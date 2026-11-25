@@ -431,7 +431,7 @@ class _AnimatedTitleTextState extends State<_AnimatedTitleText> {
             ),
           ),
           const SizedBox(width: 6),
-          Tooltip(
+          AppTooltip(
             message: context.l10n.commonSave,
             child: shad.IconButton.ghost(
               onPressed: _isSaving ? null : () => unawaited(_submit()),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 export 'app_checkbox.dart';
+export 'app_tooltip.dart';
 export 'app_switch.dart';
 
 /// Hairline separator. Replaces `shad.Divider` / `shad.VerticalDivider`.
@@ -51,28 +52,5 @@ class AppDivider extends StatelessWidget {
             endIndent: endIndent,
             color: resolved,
           );
-  }
-}
-
-/// Token-styled tooltip. Replaces `shad.Tooltip`.
-class AppTooltip extends StatelessWidget {
-  const AppTooltip({required this.message, required this.child, super.key});
-
-  final String message;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    final c = tokens.colorScheme;
-    return Tooltip(
-      message: message,
-      decoration: BoxDecoration(
-        color: c.popoverForeground,
-        borderRadius: tokens.borderRadiusSm,
-      ),
-      textStyle: tokens.typography.xSmall.copyWith(color: c.popover),
-      child: child,
-    );
   }
 }

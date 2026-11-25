@@ -169,7 +169,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
-                Tooltip(
+                AppTooltip(
                   message: l10n.offlinePreparationDescription,
                   triggerMode: TooltipTriggerMode.tap,
                   child: Icon(

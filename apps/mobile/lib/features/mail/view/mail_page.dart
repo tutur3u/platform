@@ -10,6 +10,7 @@ import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/ui.dart' show AppButton;
 import 'package:mobile/data/repositories/notifications_repository.dart';

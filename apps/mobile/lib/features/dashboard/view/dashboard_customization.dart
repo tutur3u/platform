@@ -203,7 +203,7 @@ class _HomeWidgetEditor extends StatelessWidget {
                   if (!hidden)
                     ReorderableDragStartListener(
                       index: index,
-                      child: Tooltip(
+                      child: AppTooltip(
                         message: context.l10n.appsReorder,
                         child: const SizedBox.square(
                           dimension: 48,

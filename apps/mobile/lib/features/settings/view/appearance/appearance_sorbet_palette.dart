@@ -27,7 +27,7 @@ class AppearanceSorbetPalette extends StatelessWidget {
       runSpacing: 10,
       children: [
         for (final preset in SorbetPreset.values)
-          Tooltip(
+          AppTooltip(
             message: l10n.sorbetPreset(preset),
             child: Semantics(
               button: true,

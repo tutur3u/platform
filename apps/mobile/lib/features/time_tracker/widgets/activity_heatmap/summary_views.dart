@@ -383,7 +383,7 @@ class _MonthlyCalendarView extends StatelessWidget {
                 final backgroundColor = inMonth
                     ? _activityCellColor(context, dayDuration, maxDuration)
                     : _outOfMonthColor(context);
-                return Tooltip(
+                return AppTooltip(
                   message:
                       '$key\n'
                       '${_formatDuration(dayDuration, l10n)} • '

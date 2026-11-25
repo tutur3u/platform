@@ -96,7 +96,7 @@ class MailBarButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
+  Widget build(BuildContext context) => AppTooltip(
     message: label,
     excludeFromSemantics: true,
     child: AppButton.ghost(

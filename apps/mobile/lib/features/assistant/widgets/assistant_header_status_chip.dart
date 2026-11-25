@@ -15,7 +15,7 @@ class AssistantHeaderStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
+    return AppTooltip(
       message: '${context.l10n.assistantLocalModeAction}: $label',
       child: Semantics(
         button: true,

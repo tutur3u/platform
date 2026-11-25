@@ -202,7 +202,7 @@ class _AppEditorRow extends StatelessWidget {
           if (dragIndex case final index?)
             ReorderableDragStartListener(
               index: index,
-              child: Tooltip(
+              child: AppTooltip(
                 message: context.l10n.appsReorder,
                 child: const SizedBox.square(
                   dimension: 48,

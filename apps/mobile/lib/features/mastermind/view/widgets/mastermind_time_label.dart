@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/presentation/relative_time.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
@@ -123,8 +124,8 @@ class _MastermindTimeLabelState extends State<MastermindTimeLabel> {
       onTap: _showAbsolute,
       onLongPress: _showAbsolute,
       excludeSemantics: true,
-      child: Tooltip(
-        key: _tooltipKey,
+      child: AppTooltip(
+        tooltipKey: _tooltipKey,
         message: absolute,
         showDuration: const Duration(seconds: 4),
         excludeFromSemantics: true,

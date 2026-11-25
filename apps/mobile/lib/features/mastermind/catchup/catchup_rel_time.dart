@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
@@ -69,8 +70,8 @@ class _CatchupRelTimeState extends State<CatchupRelTime> {
     return Semantics(
       label: spoken,
       excludeSemantics: true,
-      child: Tooltip(
-        key: _tooltip,
+      child: AppTooltip(
+        tooltipKey: _tooltip,
         message: absolute,
         triggerMode: TooltipTriggerMode.longPress,
         showDuration: const Duration(seconds: 3),

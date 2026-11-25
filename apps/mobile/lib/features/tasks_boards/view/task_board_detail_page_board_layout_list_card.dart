@@ -90,7 +90,7 @@ class _BoardLayoutMoveButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
 
-    return Tooltip(
+    return AppTooltip(
       message: tooltip,
       child: shad.GhostButton(
         onPressed: onPressed,

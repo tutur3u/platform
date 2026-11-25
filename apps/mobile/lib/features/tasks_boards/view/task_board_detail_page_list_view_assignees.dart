@@ -47,7 +47,7 @@ class _ListViewAssigneeAvatarStack extends StatelessWidget {
     );
 
     if (overflowCount > 0) {
-      child = Tooltip(
+      child = AppTooltip(
         message: context.l10n.taskBoardDetailTaskAssigneeCount(
           assignees.length,
         ),

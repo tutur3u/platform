@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/components/app_control_target.dart';
 import 'package:mobile/core/ui/components/app_icon_button.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
@@ -105,6 +106,6 @@ class AppChip extends StatelessWidget {
           ),
       ],
     );
-    return tooltip == null ? result : Tooltip(message: tooltip, child: result);
+    return tooltip == null ? result : AppTooltip(message: tooltip, child: result);
   }
 }

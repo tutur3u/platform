@@ -140,7 +140,7 @@ class MailSettingsAccountRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
+  Widget build(BuildContext context) => AppTooltip(
     message: address,
     child: AppListTile(
       leading: const Icon(Icons.alternate_email),

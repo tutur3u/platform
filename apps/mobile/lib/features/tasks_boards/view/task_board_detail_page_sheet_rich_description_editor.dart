@@ -619,7 +619,7 @@ class _TaskDescriptionToolbar extends StatelessWidget {
         ? theme.colorScheme.primary
         : theme.colorScheme.foreground;
 
-    return Tooltip(
+    return AppTooltip(
       message: tooltip,
       child: _ToolbarButton(
         size: _btnSize,
@@ -644,7 +644,7 @@ class _TaskDescriptionToolbar extends StatelessWidget {
         ? theme.colorScheme.primary
         : theme.colorScheme.foreground;
 
-    return Tooltip(
+    return AppTooltip(
       message: tooltip,
       child: _ToolbarButton(
         size: _btnSize,

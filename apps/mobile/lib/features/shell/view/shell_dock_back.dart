@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
@@ -32,7 +33,7 @@ class ShellDockBack extends StatelessWidget {
       excludeSemantics: true,
       onTap: onTap,
       onLongPress: onLongPress,
-      child: Tooltip(
+      child: AppTooltip(
         message: entry.label,
         triggerMode: onLongPress == null
             ? TooltipTriggerMode.longPress

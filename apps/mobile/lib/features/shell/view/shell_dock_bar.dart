@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_animated_slots.dart';
@@ -305,7 +306,7 @@ class ShellDockSlotButton extends StatelessWidget {
       label: entry.label,
       excludeSemantics: true,
       onTap: entry.enabled ? onTap : null,
-      child: Tooltip(
+      child: AppTooltip(
         message: entry.label,
         triggerMode: TooltipTriggerMode.longPress,
         excludeFromSemantics: true,

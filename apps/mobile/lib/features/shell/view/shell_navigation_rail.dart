@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
@@ -92,7 +93,7 @@ class ShellNavigationRail extends StatelessWidget {
                 spacing: AppSpacing.sm,
                 children: [
                   if (onBrandTap case final reveal?)
-                    Tooltip(
+                    AppTooltip(
                       message: context.l10n.appearanceSidebarOpen,
                       child: InkWell(
                         onTap: reveal,
@@ -224,7 +225,7 @@ class _RailDestination extends StatelessWidget {
     // The sidebar shows the label; the icon rail shows it on hover or long
     // press. The item already supplies the semantics label.
     if (label == null || extended) return destination;
-    return Tooltip(
+    return AppTooltip(
       message: label,
       triggerMode: TooltipTriggerMode.longPress,
       excludeFromSemantics: true,

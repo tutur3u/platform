@@ -47,7 +47,7 @@ class _TaskMetadataRow extends StatelessWidget {
           child: Text(estimate),
         ),
       if (_taskHasDescription(task.description))
-        Tooltip(
+        AppTooltip(
           message: l10n.taskBoardDetailTaskDescriptionLabel,
           child: const AppBadge.outline(child: Icon(LucideIcons.alignLeft)),
         ),

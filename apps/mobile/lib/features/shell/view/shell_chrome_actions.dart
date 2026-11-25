@@ -338,7 +338,7 @@ class _ShellActionSegments extends StatelessWidget {
               excludeSemantics: true,
               onTap: action.enabled ? () => _invokeShellAction(action) : null,
               label: action.tooltip,
-              child: Tooltip(
+              child: AppTooltip(
                 message: action.tooltip ?? '',
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),

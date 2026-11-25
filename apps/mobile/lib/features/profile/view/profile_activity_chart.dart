@@ -49,7 +49,7 @@ class ProfileActivityChart extends StatelessWidget {
                   final message =
                       '${DateFormat.yMMMd(locale).format(date)} · '
                       '${l10n.profileTrackedMinutes(seconds ~/ 60)}';
-                  return Tooltip(
+                  return AppTooltip(
                     message: message,
                     excludeFromSemantics: true,
                     triggerMode: TooltipTriggerMode.tap,

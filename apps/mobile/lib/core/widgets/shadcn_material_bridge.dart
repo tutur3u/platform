@@ -8,6 +8,7 @@ import 'package:mobile/core/theme/appearance/interface_theme.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_theme.dart';
 import 'package:mobile/core/ui/components/account_overlay_scope.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -57,7 +58,8 @@ class ShadcnMaterialBridge extends StatelessWidget {
             ),
       child: AppInterfaceScope(
         settings: appearance ?? const AppearanceSettings(),
-        child: Material(
+        child: AppTooltipTheme(
+          child: Material(
           color: Colors.transparent,
           child: ScaffoldMessenger(
             child: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -66,6 +68,7 @@ class ShadcnMaterialBridge extends StatelessWidget {
                   navigatorBoundary?.call(_AccountToastLayer(child: child)) ??
                   child,
             ),
+          ),
           ),
         ),
       ),

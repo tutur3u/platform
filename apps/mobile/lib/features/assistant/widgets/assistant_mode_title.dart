@@ -97,7 +97,7 @@ class AssistantModeTitle extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: Tooltip(
+              child: AppTooltip(
                 message: context.l10n.assistantRenameTitle,
                 child: AppButton.ghost(
                   key: const ValueKey('assistant-name-title'),

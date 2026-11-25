@@ -88,7 +88,7 @@ class MailMessageTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (desktop)
-                      Tooltip(
+                      AppTooltip(
                         message: context.l10n.mailKeyboardSelect,
                         excludeFromSemantics: true,
                         child: Semantics(

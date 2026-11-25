@@ -62,7 +62,7 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
                   style: AppTokens.of(context).typography.large,
                 ),
               ),
-              Tooltip(
+              AppTooltip(
                 triggerMode: TooltipTriggerMode.tap,
                 message: l10n.inventoryRedesignReceiptCoverage,
                 child: const SizedBox(

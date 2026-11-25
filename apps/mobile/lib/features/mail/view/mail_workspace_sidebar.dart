@@ -150,7 +150,7 @@ extension _MailWorkspaceSidebar on _MailWorkspaceState {
                 icon: Icons.edit_outlined,
                 onTap: _mutating ? null : _compose,
               ),
-          Tooltip(
+          AppTooltip(
             message: mailboxLabel,
             excludeFromSemantics: true,
             child: destination(

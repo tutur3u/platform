@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_route_fade.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -18,7 +19,7 @@ class ShellDockActionButton extends StatelessWidget {
   final bool primary;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
+  Widget build(BuildContext context) => AppTooltip(
     message: action.tooltip ?? '',
     excludeFromSemantics: true,
     child: ConstrainedBox(

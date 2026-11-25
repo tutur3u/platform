@@ -12,6 +12,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_adaptive_grid.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';

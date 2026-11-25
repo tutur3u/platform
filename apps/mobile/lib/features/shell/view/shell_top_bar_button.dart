@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 
@@ -76,7 +77,7 @@ class ShellTopBarButton extends StatelessWidget {
     );
     final label = tooltip;
     if (label == null || label.trim().isEmpty) return button;
-    return Tooltip(message: label, child: button);
+    return AppTooltip(message: label, child: button);
   }
 }
 

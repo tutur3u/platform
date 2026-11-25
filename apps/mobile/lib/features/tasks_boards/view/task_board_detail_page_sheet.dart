@@ -595,7 +595,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     return Positioned(
       right: 16,
       bottom: 16,
-      child: Tooltip(
+      child: AppTooltip(
         message: context.l10n.commonSave,
         child: Semantics(
           label: context.l10n.commonSave,

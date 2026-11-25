@@ -131,7 +131,7 @@ class MailMessageHeader extends StatelessWidget {
                   ),
                   if (date != null) ...[
                     const SizedBox(width: AppSpacing.sm),
-                    Tooltip(
+                    AppTooltip(
                       message: formatMailMessageDate(context, date),
                       child: Text(
                         formatMailRelativeDate(context, date),

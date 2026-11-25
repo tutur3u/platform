@@ -29,7 +29,7 @@ class AppearanceAccentPicker extends StatelessWidget {
       runSpacing: 10,
       children: [
         for (final id in AppearanceAccentId.values)
-          Tooltip(
+          AppTooltip(
             message: l10n.appearanceAccent(id),
             child: Semantics(
               button: true,

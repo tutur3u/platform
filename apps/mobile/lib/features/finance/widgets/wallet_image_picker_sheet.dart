@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/features/finance/utils/wallet_images.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -119,7 +120,7 @@ class _WalletImagePickerSheetState extends State<WalletImagePickerSheet> {
                         final selected =
                             widget.initialImageSrc == image.imageSrc;
 
-                        return Tooltip(
+                        return AppTooltip(
                           message: image.name,
                           child: selected
                               ? shad.PrimaryButton(

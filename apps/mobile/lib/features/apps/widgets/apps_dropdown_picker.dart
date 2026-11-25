@@ -28,7 +28,7 @@ class AppsDropdownPicker extends StatelessWidget {
     button: true,
     label:
         '${title ?? context.l10n.navApps}, ${context.l10n.appsHubSearchHint}',
-    child: Tooltip(
+    child: AppTooltip(
       message: context.l10n.navApps,
       excludeFromSemantics: true,
       child: InkWell(

@@ -41,7 +41,7 @@ class InventoryStockHealthPanel extends StatelessWidget {
                       style: AppTokens.of(context).typography.large,
                     ),
                   ),
-                  Tooltip(
+                  AppTooltip(
                     triggerMode: TooltipTriggerMode.tap,
                     message:
                         '${l10n.inventoryStockHealthScope}\n'

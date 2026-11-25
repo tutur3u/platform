@@ -43,7 +43,7 @@ class _ProjectDetailsCard extends StatelessWidget {
               Semantics(
                 button: true,
                 label: editLabel,
-                child: Tooltip(
+                child: AppTooltip(
                   message: editLabel,
                   child: shad.GhostButton(
                     density: shad.ButtonDensity.icon,
@@ -55,7 +55,7 @@ class _ProjectDetailsCard extends StatelessWidget {
               Semantics(
                 button: true,
                 label: deleteLabel,
-                child: Tooltip(
+                child: AppTooltip(
                   message: deleteLabel,
                   child: shad.GhostButton(
                     density: shad.ButtonDensity.icon,
@@ -196,7 +196,7 @@ class _LinkedTasksCard extends StatelessWidget {
                       Semantics(
                         button: true,
                         label: unlinkLabel,
-                        child: Tooltip(
+                        child: AppTooltip(
                           message: unlinkLabel,
                           child: shad.GhostButton(
                             density: shad.ButtonDensity.icon,

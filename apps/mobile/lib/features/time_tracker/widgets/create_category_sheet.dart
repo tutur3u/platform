@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide TextField;
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
     show AppSheetHandle;
@@ -316,7 +317,7 @@ class _ColorGrid extends StatelessWidget {
       children: tokens.map((token) {
         final color = _tokenColor(context, token);
         final isSelected = selected == token.value;
-        return Tooltip(
+        return AppTooltip(
           message: _colorLabel(l10n, token),
           child: GestureDetector(
             onTap: () => onSelect(token.value),

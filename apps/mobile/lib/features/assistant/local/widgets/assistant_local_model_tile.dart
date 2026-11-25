@@ -127,7 +127,7 @@ class AssistantLocalModelTile extends StatelessWidget {
             title: Text(model.name),
             subtitle: Text(status),
             trailing: selected
-                ? Tooltip(
+                ? AppTooltip(
                     message: l10n.assistantLocalSelected,
                     child: Semantics(
                       label: l10n.assistantLocalSelected,

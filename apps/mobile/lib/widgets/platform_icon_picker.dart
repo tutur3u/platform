@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Scaffold;
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class PlatformIconPickerField extends StatefulWidget {
@@ -169,7 +170,7 @@ class _PlatformIconPickerSheetState extends State<_PlatformIconPickerSheet> {
                         final option = filtered[index];
                         final selected = option.key == widget.initialValue;
                         final buttonChild = Icon(option.icon, size: 16);
-                        return Tooltip(
+                        return AppTooltip(
                           message: option.label,
                           child: selected
                               ? shad.PrimaryButton(

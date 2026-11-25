@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
@@ -215,7 +216,7 @@ class _ActionItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Tooltip(
+        AppTooltip(
           message: action.label,
           child: Semantics(
             label: action.label,

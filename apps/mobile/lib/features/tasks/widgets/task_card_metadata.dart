@@ -97,7 +97,7 @@ class TaskPriorityMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
+    return AppTooltip(
       message: level.label(context.l10n),
       child: Icon(
         level.icon,

@@ -61,7 +61,7 @@ class AuthProviderIconButton extends StatelessWidget {
       ),
       null => Icon(icon, size: 18),
     };
-    return Tooltip(
+    return AppTooltip(
       message: label,
       excludeFromSemantics: true,
       child: AppButton.outline(

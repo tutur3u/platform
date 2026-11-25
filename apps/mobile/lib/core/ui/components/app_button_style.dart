@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/components/app_tap_target.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 enum AppButtonVariant { primary, secondary, outline, ghost, destructive, link }
@@ -186,7 +187,7 @@ class AppButtonFrame extends StatelessWidget {
       label: semanticLabel,
       child: tooltip == null
           ? target
-          : Tooltip(
+          : AppTooltip(
               message: tooltip,
               excludeFromSemantics: true,
               child: target,

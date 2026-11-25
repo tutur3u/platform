@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
+import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_utils.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -132,6 +133,6 @@ class TaskDescriptionMentionChip extends StatelessWidget {
       return chip;
     }
 
-    return Tooltip(message: tooltip, child: chip);
+    return AppTooltip(message: tooltip, child: chip);
   }
 }

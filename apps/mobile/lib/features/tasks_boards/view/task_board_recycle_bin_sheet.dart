@@ -231,7 +231,7 @@ extension on _TaskBoardDetailPageViewState {
                             ],
                           ),
                         ),
-                        Tooltip(
+                        AppTooltip(
                           message: context.l10n.taskBoardDetailRefresh,
                           child: shad.IconButton.ghost(
                             icon: const Icon(Icons.refresh_rounded, size: 18),
