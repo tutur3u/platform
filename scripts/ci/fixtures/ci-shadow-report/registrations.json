@@ -1,0 +1,76 @@
+{
+  "registrations": [
+    {
+      "sha": "2222222222222222222222222222222222222222",
+      "before": "1111111111111111111111111111111111111111",
+      "base": null,
+      "plan": [
+        {
+          "workflow": "type-check.yaml",
+          "run": true,
+          "reason": "type-check.yaml uses static tuturuuu.ts gating",
+          "closureKey": null
+        },
+        {
+          "workflow": "calendar-cloudflare.yaml",
+          "run": false,
+          "reason": "calendar-cloudflare.yaml is not affected",
+          "closureKey": null
+        },
+        {
+          "workflow": "codeql.yml",
+          "run": false,
+          "reason": "no changed path matches the push filter",
+          "closureKey": null
+        },
+        {
+          "workflow": "mobile.yaml",
+          "run": true,
+          "reason": "mobile.yaml uses static tuturuuu.ts gating",
+          "closureKey": null
+        }
+      ],
+      "runId": 102,
+      "runAttempt": 1,
+      "actor": "github:pusher",
+      "logsUrl": "https://github.com/tutur3u/platform/actions/runs/102/attempts/1",
+      "registeredAt": 1795000060000
+    },
+    {
+      "sha": "1111111111111111111111111111111111111111",
+      "before": "0000000000000000000000000000000000000001",
+      "base": null,
+      "plan": [
+        {
+          "workflow": "type-check.yaml",
+          "run": true,
+          "reason": "type-check.yaml uses static tuturuuu.ts gating",
+          "closureKey": null
+        },
+        {
+          "workflow": "calendar-cloudflare.yaml",
+          "run": true,
+          "reason": "calendar-cloudflare.yaml is affected by 1 changed path(s)",
+          "closureKey": null
+        },
+        {
+          "workflow": "codeql.yml",
+          "run": false,
+          "reason": "no changed path matches the push filter",
+          "closureKey": null
+        },
+        {
+          "workflow": "mobile.yaml",
+          "run": false,
+          "reason": "no changed path matches the push filter",
+          "closureKey": null
+        }
+      ],
+      "runId": 101,
+      "runAttempt": 1,
+      "actor": "github:pusher",
+      "logsUrl": "https://github.com/tutur3u/platform/actions/runs/101/attempts/1",
+      "registeredAt": 1795000000000
+    }
+  ]
+}

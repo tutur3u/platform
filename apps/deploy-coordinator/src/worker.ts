@@ -1,3 +1,4 @@
+import { CI_OBJECT } from './ci-registry';
 import { DeployEnvironment } from './environment-object';
 import { handle } from './http';
 import { githubKeySource } from './oidc';
@@ -6,6 +7,7 @@ export { DeployEnvironment };
 
 type Env = {
   DEPLOY_COORDINATOR_ENABLED?: string;
+  DEPLOY_COORDINATOR_CI_ENABLED?: string;
   DEPLOY_COORDINATOR_OIDC_AUDIENCE: string;
   DEPLOY_COORDINATOR_REPOSITORY_ID: string;
   DEPLOY_COORDINATOR_OPERATOR_TOKEN?: string;
@@ -27,6 +29,7 @@ export default {
     try {
       return await handle(request, {
         enabled: env.DEPLOY_COORDINATOR_ENABLED === 'true',
+        ciEnabled: env.DEPLOY_COORDINATOR_CI_ENABLED === 'true',
         audience: env.DEPLOY_COORDINATOR_OIDC_AUDIENCE,
         repositoryId: env.DEPLOY_COORDINATOR_REPOSITORY_ID,
         operatorToken: env.DEPLOY_COORDINATOR_OPERATOR_TOKEN,
@@ -36,6 +39,10 @@ export default {
           env.DEPLOY_ENVIRONMENTS.get(
             env.DEPLOY_ENVIRONMENTS.idFromName(name)
           ).call(context, operation),
+        ciCall: async (operation) =>
+          env.DEPLOY_ENVIRONMENTS.get(
+            env.DEPLOY_ENVIRONMENTS.idFromName(CI_OBJECT)
+          ).ci(operation),
       });
     } catch (caught) {
       console.error('Deploy coordinator request failed', caught);

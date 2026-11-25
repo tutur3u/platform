@@ -13,6 +13,7 @@ let enabled: boolean;
 
 const env = (): RouterEnv => ({
   enabled,
+  ciEnabled: false,
   audience: AUDIENCE,
   repositoryId: REPOSITORY_ID,
   operatorToken: OPERATOR,
@@ -29,6 +30,9 @@ const env = (): RouterEnv => ({
       Date.now(),
       () => crypto.randomUUID()
     );
+  },
+  ciCall: async () => {
+    throw new Error('CI registry is not used by these tests');
   },
 });
 

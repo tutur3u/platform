@@ -1,9 +1,9 @@
-import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { LIMITS } from './core';
 import { type Operation, runOperation } from './environment-service';
 import type { EnvironmentName } from './projects';
-import { type SqlExec, SqlEnvironmentStore } from './sql-store';
+import { SqlEnvironmentStore } from './sql-store';
+import { meteredSql } from './test-support';
 
 // Cloudflare bills every row a write touches in a table and in each of its
 // indexes. Each table's weight is its own b-tree plus the secondary indexes the
@@ -19,40 +19,10 @@ const WEIGHT: Record<string, number> = {
   budget: 1,
 };
 
-function meteredSql() {
-  const db = new DatabaseSync(':memory:');
-  const meter = { rows: 0 };
-  const sql: SqlExec = {
-    exec(query, ...bindings) {
-      const statement = db.prepare(query);
-      const params = bindings as Array<string | number | null>;
-      const table = /^\s*(?:INSERT INTO|UPDATE|DELETE FROM)\s+(\w+)/i.exec(
-        query
-      )?.[1];
-      let rows: never[] = [];
-      if (statement.columns().length > 0) {
-        rows = statement.all(...params) as never[];
-        if (table) meter.rows += rows.length * (WEIGHT[table] ?? 1);
-      } else {
-        const { changes } = statement.run(...params);
-        if (table) meter.rows += Number(changes) * (WEIGHT[table] ?? 1);
-      }
-      return {
-        toArray: () => rows,
-        one: () => {
-          if (rows.length !== 1) throw new Error('Expected exactly one row');
-          return rows[0]!;
-        },
-      };
-    },
-  };
-  return { sql, meter };
-}
-
 const T0 = Date.UTC(2026, 10, 20, 12);
 
 function metered(environment: EnvironmentName = 'production') {
-  const { sql, meter } = meteredSql();
+  const { sql, meter } = meteredSql(WEIGHT);
   const store = new SqlEnvironmentStore(sql);
   let counter = 0;
   const newId = () =>

@@ -16,9 +16,9 @@ const LANE = /^[A-Za-z0-9._/-]{1,200}$/;
 
 // Reads the body as a stream and stops at the byte cap, so a missing or false
 // Content-Length never makes the Worker buffer an oversized body.
-async function readCapped(request: Request): Promise<string> {
+async function readCapped(request: Request, limit: number): Promise<string> {
   const declared = Number(request.headers.get('content-length') ?? '0');
-  if (declared > MAX_BODY_BYTES) throw new InvalidInput('Body too large');
+  if (declared > limit) throw new InvalidInput('Body too large');
   if (!request.body) return '';
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -27,7 +27,7 @@ async function readCapped(request: Request): Promise<string> {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > MAX_BODY_BYTES) {
+    if (size > limit) {
       await reader.cancel().catch(() => undefined);
       throw new InvalidInput('Body too large');
     }
@@ -46,8 +46,11 @@ async function readCapped(request: Request): Promise<string> {
   }
 }
 
-export async function readJson(request: Request): Promise<Json> {
-  const text = await readCapped(request);
+export async function readJson(
+  request: Request,
+  limit: number = MAX_BODY_BYTES
+): Promise<Json> {
+  const text = await readCapped(request, limit);
   if (!text) return {};
   let value: unknown;
   try {

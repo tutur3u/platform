@@ -1,7 +1,7 @@
 ---
 title: 'Deployment coordinator'
 description: 'Design of the Tuturuuu-hosted deployment authority: projects, environments and deployments on a Cloudflare Worker with one Durable Object per project environment, serialized publishes, supersession, promotion and rollback markers, a durable stop fence and a bounded cost ceiling.'
-updatedAt: '2026-11-20'
+updatedAt: '2026-11-26'
 audience: developers
 ---
 
@@ -200,6 +200,32 @@ every string field has a length bound. Unknown routes return `404`.
 
 The read endpoints are the stable shape for CLI consumers such as a `ttr`
 deploy-queue view.
+
+### CI registry
+
+Main-branch CI registration
+([coordinator-orchestrated CI](/build/devops/coordinator-ci-orchestration),
+slice 1) lives in one more Durable Object of the same class, named `ci:main`,
+which holds only its own tables. It records plans and dispatches nothing.
+
+| Method and path | Caller | Purpose |
+| --------------- | ------ | ------- |
+| `POST /v1/ci/main/registrations` | CI (`ci-register.yaml`) | Register a main push and its plan |
+| `GET /v1/ci/main` | operator | Stop state, stored count and today's budget |
+| `GET /v1/ci/main/registrations?limit=N` | operator | Newest first; `N` from 1 to 100, default 30 |
+| `GET /v1/ci/main/registrations/:sha` | operator | One registration |
+| `POST /v1/ci/main/stop` and `/resume` | operator | Durable stop fence for registration |
+
+A registration's token must carry `ref` `refs/heads/main`, `event_name`
+`push`, and `job_workflow_ref` and `workflow_ref` both naming
+`ci-register.yaml` at that ref (`CI_REGISTRATION_WORKFLOW` in
+`src/projects.ts`); the body's `sha` must equal the token's. The body is
+`{ sha, before, base, plan }` with at most 120 plan entries
+`{ workflow, run, reason (≤120 characters), closureKey? (≤64 hex) }` and at
+most 16 KiB. A SHA registers once: a repeat, such as a re-run, answers the
+stored record with `created: false` and writes nothing. Run id, attempt,
+actor and logs URL come from the token. The newest 500 registrations are
+kept; each insert prunes the oldest past that.
 
 ### Authentication
 
@@ -421,14 +447,15 @@ while handling a call ([pricing](https://developers.cloudflare.com/durable-objec
 
 | Item | Bound |
 | ---- | ----- |
-| Durable Objects | catalog projects × 3 environments; no other names are addressable |
+| Durable Objects | catalog projects × 3 environments, plus the `ci:main` CI registry; no other names are addressable |
 | Calls per deployment | create 1, claims backing off from the coordinator's 60 s floor to a 180 s cap over the default 30-minute wait (≤12, the grant included; `max-wait-minutes: 60` allows about 22), heartbeats every 4 min for ≤90 min (≤22, a failed one retried after 1 min), finish 1: worst case about 36, typical about 6 |
 | Client retries | 3 attempts with backoff on network errors and `5xx` only |
 | Daily budget | 500 calls per environment object per UTC day, enough for about 13 worst-case or 80 typical deployments; every preview lane of a project shares its preview environment's budget, so recheck the figure before onboarding busy staging or preview workflows, counted durably before any other work; beyond it `429 BUDGET_EXHAUSTED`, which writes no rows. The Worker remembers an exhausted environment in isolate memory until UTC midnight and answers without calling the object. Operator stop, resume and reads are neither counted nor rejected, write no rows and cost one Durable Object request each; the dashboard reads on demand and never polls |
 | Preview lanes | 50 open lanes per preview environment; more is `429 CAPACITY` |
 | Lanes | 200 per environment. A new lane evicts the least recently used idle lane with its rows, except a lane with an `unknown` attempt from the last six hours, which GitHub-hosted jobs can still reconcile; with no evictable lane, `429 CAPACITY` |
 | Retention | 100 finished deployments per lane, pruned on write, plus any `unknown` attempt from the last six hours, which can still reconcile (one publisher per lane and the twelve-minute lease plus grace keep that under about 30); no log content, only links |
-| Payload | 8 KiB request bodies |
+| Payload | 8 KiB request bodies; 16 KiB for a CI registration |
+| CI registry | 400 new registrations per UTC day, counted durably like an environment's budget; beyond it `429 BUDGET_EXHAUSTED`, cached per isolate until UTC midnight. A repeat, a stopped object and a rejection write no rows; a registration writes 2 rows, 3 at full retention (500 kept), plus 1 on the day's first. Hard ceiling about 1,200 rows a day; see the [slice 1 cost](/build/devops/coordinator-ci-orchestration#slice-1-cost) |
 
 A busy production environment of 20 typical deployments a day uses about 120
 calls, well inside its budget; a budget that runs out falls open in CI, so it
@@ -464,7 +491,9 @@ pinned at its budget every day:
   exceeds 6 once its share is counted. The first counted call of each UTC day
   also replaces the budget row, 1 more row once a day per environment.
 - Hard ceiling, every call a create: 76,500 × 18 ≈ 1.4 million rows a day,
-  about 41 million a month, inside the 50 million included.
+  about 41 million a month, inside the 50 million included. The `ci:main`
+  registry adds at most 400 registrations × 3 rows + 1 ≈ 1,200 rows a day
+  (`src/ci-registry.test.ts` pins it), under 0.1% of that ceiling.
 - The cost test pins a worst-case lifecycle of 41 calls and 166 rows: the
   deployment's create, 12 backed-off wait polls, its grant, 23 heartbeats and
   completion, plus the create, claim and completion of the run blocking it.
@@ -502,6 +531,13 @@ Stop fences, outermost first:
    `DEPLOY_COORDINATOR_MODE` to `off` stops all CI traffic without a code
    change.
 
+CI registration has the same layers: `DEPLOY_COORDINATOR_ENABLED` and its own
+Worker variable `DEPLOY_COORDINATOR_CI_ENABLED` (shipped `'false'`; anything
+but `true` answers `503 CI_OFF` before the object is reached), the `ci:main`
+stop (`POST /v1/ci/main/stop`; registration answers `503 STOPPED` and writes
+nothing), its daily budget, and `vars.DEPLOY_COORDINATOR_CI_MODE`, which skips
+the `ci-register.yaml` job unless it is `observe`.
+
 A rate limit or billing alert alone is not a spend cap; the durable budget and
 the catalog-bounded object count are.
 
@@ -520,6 +556,7 @@ actions are plain `POST`s on the API above for scripts.
 | Roll back | **Roll back** on an earlier succeeded deployment queues a `rollback` marker and holds the lane, so enforce-capable deploys skip in `enforce`; observe-only publishers (Vercel, Meet, Tasks, gateway, stores) still publish and can overwrite it, so pause their workflow too. Restore that version with the owning tooling (for a cf Worker, `cf workers deployments create` naming its version), **Resolve** the marker, then **Release hold** when automatic deploys may resume |
 | Abandon a rollback or promotion | **Cancel** the queued marker; cancelling a rollback releases its hold |
 | Retry a failed marker | Repeat **Promote** or **Roll back**: a failed, cancelled or unknown marker is replaced by a new one |
+| Read the CI shadow report | `DEPLOY_COORDINATOR_OPERATOR_TOKEN=... node scripts/ci/ci-shadow-report.mjs --limit 20`; see [reading the shadow report](/build/devops/coordinator-ci-orchestration#reading-the-shadow-report). Enable or stop registration as in [enabling](/build/devops/coordinator-ci-orchestration#enabling) |
 | Disable the coordinator itself | Not instant: set `DEPLOY_COORDINATOR_ENABLED` to anything but `true` in `cloudflare.config.ts` and its parity fixture, then publish through production sync; every CI call then answers `503 COORDINATOR_OFF` before any Durable Object call. Use the `DEPLOY_COORDINATOR_MODE=off` kill switch first |
 
 The switch to `enforce` follows a clean observe window: about ten consecutive
@@ -563,13 +600,22 @@ Run from the repository root:
   expiry, lane eviction and retention. The cost suite meters index-weighted
   rows written per call against SQLite and pins the figures above. The router suite drives the HTTP API with OIDC tokens signed by a
   generated RSA key; the OIDC suite covers claim, event, workflow and ref
-  checks and the rate-limited key refetch.
+  checks and the rate-limited key refetch. `src/ci-registry.test.ts` covers
+  the CI registry on both stores (idempotency, retention, stop, budget) and
+  pins its rows per call; `src/ci-http.test.ts` covers registration
+  authorization, body bounds, both switches and the operator reads.
+- `node --test scripts/ci/ci-register.test.mjs scripts/ci/ci-shadow-report.test.mjs`
+  covers the shadow plan (push path filters checked against a YAML parser on
+  every workflow, decisions, closure keys, body bounds, retries, exit 0) and
+  the report against fixtures.
 - `node --test scripts/ci/deploy-coordinator-client.test.mjs` covers the
   client's phases, fall-open paths, bounded waits and retries.
 - `node --test apps/deploy-coordinator/scripts/verify-worker-runtime.mjs` runs
   the real Worker and Durable Object in workerd through the Vite runtime: the
-  private config, closed routes, and a seeded lane lock, stop fence and
-  exhausted budget surviving `restart()`. It sends no token that could reach
+  private config, closed routes, a seeded lane lock, stop fence and
+  exhausted budget surviving `restart()`, and the CI registry: the shipped
+  `CI_OFF` answer, a seeded registration read back, and its stop surviving a
+  restart in an object that holds no environment tables. It sends no token that could reach
   GitHub's JWKS. The harness warms the first Durable Object route and reads
   once after a restart before using the Local Explorer, which can reload the
   runtime on a cold path.

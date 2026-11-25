@@ -21,6 +21,9 @@ export default defineConfig({
     env: {
       // Global stop fence: anything other than 'true' rejects CI mutations.
       DEPLOY_COORDINATOR_ENABLED: bindings.text('true'),
+      // Main-branch CI registration (ci:main): anything other than 'true'
+      // answers 503 before the object is reached.
+      DEPLOY_COORDINATOR_CI_ENABLED: bindings.text('false'),
       DEPLOY_COORDINATOR_OIDC_AUDIENCE: bindings.text(
         'tuturuuu-deploy-coordinator'
       ),

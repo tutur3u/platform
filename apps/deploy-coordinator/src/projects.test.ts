@@ -1,7 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { CI_OBJECT } from './ci-registry';
 import {
+  CI_REGISTRATION_WORKFLOW,
   ENVIRONMENTS,
   findProject,
   PROJECTS,
@@ -20,6 +22,21 @@ describe('project catalog', () => {
   it('pins the catalog size and unique ids', () => {
     expect(PROJECTS).toHaveLength(51);
     expect(new Set(PROJECTS.map((project) => project.id)).size).toBe(51);
+  });
+
+  it('keeps the CI registry apart from every project environment', () => {
+    const names = PROJECTS.flatMap((project) =>
+      ENVIRONMENTS.map((environment) => `${project.id}:${environment}`)
+    );
+    expect(names).not.toContain(CI_OBJECT);
+    expect(findProject(CI_OBJECT.split(':')[0]!)).toBeUndefined();
+  });
+
+  it('binds CI registration to a main push workflow that registers', () => {
+    const source = read(CI_REGISTRATION_WORKFLOW);
+    expect(source).toMatch(/^ {2}push:\n {4}branches: \[main\]$/m);
+    expect(source).toMatch(/^ {6}id-token: write$/m);
+    expect(source).toContain('node scripts/ci/ci-register.mjs');
   });
 
   it('allowlists only workflow files that exist', () => {

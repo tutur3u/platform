@@ -78,6 +78,8 @@ const mainExceptions = {
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
   'vault-witness-cloudflare.yaml':
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
+  'ci-register.yaml':
+    'Shadow CI registration: one non-cancelling run per main SHA; the coordinator keeps the first registration of a SHA',
 };
 // These workflows do not cancel a main push, and each main SHA has its own
 // group. A shared "latest" group drops the previous pending run when

@@ -5,9 +5,9 @@ updatedAt: '2026-11-26'
 audience: developers
 ---
 
-Status: design. Nothing here is built yet. The first slice, register and
-observe, changes no CI behaviour. Each later slice lands on its own, with its
-own review and gate.
+Status: slice 1, register and observe, is built and changes no CI behaviour;
+see [Slice 1: register and observe](#slice-1-register-and-observe). The later
+slices are design. Each lands on its own, with its own review and gate.
 
 ## Problem
 
@@ -102,26 +102,115 @@ affected set of eight:
 
 | Item | Calls | Rows written |
 | ---- | ----- | ------------ |
-| Registration (plan for every workflow) | 1 | about 55: one SHA row and one plan row per workflow, plus indexes |
+| Registration (plan for every workflow, built in slice 1) | 1 | 3: budget counter, one registration row holding the whole plan, and the oldest registration pruned past retention |
 | Dispatch decisions (coalesced, affected only) | 0 extra (taken on registration or the settle alarm) | about 8 |
 | Completion reports | 8 | about 8 × 6 = 48 |
-| Total per push | about 9 | about 110 |
+| Total per push | about 9 | about 60 |
 
-At 150 main pushes a day that is about 1,350 calls and 17,000 rows a day,
-about 0.5 million rows a month, inside the included 50 million. The settle
+At 150 main pushes a day that is about 1,350 calls and 9,000 rows a day,
+about 0.3 million rows a month, inside the included 50 million. The settle
 window uses one Durable Object alarm per lane only while a plan is waiting,
 bounded by the lane count. GitHub API calls made by the coordinator (dispatch
 and cancel) are bounded by the runner budget and the cancellation allowlist.
-The hard ceiling is the existing per-environment daily budget, applied to a
-new `ci:main` object.
+The hard ceiling is the `ci:main` object's own durable daily budget
+(400 registrations in slice 1); the slice that adds dispatch and completion
+calls sets and pins its budget for them.
+
+## Slice 1: register and observe
+
+Built and off until enabled. Nothing dispatches, cancels or waits on it.
+
+- **Workflow.** `.github/workflows/ci-register.yaml` runs on every push to
+  `main`, one run per SHA (`ci-register-<sha>`, never cancelled). Its single
+  job is skipped unless `vars.DEPLOY_COORDINATOR_CI_MODE` is `observe`; every
+  step continues on error, so it never fails or blocks anything. It holds
+  `contents: read` and `id-token: write` and no secrets.
+- **Plan.** `scripts/ci/ci-register.mjs` reads the push's `before..sha` diff
+  and, for each workflow a push to `main` starts, applies GitHub's
+  push path filter (the parser in `scripts/ci/pr-blast-radius.mjs`, checked
+  against a YAML parser on every workflow by its test) and then the
+  workflow's own `getWorkflowDecision` from `tuturuuu.ts`, with the same
+  workspace manifests, extra edges and `bun.lock` narrowing as
+  `check-workflow-config.ts`. Each entry is `{ workflow, run, reason,
+  closureKey }`. The closure key is the first 128 bits of a SHA-256 over the
+  workflow file and every file its push path filter selects at the commit;
+  files a workflow reads outside its filter are not covered. `base` is `null`:
+  the last-green base needs an `actions: read` token the job does not hold,
+  so the plan uses the push's own range. Real CI diffs some workflows from
+  another commit (`scripts/ci/resolve-changed-files-core.ts`): the Cloudflare
+  production publishers from their last deployment marker, and the checks in
+  `scripts/ci/main-supersession.json` from their last green main run. The plan
+  does not compute those ranges; it marks those entries `run: true` with the
+  reason `range not computed: …`, and the report counts them as neither saved
+  nor missed. The release-only and overflow-notes shortcuts are not modelled
+  either. An unknown range (new branch, lost `before`) leaves every path
+  filter open. The script posts with the job's OIDC token (audience
+  `tuturuuu-deploy-coordinator`), up to 3 attempts with backoff on network
+  errors and `5xx`, except the deliberate `CI_OFF`, `COORDINATOR_OFF` and
+  `STOPPED` answers, which are final. Every failure after the module loads is
+  logged and the script exits 0; the step continues on error regardless.
+  Computing the plan takes about 3 seconds.
+- **Coordinator.** `POST /v1/ci/main/registrations` on the deployment
+  coordinator, stored in the `ci:main` Durable Object; see the
+  [API](/build/devops/deployment-coordinator#ci-registry) and its
+  [cost](/build/devops/deployment-coordinator#cost-and-stop-fence-analysis).
+- **Report.** `scripts/ci/ci-shadow-report.mjs` compares the newest
+  registrations with the push runs GitHub started for those SHAs.
+
+### Enabling
+
+1. Set `DEPLOY_COORDINATOR_CI_ENABLED` to `'true'` in
+   `apps/deploy-coordinator/cloudflare.config.ts` and in the parity fixture
+   `scripts/ci/fixtures/cf-worker-parity/deploy-coordinator.json` (a reviewed
+   `vars` transition), then publish the Worker through the normal production
+   round. The shipped value is `'false'`: registration answers
+   `503 CI_OFF` before the token is read or the object is reached.
+2. `gh variable set DEPLOY_COORDINATOR_CI_MODE --body observe` (with
+   `DEPLOY_COORDINATOR_ORIGIN` already set for deploy reporting). Any other
+   value skips the job on the next push.
+
+To stop: `gh variable set DEPLOY_COORDINATOR_CI_MODE --body off` stops all
+traffic at the source; `POST /v1/ci/main/stop` makes the object answer
+`503 STOPPED` and write nothing; the Worker variable is the outer switch.
+
+### Reading the shadow report
+
+```bash
+DEPLOY_COORDINATOR_OPERATOR_TOKEN=... node scripts/ci/ci-shadow-report.mjs --limit 20
+```
+
+It makes one coordinator call and one `gh api` call per SHA (`--limit` is
+at most 30; `--json` prints the raw comparison). The first table is per
+commit: planned runs, push runs GitHub started, **would save** (started runs
+the plan says need not run) and **missed** (planned runs GitHub never
+started). The second is per workflow, with GitHub's outcome counted as `ran`,
+`skipped`, `cancelled`, `running` or `not-started`, and `unplanned` for push
+runs of a workflow the plan does not list. A non-zero **missed** is a plan
+the coordinator could not yet be trusted to dispatch; record it with the
+queue-depth and parity evidence below before slice 2.
+
+### Slice 1 cost
+
+| Per push | Calls | Rows written |
+| -------- | ----- | ------------ |
+| Registration | 1 Worker and 1 Durable Object request (up to 3 on an unexpected `5xx`) | 2 while under retention, 3 at full retention (budget 1, registration 1, pruned 1), plus 1 on the day's first registration |
+| Repeat of a SHA (a re-run) | 1 | 0 |
+| Stopped object, exhausted budget | 1 (the budget answer is then cached per isolate until UTC midnight) | 0 |
+
+The hard ceiling is the daily budget: 400 registrations × 3 rows + 1 = 1,201
+rows a day, about 36,000 a month, and at most 500 stored rows of at most
+16 KiB each (about 8 MB). Rows read are the at most 501 rows each insert sorts
+for pruning, about 6 million a month at the ceiling, against 25 billion
+included. At about 150 pushes a day the slice costs about 450 rows and 150
+Durable Object requests a day, and one GitHub-hosted job of about a minute per
+push. The figures are pinned by `apps/deploy-coordinator/src/ci-registry.test.ts`.
 
 ## Slices
 
-1. **Register and observe (shadow).** `ci-register.yaml` registers each main
-   push and the plan it would run; the coordinator records it. A daily
-   comparison reports what the coordinator would have dispatched, skipped as
-   closure-green, coalesced or cancelled against the runs GitHub actually
-   ran. No dispatch, no cancel, no trigger change.
+1. **Register and observe (shadow), built.** `ci-register.yaml` registers
+   each main push and the plan it would run; the coordinator records it. The
+   shadow report compares the plans with the runs GitHub actually started.
+   No dispatch, no cancel, no trigger change.
 2. **Pins.** Pin records and `ttr ci pin`; the coordinator nominates release
    candidates. Release admission reads coordinator verdicts in observe mode
    beside the existing GitHub-run check.

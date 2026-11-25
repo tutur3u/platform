@@ -1,0 +1,45 @@
+name: CI Register
+
+# Registers each main push and the plan it would run with the deployment
+# coordinator's CI registry (apps/docs/build/devops/coordinator-ci-orchestration.mdx).
+# Shadow mode: it dispatches, cancels and blocks nothing, and every step
+# continues on error. The job runs only while
+# vars.DEPLOY_COORDINATOR_CI_MODE is 'observe'.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One run per main commit, never cancelled: each SHA registers once.
+concurrency:
+  group: ci-register-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  register:
+    if: vars.DEPLOY_COORDINATOR_CI_MODE == 'observe'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        continue-on-error: true
+        with:
+          # Full history for the push range, without blobs until read.
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        continue-on-error: true
+        with:
+          node-version: 24
+      - name: Register the push and its shadow plan
+        continue-on-error: true
+        env:
+          DEPLOY_COORDINATOR_CI_MODE: ${{ vars.DEPLOY_COORDINATOR_CI_MODE }}
+          DEPLOY_COORDINATOR_ORIGIN: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+        run: node scripts/ci/ci-register.mjs

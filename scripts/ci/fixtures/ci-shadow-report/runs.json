@@ -1,0 +1,68 @@
+{
+  "2222222222222222222222222222222222222222": {
+    "total_count": 4,
+    "workflow_runs": [
+      {
+        "id": 20,
+        "event": "push",
+        "path": ".github/workflows/type-check.yaml",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 21,
+        "event": "push",
+        "path": ".github/workflows/calendar-cloudflare.yaml",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 22,
+        "event": "push",
+        "path": ".github/workflows/ci-register.yaml",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 23,
+        "event": "push",
+        "path": ".github/workflows/tsrs-shadow.yaml",
+        "status": "in_progress",
+        "conclusion": null
+      },
+      {
+        "id": 24,
+        "event": "workflow_dispatch",
+        "path": ".github/workflows/codeql.yml",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "1111111111111111111111111111111111111111": {
+    "total_count": 3,
+    "workflow_runs": [
+      {
+        "id": 10,
+        "event": "push",
+        "path": ".github/workflows/type-check.yaml",
+        "status": "completed",
+        "conclusion": "cancelled"
+      },
+      {
+        "id": 11,
+        "event": "push",
+        "path": ".github/workflows/calendar-cloudflare.yaml",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      {
+        "id": 12,
+        "event": "push",
+        "path": ".github/workflows/codeql.yml",
+        "status": "completed",
+        "conclusion": "failure"
+      }
+    ]
+  }
+}

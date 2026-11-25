@@ -14,11 +14,22 @@ import {
   PROJECTS,
   type ProjectEntry,
 } from './projects';
-import type { CoordinatorErrorCode, Deployment, Result } from './types';
+import { handleCi, resetCiExhaustedForTests } from './ci-http';
+import type { CiOperation } from './ci-registry';
+import {
+  error,
+  json,
+  NOT_FOUND,
+  operator as operatorActor,
+  STATUS,
+} from './http-shared';
+import type { Deployment, Result } from './types';
 import * as v from './validate';
 
 export type RouterEnv = {
   enabled: boolean;
+  // Main-branch CI registration; off unless DEPLOY_COORDINATOR_CI_ENABLED.
+  ciEnabled: boolean;
   audience: string;
   repositoryId: string;
   operatorToken: string | undefined;
@@ -29,24 +40,8 @@ export type RouterEnv = {
     context: CallContext,
     operation: Operation
   ) => Promise<Result<unknown>>;
+  ciCall: (operation: CiOperation) => Promise<Result<unknown>>;
 };
-
-const STATUS: Record<CoordinatorErrorCode, number> = {
-  BUDGET_EXHAUSTED: 429,
-  CAPACITY: 429,
-  CONFLICT: 409,
-  INVALID_STATE: 409,
-  LEASE_EXPIRED: 409,
-  NOT_FOUND: 404,
-  RUN_MISMATCH: 403,
-  STALE_GRANT: 409,
-};
-
-const json = (body: unknown, status = 200) =>
-  Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
-const error = (status: number, code: string, message = code) =>
-  json({ error: code, message }, status);
-const NOT_FOUND = () => error(404, 'NOT_FOUND', 'Not found');
 
 // Environments whose daily budget ran out, remembered per isolate until UTC
 // midnight so further calls are answered without reaching the object.
@@ -67,6 +62,7 @@ export async function handle(request: Request, env: RouterEnv) {
   const method = request.method;
   if (url.pathname === '/health')
     return method === 'GET' ? json({ ok: true }) : NOT_FOUND();
+  if (parts[0] === 'v1' && parts[1] === 'ci') return handleCi(request, env);
   if (parts[0] !== 'v1' || parts[1] !== 'projects') return NOT_FOUND();
 
   try {
@@ -153,16 +149,8 @@ async function invoke(
   return error(STATUS[result.code], result.code, result.message);
 }
 
-async function operator(request: Request, env: RouterEnv) {
-  const header = request.headers.get('authorization') ?? '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-  if (!env.operatorToken || !token) return NOT_FOUND();
-  if (!(await v.secretEquals(token, env.operatorToken))) return NOT_FOUND();
-  try {
-    return v.actor(request.headers.get('x-deploy-actor'));
-  } catch {
-    return error(400, 'INVALID_INPUT', 'Missing X-Deploy-Actor');
-  }
+export function operator(request: Request, env: RouterEnv) {
+  return operatorActor(request, env.operatorToken);
 }
 
 async function operatorCall(
@@ -334,4 +322,5 @@ async function ciAction(
 
 export function resetExhaustedForTests() {
   exhausted.clear();
+  resetCiExhaustedForTests();
 }

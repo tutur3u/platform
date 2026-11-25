@@ -137,7 +137,8 @@ export type CoordinatorErrorCode =
   | 'LEASE_EXPIRED'
   | 'NOT_FOUND'
   | 'RUN_MISMATCH'
-  | 'STALE_GRANT';
+  | 'STALE_GRANT'
+  | 'STOPPED';
 
 export class CoordinatorError extends Error {
   constructor(

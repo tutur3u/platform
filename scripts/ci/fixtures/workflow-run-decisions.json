@@ -21,6 +21,7 @@
   "ci-check.yml": ["always"],
   "ci-plan.yaml": ["diff-script"],
   "ci-reconciler.yaml": ["always"],
+  "ci-register.yaml": ["always"],
   "ci-summary-poster.yml": ["always"],
   "cms-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "cms-renderer.yaml": ["path-filters"],

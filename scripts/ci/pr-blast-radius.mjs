@@ -41,10 +41,20 @@ function parseFlow(text) {
   return items;
 }
 
+// A list under `key:` at lines[start], as a flow or block sequence. An alias
+// (`*name`) resolves to the list its anchor (`&name`) defines in the same file.
 function parseList(lines, start) {
-  const match = /^(\s*)(?:paths-ignore|paths):\s*(.*)$/u.exec(lines[start]);
+  const match = /^(\s*)[\w-]+:\s*(.*)$/u.exec(lines[start]);
   const indent = match[1].length;
-  const rest = match[2].trim();
+  const rest = match[2].trim().replace(/^&[\w-]+\s*/u, '');
+  const alias = /^\*([\w-]+)$/u.exec(rest);
+  if (alias) {
+    const anchor = lines.findIndex((line) =>
+      new RegExp(`^\\s*[\\w-]+:\\s*&${alias[1]}(?:\\s|$)`, 'u').test(line)
+    );
+    if (anchor === -1) return { items: [], index: start };
+    return { items: parseList(lines, anchor).items, index: start };
+  }
   if (rest.startsWith('[')) {
     let buffer = rest;
     let index = start;
@@ -109,7 +119,101 @@ export function parsePullRequestFilters(text) {
   return null;
 }
 
+const PUSH_KEYS = {
+  branches: 'branches',
+  'branches-ignore': 'branchesIgnore',
+  tags: 'tags',
+  'tags-ignore': 'tagsIgnore',
+  paths: 'paths',
+  'paths-ignore': 'ignore',
+};
+
+// The push trigger of a workflow: { branches, branchesIgnore, tags,
+// tagsIgnore, paths, ignore }, each a list or null when absent, or null when
+// the workflow has no push trigger. Reads the `on:` mapping only, in the
+// two-space layout every workflow here uses; scalar and sequence `on:` forms
+// trigger on every push.
+export function parsePushFilters(text) {
+  const lines = text.split(/\r?\n/u);
+  const on = lines.findIndex((line) => /^(?:on|'on'|"on"):/u.test(line));
+  if (on === -1) return null;
+  const inline = lines[on]
+    .replace(/^[^:]+:/u, '')
+    .replace(/#.*$/u, '')
+    .trim();
+  const filters = Object.fromEntries(
+    Object.values(PUSH_KEYS).map((key) => [key, null])
+  );
+  if (inline)
+    return /(?:^|[\s[,])push(?:$|[\s\],])/u.test(inline) ? filters : null;
+  for (let index = on + 1; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (/^\S/u.test(line) && !line.startsWith('#')) return null;
+    if (!/^ {2}push:/u.test(line)) continue;
+    for (let cursor = index + 1; cursor < lines.length; cursor += 1) {
+      const nested = lines[cursor];
+      if (!nested.trim() || nested.trim().startsWith('#')) continue;
+      if (nested.length - nested.trimStart().length <= 2) break;
+      const key = /^ {4}([\w-]+):/u.exec(nested);
+      if (!key || !PUSH_KEYS[key[1]]) continue;
+      const parsed = parseList(lines, cursor);
+      filters[PUSH_KEYS[key[1]]] = parsed.items;
+      cursor = parsed.index;
+    }
+    return filters;
+  }
+  return null;
+}
+
+function matchesRef(patterns, ref) {
+  const positives = patterns.filter((pattern) => !pattern.startsWith('!'));
+  const negatives = patterns
+    .filter((pattern) => pattern.startsWith('!'))
+    .map((pattern) => pattern.slice(1));
+  return (
+    positives.some((pattern) => globToRegExp(pattern).test(ref)) &&
+    !negatives.some((pattern) => globToRegExp(pattern).test(ref))
+  );
+}
+
+// Whether a push to `branch` starts the workflow, before path filters.
+export function pushSelectsBranch(filters, branch = 'main') {
+  if (!filters) return false;
+  if (filters.branches) return matchesRef(filters.branches, branch);
+  if (filters.branchesIgnore)
+    return !matchesRef(filters.branchesIgnore, branch);
+  // A trigger that names only tags never starts on a branch push.
+  return !filters.tags && !filters.tagsIgnore;
+}
+
+// Workflows a push to main starts, with their path filters, sorted by file.
+export function loadMainPushWorkflows(dir = WORKFLOWS_DIR) {
+  return readdirSync(dir)
+    .filter((file) => file.endsWith('.yml') || file.endsWith('.yaml'))
+    .sort()
+    .flatMap((file) => {
+      const filters = parsePushFilters(
+        readFileSync(path.join(dir, file), 'utf8')
+      );
+      return pushSelectsBranch(filters)
+        ? [{ file, paths: filters.paths ?? [], ignore: filters.ignore ?? [] }]
+        : [];
+    });
+}
+
+// Compiled once per pattern: closure keys match every file of the tree.
+const compiled = new Map();
+
 function globToRegExp(pattern) {
+  let expression = compiled.get(pattern);
+  if (!expression) {
+    expression = compileGlob(pattern);
+    compiled.set(pattern, expression);
+  }
+  return expression;
+}
+
+function compileGlob(pattern) {
   let source = '^';
   for (let index = 0; index < pattern.length;) {
     if (pattern.startsWith('**/', index)) {

@@ -272,3 +272,108 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
   const [{ used }] = await sql('SELECT used FROM budget');
   assert.ok(used >= 500);
 });
+
+// Every request in the CI registry test is idempotent (reads, a rejected
+// registration, an upsert, stop and resume), so each tolerates the Vite
+// reload that follows a restart, boundedly, like `read` does.
+const settled = async (work) => {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await work();
+    } catch (caught) {
+      if (
+        attempt === 10 ||
+        !/answered 5\d\d: |not valid JSON|fetch failed|Local Explorer/.test(
+          `${caught?.message} ${caught?.cause?.message ?? ''}`
+        )
+      )
+        throw caught;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+};
+const ciSql = (query, params = []) =>
+  settled(() =>
+    worker.durableObjectSql('DeployEnvironment', 'ci:main', query, params)
+  );
+
+test('CI registry: switch off by default, seeded read, stop fence across a restart', async () => {
+  const CI = '/v1/ci/main';
+  // The previous test restarted workerd; warm the runtime before asserting.
+  await waitReady();
+  // The first operator read creates the registry's tables.
+  const empty = await read(CI);
+  assert.equal(empty.status, 200);
+  assert.equal(empty.body.registrations, 0);
+  assert.equal(empty.body.meta.stopped, false);
+
+  // The shipped config keeps registration off: answered before the token is
+  // read or the object is reached.
+  const off = await settled(() =>
+    call(`${CI}/registrations`, { method: 'POST', body: {}, auth: false })
+  );
+  assert.equal(off.status, 503);
+  assert.equal(off.body.error, 'CI_OFF');
+  assert.equal(
+    (await settled(() => call(`${CI}/registrations`, { auth: false }))).status,
+    404
+  );
+
+  const sha = 'c'.repeat(40);
+  const registration = {
+    sha,
+    before: 'b'.repeat(40),
+    base: null,
+    plan: [
+      {
+        workflow: 'type-check.yaml',
+        run: true,
+        reason: 'type-check.yaml uses static tuturuuu.ts gating',
+        closureKey: 'f'.repeat(32),
+      },
+    ],
+    runId: 7,
+    runAttempt: 1,
+    actor: 'github:runtime',
+    logsUrl: 'https://github.com/tutur3u/platform/actions/runs/7/attempts/1',
+    registeredAt: Date.now(),
+  };
+  await ciSql(
+    'INSERT OR REPLACE INTO ci_registrations (sha, registered_at, data) VALUES (?, ?, ?)',
+    [sha, registration.registeredAt, JSON.stringify(registration)]
+  );
+  const listed = await read(`${CI}/registrations?limit=5`);
+  assert.deepEqual(listed.body.registrations, [registration]);
+  assert.deepEqual(
+    (await read(`${CI}/registrations/${sha}`)).body,
+    registration
+  );
+  assert.equal(
+    (await read(`${CI}/registrations/${'d'.repeat(40)}`)).status,
+    404
+  );
+  assert.equal(
+    (await settled(() => call(`${CI}/registrations?limit=101`))).status,
+    400
+  );
+
+  const stopped = await settled(() =>
+    call(`${CI}/stop`, { method: 'POST', body: { reason: 'runtime' } })
+  );
+  assert.equal(stopped.body.stopRevision, 1);
+  await worker.restart();
+  await waitReady();
+  const after = await read(CI);
+  assert.equal(after.body.meta.stopped, true);
+  assert.equal(after.body.registrations, 1);
+  assert.equal(
+    (await settled(() => call(`${CI}/resume`, { method: 'POST', body: {} })))
+      .body.stopped,
+    false
+  );
+  // The registry lives in its own object, apart from every environment.
+  const [{ count }] = await ciSql(
+    "SELECT COUNT(*) AS count FROM sqlite_master WHERE type = 'table' AND name IN ('deployments', 'lanes', 'budget')"
+  );
+  assert.equal(count, 0);
+});

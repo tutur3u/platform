@@ -5,6 +5,39 @@ import { type SqlExec, SqlEnvironmentStore } from './sql-store';
 import { type EnvironmentStore, MemoryStore } from './store';
 import type { CreateInput, Result } from './types';
 
+// SQLite through node:sqlite with the Durable Object `exec` contract that
+// counts rows written, weighted per table by the rows each write touches in
+// the table and its indexes (see cost.test.ts).
+export function meteredSql(weight: Record<string, number>) {
+  const db = new DatabaseSync(':memory:');
+  const meter = { rows: 0 };
+  const sql: SqlExec = {
+    exec(query, ...bindings) {
+      const statement = db.prepare(query);
+      const params = bindings as Array<string | number | null>;
+      const table = /^\s*(?:INSERT INTO|UPDATE|DELETE FROM)\s+(\w+)/i.exec(
+        query
+      )?.[1];
+      let rows: never[] = [];
+      if (statement.columns().length > 0) {
+        rows = statement.all(...params) as never[];
+        if (table) meter.rows += rows.length * (weight[table] ?? 1);
+      } else {
+        const { changes } = statement.run(...params);
+        if (table) meter.rows += Number(changes) * (weight[table] ?? 1);
+      }
+      return {
+        toArray: () => rows,
+        one: () => {
+          if (rows.length !== 1) throw new Error('Expected exactly one row');
+          return rows[0]!;
+        },
+      };
+    },
+  };
+  return { sql, meter };
+}
+
 // SQLite through node:sqlite with the Durable Object `exec` contract.
 export function nodeSql(): SqlExec {
   const db = new DatabaseSync(':memory:');

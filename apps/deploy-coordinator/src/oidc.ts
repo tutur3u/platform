@@ -1,5 +1,6 @@
 import {
   allowedWorkflows,
+  CI_REGISTRATION_WORKFLOW,
   type EnvironmentName,
   type ProjectEntry,
   requiredRef,
@@ -208,5 +209,19 @@ export function authorizeForEnvironment(
         claims.workflow_ref === at(rule.caller)
   );
   if (!allowed) return 'BAD_WORKFLOW';
+  return null;
+}
+
+// Binds a verified token to main-branch CI registration: only a push to main
+// running the allowlisted registration workflow at that ref may register.
+export function authorizeForCiRegistration(
+  claims: GithubClaims
+): OidcFailure | null {
+  const ref = 'refs/heads/main';
+  if (claims.ref !== ref) return 'BAD_REF';
+  if (claims.event_name !== 'push') return 'BAD_EVENT';
+  const expected = `${claims.repository}/.github/workflows/${CI_REGISTRATION_WORKFLOW}@${ref}`;
+  if (claims.job_workflow_ref !== expected || claims.workflow_ref !== expected)
+    return 'BAD_WORKFLOW';
   return null;
 }

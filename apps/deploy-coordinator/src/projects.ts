@@ -184,6 +184,11 @@ export const PROJECTS: readonly ProjectEntry[] = [
   store('mobile-macos'),
 ];
 
+// The only workflow whose OIDC token may register a main push with the
+// coordinator's CI registry (src/ci-http.ts); not a catalog project, so it
+// addresses no deployment environment.
+export const CI_REGISTRATION_WORKFLOW = 'ci-register.yaml';
+
 const byId = new Map(PROJECTS.map((project) => [project.id, project]));
 
 export function findProject(id: string): ProjectEntry | undefined {
