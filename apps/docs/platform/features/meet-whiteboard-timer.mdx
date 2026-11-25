@@ -1,0 +1,92 @@
+---
+title: "Meet Whiteboard and Timer"
+description: "One Whiteboard and one Timer in the Meet Activities menu, and how older whiteboard and timer activities still open."
+audience: users
+---
+
+With `MEET_UX_V2` on in Meet, the Activities menu offers one **Whiteboard**
+("Bảng trắng") and one **Timer** ("Hẹn giờ") instead of several older entries.
+With the flag off, and in Parley, the menu is unchanged.
+
+## Whiteboard
+
+**Scope.** The Activities menu, the stage pane title, the minimized-activity
+chip in the dock and the phone activity switcher.
+
+**Default.** The Whiteboard entry opens the Tuturuuu Whiteboard (Excalidraw)
+linked to the meeting. It is always kept in the workspace whiteboard as people
+draw, so nothing in Meet asks anyone to save it and there is no Save button. The
+board's host controls (link, create, guest access, remove) are unchanged; see
+[Saved whiteboard](/platform/features/meet-calls#saved-whiteboard).
+
+**Who gets which board.** The entry opens the first of these the person may use:
+
+| Order | Older entry | Stage id | Who has it |
+| --- | --- | --- | --- |
+| 1 | Saved whiteboard | `board` | People who may use the room's tools and have an account |
+| 2 | Pen whiteboard | `tool:pen-whiteboard` | People who browse the tools, including activity runners in host-only rooms and guests where tools are open to everyone |
+| 3 | Classroom whiteboard | `whiteboard` | Rooms with classroom tools |
+
+Guests without an account are not offered the Tuturuuu Whiteboard (it would only
+ask them to sign in), so where they browse tools their Whiteboard is the pen
+board.
+
+**Older ids.** Every older id still routes to its own pane, so a saved layout,
+a host's default activity, a Follow or a Summon from a client without the flag
+still opens the pane, and nothing stored is moved or deleted. Each of those
+panes is titled **Whiteboard** with the pen icon.
+
+**Exceptions.**
+
+- Summon has no room view for the Tuturuuu Whiteboard, so it is shared through
+  Follow (layout mirroring) only, as before. The pen board keeps Summon.
+- Pen board strokes and classroom whiteboard drawings still end with the room;
+  only the Tuturuuu Whiteboard stays after the call.
+
+## Timer
+
+**Scope.** The Activities menu and the Timer pane or page.
+
+**Default.** One Timer with a **Just me** / **Everyone** switch ("Chỉ mình tôi"
+/ "Mọi người"). Hosts and co-hosts who may set the room timer start on
+**Everyone**; everyone else starts on **Just me**.
+
+- **Everyone** is the room's class timer with its server rules unchanged: it
+  needs `MEET_CLASS_TIMER_ENABLED`, hosts and co-hosts start it, and only the
+  host pauses, resumes and stops it. Everyone admitted sees the read-only chip.
+- **Just me** is the private countdown on this device. It never writes room
+  state and keeps running while hidden.
+- People who may not set the room timer see **Everyone** disabled with the
+  reason: "Only hosts and co-hosts can set a timer for everyone." or, when the
+  room has no shared timer, "This room does not offer a timer for everyone."
+
+**Where it opens.** For people who browse the tools it is the Timer pane
+(`tool:timers`). A host or co-host who does not browse the tools (for example in
+a host-only room) still gets the Timer as a page in the Activities dialog
+(`class-timer`), with the same switch. The older ids keep routing; a `tool:timers`
+pane is titled **Timer**.
+
+## EduFest classes
+
+The EduFest run (guest join, Upskii presenter, Follow, classroom quizzes, Q&A,
+transcripts) does not use either activity, so its flow is unchanged. With the
+flag on, a teacher's Whiteboard is the Tuturuuu Whiteboard, which guests without
+an account cannot open, and the menu no longer offers the teacher the pen board.
+Guests who browse the tools still open the pen board as their Whiteboard, and a
+pen board opened by a client without the flag still reaches them.
+
+## Regression coverage
+
+Under `packages/meet-core/src/features/call`:
+
+- `stage-layout/merged-activities.test.ts`: the older id to merged kind mapping
+  and the preference order.
+- `components/activities-merge.test.ts`: one Whiteboard and one Timer, the
+  fallbacks, and the Activities groups.
+- `components/activities-menu-merged.test.tsx`: the Activities menu with and
+  without `MEET_UX_V2`, and no "saved" wording.
+- `stage-layout/room-stage-merged.test.tsx`: pane titles for every older id.
+- `components/timer-modes.test.tsx`: the switch defaults, Everyone through the
+  class timer command, Just me without room writes, and the disabled reason.
+- `whiteboard/board-room.test.tsx`: the board status note without saving
+  wording.
