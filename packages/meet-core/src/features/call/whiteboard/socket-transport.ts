@@ -44,15 +44,28 @@ const DEFAULT_RETRY = [1000, 2000, 5000, 10_000, 20_000] as const;
 
 /**
  * Excalidraw adds a line or arrow with a single point on pointer-down. The
- * room refuses a guest's line with fewer than two points, so it is held back
- * until the next point arrives; a line drawn no further is never sent.
+ * room refuses a guest's live line with fewer than two points, so a new one is
+ * held back until the next point arrives; a line drawn no further is never
+ * sent. Deletions and lines the board already knows always go out, so
+ * removing a line, or its points, always reaches everyone.
  */
-function isUnfinishedLine(element: unknown) {
-  const { type, points } = element as { type?: unknown; points?: unknown };
+function isUnsentNewLine(
+  change: { type: string; element: unknown },
+  known: ReadonlySet<string>
+) {
+  const { id, type, points, isDeleted } = change.element as {
+    id?: unknown;
+    type?: unknown;
+    points?: unknown;
+    isDeleted?: unknown;
+  };
   return (
+    change.type !== 'delete' &&
+    isDeleted !== true &&
     (type === 'line' || type === 'arrow') &&
     Array.isArray(points) &&
-    points.length < 2
+    points.length < 2 &&
+    !(typeof id === 'string' && known.has(id))
   );
 }
 
@@ -69,6 +82,14 @@ export function createBoardSocketTransport(
     options.createSocket ??
     ((url: string, protocols: string[]) => new WebSocket(url, protocols));
   const listeners = new Set<(members: BoardMember[]) => void>();
+  /** Element ids this transport has sent or received. */
+  const known = new Set<string>();
+  const remember = (elements: readonly unknown[]) => {
+    for (const element of elements) {
+      const id = (element as { id?: unknown } | null)?.id;
+      if (typeof id === 'string') known.add(id);
+    }
+  };
   let socket: WebSocket | null = null;
   let handlers: WhiteboardTransportHandlers | null = null;
   let refresh: ReturnType<typeof setInterval> | null = null;
@@ -99,6 +120,7 @@ export function createBoardSocketTransport(
     switch (message.type) {
       case 'sync':
         options.onRole(message.role);
+        remember(message.elements);
         if (message.elements.length > 0)
           handlers.onElementChanges({
             senderId: 'system',
@@ -110,6 +132,7 @@ export function createBoardSocketTransport(
           });
         return;
       case 'elements':
+        remember(message.changes.map((change) => change.element));
         handlers.onElementChanges({
           senderId: message.senderId,
           timestamp: message.timestamp,
@@ -255,10 +278,11 @@ export function createBoardSocketTransport(
     },
     async sendElementChanges(batch) {
       const changes = batch.changes.filter(
-        (change) => !isUnfinishedLine(change.element)
+        (change) => !isUnsentNewLine(change, known)
       );
       if (changes.length === 0 && batch.changes.length > 0) return;
       send({ type: 'elements', changes, timestamp: batch.timestamp });
+      remember(changes.map((change) => change.element));
     },
     sendCursor: async (update) =>
       send({ type: 'cursor', x: update.x, y: update.y, tool: update.tool }),

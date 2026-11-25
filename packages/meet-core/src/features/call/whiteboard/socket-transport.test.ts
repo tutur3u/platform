@@ -167,6 +167,52 @@ describe('board socket transport', () => {
     expect(socket.sent[1].changes[0].element.points).toHaveLength(2);
   });
 
+  it('always sends deletions and lines the board already knows', async () => {
+    const { transport } = setup();
+    await tick();
+    const socket = FakeSocket.all[0]!;
+    socket.open();
+    const line = (id: string, over: Record<string, unknown> = {}) => ({
+      id,
+      type: 'line',
+      version: 2,
+      versionNonce: 1,
+      points: [[0, 0]],
+      ...over,
+    });
+    const send = (type: string, element: object) =>
+      transport.sendElementChanges({
+        senderId: 'u',
+        changes: [{ type: type as never, element: element as never }],
+        timestamp: 1,
+      });
+    const sentIds = () =>
+      socket.sent.flatMap((m) => m.changes.map((c: any) => c.element.id));
+    // A new one-point line that is deleted, either way, still goes out.
+    await send('update', line('gone', { isDeleted: true }));
+    await send('delete', line('dropped'));
+    // A line sent with two points that loses one keeps reaching the board.
+    await send(
+      'update',
+      line('mine', {
+        points: [
+          [0, 0],
+          [5, 5],
+        ],
+      })
+    );
+    await send('update', line('mine', { version: 3 }));
+    // So does a line another person drew.
+    socket.receive({
+      type: 'elements',
+      senderId: 'peer',
+      timestamp: 1,
+      changes: [{ type: 'insert', element: line('theirs', { version: 1 }) }],
+    });
+    await send('update', line('theirs'));
+    expect(sentIds()).toEqual(['gone', 'dropped', 'mine', 'mine', 'theirs']);
+  });
+
   it('refreshes its ticket on schedule', async () => {
     const join = vi.fn(async () => session('fresh'));
     setup(join);
