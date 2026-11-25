@@ -8,7 +8,11 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { gateOrRollBack, healthGate } from './wave1-production-health.mjs';
 import { recoverPublication } from './wave1-production-recovery.mjs';
-import { stagedSmoke, stageSmokeSwitch } from './wave1-staged-publish.mjs';
+import {
+  SWITCH_WORST_CASE_MS,
+  stagedSmoke,
+  stageSmokeSwitch,
+} from './wave1-staged-publish.mjs';
 
 const sha = 'a'.repeat(40);
 const noSleep = async () => {};
@@ -343,9 +347,44 @@ test('a smoke that leaves too little budget for the gate never switches', async 
       gateReserveMs: 5_000,
       now: () => 0,
     }),
-    /too little time budget left for the health gate.*no traffic moved/
+    /too little time budget left for the switch and the health gate.*no traffic moved/
   );
   assert.equal(rec.state, 'smoke-failed');
   assert.deepEqual(plane.state.writes, [stage, serving]);
   assert.deepEqual(plane.state.split, serving);
+});
+
+test('the pre-switch reserve includes the switch worst case', async () => {
+  const attempt = (deadlineAt) => {
+    const plane = controlPlane(serving);
+    const rec = record();
+    return {
+      plane,
+      rec,
+      done: stageSmokeSwitch({
+        app: 'calendar',
+        sha,
+        worker: 'tuturuuu-calendar',
+        record: rec,
+        save: () => {},
+        script: 'https://api.example/script',
+        token: 'deploy',
+        request: plane.request,
+        cases: [],
+        smokeFetcher: edge(),
+        sleep: noSleep,
+        deadlineAt,
+        gateReserveMs: 5_000,
+        now: () => 0,
+      }),
+    };
+  };
+  assert.equal(SWITCH_WORST_CASE_MS, 96_000);
+  // Room for the gate alone is not enough: the switch needs its own time.
+  const short = attempt(5_000 + SWITCH_WORST_CASE_MS - 1);
+  await assert.rejects(short.done, /too little time budget/);
+  assert.deepEqual(short.plane.state.writes, [stage, serving]);
+  const enough = attempt(5_000 + SWITCH_WORST_CASE_MS);
+  assert.equal((await enough.done).state, 'switched');
+  assert.deepEqual(enough.plane.state.writes, [stage, switched]);
 });

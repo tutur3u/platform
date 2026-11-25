@@ -336,6 +336,7 @@ jobs:
           name: wave1-${{ inputs.app }}-production-${{ inputs['release-artifact'] == true && 'release-' || '' }}${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/native-production
       - name: Restore same-run production artifact
+        timeout-minutes: 5
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/wave1-native-archive.py restore "apps/$APP" "$RUNNER_TEMP/native-production/wave1-native.tar.gz"

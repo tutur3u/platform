@@ -18,6 +18,10 @@ import { buildIdentity, healthTargets } from './wave1-production-health.mjs';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// The switch's worst case: a guard read, the write and up to four readbacks,
+// each a request of up to 15 s, with three 2 s sleeps between readbacks.
+export const SWITCH_WORST_CASE_MS = 6 * 15_000 + 3 * 2_000;
+
 export const SMOKE_DEFAULTS = {
   // The edge picks a new deployment up within seconds; a minute of retries
   // bounds the wait for the override to reach the staged version.
@@ -309,12 +313,14 @@ export async function stageSmokeSwitch({
     };
   }
   // Switching with too little budget left would let the health gate stop at
-  // once and roll back; treat the shortfall as a failed smoke instead.
-  if (smoke.passed && now() + gateReserveMs > deadlineAt)
+  // once and roll back; treat the shortfall as a failed smoke instead. The
+  // reserve covers the switch itself as well as a full gate run.
+  const reserveMs = SWITCH_WORST_CASE_MS + gateReserveMs;
+  if (smoke.passed && now() + reserveMs > deadlineAt)
     smoke = {
       ...smoke,
       passed: false,
-      failure: `too little time budget left for the health gate (${gateReserveMs} ms)`,
+      failure: `too little time budget left for the switch and the health gate (${reserveMs} ms)`,
     };
   record.smoke = smoke;
   save();
