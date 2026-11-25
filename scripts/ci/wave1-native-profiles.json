@@ -5,6 +5,7 @@
       "stagingWorker": "tuturuuu-calendar-wave1-staging",
       "productionWorker": "tuturuuu-calendar",
       "canonicalHost": "calendar.tuturuuu.com",
+      "observability": { "enabled": true, "head_sampling_rate": 1 },
       "secrets": [
         "NEXT_PUBLIC_SUPABASE_URL",
         "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -222,6 +223,7 @@
       "stagingWorker": "tuturuuu-apps-wave1-staging",
       "productionWorker": "tuturuuu-apps",
       "canonicalHost": "apps.tuturuuu.com",
+      "observability": { "enabled": true, "head_sampling_rate": 1 },
       "secrets": [
         "NEXT_PUBLIC_SUPABASE_URL",
         "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
@@ -300,6 +302,7 @@
       "productionOnly": true,
       "productionWorker": "tuturuuu-finance",
       "canonicalHost": "finance.tuturuuu.com",
+      "observability": { "enabled": true, "head_sampling_rate": 1 },
       "compatibilityDate": "2026-10-12",
       "sourceVars": {
         "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
@@ -871,6 +874,7 @@
       "productionOnly": true,
       "productionWorker": "tuturuuu-drive",
       "canonicalHost": "drive.tuturuuu.com",
+      "observability": { "enabled": true, "head_sampling_rate": 1 },
       "compatibilityDate": "2026-10-12",
       "sourceVars": {
         "DRIVE_NATIVE_PROFILE": "production",

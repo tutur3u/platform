@@ -192,7 +192,8 @@ test('hashed assets entry modules pass cf deploy prebuilt dry-run', async (t) =>
   );
   assert.deepEqual(worker.observability, {
     enabled: true,
-    headSamplingRate: 0.05,
+    // Apps samples fully, as its wave-1 profile declares.
+    headSamplingRate: 1,
   });
   assert.equal(worker.manifest.mainModule, 'assets/index-abc12345.js');
   // Every sealed module ships, as a --no-bundle deploy uploads them,

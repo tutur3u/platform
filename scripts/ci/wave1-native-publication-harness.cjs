@@ -60,7 +60,9 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
     scriptSettings: {
       observability: {
         enabled: true,
-        head_sampling_rate: app === 'mail' ? 1 : 0.05,
+        // Live settings already match the app's profile sampling.
+        head_sampling_rate:
+          profiles.apps[app]?.observability?.head_sampling_rate ?? 0.05,
       },
     },
     ledgerQueries: 0,

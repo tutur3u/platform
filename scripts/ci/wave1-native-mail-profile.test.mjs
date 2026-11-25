@@ -78,7 +78,10 @@ test('Mail staging seal restores its explicit host without a provider subdomain'
   assert.equal(config.vars.TUTURUUU_NOINDEX, '1');
 });
 
-test('Wave 1 profiles use full sampling only for Mail', () => {
+// Wave-1 apps sample every request; other profiled apps keep 0.05.
+const fullySampled = new Set(['mail', 'calendar', 'apps', 'finance', 'drive']);
+
+test('Wave 1 apps use full sampling and other profiles keep 0.05', () => {
   for (const [app, recipe] of Object.entries(releaseRecipes)) {
     const base = {
       name: recipe.cf.sourceIdentity,
@@ -106,7 +109,7 @@ test('Wave 1 profiles use full sampling only for Mail', () => {
         config.observability,
         {
           enabled: true,
-          head_sampling_rate: app === 'mail' ? 1 : 0.05,
+          head_sampling_rate: fullySampled.has(app) ? 1 : 0.05,
         },
         `${app} ${environment}`
       );

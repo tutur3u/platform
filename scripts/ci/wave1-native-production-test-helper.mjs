@@ -18,6 +18,7 @@ import {
 } from '../../tuturuuu.ci.ts';
 import { artifactDigest, prepare } from './wave1-native-artifact.mjs';
 import { assertRouteFree, main } from './wave1-native-production.mjs';
+import { observabilityFor } from './wave1-native-profile.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -132,7 +133,8 @@ export function setup(
     scriptSettings: {
       observability: {
         enabled: true,
-        head_sampling_rate: app === 'mail' ? 1 : 0.05,
+        // Live settings already match the app's profile sampling.
+        head_sampling_rate: observabilityFor(app).head_sampling_rate,
       },
     },
   };

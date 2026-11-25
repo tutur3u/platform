@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import test from 'node:test';
 import { settingsExpectation } from './wave1-native-emitted-observability.mjs';
+import { profiles } from './wave1-native-profile.mjs';
 import { newId, setup } from './wave1-native-production-test-helper.mjs';
 import { waitForScriptObservability } from './wave1-native-script-settings.mjs';
 import { productionFailureMessage } from './wave1-native-upload-error.mjs';
@@ -90,11 +91,12 @@ const persistent503 =
 
 test('the expectation follows the emitted Build Output, not the profile default', async () => {
   const base = { appRoot: '/unused', environment: 'staging', sha: 'a' };
+  // Tools declares no profile observability, so the emitted value decides.
   assert.equal(
     await settingsExpectation({
       ...base,
-      app: 'calendar',
-      worker: 'calendar',
+      app: 'tools',
+      worker: 'tools',
       readWorkerConfig: emitsNone,
     }),
     null
@@ -102,8 +104,8 @@ test('the expectation follows the emitted Build Output, not the profile default'
   assert.deepEqual(
     await settingsExpectation({
       ...base,
-      app: 'apps',
-      worker: 'apps',
+      app: 'tools',
+      worker: 'tools',
       readWorkerConfig: async () => ({
         observability: { enabled: true, headSamplingRate: 0.05 },
       }),
@@ -127,7 +129,18 @@ test('the expectation follows the emitted Build Output, not the profile default'
   );
 });
 
-test('staging skips the settings check when the emitter declares no observability', async (t) => {
+// Every wave-1 profile declares observability; an app without a declared
+// value is simulated by removing Calendar's for the duration of the test.
+function withoutDeclaredObservability(t, app) {
+  const declared = profiles.apps[app].observability;
+  delete profiles.apps[app].observability;
+  t.after(() => {
+    profiles.apps[app].observability = declared;
+  });
+}
+
+test('staging skips the settings check when neither profile nor emitter declares observability', async (t) => {
+  withoutDeclaredObservability(t, 'calendar');
   const p = await publisher(t, 'calendar');
   p.options.readWorkerConfig = emitsNone;
   const logs = [];
@@ -208,11 +221,27 @@ test('production refuses before upload when the emitter drops a profile-declared
   assert.deepEqual(p.state.calls, []);
 });
 
-test('production skips the settings check when the emitter declares no observability', async (t) => {
+test('production skips the settings check when neither profile nor emitter declares observability', async (t) => {
+  withoutDeclaredObservability(t, 'calendar');
   const p = setup(t);
   t.mock.method(console, 'log', () => {});
   const result = await p.run({ readWorkerConfig: emitsNone });
   assert.equal(result.state, 'accepted-private');
   assert.equal(p.state.settingsReads, 0);
   assert.equal(p.state.writes, 1);
+});
+
+test('a wave-1 production publish refuses when its emitter declares no observability', async (t) => {
+  for (const app of ['calendar', 'apps', 'finance', 'drive']) {
+    const p = setup(t, { app });
+    await assert.rejects(
+      p.run({ readWorkerConfig: emitsNone }),
+      (error) => {
+        assert.match(productionFailureMessage(error), /Nothing was deployed/);
+        return true;
+      },
+      app
+    );
+    assert.equal(p.state.writes, 0, app);
+  }
 });

@@ -185,6 +185,20 @@ leaves that exposure open. The 0% deployment avoids both. The header is not
 guaranteed to pass through every service binding, so the smoke fails closed
 unless build-info on each path proves it reached the staged version.
 
+## Observability
+
+Every wave-1 Worker (Mail, Calendar, Apps, Finance and Drive) samples every
+request: its profile in `scripts/ci/wave1-native-profiles.json` declares
+`observability: { enabled: true, head_sampling_rate: 1 }`, the sealed config
+and the emitted Build Output carry it, and the post-activation script-settings
+readback requires it, so a publish never lowers live Workers Logs sampling.
+An emit that drops the declared value refuses before deploying.
+`scripts/ci/wave1-native-observability.test.mjs` pins the profiles, the seal
+and the emitted value; the Apps, Drive and Finance `void.config.ts` files keep
+0.05 for their own builds and do not decide published sampling. Revisit the
+rate when an app's Workers Logs volume becomes material. Monthly log events per
+app: not measured.
+
 ## Concurrency
 
 Builds of one app and SHA share a queue (`wave1-native-production-<app>-<sha>`);
