@@ -44,11 +44,13 @@ import { handleMeetClassServiceRequest } from './room-class-service';
 import {
   cleanupRoomPublications,
   countRoomHttpRequest,
+  restoreHttpCounter,
   retainRoomAttendance,
   scheduleRoomFollowUps,
   wakeAttendanceCopies,
 } from './room-maintenance';
 import { handleMeetRoomDevice } from './room-device-request';
+import { MiraShareStorage } from './mira-share-storage';
 import { privateRoomStorage } from './private-room-storage';
 import { restoreRoomSnapshot } from './restore-room-snapshot';
 import { type RoomServiceState, roomService } from './room-service';
@@ -66,6 +68,7 @@ export class MeetRoomDurableObject implements DurableObject {
   private snapshotStored = false;
   private loading: Promise<void> | null = null;
   private readonly presence = new MeetPresencePublisher();
+  private readonly shares = new MiraShareStorage(() => this.state.storage);
   private commands = new MeetCommandExecutor();
   private readonly delivery = createMeetRoomSocketDelivery({
     sockets: () => this.sockets(),
@@ -92,20 +95,8 @@ export class MeetRoomDurableObject implements DurableObject {
         restoreRoomSnapshot(stored, this.sockets(), this.delivery.tokenOf);
       if (restored) this.snapshot = restored.snapshot;
       this.snapshotStored ||= !!restored;
-      const counter = await this.state.storage.get<
-        number | { requests: number; writes: number }
-      >('usage-http-requests');
-      if (counter !== undefined) {
-        this.snapshot.usage ??= createRoomUsage();
-        this.snapshot.usage.httpRequests = Math.max(
-          this.snapshot.usage.httpRequests,
-          typeof counter === 'number' ? counter : counter.requests
-        );
-        this.snapshot.usage.httpCounterWrites = Math.max(
-          this.snapshot.usage.httpCounterWrites ?? 0,
-          typeof counter === 'number' ? counter : counter.writes
-        );
-      }
+      this.shares.seed(this.snapshot);
+      await restoreHttpCounter(this.state.storage, this.snapshot);
       if (restored?.migrated) {
         this.snapshot.usage ??= createRoomUsage();
         this.snapshot.usage.storageWrites++;
@@ -127,7 +118,10 @@ export class MeetRoomDurableObject implements DurableObject {
     this.snapshotStored = true;
     // Output gating keeps acknowledgements behind the durable write. Every
     // write settles the per-speaker fence, so endings reach the outbox.
-    const snapshot = (this.snapshot = selfOutbox.settle(this.snapshot));
+    // Shared tutor chat goes to its own keys in the same write batch.
+    const snapshot = (this.snapshot = this.shares.flush(
+      selfOutbox.settle(this.snapshot)
+    ));
     publishStoredAttendance(
       this.env,
       this.state.storage,

@@ -153,6 +153,7 @@ export function applyRoomRestore(
     miraPrivate: undefined,
     miraRoom: undefined,
     miraShares: undefined,
+    miraSharePending: undefined,
     transcriptConsent: undefined,
     liveShares: {},
     budget: {

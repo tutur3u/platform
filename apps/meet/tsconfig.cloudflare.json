@@ -33,6 +33,7 @@
     "../meet-realtime/src/channel-worker.ts",
     "../meet-realtime/src/collaboration-room-do.ts",
     "../meet-realtime/src/collaboration-worker.ts",
+    "../meet-realtime/src/mira-share-storage.ts",
     "../meet-realtime/src/personal-receipt-storage.ts",
     "../meet-realtime/src/private-room-storage.ts",
     "../meet-realtime/src/programming-mira-fix.ts",

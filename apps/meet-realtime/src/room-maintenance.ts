@@ -33,6 +33,26 @@ export function countRoomHttpRequest(
   );
 }
 
+/** Restores the durable HTTP request counter into a freshly loaded room. */
+export async function restoreHttpCounter(
+  storage: Pick<DurableObjectStorage, 'get'>,
+  snapshot: MeetRoomSnapshot
+) {
+  const counter = await storage.get<
+    number | { requests: number; writes: number }
+  >('usage-http-requests');
+  if (counter === undefined) return;
+  snapshot.usage ??= createRoomUsage();
+  snapshot.usage.httpRequests = Math.max(
+    snapshot.usage.httpRequests,
+    typeof counter === 'number' ? counter : counter.requests
+  );
+  snapshot.usage.httpCounterWrites = Math.max(
+    snapshot.usage.httpCounterWrites ?? 0,
+    typeof counter === 'number' ? counter : counter.writes
+  );
+}
+
 export async function wakeAttendanceCopies(input: {
   env: AttendanceEnv;
   storage: AttendanceStorage;

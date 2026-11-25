@@ -10,15 +10,23 @@ import {
   nextMiraOnExpiry,
 } from '../../../packages/realtime/src/meet/room-mira-pending';
 import { settleSelfCapture } from '../../../packages/realtime/src/meet/room-self-capture-state';
+import {
+  nextMiraShareExpiry,
+  pruneMiraShares,
+} from '../../../packages/realtime/src/meet/room-mira-share';
 import type { MeetRoomEnv } from './room-env';
 import type { RoomServiceState } from './room-service';
 
 /**
  * Room-side fences applied before every write: expired Mira on choices that
- * were never confirmed are dropped, then per-speaker endings reach the outbox.
+ * were never confirmed are dropped, shared tutor chat that expired or lost
+ * its grant is dropped, then per-speaker endings reach the outbox.
  */
 function settleRoom(snapshot: RoomServiceState, now: number) {
-  return settleSelfCapture(expireMiraOn(snapshot, now), now);
+  return settleSelfCapture(
+    pruneMiraShares(expireMiraOn(snapshot, now), now),
+    now
+  );
 }
 
 /** Per-speaker outbox hooks of the room Durable Object. */
@@ -35,7 +43,9 @@ export const selfOutbox = {
       selfOutboxDeadline(snapshot, env),
       selfSessionWake(snapshot, env),
       // An unconfirmed Mira on is dropped when it expires.
-      nextMiraOnExpiry(snapshot)
+      nextMiraOnExpiry(snapshot),
+      // So is shared tutor chat, even in a room with no further requests.
+      nextMiraShareExpiry(snapshot)
     ),
   deliver: async (input: {
     env: MeetRoomEnv;

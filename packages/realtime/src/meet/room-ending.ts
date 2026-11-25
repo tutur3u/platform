@@ -19,10 +19,12 @@ export function endMeetRoom(
   const {
     miraRoom: _miraRoom,
     miraShares: _miraShares,
+    miraSharePending: _miraSharePending,
     ...kept
   } = state as MeetRoomSnapshot & {
     miraRoom?: unknown;
     miraShares?: unknown;
+    miraSharePending?: unknown;
   };
   const attendance = closeOpenAttendanceIntervals(state.attendance, now);
   return {

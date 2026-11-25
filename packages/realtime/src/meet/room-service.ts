@@ -53,6 +53,7 @@ import type { MiraRoomState } from './room-mira-consent';
 import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
 import {
   applyMiraShare,
+  type MiraSharePending,
   type MiraShareState,
   pruneMiraShares,
   withMiraShareStatus,
@@ -80,6 +81,8 @@ export type RoomServiceState = MeetRoomSnapshot & {
   miraPrivate?: MiraPrivateState;
   /** Per-person, owner-only shares of private notes with Private Mira. */
   miraShares?: MiraShareState;
+  /** Shared tutor chat for the next storage write; stripped before persist. */
+  miraSharePending?: MiraSharePending;
   miraRoom?: MiraRoomState;
   transcriptConsent?: MeetTranscriptState;
   programmingMira?: RoomProgrammingMira;
