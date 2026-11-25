@@ -23,6 +23,7 @@ import {
   withGuardBreaker,
 } from './breaker';
 import { isStrongGuardSecret, resolveGuardOrigin } from './crypto';
+import { safeErrorFields } from '../log-safety';
 import { ABUSE_GUARD_FAMILIES, type AbuseGuardFamily } from './protocol';
 
 export type AbuseGuardEnv = Partial<
@@ -191,6 +192,66 @@ let clientCacheGeneration = -1;
  * clear it (tests, or a binding removed at runtime).
  */
 export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
+  try {
+    installRuntimeInput(input);
+  } catch (error) {
+    failRuntimeInputClosed(input, error);
+  }
+}
+
+let configureFailureReported = false;
+let failedFamiliesKey: string | null = null;
+
+/**
+ * The families a failed configuration assigns. A missing list assigns none;
+ * a list that is present but unreadable or not a string (e.g. a JSON var)
+ * assigns every family, so nothing intended for the store falls back.
+ */
+function failedFamilies(input: RuntimeInput | null) {
+  try {
+    const value: unknown = input?.families;
+    if (value === undefined || value === null) {
+      return new Set<AbuseGuardFamily>();
+    }
+    if (typeof value === 'string') return parseAbuseGuardFamilies(value);
+  } catch {
+    // Unreadable: treated as assigning every family.
+  }
+  return new Set<AbuseGuardFamily>(ABUSE_GUARD_FAMILIES);
+}
+
+/**
+ * Configuration runs before routing on every request of a native Worker, so a
+ * failure here must never become a 500 on every route. Families the input
+ * assigns turn `off` (callers apply their own fail policy; never legacy, so a
+ * consumed token cannot be replayed against a fresh store). Unassigned
+ * families keep their legacy path. Reported once per isolate, without the
+ * message or binding details.
+ */
+function failRuntimeInputClosed(input: RuntimeInput | null, error: unknown) {
+  const state = runtimeState();
+  const families = failedFamilies(input);
+  const key = [...families].sort().join(',');
+  // A repeated identical failure keeps the state as is: no per-request churn.
+  if (state.input === null && failedFamiliesKey === key) return;
+  failedFamiliesKey = key;
+  state.input = null;
+  state.generation += 1;
+  state.override = families.size > 0 ? { families, usable: null } : null;
+  if (!configureFailureReported) {
+    configureFailureReported = true;
+    console.error(
+      `[ALERT][abuse-guard] SR-951 ${JSON.stringify({
+        alert: 'abuse-guard-configure-failed',
+        severity: 'critical',
+        families: [...families].sort(),
+        error: safeErrorFields(error),
+      })}`
+    );
+  }
+}
+
+function installRuntimeInput(input: RuntimeInput | null) {
   const state = runtimeState();
   const current = state.input;
   if (
@@ -203,26 +264,34 @@ export function configureAbuseGuardRuntime(input: RuntimeInput | null) {
   ) {
     return;
   }
+  // Derive everything before touching shared state, so a throw leaves the
+  // previous configuration (and its circuit breakers) intact.
+  const override = input ? deriveOverride(input) : null;
+  failedFamiliesKey = null;
   state.input = input;
   state.generation += 1;
   // A new binding is a new connection; do not carry an open circuit over.
   for (const family of ABUSE_GUARD_FAMILIES) {
     state.breakers?.delete(breakerKey(BINDING_TARGET, family));
   }
-  if (!input) {
-    state.override = null;
-    return;
-  }
+  state.override = override;
+}
+
+function deriveOverride(input: RuntimeInput): RuntimeOverride | null {
+  const families = parseAbuseGuardFamilies(input.families);
+  // No assigned family: the binding is never used, so nothing derives from it.
+  if (families.size === 0) return null;
   const pepper = strong(input.pepper);
-  state.override = {
-    families: parseAbuseGuardFamilies(input.families),
+  const { binding, timeoutMs } = input;
+  return {
+    families,
     usable: pepper
       ? {
           transport: (family) =>
             withGuardBreaker(
               createBindingGuardTransport(
-                input.binding,
-                parseAbuseGuardTimeout(input.timeoutMs, family)
+                binding,
+                parseAbuseGuardTimeout(timeoutMs, family)
               ),
               breakerFor(BINDING_TARGET, family),
               { target: BINDING_TARGET, family }
