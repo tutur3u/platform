@@ -59,7 +59,11 @@ that skipped a long run of messages; a page that does not overlap replaces the
 fetched rows, because keeping them would leave a gap the history cursor could
 never fill. Appended messages newer than the page, such as one that arrived
 during a fetch, are kept on every load, and in-flight reaction taps are
-re-applied over fetched reactions.
+re-applied over fetched reactions. Only synced rows count toward that range, so
+a queued send overlaid on two pages cannot join them, and a history page
+fetched across a replacing refresh is discarded. Opening a conversation may
+show its cached page; unless the thread came from the server in the last ten
+seconds, it is then revalidated in the background through the same merge.
 Realtime `message.created` appends; edits, deletions and reaction updates patch
 a loaded message in place and leave the conversation list order alone.
 
@@ -84,7 +88,8 @@ Regression coverage: `chat_conversation_layout_test.dart`,
 `chat_pagination_scope_test.dart`, `chat_thread_layout_test.dart`,
 `chat_thread_items_test.dart`, `chat_surface_width_test.dart`,
 `chat_cubit_history_test.dart`, `chat_cubit_message_actions_test.dart`,
-`chat_cubit_sync_test.dart`, `chat_cubit_fetch_range_test.dart` and the
+`chat_cubit_sync_test.dart`, `chat_cubit_fetch_range_test.dart`,
+`chat_cubit_range_generation_test.dart` and the
 `chat_page_render_test.dart` design renders (phone, tablet and desktop in
 light and dark) in `apps/mobile/test/features/chat`.
 

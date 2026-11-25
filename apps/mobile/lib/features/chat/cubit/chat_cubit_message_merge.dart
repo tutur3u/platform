@@ -86,13 +86,19 @@ extension ChatCubitMessageMerge on ChatCubit {
     final pageStart = _syncedBound(page.messages, newest: false);
     final pageEnd = _syncedBound(page.messages, newest: true);
     final pageIds = {for (final message in page.messages) message.id};
+    // The range only ever holds synced ids: a queued send overlaid on two
+    // pages must not make them look contiguous.
+    final syncedPageIds = {
+      for (final message in page.messages)
+        if (isMessageSynced(message.id)) message.id,
+    };
     final fetchedEnd = fetched?.end;
     final overlaps =
         quietly &&
         full &&
         pageStart != null &&
         fetched != null &&
-        (pageIds.any(fetched.ids.contains) ||
+        (syncedPageIds.any(fetched.ids.contains) ||
             (fetchedEnd != null && !pageStart.isAfter(fetchedEnd)));
     final newer = pageEnd == null
         ? const <ChatMessage>[]
@@ -113,14 +119,18 @@ extension ChatCubitMessageMerge on ChatCubit {
               )
               .toList(growable: false)
         : const <ChatMessage>[];
-    _fetched[conversationId] = overlaps
-        ? (
-            end: pageEnd == null || fetchedEnd!.isAfter(pageEnd)
-                ? fetchedEnd
-                : pageEnd,
-            ids: {...fetched.ids, ...pageIds},
-          )
-        : (end: pageEnd, ids: pageIds);
+    if (overlaps) {
+      _fetched[conversationId] = (
+        end: fetchedEnd == null || (pageEnd?.isAfter(fetchedEnd) ?? false)
+            ? pageEnd ?? fetchedEnd
+            : fetchedEnd,
+        ids: {...fetched.ids, ...syncedPageIds},
+      );
+    } else {
+      _fetched[conversationId] = (end: pageEnd, ids: syncedPageIds);
+      _rangeGeneration[conversationId] =
+          (_rangeGeneration[conversationId] ?? 0) + 1;
+    }
     return (
       messages: _sortedById([...older, ...page.messages, ...newer]),
       hasOlder: older.isEmpty
@@ -134,7 +144,44 @@ extension ChatCubitMessageMerge on ChatCubit {
     final fetched = _fetched[conversationId];
     _fetched[conversationId] = (
       end: fetched?.end ?? _syncedBound(page.messages, newest: true),
-      ids: {...?fetched?.ids, for (final message in page.messages) message.id},
+      ids: {
+        ...?fetched?.ids,
+        for (final message in page.messages)
+          if (isMessageSynced(message.id)) message.id,
+      },
+    );
+  }
+
+  /// Drops fetched ranges (one conversation's, or all on a workspace
+  /// switch) and bumps their generations so in-flight history pages are
+  /// discarded.
+  void _forgetFetchedRanges([String? conversationId]) {
+    final ids = conversationId == null
+        ? {..._fetched.keys, ..._rangeGeneration.keys}
+        : {conversationId};
+    for (final id in ids) {
+      _fetched.remove(id);
+      _freshFetchedAt.remove(id);
+      _rangeGeneration[id] = (_rangeGeneration[id] ?? 0) + 1;
+    }
+  }
+
+  /// A plain selection may show a cached page; revalidate it in the
+  /// background through the overlap-or-replace merge. Skipped when the
+  /// thread was fetched from the server moments ago, so repeated taps do
+  /// not refetch.
+  void _revalidateThread(String conversationId) {
+    final last = _freshFetchedAt[conversationId];
+    if (last != null && _now().difference(last) < ChatCubit.revalidateAfter) {
+      return;
+    }
+    unawaited(
+      selectConversation(
+        conversationId,
+        forceRefresh: true,
+        fresh: true,
+        quietly: true,
+      ).catchError((Object _) {}),
     );
   }
 

@@ -25,7 +25,9 @@ class ChatCubit extends Cubit<ChatState> {
     ChatRealtimeClient? realtimeClient,
     String? Function()? currentUserId,
     CacheStore? cacheStore,
-  }) : _currentUserId = currentUserId ?? currentCacheUserId,
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now,
+       _currentUserId = currentUserId ?? currentCacheUserId,
        _ownerId = (currentUserId ?? currentCacheUserId)(),
        _store = cacheStore ?? CacheStore.instance,
        _repository = repository ?? ChatRepository(),
@@ -44,6 +46,14 @@ class ChatCubit extends Cubit<ChatState> {
   /// included, so they cannot make a later page look contiguous.
   final Map<String, ({DateTime? end, Set<String> ids})> _fetched = {};
 
+  /// Bumped per conversation whenever its fetched range is reset or
+  /// replaced; an older-history page fetched across a bump is dropped.
+  final Map<String, int> _rangeGeneration = {};
+
+  /// When each conversation last loaded its newest page from the server.
+  final Map<String, DateTime> _freshFetchedAt = {};
+
+  final DateTime Function() _now;
   final String? Function() _currentUserId;
   final String? _ownerId;
   final CacheStore _store;
@@ -78,6 +88,9 @@ class ChatCubit extends Cubit<ChatState> {
 
   /// Messages per history page; a full page means older messages may exist.
   static const int messagePageSize = 60;
+
+  /// A thread fetched from the server this recently is not revalidated.
+  static const Duration revalidateAfter = Duration(seconds: 10);
   int _loadToken = 0;
   int _searchRequestVersion = 0;
 
@@ -124,6 +137,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     final token = ++_loadToken;
+    _forgetFetchedRanges();
     _inboxFallback?.cancel();
     _inboxFallback = null;
     _roomFallback?.cancel();
@@ -222,9 +236,14 @@ class ChatCubit extends Cubit<ChatState> {
       } else {
         _syncConversationRoom();
       }
-    } on ApiException catch (error) {
+    } on Object catch (error) {
       if (!quietly && _scopeActive && token == _loadToken) {
-        emit(state.copyWith(status: ChatStatus.error, error: error.message));
+        emit(
+          state.copyWith(
+            status: ChatStatus.error,
+            error: error is ApiException ? error.message : error.toString(),
+          ),
+        );
       }
     }
   }
@@ -372,12 +391,16 @@ class ChatCubit extends Cubit<ChatState> {
         ),
       );
       _pruneUnsynced();
+      if (fresh) _freshFetchedAt[conversationId] = _now();
       if (!quietly) {
+        if (!fresh) _revalidateThread(conversationId);
         _clearUnread(conversationId);
         unawaited(_repository.markRead(wsId, conversationId));
         unawaited(loadConversationPanels());
       }
-    } on ApiException catch (error) {
+    } on Object catch (error) {
+      // Any failure (not only ApiException) ends this load, so one bad
+      // state cannot break every later refresh.
       if (!quietly &&
           _scopeActive &&
           wsId == state.wsId &&
@@ -386,7 +409,7 @@ class ChatCubit extends Cubit<ChatState> {
         emit(
           state.copyWith(
             messageStatus: ChatMessageStatus.error,
-            error: error.message,
+            error: error is ApiException ? error.message : error.toString(),
           ),
         );
       }
@@ -405,6 +428,8 @@ class ChatCubit extends Cubit<ChatState> {
     _refreshingFallback = true;
     try {
       await refresh(fresh: true, quietly: true);
+    } on Object {
+      // A failed fallback refetch waits for the next tick or event.
     } finally {
       _refreshingFallback = false;
     }
@@ -542,6 +567,7 @@ class ChatCubit extends Cubit<ChatState> {
   }
 
   void _removeConversation(String conversationId) {
+    _forgetFetchedRanges(conversationId);
     final next = state.conversations
         .where((conversation) => conversation.id != conversationId)
         .toList(growable: false);

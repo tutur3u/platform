@@ -104,17 +104,36 @@ class CubitFixtureRepository extends ChatRepository {
     bool forceRefresh = false,
   }) async {
     beforeCursors.add(before);
-    // Like the real repository, serve the cached page unless forced.
+    // Like the real repository: cache only the server rows and overlay the
+    // queued sends on every read, so a cached page reflects the queue now.
     final key = (conversationId, before);
-    final cached = _cache[key];
-    if (!forceRefresh && cached != null) return cached;
-    final messages = await onListMessages(conversationId, before);
-    final page = (messages: messages, serverCount: serverCountOf(messages));
-    _cache[key] = page;
-    return page;
+    var cached = _cache[key];
+    if (forceRefresh || cached == null) {
+      final messages = await onListMessages(conversationId, before);
+      final queued = messages.where((m) => isPendingChatMessage(wsId, m.id));
+      cached = (
+        server: messages
+            .where((m) => !isPendingChatMessage(wsId, m.id))
+            .toList(growable: false),
+        overlay: queued.toList(growable: false),
+        serverCount: serverCountOf(messages),
+      );
+      _cache[key] = cached;
+    }
+    final overlay = before != null
+        ? const <ChatMessage>[]
+        : cached.overlay.where((m) => isPendingChatMessage(wsId, m.id));
+    return (
+      messages: [...cached.server, ...overlay],
+      serverCount: cached.serverCount,
+    );
   }
 
-  final Map<(String, String?), ChatMessagePage> _cache = {};
+  final Map<
+    (String, String?),
+    ({List<ChatMessage> server, List<ChatMessage> overlay, int serverCount})
+  >
+  _cache = {};
 
   @override
   Future<ChatConversation> markRead(
@@ -189,10 +208,15 @@ class CubitHarness {
   final realtime = CubitFixtureRealtime();
   final inbox = StreamController<ChatRealtimeEvent>.broadcast();
   late final repository = CubitFixtureRepository(api);
+
+  /// The cubit's clock; tests move it forward to pass throttles.
+  DateTime now = DateTime.utc(2026, 11, 25, 9);
+
   late final cubit = ChatCubit(
     repository: repository,
     realtimeClient: realtime,
     currentUserId: () => 'me',
+    now: () => now,
   );
 
   Future<void> open() async {

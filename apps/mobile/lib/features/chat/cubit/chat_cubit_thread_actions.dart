@@ -91,6 +91,7 @@ extension ChatCubitThreadActions on ChatCubit {
     final oldest = _oldestServerMessageAt(wsId, conversationId);
     if (oldest == null) return;
     final token = _loadToken;
+    final generation = _rangeGeneration[conversationId] ?? 0;
     _emitState(state.copyWith(loadingOlderConversationId: conversationId));
     try {
       final page = await _repository.listMessagePage(
@@ -98,7 +99,14 @@ extension ChatCubitThreadActions on ChatCubit {
         conversationId,
         before: oldest.toUtc().toIso8601String(),
       );
-      if (!_scopeActive || token != _loadToken || state.wsId != wsId) return;
+      // A refresh that replaced the thread meanwhile makes this page
+      // non-adjacent to it; merging would leave a gap.
+      if (!_scopeActive ||
+          token != _loadToken ||
+          state.wsId != wsId ||
+          (_rangeGeneration[conversationId] ?? 0) != generation) {
+        return;
+      }
       _trackUnsynced(wsId, page.messages);
       _recordOlderPage(conversationId, page);
       final merged = _sortedById([
