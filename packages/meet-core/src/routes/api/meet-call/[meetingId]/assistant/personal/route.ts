@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { readPersonalChatBody } from '../../../../../../features/call/server/personal-chat-body';
 import { readMiraDemoAuthority } from '../../../../../../features/live-assistant/server/demo-authority';
 import { requirePrivateMiraChoice } from '../../../../../../features/live-assistant/server/private-consent';
+import { forwardSharedTutorChat } from '../../../../../../features/live-assistant/server/private-share';
 
 const input = z.object({
   requestId: z.uuid(),
@@ -97,6 +98,12 @@ export async function POST(
       payer: authority.payer,
     });
     await checkConsent();
+    // Reaches the owner's Private Mira only while they share their tutor chat.
+    await forwardSharedTutorChat(access, [
+      ...payload.data.history,
+      { body: payload.data.question, assistant: false },
+      { body: answer.text, assistant: true },
+    ]);
     return answer;
   });
 }

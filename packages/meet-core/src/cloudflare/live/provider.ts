@@ -101,7 +101,12 @@ export async function connectLiveProvider(input: {
               ...liveTools(
                 input.claims.mode,
                 memory.enabled,
-                input.claims.app === 'meet'
+                input.claims.app === 'meet',
+                {
+                  uxV2:
+                    input.claims.app === 'meet' &&
+                    input.env.MEET_UX_V2 === 'true',
+                }
               ),
             ],
           },

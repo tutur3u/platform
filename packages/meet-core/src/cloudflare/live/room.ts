@@ -31,7 +31,11 @@ export async function liveRoomCommand<T>(
       mode: 'call',
       role: identity.isHost ? 'host' : 'speaker',
       roomId: `${identity.workspaceId}:${claims.meetingId}`,
-      scopes: ['meet:server', 'meet:live-server'],
+      // Only a person's own Private Mira may read what they chose to share.
+      scopes:
+        claims.mode === 'personal'
+          ? ['meet:server', 'meet:live-server', 'meet:private-mira']
+          : ['meet:server', 'meet:live-server'],
       userId: claims.ownerId,
       accountId: claims.ownerId,
       wsId: identity.workspaceId,

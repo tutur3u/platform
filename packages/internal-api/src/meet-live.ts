@@ -103,7 +103,10 @@ export type PrivateMiraPolicy = {
     recordedAt: number;
     revision: number;
   } | null;
+  /** Present under the redesign: the caller's own share with Private Mira. */
+  privateShare?: PrivateMiraShare;
 };
+export type PrivateMiraShare = { enabled: boolean; revision: number };
 export function readPrivateMiraPolicy(meetingId: string) {
   return getInternalApiClient().json<PrivateMiraPolicy>(
     `/api/meet-live/${encodeURIComponent(meetingId)}`,
@@ -131,6 +134,21 @@ export function setPrivateMiraChoice(
         version,
         expectedActorId,
       }),
+    }
+  );
+}
+/** Shares or stops sharing the caller's own notes and tutor chat. */
+export function setPrivateMiraShare(
+  meetingId: string,
+  enabled: boolean,
+  expectedActorId: string
+) {
+  return getInternalApiClient().json<PrivateMiraShare>(
+    `/api/meet-live/${encodeURIComponent(meetingId)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'share', enabled, expectedActorId }),
     }
   );
 }

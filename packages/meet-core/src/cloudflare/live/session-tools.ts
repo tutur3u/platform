@@ -6,6 +6,10 @@ import {
   requireCurrentPrivateGrant,
 } from './private-grant';
 import {
+  liveMiraPublishesPolls,
+  readSharedPrivateNotes,
+} from './private-share-tool';
+import {
   LIVE_QUIZ_ARENA_TOOLS,
   type LiveQuizArenaTool,
   proposeQuizArenaAction,
@@ -14,6 +18,7 @@ import type { LiveProposal } from './reviews';
 import { livePollCommand, liveRoomCommand } from './room';
 import { checkpointSchema, type SavedSession } from './session-state';
 import type { LiveEnvironment, LiveTurnArchive } from './storage';
+import { READ_SHARED_NOTES_TOOL } from './tools';
 import { liveWorkspaceAllowed } from './workspace-gate';
 
 export async function executeLiveTool(
@@ -36,6 +41,16 @@ export async function executeLiveTool(
     provider?.sendToolResponse({
       functionResponses: [{ id: callId, name, response }],
     });
+  if (name === 'launch_poll' && !liveMiraPublishesPolls(env, saved)) {
+    respond({
+      error: 'Mira only drafts polls. A host or co-host launches them in Polls.',
+    });
+    return;
+  }
+  if (name === READ_SHARED_NOTES_TOOL) {
+    respond(await readSharedPrivateNotes(env, saved));
+    return;
+  }
   if (
     name === 'draft_poll' ||
     name === 'launch_poll' ||

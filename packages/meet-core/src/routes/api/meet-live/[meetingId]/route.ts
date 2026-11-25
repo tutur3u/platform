@@ -30,6 +30,11 @@ import {
   requirePrivateMiraChoice,
   stopPrivateMiraSessions,
 } from '../../../../features/live-assistant/server/private-consent';
+import {
+  privateMiraShareCommand,
+  readPrivateMiraShare,
+  setPrivateMiraShare,
+} from '../../../../features/live-assistant/server/private-share';
 
 const schema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('policy') }),
@@ -49,6 +54,7 @@ const schema = z.discriminatedUnion('action', [
   }),
   z.object({ action: z.literal('resume'), sessionId: z.uuid() }),
   z.object({ action: z.literal('stop'), sessionId: z.uuid() }),
+  privateMiraShareCommand,
 ]);
 export async function POST(
   request: Request,
@@ -65,6 +71,9 @@ export async function POST(
     const accountFlow = usesMiraAccountConfirmation();
     if (command.action === 'start' && command.mode !== 'personal')
       throw new MeetCallAccessError(403, MIRA_ROOM_DENIED);
+    // Owner-only: the room keys every share by the signed-in account.
+    if (command.action === 'share')
+      return setPrivateMiraShare(access, command);
     const cloudflare = await getCloudflareContext({ async: true });
     const env = cloudflare.env as unknown as {
       MEET_LIVE: DurableObjectNamespace;
@@ -137,7 +146,10 @@ export async function POST(
         ...currentChoice,
         accountId: access.user.id,
         ...(accountFlow
-          ? { accountConfirmation: await readMiraAccountConfirmation(access) }
+          ? {
+              accountConfirmation: await readMiraAccountConfirmation(access),
+              privateShare: await readPrivateMiraShare(access),
+            }
           : {}),
         available: unavailableReason === undefined,
         unavailableReason,
