@@ -85,6 +85,21 @@ export const BOARD_GUEST_LIMITS = {
    */
   roomChurnCapacity: 120_000,
   roomChurnRefillPerSecond: 12_000,
+  /**
+   * The board's shared byte bucket for relaying guests' cursors and
+   * selections, charged each payload's size times the sockets it reaches,
+   * so thirty guests cannot fan their pointers out into unbounded egress.
+   * A 512 KiB burst that refills 256 KiB a second.
+   */
+  relayBytesCapacity: 524_288,
+  relayBytesPerSecond: 262_144,
+  /**
+   * The least gap between relays of one guest connection's cursor and
+   * selection; updates in between are coalesced to the latest.
+   */
+  relayIntervalMs: 100,
+  /** Element ids one guest selection may name; members keep the schema's 500. */
+  maxSelectionIds: 100,
 } as const;
 
 /** The socket budget for a join ticket's actor. */

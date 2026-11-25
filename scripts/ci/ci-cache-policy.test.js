@@ -60,6 +60,7 @@ function isFiniteRoomLifecycleStep(step) {
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-room-do.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-room-do-guest-budget.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-room-do-guest-draw.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-room-do-guest-relay.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-worker.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-state.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-checkpoint-request.test.ts"',

@@ -93,7 +93,7 @@ export type ChurnBucket = { tokens?: number; tokensAt?: number };
  * A token bucket after refilling to `now`. A bucket with no level yet starts
  * full.
  */
-function refillBucket(
+export function refillBucket(
   bucket: ChurnBucket,
   now: number,
   capacity: number,

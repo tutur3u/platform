@@ -17,6 +17,7 @@ import {
 } from '../../../packages/realtime/src/meet/board-sync-core';
 import { chunkElements } from '../../../packages/realtime/src/meet/board-sync-merge';
 import { boardFlushFenced } from '../../../packages/realtime/src/meet/board-sync-flush';
+import { GuestRelay } from '../../../packages/realtime/src/meet/board-sync-relay';
 import {
   type BoardOpenWindows,
   type ChurnBucket,
@@ -112,6 +113,13 @@ export class WhiteboardRoomDurableObject implements DurableObject {
    * Each connection's own bucket survives either in its attachment.
    */
   private roomChurn: ChurnBucket = {};
+  /**
+   * Guests' cursor and selection relays, coalesced and held to the board's
+   * shared byte bucket (`GuestRelay`, which explains eviction), with one
+   * timer that flushes held updates while any remain.
+   */
+  private guestRelay = new GuestRelay();
+  private relayTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private state: DurableObjectState,
@@ -186,7 +194,10 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   }
 
   private broadcast(message: BoardServerMessage, except?: WebSocket) {
-    const payload = JSON.stringify(message);
+    this.broadcastPayload(JSON.stringify(message), except);
+  }
+
+  private broadcastPayload(payload: string, except?: WebSocket) {
     for (const socket of this.sockets()) {
       if (socket === except) continue;
       // A socket past its ticket receives nothing, even before a sweep runs.
@@ -200,6 +211,31 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         socket.close();
       }
     }
+  }
+
+  /**
+   * Relays guests' held cursors and selections that are due and within the
+   * byte bucket, and arms the flush timer while any remain held. The timer
+   * calls this; tests call it under the test clock.
+   */
+  flushGuestRelays() {
+    const live = new Map(
+      this.sockets().map((socket) => [
+        this.attachment(socket).connectionId,
+        socket,
+      ])
+    );
+    const wait = this.guestRelay.flush(Date.now(), {
+      // Counted against every other open socket, which over-counts the
+      // expired ones the broadcast closes instead of sending to.
+      fanout: (id) => (live.has(id) ? live.size - 1 : null),
+      send: (id, payload) => this.broadcastPayload(payload, live.get(id)),
+    });
+    if (wait === null || this.relayTimer) return;
+    this.relayTimer = setTimeout(() => {
+      this.relayTimer = null;
+      this.flushGuestRelays();
+    }, wait);
   }
 
   /** How others on the board name this socket's person. */
@@ -457,27 +493,39 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         return this.sendScene(socket, this.honoured(ticket).role);
       }
       case 'cursor':
-        return this.broadcast(
-          {
-            type: 'cursor',
-            senderId: this.actorOf(attachment),
-            displayName: ticket.displayName,
-            x: message.x,
-            y: message.y,
-            tool: message.tool,
-          },
-          socket
+      case 'selection': {
+        const relayed: BoardServerMessage =
+          message.type === 'cursor'
+            ? {
+                type: 'cursor',
+                senderId: this.actorOf(attachment),
+                displayName: ticket.displayName,
+                x: message.x,
+                y: message.y,
+                tool: message.tool,
+              }
+            : {
+                type: 'selection',
+                senderId: this.actorOf(attachment),
+                selectedElementIds: message.selectedElementIds,
+                timestamp: Date.now(),
+              };
+        if (ticket.actorKind !== 'guest')
+          return this.broadcast(relayed, socket);
+        // A guest's large selection is not relayed at all.
+        if (
+          message.type === 'selection' &&
+          Object.keys(message.selectedElementIds).length >
+            BOARD_GUEST_LIMITS.maxSelectionIds
+        )
+          return;
+        this.guestRelay.hold(
+          attachment.connectionId,
+          message.type,
+          JSON.stringify(relayed)
         );
-      case 'selection':
-        return this.broadcast(
-          {
-            type: 'selection',
-            senderId: this.actorOf(attachment),
-            selectedElementIds: message.selectedElementIds,
-            timestamp: Date.now(),
-          },
-          socket
-        );
+        return this.flushGuestRelays();
+      }
       case 'elements': {
         // Rechecked at write time, so a socket accepted before guest drawing
         // was held (its attachment survives hibernation) cannot write either.
