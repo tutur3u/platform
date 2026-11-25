@@ -57,9 +57,13 @@ Tasks Worker (production):
 | `TASKS_CI_ALERT_DONE_LIST_ID` | Variable | The `Done` list of the `GH` board (must be on the same board) |
 | `TASKS_CI_ALERT_ACTOR_ID` | Variable | The user id (UUID) recorded as the alert task creator |
 
-The route answers `503` until all four are set, and fails closed when either
-list is missing or the lists are on different boards. Writes go through a
-cookie-free admin client attributed to `TASKS_CI_ALERT_ACTOR_ID`.
+The Tasks proxy admits exactly `POST /api/v1/ci/alerts` without a session,
+from the sessionless table in `apps/tasks/src/sessionless-api.ts`. It strips
+cookies and `authorization`, so the route sees no ambient identity and checks
+only its header secret. The route answers `503` until all four are set, and
+fails closed when either list is missing or the lists are on different boards.
+Writes go through a cookie-free admin client attributed to
+`TASKS_CI_ALERT_ACTOR_ID`.
 
 GitHub: create the environment `ci-alerts`, limit its deployment branches to
 `main` and `production`, and add the secret `TTR_CI_ALERT_TOKEN`.

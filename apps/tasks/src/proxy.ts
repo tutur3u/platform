@@ -45,6 +45,7 @@ import {
   isRootRedirectExcluded,
   resolveTasksRootEntry,
 } from './lib/tasks/root-entry';
+import { findSessionlessApiRoute } from './sessionless-api';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -192,20 +193,23 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
-    // Release identity is public (the native Worker serves it before any
-    // session work): no refresh, and no ambient identity reaches the handler.
-    const isBuildInfoRead =
-      req.nextUrl.pathname === '/api/build-info' &&
-      (req.method === 'GET' || req.method === 'HEAD');
-    if (isBuildInfoRead) {
+    // Public or self-authenticating routes (see sessionless-api.ts): no
+    // session refresh, and no ambient identity reaches the handler.
+    const sessionlessRoute = findSessionlessApiRoute(
+      req.nextUrl.pathname,
+      req.method
+    );
+    const isSessionlessApi = sessionlessRoute !== null;
+    if (sessionlessRoute) {
       for (const cookie of req.cookies.getAll())
         req.cookies.delete(cookie.name);
       req.headers.delete('cookie');
-      req.headers.delete('authorization');
+      if (!sessionlessRoute.keepAuthorization)
+        req.headers.delete('authorization');
     }
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
+      isLocalAuthApi || isSessionlessApi || hasBearerApiSession
         ? null
         : mounted
           ? await resolveMountedTasksSession(req)
@@ -238,7 +242,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (isBuildInfoRead)
+    if (isSessionlessApi)
       return withTaskApiCors(
         req,
         NextResponse.next({ request: { headers: req.headers } })
