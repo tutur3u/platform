@@ -589,8 +589,8 @@ An instant meeting is titled "{name}'s meeting" (Vietnamese: "Cuộc họp của
 {name}") when the host has a saved display name, the account's metadata name
 otherwise, and stays "Untitled meeting" when neither exists. The title is stored
 as the meeting name like any other, so calendar events, notes and transcripts show
-it unchanged, and no code compares a name against the untitled literal: the
-untitled label is only the display fallback for a meeting with no name. The host
+it unchanged. The untitled label is rendered per viewer, see
+[Default meeting names](#default-meeting-names). The host
 can rename it inline on the pre-join stage or from the in-call title. The ended
 screen's New meeting button gets the saved name too. The meeting name is
 stripped of control and format characters and whitespace-collapsed both when the
@@ -599,6 +599,27 @@ meeting form in web and workspace keeps its own pending label and its two-field
 form.
 
 Regression coverage: `meeting-entry.test.tsx` and `host-name.test.ts`.
+
+### Default meeting names
+
+- Rule: a meeting with no name, a blank name, or a stored name equal to a
+  known untitled default ("Untitled meeting" or "Cuộc họp chưa đặt tên")
+  renders as the untitled label in the viewer's locale. Any other stored name
+  is a chosen title and renders verbatim, in every locale.
+- Scope and default: always on (a display fix, not behind `MEET_UX_V2`).
+  Stored names are not rewritten; the mapping happens at render.
+- Surfaces: the signed-out guest join card, the public invite page, the room
+  (pre-join, in-call header, Share and ended screens) and the meeting detail
+  page in Meet, and the same shared components in Parley.
+- Exceptions: the "{name}'s meeting" instant-meeting title is still stored in
+  the creator's language, since a chosen-looking title cannot be told apart
+  from a default. Link-preview metadata keeps the stored name. Older clients
+  stored the untitled default in the creator's language; the known-default
+  list is what lets those rows render correctly, so a new locale must add its
+  default to `STORED_DEFAULT_MEETING_NAMES`.
+
+Regression coverage: `meeting-display-name.test.ts` and
+`guest-join.test.tsx` under `packages/meet-core/src/features/call`.
 
 Known chrome follow-ups, not yet done: the playback volume range still uses a
 native input, the title and share-option buttons keep their hand-written hover
@@ -1011,6 +1032,38 @@ admitted and approved participants, including guests outside the workspace.
 Every non-host notes read checks the signed room policy on the Durable Object;
 removing permission blocks subsequent reads. Existing downloaded information
 cannot be recalled. Transcription mutations remain host-only.
+
+### Stage join QR (`MEET_UX_V2`)
+
+- Rule: with `MEET_UX_V2` on, the stage's bottom-left corner carries a join
+  QR. It encodes the same `/r/<code>` link the Share dialog gives guests and
+  exposes nothing Share does not. From `lg` up with no activity open it is a
+  small card ("Scan to join"); below `lg`, or while an activity is open, it is
+  a "Join QR" chip that opens the code in a popover, so it never covers a
+  face or activity controls. Anyone can shrink the card to the chip for
+  themselves.
+- Default: shown for every participant, auto-hide off.
+- Room controls: hosts and co-hosts (the participant manage scope, the same
+  as Activities settings) turn it on or off for the room with **Join QR on
+  stage** in More, and set auto-hide (Off, 2, 5 or 10 minutes) or **Hide for
+  everyone** from the card's options. The room stamps its own time
+  (`joinQrShownAt`) whenever a manager shows the QR or changes auto-hide, so
+  every client hides it together; turning it back on restarts the clock.
+  Participants cannot change it.
+- Exceptions: absent with `MEET_UX_V2` off and in Parley. A client whose clock
+  is off hides it that much early or late.
+
+Regression coverage: `room-join-qr.test.ts` under `packages/realtime/src/meet`
+and `stage-join-qr.test.tsx` under `packages/meet-core/src/features/call`.
+
+### People control placement (`MEET_UX_V2`)
+
+With `MEET_UX_V2` on, the people count that opens the participants panel sits
+at the bar's leading edge from `lg` up, just right of the room clocks. Phones
+and tablets keep it at the trailing end of the control bar. When the panel
+closes and focus would fall to the page, focus returns to the people control
+shown at that width. With the flag off it stays at the trailing end. Its label
+reads "People ({count})". Regression coverage: `control-bar-people.test.tsx`.
 
 ### Participant identity markers
 
