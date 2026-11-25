@@ -56,7 +56,8 @@ it('exports Java source alongside ignored binary class files', async () => {
       join(directory, 'Main$Inner.class'),
       Buffer.from([0xca, 0xfe, 0xba, 0xbe])
     );
-    await writeFile(join(directory, 'Main$Other.class'), Buffer.from([0, 1]));
+    await writeFile(join(directory, 'Main$Other.class'), Buffer.alloc(262146));
+    await writeFile(join(directory, 'compiled'), Buffer.alloc(262146, 0xca));
 
     const exported = exportProject(directory);
     expect(exported.error).toBeUndefined();
@@ -67,23 +68,22 @@ it('exports Java source alongside ignored binary class files', async () => {
   }
 });
 
-it.each(['my file.txt', 'Main$Inner.class', 'large.log'])(
+it.each([
+  ['my file.txt', 'x', 'Unsupported Drive file path'],
+  ['Main$Inner.class', 'x', 'Unsupported Drive file path'],
+  ['large file.log', 'x'.repeat(262146), 'Unsupported Drive file path'],
+  ['large.log', 'x'.repeat(262146), 'File exceeds Drive save limit'],
+  ['utf8.log', 'x'.repeat(262144) + 'é', 'File exceeds Drive save limit'],
+])(
   'identifies unsupported export file %s',
-  async (name) => {
+  async (name, content, error) => {
     const directory = await mkdtemp(join(tmpdir(), 'ttr-playground-export-'));
     try {
-      await writeFile(
-        join(directory, name),
-        name === 'large.log' ? 'x'.repeat(262145) : 'x'
-      );
+      await writeFile(join(directory, name), content);
       const exported = exportProject(directory);
       expect(exported.status).not.toBe(0);
       expect(exported.stderr).toContain(name);
-      expect(exported.stderr).toContain(
-        name === 'large.log'
-          ? 'File exceeds Drive save limit'
-          : 'Unsupported Drive file path'
-      );
+      expect(exported.stderr).toContain(error);
     } finally {
       await rm(directory, { recursive: true, force: true });
     }

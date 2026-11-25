@@ -39,62 +39,30 @@ function payload(projectId = first, operation = 'run') {
 function result(code = 0, output = '') {
   return { code, output, stderr: '', exceeded: false, timedOut: false };
 }
-describe('managed playground removal ownership', () => {
-  beforeEach(() => {
-    vi.resetModules();
-    vi.useFakeTimers();
-    docker.mockReset();
-    vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'fixture');
-    vi.stubEnv(
-      'TUTURUUU_PLAYGROUND_IMAGES',
-      JSON.stringify({ python: `python@sha256:${'a'.repeat(64)}` })
-    );
-    docker.mockImplementation(async (args: string[]) => {
-      if (args[0] === 'inspect') return result(0, 'true');
-      if (args[0] === 'exec' && args.includes('name')) return result(0, '[]');
-      // The final export invokes Python without --interactive.
-      if (args[0] === 'exec' && !args.includes('--interactive'))
-        return result(0, '[]');
-      return result();
-    });
+beforeEach(() => {
+  vi.resetModules();
+  vi.useFakeTimers();
+  docker.mockReset();
+  vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'fixture');
+  vi.stubEnv(
+    'TUTURUUU_PLAYGROUND_IMAGES',
+    JSON.stringify({ python: `python@sha256:${'a'.repeat(64)}` })
+  );
+  docker.mockImplementation(async (args: string[]) => {
+    if (args[0] === 'inspect') return result(0, 'true');
+    if (args[0] === 'exec' && args.includes('name')) return result(0, '[]');
+    // The final export invokes Python without --interactive.
+    if (args[0] === 'exec' && !args.includes('--interactive'))
+      return result(0, '[]');
+    return result();
   });
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.unstubAllEnvs();
-  });
+});
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllEnvs();
+});
 
-  it('retains production log suppression but allows bounded synthetic startup logs', async () => {
-    const { createPlaygroundDockerArgs } =
-      await import('./devbox-playground-sandbox');
-    const args = () =>
-      createPlaygroundDockerArgs(
-        first,
-        'python',
-        `python@sha256:${'a'.repeat(64)}`,
-        limits,
-        { hostCpus: 4, hostMemoryBytes: 8 * 1024 ** 3 }
-      );
-    expect(args()).toContain('--log-driver=none');
-    vi.stubEnv('TTR_PLAYGROUND_ACCEPTANCE', 'true');
-    expect(args()).toContain('--log-driver=none');
-    vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'ci-123-1');
-    vi.resetModules();
-    const synthetic = await import('./devbox-playground-sandbox');
-    const logged = synthetic.createPlaygroundDockerArgs(
-      first,
-      'python',
-      `python@sha256:${'a'.repeat(64)}`,
-      limits,
-      { hostCpus: 4, hostMemoryBytes: 8 * 1024 ** 3 }
-    );
-    expect(logged).not.toContain('--log-driver=none');
-    expect(logged).toContain('--log-driver=local');
-    expect(logged).toContain('--log-opt=max-size=8k');
-    expect(logged).toContain('--log-opt=max-file=1');
-    expect(logged).toContain('--log-opt=compress=false');
-    expect(logged.slice(-3)).toEqual(['sh', '-c', 'exec sleep 7200']);
-  });
-
+describe('playground readiness probe', () => {
   it('applies the same guest and host ceilings to readiness probes', async () => {
     const { getPlaygroundReadiness } =
       await import('./devbox-playground-sandbox');
@@ -134,6 +102,40 @@ describe('managed playground removal ownership', () => {
       '-c',
       `command -v python3 >/dev/null && ${checks}`,
     ]);
+  });
+});
+
+describe('managed playground removal ownership', () => {
+  it('retains production log suppression but allows bounded synthetic startup logs', async () => {
+    const { createPlaygroundDockerArgs } =
+      await import('./devbox-playground-sandbox');
+    const args = () =>
+      createPlaygroundDockerArgs(
+        first,
+        'python',
+        `python@sha256:${'a'.repeat(64)}`,
+        limits,
+        { hostCpus: 4, hostMemoryBytes: 8 * 1024 ** 3 }
+      );
+    expect(args()).toContain('--log-driver=none');
+    vi.stubEnv('TTR_PLAYGROUND_ACCEPTANCE', 'true');
+    expect(args()).toContain('--log-driver=none');
+    vi.stubEnv('TUTURUUU_PLAYGROUND_POOL_ID', 'ci-123-1');
+    vi.resetModules();
+    const synthetic = await import('./devbox-playground-sandbox');
+    const logged = synthetic.createPlaygroundDockerArgs(
+      first,
+      'python',
+      `python@sha256:${'a'.repeat(64)}`,
+      limits,
+      { hostCpus: 4, hostMemoryBytes: 8 * 1024 ** 3 }
+    );
+    expect(logged).not.toContain('--log-driver=none');
+    expect(logged).toContain('--log-driver=local');
+    expect(logged).toContain('--log-opt=max-size=8k');
+    expect(logged).toContain('--log-opt=max-file=1');
+    expect(logged).toContain('--log-opt=compress=false');
+    expect(logged.slice(-3)).toEqual(['sh', '-c', 'exec sleep 7200']);
   });
 
   it('keeps capacity owned when removal fails and the container remains', async () => {

@@ -31,7 +31,7 @@ for entry in files:
 with open('/tmp/.ttr-files.json','w') as handle: json.dump(paths,handle)
 `;
 export const PLAYGROUND_EXPORT_SCRIPT = `
-import json, os, re, stat, sys
+import codecs, json, os, re, stat
 files=[]; total=0
 excluded={'node_modules','.git','__pycache__','target','.venv'}
 for directory, folders, names in os.walk('/project',followlinks=False):
@@ -41,15 +41,15 @@ for directory, folders, names in os.walk('/project',followlinks=False):
         info=os.lstat(path)
         if not stat.S_ISREG(info.st_mode): continue
         relative=os.path.relpath(path,'/project')
-        if info.st_size>262144: raise ValueError('File exceeds Drive save limit: '+relative)
         fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
         with os.fdopen(fd,'rb') as handle: data=handle.read(262145)
-        if len(data)>262144: raise ValueError('File grew beyond limit: '+relative)
-        try: content=data.decode('utf-8')
+        if 0 in data: continue
+        oversized=len(data)>262144
+        try: content=codecs.getincrementaldecoder('utf-8')().decode(data,final=not oversized)
         except UnicodeDecodeError: continue
-        if chr(0) in content: continue
         if len(relative)>240 or any(not re.fullmatch(r'[a-zA-Z0-9_.@+-]+', p) or p in ('.','..') for p in relative.split('/')):
-            raise ValueError('Unsupported Drive file path: '+relative)
+            raise ValueError('Unsupported Drive file path: '+repr(relative))
+        if oversized: raise ValueError('File exceeds Drive save limit: '+relative)
         total+=len(data)
         if total>2097152 or len(files)>=128: raise ValueError('Project exceeds Drive save limit')
         files.append({'path':relative,'content':content})

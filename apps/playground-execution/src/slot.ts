@@ -181,6 +181,7 @@ export class PlaygroundSlot extends DurableObject<Env> {
             outcome:
               result?.outcome ?? (stop.signal.aborted ? 'stopped' : 'error'),
             firstInIsolate,
+            exported: result?.files !== undefined,
           })
         );
       }

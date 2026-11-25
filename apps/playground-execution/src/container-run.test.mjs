@@ -5,7 +5,7 @@ import { runInFreshContainer } from './container-run.ts';
 const input = { command: 'printf hello', files: [], stdin: 'input' };
 const result = { exitCode: 0, output: 'hello', outcome: 'exited' };
 
-function containerFixture(overrides = {}) {
+function containerFixture(overrides = {}, guestResult = result) {
   const calls = [];
   const container = {
     running: false,
@@ -21,7 +21,7 @@ function containerFixture(overrides = {}) {
       calls.push(['exec', args, options.user]);
       assert.deepEqual(await new Response(options.stdin).json(), input);
       return {
-        stdout: new Blob([JSON.stringify(result)]).stream(),
+        stdout: new Blob([JSON.stringify(guestResult)]).stream(),
         exitCode: Promise.resolve(0),
       };
     },
@@ -64,6 +64,19 @@ test('starts one egress-disabled isolated guest, passes only job bytes, and dest
   ]);
   assert.equal(container.running, false);
 });
+
+for (const [description, files, expected] of [
+  ['no export', null, result],
+  ['an empty export', [], { ...result, files: [] }],
+]) {
+  test(`preserves normal completion with ${description}`, async () => {
+    const { container } = containerFixture({}, { ...result, files });
+    assert.deepEqual(
+      await runInFreshContainer(container, input, Date.now() + 1000),
+      expected
+    );
+  });
+}
 
 test('refuses to reuse a running guest or start an expired job', async () => {
   const { container, calls } = containerFixture({ running: true });
