@@ -338,8 +338,9 @@ After a normal exit the launcher exports the workspace as a complete
 inventory. Files the program created that cannot be saved (binaries, names
 outside the path rules, files over 256 KiB, non-UTF-8 text) are left out. If a
 project file still exists but cannot be saved, or the workspace exceeds the
-inventory or size limits, nothing is exported and the Run keeps its output.
-An export problem never replaces the program's output.
+inventory or size limits, the launcher returns `files: null`. The slot skips
+Drive writeback and preserves the program's exit code, output and outcome.
+An empty array is a complete inventory and can record file deletions.
 
 ## Logs and first-Run telemetry
 

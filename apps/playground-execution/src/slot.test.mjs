@@ -57,7 +57,7 @@ function storageFixture() {
   };
 }
 
-function containerFixture() {
+function containerFixture(overrides = {}) {
   const calls = { start: 0, exec: 0, destroy: 0 };
   const container = {
     running: false,
@@ -78,6 +78,7 @@ function containerFixture() {
             output: 'hi\n',
             outcome: 'exited',
             files: guest.files,
+            ...overrides,
           }),
         ]).stream(),
         exitCode: Promise.resolve(0),
@@ -266,6 +267,31 @@ test('a normal Run makes one source fetch, one guest start, one command and one 
   assert.equal(fx.fetches.length, 1);
   assert.deepEqual(fx.guest.calls, { start: 1, exec: 1, destroy: 1 });
   assert.equal(fx.coordinator.calls.complete.length, 1);
+});
+
+test('a successful Run without an export completes without Drive writeback', async (t) => {
+  const fx = setup(t, {
+    guest: containerFixture({ output: 'hi', files: null }),
+  });
+  const slot = fx.slot();
+  await slot.assign(claim(), identity, 3, ...tickets, undefined);
+  await slot.alarm();
+
+  assert.deepEqual(fx.fetches, [
+    '/api/v1/internal/playground-execution/source',
+  ]);
+  assert.deepEqual(fx.coordinator.calls.complete, [
+    {
+      runId: 'run-1',
+      state: 'succeeded',
+      result: {
+        exitCode: 0,
+        output: 'hi',
+        savedRevision: undefined,
+        sandboxFailed: false,
+      },
+    },
+  ]);
 });
 
 test('a restart after the start intent fails the Run without replaying it', async (t) => {

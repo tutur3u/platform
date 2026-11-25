@@ -52,7 +52,7 @@ function parseResult(value: unknown): GuestResult {
     exitCode: value.exitCode,
     output: value.output,
     outcome: value.outcome,
-    ...('files' in value ? { files: value.files } : {}),
+    ...('files' in value && value.files !== null ? { files: value.files } : {}),
   };
 }
 
