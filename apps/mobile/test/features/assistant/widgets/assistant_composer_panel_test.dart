@@ -14,6 +14,7 @@ void main() {
     ('medium dock', const Size(768, 1024), 0.0, true, 640.0),
     ('medium without dock', const Size(768, 1024), 0.0, false, 640.0),
     ('phone landscape dock', const Size(844, 390), 0.0, true, 844.0),
+    ('wide phone landscape dock', const Size(1024, 390), 0.0, true, 1024.0),
     ('landscape rail', const Size(1024, 768), 80.0, false, 792.0),
     ('desktop sidebar', const Size(1440, 900), 240.0, false, 792.0),
   ]) {
@@ -24,10 +25,12 @@ void main() {
           (tester) async {
             tester.view
               ..physicalSize = window
-              ..devicePixelRatio = 1;
+              ..devicePixelRatio = 1
+              ..viewInsets = FakeViewPadding(bottom: keyboard);
             addTearDown(tester.view.reset);
             const viewportKey = ValueKey('assistant-viewport');
             final showKeyboard = keyboard > 0;
+            final withNavigationDock = railWidth == 0;
             final showDock = dock && !showKeyboard;
             final dockClearance =
                 ShellDockMetrics.clearanceFor(safeArea) + safeArea;
@@ -47,7 +50,10 @@ void main() {
                           : safeArea,
                     ),
                     viewPadding: EdgeInsets.only(bottom: safeArea),
-                    viewInsets: EdgeInsets.only(bottom: keyboard),
+                    // The shell body consumes the IME inset beside the rail.
+                    viewInsets: EdgeInsets.only(
+                      bottom: withNavigationDock ? keyboard : 0,
+                    ),
                     textScaler: TextScaler.linear(showKeyboard ? 3 : 1),
                   ),
                   child: Material(
@@ -86,7 +92,6 @@ void main() {
             );
             final cardRect = tester.getRect(find.byType(AppCard));
             final offset = assistantPageComposerBottomOffset(context);
-            final withNavigationDock = railWidth == 0;
             if (withNavigationDock) {
               expect(
                 offset,
@@ -97,7 +102,7 @@ void main() {
                     : safeArea,
               );
             } else if (showKeyboard) {
-              expect(offset, railWidth > 80 ? AppSpacing.xl : 0);
+              expect(offset, AppSpacing.xl);
             } else {
               expect(offset, safeArea + AppSpacing.xl);
             }

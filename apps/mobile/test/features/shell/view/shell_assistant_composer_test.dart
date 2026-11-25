@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -202,7 +203,10 @@ void main() {
       tester.view.viewInsets = const FakeViewPadding(bottom: 260);
       addTearDown(tester.view.resetViewInsets);
       await settle();
-      expect(tester.getBottomLeft(composer).dy, closeTo(900 - 260, 1));
+      expect(
+        tester.getBottomLeft(composer).dy,
+        closeTo(900 - 260 - (rail ? AppSpacing.xl : 0), 1),
+      );
       tester.view.resetViewInsets();
       await settle();
       expect(

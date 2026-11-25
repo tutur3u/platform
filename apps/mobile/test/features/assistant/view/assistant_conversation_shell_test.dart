@@ -74,46 +74,67 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('desktop composer keeps the last message clear above the IME', (
-    tester,
-  ) async {
-    tester.view
-      ..physicalSize = const Size(1440, 900)
-      ..devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await pumpAssistantShell(
-      tester,
-      repository: AssistantShellFixtureRepository()..longTranscript = true,
+  for (final width in [840.0, 1024.0, 1279.0, 1280.0, 1440.0]) {
+    testWidgets(
+      'rail composer and last message clear the bottom at width $width',
+      (tester) async {
+        tester.view
+          ..physicalSize = Size(width, 900)
+          ..devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await pumpAssistantShell(
+          tester,
+          repository: AssistantShellFixtureRepository()..longTranscript = true,
+        );
+
+        final composer = find.byType(AssistantComposerSizeReporter);
+        final thread = find.byType(CustomScrollView);
+        final position = tester
+            .state<ScrollableState>(
+              find.descendant(of: thread, matching: find.byType(Scrollable)),
+            )
+            .position;
+        for (final keyboard in [0.0, 300.0]) {
+          tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
+          await tester.pumpAndSettle();
+          position.jumpTo(position.maxScrollExtent);
+          await tester.pumpAndSettle();
+
+          final composerRect = tester.getRect(composer);
+          final threadRect = tester.getRect(thread);
+          final lastMessageRect = tester.getRect(
+            find.byType(AssistantTranscriptBubble).last,
+          );
+          final gap = 900 - keyboard - composerRect.bottom;
+          expect(gap, closeTo(AppSpacing.xl, 0.01));
+          final transcriptPadding = tester
+              .widget<SliverPadding>(
+                find
+                    .descendant(
+                      of: thread,
+                      matching: find.byType(SliverPadding),
+                    )
+                    .first,
+              )
+              .padding
+              .resolve(TextDirection.ltr);
+          expect(
+            transcriptPadding.bottom,
+            greaterThanOrEqualTo(
+              composerRect.height + gap + AppSpacing.md - 0.01,
+            ),
+          );
+          expect(composerRect.center.dx, closeTo(threadRect.center.dx, 1));
+          expect(lastMessageRect.bottom, greaterThan(threadRect.top));
+          expect(
+            lastMessageRect.bottom,
+            lessThanOrEqualTo(composerRect.top - AppSpacing.md + 1),
+          );
+        }
+        expect(tester.takeException(), isNull);
+      },
     );
-
-    final composer = find.byType(AssistantComposerSizeReporter);
-    final thread = find.byType(CustomScrollView);
-    final position = tester
-        .state<ScrollableState>(
-          find.descendant(of: thread, matching: find.byType(Scrollable)),
-        )
-        .position;
-    for (final keyboard in [0.0, 300.0]) {
-      tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
-      await tester.pumpAndSettle();
-      position.jumpTo(position.maxScrollExtent);
-      await tester.pumpAndSettle();
-
-      final composerRect = tester.getRect(composer);
-      final threadRect = tester.getRect(thread);
-      final lastMessageRect = tester.getRect(
-        find.byType(AssistantTranscriptBubble).last,
-      );
-      expect(composerRect.bottom, closeTo(900 - keyboard - AppSpacing.xl, 1));
-      expect(composerRect.center.dx, closeTo(threadRect.center.dx, 1));
-      expect(lastMessageRect.bottom, greaterThan(threadRect.top));
-      expect(
-        lastMessageRect.bottom,
-        lessThanOrEqualTo(composerRect.top - AppSpacing.md + 1),
-      );
-    }
-    expect(tester.takeException(), isNull);
-  });
+  }
 
   testWidgets('dock Back returns to the same draft after searching history', (
     tester,

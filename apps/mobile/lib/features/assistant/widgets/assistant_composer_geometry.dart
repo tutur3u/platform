@@ -31,10 +31,9 @@ double assistantComposerBottomOffset(BuildContext context) {
 
 /// The in-page composer's distance from the bottom of its viewport.
 ///
-/// With the floating dock (phones and windows below the rail breakpoint) or
-/// the icon rail (tablets), the composer sits on the dock's clearance or on
-/// the keyboard. Beside the sidebar (desktop windows) there is no dock, so the
-/// composer keeps [AppSpacing.xl] above the bottom safe area or the keyboard.
+/// In dock mode, the composer sits above the dock's clearance or directly on
+/// the keyboard. Beside the icon rail or sidebar, the composer keeps
+/// [AppSpacing.xl] above the bottom safe area or the keyboard.
 double assistantPageComposerBottomOffset(BuildContext context) {
   final media = MediaQuery.of(context);
   if (shellNavigationModeFor(media.size) == ShellNavigationMode.dock) {
@@ -48,7 +47,7 @@ double assistantPageComposerBottomOffset(BuildContext context) {
       media.viewInsets.bottom > 0 ||
       (view != null && view.viewInsets.bottom > 0);
   if (keyboardVisible) {
-    return shellNavigationExtendedFor(media.size) ? AppSpacing.xl : 0;
+    return AppSpacing.xl;
   }
   return media.viewPadding.bottom + AppSpacing.xl;
 }
