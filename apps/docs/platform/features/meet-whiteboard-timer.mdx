@@ -83,34 +83,55 @@ field that type draws from must be present (position, size, angle, stroke,
 fill, roughness, opacity, seed and groups for every shape; points for lines,
 arrows (two or more) and freehand strokes (one or more); text, font size,
 font family and line height for text). Each field is checked for type, size
-and range: positions within 1,000,000 px, sizes up to 100,000 px, point
+and range: positions within 1,000,000 px, sizes up to 10,000 px, point
 coordinates within 100,000 px, stroke widths 0.5 to 64, roughness 0 to 5,
 opacity 0 to 100, font sizes 1 to 2048, line heights 0.5 to 10, pressures 0
 to 1, binding focus within -1 to 1, bounded text, known styles, at most 32
-groups, 256 bound elements and 500 lines of text. A line, arrow or freehand
-stroke from someone outside the workspace holds at most 10,000 points; a
-longer stroke is refused, so very long freehand strokes need to be drawn in
-parts.
+groups, 256 bound elements and 500 lines of text. A freehand stroke needs a
+pressure for every point or simulated pressure, since Excalidraw draws one
+with neither invisibly. A line, arrow or freehand stroke from someone outside
+the workspace holds at most 10,000 points, and its render cost (below) limits
+a rough line or arrow to about 5,000; a longer stroke is refused, so very long
+strokes need to be drawn in parts. The editor holds back a line or arrow until
+it has its second point, so starting one never reports a refused edit.
 
-Drawing is budgeted so no board can freeze the people viewing it. Every
-element has one render cost, roughly the lines a viewer draws for it: one,
-plus its fill, its dashes and its text lines.
+Drawing is budgeted so no board can freeze the people viewing it or run them
+out of memory. Every element has one render cost, roughly the lines and
+points a viewer draws for it: one, plus its fill, its stroke points, its
+dashes and its text lines.
 
 - A hachure, zigzag or cross-hatch fill on a rectangle, diamond or ellipse
-  costs its diagonal over four times the stroke width; a filled line or
-  freehand stroke may be concave, so each edge costs half the scan lines it
-  crosses, which bounds the lines for any shape. Zigzag and cross-hatch count
-  twice, a missing fill style counts as hachure, and a transparent background,
-  an arrow or text draws no fill. Every filled shape also costs its diagonal
-  over 16, for the scan across it.
-- Dashed and dotted outlines cost their length over 16 or 7.5 units.
+  costs its diagonal over four times the stroke width, plus its diagonal over
+  16 for the scan across it. A filled line or freehand stroke may be concave,
+  so each edge costs half the scan lines it crosses, which bounds the lines for
+  any shape, and the scan costs its whole outline over 16, since it touches
+  every edge on each step. Zigzag and cross-hatch count twice and cross-hatch
+  scans twice; a missing fill style counts as hachure, and a transparent
+  background, an arrow or text draws no fill. A solid fill on a line or
+  freehand stroke costs 1.25 per point.
+- A line, arrow or freehand stroke costs one per point, two for a solid line
+  or arrow with roughness, which roughjs strokes twice.
+- Dashed and dotted outlines cost their length over 16 or 7.5 units; along a
+  line or arrow the length counts 1.7 times, for its curves.
 - Text costs one per line.
+
+Every viewer also caches each element on its own canvas of up to 16.7 million
+pixels (64 MiB). An element's canvas area is its box, or the bounds of its
+points for a line, arrow or freehand stroke, at least one pixel each way, up to
+that cap.
 
 One element from someone outside the workspace may cost at most 10,000. Their
 growing edits are refused once the whole board, members' shapes included,
-would cost more than 200,000, and each of their connections spends a churn
-bucket of 40,000 that refills 4,000 a second: every applied change is charged,
-so re-sending the same costly shape is bounded too. Deleting costs nothing.
+would cost more than 200,000 or cache more than eight full-size canvases
+(134 million pixels, about 512 MiB). Each of their connections spends a churn
+bucket of 40,000 that refills 4,000 a second, and every change from anyone
+outside the workspace also spends the board's shared bucket of 120,000 that
+refills 12,000 a second, so the 30 guest connections a board allows cannot add
+up their buckets. Every applied change is charged, so re-sending the same
+costly shape is bounded too. Deleting costs nothing. A connection's bucket
+survives the room being evicted; the board's bucket restarts full, which
+grants nothing extra, since it refills from empty in the ten seconds the room
+must sit idle before eviction.
 Members' own edits are never refused for cost, and anyone may still shrink or
 delete a shape on a full board. A refused edit reports that the board is
 full.
@@ -205,6 +226,8 @@ Under `packages/meet-core/src/features/call`:
   class timer command, Just me without room writes, and the disabled reason.
 - `whiteboard/board-room.test.tsx`: the board status note without saving
   wording.
+- `whiteboard/socket-transport.test.ts`: a line or arrow is held back until
+  its second point.
 - `stage-layout/whiteboard-policy.test.ts`: which board guests and hosts get
   with the guest switch on and off.
 - `components/call-account-gates.test.tsx`: the guest board pane and the
@@ -223,15 +246,17 @@ Under `packages/meet-core/src/features/call`:
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do.test.ts` (guest message
 rate, size, connection, reopen and seat caps across an eviction, guest viewers,
-per-board ids, guest field types and link stripping, a costly guest batch, the
-churn bucket across an eviction),
+per-board ids, guest field types and link stripping),
+`apps/meet-realtime/src/whiteboard-room-do-guest-budget.test.ts` (a costly
+guest batch, the churn bucket across an eviction, the board's shared bucket),
 `apps/meet-realtime/src/room-service-board-access.test.ts` (only an open
 socket counts, only server tokens may ask), `packages/realtime/src/meet` tests
 `room-board-access.test.ts` (who the room answers, the grace period),
-`board-sync-guest.test.ts` (links, required fields per type, field types,
-sizes and ranges, text lines, open windows, actor ids),
-`board-sync-cost.test.ts` (the render cost for concave shapes, scans, dashes,
-text and extreme values, and the element, scene and churn budgets) and `board-sync-core-bounds.test.ts` (the reload window across an
+`board-sync-guest.test.ts` (links, required fields per type, freehand
+pressure, field types, sizes and ranges, text lines, open windows, actor ids),
+`board-sync-cost.test.ts` (the render cost for concave shapes, outline scans,
+solid fills, stroke points, dashes, text and extreme values, canvas area, and
+the element, scene, area, churn and shared churn budgets) and `board-sync-core-bounds.test.ts` (the reload window across an
 eviction), and
 `apps/meet/src/runtime/page-model.server.test.ts` (the switch reaches the
 room, off by default).
