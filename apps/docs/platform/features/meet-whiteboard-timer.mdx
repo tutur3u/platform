@@ -81,12 +81,25 @@ person's platform user id. From people outside the workspace the board keeps
 only the drawing fields Excalidraw uses, each checked for type, size and
 range: positions within 1,000,000 px, sizes up to 100,000 px, point
 coordinates within 100,000 px, stroke widths 0.5 to 64, roughness 0 to 5,
-opacity 0 to 100, font sizes 1 to 512, line heights 0.5 to 10, pressures 0
-to 1, binding focus within -1 to 1, bounded text, known styles, at most 10,000
-points, 32 groups and 256 bound elements. A hachure, cross-hatch or zigzag
-fill may draw at most 50,000 lines (the shape's diagonal over four times its
-stroke width), so no shape can freeze the people viewing it. An element with
-a malformed or out-of-range field is refused and the sender is told. Links must be http(s) or same-site, with no backslash or
+opacity 0 to 100, font sizes 1 to 2048, line heights 0.5 to 10, pressures 0
+to 1, binding focus within -1 to 1, bounded text, known styles, at most 32
+groups and 256 bound elements. A line, arrow or freehand stroke from someone
+outside the workspace holds at most 10,000 points; a longer stroke is refused,
+so very long freehand strokes need to be drawn in parts.
+
+Fills are budgeted so no board can freeze the people viewing it. A hachure,
+zigzag or cross-hatch fill is estimated as the diagonal of the shape's box
+(for lines, arrows and freehand strokes, the larger of their size and their
+points' span) over four times the stroke width, counted twice for zigzag and
+cross-hatch. A shape without a fill style counts as hachure, and a
+transparent background draws no fill. One element from someone outside the
+workspace may draw at most 10,000 fill lines, and their edits are refused
+once the whole board, members' shapes included, would pass 200,000. Members'
+own edits are never refused for fills, and anyone may still shrink or delete
+a shape on a full board.
+
+An element with a malformed or out-of-range field is refused and the sender is
+told. Links must be http(s) or same-site, with no backslash or
 control character; other links are cleared.
 
 **Revocation.** Board tickets for people outside the workspace last one minute
@@ -193,12 +206,13 @@ Under `packages/meet-core/src/features/call`:
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do.test.ts` (guest message
 rate, size, connection, reopen and seat caps across an eviction, guest viewers,
-per-board ids, guest field types and link stripping),
+per-board ids, guest field types and link stripping, the scene fill budget),
 `apps/meet-realtime/src/room-service-board-access.test.ts` (only an open
 socket counts, only server tokens may ask), `packages/realtime/src/meet` tests
 `room-board-access.test.ts` (who the room answers, the grace period),
-`board-sync-guest.test.ts` (links, field types, sizes and ranges, the fill
-line limit, open windows, actor ids) and `board-sync-core-bounds.test.ts` (the reload window across an
+`board-sync-guest.test.ts` (links, field types, sizes and ranges, open
+windows, actor ids), `board-sync-fill.test.ts` (the fill estimate for points,
+missing styles and zigzag, the element and scene fill budgets) and `board-sync-core-bounds.test.ts` (the reload window across an
 eviction), and
 `apps/meet/src/runtime/page-model.server.test.ts` (the switch reaches the
 room, off by default).
