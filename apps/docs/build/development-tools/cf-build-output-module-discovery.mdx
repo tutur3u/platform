@@ -49,7 +49,8 @@ These checks run before any upload in the production path:
   `?query` and `#hash` suffixes. Emission fails if a specifier names an existing
   ES module that is not emitted: one outside the bundle root (after resolving
   symlinks), in a dot directory, or excluded. A non-ESM file inside the root,
-  such as `.wasm` or text, fails as unsupported by this emit. Directories and
+  including one in a dot directory, such as `.wasm` or text, fails as
+  unsupported by this emit. Directories and
   non-ESM files outside the root pass, because specifier text also appears in
   comments and strings. Specifiers that name no file pass, such as JSDoc
   `@import` comments or prose.

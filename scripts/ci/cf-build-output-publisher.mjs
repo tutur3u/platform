@@ -54,7 +54,7 @@ function compileGlob(part, glob) {
       index = close;
     } else {
       assert.ok(char !== '}', `unbalanced "}" in module glob: ${glob}`);
-      pattern += char.replace(/[.+^$()|[\]\\{}*?]/gu, '\\$&');
+      pattern += char.replace(/[.+^$()|[\]\\]/gu, '\\$&');
     }
   }
   return pattern;
@@ -266,12 +266,9 @@ function referenceState(bundleRoot, target) {
     throw error;
   }
   if (!lstatSync(real).isFile()) return 'not-a-file';
-  const root = realpathSync(bundleRoot);
-  const inside =
-    real.startsWith(root + sep) &&
-    !target.startsWith('../') &&
-    !target.split('/').some((segment) => segment.startsWith('.'));
-  return inside ? 'inside' : 'outside';
+  // Real path only: dot directories are inside the root. Any existing,
+  // unemitted ES module fails regardless, so this only routes non-ESM files.
+  return real.startsWith(realpathSync(bundleRoot) + sep) ? 'inside' : 'outside';
 }
 
 /**

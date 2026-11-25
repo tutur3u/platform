@@ -471,3 +471,22 @@ test('hasComputedDynamicImport documents its textual limits', () => {
   // Constant specifiers inside strings or comments stay constant.
   assert.equal(hasComputedDynamicImport('"import(\'./a.js\')"'), false);
 });
+
+test('a non-ESM file in a dot directory of the root fails emission', () => {
+  const root = mkdtempSync(join(tmpdir(), 'cf-build-output-dot-wasm-'));
+  mkdirSync(join(root, '.assets'), { recursive: true });
+  writeFileSync(join(root, '.assets/engine.wasm'), 'wasm');
+  writeFileSync(
+    join(root, 'index.mjs'),
+    'import w from "./.assets/engine.wasm";export default {w};\n'
+  );
+  assert.throws(
+    () =>
+      discoverCfBuildOutputEsmModules(
+        root,
+        { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] },
+        'index.mjs'
+      ),
+    /non-ESM modules are unsupported by this emit: index\.mjs -> \.assets\/engine\.wasm/
+  );
+});
