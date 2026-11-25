@@ -16,7 +16,10 @@ describe('isUnroutableLettinPath', () => {
     '/index.php/x',
     '/en/%2E%2E%2Fetc',
     '/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php',
-    '/api/v1/lettin/config.json',
+    '/apix.php',
+    '/API/v1/x.php',
+    '/%61pi/v1/x.php',
+    '/en/api/x.php',
   ])('fences %s', (path) => {
     expect(isUnroutableLettinPath(new URL(path, 'https://lettin.test'))).toBe(
       true
@@ -34,6 +37,10 @@ describe('isUnroutableLettinPath', () => {
     '/api/v1/workspaces/personal/lettin/export',
     '/_next/static/chunks/main.js',
     '/_next/image',
+    '/api/v1/storage/download/a/report.pdf',
+    '/api/v1/integrations/external-chat/widget.js',
+    '/api/v1/workspaces/ws/storage/export/token/assets/cover.png',
+    '/api/v1/lettin/config.json',
   ])('admits %s', (path) => {
     expect(isUnroutableLettinPath(new URL(path, 'https://lettin.test'))).toBe(
       false
@@ -91,9 +98,42 @@ describe('Lettin Worker entry', () => {
     expect(nextFetch).not.toHaveBeenCalled();
   });
 
-  it('hands real routes to the bridge', async () => {
+  it.each(['/apix.php', '/en/notes.txt', '/API/v1/x.php'])(
+    'answers non-forwarded dotted %s with 404 outside the bridge',
+    async (path) => {
+      const response = await fetch(
+        new Request(`https://lettin.tuturuuu.com${path}`),
+        {},
+        ctx
+      );
+      expect(response.status).toBe(404);
+      expect(nextFetch).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['POST', '/api/v1/lettin/../x%0A'],
+    ['GET', '/api/v1/storage/%0Areport.pdf'],
+    ['PROPFIND', '/api/v1/storage/download/a/report.pdf'],
+    ['GET', '/api/v1/storage/%E0%A4%A.pdf'],
+  ])('keeps the shared fences on /api: %s %s', async (method, path) => {
     const response = await fetch(
-      new Request('https://lettin.tuturuuu.com/en/worlds'),
+      new Request(`https://lettin.tuturuuu.com${path}`, { method }),
+      {},
+      ctx
+    );
+    expect(response.status).toBe(404);
+    expect(nextFetch).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    '/en/worlds',
+    '/api/v1/storage/download/a/report.pdf',
+    '/api/v1/integrations/external-chat/widget.js',
+  ])('hands %s to the bridge', async (path) => {
+    nextFetch.mockClear();
+    const response = await fetch(
+      new Request(`https://lettin.tuturuuu.com${path}`),
       {},
       ctx
     );
