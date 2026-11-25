@@ -501,8 +501,10 @@ test('uses the orchestrator identity and counts only its delegated activity', ()
   });
   assert.equal(pinned.orchestrator.state, 'idle');
   assert.deepEqual(pinned.orchestrator.delegated, { running: 1, waiting: 0 });
-  // With no configured id the broader `[Iris]` title is the fallback, so an
-  // orchestrator titled anything else under that prefix never reads offline.
+  // With no configured id the strict title wins even when the thread is idle:
+  // the broader `[Iris]` lane is only the fallback.
+  assert.equal(buildFleetState(rows, { now: NOW }).orchestrator.state, 'idle');
+  rows.threads.delete('t-iris');
   assert.equal(
     buildFleetState(rows, { now: NOW }).orchestrator.state,
     'running'
@@ -590,6 +592,7 @@ test('an empty or non-string orchestrator id reads as unset', () => {
   for (const value of ['', '   ', 7, null, {}, ['t-iris'], 'x'.repeat(257)])
     assert.equal(normalizeOrchestratorThreadId(value), undefined);
   const rows = automationRows();
+  rows.threads.delete('t-iris');
   for (const value of ['', '  ', 7, null, {}])
     assert.equal(
       buildFleetState(rows, { now: NOW, orchestratorThreadId: value })

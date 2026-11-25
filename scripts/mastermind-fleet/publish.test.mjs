@@ -433,7 +433,8 @@ test('a pinned orchestrator id ignores an invalid title pattern, and an unpinned
     });
   }
   assert.equal(states.length, 2);
-  for (const state of states) assert.notEqual(state.orchestrator.state, 'offline');
+  for (const state of states)
+    assert.notEqual(state.orchestrator.state, 'offline');
   // Only the unpinned config reads the pattern, so only it warns.
   assert.equal(warn.mock.callCount(), 1);
 });
