@@ -17,6 +17,11 @@ import {
   buildOutputObservability,
 } from './cf-build-output-publisher.mjs';
 import { assertSupportedConfig } from './void-cf-config-guard.mjs';
+import {
+  measureSourceMap,
+  selectSourceMaps,
+  sourceMapBudget,
+} from './void-cf-sourcemaps.mjs';
 import { suppliers } from './wave1-cf-output.mjs';
 
 // Converts a sealed Void Worker artifact (its emitted deploy config, server
@@ -87,8 +92,17 @@ function moduleType(path) {
   return MODULE_TYPES.find(([re]) => re.test(path))?.[1];
 }
 
-/** Every uploadable module under the server directory. */
-export function serverModules(serverRoot, mainModule, sourceMaps) {
+/**
+ * Every uploadable module under the server directory, and the source map
+ * selection when maps are uploaded (null otherwise). Maps beyond the upload
+ * limits are dropped by `selectSourceMaps`; JS and other modules never are.
+ */
+export function serverModuleSelection(
+  serverRoot,
+  mainModule,
+  sourceMaps,
+  budget = sourceMapBudget()
+) {
   const modules = {};
   const maps = [];
   walk(serverRoot, (rel) => {
@@ -98,11 +112,19 @@ export function serverModules(serverRoot, mainModule, sourceMaps) {
     if (type) modules[rel] = { type };
   });
   assert.equal(modules[mainModule]?.type, 'esm', 'main module must be ESM');
-  if (sourceMaps)
-    for (const rel of maps)
-      if (modules[rel.slice(0, -4)]?.type === 'esm')
-        modules[rel] = { type: 'sourcemap' };
-  return modules;
+  if (!sourceMaps) return { modules, sourceMaps: null };
+  const candidates = maps
+    .filter((rel) => modules[rel.slice(0, -4)]?.type === 'esm')
+    .map((name) => ({ name, ...measureSourceMap(join(serverRoot, name)) }));
+  const selection = selectSourceMaps(candidates, `${mainModule}.map`, budget);
+  for (const name of selection.kept) modules[name] = { type: 'sourcemap' };
+  return { modules, sourceMaps: selection };
+}
+
+/** Every uploadable module under the server directory. */
+export function serverModules(serverRoot, mainModule, sourceMaps, budget) {
+  return serverModuleSelection(serverRoot, mainModule, sourceMaps, budget)
+    .modules;
 }
 
 function bindingFor(name, kind, entry, selfName) {
@@ -245,6 +267,7 @@ export async function emitVoidCfOutput({
   name,
   vars = {},
   sourceSha,
+  sourceMapBudgetOverride,
 }) {
   const absoluteConfig = realpathSync(configPath);
   const config = readEmittedConfig(absoluteConfig);
@@ -253,10 +276,11 @@ export async function emitVoidCfOutput({
   const serverRoot = dirname(mainPath);
   assert.equal(serverRoot, configDir, 'main module must sit beside config');
   const mainModule = posix(relative(serverRoot, mainPath));
-  const modules = serverModules(
+  const { modules, sourceMaps } = serverModuleSelection(
     serverRoot,
     mainModule,
-    config.upload_source_maps === true
+    config.upload_source_maps === true,
+    sourceMapBudgetOverride
   );
   const workerConfig = {
     ...workerConfigFrom(config, { name, vars }),
@@ -314,6 +338,8 @@ export async function emitVoidCfOutput({
     migrationTag: lastMigrationTag(config),
     varOverrides: Object.keys(vars).sort(),
     moduleCount: Object.keys(modules).length,
+    // Names and byte counts only; null when the config uploads no maps.
+    sourceMaps,
     assetCount,
     files,
   };

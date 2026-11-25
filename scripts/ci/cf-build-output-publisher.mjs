@@ -450,12 +450,16 @@ export function measureBuildOutputUpload(
     'workers/default/assets'
   );
   const modules = [];
+  // Source maps the emit kept ship with the version, so they count against
+  // Cloudflare's source map limits exactly as uploaded.
+  const maps = [];
   function visit(directory, root) {
     for (const name of readdirSync(directory)) {
       const path = join(directory, name);
       const stat = lstatSync(path);
       if (stat.isDirectory()) visit(path, root);
-      else if (/\.(?:m?js)$/u.test(name) && !name.endsWith('.map')) {
+      else if (name.endsWith('.map')) maps.push({ bytes: stat.size, path });
+      else if (/\.(?:m?js)$/u.test(name)) {
         const rel = relative(root, path).split('\\').join('/');
         modules.push({ name: rel, bytes: stat.size, path });
       }
@@ -500,10 +504,14 @@ export function measureBuildOutputUpload(
       modules: modules.map(({ name, bytes }) => ({ name, bytes })),
     },
     sourcemaps: {
-      enabled: false,
-      count: 0,
-      encodedBytes: 0,
-      gzipBytes: 0,
+      enabled: maps.length > 0,
+      count: maps.length,
+      encodedBytes: maps.reduce((total, item) => total + item.bytes, 0),
+      gzipBytes:
+        maps.length > 0
+          ? gzipSync(Buffer.concat(maps.map((item) => readFileSync(item.path))))
+              .length
+          : 0,
       unexpectedFiles: 0,
       measured: true,
     },

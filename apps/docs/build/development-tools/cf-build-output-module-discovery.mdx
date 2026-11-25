@@ -80,6 +80,22 @@ that response with a separate streaming reader. The reader keeps only
 it streams, and bounds the total bytes by the measured upload size. Run it after
 `cf workers versions create` and before any traffic split.
 
+## Source maps over the upload limit
+
+Cloudflare rejects a version whose source maps exceed 60 MiB encoded or 15 MiB
+gzipped (API error 10021; `uploadLimits` in
+`scripts/ci/wave1-native-upload-limits.mjs`). When a Void emit uploads maps
+(`upload_source_maps: true`) and they exceed either limit,
+`scripts/ci/void-cf-sourcemaps.mjs` keeps the main module's map first, then
+the smallest maps, while the kept total stays within 90% of both limits, and
+drops the rest. Maps that cannot fit are all dropped. The emit makes this
+choice, so `measureBuildOutputUpload` (which counts the `.map` files in the
+Build Output) and the upload see the same maps. `void-cf-receipt.json` records
+`sourceMaps` with the limits, totals, kept names and each dropped map's name
+and bytes. Only maps are dropped: JS and other modules, the module manifest's
+non-map entries, the module-set compare and the closure checks are unchanged.
+`scripts/ci/void-cf-sourcemaps.test.mjs` covers each case.
+
 ## Auditing a hosted version
 
 - `GET /workers/scripts/<name>/content/v2` ignores `?version=` and returns the
