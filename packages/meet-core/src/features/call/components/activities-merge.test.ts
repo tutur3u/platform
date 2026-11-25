@@ -73,7 +73,10 @@ describe('mergeActivityTiles', () => {
   it('lists one Class timer: the pane when it is offered, else the room page', () => {
     const both = mergeActivityTiles([timers, polls, roomTimer], copy);
     expect(both.map((entry) => entry.id)).toEqual(['timer', 'polls']);
-    expect(both[0]).toMatchObject({ label: 'Class timer', stageId: 'tool:timers' });
+    expect(both[0]).toMatchObject({
+      label: 'Class timer',
+      stageId: 'tool:timers',
+    });
     expect(both[0]?.page).toBeUndefined();
     const page = mergeActivityTiles([polls, roomTimer], copy);
     expect(page[1]).toMatchObject({ id: 'timer', page: roomTimer.page });

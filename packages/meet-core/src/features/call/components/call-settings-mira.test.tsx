@@ -22,7 +22,9 @@ const f = vi.hoisted(() => ({
   withdraw: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api/meet-call', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tuturuuu/internal-api/meet-call')>()),
+  ...(await importOriginal<
+    typeof import('@tuturuuu/internal-api/meet-call')
+  >()),
   readMeetMiraAccountConfirmation: f.confirmation,
   withdrawMeetMiraAccount: f.withdraw,
 }));
@@ -164,7 +166,9 @@ it('opens the meeting settings on the Mira section from a refusal and saves the 
   await waitFor(() => expect(toggle.getAttribute('disabled')).toBeNull());
   f.write.mockResolvedValue(off);
   fireEvent.click(toggle);
-  await waitFor(() => expect(toggle.getAttribute('aria-checked')).toBe('false'));
+  await waitFor(() =>
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+  );
   expect(screen.getByRole('button', withdrawLabel)).toBeTruthy();
 });
 

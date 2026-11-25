@@ -53,7 +53,9 @@ it('shows a compact countdown and exposes the localized deadline on click', () =
       ?.getAttribute('stroke-dashoffset')
   ).toBe('75');
   fireEvent.click(button);
-  expect(screen.getByRole('dialog').textContent).toContain('Meeting ends in 30s');
+  expect(screen.getByRole('dialog').textContent).toContain(
+    'Meeting ends in 30s'
+  );
   expect(screen.getByRole('dialog').textContent).toMatch(/5:02|17:02/);
   expect(button.getAttribute('aria-label')).toBe('Meeting ends in');
   act(() => vi.advanceTimersByTime(30_000));

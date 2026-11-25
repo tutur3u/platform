@@ -33,13 +33,14 @@ it('shows actionable credits guidance and logs only fixed status/code metadata',
   ).not.toContain('synthetic-private');
 });
 
-function FailureAction({ error }: { error: { status: number; code?: string } }) {
+function FailureAction({
+  error,
+}: {
+  error: { status: number; code?: string };
+}) {
   const t = useTranslations('meet.ai');
   return (
-    <button
-      type="button"
-      onClick={() => showMeetingAiFailure(t, error)}
-    >
+    <button type="button" onClick={() => showMeetingAiFailure(t, error)}>
       Synthetic failure
     </button>
   );

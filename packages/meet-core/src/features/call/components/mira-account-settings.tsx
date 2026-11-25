@@ -103,7 +103,9 @@ export function MiraAccountSettings({
           )}
           {withdraw.isError && (
             <p className="text-destructive text-sm" role="alert">
-              {t(incomplete ? 'withdraw_incomplete' : 'withdraw_account_failed')}
+              {t(
+                incomplete ? 'withdraw_incomplete' : 'withdraw_account_failed'
+              )}
             </p>
           )}
         </SettingsSectionBlock>
