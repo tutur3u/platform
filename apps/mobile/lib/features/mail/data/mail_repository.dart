@@ -690,3 +690,10 @@ class MailRepository extends MailSettingsRepository {
 
 List<Map<String, dynamic>> mailRows(Object? value) =>
     (value as List<dynamic>? ?? []).whereType<Map<String, dynamic>>().toList();
+
+/// The string ids of [rows]; a row without one cannot be addressed by a bulk
+/// request, so it is left out rather than sent as a null or numeric id.
+List<String> mailMessageIds(Iterable<Map<String, dynamic>> rows) => [
+  for (final row in rows)
+    if (row['id'] case final String id) id,
+];

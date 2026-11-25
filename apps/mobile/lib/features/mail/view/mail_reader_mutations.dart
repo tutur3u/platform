@@ -12,10 +12,7 @@ extension _MailReaderMutations on _MailReaderState {
     final moveIds = folderId == null
         ? null
         : widget.thread
-        ? [
-            for (final message in _messages)
-              if (message['id'] case final String id) id,
-          ]
+        ? mailMessageIds(_messages)
         : [id];
     if (moveIds?.isEmpty ?? false) return;
     if (action == 'mark_read' || action == 'mark_unread') {

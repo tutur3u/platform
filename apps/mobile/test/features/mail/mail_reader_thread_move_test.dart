@@ -173,4 +173,19 @@ void main() {
     expect(optimistic, isEmpty);
     expect(find.byType(MailReader), findsOneWidget);
   });
+
+  test('rows without a string id are not sent as message ids', () {
+    // Rendering rejects such rows, so the filter is exercised at its boundary.
+    expect(
+      mailMessageIds([
+        _message('m1'),
+        _message(null),
+        _message(7),
+        {'bodyText': 'No id at all'},
+        _message('m4'),
+      ]),
+      ['m1', 'm4'],
+    );
+    expect(mailMessageIds(const []), isEmpty);
+  });
 }
