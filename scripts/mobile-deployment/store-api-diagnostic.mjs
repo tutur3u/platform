@@ -1,62 +1,118 @@
-const REDACTED = '[redacted]';
+import { createHash } from 'node:crypto';
 
-function redactGoogleText(value) {
-  return value
-    .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, ' ')
-    .replace(/\b(?:[a-z][a-z0-9+.-]*:\/\/|www\.)[^\s<>"']+/giu, REDACTED)
-    .replace(/[^\s<>"'(),;:]+@[^\s<>"'(),;:]+/gu, REDACTED)
-    .replace(/\b(?:[a-z][a-z0-9_]*\.)+[a-z][a-z0-9_-]*\b/giu, REDACTED)
-    .replace(
-      /\b(?:bearer\s+|(?:token|secret|password|api[_ -]?key|project(?: number)?)\s*[:=]\s*)[^\s,;]+/giu,
-      REDACTED
-    )
-    .replace(/\b\d{6,}\b|\b[0-9a-f]{16,}\b|[\w+/-]{24,}={0,2}/giu, (token) =>
-      // Preserve long camelCase review parameters while masking opaque IDs.
-      /^(?:changesNotSentForReview|changesInReviewBehavior)$/u.test(token)
-        ? token
-        : REDACTED
-    );
+const WITHHELD = '[message withheld: unrecognised]';
+const GOOGLE_STATUSES = new Set([
+  'INVALID_ARGUMENT',
+  'FAILED_PRECONDITION',
+  'PERMISSION_DENIED',
+  'UNAUTHENTICATED',
+  'NOT_FOUND',
+  'ALREADY_EXISTS',
+  'ABORTED',
+  'RESOURCE_EXHAUSTED',
+  'INTERNAL',
+  'UNAVAILABLE',
+  'DEADLINE_EXCEEDED',
+  'UNKNOWN',
+]);
+const GOOGLE_REASONS = new Set([
+  'badRequest',
+  'forbidden',
+  'invalid',
+  'notFound',
+  'required',
+  'changesNotSentForReview',
+  'changesInReviewBehavior',
+  'INVALID_ARGUMENT',
+  'FAILED_PRECONDITION',
+]);
+
+// Complete messages only. Never interpolate text supplied by Play.
+const PLAY_MESSAGES = new Set([
+  // Review must be submitted manually.
+  'Changes cannot be sent for review automatically.',
+  // Play's API hint for deferring review.
+  'Changes cannot be sent for review automatically. Please set the query parameter changesNotSentForReview to true.',
+  // Play's API hint when review must happen immediately.
+  'Changes cannot be set to not be sent for review.',
+  // This update conflicts with managed publishing.
+  'Managed publishing is enabled.',
+  // The version code is reserved by an earlier upload.
+  'Version code has already been used.',
+  // Release notes exceed the store length limit.
+  'Release notes are too long.',
+  // The requested testing track does not exist.
+  'Track not found.',
+  // No testers can access the track.
+  'No testers are configured for this track.',
+  // No countries are selected for the release.
+  'No countries or regions are selected for this track.',
+  // Draft apps require draft releases.
+  'Only releases with status draft may be created on draft app.',
+  // A required policy declaration is incomplete.
+  'App content declarations are incomplete.',
+]);
+
+const GOOGLE_FIELD =
+  /^(?:track|changesNotSentForReview|changesInReviewBehavior|releases(?:\[\d{1,4}\](?:\.(?:name|status|userFraction|countryTargeting|inAppUpdatePriority|versionCodes(?:\[\d{1,4}\])?|releaseNotes(?:\[\d{1,4}\](?:\.(?:language|text))?)?))?)?)$/u;
+
+function decodePercentEscapes(value) {
+  return value.replace(/(?:%[0-9a-f]{2})+/giu, (encoded) => {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return encoded;
+    }
+  });
+}
+
+function normalizePlayMessage(value) {
+  let decoded = decodePercentEscapes(value);
+  if (/%[0-9a-f]{2}/iu.test(decoded)) decoded = decodePercentEscapes(decoded);
+  return decoded
+    .normalize('NFKC')
+    .replace(/\p{Cf}/gu, '')
+    .replace(/\s+/gu, ' ')
+    .replace(/\p{Cc}/gu, '')
+    .trim();
+}
+
+function playMessageDiagnostic(value) {
+  if (typeof value !== 'string' || !value.length) return '';
+  if (value.length > 8192) return WITHHELD;
+  const normalized = normalizePlayMessage(value);
+  if (PLAY_MESSAGES.has(normalized)) return normalized;
+  const hash = createHash('sha256')
+    .update(normalized)
+    .digest('hex')
+    .slice(0, 8);
+  return `${WITHHELD} sha256:${hash}`;
 }
 
 function googleApiErrorDiagnostic(error) {
-  const safe = (value, pattern) =>
-    typeof value === 'string' &&
-    pattern.test(value) &&
-    value.length <= 100 &&
-    value.split('.').every((segment) => redactGoogleText(segment) === segment)
-      ? value
-      : '';
   const details = Array.isArray(error.details) ? error.details.slice(0, 8) : [];
   const errors = Array.isArray(error.errors) ? error.errors.slice(0, 8) : [];
-  const reasons = [...errors, ...details].map((entry) =>
-    safe(entry?.reason, /^[A-Za-z][A-Za-z0-9_-]{0,79}$/u)
-  );
+  const reasons = [...errors, ...details]
+    .map((entry) => entry?.reason)
+    .filter((reason) => GOOGLE_REASONS.has(reason));
   const fields = details.flatMap((entry) =>
     Array.isArray(entry?.violations)
       ? entry.violations
           .slice(0, 8)
-          .map((violation) =>
-            safe(
-              violation?.field,
-              /^(?:releases|track|changesNotSentForReview|changesInReviewBehavior)(?:\[\d{1,4}\]|\.[A-Za-z][A-Za-z0-9_]*){0,8}$/u
-            )
+          .map((violation) => violation?.field)
+          .filter(
+            (field) => typeof field === 'string' && GOOGLE_FIELD.test(field)
           )
       : []
   );
-  const message =
-    typeof error.message === 'string' && error.message.length <= 8192
-      ? redactGoogleText(error.message).trim()
-      : '';
   return [
-    safe(error.status, /^[A-Z][A-Z_]{0,39}$/u),
+    GOOGLE_STATUSES.has(error.status) ? error.status : '',
     Number.isInteger(error.code) && error.code >= 400 && error.code <= 599
       ? String(error.code)
       : '',
-    ...[...new Set(reasons.filter(Boolean))].slice(0, 3),
-    ...[...new Set(fields.filter(Boolean))].slice(0, 3),
-    /\p{L}/u.test(message.replaceAll(REDACTED, ''))
-      ? message.slice(0, 200)
-      : '',
+    ...[...new Set(reasons)].slice(0, 3),
+    ...[...new Set(fields)].slice(0, 3),
+    playMessageDiagnostic(error.message),
   ]
     .filter(Boolean)
     .join(', ');
