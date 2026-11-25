@@ -84,35 +84,44 @@ The patch changes the element canvas cache in both shipped builds
   from the one the cache entry last saw, and records the new zoom when the
   scale is unchanged, so steady frames skip the check.
 - The static scene spends a visible-area budget of 64 viewports per frame.
-  Drawing a cached canvas costs about its visible area in pixels, transparent
-  or not, so a dense stack zoomed in would otherwise cost a viewport or more
-  per element. Walking from the topmost (last drawn) element, each element is
-  charged what it draws, clipped to the view, in viewports: its rotated
-  bounds (`getElementBounds`) grown by its canvas padding over the device
-  pixel ratio, or for a labelled arrow the square label canvas drawn in its
-  place, plus its bound text with that text's own padding. Every element is
-  charged at least 1/2000 of a viewport for the work of drawing anything, and
-  a charge that cannot be measured counts as the whole budget. Once the total
-  passes 64, every older element is skipped for that frame. The charge is
-  approximate: a thin diagonal line or a loose freehand stroke costs its
-  whole padded box rather than its ink, since its cached canvas is drawn over
-  that box. Skipped elements are still in the scene: they reappear when the
-  view zooms out or moves, and they can still be selected and edited while
-  hidden. The rule is the same for members and guests, and exports draw
-  everything. `__ttrOverAreaBudget`, appended to each chunk, picks the skipped
-  elements.
+  Drawing a cached canvas costs about its visible area in pixels, transparent or
+  not, so a dense stack zoomed in would otherwise cost a viewport or more per
+  element. Walking from the topmost (last drawn) element, each element is
+  charged what it draws, clipped to the view, in viewports: its cached canvas,
+  which is its unrotated box (`getElementAbsoluteCoords`) grown by its canvas
+  padding over the device pixel ratio and rotated by its angle about its centre,
+  charged by the bounding box of that rotated canvas; or for a labelled arrow
+  the square label canvas drawn in its place; plus its bound text, measured the
+  same way. Every element is charged at least 1/2000 of a viewport for the work
+  of drawing anything, and a charge that cannot be measured counts as the whole
+  budget. Once the total passes 64, every older element is skipped for that
+  frame. The charge is approximate and errs high: a thin diagonal line or a
+  loose freehand stroke costs the bounding box of its rotated padded canvas, not
+  its ink, since that canvas is drawn whole. Skipped elements are still in the
+  scene: they reappear when the view zooms out or moves, and they can still be
+  selected and edited while hidden. The rule is the same for members and guests,
+  and exports draw everything. `__ttrOverAreaBudget`, appended to each chunk,
+  picks the skipped elements.
 
-  Choosing 64: the reviewer measured about 3.6 ms per drawn viewport in
-  software Chromium at a device pixel ratio of three, so 64 viewports is
-  about 230 ms in that worst case. They also measured 20,000 tiny shapes at
-  100% drawing in about 70 ms a frame against about 33 ms for a near-empty
-  one: roughly 0.002 ms of fixed work per element, which the 1/2000 minimum
-  approximates. By the budget's own count at 200% in a 1024 by 768 view,
-  80 diagonal lines count about 35 viewports and 80 zig-zag freehand strokes
-  about 51, so both boards draw completely. Content starts to disappear past
-  the budget: the same zig-zag strokes stacked on one spot reach it at about
-  112 strokes, after which the oldest are skipped. A Meet board holds at most
-  2,000 elements, which also limits how many tiny elements a frame can carry.
+  Choosing 64: the reviewer measured about 3.6 ms per drawn viewport for
+  ordinary shapes in software Chromium at a device pixel ratio of three, so
+  64 viewports is about 230 ms there. The cost per viewport is not uniform:
+  one-point freehand strokes of width 16, whose canvases are mostly padding,
+  measured about 0.9 s per frame at 64 viewports in the same setup. That is
+  the known worst case. Lowering the budget to 16 would bring it near 0.23 s
+  but hide content on ordinary boards (80 zig-zag strokes at 200% count about
+  51 viewports), so the budget stays at 64 while guest drawing is off. They
+  also measured 20,000 tiny shapes at 100% drawing in about 70 ms a frame
+  against about 33 ms for a near-empty one: roughly 0.002 ms of fixed work
+  per element, which the 1/2000 minimum approximates. By the budget's own
+  count at 200% in a 1024 by 768 view, 80 diagonal lines count about 35
+  viewports and 80 zig-zag freehand strokes about 51, so both boards draw
+  completely. Past the budget the oldest content is skipped; the test's model
+  of zig-zag strokes stacked on one spot reaches it at about 112 strokes,
+  while in the reviewer's run real Excalidraw at 200% drew 112, 113 and 120
+  stacked strokes at 52 to 56 viewports, so the real cliff depends on the
+  strokes' actual canvases. A Meet board holds at most 2,000 elements, which
+  also limits how many tiny elements a frame can carry.
 
 The patch is produced by a script that applies each edit to the pristine
 chunks and refuses unless every edit matches exactly once. Replace the whole
@@ -120,18 +129,19 @@ patch rather than editing the `.patch` file: restore the pristine package,
 run the script inside `bun patch @excalidraw/excalidraw`, then
 `bun patch --commit`.
 
-`packages/whiteboard/src/excalidraw-canvas-cap.test.ts` runs the patched code
-of both builds: the sizing at zoom 1 to 3, the image exemption, the rebuild
-rule and its skipped checks, and the visible-area budget: zero-size shapes,
-one-point freehand strokes, rotated strips, bound text on empty containers
-and labelled arrows are charged what they draw; 20,000 tiny shapes at 30x,
-1,000 view-covering boxes at 3x and 6,700 stacked boxes at 30x stay within
-the budget; 80-line and 80-stroke boards at 2x draw completely; and 120
-stacked strokes lose their oldest. It runs at a device pixel ratio of two,
-while the server's guest budget measures canvases at three. It fails against
-the unpatched package. Any `@excalidraw/excalidraw` upgrade must re-apply the
-patch to the new build's chunks, update the test's chunk names and helper
-names, and pass that test before it lands.
+`packages/whiteboard/src/excalidraw-canvas-cap.test.ts` runs the patched code of
+both builds: the sizing at zoom 1 to 3, the image exemption, the rebuild rule
+and its skipped checks, and the visible-area budget: zero-size shapes, one-point
+freehand strokes, rotated strips, 45-degree diagonal strokes and lines,
+45-degree diamonds, bound text on empty containers and labelled arrows are
+charged what they draw; 20,000 tiny shapes at 30x, 1,000 view-covering boxes at
+3x and 6,700 stacked boxes at 30x stay within the budget; 80-line and 80-stroke
+boards at 2x draw completely; and, by the model, 120 stacked strokes lose their
+oldest. It runs at a device pixel ratio of two, while the server's guest budget
+measures canvases at three. It fails against the unpatched package. Any
+`@excalidraw/excalidraw` upgrade must re-apply the patch to the new build's
+chunks, update the test's chunk names and helper names, and pass that test
+before it lands.
 
 Step 1. Install [bun](https://bun.sh/docs/installation) on your machine (if you don't already have it yet), by running the following command:
 

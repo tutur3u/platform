@@ -126,31 +126,32 @@ someone outside the workspace never carries a text label: every label entry is
 dropped before the arrow is stored or relayed. Members' arrow labels are kept.
 
 Drawing from people outside the workspace is budgeted to limit the work and
-memory each viewer spends on the board. The budgets assume 100% zoom at a
-device pixel ratio of three, the densest common phone and tablet screens.
-For everyone on the board, the editor never caches a shape above its
-100%-zoom size: zooming in draws the cache upscaled instead of growing it, so
-zoomed shapes and text look blocky, which the product owner accepted. Images
-keep their full zoom detail; the Meet board accepts no images from anyone. It
-rebuilds a cache only when its scale changes and fits an arrow's label canvas
-within the per-element cap. Each frame spends a budget of 64 viewports of
-visible area from the topmost element down, charging each element what it
-draws: its rotated, padded bounds (a labelled arrow's label square instead),
-plus its bound text, and at least 1/2000 of a viewport. Once the budget is
-spent, older elements are not drawn in that frame, but stay on the board,
-reappear when the view zooms out or moves, and can still be selected. This
-limits the drawing work for a dense stack zoomed in; it is not a guarantee
-of frame time, and the charge is approximate (a thin diagonal line costs its
-padded box). Ordinary boards fit: 80 diagonal lines or 80 zig-zag strokes at
-200% count about 35 and 51 viewports. Past the budget the oldest content is
-hidden: zig-zag strokes stacked on one spot reach it at about 112 strokes at
-200%. The rule is the same
-for members and guests (see Excalidraw canvas cap in the development guide;
-regression test
-`packages/whiteboard/src/excalidraw-canvas-cap.test.ts`, which runs at a
-device pixel ratio of two while the guest budget measures at three). Every
-element has one render cost, roughly the lines and points a viewer draws for
-it: one, plus its fill, its stroke points, its dashes and its text lines.
+memory each viewer spends on the board. The budgets assume 100% zoom at a device
+pixel ratio of three, the densest common phone and tablet screens. For everyone
+on the board, the editor never caches a shape above its 100%-zoom size: zooming
+in draws the cache upscaled instead of growing it, so zoomed shapes and text
+look blocky, which the product owner accepted. Images keep their full zoom
+detail; the Meet board accepts no images from anyone. It rebuilds a cache only
+when its scale changes and fits an arrow's label canvas within the per-element
+cap. Each frame spends a budget of 64 viewports of visible area from the topmost
+element down, charging each element what it draws: its cached canvas, padded and
+rotated as drawn (a labelled arrow's label square instead), plus its bound text,
+and at least 1/2000 of a viewport. Once the budget is spent, older elements are
+not drawn in that frame, but stay on the board, reappear when the view zooms out
+or moves, and can still be selected. This limits the drawing work for a dense
+stack zoomed in; it is not a guarantee of frame time: the reviewer measured
+about 0.9 s per frame in software Chromium at a device pixel ratio of three for
+its worst case, thick one-point freehand strokes. The charge is approximate and
+errs high (a thin diagonal line costs the bounding box of its rotated, padded
+canvas). Ordinary boards fit: 80 diagonal lines or 80 zig-zag strokes at 200%
+count about 35 and 51 viewports. Past the budget the oldest content is hidden;
+where that starts depends on the strokes' real canvases (the reviewer saw 120
+stacked strokes at 200% draw completely). The rule is the same for members and
+guests (see Excalidraw canvas cap in the development guide; regression test
+`packages/whiteboard/src/excalidraw-canvas-cap.test.ts`, which runs at a device
+pixel ratio of two while the guest budget measures at three). Every element has
+one render cost, roughly the lines and points a viewer draws for it: one, plus
+its fill, its stroke points, its dashes and its text lines.
 
 - A hachure, zigzag or cross-hatch fill on a rectangle, diamond or ellipse
   costs its diagonal over four times the stroke width, plus its diagonal over
@@ -337,7 +338,7 @@ Under `packages/whiteboard/src`:
 - `excalidraw-canvas-cap.test.ts`: the patched Excalidraw cache for the dev
   and prod builds: sizing at zoom 1 to 3, the image exemption, the rebuild
   rule, and the 64-viewport visible-area budget per frame with its
-  rotated, padded, bound-text and minimum charges.
+  rotated padded canvas, label, bound-text and minimum charges.
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do-guest-draw.test.ts`
 (a guest edit ticket refused and closed while guest drawing is held or the
