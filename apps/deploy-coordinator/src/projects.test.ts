@@ -73,8 +73,7 @@ describe('project catalog', () => {
   it('runs each reusable production publisher from its listed caller', () => {
     for (const project of PROJECTS)
       for (const rule of project.workflows.production) {
-        if (typeof rule === 'string' || rule.caller === rule.reusable)
-          continue;
+        if (typeof rule === 'string' || rule.caller === rule.reusable) continue;
         const caller = read(rule.caller);
         if (rule.caller === 'vercel-production.yaml') {
           // The planner reaches wave-1 uploads through the app's workflow.

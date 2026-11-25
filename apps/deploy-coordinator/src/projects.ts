@@ -167,9 +167,7 @@ export const PROJECTS: readonly ProjectEntry[] = [
   worker('parley', 'parley-cloudflare.yaml'),
   // The tuturuuu.com gateway Worker, published by the Web OpenNext workflow.
   worker('gateway', 'web-opennext.yaml'),
-  ...WEB_FAMILIES.map((family) =>
-    worker(`web-${family}`, 'web-opennext.yaml')
-  ),
+  ...WEB_FAMILIES.map((family) => worker(`web-${family}`, 'web-opennext.yaml')),
   // Production schema migrations: supabase-production.yaml's manual,
   // USER-OK-gated dispatch on the production branch.
   {

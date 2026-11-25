@@ -57,7 +57,7 @@ const PRODUCTION_WEB = {
   contracts: [
     [
       '.github/workflows/vercel-production.yaml',
-      ['0d125be38c788860ea9b58f4d37cf75d0d0dd128'],
+      ['5bea17aa8d73900d8622983eab32dd8888123e9d'],
     ],
     [
       '.github/workflows/web-cloudflare-production.yaml',

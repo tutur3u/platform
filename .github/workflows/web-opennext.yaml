@@ -301,7 +301,7 @@ jobs:
           origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
           project: web-${{ matrix.family }}
           environment: production
-          max-wait-minutes: '10'
+          max-wait-minutes: '5'
       - name: Check the deployment coordinator lease
         if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator
@@ -329,6 +329,13 @@ jobs:
             --var "SUPABASE_URL:$SUPABASE_URL" \
             --var "ROOT_WORKSPACE_ID:$ROOT_WORKSPACE_ID" \
             --var "PLATFORM_BUILD_COMMIT_HASH:$GITHUB_SHA"
+      - name: Explain a coordinator skip
+        if: steps.coordinator.outputs.publish == 'false'
+        env:
+          PROJECT: web-${{ matrix.family }}
+        run: |
+          echo "::warning::The deployment coordinator refused this $PROJECT production publish (superseded, held or already terminal); nothing was published."
+          echo "Deployment coordinator refused this $PROJECT production publish; nothing was published." >> "$GITHUB_STEP_SUMMARY"
       - name: Report to the deployment coordinator
         if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator

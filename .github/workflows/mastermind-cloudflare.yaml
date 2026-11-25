@@ -244,7 +244,8 @@ jobs:
     needs: [artifact, production-policy]
     if: (github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # Includes up to 5 minutes waiting for the coordinator's lane.
+    timeout-minutes: 30
     permissions:
       contents: read
       deployments: write
@@ -281,7 +282,7 @@ jobs:
           origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
           project: mastermind
           environment: production
-          max-wait-minutes: '10'
+          max-wait-minutes: '5'
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
@@ -491,6 +492,13 @@ jobs:
           DEPLOYMENT_MARKER_SHA: ${{ env.SOURCE_SHA }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: mastermind-cloudflare.yaml
         run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts
+      - name: Explain a coordinator skip
+        if: steps.coordinator.outputs.publish == 'false'
+        env:
+          PROJECT: mastermind
+        run: |
+          echo "::warning::The deployment coordinator refused this $PROJECT production publish (superseded, held or already terminal); nothing was published."
+          echo "Deployment coordinator refused this $PROJECT production publish; nothing was published." >> "$GITHUB_STEP_SUMMARY"
       - name: Report to the deployment coordinator
         if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator

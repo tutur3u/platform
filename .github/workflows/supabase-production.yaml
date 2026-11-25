@@ -440,7 +440,8 @@ jobs:
           persist-credentials: false
 
       # Lane lock and stop fence for production schema changes: enforce mode
-      # skips db push when the database lane is stopped, held or superseded.
+      # skips db push when the database lane is held or superseded and waits
+      # out a stop for at most 5 minutes.
       - name: Register with the deployment coordinator
         id: coordinator
         if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
@@ -451,7 +452,7 @@ jobs:
           origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
           project: database
           environment: production
-          max-wait-minutes: '10'
+          max-wait-minutes: '5'
 
       - name: Setup Supabase CLI
         if: steps.coordinator.outputs.publish != 'false'
@@ -513,6 +514,15 @@ jobs:
           node --experimental-strip-types
           scripts/ci/record-deployment-marker.ts
 
+      - name: Explain a coordinator skip
+        if: steps.coordinator.outputs.publish == 'false'
+        env:
+          PROJECT: database
+        run: |
+          echo "::warning::The deployment coordinator refused this $PROJECT production publish (superseded, held or already terminal); nothing was published."
+          echo "Deployment coordinator refused this $PROJECT production publish; nothing was published." >> "$GITHUB_STEP_SUMMARY"
+          # A USER-OK migration dispatch that applied nothing must not look green.
+          exit 1
       - name: Report to the deployment coordinator
         if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator

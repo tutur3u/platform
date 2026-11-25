@@ -99,15 +99,16 @@ rollback re-probes.
 The upload history treats both as confirmed restores.
 
 A step timeout or a manual cancel lets this step run. A job-level timeout
-(45 minutes) is a cancellation of the whole job: GitHub documents that a
+(50 minutes) is a cancellation of the whole job: GitHub documents that a
 cancelled run re-evaluates step conditions, so a `cancelled()` step is
 expected to run, but it does not document the job-timeout case and the runner
 force-terminates a cancelling job after a short grace period. The publisher
-does not rely on it. Setup steps (checkout, toolchain, install, artifact
+does not rely on it. The deployment coordinator's `begin` step waits at most
+5 minutes for the lane, and setup steps (checkout, toolchain, install, artifact
 download) normally finish within a few minutes; the artifact restore, runtime
 recheck and preflight have their own timeouts. The 25-minute upload step and
-the 4-minute recovery step therefore fit inside the 45-minute job unless the
-steps before the upload take more than about 16 minutes, so the upload step
+the 4-minute recovery step therefore fit inside the 50-minute job unless the
+steps before the upload take more than about 21 minutes, so the upload step
 times out first and recovery runs as an ordinary step after a failure. A job
 that times out before the upload step starts has written no deployment. If recovery still never runs, the receipt keeps
 `switched` or `rolling-back`, which the upload history never skips: every

@@ -309,8 +309,9 @@ jobs:
     if: ${{ !cancelled() && inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true' && needs.qualify.result == 'success' && needs.restored.result == 'success' }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
-    # Setup, preflight, the 25-minute upload step, recovery and verify.
-    timeout-minutes: 45
+    # The 5-minute coordinator wait, setup, preflight, the 25-minute upload
+    # step, recovery and verify.
+    timeout-minutes: 50
     # id-token reports this upload to the deployment coordinator with GitHub
     # OIDC; every caller of this workflow must grant it.
     permissions:
@@ -331,8 +332,9 @@ jobs:
         with:
           ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
-      # Lane lock and stop fence: a superseded, held or stopped production lane
-      # skips the upload in enforce mode; observe and failures fall open.
+      # Lane lock and stop fence: enforce mode skips the upload for a
+      # superseded or held lane and waits out a stop for at most 5 minutes;
+      # observe and failures fall open.
       - name: Register with the deployment coordinator
         id: coordinator
         if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
@@ -344,8 +346,8 @@ jobs:
           project: ${{ inputs.app }}
           environment: production
           # The job's concurrency group already serializes uploads per app;
-          # keep the lane wait inside the 45-minute job budget.
-          max-wait-minutes: '10'
+          # keep the lane wait inside the job budget's rollback headroom.
+          max-wait-minutes: '5'
       - uses: ./.github/actions/setup-bun-with-retry
         if: steps.coordinator.outputs.publish != 'false'
         with:
@@ -382,10 +384,6 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
         run: node scripts/ci/wave1-native-production.mjs "$APP" "$SOURCE_SHA" preflight
-      # The upload step stages, smokes, switches and runs the public health
-      # gate, restoring the recorded rollback deployment with its own
-      # credential when the gate fails. Its smoke and gate stop at a
-      # 17-minute budget, so the timeout keeps room for that rollback.
       - name: Check the deployment coordinator lease
         if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator
@@ -395,6 +393,10 @@ jobs:
           origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
           project: ${{ inputs.app }}
           environment: production
+      # The upload step stages, smokes, switches and runs the public health
+      # gate, restoring the recorded rollback deployment with its own
+      # credential when the gate fails. Its smoke and gate stop at a
+      # 17-minute budget, so the timeout keeps room for that rollback.
       - name: Upload once without attaching serving topology
         id: upload
         if: steps.coordinator.outputs.publish != 'false'
@@ -433,6 +435,13 @@ jobs:
           path: ${{ runner.temp }}/${{ inputs.app }}-production-publication.json
           retention-days: 90
           if-no-files-found: warn
+      - name: Explain a coordinator skip
+        if: steps.coordinator.outputs.publish == 'false'
+        env:
+          PROJECT: ${{ inputs.app }}
+        run: |
+          echo "::warning::The deployment coordinator refused this $PROJECT production publish (superseded, held or already terminal); nothing was published."
+          echo "Deployment coordinator refused this $PROJECT production publish; nothing was published." >> "$GITHUB_STEP_SUMMARY"
       - name: Report to the deployment coordinator
         if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator

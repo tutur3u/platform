@@ -314,9 +314,14 @@ The gateway reports as the `gateway` project and each store publish as its own
 in parallel in one run and would otherwise wait on one lane.
 
 The shared publishers pass `project: ${{ inputs.app }}` (wave-1 and serving
-Workers) or `web-${{ matrix.family }}`, and wait at most 10 minutes for the
-lane so the wait fits inside their job budgets; their own concurrency groups
-already serialize uploads per app.
+Workers) or `web-${{ matrix.family }}`, and wait at most 5 minutes for the
+lane, budgeted into their job timeouts ahead of the rollback headroom; their
+own concurrency groups already serialize uploads per app. In `enforce`, a
+lane still `stopped` or busy after that wait publishes uncoordinated, like
+every other wired job, so a stop holds these publishers for at most 5
+minutes; only `superseded` and `held` skip. A skip writes a warning and a
+step-summary line, and the Supabase job fails instead, so a USER-OK migration
+dispatch that applied nothing never looks green.
 
 ### Production publish coverage
 
@@ -327,7 +332,7 @@ already serialize uploads per app.
 | `serving-worker-publish.yaml` (Roadmap, Learn, Teach, Nova, Tools, LMS) | yes | still behind `SERVING_WORKERS_PUBLICATION=enabled` |
 | `mastermind-cloudflare.yaml` | yes | enforce-capable |
 | `web-opennext.yaml` family jobs | yes | one `web-<family>` project each |
-| `supabase-production.yaml` | yes | project `database` |
+| `supabase-production.yaml` | yes | project `database`; only the USER-OK `workflow_dispatch` on `production` runs `db push`, so only it reports |
 | `deploy-coordinator-cloudflare.yaml` | no | the coordinator does not coordinate its own publish |
 | `web-cloudflare-production.yaml` | not a publisher | verifies serving and records the Web marker |
 | `playground-execution-production.yaml` | no | its build runs on `refs/heads/main`, which a production token cannot carry |

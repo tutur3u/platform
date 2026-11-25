@@ -23,7 +23,8 @@ jobs:
     if: ${{ github.ref == 'refs/heads/production' && vars.SERVING_WORKERS_PUBLICATION == 'enabled' }}
     runs-on: ubuntu-latest
     environment: cloudflare-release-production
-    timeout-minutes: 30
+    # Includes up to 5 minutes waiting for the coordinator's lane.
+    timeout-minutes: 35
     concurrency:
       group: serving-worker-publish-${{ inputs.app }}
       cancel-in-progress: false
@@ -49,7 +50,8 @@ jobs:
       - name: Verify checkout identity
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       # Lane lock and stop fence on top of the variable fence above: enforce
-      # mode skips a superseded, held or stopped app; observe falls open.
+      # mode skips a superseded or held app and waits out a stop for at most
+      # 5 minutes; observe falls open.
       - name: Register with the deployment coordinator
         id: coordinator
         if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
@@ -60,7 +62,7 @@ jobs:
           origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
           project: ${{ inputs.app }}
           environment: production
-          max-wait-minutes: '10'
+          max-wait-minutes: '5'
       - uses: ./.github/actions/setup-bun-with-retry
         if: steps.coordinator.outputs.publish != 'false'
         with:
@@ -105,6 +107,13 @@ jobs:
           path: ${{ runner.temp }}/${{ inputs.app }}-serving-publication.json
           retention-days: 90
           if-no-files-found: warn
+      - name: Explain a coordinator skip
+        if: steps.coordinator.outputs.publish == 'false'
+        env:
+          PROJECT: ${{ inputs.app }}
+        run: |
+          echo "::warning::The deployment coordinator refused this $PROJECT production publish (superseded, held or already terminal); nothing was published."
+          echo "Deployment coordinator refused this $PROJECT production publish; nothing was published." >> "$GITHUB_STEP_SUMMARY"
       - name: Report to the deployment coordinator
         if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
         uses: ./.github/actions/deploy-coordinator
