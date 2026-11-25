@@ -253,12 +253,33 @@ the `p_after_*` arguments until it is null, and
 root `view_infrastructure` or `manage_feature_flags`; the audit pages newest
 first on the `(occurredAt, id)` cursor of the last row.
 
-Erasure is manual until the deferred drain ships. Rules and allow-list entries that reference a deleted user or workspace stay stored and are inert at evaluation, and they keep counting toward the 50000-rule cap until `feature_flag_erase_subject` runs for that id.
+**Deferred erasure.** Migration `20261125085000_feature_flag_erasure_intents.sql`
+records one row in `private.feature_flag_erasure_intents` after every delete on
+`auth.users` and `public.workspaces`. The trigger does constant work: it never
+takes the erasure lock or reads the rule store, so account and workspace
+deletes stay cheap. A drain (service role) works the queue in bounded steps:
+
+- `feature_flag_erasure_claim(p_limit)` leases 1 to 20 due intents. The lease is
+  `next_attempt_at`, pushed out by 2^attempts minutes (at most an hour), so a
+  stalled worker's claim returns by itself and a failing subject backs off.
+- `feature_flag_erasure_complete(p_id)` runs `feature_flag_erase_subject` and
+  deletes the intent in one transaction. A wait on the erasure lock longer than
+  the lock timeout (`55P03`) rolls the erasure back, records `lock_not_available`
+  on the intent and returns `busy`; an unknown id returns `gone`.
+- `feature_flag_erasure_status()` reports pending and due counts, the highest
+  attempt count and the oldest intent, for the drain's stop fence and alerts.
+
+While an intent is pending, `feature_flag_mutate_rule` refuses a write whose
+subject, or whose allow-list entry, names that user or workspace
+(`feature_flag_subject_erasing`). Rules of a deleted subject stay stored, inert
+at evaluation, and keep counting toward the 50000-rule cap until the drain
+reaches them. Until the Cloudflare job that runs the drain is deployed, intents
+accumulate and erasure stays a manual `feature_flag_erase_subject` call.
 
 See the
 [data protection standard](/platform/data-protection-standard#runtime-feature-flag-rules).
 
-**Rollback.** Roll back the hardening migration to remove its indexes
+**Rollback.** Roll back the erasure intents migration first; its rollback restores the hardening `feature_flag_mutate_rule` and drops the queue, triggers and drain RPCs. Then roll back the hardening migration to remove its indexes
 and quota attribution. The `manage_feature_flags` enum value
 cannot be removed. Its rollback drops the definition sync, read and erasure RPCs. The rule store rollback drops
 every rule and audit row, so export `private.feature_flag_audit` and
