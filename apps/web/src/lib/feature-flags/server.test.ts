@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isFeatureEnabled } from './server';
+
+let isFeatureEnabled: typeof import('./server').isFeatureEnabled;
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -31,13 +32,19 @@ const workspaceId = 'bbbbbbbb-0000-4000-8000-000000000001';
 const key = 'MEET_UX_V2';
 const supabase = { auth: { getUser: mocks.getUser } };
 
-beforeEach(() => {
+beforeEach(async () => {
+  vi.resetModules();
+  ({ isFeatureEnabled } = await import('./server'));
   vi.stubEnv('VERCEL_ENV', 'production');
   vi.resetAllMocks();
   mocks.createClient.mockResolvedValue(supabase);
   mocks.getUser.mockResolvedValue({ data: { user }, error: null });
   mocks.createAdminClient.mockResolvedValue({
-    schema: () => ({ rpc: mocks.rpc }),
+    schema: () => ({
+      rpc: (name: string, args: unknown) => ({
+        abortSignal: (signal: AbortSignal) => mocks.rpc(name, args, signal),
+      }),
+    }),
   });
   mocks.membership.mockResolvedValue({ ok: true });
   mocks.rpc.mockImplementation(async (name, args) => ({
@@ -68,10 +75,7 @@ describe('web runtime feature flags', () => {
     expect(
       await isFeatureEnabled(key, { workspaceId: workspaceId.toUpperCase() })
     ).toBe(true);
-    expect(mocks.createAdminClient).toHaveBeenCalledWith({
-      noCookie: true,
-      fetch: expect.any(Function),
-    });
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
     expect(mocks.membership).toHaveBeenCalledWith({
       supabase,
       userId: user.id,
@@ -83,8 +87,22 @@ describe('web runtime feature flags', () => {
       expect.objectContaining({
         p_workspace_id: workspaceId,
         p_user_id: user.id,
-      })
+      }),
+      expect.any(AbortSignal)
     );
+  });
+
+  it('creates one service client for every read in the isolate', async () => {
+    await isFeatureEnabled(key, { workspaceId });
+    await isFeatureEnabled(key, { workspaceId });
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+  });
+
+  it('creates the service client again after a failed creation', async () => {
+    mocks.createAdminClient.mockRejectedValueOnce(new Error('no env'));
+    expect(await isFeatureEnabled(key, { workspaceId })).toBe(false);
+    await isFeatureEnabled(key, { workspaceId });
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(2);
   });
 
   it('rejects unverified actor and workspace contexts before reading the rule store', async () => {
@@ -109,7 +127,8 @@ describe('web runtime feature flags', () => {
     expect(await isFeatureEnabled(key, { workspaceId })).toBe(false);
     expect(mocks.rpc).toHaveBeenCalledWith(
       'feature_flag_read_subject_rules',
-      expect.objectContaining({ p_user_id: user.id })
+      expect.objectContaining({ p_user_id: user.id }),
+      expect.any(AbortSignal)
     );
   });
 });

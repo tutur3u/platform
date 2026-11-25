@@ -22,6 +22,15 @@ export const FLAG_KINDS = Object.freeze([
   'safety-control',
   'operational',
 ]);
+/**
+ * Kinds whose runtime flags never read an environment fallback. A cold isolate
+ * whose store read fails would otherwise apply the environment value although
+ * a stored platform kill rule exists, so these flags fall back to off only.
+ */
+export const ENV_FALLBACK_FORBIDDEN_KINDS = Object.freeze([
+  'kill-switch',
+  'safety-control',
+]);
 export const FLAG_SCOPES = Object.freeze(['global', 'workspace', 'build']);
 export const REMOVAL_GRACE_HOURS = 48;
 
@@ -127,6 +136,14 @@ export function validateFlag(flag, environments = FLAG_ENVIRONMENTS) {
   }
   if (flag.runtime !== undefined) {
     for (const error of validateRuntimeDefinition(flag.runtime)) fail(error);
+    if (
+      flag.runtime.envFallback != null &&
+      ENV_FALLBACK_FORBIDDEN_KINDS.includes(flag.kind)
+    ) {
+      fail(
+        `${flag.kind} runtime flags fall back to off only and cannot declare an envFallback`
+      );
+    }
   }
   if (!KEY_PATTERN.test(flag.key ?? '')) fail('key is invalid');
   if (!FLAG_FAMILIES.includes(flag.family)) fail('family is invalid');

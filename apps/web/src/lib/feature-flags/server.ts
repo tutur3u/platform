@@ -1,12 +1,12 @@
 import 'server-only';
 
 import {
-  asPrivateRpcAdmin,
   createRuntimeReader,
   isInternalFeatureAudience,
   isUuid,
   readRuntimePlatformSnapshot,
   resolveRuntimeFlagEnvironment,
+  type PrivateRpcResult,
   type RuleEnvironment,
 } from '@tuturuuu/feature-flags';
 import {
@@ -17,18 +17,40 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { connection } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
+interface AbortablePrivateRpcAdmin {
+  schema: (name: 'private') => {
+    rpc: (
+      fn: string,
+      args: Record<string, unknown>
+    ) => {
+      abortSignal: (signal: AbortSignal) => PromiseLike<PrivateRpcResult>;
+    };
+  };
+}
+
+// One service client per isolate; each call carries its own abort signal.
+let adminClient: Promise<AbortablePrivateRpcAdmin> | undefined;
+
+function getAdminClient(): Promise<AbortablePrivateRpcAdmin> {
+  if (adminClient) return adminClient;
+  const pending = (async () =>
+    (await createAdminClient({
+      noCookie: true,
+    })) as unknown as AbortablePrivateRpcAdmin)();
+  adminClient = pending;
+  pending.catch(() => {
+    if (adminClient === pending) adminClient = undefined;
+  });
+  return pending;
+}
+
 async function rpc(
   name: string,
   args: Record<string, unknown>,
   signal: AbortSignal
-) {
-  const admin = asPrivateRpcAdmin(
-    await createAdminClient({
-      noCookie: true,
-      fetch: (input, init) => fetch(input, { ...init, signal }),
-    })
-  );
-  return admin.schema('private').rpc(name, args);
+): Promise<PrivateRpcResult> {
+  const admin = await getAdminClient();
+  return admin.schema('private').rpc(name, args).abortSignal(signal);
 }
 
 const reader = createRuntimeReader({

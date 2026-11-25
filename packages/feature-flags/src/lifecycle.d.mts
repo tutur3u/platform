@@ -18,6 +18,7 @@ export type FlagKind =
   | 'workspace-gate'
   | 'safety-control'
   | 'operational';
+export declare const ENV_FALLBACK_FORBIDDEN_KINDS: readonly FlagKind[];
 export type FlagScope = 'global' | 'workspace' | 'build';
 export type FlagLifecycleStatus =
   | 'retained'

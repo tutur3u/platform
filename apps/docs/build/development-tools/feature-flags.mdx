@@ -85,7 +85,7 @@ A `runtime` entry declares a `runtime` block next to its lifecycle metadata:
 | `type` | `boolean`. |
 | `scopes` | Rule scopes a stored rule may target: `platform` (required), `workspace`, `user`. |
 | `controllers` | Who may set each scope. `platform` is always `platform-admin`. `workspace` is `platform-admin` (entitlements, rollouts) or `workspace-admin`. `user` is `platform-admin` (per-person overrides) or `self`. |
-| `envFallback` | Legacy environment variable read only while no platform rule is stored, or `null`. |
+| `envFallback` | Legacy environment variable read only while no platform rule is stored, or `null`. `kill-switch` and `safety-control` flags must use `null`: they fall back to off only, because an unreachable store would otherwise let the environment enable a flag that has a stored kill rule. |
 | `clientExposed` | Whether the evaluated boolean may reach a browser or app client. |
 | `delegate` | Optional. `workspace` lets a workspace rule enable the flag on its own while the platform rule is `on` or absent. Requires the `workspace` scope. |
 
@@ -253,12 +253,12 @@ the `p_after_*` arguments until it is null, and
 root `view_infrastructure` or `manage_feature_flags`; the audit pages newest
 first on the `(occurredAt, id)` cursor of the last row.
 
-Account/workspace erasure wiring is pending. Until it ships, flag rules and allow-list entries that reference deleted users or workspaces remain stored but are inert at evaluation; the upcoming deferred erasure drain (intent row on delete + bounded Cloudflare job) cleans them.
+Erasure is manual until the deferred drain ships. Rules and allow-list entries that reference a deleted user or workspace stay stored and are inert at evaluation, and they keep counting toward the 50000-rule cap until `feature_flag_erase_subject` runs for that id.
 
 See the
 [data protection standard](/platform/data-protection-standard#runtime-feature-flag-rules).
 
-**Rollback.** Roll back the hardening migration first to remove its indexes
+**Rollback.** Roll back the hardening migration to remove its indexes
 and quota attribution. The `manage_feature_flags` enum value
 cannot be removed. Its rollback drops the definition sync, read and erasure RPCs. The rule store rollback drops
 every rule and audit row, so export `private.feature_flag_audit` and

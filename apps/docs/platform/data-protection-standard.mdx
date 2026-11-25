@@ -89,7 +89,7 @@ Decision by the USER on 2026-11-24: "allow in cookies banner, default everything
 
 ### Runtime feature flag rules
 
-Account/workspace erasure wiring is pending. Until it ships, flag rules and allow-list entries that reference deleted users or workspaces remain stored but are inert at evaluation; the upcoming deferred erasure drain (intent row on delete + bounded Cloudflare job) cleans them.
+Erasure is manual until the deferred drain ships. Deleting an account or workspace does not remove its flag rules, allow-list entries or audit identifiers on its own: an operator must call `private.feature_flag_erase_subject` for each deleted id. Until then the rules stay stored, are inert at evaluation, and still count toward the per-flag rule cap (see [feature flags](/build/development-tools/feature-flags#rule-store)).
 
 - **Scope:** `private.feature_flag_rules`, `private.feature_flag_audit` and `private.feature_flag_definition_audit` ([feature flags](/build/development-tools/feature-flags#rule-store)). User ids appear as user-rule subjects, allow-list entries, rule authors and enablers (`updated_by` and `enabled_by`) and audit actors and subjects. Definitions and their audit hold no personal data.
 - **Account erasure:** `private.feature_flag_erase_subject('user', <user id>)` deletes the user's rules, removes the user from every allow-list (bumping the rule's revision), nulls matching authorship and quota attribution, and in every audit row nulls the actor and user subject and replaces the user's allow-list entries with the tombstone `"erased"`. Each rule it deletes or changes gets an audit row with no actor and client `erasure`. The call is idempotent. Audit rows are otherwise kept.

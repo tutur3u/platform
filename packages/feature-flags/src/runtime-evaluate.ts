@@ -1,5 +1,6 @@
 import type { CatalogFlag } from './lifecycle.mjs';
 import type { RuntimeRuleScope } from './runtime-definition.mjs';
+import { ENV_FALLBACK_FORBIDDEN_KINDS } from './lifecycle.mjs';
 import { RUNTIME_RULE_SCOPES } from './runtime-definition.mjs';
 import { isIncluded, isUuid, ruleShapeError } from './rule-validation';
 
@@ -257,7 +258,11 @@ export function evaluateRuntimeFlag(
         trace: [...trace, `platform rule ${platform.mode}`],
       };
     }
-    if (envFallback !== null && input.envValue !== undefined) {
+    if (
+      envFallback !== null &&
+      input.envValue !== undefined &&
+      !ENV_FALLBACK_FORBIDDEN_KINDS.includes(flag.kind)
+    ) {
       return {
         enabled: input.envValue === 'true',
         source: 'env-fallback',
