@@ -31,6 +31,19 @@ describe('buildGatewayRedirectUrl', () => {
     ).toBe('https://pay.tuturuuu.localhost/?source=sidebar-apps');
   });
 
+  it('sends the Documents app to its /docs path on the shared origin', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    const app = getGatewayApp('documents');
+    if (!app) throw new Error('Expected the registered Documents app');
+
+    expect(buildGatewayRedirectUrl({ app, search: '' })).toBe(
+      'https://tuturuuu.com/docs?source=apps'
+    );
+    expect(
+      buildGatewayRedirectUrl({ app, path: ['a b'], search: '?x=1' })
+    ).toBe('https://tuturuuu.com/docs/a%20b?x=1&source=apps');
+  });
+
   it('keeps production launches on the registered production origin', () => {
     vi.stubEnv('NODE_ENV', 'production');
     const app = getGatewayApp('pay');

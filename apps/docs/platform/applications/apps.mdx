@@ -18,10 +18,10 @@ users to each app's canonical domain:
 - `/tasks/personal/tasks` redirects to `tasks.tuturuuu.com/personal/tasks`
 - query strings are preserved during redirects
 - Documents is the `documents` catalog entry. It lives in the platform at
-  `tuturuuu.com/docs` (a path, not a subdomain) and the launcher opens that
-  path; a gateway redirect from `/documents` lands on the platform origin root.
-  `docs.tuturuuu.com` is the separate Documentation site, and every
-  "Documentation" link points to it directly.
+  `tuturuuu.com/docs` (a path, not a subdomain); the launcher opens that path
+  and a gateway redirect from `/documents` lands on `tuturuuu.com/docs`
+  (`gatewayBasePath`). `docs.tuturuuu.com` is the separate Documentation site,
+  and every "Documentation" link points to it directly.
 
 It intentionally excludes infrastructure-only or non-web app directories such as
 `apps/database`, `apps/mobile`, `apps/redis`, `apps/discord`,

@@ -46,6 +46,9 @@ export function buildGatewayRedirectUrl({
   search: string;
 }) {
   const url = new URL(getGatewayAppOrigin(app));
+  if (app.gatewayBasePath) {
+    url.pathname = `${trimTrailingSlashes(url.pathname)}${app.gatewayBasePath}`;
+  }
   const suffix = path.map((segment) => encodeURIComponent(segment)).join('/');
 
   if (suffix) {

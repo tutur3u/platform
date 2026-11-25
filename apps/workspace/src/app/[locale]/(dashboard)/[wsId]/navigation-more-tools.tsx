@@ -15,13 +15,6 @@ type MoreToolsInput = {
   ENABLE_AI_ONLY: boolean;
   hasSecret: (name: string, value: string) => boolean;
   withoutPermission: PermissionsResult['withoutPermission'];
-  sidebarSections: {
-    ai: string;
-    core: string;
-    operations: string;
-    utilities: string;
-    workTools: string;
-  };
   isMailUser: boolean;
   isPersonal: boolean;
   chatAppHref: string;
@@ -41,7 +34,6 @@ export function createMoreToolsNavigation({
   ENABLE_AI_ONLY,
   hasSecret,
   withoutPermission,
-  sidebarSections,
   isMailUser,
   chatAppHref,
   contactsAppHref,
@@ -65,14 +57,12 @@ export function createMoreToolsNavigation({
         aliases: [`/${personalOrWsId}/personal-journal/*`],
         icon: createDashboardNavigationIcon('NotebookPen', 'h-5 w-5'),
         disabled: !isPersonal,
-        preferenceSectionLabel: sidebarSections.workTools,
       },
       {
         id: 'notes',
         title: t('sidebar_tabs.notes'),
         href: `/${personalOrWsId}/notes`,
         icon: createDashboardNavigationIcon('NotebookPen', 'h-5 w-5'),
-        preferenceSectionLabel: sidebarSections.workTools,
       },
       {
         id: 'documents',
@@ -87,7 +77,6 @@ export function createMoreToolsNavigation({
           alwaysShow: true,
         }),
         experimental: 'beta',
-        preferenceSectionLabel: sidebarSections.workTools,
       },
       {
         id: 'mind',
@@ -95,7 +84,6 @@ export function createMoreToolsNavigation({
         icon: createDashboardNavigationIcon('BrainCircuit', 'h-5 w-5'),
         href: mindAppHref,
         external: true,
-        preferenceSectionLabel: sidebarSections.ai,
       },
       {
         id: 'hive',
@@ -103,7 +91,6 @@ export function createMoreToolsNavigation({
         icon: createDashboardNavigationIcon('Blocks', 'h-5 w-5'),
         href: hiveAppHref,
         external: true,
-        preferenceSectionLabel: sidebarSections.ai,
       },
       {
         id: 'chat',
@@ -117,7 +104,6 @@ export function createMoreToolsNavigation({
           alwaysShow: true,
         }),
         experimental: 'beta',
-        preferenceSectionLabel: sidebarSections.ai,
       },
       {
         id: 'qr_generator',
@@ -126,7 +112,6 @@ export function createMoreToolsNavigation({
         icon: createDashboardNavigationIcon('QrCodeIcon', 'h-5 w-5'),
         aliases: [`/${personalOrWsId}/qr-generator`],
         external: true,
-        preferenceSectionLabel: sidebarSections.utilities,
       },
       null,
       {
@@ -170,7 +155,6 @@ export function createMoreToolsNavigation({
           `/${personalOrWsId}/workforce/payroll`,
         ],
         tempDisabled: true, // coming soon
-        preferenceSectionLabel: sidebarSections.operations,
       },
       {
         id: 'posts',
@@ -184,7 +168,6 @@ export function createMoreToolsNavigation({
             withoutPermission('view_user_groups_reports') &&
             withoutPermission('approve_reports')),
         external: true,
-        preferenceSectionLabel: sidebarSections.operations,
       },
       {
         id: 'inventory',
@@ -196,7 +179,6 @@ export function createMoreToolsNavigation({
           alwaysShow: true,
         }),
         disabled: ENABLE_AI_ONLY || withoutPermission('view_inventory'),
-        preferenceSectionLabel: sidebarSections.operations,
       },
       null,
       // AI Lab, Google Workspace, and utility tools
@@ -293,7 +275,6 @@ export function createMoreToolsNavigation({
             experimental: 'alpha',
           },
         ],
-        preferenceSectionLabel: sidebarSections.ai,
       },
       {
         id: 'google_workspace',
@@ -348,14 +329,12 @@ export function createMoreToolsNavigation({
           //   requireRootMember: true,
           // },
         ],
-        preferenceSectionLabel: sidebarSections.utilities,
       },
       {
         id: 'meet',
         title: t('sidebar_tabs.meet'),
         href: meetAppHref,
         icon: createDashboardNavigationIcon('SquaresIntersect', 'h-5 w-5'),
-        preferenceSectionLabel: sidebarSections.utilities,
         external: true,
         children: [
           {
@@ -380,7 +359,6 @@ export function createMoreToolsNavigation({
         disabled: !DEV_MODE,
         requireRootWorkspace: true,
         requireRootMember: true,
-        preferenceSectionLabel: sidebarSections.utilities,
       },
       {
         id: 'mail',
@@ -391,7 +369,6 @@ export function createMoreToolsNavigation({
         requireRootMember: true,
         disabled: !isMailUser,
         experimental: 'beta',
-        preferenceSectionLabel: sidebarSections.utilities,
         children: [
           {
             title: t('mail.inbox'),
@@ -445,7 +422,6 @@ export function createMoreToolsNavigation({
         disabled:
           resolvedWorkspaceId !== ROOT_WORKSPACE_ID &&
           !hasSecret('ENABLE_LINK_SHORTENER', 'true'),
-        preferenceSectionLabel: sidebarSections.utilities,
       },
     ],
   };

@@ -1,5 +1,9 @@
 import { arrayMove } from '@dnd-kit/sortable';
 import {
+  getSidebarCategory,
+  getSidebarCategoryRank,
+} from '@tuturuuu/ui/custom/sidebar-categories';
+import {
   normalizeSidebarNavigationLayoutConfig,
   SETTINGS_NAVIGATION_ID,
   type SidebarNavigationLayoutConfig,
@@ -59,10 +63,23 @@ export function getConfigItems(
   const hiddenIds = new Set(config.hidden);
   const definitionById = new Map(items.map((item) => [item.id, item]));
 
+  // Grouped by the sidebar's category order so each category header appears
+  // once. The relative order inside a category is the saved order, which is
+  // exactly what the sidebar uses within that category.
   return config[placement]
-    .map((id) => definitionById.get(id))
-    .filter((item): item is NavigationItemDefinition => Boolean(item))
-    .filter((item) => !hiddenIds.has(item.id));
+    .map((id, position) => ({ item: definitionById.get(id), position }))
+    .filter(
+      (entry): entry is { item: NavigationItemDefinition; position: number } =>
+        Boolean(entry.item)
+    )
+    .filter(({ item }) => !hiddenIds.has(item.id))
+    .sort(
+      (left, right) =>
+        getSidebarCategoryRank(getSidebarCategory(left.item.id)) -
+          getSidebarCategoryRank(getSidebarCategory(right.item.id)) ||
+        left.position - right.position
+    )
+    .map(({ item }) => item);
 }
 
 export function getHiddenItems(

@@ -14,13 +14,6 @@ const input = {
   ENABLE_AI_ONLY: false,
   hasSecret: () => false,
   withoutPermission: () => false,
-  sidebarSections: {
-    ai: 'AI',
-    core: 'Core',
-    operations: 'Operations',
-    utilities: 'Utilities',
-    workTools: 'Work',
-  },
   isMailUser: false,
   isPersonal: true,
   chatAppHref: '/chat',

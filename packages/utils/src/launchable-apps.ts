@@ -28,6 +28,8 @@ export type LaunchableApp = {
   appRoot: string;
   category: LaunchableAppCategory;
   defaultPath: string;
+  /** Path the apps gateway redirects to for an app that shares another app's origin. */
+  gatewayBasePath?: string;
   localhostOrigin?: string;
   packageName: string;
   portlessApp: Parameters<typeof getTuturuuuPortlessAppOrigin>[0];
@@ -43,8 +45,9 @@ const workspaceRootPath: LaunchableAppWorkspacePathResolver = (workspace) =>
 const workspaceTasksPath: LaunchableAppWorkspacePathResolver = (workspace) =>
   `${workspaceRootPath(workspace)}/tasks`;
 
-const workspaceDocumentsPath: LaunchableAppWorkspacePathResolver = (workspace) =>
-  `${workspaceRootPath(workspace)}/documents`;
+const workspaceDocumentsPath: LaunchableAppWorkspacePathResolver = (
+  workspace
+) => `${workspaceRootPath(workspace)}/documents`;
 
 const meetWorkspacePath: LaunchableAppWorkspacePathResolver = (workspace) =>
   `/workspace/${toWorkspaceSlug(workspace.id, {
@@ -96,6 +99,7 @@ export const LAUNCHABLE_APPS = [
     appRoot: 'apps/web',
     category: 'productivity',
     defaultPath: '/docs',
+    gatewayBasePath: '/docs',
     localhostOrigin: 'http://localhost:7803',
     packageName: '@tuturuuu/web',
     portlessApp: 'platform',

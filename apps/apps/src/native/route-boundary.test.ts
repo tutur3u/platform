@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GATEWAY_APPS } from '../lib/apps-registry';
+import { GATEWAY_APPS, type GatewayApp } from '../lib/apps-registry';
 import { canonicalLocaleRedirect, localeCookie, requestLocale } from './locale';
 import { gatewayDestination } from './redirect';
 
@@ -9,7 +9,7 @@ afterEach(() => vi.unstubAllEnvs());
 describe('Apps native route parity', () => {
   it('keeps every canonical catalogue destination and duplicate query value', () => {
     vi.stubEnv('NODE_ENV', 'production');
-    for (const app of GATEWAY_APPS) {
+    for (const app of GATEWAY_APPS as readonly GatewayApp[]) {
       const result = gatewayDestination(
         new URL(`https://apps.fixture.test/${app.slug}/a%2Fb?tag=1&tag=2`)
       );
@@ -18,7 +18,7 @@ describe('Apps native route parity', () => {
         throw new Error('Expected a registered destination');
       const target = new URL(result.href);
       expect(target.origin).toBe(new URL(app.productionUrl).origin);
-      expect(target.pathname).toBe('/a%2Fb');
+      expect(target.pathname).toBe(`${app.gatewayBasePath ?? ''}/a%2Fb`);
       expect(target.searchParams.getAll('tag')).toEqual(['1', '2']);
       expect(target.searchParams.get('source')).toBe('apps');
     }

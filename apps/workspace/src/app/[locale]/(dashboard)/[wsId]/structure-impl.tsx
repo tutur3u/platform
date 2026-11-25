@@ -40,20 +40,14 @@ import {
 import { DashboardNavigationIcon } from './navigation-icons';
 import { filterDashboardNavigationLinks } from './navigation-visibility';
 import {
+  appendArchivedNavigationLink,
   applySidebarNavigationPreferences,
   createSidebarNavigationLayoutConfigForHiddenState,
-  createSidebarNavigationLayoutConfigForPlacement,
-  MORE_TOOLS_NAVIGATION_ID,
   SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID,
   SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID,
-  type SidebarNavigationPlacement,
   serializeSidebarNavigationLayoutConfig,
 } from './sidebar-navigation-preferences';
-import { flattenToolsSection } from './sidebar-tools-section';
-import {
-  hasMultipleNavigationChildren,
-  insertArchivedNavigationLink,
-} from './structure-navigation-utils';
+import { hasMultipleNavigationChildren } from './structure-navigation-utils';
 import type { NavigationState, StructureProps } from './structure-types';
 import { WorkspaceSelectorVisibilityProvider } from './workspace-selector-visibility-context';
 
@@ -271,16 +265,29 @@ export function StructureImpl({
   );
   const effectiveNavigationLayout =
     workspaceNavigationLayout ?? accountNavigationLayout ?? null;
+  const categoryLabels = useMemo(
+    () => ({
+      ai: t('sidebar_sections.ai'),
+      communication: t('sidebar_sections.communication'),
+      files_content: t('sidebar_sections.files_content'),
+      operations: t('sidebar_sections.operations'),
+      overview: t('sidebar_sections.overview'),
+      productivity: t('sidebar_sections.productivity'),
+      utilities: t('sidebar_sections.utilities'),
+    }),
+    [t]
+  );
   const navigationPreferenceResult = useMemo(
     () =>
       applySidebarNavigationPreferences(
         hydratedLinks,
         effectiveNavigationLayout,
         {
+          categoryLabels,
           pathname,
         }
       ),
-    [effectiveNavigationLayout, hydratedLinks, pathname]
+    [categoryLabels, effectiveNavigationLayout, hydratedLinks, pathname]
   );
   const preferenceItemById = useMemo(
     () =>
@@ -324,23 +331,6 @@ export function StructureImpl({
       });
     },
   });
-  const createQuickPlacementUpdate = useCallback(
-    (id: string, placement: SidebarNavigationPlacement) => {
-      const nextConfig = createSidebarNavigationLayoutConfigForPlacement(
-        hydratedLinks,
-        effectiveNavigationLayout,
-        id,
-        placement
-      );
-
-      return {
-        id,
-        placement,
-        value: serializeSidebarNavigationLayoutConfig(nextConfig),
-      };
-    },
-    [effectiveNavigationLayout, hydratedLinks]
-  );
   const createQuickHiddenUpdate = useCallback(
     (id: string, hidden: boolean) => {
       const nextConfig = createSidebarNavigationLayoutConfigForHiddenState(
@@ -359,7 +349,7 @@ export function StructureImpl({
   );
   const preferredLinks = useMemo(() => {
     if (navigationPreferenceResult.archivedLinks.length === 0) {
-      return flattenToolsSection(navigationPreferenceResult.links);
+      return navigationPreferenceResult.links;
     }
 
     const archivedNavigationLink: NavLink = {
@@ -374,18 +364,9 @@ export function StructureImpl({
       ),
     };
 
-    return flattenToolsSection(
-      navigationPreferenceResult.links.map((link) => {
-        if (link?.id !== MORE_TOOLS_NAVIGATION_ID) return link;
-
-        return {
-          ...link,
-          children: insertArchivedNavigationLink({
-            archivedNavigationLink,
-            children: link.children ?? [],
-          }),
-        };
-      })
+    return appendArchivedNavigationLink(
+      navigationPreferenceResult.links,
+      archivedNavigationLink
     );
   }, [
     navigationPreferenceResult.archivedLinks,
@@ -396,13 +377,6 @@ export function StructureImpl({
     (linksToDecorate: (NavLink | null)[]): (NavLink | null)[] =>
       linksToDecorate.map((link) => {
         if (!link) return null;
-
-        if (link.id === MORE_TOOLS_NAVIGATION_ID) {
-          return {
-            ...link,
-            children: link.children,
-          };
-        }
 
         const archivedItems = link.preferenceArchivedItems?.map((item) => ({
           ...item,
@@ -429,10 +403,6 @@ export function StructureImpl({
             : link;
         }
 
-        const isPinned = preferenceItem.placement === 'root';
-        const nextPlacement: SidebarNavigationPlacement = isPinned
-          ? 'more'
-          : 'root';
         const pending =
           quickLayoutMutation.isPending &&
           quickLayoutMutation.variables?.id === link.id;
@@ -455,22 +425,10 @@ export function StructureImpl({
               ),
             pending,
           },
-          preferenceQuickAction: {
-            isPinned,
-            label: isPinned
-              ? t('settings.preferences.sidebar_layout.unpin_to_more')
-              : t('settings.preferences.sidebar_layout.pin_to_root'),
-            onClick: () =>
-              quickLayoutMutation.mutate(
-                createQuickPlacementUpdate(link.id!, nextPlacement)
-              ),
-            pending,
-          },
         };
       }),
     [
       createQuickHiddenUpdate,
-      createQuickPlacementUpdate,
       preferenceItemById,
       quickLayoutMutation.isPending,
       quickLayoutMutation.mutate,
@@ -819,6 +777,7 @@ export function StructureImpl({
                 wsId={wsId}
                 isCollapsed={isCollapsed}
                 links={decoratedCurrentLinks}
+                collapsibleSections
                 onSubMenuClick={handleNavChange}
                 onClick={handleSidebarNavigation}
               />

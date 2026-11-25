@@ -1,4 +1,10 @@
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import {
+  groupNavLinksByCategory,
+  type SidebarCategoryLabels,
+} from '@tuturuuu/ui/custom/sidebar-category-layout';
+
+export { appendArchivedNavigationLink } from '@tuturuuu/ui/custom/sidebar-category-layout';
 
 export const SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID = 'SIDEBAR_NAVIGATION_LAYOUT';
 export const SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID =
@@ -28,7 +34,17 @@ export interface SidebarNavigationPreferenceResult {
   archivedLinks: NavLink[];
   items: SidebarNavigationPreferenceItem[];
   links: (NavLink | null)[];
+  /** Ids placed in More, in saved-then-default order. Layout order is by category. */
+  moreIds: string[];
   normalizedConfig: SidebarNavigationLayoutConfig;
+  /** Unlocked ids placed at the root, in saved-then-default order. */
+  rootIds: string[];
+}
+
+export interface SidebarNavigationPreferenceOptions {
+  /** Translated category headers, keyed by category id. */
+  categoryLabels?: SidebarCategoryLabels;
+  pathname?: string;
 }
 
 const EMPTY_CONFIG: SidebarNavigationLayoutConfig = {
@@ -200,14 +216,11 @@ interface CollectedNavigationItem {
 
 function collectPreferenceItems(links: (NavLink | null)[]) {
   const items: CollectedNavigationItem[] = [];
-  let moreToolsTemplate: NavLink | null = null;
 
   for (const link of links) {
     if (!link) continue;
 
     if (link.id === MORE_TOOLS_NAVIGATION_ID) {
-      moreToolsTemplate = link;
-
       for (const child of link.children ?? []) {
         if (!child?.id) continue;
 
@@ -229,10 +242,7 @@ function collectPreferenceItems(links: (NavLink | null)[]) {
     });
   }
 
-  return {
-    items,
-    moreToolsTemplate,
-  };
+  return { items };
 }
 
 function filterKnownIds(ids: string[], knownIds: Set<string>) {
@@ -340,22 +350,13 @@ function buildPlacementOrder(args: {
   return result;
 }
 
-function applyMoreToolSectionLabels(items: NavLink[]): NavLink[] {
-  return items.map((item) => ({
-    ...item,
-    sectionLabel: item.preferenceSectionLabel,
-  }));
-}
-
 export function applySidebarNavigationPreferences(
   links: (NavLink | null)[],
   rawConfig: unknown,
-  options?: {
-    pathname?: string;
-  }
+  options?: SidebarNavigationPreferenceOptions
 ): SidebarNavigationPreferenceResult {
   const normalizedConfig = normalizeSidebarNavigationLayoutConfig(rawConfig);
-  const { items, moreToolsTemplate } = collectPreferenceItems(links);
+  const { items } = collectPreferenceItems(links);
   const itemById = new Map(items.map((item) => [item.link.id!, item]));
   const knownIds = new Set(itemById.keys());
   const lockedIds = items
@@ -414,37 +415,18 @@ export function applySidebarNavigationPreferences(
     itemById,
     pathname: options?.pathname,
   });
-  const sectionedMoreItems = applyMoreToolSectionLabels(moreItems);
-
-  const rootWithSeparators = cleanSeparators(
-    [
-      ...lockedRootItems,
-      lockedRootItems.length > 0 && rootItemsWithoutSettings.length > 0
-        ? null
-        : undefined,
-      ...rootItemsWithoutSettings,
-    ].filter((link): link is NavLink | null => link !== undefined)
+  const sectionedItems = groupNavLinksByCategory(
+    [...lockedRootItems, ...rootItemsWithoutSettings, ...moreItems],
+    [...rootConfigIds, ...moreConfigIds],
+    options?.categoryLabels
   );
-  const linksWithMoreTools: (NavLink | null)[] =
-    (sectionedMoreItems.length > 0 || archivedLinks.length > 0) &&
-    moreToolsTemplate
-      ? [
-          ...rootWithSeparators,
-          rootWithSeparators.length > 0 ? null : undefined,
-          {
-            ...moreToolsTemplate,
-            children: cleanSeparators(sectionedMoreItems),
-            disabled: false,
-          },
-        ].filter((link): link is NavLink | null => link !== undefined)
-      : rootWithSeparators;
   const linksWithSettingsFooter: (NavLink | null)[] = settingsLink
     ? [
-        ...linksWithMoreTools,
-        linksWithMoreTools.length > 0 ? null : undefined,
+        ...sectionedItems,
+        sectionedItems.length > 0 ? null : undefined,
         settingsLink,
       ].filter((link): link is NavLink | null => link !== undefined)
-    : linksWithMoreTools;
+    : sectionedItems;
 
   const placementById = new Map<string, SidebarNavigationPlacement>();
   for (const id of rootConfigIds) placementById.set(id, 'root');
@@ -469,11 +451,18 @@ export function applySidebarNavigationPreferences(
     archivedLinks,
     items: preferenceItems,
     links: cleanSeparators(linksWithSettingsFooter),
+    moreIds: moreItems
+      .map((link) => link.id)
+      .filter((id): id is string => Boolean(id)),
     normalizedConfig: {
       hidden: hiddenConfigIds,
       more: moreConfigIds,
       root: rootConfigIds,
     },
+    rootIds: rootItemsWithoutSettings
+      .filter((link) => !lockedIdSet.has(link.id ?? ''))
+      .map((link) => link.id)
+      .filter((id): id is string => Boolean(id)),
   };
 }
 
@@ -509,8 +498,8 @@ export function createSidebarNavigationLayoutConfigForHiddenState(
   }
 
   const applied = applySidebarNavigationPreferences(links, rawConfig);
-  const rootIds = extractRootPreferenceIds(applied.links, lockedIds);
-  const moreIds = extractMorePreferenceIds(applied.links);
+  const rootIds = [...applied.rootIds];
+  const moreIds = [...applied.moreIds];
   const hiddenIds = filterKnownIds(normalizedConfig.hidden, knownIds).filter(
     (hiddenId) => hiddenId !== id && !lockedIds.has(hiddenId)
   );
@@ -571,32 +560,6 @@ export function createSidebarNavigationLayoutConfigForHiddenState(
   };
 }
 
-function extractRootPreferenceIds(
-  links: (NavLink | null)[],
-  lockedIds: Set<string>
-) {
-  return links
-    .filter((link): link is NavLink => Boolean(link))
-    .filter(
-      (link) =>
-        link.id &&
-        link.id !== MORE_TOOLS_NAVIGATION_ID &&
-        !lockedIds.has(link.id)
-    )
-    .map((link) => link.id!);
-}
-
-function extractMorePreferenceIds(links: (NavLink | null)[]) {
-  const moreTools = links.find((link) => link?.id === MORE_TOOLS_NAVIGATION_ID);
-
-  return (
-    moreTools?.children
-      ?.filter((link): link is NavLink => Boolean(link))
-      .map((link) => link.id)
-      .filter((id): id is string => Boolean(id)) ?? []
-  );
-}
-
 export function createSidebarNavigationLayoutConfigForPlacement(
   links: (NavLink | null)[],
   rawConfig: unknown,
@@ -631,8 +594,8 @@ export function createSidebarNavigationLayoutConfigForPlacement(
   }
 
   const applied = applySidebarNavigationPreferences(links, rawConfig);
-  const rootIds = extractRootPreferenceIds(applied.links, lockedIds);
-  const moreIds = extractMorePreferenceIds(applied.links);
+  const rootIds = [...applied.rootIds];
+  const moreIds = [...applied.moreIds];
   const hiddenIds = filterKnownIds(
     normalizedConfig.hidden,
     new Set(itemById.keys())
@@ -671,27 +634,4 @@ export function createSidebarNavigationLayoutConfigForPlacement(
         ? uniqueIds(insertRootNavigationId(rootWithoutTarget, id))
         : uniqueIds(rootWithoutTarget),
   };
-}
-
-export function promoteArchivedWhenMoreToolsOnlyHasArchive(
-  links: (NavLink | null)[]
-): (NavLink | null)[] {
-  return links.flatMap((link) => {
-    if (!link || link.id !== MORE_TOOLS_NAVIGATION_ID) {
-      return [link];
-    }
-
-    const nonNullChildren = (link.children ?? []).filter(
-      (child): child is NavLink => Boolean(child)
-    );
-
-    if (
-      nonNullChildren.length === 1 &&
-      nonNullChildren[0]?.id === ARCHIVED_NAVIGATION_ID
-    ) {
-      return [nonNullChildren[0]];
-    }
-
-    return [link];
-  });
 }
