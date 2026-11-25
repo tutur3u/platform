@@ -427,7 +427,8 @@ void main() {
   for (final meanwhile in ['nothing', 'another opened', 'folder changed']) {
     testWidgets('reopening a conversation waits for its held Archive to land '
         '(meanwhile: $meanwhile)', (tester) async {
-      tester.view.physicalSize = const Size(1194, 834);
+      // A short landscape window keeps the split pane and the folder picker.
+      tester.view.physicalSize = const Size(800, 580);
       f.starred.add('First');
       final archive = Completer<void>();
       Future<void> archiveFirst() => f.repository.changeState(

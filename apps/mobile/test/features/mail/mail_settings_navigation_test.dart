@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -72,7 +73,18 @@ void main() {
     );
     await tester.tap(find.text('Open settings'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, 'Synthetic sender');
+    final sender = find.byWidgetPredicate(
+      (widget) => widget is AppTextField && widget.label == 'Sender name',
+    );
+    await tester.scrollUntilVisible(
+      sender,
+      150,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(
+      find.descendant(of: sender, matching: find.byType(TextField)),
+      'Synthetic sender',
+    );
     await tester.pump();
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();

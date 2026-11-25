@@ -10,6 +10,7 @@ import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_quick_filter.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
+import 'package:mobile/features/mail/view/mail_reading_preferences.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
@@ -52,7 +53,9 @@ void main() {
   final trashed = <String>{};
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({
+      MailReadingPreferences.afterArchiveKey: MailAfterArchive.list.name,
+    });
     queries.clear();
     savedViews.clear();
     trashed.clear();

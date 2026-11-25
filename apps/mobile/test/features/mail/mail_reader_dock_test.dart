@@ -154,9 +154,10 @@ void main() {
     addTearDown(() => MailAppearancePreference.instance.value = previous);
 
     expect(appearance.options.map((option) => option.id), [
+      'auto',
+      'dark',
       'original',
       'light',
-      'dark',
     ]);
     appearance.onSelected('dark');
     await tester.pumpAndSettle();

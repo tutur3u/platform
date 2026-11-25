@@ -124,7 +124,16 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.slash);
     await tester.pumpAndSettle();
-    final search = tester.widget<EditableText>(find.byType(EditableText));
+    final search = tester.widget<EditableText>(
+      find.descendant(
+        of: find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration?.hintText == 'Search mail',
+        ),
+        matching: find.byType(EditableText),
+      ),
+    );
     expect(search.focusNode.hasFocus, isTrue);
     await tester.sendKeyEvent(LogicalKeyboardKey.keyJ);
     await tester.pumpAndSettle();

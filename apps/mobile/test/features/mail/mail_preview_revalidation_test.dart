@@ -195,7 +195,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(MailReader), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Mailbox').first);
+    await tester.tap(find.text('synthetic@example.invalid'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('second@example.invalid'));
     await tester.pumpAndSettle();

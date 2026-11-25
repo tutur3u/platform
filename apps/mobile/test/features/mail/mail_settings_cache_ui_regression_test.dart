@@ -22,6 +22,20 @@ import '../../helpers/pump_app.dart';
 
 class _Repository extends Mock implements MailRepository {}
 
+final Finder _senderField = find.byWidgetPredicate(
+  (widget) => widget is AppTextField && widget.label == 'Sender name',
+);
+final Finder _senderInput = find.descendant(
+  of: _senderField,
+  matching: find.byType(TextField),
+);
+
+Future<void> _scrollToSender(WidgetTester tester) => tester.scrollUntilVisible(
+  _senderField,
+  150,
+  scrollable: find.byType(Scrollable).first,
+);
+
 void main() {
   late _Repository repository;
   setUp(() {
@@ -53,7 +67,8 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      final sender = find.byType(AppTextField).first;
+      await _scrollToSender(tester);
+      final sender = _senderField;
       expect(
         tester.widget<AppTextField>(sender).controller!.text,
         'Stored sender',
@@ -94,7 +109,8 @@ void main() {
       );
       await tester.pump();
       await tester.pump();
-      expect(find.byType(AppTextField), findsWidgets);
+      await _scrollToSender(tester);
+      expect(_senderField, findsOneWidget);
       refresh.completeError(
         ApiException(message: 'Denied', statusCode: status),
       );
@@ -140,6 +156,7 @@ void main() {
       );
       expect(editor.canManage, isFalse);
       expect(editor.readOnlySnapshot, isTrue);
+      await _scrollToSender(tester);
       final serverFields = tester.widgetList<AppTextField>(
         find.byType(AppTextField),
       );
@@ -196,7 +213,8 @@ void main() {
     );
     await tester.tap(find.text('Open'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).first, 'Saved sender');
+    await _scrollToSender(tester);
+    await tester.enterText(_senderInput, 'Saved sender');
     await tester.pump();
     final save = actions.state
         .resolveForLocation('/mail')
@@ -264,19 +282,23 @@ void main() {
       );
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, 'Queued sender');
+      await _scrollToSender(tester);
+      await tester.enterText(_senderInput, 'Queued sender');
       await tester.pump();
       await tester.tap(find.byTooltip('Save'));
       await tester.pumpAndSettle();
       expect(find.byType(MailSettingsPage), findsOneWidget);
-      expect(
-        find.text(
-          status == PendingMutationStatus.queued
-              ? 'Waiting to sync'
-              : 'Needs review before syncing',
-        ),
-        findsOneWidget,
+      final statusText = find.text(
+        status == PendingMutationStatus.queued
+            ? 'Waiting to sync'
+            : 'Needs review before syncing',
       );
+      await tester.scrollUntilVisible(
+        statusText,
+        -100,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(statusText, findsOneWidget);
       expect(mutations.value.single.id, 'operation');
       await tester.pumpWidget(const SizedBox.shrink());
     });
@@ -349,30 +371,22 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
+        await _scrollToSender(tester);
         if (!restored) {
-          await tester.enterText(find.byType(TextField).first, 'Queued');
+          await tester.enterText(_senderInput, 'Queued');
           await tester.tap(find.byTooltip('Save'));
           await tester.pumpAndSettle();
           expect(payloads.single, {'senderName': 'Queued'});
         }
-        expect(
-          tester.widget<AppTextField>(find.byType(AppTextField).first).enabled,
-          isFalse,
-        );
+        expect(tester.widget<AppTextField>(_senderField).enabled, isFalse);
         refresh = Completer<Map<String, dynamic>>();
         mutations.value = [];
         await tester.pump();
-        expect(
-          tester.widget<AppTextField>(find.byType(AppTextField).first).enabled,
-          isFalse,
-        );
+        expect(tester.widget<AppTextField>(_senderField).enabled, isFalse);
         server = {'senderName': 'New web sender'};
         refresh.complete({'settings': server});
         await tester.pumpAndSettle();
-        expect(
-          tester.widget<AppTextField>(find.byType(AppTextField).first).enabled,
-          isTrue,
-        );
+        expect(tester.widget<AppTextField>(_senderField).enabled, isTrue);
         final instructions = find.byKey(
           const ValueKey('mail-settings-instructions'),
         );
@@ -425,18 +439,13 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pumpAndSettle();
     verify(() => repository.settingsBootstrap('ws')).called(1);
+    await _scrollToSender(tester);
+    expect(tester.widget<AppTextField>(_senderField).enabled, isTrue);
     expect(
-      tester.widget<AppTextField>(find.byType(AppTextField).first).enabled,
-      isTrue,
-    );
-    expect(
-      tester
-          .widget<AppTextField>(find.byType(AppTextField).first)
-          .controller!
-          .text,
+      tester.widget<AppTextField>(_senderField).controller!.text,
       'Restored',
     );
-    await tester.enterText(find.byType(TextField).first, 'Recovered edit');
+    await tester.enterText(_senderInput, 'Recovered edit');
     await tester.tap(find.byTooltip('Save'));
     await tester.pumpAndSettle();
     verify(

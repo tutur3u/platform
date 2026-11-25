@@ -13,6 +13,7 @@ import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -274,7 +275,14 @@ void main() {
     final ids = actions.state
         .resolveForLocation(Routes.mail)
         .map((action) => action.id);
-    expect(ids, contains('mail-compose'));
+    expect(ids, contains('mail-search'));
+    expect(ids, isNot(contains('mail-compose')));
+    final compose = tester
+        .widget<ShellMiniNav>(find.byType(ShellMiniNav))
+        .items
+        .singleWhere((item) => item.id == 'compose');
+    expect(compose.label, 'Compose');
+    expect(compose.onPressed, isNotNull);
     expect(ids, isNot(contains('mail-primary-action')));
     expect(titles.state.resolveForLocation(Routes.mail), 'Inbox');
     final back = actions.state.backForLocation(Routes.mail);
