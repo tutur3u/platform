@@ -1,128 +1,47 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
-import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
-import 'package:mobile/features/assistant/models/assistant_models.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_controls.dart';
-import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_panel.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sidebar.dart';
-import 'package:mobile/features/assistant/widgets/assistant_home_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_quick_actions.dart';
 import 'package:mobile/features/assistant/widgets/assistant_recent_conversations.dart';
 
 import '../../../helpers/design_render_harness.dart';
-
-final _now = DateTime(2030, 4, 3, 9, 30);
-
-final _history = [
-  AssistantChatRecord(
-    id: 'chat-1',
-    title: 'Launch follow-up',
-    preview: 'I drafted the next steps for the launch.',
-    updatedAt: DateTime(2030, 4, 3, 8, 10),
-  ),
-  AssistantChatRecord(
-    id: 'chat-2',
-    title: 'Sprint planning for the April release',
-    preview: 'A summary of this week’s priorities.',
-    updatedAt: DateTime(2030, 4, 2, 11, 25),
-  ),
-  AssistantChatRecord(
-    id: 'chat-3',
-    title: 'Quarterly budget review',
-    preview: 'Compare spending against the plan.',
-    updatedAt: DateTime(2030, 3, 12, 16),
-  ),
-];
+import '../view/assistant_s5_shell_harness.dart';
 
 const _sizes = {
   'phone': Size(390, 844),
+  'phone-landscape': Size(932, 430),
   'tablet': Size(834, 1194),
   'desktop': Size(1440, 900),
 };
 
-/// The Mira new-chat screen as the page composes it: history beside the
-/// thread on wide windows, the home content, and the composer surface with
-/// its prompts and model controls.
-class _Scene extends StatelessWidget {
-  const _Scene({required this.onPrompt, required this.onMode});
-
-  final ValueChanged<String> onPrompt;
-  final ValueChanged<AssistantThinkingMode> onMode;
-
-  @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final wide = constraints.maxWidth >= assistantHistorySidebarMinWidth;
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (wide)
-            SizedBox(
-              width: assistantHistorySidebarWidth(constraints.maxWidth),
-              child: AssistantHistorySidebar(
-                history: _history,
-                status: AssistantHistoryStatus.ready,
-                activeChatId: 'chat-1',
-                now: _now,
-                topInset: AppSpacing.lg,
-                onSelect: (_) {},
-                onOpenAll: () {},
-                onRetry: () async {},
-              ),
-            ),
-          Expanded(
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      AppSpacing.xxl,
-                      AppSpacing.lg,
-                      240,
-                    ),
-                    child: AssistantHomeView(
-                      assistantName: 'Mira',
-                      now: _now,
-                      onPromptSelected: onPrompt,
-                      recent: wide
-                          ? null
-                          : AssistantRecentConversations(
-                              history: _history,
-                              status: AssistantHistoryStatus.ready,
-                              now: _now,
-                              onSelect: (_) {},
-                              onSeeAll: () {},
-                              onRetry: () async {},
-                            ),
-                    ),
-                  ),
-                ),
-                AssistantComposerPanel(
-                  showSuggestions: false,
-                  onPromptSelected: onPrompt,
-                  onHeightChanged: (_) {},
-                  controls: AssistantComposerControls(
-                    shellState: const AssistantShellState(),
-                    onOpenModels: null,
-                    onThinkingModeChanged: (mode) async => onMode(mode),
-                  ),
-                  child: Builder(
-                    builder: (context) =>
-                        SizedBox(height: assistantComposerHeight(context)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    },
-  );
+/// Writes the real page's render boundary to `DESIGN_RENDER_DIR`.
+Future<void> _capture(WidgetTester tester, String name) async {
+  final output = DesignRender.outputDir;
+  if (output == null) return;
+  final ratio =
+      double.tryParse(
+        Platform.environment['DESIGN_RENDER_PIXEL_RATIO'] ?? '',
+      ) ??
+      1;
+  await tester.runAsync(() async {
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(assistantBoundary),
+    );
+    final image = await boundary.toImage(pixelRatio: ratio);
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    final file = File('$output/$name.png');
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes!.buffer.asUint8List());
+    image.dispose();
+  });
 }
 
 Future<void> _pump(WidgetTester tester, Widget child, Brightness b) async {
@@ -136,25 +55,24 @@ Future<void> _pump(WidgetTester tester, Widget child, Brightness b) async {
 
 void main() {
   setUpAll(DesignRender.loadFonts);
+  setUpAssistantShellHarness();
 
+  // The real Mira page in the shell, on a new chat, at each window class.
   for (final MapEntry(key: device, value: size) in _sizes.entries) {
-    for (final brightness in [Brightness.light, Brightness.dark]) {
+    for (final brightness in Brightness.values) {
       testWidgets('Mira home $device ${brightness.name}', (tester) async {
         DesignRender.setSize(tester, size);
-        final prompts = <String>[];
-        final modes = <AssistantThinkingMode>[];
-        await _pump(
+        await pumpAssistantShell(
           tester,
-          _Scene(onPrompt: prompts.add, onMode: modes.add),
-          brightness,
+          repository: AssistantShellFixtureRepository(),
+          brightness: brightness,
+          storedId: null,
         );
         expect(tester.takeException(), isNull);
-        await DesignRender.capture(
-          tester,
-          'assistant-home-$device-${brightness.name}',
-        );
+        await _capture(tester, 'assistant-home-$device-${brightness.name}');
 
-        final wide = device != 'phone';
+        // History sits beside the thread only on tablet-class windows.
+        final wide = device == 'tablet' || device == 'desktop';
         expect(
           find.byKey(const ValueKey('assistant-history-sidebar')),
           wide ? findsOneWidget : findsNothing,
@@ -164,23 +82,78 @@ void main() {
           wide ? findsNothing : findsOneWidget,
         );
 
+        // Four quick actions in a row from 600dp of grid width, otherwise
+        // two rows of two.
         Rect tile(String id) =>
             tester.getRect(find.byKey(ValueKey('assistant-quick-action-$id')));
+        final grid = tester.getRect(
+          find.byKey(const ValueKey('assistant-quick-actions')),
+        );
         expect(tile('tasks').top, tile('calendar').top);
-        if (device == 'desktop') {
+        if (grid.width >= 600) {
           expect(tile('finance').top, tile('calendar').top);
         } else {
           expect(tile('focus').top, greaterThan(tile('calendar').bottom));
+          expect(tile('focus').height, tile('tasks').height);
         }
-
+        // Short windows scroll the home; bring the tile clear of the
+        // composer before tapping it.
+        final cardTop = tester
+            .getRect(
+              find.descendant(
+                of: find.byType(AssistantComposerPanel),
+                matching: find.byType(AppCard),
+              ),
+            )
+            .top;
+        final overlap = tile('calendar').bottom - cardTop;
+        if (overlap > 0) {
+          final position = tester
+              .state<ScrollableState>(
+                find.descendant(
+                  of: find.byType(CustomScrollView),
+                  matching: find.byType(Scrollable),
+                ),
+              )
+              .position;
+          position.jumpTo(position.pixels + overlap + AppSpacing.sm);
+          await tester.pump();
+        }
+        expect(tile('calendar').bottom, lessThanOrEqualTo(cardTop));
         await tester.tap(
           find.byKey(const ValueKey('assistant-quick-action-calendar')),
         );
-        expect(prompts.last, 'Summarize my calendar for today');
+        await tester.pump();
+        expect(
+          tester.widget<TextField>(find.byType(TextField)).controller?.text,
+          'Summarize my calendar for today',
+        );
+
+        // One prompt surface: no starter chips, only the model control, and
+        // no response-mode chip whatever mode a restored chat carries.
         expect(
           find.byKey(const ValueKey('assistant-starter-prompts')),
           findsNothing,
         );
+        expect(
+          find.byKey(const ValueKey('assistant-composer-model')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('assistant-composer-mode')),
+          findsNothing,
+        );
+        final composer = tester.getRect(
+          find.descendant(
+            of: find.byType(AssistantComposerPanel),
+            matching: find.byType(AppCard),
+          ),
+        );
+        final controls = tester.getRect(
+          find.byKey(const ValueKey('assistant-composer-controls')),
+        );
+        expect(controls.bottom, lessThanOrEqualTo(composer.bottom));
+
         // The outline paints over the card fill so it stays visible.
         final outline = tester.widget<DecoratedBox>(
           find.byKey(const ValueKey('assistant-composer-outline')),
@@ -195,24 +168,12 @@ void main() {
               ? colors.mutedForeground.withValues(alpha: 0.4)
               : colors.border,
         );
-
-        final composer = tester.getRect(
-          find.descendant(
-            of: find.byType(AssistantComposerPanel),
-            matching: find.byType(AppCard),
-          ),
-        );
-        final controls = tester.getRect(
-          find.byKey(const ValueKey('assistant-composer-controls')),
-        );
-        expect(controls.bottom, lessThanOrEqualTo(composer.bottom));
-        await tester.tap(find.byKey(const ValueKey('assistant-composer-mode')));
-        expect(modes, [AssistantThinkingMode.fast]);
         expect(tester.takeException(), isNull);
       });
     }
   }
 
+  // Component states rendered on their own.
   group('history states', () {
     Widget sidebar(AssistantHistoryStatus status, Future<void> Function() r) =>
         SizedBox(

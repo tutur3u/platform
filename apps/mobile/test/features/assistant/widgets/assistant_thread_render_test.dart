@@ -63,21 +63,22 @@ const _sizes = {
   'desktop': Size(1440, 900),
 };
 
-Widget _thread(AssistantChatState state) => SingleChildScrollView(
-  padding: const EdgeInsets.all(AppSpacing.lg),
-  child: Center(
-    child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 760),
-      child: AssistantTranscriptSection(
-        chatState: state,
-        liveState: const AssistantLiveState(),
-        assistantName: 'Mira',
-        documentLayout: true,
-        onRetry: () {},
+Widget _thread(AssistantChatState state, {VoidCallback? onRetry}) =>
+    SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: AssistantTranscriptSection(
+            chatState: state,
+            liveState: const AssistantLiveState(),
+            assistantName: 'Mira',
+            documentLayout: true,
+            onRetry: onRetry ?? () {},
+          ),
+        ),
       ),
-    ),
-  ),
-);
+    );
 
 Future<void> _pump(WidgetTester tester, Widget child, Brightness b) async {
   final settings = DesignRender.themes[b.name]!.$1;
@@ -156,9 +157,11 @@ void main() {
 
   testWidgets('reply failure renders a retryable error card', (tester) async {
     DesignRender.setSize(tester, _sizes['phone']!);
+    var retries = 0;
     await _pump(
       tester,
       _thread(
+        onRetry: () => retries++,
         const AssistantChatState(
           fallbackChatId: 'chat',
           status: AssistantChatStatus.error,
@@ -180,6 +183,13 @@ void main() {
       findsOneWidget,
     );
     await DesignRender.capture(tester, 'assistant-thread-error-dark');
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('assistant-reply-failure-card')),
+        matching: find.byTooltip('Retry'),
+      ),
+    );
+    expect(retries, 1);
   });
 
   testWidgets('streaming dots stay still with reduced motion', (tester) async {
