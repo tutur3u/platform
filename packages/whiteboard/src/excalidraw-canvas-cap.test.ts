@@ -11,11 +11,13 @@ import { describe, expect, it } from 'vitest';
  * - a cached element canvas never grows past its 100%-zoom size, except an
  *   image's, and an arrow's label canvas stays within Excalidraw's own area
  *   and side limits;
- * - a cached canvas is rebuilt only when its effective scale changes;
- * - drawing a cached canvas copies only what lands on the visible canvas.
- * These tests run that code from each build the app loads. After an upgrade
- * the chunk names change and these tests fail: re-apply the patch and update
- * the chunk and helper names here.
+ * - a cached canvas is rebuilt only when its effective scale changes, and the
+ *   scale is recomputed only when the zoom changes;
+ * - a frame draws at most the 24 topmost viewport-covering elements.
+ * These tests run that code from each build the app loads, at a device pixel
+ * ratio of two (the server's guest budget measures at three). After an
+ * upgrade the chunk names change and these tests fail: re-apply the patch and
+ * update the chunk and helper names here.
  */
 const AREA_LIMIT = 16_777_216;
 const SIDE_LIMIT = 32_767;
@@ -103,6 +105,7 @@ type Build = (typeof BUILDS)[number];
 /** A build's sizing and cache functions, run with their helpers stubbed. */
 function load({ file, sizing, cache, names }: Build) {
   let builds = 0;
+  let sizings = 0;
   const context: Record<string, unknown> = {
     window: { devicePixelRatio: DPR },
     [names.padding]: () => 20,
@@ -143,7 +146,18 @@ function load({ file, sizing, cache, names }: Build) {
     map: unknown,
     zoom: { value: number }
   ) => Size;
-  context[names.sizing] = size;
+  // The patch's appended helpers, which the cache check calls.
+  const text = readFileSync(join(packageRoot, file), 'utf8');
+  if (text.includes('/* tuturuuu-lod:start */'))
+    runInNewContext(
+      slice(file, '/* tuturuuu-lod:start */', '/* tuturuuu-lod:end */'),
+      context
+    );
+  // The cache check's own calls are counted; the stub above is not.
+  context[names.sizing] = (...args: Parameters<typeof size>) => {
+    sizings++;
+    return size(...args);
+  };
   const cached = runInNewContext(`(${slice(file, ...cache)})`, context) as (
     element: Shape,
     map: unknown,
@@ -153,45 +167,40 @@ function load({ file, sizing, cache, names }: Build) {
   return {
     size: (element: Shape, zoom: number) =>
       size(element, new Map(), { value: zoom }),
-    /** Draws `element` at `zoom` through the cache; returns the rebuilds. */
+    /** Draws `element` at `zoom` through the cache. */
     draw(element: Shape, zoom: number) {
       cached(element, new Map(), {}, { zoom: { value: zoom }, theme: 'l' });
-      return builds;
+      return { builds, sizings };
     },
   };
 }
 
-type Draw = (
-  context: unknown,
-  image: { width: number; height: number },
-  dx: number,
-  dy: number,
-  dw: number,
-  dh: number
-) => void;
+type Box = [number, number, number, number];
+type Skip = (
+  elements: readonly Box[],
+  coordsOf: (element: Box) => Box,
+  appState: unknown,
+  isExporting: boolean
+) => Set<Box>;
 
-/** The clipped draw the patch appends to `file`. */
-function clippedDraw(file: string): Draw {
+/** The frame's skip rule the patch appends to `file`. */
+function coveringToSkip(file: string): Skip {
   const source = slice(
     file,
-    '/* tuturuuu-draw-clipped:start */',
-    '/* tuturuuu-draw-clipped:end */'
+    '/* tuturuuu-lod:start */',
+    '/* tuturuuu-lod:end */'
   );
-  return runInNewContext(`${source};__ttrDrawClipped`, {}) as Draw;
+  return runInNewContext(`${source};__ttrCoveringToSkip`, {}) as Skip;
 }
 
-/** A 1920 by 1080 canvas under `transform`, recording drawImage calls. */
-function screen(transform: Record<'a' | 'b' | 'c' | 'd' | 'e' | 'f', number>) {
-  const calls: number[][] = [];
-  return {
-    calls,
-    context: {
-      canvas: { width: 1920, height: 1080 },
-      getTransform: () => transform,
-      drawImage: (_: unknown, ...args: number[]) => calls.push(args),
-    },
-  };
-}
+/** A 1920 by 1080 view at `zoom`, scrolled to the scene origin. */
+const view = (zoom: number) => ({
+  zoom: { value: zoom },
+  width: 1920,
+  height: 1080,
+  scrollX: 0,
+  scrollY: 0,
+});
 
 describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
   const { size, draw } = load(build);
@@ -236,45 +245,73 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
 
   it('rebuilds a cached canvas only when its scale changes', () => {
     const box = { type: 'rectangle', width: 300, height: 200, angle: 0 };
-    expect(draw(box, 2)).toBe(1);
-    // Zoom 2 and 3 both cache at 100%: nothing to rebuild.
-    expect(draw(box, 3)).toBe(1);
-    expect(draw(box, 1)).toBe(1);
-    expect(draw(box, 0.5)).toBe(2);
-    expect(draw(box, 0.5)).toBe(2);
+    expect(draw(box, 2)).toEqual({ builds: 1, sizings: 0 });
+    // The same zoom again: no scale check at all.
+    expect(draw(box, 2)).toEqual({ builds: 1, sizings: 0 });
+    // Zoom 2 and 3 both cache at 100%: one check, nothing to rebuild, and
+    // the new zoom is recorded so the next frame skips the check.
+    expect(draw(box, 3)).toEqual({ builds: 1, sizings: 1 });
+    expect(draw(box, 3)).toEqual({ builds: 1, sizings: 1 });
+    expect(draw(box, 1)).toEqual({ builds: 1, sizings: 2 });
+    expect(draw(box, 0.5)).toEqual({ builds: 2, sizings: 3 });
+    expect(draw(box, 0.5)).toEqual({ builds: 2, sizings: 3 });
   });
 
-  describe('clipped draw at 10x zoom', () => {
-    const drawClipped = () => clippedDraw(build.file);
-    const image = { width: 4096, height: 4096 };
-    const zoomed = { a: 10, b: 0, c: 0, d: 10, e: -20_000, f: -10_000 };
+  describe('viewport-covering elements per frame', () => {
+    const skip = (
+      elements: readonly Box[],
+      zoom = 10,
+      exporting = false
+    ) =>
+      coveringToSkip(build.file)(
+        elements,
+        (element) => element,
+        view(zoom),
+        exporting
+      );
+    // At 10x a 1920 by 1080 view shows 192 by 108 scene units.
+    const stack = (count: number): Box[] =>
+      Array.from({ length: count }, (_, i) => [-i, -i, 1000, 1000]);
 
-    it('copies at most a viewport of pixels from the matching source', () => {
-      const { calls, context } = screen(zoomed);
-      drawClipped()(context, image, 0, 0, 4096, 4096);
-      const [sx, sy, sw, sh, x, y, w, h] = calls[0]!;
-      expect([x, y, w, h]).toEqual([2000, 1000, 192, 108]);
-      expect(w! * 10 * h! * 10).toBeLessThanOrEqual(1920 * 1080);
-      // The destination is the same size as the source here.
-      expect([sx, sy, sw, sh]).toEqual([2000, 1000, 192, 108]);
+    it('draws only the 24 topmost of 1,000 stacked covering elements', () => {
+      const elements = stack(1000);
+      const skipped = skip(elements);
+      const drawn = elements.filter((element) => !skipped.has(element));
+      expect(drawn).toHaveLength(24);
+      expect(drawn).toEqual(elements.slice(-24));
     });
 
-    it('draws a visible element whole and skips one off screen', () => {
-      const { calls, context } = screen(zoomed);
-      drawClipped()(context, image, 2010, 1010, 10, 10);
-      expect(calls).toEqual([[2010, 1010, 10, 10]]);
-      drawClipped()(context, image, 0, 0, 100, 100);
-      expect(calls).toHaveLength(1);
+    it('always draws small elements, wherever they sit in the stack', () => {
+      const elements = stack(100).flatMap((element, i): Box[] => [
+        element,
+        [i, i, i + 10, i + 10],
+      ]);
+      const skipped = skip(elements);
+      expect(skipped.size).toBe(100 - 24);
+      for (const [x1, , x2] of skipped) expect(x2 - x1).toBeGreaterThan(500);
     });
 
-    it('bounds a rotated draw by the rotated viewport', () => {
-      const r = Math.SQRT1_2 * 10;
-      const turned = { a: r, b: r, c: -r, d: r, e: 0, f: 0 };
-      const { calls, context } = screen(turned);
-      drawClipped()(context, image, -5000, -5000, 10_000, 10_000);
-      const [, , , , , , w, h] = calls[0]!;
-      // The viewport turned 45 degrees spans (1920 + 1080) / sqrt(2) a side.
-      expect(w! * h! * 100).toBeLessThanOrEqual((1920 + 1080) ** 2 / 2 + 1);
+    it('counts only what covers half the view, at the current zoom', () => {
+      // A third of the view, inside it: never covering.
+      const third = stack(1000).map((): Box => [0, 0, 64, 108]);
+      expect(skip(third).size).toBe(0);
+      // Zoomed out, the same stack fits in the view and nothing is skipped.
+      expect(skip(stack(1000), 0.5).size).toBe(0);
+      // Exactly 24 covering elements all draw; an export draws everything.
+      expect(skip(stack(24)).size).toBe(0);
+      expect(skip(stack(1000), 10, true).size).toBe(0);
+    });
+
+    it('is wired into the static scene before each element draws', () => {
+      const text = readFileSync(join(packageRoot, build.file), 'utf8');
+      const calls = text.split('__ttrCoveringToSkip(').length - 1;
+      // The declaration and one call per build.
+      expect(calls).toBe(2);
+      expect(text).toContain(
+        build.build === 'dev'
+          ? 'if (__ttrSkipped.has(element)) {'
+          : 'n.has(E.containerId)||__ttrSkip.has(E))return;'
+      );
     });
   });
 });
