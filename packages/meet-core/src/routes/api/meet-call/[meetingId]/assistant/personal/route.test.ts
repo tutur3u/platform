@@ -7,6 +7,7 @@ const fixture = vi.hoisted(() => ({
   context: vi.fn(),
   forward: vi.fn(),
   waitUntil: vi.fn(),
+  roomAction: vi.fn(),
   shared: false,
   sharedAt: undefined as number | undefined,
 }));
@@ -27,6 +28,7 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   },
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
+  roomServiceFailureAction: fixture.roomAction,
   roomRoute: async (
     _request: Request,
     meetingId: string,
@@ -41,8 +43,12 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
         })
       );
     } catch (error) {
-      const problem = error as { status: number; code?: string };
-      return Response.json({ code: problem.code }, { status: problem.status });
+      const problem = error as { status?: number; code?: string };
+      // A route that leaks an untyped error would answer a generic 500.
+      return Response.json(
+        { code: problem.code },
+        { status: problem.status ?? 500 }
+      );
     }
   },
 }));
@@ -164,4 +170,52 @@ it('forwards a shared tutor chat without holding the answer', async () => {
   expect(fixture.waitUntil).toHaveBeenCalledWith(
     fixture.forward.mock.results[0]?.value
   );
+});
+
+it('types a failed room action as a retryable 503, never a generic 500', async () => {
+  const failure = new MeetCallAccessError(500, 'Room action is unavailable');
+  fixture.privateRequest.mockRejectedValue(failure);
+  fixture.roomAction.mockImplementation((error: unknown) =>
+    error === failure ? 'personal.begin' : undefined
+  );
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const response = await ask();
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    code: 'MIRA_PRIVATE_ROOM_UNAVAILABLE',
+  });
+  // Only the stage, room action and error class; never the question.
+  expect(errors).toHaveBeenCalledWith('Private Mira answer failed', {
+    stage: 'answer',
+    action: 'personal.begin',
+    name: 'Error',
+  });
+  expect(JSON.stringify(errors.mock.calls)).not.toContain('Hello');
+  errors.mockRestore();
+});
+
+it('types an unexpected failure with a stable code', async () => {
+  fixture.privateRequest.mockRejectedValue(new TypeError('provider broke'));
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const response = await ask();
+  expect(response.status).toBe(500);
+  expect(await response.json()).toEqual({ code: 'MIRA_PRIVATE_FAILED' });
+  expect(errors).toHaveBeenCalledWith('Private Mira answer failed', {
+    stage: 'answer',
+    action: undefined,
+    name: 'TypeError',
+  });
+  errors.mockRestore();
+});
+
+it('answers when the runtime returns the bindings without a Promise', async () => {
+  // The native Meet Worker's shim once did; `.catch` on it was a TypeError.
+  fixture.context.mockReturnValue({
+    env: { MEET_AI_DISABLED: 'false', GOOGLE_GENERATIVE_AI_API_KEY: 'test' },
+    ctx: { waitUntil: fixture.waitUntil },
+  });
+  fixture.privateRequest.mockResolvedValue({ text: 'A private reply' });
+  const response = await ask();
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ text: 'A private reply' });
 });

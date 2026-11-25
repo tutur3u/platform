@@ -46,7 +46,9 @@ const privateFailureKeys = {
   MIRA_CREDITS_UNAVAILABLE: 'personal_credits_unavailable',
   MIRA_DEPLOYMENT_DISABLED: 'personal_deployment_unavailable',
   MIRA_DEPLOYMENT_UNAVAILABLE: 'personal_deployment_unavailable',
+  MIRA_PRIVATE_FAILED: 'personal_answer_failed',
   MIRA_PRIVATE_OFF: 'personal_off_in_meeting',
+  MIRA_PRIVATE_ROOM_UNAVAILABLE: 'personal_room_unavailable',
   MIRA_PROVIDER_UNAVAILABLE: 'personal_provider_unavailable',
   MIRA_WORKSPACE_UNAVAILABLE: 'personal_workspace_unavailable',
 } as const;

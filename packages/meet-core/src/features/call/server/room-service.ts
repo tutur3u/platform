@@ -60,6 +60,50 @@ export const ROOM_REFUSAL_CODES: ReadonlySet<string> = new Set([
   'MIRA_ROOM_STALE',
 ]);
 
+/**
+ * A room-service call that failed. It keeps the room action's name for logs
+ * and for routes that map it to their own refusal; never the command body.
+ */
+export class MeetRoomServiceError extends MeetCallAccessError {
+  constructor(
+    status: number,
+    public action: string,
+    code?: string,
+    retryAfterSeconds?: number
+  ) {
+    super(status, 'Room action is unavailable', code, retryAfterSeconds);
+    this.name = 'MeetRoomServiceError';
+  }
+}
+
+const ROOM_ACTION = Symbol.for('tuturuuu.meet.roomServiceAction');
+
+function tagRoomServiceAction(error: unknown, action: string) {
+  if (error && typeof error === 'object')
+    Reflect.set(error, ROOM_ACTION, action);
+  return error;
+}
+
+/** The room action a room-service failure came from, if it came from one. */
+export function roomServiceFailureAction(error: unknown) {
+  if (error instanceof MeetRoomServiceError) return error.action;
+  const action =
+    error && typeof error === 'object'
+      ? Reflect.get(error, ROOM_ACTION)
+      : undefined;
+  return typeof action === 'string' ? action : undefined;
+}
+
+function roomActionName(command: unknown) {
+  const action =
+    command && typeof command === 'object' && 'action' in command
+      ? command.action
+      : undefined;
+  return typeof action === 'string' && /^[\w.-]{1,64}$/u.test(action)
+    ? action
+    : 'unknown';
+}
+
 export async function callRoomService<T>(
   access: MeetCallRouteAccess,
   command: unknown,
@@ -98,6 +142,7 @@ export async function callRoomService<T>(
   // repeated once; an unreachable room is reported as retryable, never as a
   // generic 500.
   const attempts = options?.retryRead ? 2 : 1;
+  const action = roomActionName(command);
   let response: Response | undefined;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const last = attempt === attempts;
@@ -113,15 +158,15 @@ export async function callRoomService<T>(
         cache: 'no-store',
       });
     } catch (error) {
-      // Only reads are reported as retryable; other callers keep their error.
-      if (!options?.retryRead) throw error;
-      if (last)
-        throw new MeetCallAccessError(
-          503,
-          'Room action is unavailable',
-          undefined,
-          1
-        );
+      if (!options?.retryRead || last)
+        console.error('Meet room service unreachable', {
+          action,
+          name: error instanceof Error ? error.name : 'unknown',
+        });
+      // Only reads are reported as retryable; other callers keep their error,
+      // tagged with the room action so a route can still type it.
+      if (!options?.retryRead) throw tagRoomServiceAction(error, action);
+      if (last) throw new MeetRoomServiceError(503, action, undefined, 1);
       await new Promise((resolve) => setTimeout(resolve, ROOM_READ_RETRY_MS));
       continue;
     }
@@ -143,9 +188,14 @@ export async function callRoomService<T>(
             )
             .catch(() => undefined)
         : (await response?.body?.cancel().catch(() => undefined), undefined);
-    throw new MeetCallAccessError(
+    if ((response?.status ?? 503) >= 500)
+      console.error('Meet room service failed', {
+        action,
+        status: response?.status ?? 503,
+      });
+    throw new MeetRoomServiceError(
       response?.status ?? 503,
-      'Room action is unavailable',
+      action,
       code,
       options?.retryRead && (response?.status ?? 503) >= 500 ? 1 : undefined
     );
@@ -202,6 +252,8 @@ export async function meetCallRoomRoute(
     if (status >= 500)
       console.error('Meet room action failed', {
         name: error instanceof Error ? error.name : 'unknown',
+        // The room action (never its body) when the room itself failed.
+        action: roomServiceFailureAction(error),
       });
     const accessError =
       error instanceof MeetCallAccessError ? error : undefined;
