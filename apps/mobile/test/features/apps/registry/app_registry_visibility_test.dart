@@ -39,21 +39,14 @@ void main() {
     );
     expect(
       visible,
-      containsAll([
-        'meet',
-        'chat',
-        'documents',
-        'drive',
-        'cms',
-        'crm',
-        'timer',
-      ]),
+      containsAll(['meet', 'chat', 'documents', 'drive', 'crm', 'timer']),
     );
     expect(visible, isNot(contains('notes')));
     expect(visible, isNot(contains('mail')));
     expect(visible, isNot(contains('inventory')));
     expect(visible, isNot(contains('education')));
     expect(visible, isNot(contains('habits')));
+    expect(visible, isNot(contains('cms')));
     expect(AppRegistry.moduleById('notes')?.id, 'documents');
     expect(
       AppRegistry.moduleFromLocation('/notes?noteId=private')?.id,

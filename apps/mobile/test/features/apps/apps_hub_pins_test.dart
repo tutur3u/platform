@@ -16,7 +16,7 @@ const _pinnable = [
   'chat',
   'drive',
   'documents',
-  'cms',
+  'meet',
   'timer',
   'crm',
 ];

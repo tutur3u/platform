@@ -2168,6 +2168,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get cmsNoEntries => 'Chưa có mục nội dung nào.';
 
   @override
+  String get cmsNotEnabledAction => 'Mở Ứng dụng';
+
+  @override
+  String get cmsNotEnabledMessage => 'Workspace này chưa bật CMS. Hãy nhờ quản trị viên workspace kết nối một dự án nội dung.';
+
+  @override
+  String get cmsNotEnabledTitle => 'CMS chưa được bật';
+
+  @override
   String get cmsOverview => 'Tổng quan';
 
   @override

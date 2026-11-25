@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
 import 'package:mobile/core/router/app_router_onboarding.dart';
+import 'package:mobile/core/router/app_router_refresh.dart';
 import 'package:mobile/core/router/app_router_telemetry_consent.dart';
 import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/finance_routes.dart';
@@ -28,6 +27,7 @@ import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mobile/features/auth/view/mfa_verify_page.dart';
 import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/auth/widgets/security_check_dialog.dart';
+import 'package:mobile/features/cms/cubit/cms_access_cubit.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
@@ -178,6 +178,7 @@ GoRouter createAppRouter(
   AppTabCubit appTabCubit, {
   MastermindAccessCubit? mastermindAccessCubit,
   FleetAccessCubit? fleetAccessCubit,
+  CmsAccessCubit? cmsAccessCubit,
   String? initialLocation,
   TelemetryPreference? telemetryConsent,
   OnboardingGate? onboardingGate,
@@ -203,15 +204,16 @@ GoRouter createAppRouter(
     initialLocation: initialLocation ?? Routes.home,
     overridePlatformDefaultLocation: true,
     refreshListenable: Listenable.merge([
-      _AppRefreshNotifier(
-        authCubit,
-        workspaceCubit,
-        habitsAccessCubit,
-        educationAccessCubit,
-        inventoryAccessCubit,
-        mastermindAccessCubit,
-        fleetAccessCubit,
-      ),
+      AppRouterRefreshNotifier([
+        authCubit.stream,
+        workspaceCubit.stream,
+        habitsAccessCubit.stream,
+        educationAccessCubit.stream,
+        inventoryAccessCubit.stream,
+        ?mastermindAccessCubit?.stream,
+        ?fleetAccessCubit?.stream,
+        ?cmsAccessCubit?.stream,
+      ]),
       if (telemetryConsent != null) telemetryConsent,
       ?onboardingGate,
     ]),
@@ -321,6 +323,13 @@ GoRouter createAppRouter(
       if (shouldRedirectDisabledEducationRoutes(
         state.matchedLocation,
         educationAccessState,
+      )) {
+        return Routes.apps;
+      }
+
+      if (shouldRedirectUnavailableCmsRoutes(
+        state.matchedLocation,
+        cmsAccessCubit?.state,
       )) {
         return Routes.apps;
       }
@@ -628,70 +637,4 @@ GoRouter createAppRouter(
       ),
     ],
   );
-}
-
-/// Notifies [GoRouter] when auth or workspace state changes so it can
-/// re-evaluate redirects.
-class _AppRefreshNotifier extends ChangeNotifier {
-  _AppRefreshNotifier(
-    AuthCubit authCubit,
-    WorkspaceCubit workspaceCubit,
-    HabitsAccessCubit habitsAccessCubit,
-    EducationAccessCubit educationAccessCubit,
-    InventoryAccessCubit inventoryAccessCubit,
-    MastermindAccessCubit? mastermindAccessCubit,
-    FleetAccessCubit? fleetAccessCubit,
-  ) {
-    _authSub = authCubit.stream.listen((state) {
-      if (kDebugMode) {
-        debugPrint('Router refresh: auth=${state.status}');
-      }
-      notifyListeners();
-    });
-    _wsSub = workspaceCubit.stream.listen((state) {
-      if (kDebugMode) {
-        debugPrint(
-          'Router refresh: ws=${state.status} '
-          'hasWs=${state.hasWorkspace} '
-          'wsId=${state.currentWorkspace?.id}',
-        );
-      }
-      notifyListeners();
-    });
-    _habitsAccessSub = habitsAccessCubit.stream.listen((_) {
-      notifyListeners();
-    });
-    _educationAccessSub = educationAccessCubit.stream.listen((_) {
-      notifyListeners();
-    });
-    _inventoryAccessSub = inventoryAccessCubit.stream.listen((_) {
-      notifyListeners();
-    });
-    _mastermindAccessSub = mastermindAccessCubit?.stream.listen((_) {
-      notifyListeners();
-    });
-    _fleetAccessSub = fleetAccessCubit?.stream.listen((_) {
-      notifyListeners();
-    });
-  }
-
-  late final StreamSubscription<AuthState> _authSub;
-  late final StreamSubscription<WorkspaceState> _wsSub;
-  late final StreamSubscription<HabitsAccessState> _habitsAccessSub;
-  late final StreamSubscription<EducationAccessState> _educationAccessSub;
-  late final StreamSubscription<InventoryAccessState> _inventoryAccessSub;
-  late final StreamSubscription<MastermindAccessState>? _mastermindAccessSub;
-  late final StreamSubscription<FleetAccessState>? _fleetAccessSub;
-
-  @override
-  Future<void> dispose() async {
-    await _authSub.cancel();
-    await _wsSub.cancel();
-    await _habitsAccessSub.cancel();
-    await _educationAccessSub.cancel();
-    await _inventoryAccessSub.cancel();
-    await _mastermindAccessSub?.cancel();
-    await _fleetAccessSub?.cancel();
-    super.dispose();
-  }
 }

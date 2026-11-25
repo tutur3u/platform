@@ -201,6 +201,20 @@ void main() {
     );
   }
 
+  testWidgets('an unavailable studio is a not-enabled state, not an error', (
+    tester,
+  ) async {
+    repository.failure = const ApiException(
+      message: 'External project studio unavailable for this workspace',
+      statusCode: 404,
+    );
+    await tester.pumpApp(page());
+    await tester.pumpAndSettle();
+    expect(find.text("CMS isn't enabled"), findsOneWidget);
+    expect(find.text('Open Apps'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+  });
+
   testWidgets('failed save retains entered text and permits retry', (
     tester,
   ) async {

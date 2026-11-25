@@ -4249,6 +4249,24 @@ abstract class AppLocalizations {
   /// **'No entries yet.'**
   String get cmsNoEntries;
 
+  /// No description provided for @cmsNotEnabledAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Apps'**
+  String get cmsNotEnabledAction;
+
+  /// No description provided for @cmsNotEnabledMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'CMS isn\'t turned on for this workspace. Ask a workspace admin to connect a content project.'**
+  String get cmsNotEnabledMessage;
+
+  /// No description provided for @cmsNotEnabledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CMS isn\'t enabled'**
+  String get cmsNotEnabledTitle;
+
   /// No description provided for @cmsOverview.
   ///
   /// In en, this message translates to:

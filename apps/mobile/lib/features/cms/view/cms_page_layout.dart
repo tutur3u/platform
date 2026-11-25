@@ -111,6 +111,15 @@ extension _CmsPageLayout on _CmsPageState {
     if (_isLoading && !_hasData && _error == null) {
       return const CmsLoadingSkeleton();
     }
+    if (_unavailable) {
+      return AppStateMessage(
+        icon: LucideIcons.layoutGrid,
+        title: l10n.cmsNotEnabledTitle,
+        message: l10n.cmsNotEnabledMessage,
+        actionLabel: l10n.cmsNotEnabledAction,
+        onAction: () => context.go(Routes.apps),
+      );
+    }
     if (_denied) {
       return AppStateMessage(
         icon: LucideIcons.lock,

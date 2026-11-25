@@ -18,6 +18,7 @@ extension _CmsPageData on _CmsPageState {
       if (!mounted || token != _requestToken) return;
       _updateState(() {
         _denied = false;
+        _unavailable = false;
         _summary = results[0] as CmsSummary;
         _collections = {
           for (final row in results[1] as List<CmsCollection>) row.id: row,
@@ -40,12 +41,14 @@ extension _CmsPageData on _CmsPageState {
       }
     } on ApiException catch (error) {
       if (!mounted || token != _requestToken) return;
+      final unavailable = CmsAccessRepository.isUnavailableError(error);
+      if (unavailable) {
+        unawaited(context.read<CmsAccessCubit?>()?.markUnavailable(_wsId));
+      }
       _updateState(() {
         _error = error.message;
-        if (error.statusCode == 401 ||
-            (error.statusCode == 403 &&
-                error.code != 'MFA_REQUIRED' &&
-                !error.isVerificationRequired)) {
+        _unavailable = unavailable && error.statusCode == 404;
+        if (error.statusCode == 401 || unavailable) {
           _denied = true;
           _summary = null;
           _collections = const [];

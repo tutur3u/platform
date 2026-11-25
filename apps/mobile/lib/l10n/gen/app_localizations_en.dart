@@ -2181,6 +2181,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmsNoEntries => 'No entries yet.';
 
   @override
+  String get cmsNotEnabledAction => 'Open Apps';
+
+  @override
+  String get cmsNotEnabledMessage => 'CMS isn\'t turned on for this workspace. Ask a workspace admin to connect a content project.';
+
+  @override
+  String get cmsNotEnabledTitle => 'CMS isn\'t enabled';
+
+  @override
   String get cmsOverview => 'Overview';
 
   @override

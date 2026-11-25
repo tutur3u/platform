@@ -34,6 +34,7 @@ import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/repositories/cms_access_repository.dart';
 import 'package:mobile/data/repositories/documents_offline_preparation.dart';
 import 'package:mobile/data/repositories/drive_offline_preparation.dart';
 import 'package:mobile/data/repositories/education_access_repository.dart';
@@ -67,6 +68,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
 import 'package:mobile/features/classes/data/classes_today_repository.dart';
+import 'package:mobile/features/cms/cubit/cms_access_cubit.dart';
 import 'package:mobile/features/command_palette/command_palette_host.dart';
 import 'package:mobile/features/dashboard/home_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
@@ -125,6 +127,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 part 'app_push_navigation.dart';
 part 'app_inventory_warmup.dart';
 part 'app_offline_preparation.dart';
+part 'app_workspace_access.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -179,6 +182,7 @@ class _AppState extends State<App> {
   late final MastermindRuntime _mastermind;
   late final AudienceModeCubit _audienceModeCubit;
   late final InventoryAccessCubit _inventoryAccessCubit;
+  late final CmsAccessCubit _cmsAccessCubit;
   late final AppTabCubit _appTabCubit;
   late final ShellChromeActionsCubit _shellChromeActionsCubit;
   late final ShellMiniNavCubit _shellMiniNavCubit;
@@ -262,6 +266,7 @@ class _AppState extends State<App> {
     _inventoryAccessCubit = InventoryAccessCubit(
       repository: _inventoryAccessRepository,
     );
+    _cmsAccessCubit = CmsAccessCubit(repository: CmsAccessRepository());
     _mastermind = MastermindRuntime.create(
       userId: () => _authCubit.state.user?.id,
       isPersonalWorkspace: (wsId) => [
@@ -296,6 +301,7 @@ class _AppState extends State<App> {
       _appTabCubit,
       mastermindAccessCubit: _mastermind.access,
       fleetAccessCubit: _mastermind.fleetAccess,
+      cmsAccessCubit: _cmsAccessCubit,
       initialLocation: widget.initialRoute,
       telemetryConsent: consentGate.isEligible(widget.appFlavor)
           ? TelemetryPreference.instance
@@ -502,6 +508,7 @@ class _AppState extends State<App> {
     unawaited(_educationAccessCubit.close());
     unawaited(_audienceModeCubit.close());
     unawaited(_inventoryAccessCubit.close());
+    unawaited(_cmsAccessCubit.close());
     unawaited(_mastermind.close());
     _inventoryRepository.dispose();
     unawaited(_appTabCubit.close());
@@ -531,6 +538,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _educationAccessCubit),
         BlocProvider.value(value: _audienceModeCubit),
         BlocProvider.value(value: _inventoryAccessCubit),
+        BlocProvider.value(value: _cmsAccessCubit),
         BlocProvider.value(value: _mastermind.access),
         BlocProvider.value(value: _mastermind.fleetAccess),
         BlocProvider.value(value: _mastermind.snapshot),
@@ -597,24 +605,7 @@ class _AppState extends State<App> {
               listener: (context, state) {
                 _syncOfflinePreparationScope();
                 _bindAudienceMode();
-                unawaited(
-                  _mastermind.access.syncWorkspace(state.currentWorkspace?.id),
-                );
-                unawaited(
-                  context.read<HabitsAccessCubit>().syncWorkspace(
-                    state.currentWorkspace?.id,
-                  ),
-                );
-                unawaited(
-                  context.read<EducationAccessCubit>().syncWorkspace(
-                    state.currentWorkspace?.id,
-                  ),
-                );
-                unawaited(
-                  context.read<InventoryAccessCubit>().syncWorkspace(
-                    state.currentWorkspace?.id,
-                  ),
-                );
+                _syncWorkspaceAccess(state.currentWorkspace?.id);
                 if (!_recordAccountWorkspace(state)) return;
                 unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
                 unawaited(_openPendingDeepLinkIfReady());

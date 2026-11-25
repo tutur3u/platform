@@ -6,6 +6,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/chat/view/chat_page.dart';
+import 'package:mobile/features/cms/cubit/cms_access_cubit.dart';
 import 'package:mobile/features/cms/view/cms_page.dart';
 import 'package:mobile/features/crm/view/crm_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
@@ -439,6 +440,11 @@ class AppRegistry {
       'education' => context.select<EducationAccessCubit?, bool>(
         (cubit) =>
             cubit?.state.status == EducationAccessStatus.loaded &&
+            cubit?.state.enabled == true,
+      ),
+      'cms' => context.select<CmsAccessCubit?, bool>(
+        (cubit) =>
+            cubit?.state.status == CmsAccessStatus.loaded &&
             cubit?.state.enabled == true,
       ),
       'habits' => context.select<HabitsAccessCubit?, bool>(

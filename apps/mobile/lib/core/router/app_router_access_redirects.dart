@@ -1,4 +1,5 @@
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/cms/cubit/cms_access_cubit.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_state.dart';
@@ -42,3 +43,14 @@ bool shouldRedirectDisabledMastermindRoutes(
       MastermindAccessStatus.error => true,
       MastermindAccessStatus.loaded => !accessState.enabled,
     };
+
+/// CMS deep links stay open while access is still resolving (the page shows
+/// its loading skeleton) and fall back to Apps once the workspace is known to
+/// have no CMS, so the unavailable-studio error is never a resting state.
+bool shouldRedirectUnavailableCmsRoutes(
+  String matchedLocation,
+  CmsAccessState? cmsAccessState,
+) =>
+    cmsAccessState != null &&
+    cmsAccessState.isUnavailable &&
+    Routes.miniAppRootForLocation(matchedLocation) == Routes.cms;
