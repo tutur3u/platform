@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
@@ -49,7 +50,14 @@ class ShellSidebarWorkspaceSwitcher extends StatelessWidget {
     void open() {
       unawaited(AppHaptics.selection());
       onOpened?.call();
-      unawaited(showWorkspacePicker(context, searchable: true));
+      unawaited(
+        showWorkspacePicker(
+          context,
+          searchable: true,
+          // Switching workspace over an open draft would discard it.
+          canSelect: () => !DraftRouteGuard.instance.hasBlockingRoute,
+        ),
+      );
     }
 
     final avatar = WorkspaceAvatar(
