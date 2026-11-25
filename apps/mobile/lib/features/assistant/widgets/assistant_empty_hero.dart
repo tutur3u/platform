@@ -13,6 +13,7 @@ class AssistantEmptyHero extends StatelessWidget {
     this.listening = false,
     this.now,
     this.characterSize = 104,
+    this.dense = false,
     super.key,
   });
 
@@ -25,6 +26,9 @@ class AssistantEmptyHero extends StatelessWidget {
   /// Clock for the time-of-day line; defaults to the current time.
   final DateTime? now;
   final double characterSize;
+
+  /// Drops the outer padding and tightens the gap under the character.
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +45,7 @@ class AssistantEmptyHero extends StatelessWidget {
         : l10n.tasksGoodNight;
     return Padding(
       key: const ValueKey('assistant-empty-hero'),
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      padding: EdgeInsets.symmetric(vertical: dense ? 0 : AppSpacing.sm),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -50,7 +54,7 @@ class AssistantEmptyHero extends StatelessWidget {
             thinking: thinking,
             listening: listening,
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: dense ? AppSpacing.sm : AppSpacing.md),
           Text(
             timeOfDay,
             textAlign: TextAlign.center,

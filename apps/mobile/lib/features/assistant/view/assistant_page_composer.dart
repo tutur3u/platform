@@ -15,7 +15,6 @@ extension _AssistantPageComposer on _AssistantPageState {
     required bool Function() messageActionsCurrent,
     required Future<void> Function(String) removeComposerAttachment,
     required Future<void> Function(String) retryComposerAttachment,
-    required bool showSuggestions,
     required bool showControls,
   }) {
     final primary = AssistantComposerPrimaryAction(
@@ -81,7 +80,9 @@ extension _AssistantPageComposer on _AssistantPageState {
       onRetryAttachment: retryComposerAttachment,
     );
     return AssistantComposerPanel(
-      showSuggestions: showSuggestions,
+      // The home's quick actions own prompt shortcuts, so the composer
+      // keeps a single surface for typing.
+      showSuggestions: false,
       onPromptSelected: _applyStarterPrompt,
       onHeightChanged: _setComposerHeight,
       controls: showControls
@@ -122,4 +123,32 @@ extension _AssistantPageComposer on _AssistantPageState {
       primary: _livePrimaryAction(),
     ),
   );
+
+  /// Page background behind the composer down to the bottom edge, fading in
+  /// just above it, so content scrolling under the composer never shows
+  /// through the gap above the dock.
+  Widget _composerScrim(BuildContext context) {
+    final background = AppTokens.of(context).colorScheme.background;
+    const fade = AppSpacing.lg;
+    final height = _composerReservedSpace(context) - AppSpacing.md + fade;
+    return Positioned(
+      key: const ValueKey('assistant-composer-scrim'),
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: height,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [background.withValues(alpha: 0), background],
+              stops: [0, fade / height],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

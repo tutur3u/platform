@@ -32,13 +32,16 @@ class AssistantHomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final compactHeight = MediaQuery.sizeOf(context).height < 700;
+    // Phone-height windows get a smaller character and tighter gaps so the
+    // greeting, quick actions and recent chats fit above the composer.
+    final height = MediaQuery.sizeOf(context).height;
+    final compact = height < 900;
     return Center(
       key: const ValueKey('assistant-home'),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: maxWidth),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+          padding: EdgeInsets.symmetric(vertical: compact ? 0 : AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -48,12 +51,17 @@ class AssistantHomeView extends StatelessWidget {
                 thinking: thinking,
                 listening: listening,
                 now: now,
-                characterSize: compactHeight ? 80 : 104,
+                characterSize: height < 700
+                    ? 56
+                    : compact
+                    ? 64
+                    : 104,
+                dense: compact,
               ),
-              const SizedBox(height: AppSpacing.xl),
+              SizedBox(height: compact ? AppSpacing.md : AppSpacing.xl),
               AssistantQuickActionGrid(onSelected: onPromptSelected),
               if (recent case final recent?) ...[
-                const SizedBox(height: AppSpacing.xxl),
+                SizedBox(height: compact ? AppSpacing.lg : AppSpacing.xxl),
                 recent,
               ],
             ],

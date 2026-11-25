@@ -62,46 +62,45 @@ class AssistantComposerPanel extends StatelessWidget {
                 onHeightChanged: onHeightChanged,
                 child: Padding(
                   padding: insets,
-                  child: AppCard(
-                    padding: EdgeInsets.zero,
-                    // Outlined in every appearance so the prompt reads as an
-                    // input surface on dark backgrounds too.
-                    borderColor: AppTokens.of(context).colorScheme.border,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (showSuggestions)
-                          AppHorizontalScrollView(
-                            key: const ValueKey('assistant-starter-prompts'),
-                            padding: const EdgeInsets.fromLTRB(
-                              AppSpacing.sm,
-                              AppSpacing.sm,
-                              AppSpacing.sm,
-                              0,
+                  child: _Outlined(
+                    child: AppCard(
+                      padding: EdgeInsets.zero,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (showSuggestions)
+                            AppHorizontalScrollView(
+                              key: const ValueKey('assistant-starter-prompts'),
+                              padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.sm,
+                                AppSpacing.sm,
+                                AppSpacing.sm,
+                                0,
+                              ),
+                              child: Row(
+                                spacing: AppSpacing.xs,
+                                children: [
+                                  for (final prompt in [
+                                    l10n.assistantStarterFocus,
+                                    l10n.assistantStarterPlan,
+                                    l10n.assistantStarterBacklog,
+                                    l10n.assistantStarterDraft,
+                                  ])
+                                    AppChip(
+                                      label: Text(prompt, maxLines: 1),
+                                      onPressed: () => onPromptSelected(prompt),
+                                    ),
+                                ],
+                              ),
                             ),
-                            child: Row(
-                              spacing: AppSpacing.xs,
-                              children: [
-                                for (final prompt in [
-                                  l10n.assistantStarterFocus,
-                                  l10n.assistantStarterPlan,
-                                  l10n.assistantStarterBacklog,
-                                  l10n.assistantStarterDraft,
-                                ])
-                                  AppChip(
-                                    label: Text(prompt, maxLines: 1),
-                                    onPressed: () => onPromptSelected(prompt),
-                                  ),
-                              ],
-                            ),
+                          Padding(
+                            padding: const EdgeInsets.all(AppSpacing.xs),
+                            child: child,
                           ),
-                        Padding(
-                          padding: const EdgeInsets.all(AppSpacing.xs),
-                          child: child,
-                        ),
-                        ?controls,
-                      ],
+                          ?controls,
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -110,6 +109,35 @@ class AssistantComposerPanel extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Outlines the composer in every appearance so the prompt reads as an input
+/// surface. The line is painted over the card's fill, which covers a border
+/// painted beneath it. Dark schemes share their border colour with the muted
+/// surface, so the outline steps up to a translucent muted foreground there.
+class _Outlined extends StatelessWidget {
+  const _Outlined({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final colors = tokens.colorScheme;
+    return DecoratedBox(
+      key: const ValueKey('assistant-composer-outline'),
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: colors.isDark
+              ? colors.mutedForeground.withValues(alpha: 0.4)
+              : colors.border,
+        ),
+        borderRadius: BorderRadius.circular(tokens.shapes.card),
+      ),
+      child: child,
     );
   }
 }

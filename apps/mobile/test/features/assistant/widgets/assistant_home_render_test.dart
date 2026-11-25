@@ -103,7 +103,7 @@ class _Scene extends StatelessWidget {
                   ),
                 ),
                 AssistantComposerPanel(
-                  showSuggestions: true,
+                  showSuggestions: false,
                   onPromptSelected: onPrompt,
                   onHeightChanged: (_) {},
                   controls: AssistantComposerControls(
@@ -177,8 +177,24 @@ void main() {
           find.byKey(const ValueKey('assistant-quick-action-calendar')),
         );
         expect(prompts.last, 'Summarize my calendar for today');
-        await tester.tap(find.text("Today's focus"));
-        expect(prompts.last, "Today's focus");
+        expect(
+          find.byKey(const ValueKey('assistant-starter-prompts')),
+          findsNothing,
+        );
+        // The outline paints over the card fill so it stays visible.
+        final outline = tester.widget<DecoratedBox>(
+          find.byKey(const ValueKey('assistant-composer-outline')),
+        );
+        expect(outline.position, DecorationPosition.foreground);
+        final colors = AppTokens.of(
+          tester.element(find.byType(AssistantComposerPanel)),
+        ).colorScheme;
+        expect(
+          ((outline.decoration as BoxDecoration).border! as Border).top.color,
+          brightness == Brightness.dark
+              ? colors.mutedForeground.withValues(alpha: 0.4)
+              : colors.border,
+        );
 
         final composer = tester.getRect(
           find.descendant(

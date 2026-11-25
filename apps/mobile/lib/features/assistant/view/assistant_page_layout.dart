@@ -378,6 +378,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               _handleScrollToBottomPressed,
                                         ),
                                     ],
+                                    if (!isLiveMode) _composerScrim(context),
                                     if (isLiveMode)
                                       _buildLiveDock(
                                         wsId: currentWorkspace.id,
@@ -404,8 +405,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             removeComposerAttachment,
                                         retryComposerAttachment:
                                             retryComposerAttachment,
-                                        showSuggestions:
-                                            !keyboardVisible && !showTranscript,
                                         showControls:
                                             keyboardVisible || !showTranscript,
                                       ),

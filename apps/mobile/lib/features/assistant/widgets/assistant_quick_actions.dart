@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -54,7 +52,9 @@ List<AssistantQuickAction> assistantQuickActions(BuildContext context) {
 }
 
 /// A two-column grid of quick actions on compact widths and a single row of
-/// four from 600dp of available width.
+/// four from 600dp of available width. Two-column tiles lay the icon beside
+/// the prompt so the grid stays short on phones; tiles in a row share the
+/// tallest one's height.
 class AssistantQuickActionGrid extends StatelessWidget {
   const AssistantQuickActionGrid({required this.onSelected, super.key});
 
@@ -70,22 +70,26 @@ class AssistantQuickActionGrid extends StatelessWidget {
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= _rowWidth ? 4 : 2;
         const gap = AppSpacing.sm;
-        final available = math.max(
-          0,
-          constraints.maxWidth - gap * (columns - 1),
-        );
-        // Floored so rounding never pushes the last tile onto a new run.
-        final width = (available / columns).floorToDouble();
-        return Wrap(
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: gap,
-          runSpacing: gap,
           children: [
-            for (final action in actions)
-              SizedBox(
-                width: width,
-                child: _QuickActionTile(
-                  action: action,
-                  onTap: () => onSelected(action.prompt),
+            for (var start = 0; start < actions.length; start += columns)
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: gap,
+                  children: [
+                    for (final action in actions.skip(start).take(columns))
+                      Expanded(
+                        child: _QuickActionTile(
+                          action: action,
+                          inline: columns == 2,
+                          onTap: () => onSelected(action.prompt),
+                        ),
+                      ),
+                  ],
                 ),
               ),
           ],
@@ -96,9 +100,16 @@ class AssistantQuickActionGrid extends StatelessWidget {
 }
 
 class _QuickActionTile extends StatelessWidget {
-  const _QuickActionTile({required this.action, required this.onTap});
+  const _QuickActionTile({
+    required this.action,
+    required this.inline,
+    required this.onTap,
+  });
 
   final AssistantQuickAction action;
+
+  /// Icon beside the prompt instead of above it.
+  final bool inline;
   final VoidCallback onTap;
 
   @override
@@ -106,6 +117,12 @@ class _QuickActionTile extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final colors = tokens.colorScheme;
     final radius = BorderRadius.circular(AppRadius.md);
+    final prompt = Text(
+      action.prompt,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+      style: tokens.typography.uiSm.copyWith(color: colors.foreground),
+    );
     return Semantics(
       button: true,
       child: Material(
@@ -115,27 +132,34 @@ class _QuickActionTile extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 96),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppIconTile(icon: action.icon, tone: action.tone),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    action.prompt,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: tokens.typography.uiSm.copyWith(
-                      color: colors.foreground,
-                    ),
+          child: Padding(
+            padding: inline
+                ? const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm + 2,
+                    vertical: AppSpacing.sm + 2,
+                  )
+                : const EdgeInsets.all(AppSpacing.md),
+            child: inline
+                ? Row(
+                    spacing: AppSpacing.sm,
+                    children: [
+                      AppIconTile(
+                        icon: action.icon,
+                        tone: action.tone,
+                        size: 28,
+                      ),
+                      Expanded(child: prompt),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppIconTile(icon: action.icon, tone: action.tone),
+                      const SizedBox(height: AppSpacing.sm),
+                      prompt,
+                    ],
                   ),
-                ],
-              ),
-            ),
           ),
         ),
       ),
