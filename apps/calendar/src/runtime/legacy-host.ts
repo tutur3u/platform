@@ -84,6 +84,10 @@ export function legacyHostResponse(
   target.search = url.search;
   return new Response(null, {
     status: 301,
-    headers: { Location: target.href },
+    headers: {
+      Location: target.href,
+      'Cache-Control': 'private, no-store',
+      Vary: 'Accept, Sec-Fetch-Mode, Upgrade',
+    },
   });
 }

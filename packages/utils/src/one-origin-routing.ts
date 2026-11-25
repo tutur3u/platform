@@ -146,10 +146,8 @@ export function decideOneOriginRequest(
           status: config.redirectStatus,
           headers: {
             Location: location,
-            // Temporary redirects must stay revocable.
-            ...(config.redirectStatus !== 301
-              ? { 'Cache-Control': 'no-store' }
-              : {}),
+            'Cache-Control': 'no-store',
+            Vary: 'Accept, Sec-Fetch-Mode, Upgrade',
           },
         }),
       };

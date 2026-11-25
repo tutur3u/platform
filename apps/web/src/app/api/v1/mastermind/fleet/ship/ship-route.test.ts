@@ -24,11 +24,14 @@ vi.mock('server-only', () => ({}));
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
 const URL = 'https://tuturuuu.com/api/v1/mastermind/fleet/ship';
+const APEX = 'https://tuturuuu.com';
+const SAME_ORIGIN = { origin: APEX };
 const CHECK_TOKEN = 'k'.repeat(40);
 
 const mocks = vi.hoisted(() => ({
   user: { id: '' },
   permission: false,
+  appSessionToken: undefined as string | undefined,
   store: null as ReturnType<typeof createMemoryMastermindStore> | null,
   cronControl: undefined as { fetch: typeof fetch } | undefined,
   options: [] as Array<{
@@ -36,13 +39,22 @@ const mocks = vi.hoisted(() => ({
   }>,
 }));
 
+// Route tests assume the real withSessionAuth has verified and selected the
+// credential before passing its context to the handler.
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: (
-    handler: (request: Request, auth: { user: { id: string } }) => Response,
+    handler: (
+      request: Request,
+      auth: { user: { id: string }; appSessionToken?: string }
+    ) => Promise<Response>,
     options: (typeof mocks.options)[number]
   ) => {
     mocks.options.push(options);
-    return (request: Request) => handler(request, { user: mocks.user });
+    return (request: Request) =>
+      handler(request, {
+        user: mocks.user,
+        appSessionToken: mocks.appSessionToken,
+      });
   },
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -91,6 +103,7 @@ describe('ship routes', () => {
     vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', OWNER);
     mocks.user = { id: OWNER };
     mocks.permission = true;
+    mocks.appSessionToken = undefined;
     mocks.store = createMemoryMastermindStore();
   });
   afterEach(() => {
@@ -106,7 +119,7 @@ describe('ship routes', () => {
   it('serves the validated snapshot to the owner only', async () => {
     const raw = await collected();
     await mocks.store!.set(SHIP_SNAPSHOT_KEY, raw, { ttlMs: 60_000 });
-    const response = await GET(new NextRequest(URL));
+    const response = await GET(new NextRequest(URL, { headers: SAME_ORIGIN }));
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     const body = await response.json();
@@ -114,19 +127,74 @@ describe('ship routes', () => {
     expect(JSON.stringify(body)).not.toContain(GITHUB_TOKEN);
 
     mocks.user = { id: '22222222-2222-4222-8222-222222222222' };
-    expect((await GET(new NextRequest(URL))).status).toBe(403);
+    expect(
+      (await GET(new NextRequest(URL, { headers: SAME_ORIGIN }))).status
+    ).toBe(403);
   });
 
   it('answers not_collected, and refuses a tampered value', async () => {
-    expect((await GET(new NextRequest(URL))).status).toBe(404);
+    expect(
+      (await GET(new NextRequest(URL, { headers: SAME_ORIGIN }))).status
+    ).toBe(404);
     const snapshot = JSON.parse(await collected());
     snapshot.apps[0].production.release.sha = 'not-a-sha';
     await mocks.store!.set(SHIP_SNAPSHOT_KEY, JSON.stringify(snapshot), {
       ttlMs: 60_000,
     });
-    const response = await GET(new NextRequest(URL));
+    const response = await GET(new NextRequest(URL, { headers: SAME_ORIGIN }));
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ error: 'invalid_snapshot' });
+  });
+
+  it.each([
+    ['missing', {}],
+    ['foreign origin', { origin: 'https://other.tuturuuu.com' }],
+    ['same-site metadata', { 'sec-fetch-site': 'same-site' }],
+    ['address-bar navigation', { 'sec-fetch-site': 'none' }],
+    ['opaque origin', { origin: 'null', 'sec-fetch-site': 'same-origin' }],
+  ] satisfies [string, HeadersInit][])(
+    'rejects cookie-authenticated Ship requests with %s',
+    async (_case, headers) => {
+      const collector = vi.fn();
+      mocks.cronControl = { fetch: collector };
+      try {
+        expect((await GET(new NextRequest(URL, { headers }))).status).toBe(403);
+        const check = await POST(
+          new NextRequest(`${URL}/check`, { method: 'POST', headers })
+        );
+        expect(check.status).toBe(403);
+        expect(collector).not.toHaveBeenCalled();
+      } finally {
+        mocks.cronControl = undefined;
+      }
+    }
+  );
+
+  it('accepts a matching Origin before consulting Fetch Metadata', async () => {
+    const headers = { origin: APEX, 'sec-fetch-site': 'cross-site' };
+    expect((await GET(new NextRequest(URL, { headers }))).status).toBe(404);
+  });
+
+  it('accepts same-origin Fetch Metadata only on the apex', async () => {
+    const headers = { 'sec-fetch-site': 'same-origin' };
+    expect((await GET(new NextRequest(URL, { headers }))).status).toBe(404);
+    const sibling = URL.replace('tuturuuu.com', 'other.tuturuuu.com');
+    expect((await GET(new NextRequest(sibling, { headers }))).status).toBe(403);
+  });
+
+  it('allows the verified bearer without origin proof and rejects cookie fallback', async () => {
+    const headers = { authorization: 'Bearer ttr_app_verified' };
+    const request = () => new NextRequest(URL, { headers });
+    mocks.appSessionToken = 'ttr_app_verified';
+    expect((await GET(request())).status).toBe(404);
+
+    mocks.appSessionToken = 'ttr_app_cookie';
+    expect((await GET(request())).status).toBe(403);
+  });
+
+  it('allows a verified Supabase bearer without origin proof', async () => {
+    const headers = { authorization: 'Bearer verified-supabase-token' };
+    expect((await GET(new NextRequest(URL, { headers }))).status).toBe(404);
   });
 
   it('relays "Check now" to Cron Control with the check token', async () => {
@@ -145,7 +213,12 @@ describe('ship routes', () => {
       }
     );
     const check = () =>
-      POST(new NextRequest(`${URL}/check`, { method: 'POST' }));
+      POST(
+        new NextRequest(`${URL}/check`, {
+          method: 'POST',
+          headers: SAME_ORIGIN,
+        })
+      );
 
     const ok = await check();
     expect(ok.status).toBe(200);
@@ -198,10 +271,14 @@ describe('ship routes', () => {
     vi.stubGlobal('fetch', async () => {
       throw new Error('public fetch must not be used');
     });
+    mocks.appSessionToken = 'ttr_app_verified';
+    const request = () =>
+      new NextRequest(`${URL}/check`, {
+        method: 'POST',
+        headers: { authorization: 'Bearer ttr_app_verified' },
+      });
     try {
-      const response = await POST(
-        new NextRequest(`${URL}/check`, { method: 'POST' })
-      );
+      const response = await POST(request());
       expect(response.status).toBe(200);
       expect(calls).toEqual([
         {
@@ -212,9 +289,7 @@ describe('ship routes', () => {
       // Without the token the binding is not called at all.
       vi.stubEnv('MASTERMIND_SHIP_CHECK_TOKEN', '');
       calls.length = 0;
-      expect(
-        (await POST(new NextRequest(`${URL}/check`, { method: 'POST' }))).status
-      ).toBe(503);
+      expect((await POST(request())).status).toBe(503);
       expect(calls).toEqual([]);
     } finally {
       mocks.cronControl = undefined;
@@ -241,7 +316,7 @@ describe('ship routes', () => {
     vi.stubEnv('MASTERMIND_SHIP_CHECK_ORIGIN', 'http://cron.example.test');
     vi.stubEnv('MASTERMIND_SHIP_CHECK_TOKEN', CHECK_TOKEN);
     const response = await POST(
-      new NextRequest(`${URL}/check`, { method: 'POST' })
+      new NextRequest(`${URL}/check`, { method: 'POST', headers: SAME_ORIGIN })
     );
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({

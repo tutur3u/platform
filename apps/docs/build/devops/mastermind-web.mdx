@@ -192,6 +192,15 @@ routes and `HEAD`, and deny the Owner tier and a revoked grant.
 second allowlist at the edge. **Offboarding.** Revoke the Fleet grant; the
 next request is denied, and the next refresh with it.
 
+### Ship API admission
+
+The owner-only Ship snapshot and **Check now** routes on Web require
+cookie-authenticated requests to target `https://tuturuuu.com` and send that
+exact `Origin`. If `Origin` is absent, `Sec-Fetch-Site: same-origin` suffices.
+Address-bar navigation with `Sec-Fetch-Site: none` and no `Origin` returns
+`403` when authenticated by cookie. Verified bearer callers are exempt from
+the origin check.
+
 ## Session issuance
 
 `mastermind` is a registered internal app on `https://mastermind.tuturuuu.com`
@@ -203,24 +212,34 @@ like every other satellite. No other host, subdomain or path maps to it.
    `returnUrl=https://mastermind.tuturuuu.com/verify-token?nextUrl=<path>`.
    Return paths must stay on the host and never point at `/login` or
    `/verify-token`. `/login` also stores a random nonce and a PKCE verifier
-   in the `__Host-mastermind_login_state` cookie (600 seconds). The Worker
-   signs the S256 challenge, callback, expiry and MFA intent in the return
-   URL. When the browser carries a central
+   in the `__Host-mastermind_login_state` cookie (600 seconds). When the
+   browser carries a central
    Tuturuuu session cookie (a routing hint only), the same query goes to
    Web's [signed-in continue](/platform/architecture/authentication#signed-in-continue-for-first-party-apps)
    instead, which returns straight to `/verify-token` without rendering the
    sign-in page; a step-up (`mfa=fresh`) or an account choice always uses
    `/login`.
-2. Web checks the signed transaction and its own MFA policy. The login
-   page's fetch can check the account and MFA and receive a navigation URL.
-   Only an unprefetched top-level document navigation claims the transaction
-   in the replay store and mints a single-use, 300-second `mastermind`
-   token bound to the Worker's challenge. `/verify-token` checks the nonce
-   against the cookie and presents the verifier, the Worker-only redeem
-   proof, and Web's token-specific issuer proof to
-   `POST /api/v1/auth/cross-app-token/verify`. Web redeems it only through the service-role
-   PKCE validator, so a handoff URL copied from history or logs cannot be
-   redeemed from another browser. The Worker accepts the answer only when
+2. Web checks the account and enforces its MFA policy in both handoff modes.
+   - **SEC-03 on.** With `MASTERMIND_SIGNIN_TRANSACTION=true`, the Worker signs
+     the S256 challenge, callback, expiry and MFA intent. Web verifies that
+     transaction. The login page's fetch can check the account and MFA and
+     receive a navigation URL. Only an unprefetched top-level document
+     navigation claims the transaction in the replay store and mints the
+     token with a token-specific issuer proof. Web's
+     `MASTERMIND_SIGNIN_TRANSACTION_REQUIRED=true` requires a valid
+     transaction for minting and the issuer proof for redemption.
+   - **SEC-03 off.** With both switches off, the Worker starts the unsigned
+     compatibility flow and Web mints from the caller-supplied S256
+     challenge. This flow uses PKCE without a signed transaction, replay
+     claim or issuer proof.
+
+   In both modes the single-use `mastermind` token expires after 300 seconds.
+   `/verify-token` checks the nonce against the cookie and presents the
+   verifier and the Worker-only redeem proof to
+   `POST /api/v1/auth/cross-app-token/verify`. It also forwards the issuer
+   proof when Web supplied one. Web redeems through the service-role PKCE
+   validator, so a handoff URL copied from history or logs cannot be redeemed
+   from another browser. The Worker accepts the answer only when
    the access and refresh tokens verify locally for target `mastermind` and
    name the same subject, and the access session lives at most 300 seconds.
    An owner id must carry the owner email; any other subject's new session

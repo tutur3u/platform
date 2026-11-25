@@ -116,6 +116,10 @@ describe('Calendar one-origin activation', () => {
       telemetry
     );
     expect(page.status).toBe(301);
+    expect(page.headers.get('cache-control')).toBe('private, no-store');
+    expect(page.headers.get('vary')?.split(/, */u)).toEqual(
+      expect.arrayContaining(['accept', 'sec-fetch-mode', 'upgrade'])
+    );
     expect(page.headers.get('location')).toBe(
       `https://tuturuuu.com/calendar${WORKSPACE}`
     );

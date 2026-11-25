@@ -13,6 +13,13 @@ can also run it with **Check now**. Web serves the snapshot owner-only at
 `?fresh=1`, the read after Check now, skips it and replaces the cached
 copy.
 
+The owner-only Ship snapshot and **Check now** routes on Web require
+cookie-authenticated requests to target `https://tuturuuu.com` and send that
+exact `Origin`. If `Origin` is absent, `Sec-Fetch-Site: same-origin` suffices.
+Address-bar navigation with `Sec-Fetch-Site: none` and no `Origin` returns
+`403` when authenticated by cookie. Verified bearer callers are exempt from
+the origin check.
+
 ## What each run reads
 
 | Source | Requests | Facts |

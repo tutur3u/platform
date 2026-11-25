@@ -13,6 +13,7 @@ import {
   SHIP_SNAPSHOT_KEY,
   shipSnapshotSchema,
 } from '@/lib/mastermind/ship/contract';
+import { hasShipRequestOrigin } from './origin';
 
 /**
  * Same per-colo window as the fleet snapshot: one store read per colo. A
@@ -23,8 +24,10 @@ const SHIP_READ_CACHE_MS = 5000;
 
 /** Owner read of the ship snapshot the Cron Control collector writes. */
 export const GET = withSessionAuth(
-  async (request, { user }) => {
+  async (request, { appSessionToken, user }) => {
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
+    if (!hasShipRequestOrigin(request, appSessionToken))
+      return fleetError('forbidden', 403);
     const store = await fleetStore();
     if (!store) return fleetError('unavailable', 503);
 

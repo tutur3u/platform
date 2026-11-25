@@ -82,7 +82,7 @@ describe('subdomain navigations', () => {
     }
   });
 
-  it('uses 301 without a no-store header once promoted', () => {
+  it('keeps the promoted 301 out of caches', () => {
     const decision = decideOneOriginRequest(
       nav('https://meet.tuturuuu.com/x'),
       {
@@ -96,7 +96,10 @@ describe('subdomain navigations', () => {
     expect(
       decision.action === 'redirect' &&
         decision.response.headers.get('cache-control')
-    ).toBeNull();
+    ).toBe('no-store');
+    expect(
+      decision.action === 'redirect' && decision.response.headers.get('vary')
+    ).toBe('Accept, Sec-Fetch-Mode, Upgrade');
   });
 
   it('redirects crawlers that ask for HTML without Fetch Metadata', () => {

@@ -10,6 +10,7 @@ import {
   requestShipCheck,
   type ShipCheckBinding,
 } from '@/lib/mastermind/ship/check';
+import { hasShipRequestOrigin } from '../origin';
 
 declare global {
   interface CloudflareEnv {
@@ -28,8 +29,10 @@ function cronControl(): ShipCheckBinding | null {
 }
 
 export const POST = withSessionAuth(
-  async (_request, { user }) => {
+  async (request, { appSessionToken, user }) => {
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
+    if (!hasShipRequestOrigin(request, appSessionToken))
+      return fleetError('forbidden', 403);
     const { status, ...result } = await requestShipCheck(
       {
         MASTERMIND_SHIP_CHECK_ORIGIN: process.env.MASTERMIND_SHIP_CHECK_ORIGIN,
