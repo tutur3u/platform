@@ -96,6 +96,7 @@ const MISSIONS = [
   ['git', 'build', 'preview', ['repositories', 'browse', 'search']],
   ['apps', 'focus', 'reversible', ['discover', 'filter', 'launch']],
   ['docs', 'learn', 'preview', ['browse', 'search', 'reference']],
+  ['documents', 'focus', 'reversible', ['create', 'write', 'share']],
   [
     'finance',
     'operate',

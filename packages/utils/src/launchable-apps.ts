@@ -43,6 +43,9 @@ const workspaceRootPath: LaunchableAppWorkspacePathResolver = (workspace) =>
 const workspaceTasksPath: LaunchableAppWorkspacePathResolver = (workspace) =>
   `${workspaceRootPath(workspace)}/tasks`;
 
+const workspaceDocumentsPath: LaunchableAppWorkspacePathResolver = (workspace) =>
+  `${workspaceRootPath(workspace)}/documents`;
+
 const meetWorkspacePath: LaunchableAppWorkspacePathResolver = (workspace) =>
   `/workspace/${toWorkspaceSlug(workspace.id, {
     personal: Boolean(workspace.personal),
@@ -87,6 +90,19 @@ export const LAUNCHABLE_APPS = [
     slug: 'chat',
     title: 'Chat',
     workspacePathResolver: workspaceRootPath,
+  },
+  {
+    aliases: ['Writing', 'Pages', 'Shared documents'],
+    appRoot: 'apps/web',
+    category: 'productivity',
+    defaultPath: '/docs',
+    localhostOrigin: 'http://localhost:7803',
+    packageName: '@tuturuuu/web',
+    portlessApp: 'platform',
+    productionUrl: 'https://tuturuuu.com',
+    slug: 'documents',
+    title: 'Documents',
+    workspacePathResolver: workspaceDocumentsPath,
   },
   {
     aliases: ['Content', 'CMS'],

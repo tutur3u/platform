@@ -37,10 +37,10 @@ describe('app public paths', () => {
     );
   });
 
-  it('allows unauthenticated access to the docs redirect route', () => {
-    expect(APP_PUBLIC_PATHS).toEqual(
-      expect.arrayContaining(['/docs', '/en/docs', '/vi/docs'])
-    );
+  it('keeps the Documents app entry behind login', () => {
+    expect(APP_PUBLIC_PATHS).not.toContain('/docs');
+    expect(APP_PUBLIC_PATHS).not.toContain('/en/docs');
+    expect(APP_PUBLIC_PATHS).not.toContain('/vi/docs');
   });
 
   it('allows anonymous access to the public roadmap', () => {

@@ -274,10 +274,6 @@ function handlePublicMarketingRedirectRoute(
     return redirectToPath(req, pathnameWithoutLocale);
   }
 
-  if (pathnameWithoutLocale === '/docs') {
-    return NextResponse.redirect('https://docs.tuturuuu.com');
-  }
-
   if (pathnameWithoutLocale === '/pricing') {
     return redirectToPath(req, '/?hash-nav=1#pricing');
   }

@@ -32,60 +32,16 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
+import {
+  getComparablePath,
+  isNavLinkActive,
+  matchesPathPrefix,
+} from './nav-link-matching';
 import type { NavLink as NavLinkType } from './navigation';
 import {
   SidebarNavigationItemContent,
   satelliteNavigationItemClass,
 } from './satellite-navigation';
-
-function matchesPathPrefix(targetPath: string, pathPrefix: string) {
-  return targetPath === pathPrefix || targetPath.startsWith(`${pathPrefix}/`);
-}
-
-function isAbsoluteHttpUrl(target: string) {
-  return /^https?:\/\//iu.test(target);
-}
-
-function getComparablePath(
-  target?: string,
-  options: { external?: boolean } = {}
-) {
-  if (!target) return null;
-  if (options.external) return null;
-
-  try {
-    const base =
-      typeof window === 'undefined'
-        ? 'https://tuturuuu.local'
-        : window.location.origin;
-    const url = isAbsoluteHttpUrl(target)
-      ? new URL(target)
-      : new URL(target, base);
-
-    if (url.origin !== base) return null;
-
-    return url.pathname;
-  } catch {
-    return target.split(/[?#]/u)[0] || target;
-  }
-}
-
-function matchesNavigationTarget(
-  pathname: string,
-  target: string,
-  matchExact = false
-) {
-  const isWildcard = target.endsWith('/*');
-  const normalizedTarget = isWildcard
-    ? target.slice(0, -2).replace(/\/+$/u, '') || '/'
-    : target;
-
-  if (isWildcard) return matchesPathPrefix(pathname, normalizedTarget);
-
-  return matchExact
-    ? pathname === normalizedTarget
-    : matchesPathPrefix(pathname, normalizedTarget);
-}
 
 interface NavLinkProps {
   wsId: string;
@@ -123,38 +79,7 @@ export function NavLink({
   const hasSubMenu = (childLinks?.length ?? 0) > 1;
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
-  // Recursive function to check if any nested child matches the pathname
-  const hasActiveChild = (navLinks: (NavLinkType | null)[]): boolean => {
-    return (
-      navLinks?.some((child) => {
-        const childTargets = [child?.href, ...(child?.aliases ?? [])]
-          .map((target) =>
-            getComparablePath(target, { external: child?.external })
-          )
-          .filter((target): target is string => Boolean(target));
-        const childMatches = childTargets.some((target) =>
-          matchesNavigationTarget(pathname, target, child?.matchExact)
-        );
-
-        if (childMatches) return true;
-
-        if (child?.children) {
-          return hasActiveChild(child.children);
-        }
-
-        return false;
-      }) ?? false
-    );
-  };
-
-  const activeTargets = [href, ...(link.aliases ?? [])]
-    .map((target) => getComparablePath(target, { external: link.external }))
-    .filter((target): target is string => Boolean(target));
-  const isActive =
-    activeTargets.some((target) =>
-      matchesNavigationTarget(pathname, target, link.matchExact)
-    ) ||
-    (children && hasActiveChild(children));
+  const isActive = isNavLinkActive(link, pathname);
 
   const isDisabled = link.disabled || link.tempDisabled;
   const isTierRestricted = link.tempDisabled && link.requiredWorkspaceTier;

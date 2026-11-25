@@ -10,6 +10,7 @@ interface NavProps {
   onSubMenuClick: (links: (NavLinkType | null)[], title: string) => void;
   onClick: () => void;
   className?: string;
+  collapsibleSections?: boolean;
 }
 export function Nav({
   wsId,
@@ -18,12 +19,14 @@ export function Nav({
   onSubMenuClick,
   onClick,
   className,
+  collapsibleSections,
 }: NavProps) {
   return (
     <SidebarNavigation
       links={links}
       isCollapsed={isCollapsed}
       className={className}
+      collapsibleSections={collapsibleSections}
       renderLink={(link) => (
         <NavLink
           wsId={wsId}

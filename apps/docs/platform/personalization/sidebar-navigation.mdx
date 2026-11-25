@@ -1,37 +1,31 @@
 ---
 title: 'Sidebar Navigation'
 description: 'How dashboard sidebar layout preferences work in apps/web.'
-updatedAt: "2026-11-24"
+updatedAt: "2026-11-25"
 audience: users
 ---
 
 ## Default layout
 
-The dashboard sidebar always keeps **Dashboard** in the root navigation. By default, the root navigation then shows **Tasks**, **Calendar**, and **Finance**.
+The dashboard sidebar is one flat list of apps grouped under category sections. Every app belongs to exactly one category, categories always appear in the same order, and a section header appears once. The category registry (`sidebar-categories.ts`) is the only place that assigns sections; navigation items do not carry their own section labels.
 
-The sidebar has no **More tools** section (decided 2026-11-24). Every other
-eligible tool is a dedicated sidebar item listed below the pinned ones, in a
-**Tools** group, and every app is also reachable from the Apps picker at the
-top of the sidebar. Tools keep their durable sections, separated by dividers:
+| Section | Apps |
+| --- | --- |
+| Overview (no header) | Dashboard |
+| Productivity | Tasks, Calendar, Notes, Documents, Habits, Track, Forms, Personal journal |
+| Communication | Mail, Chat, Meet, Contacts |
+| Finance & Operations | Finance, Inventory, Workforce, Reports |
+| Files & Content | Drive, Whiteboards |
+| AI | Mind, Hive, AI Lab |
+| Utilities | QR Generator, Link Shortener, Polls, Google Workspace, Feedback |
 
-- **Work tools**: Habits, Whiteboards, Track, Drive, Forms, Documents
-- **AI**: Mind, Hive, Chat, AI Lab
-- **Operations**: Workforce, Users, Inventory
-- **Utilities**: QR Generator, Google Workspace, Meet, Polls, Mail, Education, Link Shortener
+Apps that are not in the registry fall into **Utilities** and sort after the known apps. A section whose apps are all unavailable or archived is not rendered. **Settings** is pinned to the bottom of the sidebar, below an **Archived** entry when one exists.
 
-Pinning moves a tool into the top group; unpinning returns it to Tools;
-archiving hides it under **Archived**. Stored layouts keep their `more`
-placement, which now means the Tools group. Manage members, SSO and Domains
-live in the settings dialog, not the sidebar (see
-[Settings dialog](/platform/features/settings-dialog)).
+Why headers used to repeat: each app carried its own section label and the renderer printed a header whenever two neighbouring labels differed. A saved per-user order that interleaved apps from different groups therefore repeated headers out of order. Grouping by the registry makes that impossible.
 
-Dashboard is separated from the main root tools. **Settings** is pinned to the
-bottom of the sidebar, below Tools and Archived.
+Section headers are collapsible. The collapsed state is remembered in the browser (`localStorage`, key `tuturuuu:sidebar:collapsed-sections:v1`, shared across workspaces); when storage is unavailable every section renders open. A collapsed section still shows the page you are on. In the icon-only rail the headers keep their space but are hidden, so every icon stays at the same height as in the expanded panel and every app stays reachable with a tooltip. Collapsible sections are opt-in (`collapsibleSections` on the shared sidebar navigation); other apps keep the plain label headers. Manage members, SSO and Domains live in the settings dialog (see [Settings dialog](/platform/features/settings-dialog)). The earlier More tools container (`more_tools`) is still how the navigation is authored, but it is expanded in place by the category layout, so no section or `flattenToolsSection` step remains. The apps/workspace copy of this sidebar is not changed by this decision.
 
-Implementation: `flattenToolsSection` in
-`apps/web/src/app/[locale]/(dashboard)/[wsId]/sidebar-tools-section.ts`
-(and the apps/workspace copy) expands the internal `more_tools` container.
-Regression coverage: `__tests__/sidebar-navigation-preferences.test.ts`.
+Regression coverage: `__tests__/sidebar-navigation-preferences.test.ts`, `__tests__/sidebar-categories.test.ts` and `packages/ui/src/components/ui/custom/satellite-navigation.test.tsx`.
 
 ## Managing layout
 
@@ -239,27 +233,18 @@ Sidebar layout preferences use a hybrid model:
 
 The saved layout stores three ordered id lists:
 
-- `root`: first-level tools shown directly in the sidebar
-- `more`: first-level tools shown inside More tools
-- `hidden`: first-level tools archived from normal sidebar rendering
+- `root` and `more`: ids the user has ordered. They no longer decide which section an app is in; within its category an explicitly ordered app comes first, in the user's order, followed by the remaining apps in registry order.
+- `hidden`: first-level tools archived from normal sidebar rendering.
 
 Unknown or stale ids are ignored when the layout is applied and are dropped the next time the user saves preferences.
 
 ## Quick actions
 
-First-level navigation items expose compact hover actions in the sidebar:
+First-level navigation items expose an **Archive** hover action that hides an item from normal sidebar rendering. It also appears on tier-gated items that render grayed out. Saving layout preferences does not grant access to unavailable tools. Pin and unpin were removed from the sidebar because every app now sits in its category section.
 
-- **Pin** moves an item from More tools to the root sidebar.
-- **Unpin** moves an item from the root sidebar to More tools.
-- **Archive** hides an item from normal sidebar rendering.
+Dashboard and Settings are locked and cannot be archived.
 
-Pin, unpin, and archive also appear on tier-gated items that render grayed out in the sidebar. Saving layout preferences does not grant access to unavailable tools.
-
-Dashboard and Settings are locked and cannot be pinned, unpinned, or archived.
-
-Archived items appear in a compact **Archived** dropdown at the bottom of **More tools**. More tools remains visible when archived items exist alongside other visible More tools children.
-
-When every normal More tools child is hidden or unavailable and **Archived** is the only remaining visible child, structure promotion lifts **Archived** to the root sidebar instead of leaving an empty More tools wrapper. Selecting an archived item from that dropdown (or the root Archived entry) restores it to its previous root or More tools placement.
+Archived items appear in a compact **Archived** entry just above Settings. Selecting an archived item from it restores the item to its category section.
 
 ## Visibility rules
 

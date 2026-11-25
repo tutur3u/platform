@@ -4766,6 +4766,7 @@
       "colab": "Learn prompt engineering together with safe mock tools.",
       "contacts": "Organize customers, members, and relationship history.",
       "docs": "Read product guides, references, and setup instructions.",
+      "documents": "Write, organize, and share workspace documents.",
       "drive": "Store, organize, and share workspace files.",
       "finance": "Manage wallets, transactions, invoices, and budgets.",
       "forms": "Build, share, and analyze workspace forms and their responses.",
@@ -4798,7 +4799,8 @@
       "cms": "CMS",
       "colab": "Colab",
       "contacts": "Contacts",
-      "docs": "Docs",
+      "docs": "Documentation",
+      "documents": "Documents",
       "drive": "Drive",
       "finance": "Finance",
       "forms": "Forms",
@@ -14441,6 +14443,9 @@
       "docs": {
         "description": "Technical guides and reference material"
       },
+      "documents": {
+        "description": "Write, organize, and share workspace documents."
+      },
       "drive": {
         "description": "Files and shared storage"
       },
@@ -18347,10 +18352,12 @@
   },
   "sidebar_sections": {
     "ai": "AI",
-    "core": "Core",
-    "operations": "Operations",
-    "utilities": "Utilities",
-    "work_tools": "Work tools"
+    "communication": "Communication",
+    "files_content": "Files & Content",
+    "operations": "Finance & Operations",
+    "overview": "Overview",
+    "productivity": "Productivity",
+    "utilities": "Utilities"
   },
   "sidebar_tabs": {
     "ai": "AI",

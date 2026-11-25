@@ -1,11 +1,9 @@
 'use client';
 
 import { Separator } from '@tuturuuu/ui/separator';
-import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function NavbarSeparator() {
-  const pathname = usePathname();
   const [scroll, setScroll] = useState(0);
 
   useEffect(() => {
@@ -40,11 +38,9 @@ export default function NavbarSeparator() {
     }
   }, [scroll]);
 
-  const forceShow = pathname.startsWith('/docs');
-
   return (
     <Separator
-      className={`${forceShow || scroll > 0 ? 'opacity-100' : 'opacity-0'} transition duration-300`}
+      className={`${scroll > 0 ? 'opacity-100' : 'opacity-0'} transition duration-300`}
     />
   );
 }

@@ -53,7 +53,11 @@ function buildFooterColumns(tFooter: Translator): MarketingFooterColumn[] {
         { external: true, href: WEB_APP_URL, label: tFooter('links.tuturuuu') },
         platformLink('/products', 'products'),
         platformLink('/pricing', 'pricing'),
-        platformLink('/docs', 'docs'),
+        {
+          external: true,
+          href: 'https://docs.tuturuuu.com',
+          label: tFooter('links.docs'),
+        },
       ],
     },
     {

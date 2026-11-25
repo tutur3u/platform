@@ -34,6 +34,7 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   cms: FileText,
   contacts: BookUser,
   docs: BookText,
+  documents: FileText,
   drive: Folder,
   finance: Wallet,
   forms: ClipboardList,

@@ -49,6 +49,35 @@ describe('launchable apps', () => {
     ).toBe('https://tools.tuturuuu.com');
   });
 
+  it('registers Documents at the apex /docs path, apart from the Docs site', () => {
+    const documents = getLaunchableApp('documents');
+    const docs = getLaunchableApp('docs');
+
+    expect(documents).toMatchObject({
+      category: 'productivity',
+      defaultPath: '/docs',
+      productionUrl: 'https://tuturuuu.com',
+      title: 'Documents',
+    });
+    expect(docs?.productionUrl).toBe('https://docs.tuturuuu.com');
+    expect(getLaunchableAppByTitle('docs')?.slug).toBe('docs');
+    expect(getLaunchableAppByTitle('writing')?.slug).toBe('documents');
+    expect(getLaunchableAppByHostname('tuturuuu.com')?.slug).toBe('platform');
+    expect(
+      resolveLaunchableAppUrl({
+        app: documents!,
+        environment: 'production',
+      })
+    ).toBe('https://tuturuuu.com/docs');
+    expect(
+      resolveLaunchableAppUrl({
+        app: documents!,
+        environment: 'production',
+        workspace: personalWorkspace,
+      })
+    ).toBe('https://tuturuuu.com/personal/documents');
+  });
+
   it('resolves production and Portless hostnames', () => {
     expect(getLaunchableAppByHostname('calendar.tuturuuu.com')?.slug).toBe(
       'calendar'

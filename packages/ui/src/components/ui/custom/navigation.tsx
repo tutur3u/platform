@@ -25,6 +25,10 @@ export interface NavLink {
   label?: string;
   /** When set, renders a labeled section header above this item in the sidebar. */
   sectionLabel?: string;
+  /** Stable section id; links sharing it form one (optionally collapsible) section. */
+  sectionId?: string;
+  /** Whether the section header toggles the section when collapsible sections are on. */
+  sectionCollapsible?: boolean;
   external?: boolean;
   disabled?: boolean;
   tempDisabled?: boolean;
@@ -57,7 +61,6 @@ export interface NavLink {
   };
   preferenceLocked?: boolean;
   preferencePlacement?: 'root' | 'more';
-  preferenceSectionLabel?: string;
   deferredQueryParamsFromWorkspaceConfig?:
     | {
         configId: string;

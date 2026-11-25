@@ -29,10 +29,6 @@ export const PUBLIC_MARKETING_ALIAS_CASES = [
     url: 'http://localhost/en/calendar/meet-together/plans/summer',
   },
   {
-    expectedLocation: 'https://docs.tuturuuu.com/',
-    url: 'http://localhost/en/docs',
-  },
-  {
     expectedLocation:
       'https://tools.tuturuuu.localhost/qr?utm_source=e2e&tag=a&tag=b',
     url: 'http://localhost/en/qr-generator?utm_source=e2e&tag=a&tag=b',

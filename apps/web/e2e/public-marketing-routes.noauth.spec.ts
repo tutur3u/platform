@@ -289,10 +289,6 @@ const redirects = [
     location: '/meet-together/plans/summer',
   },
   {
-    path: `/${DEFAULT_LOCALE}/docs`,
-    location: 'https://docs.tuturuuu.com',
-  },
-  {
     path: `/${DEFAULT_LOCALE}/pricing`,
     location: '/pricing',
   },

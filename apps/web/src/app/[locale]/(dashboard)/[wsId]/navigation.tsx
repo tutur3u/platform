@@ -171,10 +171,6 @@ export async function WorkspaceNavigationLinks({
 
     if (guestSummary.boardCount === 0) notFound();
 
-    const sidebarSections = {
-      core: t('sidebar_sections.core'),
-    };
-
     return [
       {
         id: 'tasks',
@@ -189,7 +185,6 @@ export async function WorkspaceNavigationLinks({
         external: true,
         experimental: 'beta',
         preferencePlacement: 'root',
-        preferenceSectionLabel: sidebarSections.core,
       },
     ] satisfies DashboardNavigationLink[];
   }
@@ -221,13 +216,6 @@ export async function WorkspaceNavigationLinks({
   );
   const isTaskNavigationEnabled = (configId: string) =>
     enabledTaskNavigationConfigIds.has(configId);
-  const sidebarSections = {
-    ai: t('sidebar_sections.ai'),
-    core: t('sidebar_sections.core'),
-    operations: t('sidebar_sections.operations'),
-    utilities: t('sidebar_sections.utilities'),
-    workTools: t('sidebar_sections.work_tools'),
-  };
 
   const taskNavigationDisabled =
     ENABLE_AI_ONLY || withoutPermission('manage_projects');
@@ -314,7 +302,6 @@ export async function WorkspaceNavigationLinks({
             icon: createDashboardNavigationIcon('ClipboardList', 'h-5 w-5'),
             children: [],
             matchExact: true,
-            preferenceSectionLabel: sidebarSections.utilities,
           } satisfies DashboardNavigationLink,
         ]
       : []),
@@ -326,7 +313,6 @@ export async function WorkspaceNavigationLinks({
       matchExact: true,
       preferenceLocked: true,
       preferencePlacement: 'root',
-      preferenceSectionLabel: sidebarSections.core,
     },
     null,
     {
@@ -347,7 +333,6 @@ export async function WorkspaceNavigationLinks({
       external: true,
       experimental: 'beta',
       preferencePlacement: 'root',
-      preferenceSectionLabel: sidebarSections.core,
       children: taskNavigationChildren,
     },
     {
@@ -358,7 +343,6 @@ export async function WorkspaceNavigationLinks({
       icon: createDashboardNavigationIcon('Repeat', 'h-5 w-5'),
       external: true,
       disabled: !ENABLE_HABITS,
-      preferenceSectionLabel: sidebarSections.workTools,
     },
     {
       id: 'calendar',
@@ -368,7 +352,6 @@ export async function WorkspaceNavigationLinks({
       external: true,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
       preferencePlacement: 'root',
-      preferenceSectionLabel: sidebarSections.core,
     },
     {
       id: 'contacts',
@@ -380,7 +363,6 @@ export async function WorkspaceNavigationLinks({
         withoutPermission('manage_users') &&
         withoutPermission('view_users_public_info'),
       preferencePlacement: 'root',
-      preferenceSectionLabel: sidebarSections.core,
     },
     {
       id: 'whiteboards',
@@ -390,7 +372,6 @@ export async function WorkspaceNavigationLinks({
       requiredWorkspaceTier: createTierRequirement('whiteboards', {
         alwaysShow: true,
       }),
-      preferenceSectionLabel: sidebarSections.workTools,
     },
     {
       id: 'finance',
@@ -399,7 +380,6 @@ export async function WorkspaceNavigationLinks({
       icon: createDashboardNavigationIcon('BadgeDollarSign', 'h-5 w-5'),
       experimental: 'beta',
       preferencePlacement: 'root',
-      preferenceSectionLabel: sidebarSections.core,
       aliases: [
         `/${personalOrWsId}/finance`,
         `/${personalOrWsId}/finance/transactions`,
@@ -559,7 +539,6 @@ export async function WorkspaceNavigationLinks({
         },
       ],
       disabled: ENABLE_AI_ONLY,
-      preferenceSectionLabel: sidebarSections.workTools,
     },
     {
       id: 'drive',
@@ -572,7 +551,6 @@ export async function WorkspaceNavigationLinks({
       disabled: withoutPermission('manage_drive'),
       experimental: 'beta',
       external: true,
-      preferenceSectionLabel: sidebarSections.workTools,
     },
     null,
     null,
@@ -585,7 +563,6 @@ export async function WorkspaceNavigationLinks({
       disabled:
         withoutPermission('manage_forms') &&
         withoutPermission('view_form_analytics'),
-      preferenceSectionLabel: sidebarSections.workTools,
     },
     null,
     // ── Vertical 5: More (collapsed features) ──
@@ -596,7 +573,6 @@ export async function WorkspaceNavigationLinks({
       ENABLE_AI_ONLY,
       hasSecret,
       withoutPermission,
-      sidebarSections,
       isMailUser,
       chatAppHref,
       contactsAppHref,

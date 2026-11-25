@@ -223,7 +223,7 @@ describe('family route pruning', () => {
   it('keeps the public docs pages and the build probe', () => {
     const plan = planPrune('public-docs');
     expect(plan.keep).toContain('[locale]/(marketing)/changelog/page.tsx');
-    expect(plan.keep).toContain('[locale]/(marketing)/docs/page.tsx');
+    expect(plan.keep).not.toContain('[locale]/(dashboard)/docs/page.tsx');
     expect(plan.keep).toContain('[locale]/ui/components/page.tsx');
     expect(plan.keep).toContain(
       '[locale]/(marketing)/visualizations/horse-racing/page.tsx'

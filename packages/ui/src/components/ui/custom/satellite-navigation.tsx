@@ -1,25 +1,249 @@
 'use client';
 
+import { ChevronDown } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
+import { type ReactNode, useId } from 'react';
+import { isNavLinkActive } from './nav-link-matching';
 import type { NavLink as NavLinkType } from './navigation';
+import { useCollapsedSidebarSections } from './sidebar-collapsed-sections';
 
 export interface SidebarNavigationProps {
   isCollapsed: boolean;
   links: (NavLinkType | null)[];
   className?: string;
   label?: string;
+  /**
+   * Group links by `sectionId` into collapsible sections whose open state is
+   * remembered. Off by default: other apps keep the plain label-change headers.
+   */
+  collapsibleSections?: boolean;
   renderLink: (link: NavLinkType) => ReactNode;
 }
+
+type SidebarBlock =
+  | { type: 'divider'; index: number }
+  | { type: 'item'; index: number; link: NavLinkType }
+  | {
+      type: 'section';
+      collapsible: boolean;
+      id: string;
+      items: NavLinkType[];
+      label?: string;
+    };
+
+function groupSidebarBlocks(links: (NavLinkType | null)[]): SidebarBlock[] {
+  const blocks: SidebarBlock[] = [];
+
+  links.forEach((link, index) => {
+    if (!link) {
+      blocks.push({ type: 'divider', index });
+      return;
+    }
+
+    const sectionKey = link.sectionId ?? link.sectionLabel;
+    if (!sectionKey) {
+      blocks.push({ type: 'item', index, link });
+      return;
+    }
+
+    const previous = blocks.at(-1);
+    if (previous?.type === 'section' && previous.id === sectionKey) {
+      previous.items.push(link);
+      return;
+    }
+
+    blocks.push({
+      type: 'section',
+      collapsible: Boolean(link.sectionCollapsible && link.sectionLabel),
+      id: sectionKey,
+      items: [link],
+      label: link.sectionLabel,
+    });
+  });
+
+  return blocks;
+}
+
+function SidebarDivider({ isCollapsed }: { isCollapsed: boolean }) {
+  return (
+    <div
+      className={cn('my-1 border-b', isCollapsed ? 'mx-auto w-1/2' : 'w-auto')}
+    />
+  );
+}
+
+function CollapsibleSidebarSection({
+  block,
+  isCollapsed,
+  isFirst,
+  isOpen,
+  onToggle,
+  pathname,
+  renderLink,
+}: {
+  block: Extract<SidebarBlock, { type: 'section' }>;
+  isCollapsed: boolean;
+  isFirst: boolean;
+  isOpen: boolean;
+  onToggle: () => void;
+  pathname: string;
+  renderLink: (link: NavLinkType) => ReactNode;
+}) {
+  const contentId = useId();
+
+  // The icon-only rail has no room for the header but keeps its space, so
+  // every icon sits at the same height as in the expanded panel and every
+  // app stays reachable.
+  if (isCollapsed) {
+    return (
+      <>
+        {block.label && (
+          <div
+            aria-hidden
+            className={cn('invisible px-4 pb-1', isFirst ? 'pt-0' : 'pt-3')}
+          >
+            <span className="block truncate font-semibold text-[11px] uppercase tracking-wider">
+              {block.label}
+            </span>
+          </div>
+        )}
+        {block.items.map((link, index) => (
+          <div key={`nav-item-${link.id ?? link.href ?? link.title}-${index}`}>
+            {renderLink(link)}
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  // A collapsed section still shows the page the user is on, so the active
+  // item never disappears from the sidebar.
+  const visibleItems =
+    isOpen || !block.collapsible
+      ? block.items
+      : block.items.filter((link) => isNavLinkActive(link, pathname));
+
+  return (
+    <section
+      data-section-id={block.id}
+      data-state={isOpen ? 'open' : 'closed'}
+      className="grid gap-y-0.5"
+    >
+      {block.label &&
+        (block.collapsible ? (
+          <button
+            type="button"
+            aria-controls={contentId}
+            aria-expanded={isOpen}
+            className={cn(
+              'flex w-full items-center justify-between rounded-md px-4 pb-1 font-semibold text-[11px] text-muted-foreground/80 uppercase tracking-wider transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+              isFirst ? 'pt-0' : 'pt-3'
+            )}
+            onClick={onToggle}
+          >
+            <span>{block.label}</span>
+            <ChevronDown
+              aria-hidden
+              className={cn(
+                'h-3 w-3 transition-transform',
+                !isOpen && '-rotate-90'
+              )}
+            />
+          </button>
+        ) : (
+          <div className={cn('px-4 pb-1', isFirst ? 'pt-0' : 'pt-3')}>
+            <span className="font-semibold text-[11px] text-muted-foreground/80 uppercase tracking-wider">
+              {block.label}
+            </span>
+          </div>
+        ))}
+      <div id={contentId} className="grid gap-y-0.5">
+        {visibleItems.map((link, index) => (
+          <div key={`nav-item-${link.id ?? link.href ?? link.title}-${index}`}>
+            {renderLink(link)}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CollapsibleSidebarSections({
+  links,
+  isCollapsed,
+  renderLink,
+}: Pick<SidebarNavigationProps, 'links' | 'isCollapsed' | 'renderLink'>) {
+  const pathname = usePathname() ?? '';
+  const { collapsedIds, toggleSection } = useCollapsedSidebarSections();
+  const blocks = groupSidebarBlocks(links);
+
+  return (
+    <>
+      {blocks.map((block, blockIndex) => {
+        if (block.type === 'divider') {
+          return (
+            <SidebarDivider
+              key={`nav-divider-${block.index}`}
+              isCollapsed={isCollapsed}
+            />
+          );
+        }
+
+        if (block.type === 'item') {
+          return (
+            <div
+              key={`nav-item-${block.link.href || block.link.title}-${block.index}`}
+            >
+              {renderLink(block.link)}
+            </div>
+          );
+        }
+
+        return (
+          <CollapsibleSidebarSection
+            key={`nav-section-${block.id}`}
+            block={block}
+            isCollapsed={isCollapsed}
+            isFirst={blockIndex === 0}
+            isOpen={!collapsedIds.includes(block.id)}
+            onToggle={() => toggleSection(block.id)}
+            pathname={pathname}
+            renderLink={renderLink}
+          />
+        );
+      })}
+    </>
+  );
+}
+
 export function SidebarNavigation({
   links,
   isCollapsed,
   className,
   label,
+  collapsibleSections = false,
   renderLink,
 }: SidebarNavigationProps) {
   if (!links?.length) {
     return null;
+  }
+
+  if (collapsibleSections) {
+    return (
+      <div
+        data-collapsed={isCollapsed}
+        className={cn('group flex flex-col gap-y-0.5', 'p-2', className)}
+      >
+        <nav aria-label={label} className="grid grid-cols-1 gap-y-0.5">
+          <CollapsibleSidebarSections
+            links={links}
+            isCollapsed={isCollapsed}
+            renderLink={renderLink}
+          />
+        </nav>
+      </div>
+    );
   }
 
   return (

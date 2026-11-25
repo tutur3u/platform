@@ -4377,6 +4377,11 @@
     {
       "family": "web-rest",
       "localized": true,
+      "pattern": "/docs"
+    },
+    {
+      "family": "web-rest",
+      "localized": true,
       "pattern": "/changelog/[slug]/opengraph-image/[[...metadata]]"
     },
     {
@@ -4393,11 +4398,6 @@
       "family": "web-rest",
       "localized": true,
       "pattern": "/changelog"
-    },
-    {
-      "family": "web-rest",
-      "localized": true,
-      "pattern": "/docs"
     },
     {
       "family": "web-rest",

@@ -1,13 +1,12 @@
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { describe, expect, it } from 'vitest';
 import {
+  appendArchivedNavigationLink,
   applySidebarNavigationPreferences,
   createSidebarNavigationLayoutConfigForHiddenState,
   createSidebarNavigationLayoutConfigForPlacement,
   normalizeSidebarNavigationLayoutConfig,
-  promoteArchivedWhenMoreToolsOnlyHasArchive,
 } from '../sidebar-navigation-preferences';
-import { flattenToolsSection } from '../sidebar-tools-section';
 
 const links: (NavLink | null)[] = [
   {
@@ -40,7 +39,6 @@ const links: (NavLink | null)[] = [
     id: 'forms',
     title: 'Forms',
     href: '/personal/forms',
-    preferenceSectionLabel: 'Work tools',
   },
   {
     id: 'more_tools',
@@ -50,14 +48,12 @@ const links: (NavLink | null)[] = [
         id: 'users',
         title: 'Users',
         href: '/personal/users',
-        preferenceSectionLabel: 'Operations',
       },
       null,
       {
         id: 'inventory',
         title: 'Inventory',
         href: '/personal/inventory',
-        preferenceSectionLabel: 'Operations',
       },
     ],
   },
@@ -67,7 +63,6 @@ const links: (NavLink | null)[] = [
     href: '/personal/settings',
     preferenceLocked: true,
     preferencePlacement: 'root',
-    preferenceSectionLabel: 'Utilities',
   },
 ];
 
@@ -77,44 +72,95 @@ function visibleIds(navLinks: (NavLink | null)[]) {
     .map((link) => link.id);
 }
 
-function moreChildIds(navLinks: (NavLink | null)[]) {
-  const more = navLinks.find((link) => link?.id === 'more_tools');
-  return more?.children ? visibleIds(more.children) : [];
+const categoryLabels = {
+  ai: 'AI',
+  communication: 'Communication',
+  files_content: 'Files & Content',
+  operations: 'Finance & Operations',
+  overview: 'Overview',
+  productivity: 'Productivity',
+  utilities: 'Utilities',
+};
+
+function sectionHeaders(navLinks: (NavLink | null)[]) {
+  const headers: (string | undefined)[] = [];
+  let previous: string | undefined;
+
+  for (const link of navLinks) {
+    if (!link) continue;
+    if (link.sectionId !== previous) headers.push(link.sectionLabel);
+    previous = link.sectionId;
+  }
+
+  return headers;
 }
 
 describe('sidebar navigation preferences', () => {
-  it('defaults root navigation to Dashboard, core tools, More tools, then Settings', () => {
-    const result = applySidebarNavigationPreferences(links, null);
+  it('lays out one flat list grouped by category, with Settings as the footer', () => {
+    const result = applySidebarNavigationPreferences(links, null, {
+      categoryLabels,
+    });
 
-    expect(visibleIds(result.links)).toEqual([
-      'dashboard',
-      'tasks',
-      'calendar',
-      'finance',
-      'more_tools',
-      'settings',
-    ]);
-    expect(moreChildIds(result.links)).toEqual(['forms', 'users', 'inventory']);
     expect(result.links.map((link) => link?.id ?? null)).toEqual([
       'dashboard',
-      null,
       'tasks',
       'calendar',
+      'forms',
       'finance',
-      null,
-      'more_tools',
+      'inventory',
+      'users',
       null,
       'settings',
     ]);
-    expect(
-      result.links
-        .find((link) => link?.id === 'more_tools')
-        ?.children?.filter((link): link is NavLink => Boolean(link))
-        .map((link) => link.sectionLabel)
-    ).toEqual(['Work tools', 'Operations', 'Operations']);
+    expect(result.links.some((link) => link?.id === 'more_tools')).toBe(false);
+    expect(sectionHeaders(result.links.slice(0, -2))).toEqual([
+      undefined,
+      'Productivity',
+      'Finance & Operations',
+      'Utilities',
+    ]);
+    expect(result.rootIds).toEqual(['tasks', 'calendar', 'finance']);
+    expect(result.moreIds).toEqual(['forms', 'users', 'inventory']);
   });
 
-  it('applies placement, ordering, hiding, and ignores stale ids', () => {
+  it('never repeats a section header, however the saved order interleaves apps', () => {
+    const result = applySidebarNavigationPreferences(
+      links,
+      {
+        root: ['finance', 'tasks', 'users'],
+        more: ['inventory', 'forms', 'calendar'],
+      },
+      { categoryLabels }
+    );
+    const headers = sectionHeaders(result.links.slice(0, -2));
+
+    expect(new Set(headers).size).toBe(headers.length);
+    expect(result.links.map((link) => link?.sectionId)).toEqual([
+      'overview',
+      'productivity',
+      'productivity',
+      'productivity',
+      'operations',
+      'operations',
+      'utilities',
+      undefined,
+      undefined,
+    ]);
+  });
+
+  it('marks the overview section as header-less and non-collapsible', () => {
+    const [dashboard, , , , , , , , settings] =
+      applySidebarNavigationPreferences(links, null, { categoryLabels }).links;
+
+    expect(dashboard).toMatchObject({
+      sectionCollapsible: false,
+      sectionId: 'overview',
+      sectionLabel: undefined,
+    });
+    expect(settings?.sectionId).toBeUndefined();
+  });
+
+  it('applies saved order within a category, hiding, and ignores stale ids', () => {
     const result = applySidebarNavigationPreferences(
       links,
       JSON.stringify({
@@ -126,16 +172,15 @@ describe('sidebar navigation preferences', () => {
 
     expect(visibleIds(result.links)).toEqual([
       'dashboard',
-      'finance',
       'tasks',
-      'more_tools',
+      'calendar',
+      'finance',
+      'inventory',
+      'users',
       'settings',
     ]);
-    expect(moreChildIds(result.links)).toEqual([
-      'calendar',
-      'users',
-      'inventory',
-    ]);
+    expect(result.rootIds).toEqual(['finance', 'tasks']);
+    expect(result.moreIds).toEqual(['calendar', 'users', 'inventory']);
     expect(result.normalizedConfig.hidden).toEqual(['forms']);
   });
 
@@ -150,8 +195,7 @@ describe('sidebar navigation preferences', () => {
       }
     );
 
-    const more = result.links.find((link) => link?.id === 'more_tools');
-    const activeHidden = more?.children?.find((link) => link?.id === 'forms');
+    const activeHidden = result.links.find((link) => link?.id === 'forms');
 
     expect(activeHidden).toMatchObject({
       id: 'forms',
@@ -225,23 +269,16 @@ describe('sidebar navigation preferences', () => {
     ).toBe(false);
   });
 
-  it('keeps More tools available when all More children are archived', () => {
+  it('drops a section entirely once all of its apps are archived', () => {
     const result = applySidebarNavigationPreferences(links, {
-      hidden: ['forms', 'users', 'inventory'],
+      hidden: ['finance', 'inventory'],
     });
 
-    expect(visibleIds(result.links)).toEqual([
-      'dashboard',
-      'tasks',
-      'calendar',
-      'finance',
-      'more_tools',
-      'settings',
-    ]);
-    expect(moreChildIds(result.links)).toEqual([]);
+    expect(result.links.some((link) => link?.sectionId === 'operations')).toBe(
+      false
+    );
     expect(result.archivedLinks.map((link) => link.id)).toEqual([
-      'forms',
-      'users',
+      'finance',
       'inventory',
     ]);
   });
@@ -322,76 +359,31 @@ describe('sidebar navigation preferences', () => {
   });
 });
 
-describe('promoteArchivedWhenMoreToolsOnlyHasArchive', () => {
+describe('appendArchivedNavigationLink', () => {
   const archivedLink: NavLink = {
     id: 'archived_navigation',
     title: 'Archived',
-    href: '/personal/archived',
   };
+  const settings: NavLink = {
+    id: 'settings',
+    title: 'Settings',
+    href: '/personal/settings',
+  };
+  const tasks: NavLink = { id: 'tasks', title: 'Tasks' };
 
-  it('promotes Archived to root when More Tools has only Archived', () => {
-    const links: (NavLink | null)[] = [
-      {
-        id: 'more_tools',
-        title: 'More tools',
-        children: [archivedLink],
-      },
-    ];
-
-    expect(promoteArchivedWhenMoreToolsOnlyHasArchive(links)).toEqual([
-      archivedLink,
-    ]);
-  });
-
-  it('promotes Archived to root when More Tools has a separator and Archived', () => {
-    const links: (NavLink | null)[] = [
-      {
-        id: 'more_tools',
-        title: 'More tools',
-        children: [null, archivedLink],
-      },
-    ];
-
-    expect(promoteArchivedWhenMoreToolsOnlyHasArchive(links)).toEqual([
-      archivedLink,
-    ]);
-  });
-
-  it('keeps More Tools grouped when it has other visible children', () => {
-    const tasksLink: NavLink = {
-      id: 'tasks',
-      title: 'Tasks',
-      href: '/personal/tasks',
-    };
-    const moreTools: NavLink = {
-      id: 'more_tools',
-      title: 'More tools',
-      children: [tasksLink, archivedLink],
-    };
-    const links: (NavLink | null)[] = [moreTools];
-
-    expect(promoteArchivedWhenMoreToolsOnlyHasArchive(links)).toEqual([
-      moreTools,
-    ]);
-  });
-});
-
-describe('flattenToolsSection', () => {
-  it('renders every tool as a dedicated item instead of a More tools section', () => {
-    const result = applySidebarNavigationPreferences(links, null);
-    const containerChildren =
-      result.links.find((link) => link?.id === 'more_tools')?.children ?? [];
-    const flat = flattenToolsSection(result.links);
-
-    expect(flat.some((link) => link?.id === 'more_tools')).toBe(false);
-    for (const child of containerChildren) {
-      if (child) expect(flat).toContain(child);
-    }
-    const ids = flat.map((link) => link?.id ?? null);
-    expect(ids[0]).not.toBeNull();
-    expect(ids.at(-1)).not.toBeNull();
+  it('places Archived directly above the Settings footer', () => {
     expect(
-      ids.some((id, index) => id === null && ids[index - 1] === null)
-    ).toBe(false);
+      appendArchivedNavigationLink([tasks, null, settings], archivedLink).map(
+        (link) => link?.id ?? null
+      )
+    ).toEqual(['tasks', null, 'archived_navigation', 'settings']);
+  });
+
+  it('appends Archived behind a divider when there is no Settings footer', () => {
+    expect(
+      appendArchivedNavigationLink([tasks], archivedLink).map(
+        (link) => link?.id ?? null
+      )
+    ).toEqual(['tasks', null, 'archived_navigation']);
   });
 });
