@@ -127,6 +127,7 @@ class _QuickReaction extends StatelessWidget {
     return Semantics(
       button: true,
       label: context.l10n.chatReactWith(emoji),
+      onTap: onTap,
       excludeSemantics: true,
       child: Material(
         color: selected

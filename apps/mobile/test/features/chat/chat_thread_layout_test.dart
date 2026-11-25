@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
+import 'package:mobile/features/chat/widgets/chat_message_reactions.dart';
 import 'package:mobile/features/chat/widgets/chat_thread_view.dart';
 
 import '../../helpers/helpers.dart';
@@ -57,6 +58,38 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(reaction, '\u{1F44D}');
+  });
+
+  testWidgets('reaction pills are activatable by assistive technology', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    String? toggled;
+    await tester.pumpApp(
+      ChatMessageReactions(
+        reactions: const [
+          ChatReactionSummary(emoji: '\u{1F389}', count: 2, userIds: ['me']),
+        ],
+        currentUserId: 'me',
+        onToggle: (emoji) => toggled = emoji,
+      ),
+    );
+    final pill = find.bySemanticsLabel(RegExp('2 reactions'));
+    expect(
+      tester.getSemantics(pill),
+      matchesSemantics(
+        label: '\u{1F389}, 2 reactions',
+        isButton: true,
+        hasEnabledState: true,
+        isEnabled: true,
+        hasToggledState: true,
+        isToggled: true,
+        hasTapAction: true,
+      ),
+    );
+    tester.semantics.tap(find.semantics.byLabel(RegExp('2 reactions')));
+    expect(toggled, '\u{1F389}');
+    handle.dispose();
   });
 
   for (final size in [const Size(402, 874), const Size(874, 1032)]) {

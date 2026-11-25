@@ -227,52 +227,62 @@ class ChatFileRow extends StatelessWidget {
         : LucideIcons.file;
     final size = attachment.sizeBytes;
     final radius = BorderRadius.circular(AppRadius.sm);
+    final label = [
+      attachment.filename,
+      if (size != null && size > 0) formatChatFileSize(size),
+    ].join(', ');
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),
-      child: Material(
-        color: onPrimary
-            ? colors.primaryForeground.withValues(alpha: 0.12)
-            : colors.muted.withValues(alpha: 0.6),
-        borderRadius: radius,
-        child: InkWell(
+      child: Semantics(
+        button: onOpen != null,
+        label: label,
+        onTap: onOpen,
+        excludeSemantics: true,
+        child: Material(
+          color: onPrimary
+              ? colors.primaryForeground.withValues(alpha: 0.12)
+              : colors.muted.withValues(alpha: 0.6),
           borderRadius: radius,
-          onTap: onOpen,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, size: 22, color: ink),
-                const SizedBox(width: AppSpacing.sm),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        attachment.filename,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tokens.typography.small.copyWith(
-                          color: ink,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (size != null && size > 0)
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onOpen,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 22, color: ink),
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          formatChatFileSize(size),
-                          style: tokens.typography.xSmall.copyWith(
-                            color: muted,
+                          attachment.filename,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tokens.typography.small.copyWith(
+                            color: ink,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                    ],
+                        if (size != null && size > 0)
+                          Text(
+                            formatChatFileSize(size),
+                            style: tokens.typography.xSmall.copyWith(
+                              color: muted,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-                if (onOpen != null) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  Icon(LucideIcons.download, size: 16, color: muted),
+                  if (onOpen != null) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    Icon(LucideIcons.download, size: 16, color: muted),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

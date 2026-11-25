@@ -50,6 +50,7 @@ class _ConversationTile extends StatelessWidget {
         preview,
         if (unread > 0) l10n.chatUnreadCount(unread),
       ].join(', '),
+      onTap: onTap,
       excludeSemantics: true,
       child: _TileSurface(
         selected: selected,

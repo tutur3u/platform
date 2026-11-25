@@ -66,8 +66,10 @@ class _ReactionPill extends StatelessWidget {
     final radius = BorderRadius.circular(AppRadius.pill);
     return Semantics(
       button: true,
+      enabled: true,
       toggled: mine,
       label: context.l10n.chatReactionSummary(reaction.emoji, reaction.count),
+      onTap: onTap,
       excludeSemantics: true,
       child: Material(
         color: mine

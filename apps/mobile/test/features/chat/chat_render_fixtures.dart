@@ -59,21 +59,21 @@ abstract final class ChatFixtures {
     final today = _today.add(const Duration(hours: 9));
     return [
       message(
-        'm1',
+        '00000000-0000-4000-8000-000000000001',
         'design',
         'Morning! The new onboarding flow is ready for review.',
         sender: ada,
         at: yesterday,
       ),
       message(
-        'm2',
+        '00000000-0000-4000-8000-000000000002',
         'design',
         'I left notes on the **second step**; the copy feels long.',
         sender: ada,
         at: yesterday.add(const Duration(minutes: 1)),
       ),
       message(
-        'm3',
+        '00000000-0000-4000-8000-000000000003',
         'design',
         'Thanks, I will trim it before standup.',
         sender: me,
@@ -83,7 +83,7 @@ abstract final class ChatFixtures {
         ],
       ),
       message(
-        'm4',
+        '00000000-0000-4000-8000-000000000004',
         'design',
         'Here is the updated spec.',
         sender: linh,
@@ -100,12 +100,12 @@ abstract final class ChatFixtures {
         ],
       ),
       message(
-        'm5',
+        '00000000-0000-4000-8000-000000000005',
         'design',
         'Looks great. Shipping it to QA after lunch.',
         sender: me,
         at: today.add(const Duration(minutes: 12)),
-        replyTo: 'm4',
+        replyTo: '00000000-0000-4000-8000-000000000004',
         reactions: const [
           ChatReactionSummary(emoji: '\u{1F389}', count: 1, userIds: ['linh']),
           ChatReactionSummary(emoji: '\u{1F64F}', count: 1, userIds: ['me']),
