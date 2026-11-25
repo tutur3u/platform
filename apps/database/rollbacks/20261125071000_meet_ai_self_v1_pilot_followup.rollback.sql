@@ -1,4 +1,4 @@
--- Rollback of 20261125999901_meet_ai_self_v1_pilot_followup.sql: restores the
+-- Rollback of 20261125071000_meet_ai_self_v1_pilot_followup.sql: restores the
 -- 20261124114100 functions and triggers and drops the added columns, checks
 -- and helpers. Consent and Mira choice evidence is immutable, so the rollback
 -- refuses (55000) once any allow carries notice evidence or any Mira choice

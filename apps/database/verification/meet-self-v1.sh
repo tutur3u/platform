@@ -38,7 +38,7 @@ self_v1=(
   20261111120208_meet_ai_self_v1_read_contracts
   20261124114100_meet_ai_self_v1_capture_path
   20261124114200_meet_ai_self_v1_cost_rpcs
-  20261125999901_meet_ai_self_v1_pilot_followup
+  20261125071000_meet_ai_self_v1_pilot_followup
 )
 # main's meet-ai-consent-schema/-retention suites need main's full parent RLS
 # (workspace_meetings policies, creator membership triggers); run them on a
@@ -62,7 +62,7 @@ forward() {
   for m in "${self_v1[@]}"; do
     case $m in
       2026111112020[2-5]_*) run "supabase/migrations/$m.sql" ;; # CONCURRENTLY: no transaction
-      20261125999901_*)
+      20261125071000_*)
         if [[ $($PSQL -X -At -c "select to_regclass('private.meet_consent_proofs') is null") == t ]]; then
           for p in "${proof[@]}"; do run "supabase/migrations/$p.sql" tx; done
         fi
@@ -142,7 +142,7 @@ guard_sql "perform private.meet_ai_self_v1_record_decision(sid, u, 'allow', 'v1'
   perform private.meet_ai_self_v1_mark_dispatch(c, u, 1);
   perform private.meet_ai_self_v1_stop_session(sid, u, true);"
 rollback_refused 'closed session, chunk still reserved, allow evidence recorded' \
-  20261125999901_meet_ai_self_v1_pilot_followup 20261124114200_meet_ai_self_v1_cost_rpcs \
+  20261125071000_meet_ai_self_v1_pilot_followup 20261124114200_meet_ai_self_v1_cost_rpcs \
   20261124114100_meet_ai_self_v1_capture_path
 guard_sql "perform private.meet_ai_self_v1_settle_chunk(c, 'unknown', null, null, null);
   delete from private.meet_ai_consents where session_id = sid;
@@ -197,7 +197,7 @@ $PSQL -X -q -v ON_ERROR_STOP=1 -c "select private.meet_ai_self_v1_stop_session($
   delete from auth.users where id = '$race_h';" >/dev/null
 
 # Rollback round trip, in the documented order, then forward again.
-for m in 20261125999901_meet_ai_self_v1_pilot_followup \
+for m in 20261125071000_meet_ai_self_v1_pilot_followup \
   20261124114200_meet_ai_self_v1_cost_rpcs \
   20261124114100_meet_ai_self_v1_capture_path \
   20261111120208_meet_ai_self_v1_read_contracts \

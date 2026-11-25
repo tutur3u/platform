@@ -1,5 +1,5 @@
 -- Meet AI per-speaker transcription: the self_v1 pilot follow-up
--- (20261125999901). Notice evidence on allows; Auth-row locking for late
+-- (20261125071000). Notice evidence on allows; Auth-row locking for late
 -- writes; account_erase; closed-out sessions as acknowledged no-ops; allow
 -- refused once capture ends; room entries on purge and after erasure; stream
 -- renewal under the live-upload fence; kept session erasure jobs; Mira choice
