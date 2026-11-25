@@ -56,14 +56,21 @@ It stays off until the security review approves the guest path. If that review
 has not approved it by 30 November 2026 18:00 ICT, EduFest runs with it off,
 on the pen board.
 
-**On.** An anonymous guest opens the Tuturuuu Whiteboard from the Whiteboard
-entry, or follows a leader onto it, and views or draws as the link's guest
-access allows (**No access**, **Can view**, **Can draw**, set by the host).
-Co-Programming and the live document still ask a guest to sign in.
+**Who it covers.** Everyone outside the meeting's workspace: anonymous guests
+and signed-in people who are not workspace members. Workspace members and the
+host are not affected by the switch.
 
-**Off.** The whiteboard API refuses every anonymous guest (HTTP 403) before it
-reads any board, guests keep the sign-in state on a board pane, and the
-Whiteboard falls back to the pen board as described above.
+**On.** A person outside the workspace opens the Tuturuuu Whiteboard from the
+Whiteboard entry, or follows a leader onto it, and views or draws as the
+link's guest access allows (**No access**, **Can view**, **Can draw**, set by
+the host). Co-Programming and the live document still ask a guest to sign in.
+
+**Off.** The whiteboard API refuses everyone outside the workspace (HTTP 403)
+before it reads any board, anonymous guests keep the sign-in state on a board
+pane, and with `MEET_UX_V2` the Whiteboard falls back to the pen board for
+them and for everyone in a room with one of them. Without `MEET_UX_V2` the
+board stays listed for signed-in non-members, and opening it reports that the
+whiteboard could not be opened.
 
 **What a guest can reach.** Only boards linked to the current meeting whose
 guest access is view or draw, in the meeting's workspace, never archived. A
@@ -71,32 +78,43 @@ guest never sees the workspace board list, link settings or management
 actions, and the board accepts no images or files. Everyone on a board is
 named by a per-board id derived from their user id, so nobody sees another
 person's platform user id. From people outside the workspace the board keeps
-only the drawing fields Excalidraw uses and links that are http(s) or
-same-site; other links are cleared.
+only the drawing fields Excalidraw uses, each checked for type and size
+(finite numbers, bounded text, known styles, at most 10,000 points, 32 groups
+and 256 bound elements); an element with a malformed field is refused and the
+sender is told. Links must be http(s) or same-site, with no backslash or
+control character; other links are cleared.
 
 **Revocation.** Board tickets for people outside the workspace last one minute
 and the call renews them every 30 seconds through the Meet API. Each renewal
-asks the room's `board.access` check whether the guest is connected right now
-(waiting, removed and only remembered guests are refused), and checks again that
-the switch is on and the board is still linked with guest access. A guest who
-leaves, is removed, or whose board is unlinked, archived or set to no access
-receives no board data and can send no edits within one minute; the board room
-closes the expired connection at its next sweep, at most a minute later.
-Members keep two-minute tickets.
+asks the room's `board.access` check whether the person has an open connection
+to the room right now, and checks again that the switch is on and the board is
+still linked with guest access. Waiting, removed and only remembered guests
+are refused, and so is someone whose call connection dropped, even while the
+room still shows them during its 30-second reconnect grace period. The last
+ticket a person received stays valid for at most a minute, so after they
+leave, are removed, drop off, or their board is unlinked, archived or set to
+no access, they receive board data and can send edits for at most one more
+minute. The board room closes the expired connection at its next sweep, at
+most a minute after that, without sending it anything in between. Members
+keep two-minute tickets.
 
 **Limits.**
 
-- The Meet whiteboard API allows each anonymous guest 30 list or join calls a
-  minute per meeting (HTTP 429 with `Retry-After` beyond that), counted in the
-  shared abuse-guard store or, when it is unavailable, per isolate.
+- The Meet whiteboard API allows each person outside the workspace 30 list or
+  join calls a minute per meeting (HTTP 429 with `Retry-After` beyond that),
+  counted in the shared abuse-guard store or, when it is unavailable, per
+  isolate.
 - People outside the workspace get 20 board messages a second (members 40),
   messages up to 256 KiB (members 1 MB), at most three open board connections
   each and six connection opens a minute each. Guests hold at most 30 of a
   board's 50 connections, so members always find room. A connection over a
-  limit is refused or closed; the client reconnects with a fresh ticket.
+  limit is refused or closed; the client reconnects with a fresh ticket. The
+  open counts are stored with the board room, so an eviction does not reset
+  them (except while `MEET_WHITEBOARD_FLUSH_DISABLED` keeps storage off).
 - A board that nobody is connected to reloads from the database for its next
   joiner only if its last load is at least 30 seconds old, so rapid reconnects
-  cost no database read.
+  cost no database read. The load time is stored with the board's state and
+  survives an eviction.
 
 **Exceptions.** Rules for under-18 and unconfirmed participants and every host
 control are unchanged.
@@ -158,19 +176,24 @@ Under `packages/meet-core/src/features/call`:
   sign-in state.
 - `stage-layout/use-stage-navigation.test.tsx`: guests follow onto the board
   only with the switch on.
-- `server/whiteboard.test.ts`: the switch, the room check, the guest call
-  limit, per-board ids, ticket life, unlink, other meetings and workspaces for
-  guests.
+- `server/whiteboard.test.ts`: the switch, the room check, the call limit,
+  per-board ids, ticket life, unlink, other meetings and workspaces for guests
+  and signed-in non-members.
+- `stage-layout/whiteboard-policy.test.ts` also covers who counts as outside
+  the workspace.
 - `lib/guest-whiteboard-limit.test.ts`: the guest call window and its local
   fallback.
 - `components/default-activity-setting-merged.test.tsx`: merged names in the
   default activity setting.
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do.test.ts` (guest message
-rate, size, connection, reopen and seat caps, guest viewers, per-board ids,
-guest field and link stripping), `packages/realtime/src/meet` tests
-`room-board-access.test.ts` (who the room answers),
-`board-sync-guest.test.ts` (links, fields, open windows, actor ids) and
-`board-sync-core-bounds.test.ts` (the reload window), and
+rate, size, connection, reopen and seat caps across an eviction, guest viewers,
+per-board ids, guest field types and link stripping),
+`apps/meet-realtime/src/room-service-board-access.test.ts` (only an open
+socket counts), `packages/realtime/src/meet` tests
+`room-board-access.test.ts` (who the room answers, the grace period),
+`board-sync-guest.test.ts` (links, field types and sizes, open windows, actor
+ids) and `board-sync-core-bounds.test.ts` (the reload window across an
+eviction), and
 `apps/meet/src/runtime/page-model.server.test.ts` (the switch reaches the
 room, off by default).
