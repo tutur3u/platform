@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(9);
+select plan(15);
 -- RFC 7636 appendix B challenge.
 \set challenge 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM'
 \set uid '00000000-0000-4000-8000-00000000e301'
@@ -62,6 +62,43 @@ set constraints all deferred;
 update private.cross_app_tokens set code_challenge = :'challenge', code_challenge_method = 'S256' where token = :'bound';
 select lives_ok($$set constraints all immediate$$,
   'restoring the challenge clears the queued refusal');
+
+-- A PostgREST mint commits as authenticated, so the deferred fence fires
+-- after the security definer RPC has returned and runs as that role. These
+-- checks switch to immediate before resetting the role to model that commit.
+select ok(
+  (select p.prosecdef from pg_proc p
+   where p.oid = 'private.enforce_worker_only_cross_app_pkce()'::regprocedure),
+  'Worker-only PKCE fence runs as its definer');
+select ok(
+  not has_function_privilege('authenticated',
+    'private.enforce_worker_only_cross_app_pkce()', 'execute'),
+  'authenticated cannot execute the Worker-only PKCE fence directly');
+set constraints all deferred;
+
+set local role authenticated;
+select public.generate_cross_app_token(:'uid'::uuid, 'web', 'tasks', 60) as commit_tasks_legacy \gset
+select lives_ok($$set constraints all immediate$$,
+  'authenticated commit of a legacy tasks handoff passes the fence');
+set constraints all deferred;
+
+select public.generate_cross_app_token_pkce(:'uid'::uuid, 'web', 'tasks', 60, '{}'::jsonb, :'challenge', 'S256') as commit_tasks_pkce \gset
+select lives_ok($$set constraints all immediate$$,
+  'authenticated commit of a challenge-bound tasks handoff passes the fence');
+set constraints all deferred;
+
+select public.generate_cross_app_token_pkce(:'uid'::uuid, 'web', 'mastermind', 60, '{}'::jsonb, :'challenge', 'S256') as commit_bound \gset
+select lives_ok($$set constraints all immediate$$,
+  'authenticated commit of a challenge-bound mastermind handoff passes the fence');
+set constraints all deferred;
+
+select public.generate_cross_app_token(:'uid'::uuid, 'web', 'mastermind', 60) as commit_legacy \gset
+select throws_ok($$set constraints all immediate$$, '42501',
+  'Worker-only cross-app targets require a PKCE challenge',
+  'authenticated commit of an unbound mastermind handoff hits the fence, not a permission error');
+reset role;
+delete from private.cross_app_tokens where token = :'commit_legacy';
+set constraints all immediate;
 
 select * from finish();
 rollback;
