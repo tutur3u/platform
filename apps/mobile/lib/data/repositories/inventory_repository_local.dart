@@ -365,13 +365,22 @@ extension _InventoryLocalReads on InventoryRepository {
               _catalogBackfill = null;
             });
       }
-      final data = overlayPendingProducts(
+      // Queued creates are the newest rows: they join the first page, or
+      // the last page when sorting oldest first, at their sorted position.
+      final includeCreates =
+          status == 'active' &&
+          categoryId == null &&
+          (sort == InventoryProductSort.oldest
+              ? page * pageSize >= result.count
+              : page == 1);
+      final overlaid = overlayPendingProducts(
         wsId,
         result.data,
         await _mutationQueue.listPending(),
         query: query?.trim(),
-        includeCreates: page == 1 && status == 'active' && categoryId == null,
+        includeCreates: includeCreates,
       );
+      final data = placePendingInventoryCreates(overlaid, result.data, sort);
       return (
         data: data,
         count: result.count + data.length - result.data.length,
@@ -594,4 +603,27 @@ extension _InventoryLocalReads on InventoryRepository {
     };
     return order == 0 ? a.id.compareTo(b.id) : order;
   }
+}
+
+/// Keeps the server rows in server order and inserts rows that only exist
+/// locally (queued creates) where [sort] puts them.
+List<InventoryProduct> placePendingInventoryCreates(
+  List<InventoryProduct> rows,
+  List<InventoryProduct> server,
+  InventoryProductSort sort,
+) {
+  final serverIds = {for (final row in server) row.id};
+  final placed = [
+    for (final row in rows)
+      if (serverIds.contains(row.id)) row,
+  ];
+  for (final row in rows) {
+    if (serverIds.contains(row.id)) continue;
+    final index = placed.indexWhere(
+      (other) =>
+          _InventoryLocalReads._compareLocalProducts(row, other, sort) < 0,
+    );
+    placed.insert(index < 0 ? placed.length : index, row);
+  }
+  return placed;
 }

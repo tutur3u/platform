@@ -21481,4 +21481,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryImageUnsupported => 'Choose a JPEG, PNG, WebP or GIF under 8 MB';
+
+  @override
+  String get inventoryStockNeedsOnline => 'Adjusting stock needs a connection. Your changes are still here; save again when you\'re online.';
+
+  @override
+  String get inventoryStockChanged => 'Stock changed since you opened this. The latest amounts are shown; review them and save again.';
+
+  @override
+  String inventoryFilterNoLoadedMatch(Object count) {
+    return 'No matches in the first $count products';
+  }
+
+  @override
+  String get inventoryFilterSearchMore => 'Search more products';
+
+  @override
+  String get inventoryFilterSearching => 'Searching more products…';
 }

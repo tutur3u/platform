@@ -14,11 +14,13 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_media_upload.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/widgets/inventory_form_scaffold.dart';
 import 'package:mobile/features/inventory/widgets/inventory_product_image.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
@@ -31,18 +33,24 @@ part 'inventory_editor_image.dart';
 part 'inventory_editor_operations.dart';
 part 'inventory_editor_presentation.dart';
 part 'inventory_editor_selectors.dart';
+part 'inventory_editor_stock.dart';
 part 'inventory_product_stock_rows.dart';
 
+/// [stockFirst] opens Adjust stock: the stock rows alone, saved through the
+/// history-recording stock endpoint. Without it the editor creates a
+/// product, or edits its details and leaves stock untouched.
 Future<T?> showInventoryProductEditorPage<T>(
   BuildContext context, {
   String? productId,
   bool stockFirst = false,
+  bool? canAdjustStock,
 }) {
   return showFinanceFullscreenModal<T>(
     context: context,
     builder: (context) => InventoryProductEditorPage(
       productId: productId,
       stockFirst: stockFirst,
+      canAdjustStock: canAdjustStock,
     ),
   );
 }
@@ -53,17 +61,24 @@ class InventoryProductEditorPage extends StatefulWidget {
     this.embedded = false,
     this.productId,
     this.stockFirst = false,
+    this.canAdjustStock,
     this.inventoryRepository,
     this.financeRepository,
     this.settingsRepository,
+    this.permissionsRepository,
   });
 
   final bool embedded;
   final String? productId;
   final bool stockFirst;
+
+  /// Whether the actor may send stock rows; null reads workspace
+  /// permissions. Creating without it saves the product with no stock.
+  final bool? canAdjustStock;
   final InventoryRepository? inventoryRepository;
   final FinanceRepository? financeRepository;
   final SettingsRepository? settingsRepository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<InventoryProductEditorPage> createState() =>
@@ -97,6 +112,10 @@ class _InventoryProductEditorPageState
   String? _avatarUrl;
   bool _avatarChanged = false;
   bool _uploadingImage = false;
+  bool _canAdjustStock = false;
+
+  /// Stock rows as loaded, compared with the server before adjusting.
+  List<InventoryStockEntry> _baseline = const [];
 
   String? _formError;
   bool _hasUnavailableOptions = false;
@@ -124,6 +143,10 @@ class _InventoryProductEditorPageState
     _nameController = TextEditingController();
     _descriptionController = TextEditingController();
     _usageController = TextEditingController();
+    _canAdjustStock = widget.canAdjustStock ?? false;
+    if (widget.canAdjustStock == null) {
+      unawaited(Future<void>(_resolveAdjustPermission));
+    }
     unawaited(_load());
   }
 

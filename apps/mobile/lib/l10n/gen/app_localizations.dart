@@ -39210,6 +39210,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose a JPEG, PNG, WebP or GIF under 8 MB'**
   String get inventoryImageUnsupported;
+
+  /// No description provided for @inventoryStockNeedsOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusting stock needs a connection. Your changes are still here; save again when you\'re online.'**
+  String get inventoryStockNeedsOnline;
+
+  /// No description provided for @inventoryStockChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock changed since you opened this. The latest amounts are shown; review them and save again.'**
+  String get inventoryStockChanged;
+
+  /// No description provided for @inventoryFilterNoLoadedMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches in the first {count} products'**
+  String inventoryFilterNoLoadedMatch(Object count);
+
+  /// No description provided for @inventoryFilterSearchMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Search more products'**
+  String get inventoryFilterSearchMore;
+
+  /// No description provided for @inventoryFilterSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching more products…'**
+  String get inventoryFilterSearching;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

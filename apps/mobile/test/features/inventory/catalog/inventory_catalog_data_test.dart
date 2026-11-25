@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +8,8 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/inventory/inventory_stock_movement.dart';
 import 'package:mobile/data/repositories/inventory_media_upload.dart';
+import 'package:mobile/data/repositories/inventory_media_urls.dart';
+import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/inventory/inventory_stock_summary.dart';
 import 'package:mocktail/mocktail.dart';
@@ -83,6 +86,20 @@ void main() {
       );
     });
 
+    test('an unlimited location keeps the item from reading out', () {
+      final summary = InventoryStockSummary.of(
+        _product([_row('Seat', null), _row('Bag', 0)]),
+      );
+      expect(summary.state, InventoryStockState.low);
+      expect(summary.matches(InventoryStockFilter.out), isFalse);
+    });
+
+    test('stock rows compare by location regardless of order', () {
+      final a = [_row('Bag', 1), _row('Cup', 2)];
+      expect(inventoryStockRowsEqual(a, a.reversed.toList()), isTrue);
+      expect(inventoryStockRowsEqual(a, [_row('Bag', 1)]), isFalse);
+    });
+
     test('reports a price range from the lowest price', () {
       final summary = InventoryStockSummary.of(
         _product([_row('Bag', 5, price: 30), _row('Bag', 5, price: 12)]),
@@ -113,6 +130,116 @@ void main() {
     expect(product.inventory.first.warehouseName, 'QA Kiosk');
     expect(product.inventory.last.unitName, 'Kept');
     expect(product.inventory.last.warehouseName, 'Van');
+  });
+
+  group('stored image URLs', () {
+    const ws = '82cf845a-49b0-459d-a5ee-1005e8de4fae';
+    const origin = 'https://tuturuuu.com';
+
+    test('share and legacy signed URLs resolve to the workspace object', () {
+      final share = inventoryImageShareUrl(
+        ws,
+        'inventory/media/a b.png',
+        origin: origin,
+      );
+      expect(share, startsWith('https://tuturuuu.com/api/v1/workspaces/$ws/'));
+      expect(inventoryImageStorageTarget(share, origin: origin), (
+        wsId: ws,
+        path: 'inventory/media/a b.png',
+      ));
+      expect(
+        inventoryImageStorageTarget(
+          origin: origin,
+          'https://x.supabase.co/storage/v1/object/sign/workspaces/$ws/'
+          'inventory/media/a.png?token=t',
+        ),
+        (wsId: ws, path: 'inventory/media/a.png'),
+      );
+      for (final other in [
+        'https://evil.example/api/v1/workspaces/$ws/storage/share?path=a',
+        'https://tuturuuu.com/api/v1/workspaces/$ws/storage/share?path=../a',
+        'https://cdn.tuturuuu.com/public/a.png',
+        'http://tuturuuu.com/api/v1/workspaces/$ws/storage/share?path=a',
+      ]) {
+        expect(
+          inventoryImageStorageTarget(other, origin: origin),
+          isNull,
+          reason: other,
+        );
+      }
+    });
+
+    test('loads workspace objects through a fresh signed URL', () async {
+      final api = _Api();
+      when(
+        () => api.postJson(any(), any()),
+      ).thenAnswer((_) async => {'signedUrl': 'https://storage.example/fresh'});
+      final fetched = <String>[];
+      await fetchInventoryProductImage(
+        inventoryImageShareUrl(ws, 'inventory/media/a.png', origin: origin),
+        origin: origin,
+        api: api,
+        download: (url) async {
+          fetched.add(url);
+          return Uint8List(0);
+        },
+      );
+      expect(fetched, ['https://storage.example/fresh']);
+      verify(
+        () => api.postJson('/api/v1/workspaces/$ws/storage/share', {
+          'path': 'inventory/media/a.png',
+        }),
+      ).called(1);
+    });
+
+    test('a refused legacy signed URL falls back to itself', () async {
+      final api = _Api();
+      when(
+        () => api.postJson(any(), any()),
+      ).thenThrow(const ApiException(message: 'Forbidden', statusCode: 403));
+      const legacy =
+          'https://x.supabase.co/storage/v1/object/sign/workspaces/$ws/a.png'
+          '?token=t';
+      final fetched = <String>[];
+      await fetchInventoryProductImage(
+        legacy,
+        origin: origin,
+        api: api,
+        download: (url) async {
+          fetched.add(url);
+          return Uint8List(0);
+        },
+      );
+      expect(fetched, [legacy]);
+    });
+  });
+
+  test('queued creates join the page where the sort puts them', () {
+    InventoryProduct named(String id, String name) => InventoryProduct(
+      id: id,
+      name: name,
+      categoryId: 'c',
+      ownerId: 'o',
+      wsId: 'ws',
+      inventory: const [],
+      createdAt: DateTime.utc(2026, 11, id == 'new' ? 25 : 1),
+    );
+    // The server page arrives in the sort's own order.
+    List<String> order(InventoryProductSort sort) {
+      final server = sort == InventoryProductSort.nameDesc
+          ? [named('c', 'Cherry'), named('a', 'Apple')]
+          : [named('a', 'Apple'), named('c', 'Cherry')];
+      final rows = [...server, named('new', 'Banana')];
+      return [
+        for (final row in placePendingInventoryCreates(rows, server, sort))
+          row.id,
+      ];
+    }
+
+    expect(order(InventoryProductSort.nameAsc), ['a', 'new', 'c']);
+    expect(order(InventoryProductSort.nameDesc), ['c', 'new', 'a']);
+    expect(order(InventoryProductSort.newest), ['new', 'a', 'c']);
+    expect(order(InventoryProductSort.oldest), ['a', 'c', 'new']);
   });
 
   test('stock history parses movements and paging', () {
@@ -168,7 +295,7 @@ void main() {
       registerFallbackValue(<String, dynamic>{});
     });
 
-    test('uploads to the issued URL and returns the read URL', () async {
+    test('uploads to the issued URL and keeps the stable share URL', () async {
       when(() => api.postJson(any(), any())).thenAnswer((call) async {
         final path = call.positionalArguments.first as String;
         if (path.endsWith('upload-url')) {
@@ -197,7 +324,13 @@ void main() {
         httpClient: client,
       );
 
-      expect(url, 'https://storage.example/read/a.png');
+      // A signed read URL expires; the product keeps the sign-on-read link.
+      expect(
+        url,
+        '${ApiConfig.baseUrlForPath(DriveEndpoints.share('ws'))}'
+        '/api/v1/workspaces/ws/storage/share'
+        '?path=ws%2Finventory%2Fmedia%2Fproduct-featured-image%2Fa.png',
+      );
       expect(sent.method, 'PUT');
       expect(sent.url.host, 'storage.example');
       expect(sent.headers['Authorization'], 'Bearer upload-token');
@@ -224,6 +357,47 @@ void main() {
         'path': 'ws/inventory/media/product-featured-image/a.png',
         'provider': 'r2',
       });
+    });
+
+    test('retries without Content-Type and refuses plain http', () async {
+      var ticketUrl = 'https://storage.example/upload';
+      when(() => api.postJson(any(), any())).thenAnswer((call) async {
+        final path = call.positionalArguments.first as String;
+        return path.endsWith('upload-url')
+            ? {'signedUrl': ticketUrl, 'path': 'p/a.png'}
+            : {'readUrl': 'https://storage.example/read/a.png'};
+      });
+      final sent = <http.Request>[];
+      final client = MockClient((request) async {
+        sent.add(request);
+        return http.Response('', sent.length == 1 ? 400 : 200);
+      });
+      await uploadInventoryProductImage(
+        api: api,
+        wsId: 'ws',
+        bytes: utf8.encode('png'),
+        fileName: 'a.png',
+        contentType: 'image/png',
+        httpClient: client,
+      );
+      expect(sent, hasLength(2));
+      expect(sent.first.headers['Content-Type'], startsWith('image/png'));
+      expect(sent.last.headers.containsKey('Content-Type'), isFalse);
+
+      ticketUrl = 'http://storage.example/upload';
+      sent.clear();
+      await expectLater(
+        uploadInventoryProductImage(
+          api: api,
+          wsId: 'ws',
+          bytes: utf8.encode('png'),
+          fileName: 'a.png',
+          contentType: 'image/png',
+          httpClient: client,
+        ),
+        throwsA(isA<ApiException>()),
+      );
+      expect(sent, isEmpty);
     });
 
     test('rejects unsupported files before any request', () async {

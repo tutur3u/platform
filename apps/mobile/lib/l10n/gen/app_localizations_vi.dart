@@ -21223,4 +21223,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryImageUnsupported => 'Chọn ảnh JPEG, PNG, WebP hoặc GIF dưới 8 MB';
+
+  @override
+  String get inventoryStockNeedsOnline => 'Cần kết nối mạng để điều chỉnh tồn kho. Thay đổi của bạn vẫn còn; hãy lưu lại khi có mạng.';
+
+  @override
+  String get inventoryStockChanged => 'Tồn kho đã thay đổi kể từ khi bạn mở. Số lượng mới nhất đang hiển thị; hãy kiểm tra và lưu lại.';
+
+  @override
+  String inventoryFilterNoLoadedMatch(Object count) {
+    return 'Không có kết quả trong $count sản phẩm đầu tiên';
+  }
+
+  @override
+  String get inventoryFilterSearchMore => 'Tìm thêm sản phẩm';
+
+  @override
+  String get inventoryFilterSearching => 'Đang tìm thêm sản phẩm…';
 }

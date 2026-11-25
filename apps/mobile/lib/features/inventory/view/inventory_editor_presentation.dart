@@ -84,89 +84,93 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                   stockSection,
                   const AppGap(AppSpacing.md),
                 ],
-                _InventorySectionCard(
-                  title: l10n.inventoryProductDetailsTitle,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _InventoryTextInputCard(
-                        label: l10n.inventoryProductName,
-                        fieldKey: const ValueKey('inventory-product-name'),
-                        controller: _nameController,
-                        placeholder: l10n.inventoryProductName,
-                        errorText: _nameError,
-                        onChanged: (_) {
-                          if (_nameError != null || _formError != null) {
-                            _update(() {
-                              _nameError = null;
-                              _formError = null;
-                            });
-                          } else {
-                            _update(() {});
-                          }
-                        },
-                      ),
-                      const AppGap(AppSpacing.md),
-                      _InventorySelectorCard(
-                        label: l10n.inventoryProductOwner,
-                        title: _selectedOwner?.name,
-                        placeholder: l10n.inventoryProductOwner,
-                        icon: Icons.people_outline_rounded,
-                        errorText: _ownerError,
-                        onTap: _owners.isEmpty ? null : _pickOwner,
-                      ),
-                      const AppGap(AppSpacing.md),
-                      _InventorySelectorCard(
-                        label: l10n.inventoryProductCategory,
-                        title: _selectedCategory?.name,
-                        placeholder: l10n.inventoryProductCategory,
-                        icon: Icons.category_outlined,
-                        errorText: _categoryError,
-                        onTap: _categories.isEmpty ? null : _pickCategory,
-                      ),
-                      const AppGap(AppSpacing.md),
-                      _InventorySelectorCard(
-                        label: l10n.inventoryProductFinanceCategory,
-                        title: _selectedFinanceCategory?.name,
-                        placeholder: l10n.inventoryNoLinkedFinanceCategory,
-                        icon: Icons.account_balance_wallet_outlined,
-                        onTap: _pickFinanceCategory,
-                      ),
-                      const AppGap(AppSpacing.md),
-                      _InventorySelectorCard(
-                        label: l10n.inventoryProductManufacturer,
-                        title: _selectedManufacturer?.name,
-                        placeholder: l10n.inventoryNoLinkedManufacturer,
-                        icon: Icons.factory_outlined,
-                        onTap: _pickManufacturer,
-                      ),
-                    ],
+                if (!widget.stockFirst) ...[
+                  _InventorySectionCard(
+                    title: l10n.inventoryProductDetailsTitle,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _InventoryTextInputCard(
+                          label: l10n.inventoryProductName,
+                          fieldKey: const ValueKey('inventory-product-name'),
+                          controller: _nameController,
+                          placeholder: l10n.inventoryProductName,
+                          errorText: _nameError,
+                          onChanged: (_) {
+                            if (_nameError != null || _formError != null) {
+                              _update(() {
+                                _nameError = null;
+                                _formError = null;
+                              });
+                            } else {
+                              _update(() {});
+                            }
+                          },
+                        ),
+                        const AppGap(AppSpacing.md),
+                        _InventorySelectorCard(
+                          label: l10n.inventoryProductOwner,
+                          title: _selectedOwner?.name,
+                          placeholder: l10n.inventoryProductOwner,
+                          icon: Icons.people_outline_rounded,
+                          errorText: _ownerError,
+                          onTap: _owners.isEmpty ? null : _pickOwner,
+                        ),
+                        const AppGap(AppSpacing.md),
+                        _InventorySelectorCard(
+                          label: l10n.inventoryProductCategory,
+                          title: _selectedCategory?.name,
+                          placeholder: l10n.inventoryProductCategory,
+                          icon: Icons.category_outlined,
+                          errorText: _categoryError,
+                          onTap: _categories.isEmpty ? null : _pickCategory,
+                        ),
+                        const AppGap(AppSpacing.md),
+                        _InventorySelectorCard(
+                          label: l10n.inventoryProductFinanceCategory,
+                          title: _selectedFinanceCategory?.name,
+                          placeholder: l10n.inventoryNoLinkedFinanceCategory,
+                          icon: Icons.account_balance_wallet_outlined,
+                          onTap: _pickFinanceCategory,
+                        ),
+                        const AppGap(AppSpacing.md),
+                        _InventorySelectorCard(
+                          label: l10n.inventoryProductManufacturer,
+                          title: _selectedManufacturer?.name,
+                          placeholder: l10n.inventoryNoLinkedManufacturer,
+                          icon: Icons.factory_outlined,
+                          onTap: _pickManufacturer,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const AppGap(AppSpacing.md),
-                _InventorySectionCard(
-                  title: l10n.inventoryProductDescription,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _InventoryTextAreaCard(
-                        label: l10n.inventoryProductDescription,
-                        controller: _descriptionController,
-                        placeholder: l10n.inventoryProductDescription,
-                        onChanged: (_) => _update(() {}),
-                      ),
-                      const AppGap(AppSpacing.md),
-                      _InventoryTextAreaCard(
-                        label: l10n.inventoryProductUsage,
-                        controller: _usageController,
-                        placeholder: l10n.inventoryProductUsage,
-                        onChanged: (_) => _update(() {}),
-                      ),
-                    ],
+                  const AppGap(AppSpacing.md),
+                  _InventorySectionCard(
+                    title: l10n.inventoryProductDescription,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _InventoryTextAreaCard(
+                          label: l10n.inventoryProductDescription,
+                          controller: _descriptionController,
+                          placeholder: l10n.inventoryProductDescription,
+                          onChanged: (_) => _update(() {}),
+                        ),
+                        const AppGap(AppSpacing.md),
+                        _InventoryTextAreaCard(
+                          label: l10n.inventoryProductUsage,
+                          controller: _usageController,
+                          placeholder: l10n.inventoryProductUsage,
+                          onChanged: (_) => _update(() {}),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const AppGap(AppSpacing.md),
-                if (!widget.stockFirst) stockSection,
+                  if (_showStock) ...[
+                    const AppGap(AppSpacing.md),
+                    stockSection,
+                  ],
+                ],
               ],
             ),
     );

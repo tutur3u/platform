@@ -17,6 +17,7 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/inventory/inventory_catalog_signal.dart';
 import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/inventory_scan.dart';
 import 'package:mobile/features/inventory/inventory_stock_summary.dart';
@@ -113,6 +114,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
 
   /// Extra pages fetched to fill a client-side filter; bounded per load.
   int _fillPages = 0;
+  bool _filling = false;
+  bool _canAdjustStock = false;
   final Map<String, String> _deletedNames = {};
   int _count = 0;
   bool _canManageCatalog = false;
@@ -177,6 +180,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
   void _applyPermissions(WorkspacePermissions permissions) {
     _canManageCatalog = canManageInventoryCatalog(permissions);
     _canViewStock = canViewInventoryStock(permissions);
+    _canAdjustStock = canAdjustInventoryStock(permissions);
   }
 
   Future<void> _refreshPermissions((String?, String?) scope, int token) async {
@@ -273,7 +277,6 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
         _error = null;
         _syncSelection();
       });
-      _fillClientFilter();
     } on ApiException catch (error) {
       if (_isStale(requestToken)) return;
       setState(() {
@@ -293,6 +296,10 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
       if (mounted && requestToken == _requestToken) {
         setState(() => _isLoadingInitial = false);
       }
+    }
+    // Runs after the loading flags clear so its page loads are admitted.
+    if (!_isStale(requestToken) && _error == null) {
+      unawaited(_fillClientFilter());
     }
   }
 
@@ -324,7 +331,6 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
         _page = nextPage;
         _hasMore = _products.length < _count;
       });
-      _fillClientFilter();
     } on Exception {
       if (_isStale(requestToken)) return;
       setState(() => _loadMoreFailed = true);
@@ -332,6 +338,10 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
       if (mounted && requestToken == _requestToken) {
         setState(() => _isLoadingMore = false);
       }
+    }
+    // A page loaded by scrolling continues an unfinished filter fill.
+    if (!_filling && !_isStale(requestToken)) {
+      unawaited(_fillClientFilter());
     }
   }
 

@@ -55,6 +55,9 @@ class FakeItemsRepository extends InventoryRepository {
   /// Requests matching this throw a server error.
   bool Function(ItemsCall call)? failWhen;
 
+  /// Mirrors the single read without detail stock access: no stock rows.
+  bool omitDetailStock = false;
+
   @override
   Future<({List<InventoryProduct> data, int count})> getProducts(
     String wsId, {
@@ -96,7 +99,9 @@ class FakeItemsRepository extends InventoryRepository {
     bool forceRefresh = false,
   }) async {
     productRequests.add(productId);
-    return catalog.where((row) => row.id == productId).firstOrNull;
+    final product = catalog.where((row) => row.id == productId).firstOrNull;
+    if (product == null || !omitDetailStock) return product;
+    return item(product.id, product.name ?? '', category: product.category);
   }
 
   @override

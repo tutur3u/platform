@@ -11,10 +11,12 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/repositories/inventory_media_urls.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 
 /// Product images share encrypted storage, account/workspace scope, and quota
-/// with their inventory snapshots. No Bearer token is sent to a media URL.
+/// with their inventory snapshots. No Bearer token is sent to a media URL;
+/// workspace objects are signed through the share route first.
 class InventoryProductImageCache {
   InventoryProductImageCache({
     CacheStore? store,
@@ -22,7 +24,7 @@ class InventoryProductImageCache {
     Future<Uint8List> Function(String url)? fetchBytes,
   }) : store = store ?? CacheStore.instance,
        currentUserId = currentUserId ?? currentCacheUserId,
-       _fetchBytes = fetchBytes ?? downloadBytes;
+       _fetchBytes = fetchBytes ?? fetchInventoryProductImage;
 
   static final InventoryProductImageCache instance =
       InventoryProductImageCache();

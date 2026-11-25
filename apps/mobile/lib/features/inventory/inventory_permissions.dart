@@ -7,14 +7,26 @@ bool canManageInventoryCatalog(WorkspacePermissions permissions) {
       permissions.containsPermission('delete_inventory');
 }
 
-/// Mirrors when the products API includes stock rows: view-stock, or
+/// Mirrors when the products list API includes stock rows: view-stock, or
 /// create-sales for the checkout picker.
 bool canViewInventoryStock(WorkspacePermissions permissions) {
+  return canReadInventoryStockDetail(permissions) ||
+      canCreateInventorySales(permissions);
+}
+
+/// Mirrors the server's `canViewInventoryStock`, which gates stock on the
+/// single-product read and the stock history; create-sales is not enough.
+bool canReadInventoryStockDetail(WorkspacePermissions permissions) {
   return permissions.containsPermission('view_inventory_stock') ||
       permissions.containsPermission('view_stock_quantity') ||
-      permissions.containsPermission('adjust_inventory_stock') ||
-      permissions.containsPermission('update_stock_quantity') ||
-      canCreateInventorySales(permissions);
+      canAdjustInventoryStock(permissions);
+}
+
+/// Mirrors the server's `canAdjustInventoryStock`, required to send stock
+/// rows when creating, editing or adjusting a product.
+bool canAdjustInventoryStock(WorkspacePermissions permissions) {
+  return permissions.containsPermission('adjust_inventory_stock') ||
+      permissions.containsPermission('update_stock_quantity');
 }
 
 bool canManageInventorySetup(WorkspacePermissions permissions) {

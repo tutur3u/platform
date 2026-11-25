@@ -65,7 +65,8 @@ void main() {
       expect(find.byTooltip('Delete'), findsNothing);
     });
 
-    testWidgets('managers see the actions', (tester) async {
+    testWidgets('catalog managers edit and delete; adjusting needs stock '
+        'access', (tester) async {
       await pumpItemsPage(
         tester,
         size: _tablet,
@@ -74,8 +75,39 @@ void main() {
         shadApp: true,
       );
       expect(find.text('Edit'), findsOneWidget);
-      expect(find.text('Adjust stock'), findsOneWidget);
       expect(find.byTooltip('Delete'), findsOneWidget);
+      // The server refuses stock writes without adjust access.
+      expect(find.text('Adjust stock'), findsNothing);
+    });
+
+    testWidgets('stock adjusters get Adjust stock', (tester) async {
+      await pumpItemsPage(
+        tester,
+        size: _tablet,
+        initialProductId: milkId,
+        permissions: const {'view_inventory_stock', 'adjust_inventory_stock'},
+      );
+      expect(find.text('Adjust stock'), findsOneWidget);
+      expect(find.text('Edit'), findsNothing);
+    });
+
+    testWidgets('sales-only actors keep list stock and get no history', (
+      tester,
+    ) async {
+      final (:inventory, shell: _) = await pumpItemsPage(
+        tester,
+        size: _tablet,
+        initialProductId: 'beans',
+        permissions: const {'create_inventory_sales'},
+        configure: (repo) => repo.omitDetailStock = true,
+      );
+      expect(inventory.productRequests, contains('beans'));
+      expect(find.text('Stock by location'), findsOneWidget);
+      // The pane lists the row's locations even though the single read
+      // returned none.
+      expect(find.text('Back room'), findsOneWidget);
+      expect(find.text('Stock history'), findsNothing);
+      expect(inventory.historyRequests, isEmpty);
     });
   });
 

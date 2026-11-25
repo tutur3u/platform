@@ -121,7 +121,7 @@ class _InventoryPageState extends State<InventoryPage>
       final repository = _permissionsRepository ??=
           widget.permissionsRepository ?? WorkspacePermissionsRepository();
       final permissions = await repository.getPermissions(wsId: wsId);
-      allowed = canManageInventoryCatalog(permissions);
+      allowed = canAdjustInventoryStock(permissions);
     } on Object {
       // The editor action requires a verified grant for this scope.
     }
@@ -139,6 +139,7 @@ class _InventoryPageState extends State<InventoryPage>
       context,
       productId: productId,
       stockFirst: true,
+      canAdjustStock: true,
     );
     if (saved == true && mounted && (_actorId, _wsId) == scope) {
       await _reload(forceRefresh: true);

@@ -230,12 +230,13 @@ abstract final class InventoryEndpoints {
     return present.isEmpty ? '' : '?${Uri(queryParameters: present).query}';
   }
 
+  static String productInventory(String wsId, String productId) =>
+      '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}/inventory';
   static String productStockHistory(String wsId, String productId) =>
       '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}/inventory/history';
 
   static String mediaUploadUrl(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/media/upload-url';
-
   static String mediaReadUrl(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/media/read-url';
 

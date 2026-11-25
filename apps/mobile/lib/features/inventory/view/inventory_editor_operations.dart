@@ -10,6 +10,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
       _categoryId = _ownerId = _manufacturerId = _financeCategoryId = null;
       _avatarUrl = null;
       _avatarChanged = false;
+      _baseline = const [];
       _categories = _manufacturers = _units = _warehouses = const [];
       _owners = const [];
       _financeCategories = const [];
@@ -88,6 +89,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
         _ownerId = product.ownerId;
         _financeCategoryId = product.financeCategoryId;
         _avatarUrl = product.avatarUrl;
+        _baseline = product.inventory;
         _rows = product.inventory
             .map(
               (row) => _InventoryRowDraft(
@@ -450,13 +452,14 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
         ? l10n.inventoryProductOwnerRequired
         : null;
 
-    if (nextNameError != null ||
-        nextCategoryError != null ||
-        nextOwnerError != null) {
+    if (!widget.stockFirst &&
+        (nextNameError != null ||
+            nextCategoryError != null ||
+            nextOwnerError != null)) {
       hasError = true;
     }
 
-    for (final row in _rows) {
+    for (final row in _showStock ? _rows : const <_InventoryRowDraft>[]) {
       row.clearErrors();
 
       final amountText = row.amountController.text.trim();
@@ -516,9 +519,11 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
     }
 
     _update(() {
-      _nameError = nextNameError;
-      _categoryError = nextCategoryError;
-      _ownerError = nextOwnerError;
+      if (!widget.stockFirst) {
+        _nameError = nextNameError;
+        _categoryError = nextCategoryError;
+        _ownerError = nextOwnerError;
+      }
       _formError = hasError ? l10n.inventoryProductValidationError : null;
     });
 
@@ -539,6 +544,10 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
     if (entries == null) {
       return;
     }
+    if (widget.stockFirst) {
+      await _saveStock(wsId, scope, entries);
+      return;
+    }
 
     _update(() => _saving = true);
     try {
@@ -552,7 +561,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
           name: name,
           categoryId: _categoryId!,
           ownerId: _ownerId!,
-          inventory: entries,
+          inventory: _showStock ? entries : const [],
           manufacturerId: _manufacturerId,
           description: description.isEmpty ? null : description,
           usage: usage.isEmpty ? null : usage,
@@ -566,7 +575,6 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
           name: name,
           categoryId: _categoryId!,
           ownerId: _ownerId!,
-          inventory: entries,
           manufacturerId: _manufacturerId,
           description: description.isEmpty ? null : description,
           usage: usage.isEmpty ? null : usage,

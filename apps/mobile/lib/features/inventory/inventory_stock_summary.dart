@@ -58,7 +58,8 @@ class InventoryStockSummary {
         ? InventoryStockState.none
         : tracked.isEmpty
         ? InventoryStockState.unlimited
-        : out == tracked.length
+        // Unlimited locations can still sell, so the item is not out.
+        : out == tracked.length && tracked.length == rows.length
         ? InventoryStockState.out
         : out > 0 || low > 0
         ? InventoryStockState.low

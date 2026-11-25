@@ -29,17 +29,51 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
     ];
   }
 
-  /// The API cannot filter by warehouse or stock, so a few more pages are
-  /// fetched while too few loaded rows match.
-  void _fillClientFilter() {
-    if (!_clientFiltered ||
-        !_hasMore ||
-        _fillPages >= _maxFillPages ||
-        _visibleProducts.length >= _fillTarget) {
-      return;
+  /// The API cannot filter by warehouse or stock, so while too few loaded
+  /// rows match, up to [_maxFillPages] more pages load one after another.
+  /// Each reload or filter change resets the budget; once it runs out the
+  /// list offers to search further instead of claiming nothing matches.
+  Future<void> _fillClientFilter() async {
+    if (_filling) return;
+    _filling = true;
+    final token = _requestToken;
+    try {
+      while (mounted &&
+          token == _requestToken &&
+          _clientFiltered &&
+          _hasMore &&
+          !_loadMoreFailed &&
+          !_isLoadingInitial &&
+          !_isLoadingMore &&
+          _fillPages < _maxFillPages &&
+          _visibleProducts.length < _fillTarget) {
+        _fillPages++;
+        final loaded = _products.length;
+        _set(() {});
+        await _loadMore();
+        if (_products.length == loaded) break;
+      }
+    } finally {
+      _filling = false;
+      if (mounted) _set(() {});
     }
-    _fillPages++;
-    unawaited(_loadMore());
+  }
+
+  /// Whether the fill budget ran out with unloaded rows left.
+  bool get _fillExhausted =>
+      _clientFiltered &&
+      _hasMore &&
+      !_filling &&
+      !_isLoadingInitial &&
+      !_isLoadingMore &&
+      _fillPages >= _maxFillPages;
+
+  void _searchMore() {
+    _set(() {
+      _fillPages = 0;
+      _loadMoreFailed = false;
+    });
+    unawaited(_fillClientFilter());
   }
 
   /// Keeps the open item in step with the freshly loaded row.
@@ -74,7 +108,7 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
     if (serverChanged) {
       unawaited(_loadInitial());
     } else {
-      _fillClientFilter();
+      unawaited(_fillClientFilter());
     }
   }
 
@@ -199,13 +233,17 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
       });
       return;
     }
+    final revision = inventoryCatalogRevision.value;
     final open = widget.openDetail;
     if (open != null) {
       await open(context, product);
     } else {
       await context.push(Routes.inventoryProductDetailPath(product.id));
     }
-    if (mounted) unawaited(_loadInitial());
+    // Keep loaded pages and scroll unless the detail changed something.
+    if (mounted && inventoryCatalogRevision.value != revision) {
+      unawaited(_loadInitial(forceRefresh: true));
+    }
   }
 
   void _closeSelection() => _set(() {
@@ -220,6 +258,7 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
         : await showInventoryProductEditorPage<bool>(
             context,
             productId: productId,
+            canAdjustStock: _canAdjustStock,
           );
     if (saved == true && mounted) {
       await _loadInitial(forceRefresh: true);

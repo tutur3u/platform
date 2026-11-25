@@ -10871,5 +10871,10 @@
   "inventoryImageLibrary": "Choose from library",
   "inventoryImageUploading": "Uploading photo",
   "inventoryImageFailed": "Couldn't upload the photo",
-  "inventoryImageUnsupported": "Choose a JPEG, PNG, WebP or GIF under 8 MB"
+  "inventoryImageUnsupported": "Choose a JPEG, PNG, WebP or GIF under 8 MB",
+  "inventoryStockNeedsOnline": "Adjusting stock needs a connection. Your changes are still here; save again when you're online.",
+  "inventoryStockChanged": "Stock changed since you opened this. The latest amounts are shown; review them and save again.",
+  "inventoryFilterNoLoadedMatch": "No matches in the first {count} products",
+  "inventoryFilterSearchMore": "Search more products",
+  "inventoryFilterSearching": "Searching more products…"
 }

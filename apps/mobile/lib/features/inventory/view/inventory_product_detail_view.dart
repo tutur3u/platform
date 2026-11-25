@@ -13,6 +13,7 @@ import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/inventory/inventory_catalog_signal.dart';
 import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/inventory_stock_summary.dart';
 import 'package:mobile/features/inventory/view/inventory_product_detail_sections.dart';
@@ -73,7 +74,14 @@ class _InventoryProductDetailViewState
   bool _failed = false;
   bool _missing = false;
   bool _canManage = false;
+  bool _canAdjust = false;
+
+  /// List semantics: view-stock or create-sales, as the products list API.
   bool? _canViewStock;
+
+  /// Server semantics for the single read and history: create-sales alone
+  /// gets neither, so its stock comes from the list row.
+  bool _canReadDetail = false;
   String _currency = 'VND';
   final List<InventoryStockMovement> _history = [];
   bool _historyLoading = false;
@@ -112,9 +120,53 @@ class _InventoryProductDetailViewState
 
   void _applyPermissions(WorkspacePermissions permissions) {
     _canManage = canManageInventoryCatalog(permissions);
-    _canViewStock =
-        canViewInventoryStock(permissions) ||
-        canCreateInventorySales(permissions);
+    _canAdjust = canAdjustInventoryStock(permissions);
+    _canViewStock = canViewInventoryStock(permissions);
+    _canReadDetail = canReadInventoryStockDetail(permissions);
+  }
+
+  /// The single read omits stock without detail access; keep the list
+  /// row's stock rather than showing none.
+  InventoryProduct _keepListStock(
+    InventoryProduct fresh, [
+    InventoryProduct? row,
+  ]) {
+    final listed = row ?? _product;
+    if (_canReadDetail ||
+        fresh.inventory.isNotEmpty ||
+        listed == null ||
+        listed.inventory.isEmpty) {
+      return fresh;
+    }
+    return InventoryProduct(
+      id: fresh.id,
+      name: fresh.name,
+      avatarUrl: fresh.avatarUrl,
+      manufacturerId: fresh.manufacturerId,
+      manufacturer: fresh.manufacturer,
+      description: fresh.description,
+      usage: fresh.usage,
+      category: fresh.category,
+      categoryId: fresh.categoryId,
+      ownerId: fresh.ownerId,
+      owner: fresh.owner,
+      financeCategoryId: fresh.financeCategoryId,
+      financeCategory: fresh.financeCategory,
+      wsId: fresh.wsId,
+      createdAt: fresh.createdAt,
+      archived: fresh.archived,
+      inventory: listed.inventory,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant InventoryProductDetailView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The list row can arrive after the pane opened, as on a deep link.
+    final row = widget.initial;
+    if (row == null || identical(row, oldWidget.initial)) return;
+    final current = _product;
+    _product = current == null ? row : _keepListStock(current, row);
   }
 
   Future<void> _load({bool forceRefresh = false}) async {
@@ -132,9 +184,9 @@ class _InventoryProductDetailViewState
           .getPermissions(wsId: wsId)
           .then((permissions) {
             if (!current()) return;
-            final hadStock = _canViewStock ?? false;
+            final hadDetail = _canReadDetail;
             setState(() => _applyPermissions(permissions));
-            if (!hadStock && (_canViewStock ?? false)) {
+            if (!hadDetail && _canReadDetail) {
               unawaited(_loadHistory(reset: true));
             }
           })
@@ -148,7 +200,7 @@ class _InventoryProductDetailViewState
       );
       if (!current()) return;
       setState(() {
-        _product = product ?? _product;
+        _product = product == null ? _product : _keepListStock(product);
         _missing = product == null;
       });
     } on ApiException catch (error) {
@@ -162,7 +214,7 @@ class _InventoryProductDetailViewState
     } finally {
       if (current()) setState(() => _loading = false);
     }
-    if (current() && (_canViewStock ?? false)) {
+    if (current() && _canReadDetail) {
       await _loadHistory(reset: true);
     }
   }
@@ -206,8 +258,10 @@ class _InventoryProductDetailViewState
             context,
             productId: widget.productId,
             stockFirst: stockFirst,
+            canAdjustStock: _canAdjust,
           );
     if (saved != true || !mounted) return;
+    inventoryCatalogRevision.value++;
     widget.onChanged?.call();
     await _load(forceRefresh: true);
   }
@@ -226,7 +280,9 @@ class _InventoryProductDetailViewState
       onConfirm: () =>
           _repository.deleteProduct(wsId: wsId, productId: widget.productId),
     );
-    if (deleted && mounted) widget.onDeleted?.call();
+    if (!deleted || !mounted) return;
+    inventoryCatalogRevision.value++;
+    widget.onDeleted?.call();
   }
 
   @override
@@ -301,7 +357,7 @@ class _InventoryProductDetailViewState
               product: product,
               summary: summary,
               onEdit: manage ? () => unawaited(_edit()) : null,
-              onAdjustStock: manage && (_canViewStock ?? false)
+              onAdjustStock: _canAdjust && !_missing
                   ? () => unawaited(_edit(stockFirst: true))
                   : null,
               onDelete: manage ? () => unawaited(_delete()) : null,
@@ -315,15 +371,18 @@ class _InventoryProductDetailViewState
                 currency: _currency,
               ),
               const SizedBox(height: AppSpacing.xl),
-              InventoryDetailHistory(
-                movements: _history,
-                loading: _historyLoading,
-                failed: _historyFailed,
-                hasMore: _historyHasMore,
-                onRetry: () => unawaited(_loadHistory(reset: _history.isEmpty)),
-                onLoadMore: () => unawaited(_loadHistory()),
-              ),
-              const SizedBox(height: AppSpacing.xl),
+              if (_canReadDetail) ...[
+                InventoryDetailHistory(
+                  movements: _history,
+                  loading: _historyLoading,
+                  failed: _historyFailed,
+                  hasMore: _historyHasMore,
+                  onRetry: () =>
+                      unawaited(_loadHistory(reset: _history.isEmpty)),
+                  onLoadMore: () => unawaited(_loadHistory()),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+              ],
             ],
             InventoryDetailInfo(product: product),
           ],

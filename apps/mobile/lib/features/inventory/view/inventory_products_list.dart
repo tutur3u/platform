@@ -124,7 +124,17 @@ extension _InventoryProductsList on _InventoryProductsPageState {
             child: AppLoadingIndicator(),
           )
         : _loadMoreFailed && _products.isNotEmpty
-        ? _LoadMoreRetry(onRetry: () => unawaited(_loadMore()))
+        ? _FooterAction(
+            message: l10n.inventoryItemsLoadMoreFailed,
+            actionLabel: l10n.commonRetry,
+            onPressed: () => unawaited(_loadMore()),
+          )
+        : _fillExhausted && products.isNotEmpty
+        ? _FooterAction(
+            message: l10n.inventoryFilterNoLoadedMatch(_products.length),
+            actionLabel: l10n.inventoryFilterSearchMore,
+            onPressed: _searchMore,
+          )
         : null;
     final Widget? placeholder = _isLoadingInitial && products.isEmpty
         ? const AppGroupedCard(
@@ -147,8 +157,26 @@ extension _InventoryProductsList on _InventoryProductsPageState {
               ),
             ],
           )
-        : products.isEmpty && !(_clientFiltered && _hasMore && _isLoadingMore)
-        ? AppGroupedCard(children: [_emptyState(context)])
+        : products.isEmpty
+        ? AppGroupedCard(
+            children: [
+              if (_clientFiltered && _hasMore && (_filling || _isLoadingMore))
+                AppStateMessage.inline(
+                  icon: LucideIcons.listFilter,
+                  title: l10n.inventoryFilterSearching,
+                )
+              else if (_clientFiltered && _hasMore && _loadMoreFailed)
+                AppStateMessage.inline(
+                  icon: LucideIcons.cloudOff,
+                  tone: AppTone.destructive,
+                  title: l10n.inventoryItemsLoadMoreFailed,
+                  actionLabel: l10n.commonRetry,
+                  onAction: _searchMore,
+                )
+              else
+                _emptyState(context),
+            ],
+          )
         : null;
 
     final itemCount =
@@ -195,6 +223,14 @@ extension _InventoryProductsList on _InventoryProductsPageState {
 
   Widget _emptyState(BuildContext context) {
     final l10n = context.l10n;
+    if (_fillExhausted) {
+      return AppStateMessage.inline(
+        icon: LucideIcons.listFilter,
+        title: l10n.inventoryFilterNoLoadedMatch(_products.length),
+        actionLabel: l10n.inventoryFilterSearchMore,
+        onAction: _searchMore,
+      );
+    }
     if (_categoryId != null || _clientFiltered) {
       return AppStateMessage.inline(
         icon: LucideIcons.listFilter,
@@ -267,11 +303,18 @@ class _ScanQueryLine extends StatelessWidget {
   }
 }
 
-/// Footer after a failed page; scrolling never retries on its own.
-class _LoadMoreRetry extends StatelessWidget {
-  const _LoadMoreRetry({required this.onRetry});
+/// List footer with a note and one action: retry a failed page (scrolling
+/// never retries on its own) or keep searching for filter matches.
+class _FooterAction extends StatelessWidget {
+  const _FooterAction({
+    required this.message,
+    required this.actionLabel,
+    required this.onPressed,
+  });
 
-  final VoidCallback onRetry;
+  final String message;
+  final String actionLabel;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +325,7 @@ class _LoadMoreRetry extends StatelessWidget {
         children: [
           Expanded(
             child: Text(
-              context.l10n.inventoryItemsLoadMoreFailed,
+              message,
               style: tokens.typography.small.copyWith(
                 color: tokens.colorScheme.mutedForeground,
               ),
@@ -290,8 +333,8 @@ class _LoadMoreRetry extends StatelessWidget {
           ),
           AppButton.ghost(
             size: AppButtonSize.small,
-            onPressed: onRetry,
-            child: Text(context.l10n.commonRetry),
+            onPressed: onPressed,
+            child: Text(actionLabel),
           ),
         ],
       ),
