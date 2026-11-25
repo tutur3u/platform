@@ -180,6 +180,11 @@ class _DocumentTableEditorSheetState extends State<DocumentTableEditorSheet> {
                               controller: _cells[r][col],
                               placeholder: l10n.inputPlaceholderTableCell,
                               borderless: true,
+                              hintMaxLines: 1,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: AppSpacing.xs,
+                              ),
                               minLines: 1,
                               maxLines: 4,
                               style: r == 0 && header
