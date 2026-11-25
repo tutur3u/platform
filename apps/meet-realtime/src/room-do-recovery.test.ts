@@ -506,6 +506,7 @@ test('restart preparation restores the same account and drops a transferred choi
     choice: saved.miraPrivate?.choices[token.userId],
     sessions: [sessionId],
     admitted: true,
+    shared: false,
   });
   assert.equal(stranger.status, 200);
   assert.deepEqual(await stranger.json(), {
@@ -513,6 +514,7 @@ test('restart preparation restores the same account and drops a transferred choi
     choice: null,
     sessions: [],
     admitted: true,
+    shared: false,
   });
   assert.equal(history.status, 200);
   const replay = (await history.json()) as { chat: Array<{ id: string }> };
