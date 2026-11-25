@@ -603,14 +603,16 @@ Regression coverage: `meeting-entry.test.tsx` and `host-name.test.ts`.
 ### Default meeting names
 
 - Rule: a meeting with no name, a blank name, or a stored name equal to a
-  known untitled default ("Untitled meeting" or "Cuộc họp chưa đặt tên")
-  renders as the untitled label in the viewer's locale. Any other stored name
-  is a chosen title and renders verbatim, in every locale.
+  known untitled default ("Untitled meeting" or "Cuộc họp chưa đặt tên",
+  compared in Unicode NFC so decomposed diacritics match) renders as the
+  untitled label in the viewer's locale. Any other stored name is a chosen
+  title and renders verbatim, in every locale.
 - Scope and default: always on (a display fix, not behind `MEET_UX_V2`).
   Stored names are not rewritten; the mapping happens at render.
 - Surfaces: the signed-out guest join card, the public invite page, the room
-  (pre-join, in-call header, Share and ended screens) and the meeting detail
-  page in Meet, and the same shared components in Parley.
+  (pre-join, in-call header, Share and ended screens), the meeting detail page
+  and the meetings list (Current, Upcoming and Past rows, including the row's
+  More actions label) in Meet, and the same shared components in Parley.
 - Exceptions: the "{name}'s meeting" instant-meeting title is still stored in
   the creator's language, since a chosen-looking title cannot be told apart
   from a default. Link-preview metadata keeps the stored name. Older clients
@@ -619,7 +621,8 @@ Regression coverage: `meeting-entry.test.tsx` and `host-name.test.ts`.
   default to `STORED_DEFAULT_MEETING_NAMES`.
 
 Regression coverage: `meeting-display-name.test.ts` and
-`guest-join.test.tsx` under `packages/meet-core/src/features/call`.
+`guest-join.test.tsx` under `packages/meet-core/src/features/call`, and
+`meetings-home.test.tsx` under `apps/meet/src/app/[locale]/[wsId]/meetings`.
 
 Known chrome follow-ups, not yet done: the playback volume range still uses a
 native input, the title and share-option buttons keep their hand-written hover
@@ -1037,24 +1040,39 @@ cannot be recalled. Transcription mutations remain host-only.
 
 - Rule: with `MEET_UX_V2` on, the stage's bottom-left corner carries a join
   QR. It encodes the same `/r/<code>` link the Share dialog gives guests and
-  exposes nothing Share does not. From `lg` up with no activity open it is a
-  small card ("Scan to join"); below `lg`, or while an activity is open, it is
-  a "Join QR" chip that opens the code in a popover, so it never covers a
-  face or activity controls. Anyone can shrink the card to the chip for
-  themselves.
-- Default: shown for every participant, auto-hide off.
+  exposes nothing Share does not.
+- Form: from `lg` up, while the stage shows a plain grid, it is a small card
+  ("Scan to join") and the stage keeps a 160 px left gutter free, so tiles,
+  their name strip and their resume-audio button lay out beside the card
+  instead of under it. Anything that fills the stage (a screen share, the
+  spotlight or sidebar layout, a focused tile, an open activity, or the
+  presence-only roster) switches it to a "Join QR" chip that opens the code
+  in a popover, and the gutter is released. Below `lg` it is always the chip.
+  Anyone can shrink the card to the chip for themselves.
+- Default: on in every `MEET_UX_V2` meeting, for every participant, with
+  auto-hide off. A room that has never stored the setting shows it.
 - Room controls: hosts and co-hosts (the participant manage scope, the same
   as Activities settings) turn it on or off for the room with **Join QR on
   stage** in More, and set auto-hide (Off, 2, 5 or 10 minutes) or **Hide for
-  everyone** from the card's options. The room stamps its own time
-  (`joinQrShownAt`) whenever a manager shows the QR or changes auto-hide, so
-  every client hides it together; turning it back on restarts the clock.
-  Participants cannot change it.
-- Exceptions: absent with `MEET_UX_V2` off and in Parley. A client whose clock
-  is off hides it that much early or late.
+  everyone** from the card's options. Participants cannot change it.
+- Auto-hide clock: the room stamps its own time (`joinQrShownAt`) when a
+  manager shows the QR or changes auto-hide; hiding keeps the stamp. Each
+  `room.settings` message carries the room's `serverNow`, and clients read
+  the deadline through the measured clock skew (the class timer's pattern),
+  so a device with a fast or slow clock hides it with everyone else.
+- Room support: a room announces `features: ['joinQr']` with its settings.
+  A room on an older realtime Worker announces none and drops the QR keys,
+  so until it does, the More switch is disabled with "Available after the
+  next Meet update" (VI "Có sau bản cập nhật Meet tới") and the card has no
+  options menu. The QR itself still shows by default.
+- Exceptions: absent with `MEET_UX_V2` off and in Parley. The draggable
+  self-view card (`SelfPreviewPip`) is not mounted in the call shell, so it
+  cannot overlap the QR; if it returns, its `z-30` keeps it above the QR.
 
-Regression coverage: `room-join-qr.test.ts` under `packages/realtime/src/meet`
-and `stage-join-qr.test.tsx` under `packages/meet-core/src/features/call`.
+Regression coverage: `room-join-qr.test.ts` and `room-skip-lobby.test.ts`
+under `packages/realtime/src/meet`; `stage-join-qr.test.tsx`,
+`stage-join-qr-layout.test.tsx` and `lib/call-state-settings.test.ts` under
+`packages/meet-core/src/features/call`.
 
 ### People control placement (`MEET_UX_V2`)
 
@@ -1062,8 +1080,13 @@ With `MEET_UX_V2` on, the people count that opens the participants panel sits
 at the bar's leading edge from `lg` up, just right of the room clocks. Phones
 and tablets keep it at the trailing end of the control bar. When the panel
 closes and focus would fall to the page, focus returns to the people control
-shown at that width. With the flag off it stays at the trailing end. Its label
-reads "People ({count})". Regression coverage: `control-bar-people.test.tsx`.
+shown at that width. With the flag off it stays at the trailing end.
+Regression coverage: `control-bar-people.test.tsx`.
+
+The control's label, "People ({count})", and the room clock's "Time left"
+(VI "Thời gian còn lại") are message-bundle copy, not behind `MEET_UX_V2`:
+they apply everywhere these controls render, including the classic room and
+Parley.
 
 ### Participant identity markers
 
