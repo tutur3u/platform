@@ -77,7 +77,9 @@ extension _AssistantPageChrome on _AssistantPageState {
           icon: LucideIcons.history,
           tooltip: l10n.assistantConversationsTitle,
           onPressed: guarded(
-            () => unawaited(_openConversations(context, wsId)),
+            () => unawaited(
+              _openConversations(context, wsId, toggleSidebar: true),
+            ),
           ),
         ),
         ShellActionSpec(

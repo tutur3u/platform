@@ -257,7 +257,17 @@ extension _AssistantPageLayout on _AssistantPageState {
                           hasTranscript: hasTranscript,
                           showLiveStrip: showLiveStrip || isLiveMode,
                         );
-                        return AppScaffold(
+                        final sidebarWidth = _historySidebarWidthFor(
+                          context,
+                          hidden: isLiveMode || localLane,
+                        );
+                        final recent = localLane || sidebarWidth > 0
+                            ? null
+                            : _recentConversations(
+                                currentWorkspace.id,
+                                remoteChatState,
+                              );
+                        final page = AppScaffold(
                           child: SafeArea(
                             top: false,
                             bottom: false,
@@ -309,6 +319,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                                                   showLiveStrip: showLiveStrip,
                                                   showTranscript:
                                                       showTranscript,
+                                                  recent: recent,
                                                 ),
                                               ],
                                             ),
@@ -406,6 +417,8 @@ extension _AssistantPageLayout on _AssistantPageState {
                                           retryComposerAttachment,
                                       showSuggestions:
                                           !keyboardVisible && !showTranscript,
+                                      showControls:
+                                          keyboardVisible || !showTranscript,
                                     ),
                                   _localHeader(shellState, local),
                                   ShellChromeActions(
@@ -424,6 +437,15 @@ extension _AssistantPageLayout on _AssistantPageState {
                               ),
                             ),
                           ),
+                        );
+                        return _historySplit(
+                          sidebarWidth: sidebarWidth,
+                          sidebar: () => _buildHistorySidebar(
+                            wsId: currentWorkspace.id,
+                            chatState: remoteChatState,
+                            headerHeight: headerHeight,
+                          ),
+                          page: page,
                         );
                       },
                     );
@@ -471,6 +493,7 @@ extension _AssistantPageLayout on _AssistantPageState {
     required CameraController? camera,
     required bool showLiveStrip,
     required bool showTranscript,
+    required Widget? recent,
   }) => _transcriptPage(
     headerHeight: headerHeight,
     sliver: !showTranscript && !showLiveStrip
@@ -484,10 +507,13 @@ extension _AssistantPageLayout on _AssistantPageState {
                 >(
                   bloc: _voiceCapture,
                   selector: (state) => state.recording,
-                  builder: (_, listening) => AssistantEmptyHero(
+                  builder: (_, listening) => AssistantHomeView(
                     assistantName: shellState.soul.name,
                     thinking: chatState.status == AssistantChatStatus.restoring,
                     listening: listening,
+                    now: widget.conversationsClock?.call(),
+                    onPromptSelected: _applyStarterPrompt,
+                    recent: recent,
                   ),
                 ),
           )

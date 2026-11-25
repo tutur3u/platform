@@ -14,6 +14,29 @@ import 'package:mobile/l10n/l10n.dart';
 
 enum _ComposerOption { attach, model, local, source, close }
 
+/// Opens the gateway model picker and applies the chosen model.
+Future<void> showAssistantModelPicker(
+  BuildContext context, {
+  required AssistantShellState shellState,
+  required Future<void> Function(AssistantGatewayModel) onModelSelected,
+  AssistantRepository? repository,
+}) async {
+  final choice = await showAppSheet<AssistantGatewayModel>(
+    context: context,
+    builder: (_) => AssistantModelPickerSheet(
+      selected: shellState.selectedModel,
+      models: shellState.availableModels,
+      isAllowed: (model) => isAssistantModelAllowed(
+        model,
+        shellState.activeCredits.allowedModels,
+      ),
+      repository: repository,
+      workspaceId: shellState.workspace?.id,
+    ),
+  );
+  if (choice != null) await onModelSelected(choice);
+}
+
 /// Secondary controls share a sheet so Back returns to the prompt.
 class AssistantComposerOptions extends StatelessWidget {
   const AssistantComposerOptions({
@@ -61,20 +84,12 @@ class AssistantComposerOptions extends StatelessWidget {
       case _ComposerOption.source:
         if (!localOnly) await onOpenCreditSourceSheet();
       case _ComposerOption.model:
-        final choice = await showAppSheet<AssistantGatewayModel>(
-          context: context,
-          builder: (_) => AssistantModelPickerSheet(
-            selected: shellState.selectedModel,
-            models: shellState.availableModels,
-            isAllowed: (model) => isAssistantModelAllowed(
-              model,
-              shellState.activeCredits.allowedModels,
-            ),
-            repository: repository,
-            workspaceId: shellState.workspace?.id,
-          ),
+        await showAssistantModelPicker(
+          context,
+          shellState: shellState,
+          repository: repository,
+          onModelSelected: onModelSelected,
         );
-        if (choice != null) await onModelSelected(choice);
     }
   }
 

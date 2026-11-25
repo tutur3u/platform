@@ -16,6 +16,7 @@ extension _AssistantPageComposer on _AssistantPageState {
     required Future<void> Function(String) removeComposerAttachment,
     required Future<void> Function(String) retryComposerAttachment,
     required bool showSuggestions,
+    required bool showControls,
   }) {
     final primary = AssistantComposerPrimaryAction(
       key: const ValueKey('assistant-dock-primary'),
@@ -83,6 +84,26 @@ extension _AssistantPageComposer on _AssistantPageState {
       showSuggestions: showSuggestions,
       onPromptSelected: _applyStarterPrompt,
       onHeightChanged: _setComposerHeight,
+      controls: showControls
+          ? AssistantComposerControls(
+              shellState: shellState,
+              localModelLabel: localLane
+                  ? _localModelLabel(local.selectedModelId) ??
+                        context.l10n.assistantLocalModeAction
+                  : null,
+              onOpenModels: localLane
+                  ? _showLiveSettings
+                  : shellState.availableModels.isEmpty
+                  ? null
+                  : () => showAssistantModelPicker(
+                      context,
+                      shellState: shellState,
+                      repository: _repository,
+                      onModelSelected: _selectRemoteModel,
+                    ),
+              onThinkingModeChanged: _shellCubit.setThinkingMode,
+            )
+          : null,
       child: composer,
     );
   }

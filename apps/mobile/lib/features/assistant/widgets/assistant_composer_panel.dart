@@ -15,6 +15,7 @@ class AssistantComposerPanel extends StatelessWidget {
     required this.onPromptSelected,
     required this.onHeightChanged,
     required this.child,
+    this.controls,
     super.key,
   });
 
@@ -22,6 +23,9 @@ class AssistantComposerPanel extends StatelessWidget {
   final ValueChanged<String> onPromptSelected;
   final ValueChanged<double> onHeightChanged;
   final Widget child;
+
+  /// Model and mode controls under the prompt, inside the same surface.
+  final Widget? controls;
 
   @override
   Widget build(BuildContext context) {
@@ -56,50 +60,47 @@ class AssistantComposerPanel extends StatelessWidget {
               width: panelWidth,
               child: AssistantComposerSizeReporter(
                 onHeightChanged: onHeightChanged,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (showSuggestions) ...[
-                      AppHorizontalScrollView(
-                        key: const ValueKey('assistant-starter-prompts'),
-                        padding: insets,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minWidth: maxWidth == null
-                                ? 0
-                                : math.max(0, panelWidth - insets.horizontal),
+                child: Padding(
+                  padding: insets,
+                  child: AppCard(
+                    padding: EdgeInsets.zero,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (showSuggestions)
+                          AppHorizontalScrollView(
+                            key: const ValueKey('assistant-starter-prompts'),
+                            padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.sm,
+                              AppSpacing.sm,
+                              AppSpacing.sm,
+                              0,
+                            ),
+                            child: Row(
+                              spacing: AppSpacing.xs,
+                              children: [
+                                for (final prompt in [
+                                  l10n.assistantStarterFocus,
+                                  l10n.assistantStarterPlan,
+                                  l10n.assistantStarterBacklog,
+                                  l10n.assistantStarterDraft,
+                                ])
+                                  AppChip(
+                                    label: Text(prompt, maxLines: 1),
+                                    onPressed: () => onPromptSelected(prompt),
+                                  ),
+                              ],
+                            ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: withDock
-                                ? MainAxisAlignment.start
-                                : MainAxisAlignment.center,
-                            spacing: AppSpacing.sm,
-                            children: [
-                              for (final prompt in [
-                                l10n.assistantStarterFocus,
-                                l10n.assistantStarterPlan,
-                                l10n.assistantStarterBacklog,
-                                l10n.assistantStarterDraft,
-                              ])
-                                AppChip(
-                                  label: Text(prompt, maxLines: 1),
-                                  onPressed: () => onPromptSelected(prompt),
-                                ),
-                            ],
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.all(AppSpacing.xs),
+                          child: child,
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                    ],
-                    Padding(
-                      padding: insets,
-                      child: AppCard(
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        child: child,
-                      ),
+                        ?controls,
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),

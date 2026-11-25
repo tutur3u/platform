@@ -78,22 +78,19 @@ class _AssistantConversationsState extends State<AssistantConversations> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final tokens = AppTokens.of(context);
-    final today = DateUtils.dateOnly((widget.now ?? DateTime.now()).toLocal());
+    final now = widget.now ?? DateTime.now();
     final firstDay = MaterialLocalizations.of(context).firstDayOfWeekIndex;
-    final daysSinceStart = (today.weekday % 7 - firstDay) % 7;
-    final week = DateTime(today.year, today.month, today.day - daysSinceStart);
     final groups = {
       for (final period in AssistantConversationPeriod.values)
         period: <AssistantChatRecord>[],
     };
     for (final chat in widget.history) {
-      final date = chat.activityDate?.toLocal();
       if (_archived.contains(chat.id) || !_matches(chat)) continue;
-      final group = DateUtils.isSameDay(date, today)
-          ? AssistantConversationPeriod.today
-          : date != null && !date.isBefore(week) && date.isBefore(today)
-          ? AssistantConversationPeriod.thisWeek
-          : AssistantConversationPeriod.earlier;
+      final group = assistantConversationPeriodOf(
+        chat.activityDate,
+        now: now,
+        firstDayOfWeekIndex: firstDay,
+      );
       groups[group]!.add(chat);
     }
     final labels = {

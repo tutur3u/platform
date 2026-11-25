@@ -5,12 +5,22 @@ extension _AssistantPageHistory on _AssistantPageState {
     if (mounted && _showsConversations) context.go(Routes.assistant);
   }
 
-  Future<void> _openConversations(BuildContext context, String wsId) async {
+  /// Opens the Conversations page. With [toggleSidebar], a window wide
+  /// enough for the history sidebar shows or hides it instead.
+  Future<void> _openConversations(
+    BuildContext context,
+    String wsId, {
+    bool toggleSidebar = false,
+  }) async {
     if (_localCubit.state.local || _localCubit.state.blocked) {
       _showInlineNotice(context.l10n.assistantLocalHistoryNotice);
       return;
     }
     if (!_remoteGuard(wsId).current || _showsConversations) return;
+    if (toggleSidebar && _historySidebarAvailable) {
+      _toggleHistorySidebar();
+      return;
+    }
     _dismissComposerInput();
     context.go(Routes.assistantConversations);
   }

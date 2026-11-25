@@ -6,6 +6,26 @@ import 'package:mobile/l10n/l10n.dart';
 
 enum AssistantConversationPeriod { today, thisWeek, earlier }
 
+/// The history group of a conversation last active at [activity], relative
+/// to [now] and the locale's first day of the week.
+AssistantConversationPeriod assistantConversationPeriodOf(
+  DateTime? activity, {
+  required DateTime now,
+  required int firstDayOfWeekIndex,
+}) {
+  final today = DateUtils.dateOnly(now.toLocal());
+  final daysSinceStart = (today.weekday % 7 - firstDayOfWeekIndex) % 7;
+  final week = DateTime(today.year, today.month, today.day - daysSinceStart);
+  final date = activity?.toLocal();
+  if (DateUtils.isSameDay(date, today)) {
+    return AssistantConversationPeriod.today;
+  }
+  if (date != null && !date.isBefore(week) && date.isBefore(today)) {
+    return AssistantConversationPeriod.thisWeek;
+  }
+  return AssistantConversationPeriod.earlier;
+}
+
 class AssistantConversationRow extends StatelessWidget {
   const AssistantConversationRow({
     required this.chat,

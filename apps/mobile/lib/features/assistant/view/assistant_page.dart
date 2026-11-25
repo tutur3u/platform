@@ -56,15 +56,18 @@ import 'package:mobile/features/assistant/view/assistant_live_call_screen.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_sheet_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_options.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_panel.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
 import 'package:mobile/features/assistant/widgets/assistant_conversations.dart';
 import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
-import 'package:mobile/features/assistant/widgets/assistant_empty_hero.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
+import 'package:mobile/features/assistant/widgets/assistant_history_sidebar.dart';
+import 'package:mobile/features/assistant/widgets/assistant_home_view.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_blocked_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_haptic_feedback.dart';
@@ -74,6 +77,7 @@ import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.
 import 'package:mobile/features/assistant/widgets/assistant_live_stage_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_local_status_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_new_chat_confirmation.dart';
+import 'package:mobile/features/assistant/widgets/assistant_recent_conversations.dart';
 import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_scroll_follower.dart';
 import 'package:mobile/features/assistant/widgets/assistant_transcript_section.dart';
@@ -85,6 +89,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -103,6 +108,7 @@ part 'assistant_page_workspace.dart';
 part 'assistant_page_attachments.dart';
 part 'assistant_page_chrome.dart';
 part 'assistant_page_history.dart';
+part 'assistant_page_history_panes.dart';
 part 'assistant_page_local.dart';
 part 'assistant_page_submission.dart';
 
@@ -161,6 +167,13 @@ class _AssistantPageState extends State<AssistantPage>
   bool get _showsConversations =>
       widget.shellLocation == Routes.assistantConversations;
   bool _settingsWritePending = false;
+
+  /// Whether the window is wide enough for the history sidebar; set while
+  /// building, read when the history action runs.
+  bool _historySidebarAvailable = false;
+  bool _historySidebarCollapsed = false;
+  void _toggleHistorySidebar() =>
+      setState(() => _historySidebarCollapsed = !_historySidebarCollapsed);
   bool _newConversationPending = false;
   void _dismissCreationBanner(String wsId) => setState(
     () => AssistantCreationHoldBanner.dismiss(_creationBannerScope(wsId)),
