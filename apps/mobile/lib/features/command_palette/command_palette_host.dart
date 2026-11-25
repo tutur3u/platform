@@ -115,7 +115,7 @@ class _PaletteHostState extends State<PaletteHost> {
         : ModalRoute.of(focusedContext);
     final chrome = context.read<ShellChromeActionsCubit>().state;
     if (focusedRoute is PopupRoute<dynamic> ||
-        (shortcut.leavesCurrentPage && _isPushedFullPage(focusedRoute)) ||
+        (shortcut.navigates && _isPushedFullPage(focusedRoute)) ||
         chrome.topmostModalOwner != null ||
         _launchingAction) {
       return;

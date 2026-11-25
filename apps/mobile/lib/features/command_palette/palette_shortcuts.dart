@@ -27,6 +27,10 @@ enum PaletteShortcut {
   bool get leavesCurrentPage =>
       tab != null || this == settings || this == newItem;
 
+  /// Whether the shortcut can move the app to another routed destination,
+  /// directly or by letting the palette pick one.
+  bool get navigates => leavesCurrentPage || this == palette;
+
   SingleActivator activator(TargetPlatform platform) => SingleActivator(
     key,
     meta: platform == TargetPlatform.macOS,

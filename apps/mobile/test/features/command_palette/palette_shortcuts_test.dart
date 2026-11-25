@@ -153,7 +153,7 @@ void main() {
   }
 
   testWidgets(
-    'a pushed full page keeps tab and settings chords from leaving it',
+    'a pushed full page keeps tab, settings and palette chords from leaving it',
     (tester) async {
       final harness = await pumpPaletteApp(
         tester,
@@ -196,6 +196,62 @@ void main() {
         LogicalKeyboardKey.controlLeft,
         LogicalKeyboardKey.digit2,
       );
+      expect(harness.path, Routes.apps);
+    },
+  );
+
+  testWidgets(
+    'the palette cannot open over a pushed draft, so no destination is chosen',
+    (tester) async {
+      final harness = await pumpPaletteApp(
+        tester,
+        platform: TargetPlatform.linux,
+        size: const Size(1200, 800),
+        home: (context) => Scaffold(
+          body: TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) => const Scaffold(
+                  body: TextField(autofocus: true, key: Key('draft')),
+                ),
+              ),
+            ),
+            child: const Text('Open editor'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open editor'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('draft')), 'unsaved');
+
+      await paletteChord(
+        tester,
+        LogicalKeyboardKey.controlLeft,
+        LogicalKeyboardKey.keyK,
+      );
+      expect(find.byType(CommandPaletteView), findsNothing);
+
+      // The keys that would choose a destination reach the draft instead.
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(harness.path, Routes.home);
+      expect(find.byKey(const Key('draft')), findsOneWidget);
+      expect(find.text('unsaved'), findsOneWidget);
+
+      Navigator.of(tester.element(find.byKey(const Key('draft')))).pop();
+      await tester.pumpAndSettle();
+      await paletteChord(
+        tester,
+        LogicalKeyboardKey.controlLeft,
+        LogicalKeyboardKey.keyK,
+      );
+      expect(find.byType(CommandPaletteView), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
       expect(harness.path, Routes.apps);
     },
   );
