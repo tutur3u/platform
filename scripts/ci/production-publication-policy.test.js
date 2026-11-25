@@ -143,13 +143,19 @@ function fixture(t, policy) {
       ''
     );
   }
+  // Exemption records hold automatic publication; these fixtures assert the
+  // source policy alone, so the copy starts without records.
+  exclusionSource = exclusionSource.replace(
+    /export const productionPublicationExemptions = \{[\s\S]*?\n\} satisfies [^;]+;/,
+    'export const productionPublicationExemptions = {};'
+  );
   writeFileSync(exclusionConfig, exclusionSource);
   if (policy !== undefined) {
     const config = join(root, 'tuturuuu.ci.ts');
     writeFileSync(
       config,
       readFileSync(config, 'utf8').replace(
-        /export const productionPublicationPolicy = [\s\S]*$/,
+        /export const productionPublicationPolicy = [\s\S]*?\} satisfies ProductionPublicationPolicy;\n/,
         `export const productionPublicationPolicy = ${JSON.stringify(policy)};\n`
       )
     );
@@ -630,4 +636,56 @@ test('the production app deny-list holds exactly the listed apps and never web',
     { cwd: repoRoot, encoding: 'utf8' }
   );
   assert.equal(listed.trim(), 'colab,lettin,mind,parley,track');
+});
+
+test('an exemption record holds planner publication but not the manual path', (t) => {
+  const policy = structuredClone(heldPolicy);
+  policy.calendar = {
+    state: 'admitted',
+    reason: 'reviewed',
+    surfaces: ['frontend'],
+  };
+  const root = fixture(t, policy);
+  const config = join(root, 'tuturuuu.ci.ts');
+  writeFileSync(
+    config,
+    readFileSync(config, 'utf8').replace(
+      'export const productionPublicationExemptions = {};',
+      `export const productionPublicationExemptions = ${JSON.stringify({
+        calendar: {
+          reason: 'needs a private smoke first',
+          owner: 'prod-owner',
+          approvedOn: '2026-11-25',
+          source: 'none',
+        },
+      })};`
+    )
+  );
+  for (const eventName of ['push', 'workflow_dispatch']) {
+    const [decision] = plan(root, ['calendar-cloudflare.yaml'], eventName);
+    assert.equal(decision.shouldRun, false, eventName);
+    assert.equal(decision.held, true, eventName);
+    assert.match(decision.reason, /held from automatic publication/);
+  }
+  const automatic = runPolicy(
+    root,
+    'calendar-cloudflare.yaml',
+    `"${process.execPath}" scripts/ci/production-publication-policy.ts calendar-cloudflare.yaml "$GITHUB_STEP_SUMMARY" --automatic`
+  );
+  assert.equal(automatic.output, 'allowed=false\n');
+  assert.match(automatic.summary, /needs a private smoke first/);
+  // The reviewed manual dispatch reads the source policy alone.
+  assert.equal(
+    runPolicy(root, 'calendar-cloudflare.yaml').output,
+    'allowed=true\n'
+  );
+});
+
+test('every planner caller asks the policy for automatic admission', () => {
+  for (const app of ['calendar', 'mail', 'apps']) {
+    const run = readWorkflow(`${app}-cloudflare.yaml`).jobs[
+      'production-policy'
+    ].steps.find(({ id }) => id === 'policy').run;
+    assert.match(run, new RegExp(`${app}-cloudflare\\.yaml .* --automatic$`));
+  }
 });

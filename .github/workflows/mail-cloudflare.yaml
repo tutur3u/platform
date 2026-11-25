@@ -118,7 +118,7 @@ jobs:
         with:
           node-version: 24.22.0
       - id: policy
-        run: node scripts/ci/production-publication-policy.ts mail-cloudflare.yaml "$GITHUB_STEP_SUMMARY"
+        run: node scripts/ci/production-publication-policy.ts mail-cloudflare.yaml "$GITHUB_STEP_SUMMARY" --automatic
 
   native-publish-production:
     needs: [check-ci, production-policy]

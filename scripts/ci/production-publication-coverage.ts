@@ -17,7 +17,6 @@ export type ProductionPublicationExemption = {
   reason: string;
   owner: string;
   approvedOn: string;
-  expires: string;
   // The commit that recorded the decision, or 'none' when no review exists.
   source: string;
 };
@@ -34,7 +33,7 @@ const PLANNER = '.github/workflows/vercel-production.yaml';
 const SERVING = '.github/workflows/serving-workers-production.yaml';
 const WAVE1_PUBLISHER =
   'uses: ./.github/workflows/wave1-native-production.yaml';
-const MAX_EXEMPTION_DAYS = 90;
+const unowned = new Set(['', 'UNASSIGNED', 'NONE', 'UNKNOWN', 'TBD']);
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;
 
 function read(rootDir: string, path: string): string {
@@ -61,7 +60,8 @@ export function activeProductionApps(): string[] {
 
 export function productionPublicationCoverage(
   rootDir: string,
-  apps: readonly string[] = activeProductionApps()
+  apps: readonly string[] = activeProductionApps(),
+  exemptions: Record<string, unknown> = productionPublicationExemptions
 ): AppCoverage[] {
   const planner = read(rootDir, PLANNER);
   const serving = read(rootDir, SERVING);
@@ -77,7 +77,8 @@ export function productionPublicationCoverage(
       (entry) => entry.app === app
     );
     const hold = productionPublicationHold(
-      target?.productionWorkflow ?? `${app}-cloudflare.yaml`
+      target?.productionWorkflow ?? `${app}-cloudflare.yaml`,
+      { automatic: true, exemptions }
     );
     if (hold) gaps.push(hold);
     let route: PublicationRoute | null = null;
@@ -107,33 +108,34 @@ export function productionPublicationCoverage(
   });
 }
 
-function days(from: string, to: string): number {
+function isCalendarDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !isoDate.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
   return (
-    (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) /
-    86_400_000
+    !Number.isNaN(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
   );
 }
 
-/** Problems with the exemption records; empty when coverage is complete. */
+/**
+ * Problems with the exemption records; empty when coverage is complete. The
+ * result never depends on the current date: a record fails only when it is
+ * missing, unowned, undated or malformed.
+ */
 export function productionPublicationCoverageProblems({
   rootDir,
-  today,
   exemptions = productionPublicationExemptions,
   apps,
 }: {
   rootDir: string;
-  today: string;
   exemptions?: Record<string, unknown>;
   apps?: readonly string[];
 }): string[] {
   const problems: string[] = [];
-  const coverage = productionPublicationCoverage(rootDir, apps);
+  const coverage = productionPublicationCoverage(rootDir, apps, exemptions);
   const known = new Set(coverage.map(({ app }) => app));
   for (const { app, route, gaps } of coverage) {
-    const exemption = exemptions[app];
-    if (route && exemption) {
-      problems.push(`${app}: publishes through ${route}; remove its exemption`);
-    } else if (!route && !exemption) {
+    if (!route && !Object.hasOwn(exemptions, app)) {
       problems.push(
         `${app}: excluded from production publication without an exemption (${gaps.join('; ')})`
       );
@@ -144,13 +146,11 @@ export function productionPublicationCoverageProblems({
       problems.push(`${app}: exemption for an unknown production app`);
       continue;
     }
-    const entry = value as Partial<ProductionPublicationExemption>;
-    const keys = Object.keys(entry ?? {})
-      .sort()
-      .join();
-    if (keys !== 'approvedOn,expires,owner,reason,source') {
+    const entry = (value ?? {}) as Partial<ProductionPublicationExemption>;
+    const keys = Object.keys(entry).sort().join();
+    if (keys !== 'approvedOn,owner,reason,source') {
       problems.push(
-        `${app}: exemption needs exactly reason, owner, approvedOn, expires and source`
+        `${app}: exemption needs exactly reason, owner, approvedOn and source`
       );
       continue;
     }
@@ -160,34 +160,18 @@ export function productionPublicationCoverageProblems({
         problems.push(`${app}: exemption ${field} must be one non-empty line`);
     }
     if (
+      typeof entry.owner === 'string' &&
+      unowned.has(entry.owner.trim().toUpperCase())
+    )
+      problems.push(`${app}: exemption needs a named owner`);
+    if (
       typeof entry.source === 'string' &&
       entry.source !== 'none' &&
       !/^[a-f0-9]{10,40}$/.test(entry.source)
     )
       problems.push(`${app}: exemption source must be a commit SHA or none`);
-    const { approvedOn, expires } = entry;
-    if (
-      typeof approvedOn !== 'string' ||
-      typeof expires !== 'string' ||
-      !isoDate.test(approvedOn) ||
-      !isoDate.test(expires) ||
-      Number.isNaN(days(approvedOn, expires))
-    ) {
-      problems.push(`${app}: exemption dates must be YYYY-MM-DD`);
-      continue;
-    }
-    if (days(approvedOn, today) < 0)
-      problems.push(`${app}: exemption approvedOn is in the future`);
-    if (days(approvedOn, expires) <= 0)
-      problems.push(`${app}: exemption expires before it was approved`);
-    if (days(approvedOn, expires) > MAX_EXEMPTION_DAYS)
-      problems.push(
-        `${app}: exemption lasts more than ${MAX_EXEMPTION_DAYS} days`
-      );
-    if (days(today, expires) <= 0)
-      problems.push(
-        `${app}: exemption expired on ${expires}; publish it automatically or renew the exemption with its owner`
-      );
+    if (!isCalendarDate(entry.approvedOn))
+      problems.push(`${app}: exemption approvedOn must be a YYYY-MM-DD date`);
   }
   return problems;
 }

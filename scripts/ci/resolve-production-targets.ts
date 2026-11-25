@@ -113,7 +113,10 @@ export async function resolveProductionTargets({
   const selectionEvent = packageResume ? 'push' : eventName;
   return Promise.all(
     targets.map(async ({ productionWorkflow }) => {
-      const hold = productionPublicationHold(productionWorkflow);
+      // The planner publishes without an operator, so an exempt app is held.
+      const hold = productionPublicationHold(productionWorkflow, {
+        automatic: true,
+      });
       if (hold) {
         return {
           held: true,

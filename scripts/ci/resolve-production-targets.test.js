@@ -41,8 +41,12 @@ function resolveFixtureTargets({
       '--eval',
       `
         import { resolveProductionTargets } from './scripts/ci/resolve-production-targets.ts';
-        import { productionAppExclusions, productionPublicationPolicy } from './tuturuuu.ci.ts';
-        for (const app of ${JSON.stringify(liftExclusions)}) delete productionAppExclusions[app];
+        import { productionAppExclusions, productionPublicationExemptions, productionPublicationPolicy } from './tuturuuu.ci.ts';
+        // Lifting an app removes both its exclusion and its exemption record.
+        for (const app of ${JSON.stringify(liftExclusions)}) {
+          delete productionAppExclusions[app];
+          delete productionPublicationExemptions[app];
+        }
         const publicationPolicy = ${JSON.stringify(publicationPolicy)};
         if (publicationPolicy) Object.assign(productionPublicationPolicy, publicationPolicy);
         const markers = ${JSON.stringify(workflowMarkers)};

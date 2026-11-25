@@ -2,6 +2,7 @@ import { appendFileSync } from 'node:fs';
 import {
   ci,
   productionAppExclusions,
+  productionPublicationExemptions,
   productionPublicationPolicy,
 } from '../../tuturuuu.ci.ts';
 import { cloudflareProductionTargets } from '../../tuturuuu.ts';
@@ -115,10 +116,7 @@ function switchboardHold(workflowName: string): string | undefined {
 }
 
 function exclusionHold(workflowName: string): string | undefined {
-  const app =
-    cloudflareProductionTargets.find(
-      (entry) => entry.productionWorkflow === workflowName
-    )?.app ?? protectedWorkflows.get(workflowName);
+  const app = workflowApp(workflowName);
   if (!app || !Object.hasOwn(productionAppExclusions, app)) return undefined;
   const reason = productionAppExclusions[app];
   if (typeof reason !== 'string' || !reason.trim() || /[\r\n]/.test(reason)) {
@@ -127,9 +125,47 @@ function exclusionHold(workflowName: string): string | undefined {
   return reason;
 }
 
-export function productionPublicationHold(
-  workflowName: string
+function workflowApp(workflowName: string): string | undefined {
+  return (
+    cloudflareProductionTargets.find(
+      (entry) => entry.productionWorkflow === workflowName
+    )?.app ?? protectedWorkflows.get(workflowName)
+  );
+}
+
+/**
+ * An app with a productionPublicationExemptions record never publishes from
+ * the planner; its reviewed manual path (for example a wave1-native-production
+ * dispatch) is unaffected.
+ */
+function automaticHold(
+  workflowName: string,
+  exemptions: Record<string, unknown>
 ): string | undefined {
+  const app = workflowApp(workflowName);
+  if (!app || !Object.hasOwn(exemptions, app)) return undefined;
+  const reason = (exemptions[app] as { reason?: unknown } | null)?.reason;
+  return typeof reason === 'string' && reason.trim() && !/[\r\n]/.test(reason)
+    ? `held from automatic publication: ${reason}`
+    : 'held from automatic publication: malformed exemption';
+}
+
+export function productionPublicationHold(
+  workflowName: string,
+  {
+    automatic = false,
+    exemptions = productionPublicationExemptions,
+  }: { automatic?: boolean; exemptions?: Record<string, unknown> } = {}
+): string | undefined {
+  // An exclusion or policy hold keeps its own reason; an exemption holds only
+  // what the source policy would otherwise admit.
+  return (
+    sourcePolicyHold(workflowName) ??
+    (automatic ? automaticHold(workflowName, exemptions) : undefined)
+  );
+}
+
+function sourcePolicyHold(workflowName: string): string | undefined {
   if (vercelProductionPublisher.test(workflowName))
     return 'held: Vercel production publisher retired';
   // The app-id deny-list wins over admission, markers, and dispatch.
@@ -153,9 +189,13 @@ export function productionPublicationHold(
 }
 
 if (import.meta.main) {
-  const workflowName = process.argv[2];
+  // --automatic: the caller publishes without an operator (the planner path).
+  const automatic = process.argv.includes('--automatic');
+  const [workflowName, summaryPath] = process.argv
+    .slice(2)
+    .filter((arg) => arg !== '--automatic');
   if (!workflowName) throw new Error('Expected production workflow name');
-  const reason = productionPublicationHold(workflowName);
+  const reason = productionPublicationHold(workflowName, { automatic });
   const message = `${workflowName}: ${reason ?? 'publication admitted by source policy'}`;
   console.log(message);
   if (process.env.GITHUB_OUTPUT) {
@@ -164,7 +204,6 @@ if (import.meta.main) {
       `allowed=${reason === undefined}\n`
     );
   }
-  const summaryPath = process.argv[3];
   if (summaryPath) {
     appendFileSync(
       summaryPath,

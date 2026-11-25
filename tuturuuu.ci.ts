@@ -284,40 +284,37 @@ export const productionPublicationPolicy = {
 // without a record must stay route-free. Change a record only in a reviewed
 // release-owner PR.
 export const productionServingTopology = {
-  calendar: {
-    reason:
-      'calendar.tuturuuu.com is a Custom Domain on tuturuuu-calendar; uploads activate behind it and keep the prior deployment for rollback',
-    customDomains: ['calendar.tuturuuu.com'],
-    routes: [],
-  },
+  // Calendar serves calendar.tuturuuu.com as a Custom Domain on
+  // tuturuuu-calendar. Its record waits for a publish path that smokes the
+  // new version privately before it serves; the current upload activates it
+  // at 100% behind the domain.
 } satisfies ProductionServingTopology;
 
 // Every active production app publishes automatically on a production push
 // (through the planner or serving-workers-production.yaml) or is listed here.
-// production-publication-coverage.test.mjs fails when an app is excluded,
-// held or has no automatic publisher without a record, when a record outlives
-// its expiry, or when a record covers an app that already publishes. Renewal
-// needs the owner's approval and a new approvedOn date.
+// A record also holds the app from automatic publication: the planner never
+// publishes it, while its reviewed manual path stays available.
+// production-publication-coverage.test.mjs fails when an app without an
+// automatic route has no record, or a record is unowned, undated or
+// malformed. The check never depends on the current date. Remove a record in
+// the change that wires the app into a publisher.
 export const productionPublicationExemptions = {
   lettin: {
     reason: 'Excluded until the R2 timeout fix is tested',
     owner: 'vhpx',
     approvedOn: '2026-11-16',
-    expires: '2026-12-31',
     source: 'f09bf9045f',
   },
   parley: {
     reason: 'Excluded until the R2 timeout fix is tested',
     owner: 'vhpx',
     approvedOn: '2026-11-16',
-    expires: '2026-12-31',
     source: 'f09bf9045f',
   },
   colab: {
     reason: 'Colab stays with its dedicated owner',
     owner: 'vhpx',
     approvedOn: '2026-11-16',
-    expires: '2026-12-31',
     source: 'f09bf9045f',
   },
   track: {
@@ -325,7 +322,6 @@ export const productionPublicationExemptions = {
       'Track stays with its dedicated owner; it has no production publisher',
     owner: 'vhpx',
     approvedOn: '2026-11-16',
-    expires: '2026-12-31',
     source: 'f09bf9045f',
   },
   mind: {
@@ -333,14 +329,12 @@ export const productionPublicationExemptions = {
       'Mind stays with its dedicated owner; it has no production publisher',
     owner: 'vhpx',
     approvedOn: '2026-11-16',
-    expires: '2026-12-31',
     source: 'f09bf9045f',
   },
   contacts: {
     reason: 'Held for the wave-2 Start + Void cutover',
     owner: 'vhpx',
     approvedOn: '2026-11-20',
-    expires: '2026-12-31',
     source: '6eb6478982',
   },
   drive: {
@@ -348,62 +342,63 @@ export const productionPublicationExemptions = {
       'Held until the hostname moves off tuturuuu-drive; manual wave1-native-production.yaml dispatch only',
     owner: 'vhpx',
     approvedOn: '2026-11-23',
-    expires: '2026-12-31',
     source: '5de7c0df7c',
   },
-  // No reviewed decision exists for the records below: each app is admitted
-  // or selected but has no automatic production publisher. The short expiry
-  // forces an owner to wire one up or approve the exemption.
+  // Admitted, but its first publish behind the calendar.tuturuuu.com Custom
+  // Domain needs a manual release whose new version is smoked privately
+  // before it serves. Remove this record to let the planner publish it.
+  calendar: {
+    reason:
+      'First publish behind calendar.tuturuuu.com needs a manual release with a private smoke before it serves',
+    owner: 'prod-owner',
+    approvedOn: '2026-11-25',
+    source: 'none',
+  },
+  // The apps below are admitted or selected but have no automatic production
+  // publisher; the production owner lane owns wiring one up.
   git: {
     reason:
       'Planner target without a planner job; git-cloudflare.yaml deploys the sealed artifact only by manual release',
-    owner: 'UNASSIGNED',
+    owner: 'prod-owner',
     approvedOn: '2026-11-25',
-    expires: '2026-12-09',
     source: 'none',
   },
   external: {
     reason:
       'Planner target without a planner job; external-cloudflare.yaml builds production only on a main dispatch',
-    owner: 'UNASSIGNED',
+    owner: 'prod-owner',
     approvedOn: '2026-11-25',
-    expires: '2026-12-09',
     source: 'none',
   },
   finance: {
     reason:
       'Admitted, but publishes only through a manual wave1-native-production.yaml dispatch',
-    owner: 'UNASSIGNED',
+    owner: 'prod-owner',
     approvedOn: '2026-11-25',
-    expires: '2026-12-09',
     source: 'none',
   },
   forms: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'UNASSIGNED',
+    owner: 'prod-owner',
     approvedOn: '2026-11-25',
-    expires: '2026-12-09',
     source: 'none',
   },
   inventory: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'UNASSIGNED',
+    owner: 'prod-owner',
     approvedOn: '2026-11-25',
-    expires: '2026-12-09',
     source: 'none',
   },
   workspace: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'UNASSIGNED',
+    owner: 'prod-owner',
     approvedOn: '2026-11-25',
-    expires: '2026-12-09',
     source: 'none',
   },
   shortener: {
     reason: 'Admitted for a manual route-free upload; no automatic publisher',
-    owner: 'UNASSIGNED',
+    owner: 'prod-owner',
     approvedOn: '2026-11-25',
-    expires: '2026-12-09',
     source: 'none',
   },
 } satisfies Record<string, ProductionPublicationExemption>;

@@ -25,16 +25,14 @@ test('every reviewed serving topology belongs to an admitted wave-1 app', () => 
   }
 });
 
-test('Calendar publishes behind calendar.tuturuuu.com; Mail and Apps stay route-free', () => {
-  assert.deepEqual(productionServingTopologyFor('calendar')?.customDomains, [
-    'calendar.tuturuuu.com',
-  ]);
-  assert.equal(productionServingTopologyFor('mail'), null);
-  assert.equal(productionServingTopologyFor('apps'), null);
+test('every wave-1 Worker stays route-free until a reviewed record exists', () => {
+  // Calendar's Custom Domain record waits for a private-smoke publish path.
+  for (const app of ['calendar', 'mail', 'apps'])
+    assert.equal(productionServingTopologyFor(app), null, app);
 });
 
 for (const [name, topology] of [
-  ['an app that is not admitted', { drive: entry() }],
+  ['an app that is not admitted', { drive: entry(['drive.tuturuuu.com']) }],
   ['an unknown app', { unknown: entry() }],
   ['an extra key', { calendar: { ...entry(), owner: 'x' } }],
   ['a multi-line reason', { calendar: { ...entry(), reason: 'a\nb' } }],
@@ -50,6 +48,14 @@ for (const [name, topology] of [
     assert.throws(() => validateProductionServingTopology(topology));
   });
 }
+
+test('a reviewed record for an admitted app validates', () => {
+  assert.deepEqual(
+    validateProductionServingTopology({ calendar: entry() }).get('calendar')
+      .customDomains,
+    ['calendar.tuturuuu.com']
+  );
+});
 
 function entry(customDomains = ['calendar.tuturuuu.com']) {
   return { reason: 'fixture', customDomains, routes: [] };
