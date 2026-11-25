@@ -67,6 +67,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
 import 'package:mobile/features/classes/data/classes_today_repository.dart';
+import 'package:mobile/features/command_palette/command_palette_host.dart';
 import 'package:mobile/features/dashboard/home_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
@@ -646,6 +647,8 @@ class _AppState extends State<App> {
                     supportedLocales: AppLocalizations.supportedLocales,
                     routerConfig: _router,
                     builder: (context, child) {
+                      final delegate = _router.routerDelegate;
+                      final app = PaletteHost(_router, _taskRepository, child!);
                       final authIdentity = context.select<AuthCubit, String?>(
                         (cubit) => cubit.state.user?.id,
                       );
@@ -655,11 +658,8 @@ class _AppState extends State<App> {
                         child: ShadcnMaterialBridge(
                           navigatorBoundary: (navigator) =>
                               MastermindPrivacyShield(
-                                location: () => _router
-                                    .routerDelegate
-                                    .currentConfiguration
-                                    .uri
-                                    .path,
+                                location: () =>
+                                    delegate.currentConfiguration.uri.path,
                                 child: AppLockBoundary.router(
                                   router: _router,
                                   accountIdentity: authIdentity,
@@ -671,7 +671,7 @@ class _AppState extends State<App> {
                               identity: authIdentity,
                               child: DismissKeyboardOnPointerDown(
                                 child: MobileMfaApprovalListener(
-                                  child: AppVersionGate(child: child!),
+                                  child: AppVersionGate(child: app),
                                 ),
                               ),
                             ),
