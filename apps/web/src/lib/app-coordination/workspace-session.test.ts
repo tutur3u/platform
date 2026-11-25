@@ -68,6 +68,21 @@ describe('authorizeWorkspaceSessionAppTokenExchange', () => {
     expect(await authorize()).toMatchObject({ code: 'NOT_A_MEMBER' });
   });
 
+  it('stays generic when a guest is upgraded during the check', async () => {
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({
+        error: 'membership_type_mismatch',
+        membershipType: 'GUEST',
+        ok: false,
+      })
+      .mockResolvedValueOnce({ membershipType: 'MEMBER', ok: true });
+    expect(await authorize()).toEqual({
+      error: 'Forbidden',
+      ok: false,
+      status: 403,
+    });
+  });
+
   it('prefers PENDING_WORKSPACE_INVITE over NOT_A_MEMBER', async () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
       error: 'membership_missing',

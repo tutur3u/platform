@@ -169,10 +169,20 @@ export async function authorizeWorkspaceSessionAppTokenExchange({
   // row and the invite check agrees there is none. If the invite check now
   // sees a membership (a concurrent join), stay generic rather than let the
   // caller revoke someone who just became a member.
+  // A GUEST is re-read once so a concurrent upgrade to MEMBER is not
+  // reported as a denial.
   const authoritative =
-    membership.error === 'membership_type_mismatch' ||
-    (membership.error === 'membership_missing' &&
-      inviteStatus.status === 'none');
+    membership.error === 'membership_type_mismatch'
+      ? (
+          await verifyWorkspaceMembershipType({
+            requiredType: 'MEMBER',
+            supabase: admin,
+            userId,
+            wsId: normalizedWorkspaceId,
+          })
+        ).error === 'membership_type_mismatch'
+      : membership.error === 'membership_missing' &&
+        inviteStatus.status === 'none';
 
   return {
     ...(authoritative ? { code: 'NOT_A_MEMBER' as const } : {}),
