@@ -1,7 +1,7 @@
 ---
 title: Mira permissions in meetings
 updatedAt: '2026-11-25'
-description: What Mira may do in a meeting with the redesigned Meet flow, who approves each action, and how a person shares their own private notes and tutor chat with their Private Mira.
+description: What Mira may do in a meeting with the redesigned Meet flow, who approves each action, and how a person shares their own tutor chat with their Private Mira.
 audience: users
 ---
 
@@ -42,7 +42,7 @@ Approved access rules:
   it as a proposed diff, and a person (the host, never a Mira service token)
   accepts or dismisses it. The code document changes only on that accept, and
   only when the original lines still match.
-- **Private notes and tutor chat.** The share is a per-meeting grant in the
+- **Shared tutor chat.** The share is a per-meeting grant in the
   room, keyed by the signed-in account. Only that person can turn it on or
   off; the request carries no target account. Turning it on needs a confirmed
   adult Mira account ([one Mira confirmation per account](/platform/features/meet-calls#one-mira-confirmation-per-meet-account))
@@ -56,6 +56,13 @@ Approved access rules:
   that same person, on a token carrying the private scope, can read it, and
   the live worker checks the workspace gate and the account confirmation
   again before every read. Room Mira sessions never carry that scope.
+- **Where shared tutor chat is kept.** Each person's shared chat lives under
+  its own key in the room's Durable Object storage. The room snapshot keeps
+  only small metadata (when it was shared and its size), so a busy room never
+  rewrites everyone's chat on each write. One person's chat is capped at
+  16 KB, and all shared chat in a room at 256 KB: a new share evicts the
+  oldest shared chats until it fits. The stored chat counts only while it
+  matches the grant revision and share time in the snapshot.
 
 ### Revoke and lifetime
 
@@ -65,16 +72,27 @@ Approved access rules:
 - Revoking deletes the shared tutor chat and refuses the next read. It never
   needs an account confirmation.
 - Revoking also ends the owner's Private Mira voice sessions, so nothing a
-  session already read stays in a live model conversation. If a session
-  cannot be stopped, the revoke still applies to future reads and the request
-  reports the failure; trying again stops it.
+  session already read stays in a live model conversation. The room returns
+  every session registered to the owner with the revoke, so this works after
+  they left the call. If a session cannot be stopped, the revoke still
+  applies to future reads and the request reports the failure; trying again
+  stops it.
+- Withdrawing the Mira account confirmation revokes the share and ends the
+  owner's Private Mira sessions. In a call, the room revoke returns the
+  sessions to stop. From account settings, the owner's session registry
+  revokes the share in each meeting with a live Private Mira session and
+  stops those sessions. Both are best effort and bounded; every later read
+  also needs a confirmed account, which a live worker may have cached for up
+  to a minute.
 - Changing the Private Mira choice (Mute or Leave, then Continue again) ends
   the share and drops its shared tutor chat; the share does not come back on
   by itself.
 - Shared tutor chat expires one hour after the owner last sent it. An expired
-  read returns nothing, and the next room-service request drops it from room
-  state. Every share is removed when the meeting ends or is restored, and a
-  subject or meeting erasure removes the subject's share (or every share).
+  read returns nothing. The room sets its alarm for the earliest expiry and
+  deletes expired chat on that alarm or on any earlier write, even when no
+  further requests arrive. Every share and its stored chat is removed when
+  the meeting ends or is restored, and a subject or meeting erasure removes
+  the subject's share (or every share).
 
 ### Intentional exceptions
 
@@ -85,8 +103,8 @@ Approved access rules:
   or tutor chats: Blocked** and Private Mira keeps its original poll tools.
 - Private Mira poll tools remain available to the meeting host only.
 - A workspace admin who joins someone else's meeting as a co-host without
-  participant management cannot launch polls; this slice does not widen the
-  room's existing poll rule.
+  participant management cannot launch polls; the room's existing poll rule
+  applies.
 
 ### EduFest classroom flow
 
@@ -97,9 +115,19 @@ on, and Private Mira's poll launch moves to the Polls panel for the host.
 
 - `packages/realtime/src/meet/room-mira-share.test.ts`: default off, owner-only
   grant, host cannot grant or read, Room Mira and unregistered sessions refused,
-  browser call tokens refused except for revoking, immediate revoke, the size
-  cap, expired context refused and dropped, choice change drops context,
-  subject and meeting erasure, and meeting end.
+  browser call tokens refused except for revoking, immediate revoke returning
+  the owner's sessions, the per-person and room caps with oldest-first
+  eviction, no shared text in snapshot metadata, expired context refused and
+  dropped, choice change drops context, subject and meeting erasure, and
+  meeting end.
+- `apps/meet-realtime/src/room-do-mira-share.test.ts`: the room Durable Object
+  keeps shared chat out of the stored snapshot, serves it from its own key,
+  deletes the key on revoke and on a choice change, and sweeps it on the
+  expiry alarm without further requests.
+- `packages/meet-core/src/features/live-assistant/registry.test.ts`,
+  `apps/meet/src/app/api/meet-mira/account/route.test.ts` and
+  `packages/meet-core/src/routes/api/meet-call/[meetingId]/mira-room/route-account.test.ts`:
+  a withdrawn confirmation revokes shares and stops Private Mira sessions.
 - `packages/meet-core/src/cloudflare/live/private-share-tool.test.ts`:
   unconfirmed accounts refused, Room Mira and flag-off refused, revoke refuses
   the next read, Mira cannot launch polls with the flag on.
