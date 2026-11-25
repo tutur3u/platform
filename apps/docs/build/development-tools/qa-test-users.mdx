@@ -197,6 +197,21 @@ const context = await browser.newContext({
 });
 ```
 
+### Mobile app sessions
+
+Production password sign-in requires Turnstile, so an automated Flutter run
+cannot sign in with the account's password: the API answers "Turnstile
+verification is required". Mint tokens instead with
+`ttr qa users session <userId> --format tokens` and pass the refresh token to
+the app's session handoff, `AuthRepository.signInWithSession`, the same path QR
+login uses. Read the tokens from the 0600 file at run time; never put them in
+source, logs, screenshots or committed `--dart-define` files.
+
+Run signed-in mobile checks on an iOS simulator or an Android emulator. A
+macOS build signed ad hoc, without a development certificate, has neither
+network nor keychain entitlements, so it cannot reach the API or keep the
+session.
+
 ## Expiry cleanup
 
 Cron Control job `qa-test-user-cleanup` runs every 15 minutes as a native

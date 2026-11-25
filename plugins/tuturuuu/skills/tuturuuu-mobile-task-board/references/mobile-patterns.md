@@ -661,6 +661,17 @@ and the pre-`runApp` join. Completion-barrier tests live in
   separate from widget/parser verification; see the mobile Machines feature page.
 
 
+### Signed-in QA runs
+
+Use `ttr qa users` accounts for signed-in checks against production, as
+`apps/docs/build/development-tools/qa-test-users.mdx` describes. Turnstile blocks
+automated password sign-in, so sign in through the session handoff
+(`AuthRepository.signInWithSession`, the QR login path) with tokens from
+`ttr qa users session <userId> --format tokens`. Keep tokens out of source, logs
+and screenshots. Use an iOS simulator or Android emulator: an ad-hoc signed macOS
+build has no network or keychain entitlement.
+
+
 ### Development Firebase consent QA
 
 Follow `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for consent QA.
