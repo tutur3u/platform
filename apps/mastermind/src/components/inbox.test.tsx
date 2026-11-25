@@ -194,7 +194,7 @@ test('shows unknown recovery coverage without a zero count', () => {
   expect(screen.queryByText(/unsettled failed or interrupted/)).toBeNull();
 });
 
-test('shows stale partial coverage and reports holds without a retry button', () => {
+function recoveryState() {
   const state = snapshot().state;
   state.recovery = {
     generatedAt: '2026-11-21T00:00:00.000Z',
@@ -215,12 +215,49 @@ test('shows stale partial coverage and reports holds without a retry button', ()
     byRetryEligibility: { held_by_owner: 1 },
     byNextAction: { owner_resumes_after_freeze_or_decides: 1 },
     byProviderFamily: { codex: 1 },
-    actionsExecuted: {},
-    holdsPreserved: [],
+    actionsExecuted: { settled_superseded_children: 2 },
+    holdsPreserved: ['memory_pair', 'unknown_write_lanes'],
   };
-  render(wrap(<RecoverySummary state={state} now={now} />));
+  return state;
+}
+
+test('shows stale partial coverage and reports holds without a retry button', () => {
+  render(wrap(<RecoverySummary state={recoveryState()} now={now} />));
   expect(screen.getByText('Stale')).toBeTruthy();
   expect(screen.getByText(/Partial coverage/)).toBeTruthy();
   expect(screen.getByText('Held by owner')).toBeTruthy();
+  expect(screen.getByText('Active holds')).toBeTruthy();
+  expect(screen.getByText('Memory pair')).toBeTruthy();
+  expect(screen.getByText('Lanes with unknown writes')).toBeTruthy();
+  expect(screen.getByText('Actions executed')).toBeTruthy();
+  expect(screen.getByText('Superseded child threads closed')).toBeTruthy();
+  expect(screen.getByText('Provider family')).toBeTruthy();
+  expect(screen.getByText('Codex')).toBeTruthy();
   expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
+});
+
+test('uses the singular-safe total and shows none for empty holds and actions', () => {
+  const state = recoveryState();
+  state.recovery!.holdsPreserved = [];
+  state.recovery!.actionsExecuted = {};
+  render(wrap(<RecoverySummary state={state} now={now} />));
+  expect(
+    screen.getByText('Unsettled failed or interrupted threads: 1')
+  ).toBeTruthy();
+  expect(screen.getAllByText('None')).toHaveLength(2);
+});
+
+test('renders holds, actions and providers in Vietnamese', () => {
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <I18nProvider locale="vi">
+        <RecoverySummary state={recoveryState()} now={now} />
+      </I18nProvider>
+    </QueryClientProvider>
+  );
+  expect(screen.getByText('Điều đang được giữ')).toBeTruthy();
+  expect(screen.getByText('Cặp bộ nhớ')).toBeTruthy();
+  expect(screen.getByText('Hành động đã thực hiện')).toBeTruthy();
+  expect(screen.getByText('Đã đóng các luồng con bị thay thế')).toBeTruthy();
+  expect(screen.getByText('Nhóm nhà cung cấp')).toBeTruthy();
 });

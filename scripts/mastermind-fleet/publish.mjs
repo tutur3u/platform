@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Each launchd tick publishes changed snapshots or heartbeats, pulls and
 // acknowledges answers, and refreshes firing SLO alerts within the tick budget.
-import { readRecoverySummary } from './recovery-summary.mjs';
+// Runbook: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 import { createHmac, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -18,12 +18,14 @@ import {
   buildFleetState,
   contentHash,
   isoTime,
+  normalizeOrchestratorThreadId,
   peerMachineIds,
   readFleetRows,
   slugify,
 } from './fleet-state.mjs';
 import { PEER_DEADLINE_MS, readPeers } from './peer-lanes.mjs';
 import { sendPoke } from './poke.mjs';
+import { readRecoverySummary } from './recovery-summary.mjs';
 import { fleetBody, fleetText } from './scrub.mjs';
 import { attachReviewAssets } from './review-extras.mjs';
 import { purgeSecretSpools } from './secret-spool.mjs';
@@ -241,6 +243,7 @@ export function fitToBudget(state, budget = BODY_BUDGET_BYTES) {
   const size = (value) => Buffer.byteLength(JSON.stringify(value), 'utf8');
   let fitted = state;
   let bytes = size(fitted);
+  // Resolved history, release status and recovery go before anything v1 carries.
   for (const key of ['resolved', 'release', 'recovery']) {
     if (bytes <= budget || !(key in fitted)) continue;
     const { [key]: _dropped, ...rest } = fitted;
@@ -441,6 +444,19 @@ export async function runOnce({
   /** Routes Web rate limited this run; the rest of the run continues. */
   const rateLimited = [];
   const config = readJson(paths.configFile);
+  // A non-string or empty id reads as unset: it must not pin an offline
+  // identity and disable the title fallback.
+  const orchestratorThreadId = normalizeOrchestratorThreadId(
+    config.orchestratorThreadId
+  );
+  if (
+    config.orchestratorThreadId !== undefined &&
+    config.orchestratorThreadId !== null &&
+    !orchestratorThreadId
+  )
+    console.warn(
+      'fleet config orchestratorThreadId ignored: not a non-empty string'
+    );
   const pokeDir = path.join(paths.root, 'pokes');
   const observedAt = now.toISOString();
   const revision = now.getTime();
@@ -448,7 +464,7 @@ export async function runOnce({
   let rows;
   let todayOutcomes;
   try {
-    rows = readFleetRows(db, now, config.orchestratorThreadId);
+    rows = readFleetRows(db, now, orchestratorThreadId);
     try {
       todayOutcomes = readTodayOutcomes(db, now);
     } catch {
@@ -519,11 +535,15 @@ export async function runOnce({
     now,
     decisions,
     localMachine,
-    orchestratorThreadId: config.orchestratorThreadId,
-    ...(config.orchestratorThreadId === undefined &&
-    config.orchestratorTitlePattern
+    orchestratorThreadId,
+    ...(!orchestratorThreadId && config.orchestratorTitlePattern
       ? {
           orchestratorPattern: new RegExp(config.orchestratorTitlePattern, 'i'),
+          // An explicit pattern has no broader fallback.
+          orchestratorFallbackPattern: new RegExp(
+            config.orchestratorTitlePattern,
+            'i'
+          ),
         }
       : {}),
   });
@@ -547,6 +567,9 @@ export async function runOnce({
     try {
       await callWeb(web, 'PUT', STATE_PATH, JSON.stringify(state));
     } catch (error) {
+      // An addition Web refuses (edge guard, size, schema) must not stop
+      // lanes and asks: publish the v1 core once more without the additions.
+      // The full snapshot is retried at the next heartbeat or change.
       const base = baseFleetState(state);
       const message = String(error?.message);
       let limited = isRateLimited(error);
@@ -565,6 +588,7 @@ export async function runOnce({
         }
       }
       if (limited) {
+        // The stamp stays, so the snapshot is due again at the next run.
         published = false;
         rateLimited.push('state');
       }

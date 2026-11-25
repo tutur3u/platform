@@ -584,26 +584,37 @@ records the product rules of the shell entry and every tab.
 
 ### Iris activity and recovery coverage
 
-Today shows the turn state of the publisher's configured
-`orchestratorThreadId`. With the setting omitted, the default title match is
-`^\[Iris\] Orchestrator$`. A missing configured ID reads as offline. Delegated
-running and waiting counts use the observed thread ancestry and appear separately
-from Iris's turn. Queued descendants count as waiting.
+Today shows the turn state of the orchestrator. Set `orchestratorThreadId` in the
+publisher config (`~/.local/share/fleet-sync/config.json`) before deploying: the
+ID pins the identity, and an ID missing from the T3 database reads as offline. A
+blank or non-string value is ignored with a warning and counts as unset. Without
+an ID the publisher prefers a thread titled `[Iris] Orchestrator` (or the
+`orchestratorTitlePattern` match) and falls back to any `[Iris]` title, so an
+orchestrator under another `[Iris]` title never reads offline. Delegated running
+and waiting counts use the observed thread ancestry and appear separately from
+Iris's turn. Queued descendants count as waiting.
 
 The publisher accepts a private mode-0600 `fleet-recovery-summary/v1` file at
-`~/.local/share/fleet-sync/recovery/summary.json`. It publishes optional
-`recovery` coverage and aggregate counts on the owner-only state endpoint.
-Host slots are anonymous and the publisher uses the aggregate timestamp for
-successful reads. Today marks the report stale after two hours and shows
-partial coverage whenever the report is incomplete. A missing, invalid,
-oversized, or omitted report displays unavailable coverage. Holds and
-eligibility are informational and do not grant retry permission. The v1
-publisher fallback omits recovery and delegated counts. Mobile clients may
-continue using the core snapshot and can adopt these additive fields separately.
+`~/.local/share/fleet-sync/recovery/summary.json`. The producer must write it
+atomically (write a temporary file in the same directory, set mode 0600, then
+rename it over `summary.json`) so a tick never reads a partial file. It publishes
+optional `recovery` coverage and aggregate counts on the owner-only state
+endpoint. Host slots are anonymous (`host-1` to `host-32`) and come from the
+hosts the summary names; a missing host is reported through `coverage.partial`,
+not inferred from a fixed count. A `generatedAt` up to 60 seconds ahead of the
+publisher clock is accepted and clamped to now; later values are dropped. Today
+marks the report stale after two hours and shows partial coverage whenever the
+report is incomplete. A missing, invalid, oversized, or omitted report displays
+unavailable coverage. The card lists the active holds, the executed actions and
+the provider-family split next to the other aggregates. Holds and eligibility are
+informational and do not grant retry permission. The v1 publisher fallback omits
+recovery and delegated counts. Mobile clients may continue using the core
+snapshot and can adopt these additive fields separately.
 
 Regression coverage lives in `scripts/mastermind-fleet/recovery-summary.test.mjs`,
-`scripts/mastermind-fleet/fleet-state.test.mjs`, and the fleet state route and
-Today component tests.
+`scripts/mastermind-fleet/fleet-state.test.mjs`,
+`scripts/mastermind-fleet/publish.test.mjs`, the fleet state route test and the
+Today component tests (English and Vietnamese).
 
 ## Fleet command center on mobile
 

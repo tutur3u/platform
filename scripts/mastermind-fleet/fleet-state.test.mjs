@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildFleetState, contentHash, readFleetRows } from './fleet-state.mjs';
+import {
+  buildFleetState,
+  contentHash,
+  normalizeOrchestratorThreadId,
+  readFleetRows,
+} from './fleet-state.mjs';
 import { fixtureDatabase } from './fixture.mjs';
 
 const NOW = new Date('2026-11-20T03:00:00.000Z');
@@ -177,6 +182,7 @@ test('reports the orchestrator offline when no lane matches', () => {
   const state = buildFleetState(readFleetRows(fixtureDatabase(), NOW), {
     now: NOW,
     orchestratorPattern: /^\[Nobody\]/,
+    orchestratorFallbackPattern: /^\[Nobody\]/,
   });
   assert.equal(state.orchestrator.state, 'offline');
 });
@@ -495,9 +501,11 @@ test('uses the orchestrator identity and counts only its delegated activity', ()
   });
   assert.equal(pinned.orchestrator.state, 'idle');
   assert.deepEqual(pinned.orchestrator.delegated, { running: 1, waiting: 0 });
+  // With no configured id the broader `[Iris]` title is the fallback, so an
+  // orchestrator titled anything else under that prefix never reads offline.
   assert.equal(
     buildFleetState(rows, { now: NOW }).orchestrator.state,
-    'offline'
+    'running'
   );
   assert.equal(
     buildFleetState(rows, {
@@ -512,6 +520,86 @@ test('uses the orchestrator identity and counts only its delegated activity', ()
       orchestratorThreadId: 'missing',
       orchestratorPattern: /^\[Iris\]/,
     }).orchestrator.state,
+    'offline'
+  );
+});
+
+function automationRows() {
+  const rows = readFleetRows(fixtureDatabase(), NOW);
+  const iris = rows.threads.get('t-iris');
+  rows.threads.set('automation', { ...iris, title: '[Iris] Automations' });
+  rows.active = rows.active.map((run) =>
+    run.thread_id === 't-iris' ? { ...run, thread_id: 'automation' } : run
+  );
+  rows.recent = rows.recent.filter((run) => run.thread_id !== 't-iris');
+  return rows;
+}
+
+test('an orchestrator with an unconventional title never reads offline', () => {
+  const rows = automationRows();
+  rows.threads.delete('t-iris');
+  const state = buildFleetState(rows, { now: NOW });
+  assert.equal(state.orchestrator.state, 'running');
+  assert.ok(state.orchestrator.lastActiveAt);
+  // An explicit pattern has no broader fallback.
+  const strict = /^\[Iris\] Orchestrator$/i;
+  assert.equal(
+    buildFleetState(rows, {
+      now: NOW,
+      orchestratorPattern: strict,
+      orchestratorFallbackPattern: strict,
+    }).orchestrator.state,
+    'offline'
+  );
+});
+
+test('the strict orchestrator title wins over the broader fallback', () => {
+  const rows = readFleetRows(fixtureDatabase(), NOW);
+  const iris = rows.threads.get('t-iris');
+  const later = new Date(NOW.getTime() - 1000).toISOString();
+  rows.threads.set('automation', {
+    ...iris,
+    title: '[Iris] Automations',
+    updated_at: later,
+  });
+  rows.active.push({
+    ...rows.active.find((run) => run.thread_id === 't-iris'),
+    thread_id: 'automation',
+  });
+  const state = buildFleetState(rows, { now: NOW });
+  const strict = buildFleetState(rows, {
+    now: NOW,
+    orchestratorThreadId: 't-iris',
+  });
+  const broad = buildFleetState(rows, {
+    now: NOW,
+    orchestratorThreadId: 'automation',
+  });
+  assert.equal(
+    state.orchestrator.lastActiveAt,
+    strict.orchestrator.lastActiveAt
+  );
+  assert.notEqual(
+    strict.orchestrator.lastActiveAt,
+    broad.orchestrator.lastActiveAt
+  );
+});
+
+test('an empty or non-string orchestrator id reads as unset', () => {
+  assert.equal(normalizeOrchestratorThreadId(' t-iris '), 't-iris');
+  for (const value of ['', '   ', 7, null, {}, ['t-iris'], 'x'.repeat(257)])
+    assert.equal(normalizeOrchestratorThreadId(value), undefined);
+  const rows = automationRows();
+  for (const value of ['', '  ', 7, null, {}])
+    assert.equal(
+      buildFleetState(rows, { now: NOW, orchestratorThreadId: value })
+        .orchestrator.state,
+      'running'
+    );
+  // A string id genuinely missing from the database may still read offline.
+  assert.equal(
+    buildFleetState(rows, { now: NOW, orchestratorThreadId: 'missing' })
+      .orchestrator.state,
     'offline'
   );
 });

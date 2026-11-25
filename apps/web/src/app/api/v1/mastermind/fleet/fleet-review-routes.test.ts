@@ -173,6 +173,43 @@ describe('Mastermind fleet design reviews', () => {
     }
   );
 
+  it.each([
+    ['seven hosts', 7, 200],
+    ['one host', 1, 200],
+    ['the maximum of 32 hosts', 32, 200],
+    ['more than 32 hosts', 33, 422],
+  ])(
+    'validates the host list from the data (%s)',
+    async (_name, hosts, status) => {
+      const generatedAt = '2026-11-20T00:00:00.000Z';
+      const recovery = {
+        generatedAt,
+        stale: false,
+        coverage: {
+          hostsRead: hosts,
+          hostsExpected: hosts,
+          partial: false,
+          hosts: Array.from({ length: hosts }, (_, index) => ({
+            id: `host-${index + 1}`,
+            readAt: generatedAt,
+            ok: true,
+          })),
+        },
+        total: 0,
+        byStatus: {},
+        byReason: {},
+        byOwnerClass: {},
+        byRetryEligibility: {},
+        byNextAction: {},
+        byProviderFamily: {},
+        actionsExecuted: {},
+        holdsPreserved: [],
+      };
+      const response = await publish(sampleFleetState({ recovery }));
+      expect(response.status).toBe(status);
+    }
+  );
+
   it('stores a signed upload and serves it to the owner as an inert image', async () => {
     expect(
       (await uploadAsset(signed('PUT', ASSET_PATH, uploadBody))).status

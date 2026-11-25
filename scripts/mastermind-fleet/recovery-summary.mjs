@@ -2,7 +2,15 @@ import fs from 'node:fs';
 
 const MAX_INPUT_BYTES = 4096;
 const MAX_COUNT = 100_000;
-const HOSTS_EXPECTED = 6;
+/** Sane upper bound on hosts in one summary; the host list comes from the data. */
+export const MAX_HOSTS = 32;
+/** A producer clock may run slightly ahead of this publisher's. */
+export const CLOCK_SKEW_MS = 60_000;
+/**
+ * Age after which the summary reads as stale. The Today card mirrors this as
+ * RECOVERY_STALE_AFTER_MS in apps/web/src/lib/mastermind/fleet/recovery-contract.ts.
+ */
+export const STALE_AFTER_MS = 2 * 60 * 60 * 1000;
 const hostAlias = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const holds = [
   'memory_pair',
@@ -94,10 +102,16 @@ export function normalizeRecoverySummary(input, now) {
   )
     return;
   const timestamp = Date.parse(input.generatedAt);
-  if (!Number.isFinite(timestamp) || timestamp > now.getTime()) return;
-  const generatedAt = new Date(timestamp).toISOString();
-  if (generatedAt !== input.generatedAt.replace(/(?<!\.\d{3})Z$/, '.000Z'))
+  if (!Number.isFinite(timestamp) || timestamp > now.getTime() + CLOCK_SKEW_MS)
     return;
+  if (
+    new Date(timestamp).toISOString() !==
+    input.generatedAt.replace(/(?<!\.\d{3})Z$/, '.000Z')
+  )
+    return;
+  // Within the allowed skew a producer clock ahead of ours clamps to now.
+  const effective = Math.min(timestamp, now.getTime());
+  const generatedAt = new Date(effective).toISOString();
   const coverage = input.coverage;
   if (
     !hasOnly(coverage, [
@@ -114,7 +128,8 @@ export function normalizeRecoverySummary(input, now) {
     return;
   const read = [...coverage.hosts_read, ...coverage.hosts_without_unsettled];
   if (
-    read.length > HOSTS_EXPECTED ||
+    read.length === 0 ||
+    read.length > MAX_HOSTS ||
     new Set(read).size !== read.length ||
     !read.every((host) => typeof host === 'string' && hostAlias.test(host))
   )
@@ -172,15 +187,17 @@ export function normalizeRecoverySummary(input, now) {
   }
   return {
     generatedAt,
-    stale: now.getTime() - timestamp > 2 * 60 * 60 * 1000,
+    stale: now.getTime() - effective > STALE_AFTER_MS,
     coverage: {
       hostsRead: read.length,
-      hostsExpected: HOSTS_EXPECTED,
-      partial: coverage.partial || read.length < HOSTS_EXPECTED,
-      hosts: Array.from({ length: HOSTS_EXPECTED }, (_, index) => ({
+      // The hosts are the ones the summary names; a missing host is reported by
+      // the producer through `coverage.partial`, never inferred from a fixed count.
+      hostsExpected: read.length,
+      partial: coverage.partial,
+      hosts: read.map((_, index) => ({
         id: `host-${index + 1}`,
-        readAt: index < read.length ? generatedAt : null,
-        ok: index < read.length,
+        readAt: generatedAt,
+        ok: true,
       })),
     },
     total,

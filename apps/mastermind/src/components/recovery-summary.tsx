@@ -1,7 +1,35 @@
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import type { FleetState } from '../fleet/contract';
-import { formatTime, useI18n } from '../i18n';
+import { type FleetState, RECOVERY_STALE_AFTER_MS } from '../fleet/contract';
+import { formatTime, type MessageKey, useI18n } from '../i18n';
+
+function CountGroup({
+  title,
+  counts,
+}: {
+  title: string;
+  counts: Partial<Record<string, number>>;
+}) {
+  const { t } = useI18n();
+  const entries = Object.entries(counts);
+  return (
+    <div>
+      <h3 className="font-medium">{title}</h3>
+      {entries.length ? (
+        <dl className="text-sm">
+          {entries.map(([key, count]) => (
+            <div className="flex justify-between gap-2" key={key}>
+              <dt>{t(`recovery.labels.${key}` as MessageKey)}</dt>
+              <dd className="tabular-nums">{count}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-muted-foreground text-sm">{t('recovery.none')}</p>
+      )}
+    </div>
+  );
+}
 
 export function RecoverySummary({
   state,
@@ -19,6 +47,8 @@ export function RecoverySummary({
         ['owner', recovery.byOwnerClass],
         ['eligibility', recovery.byRetryEligibility],
         ['action', recovery.byNextAction],
+        ['provider', recovery.byProviderFamily],
+        ['executed', recovery.actionsExecuted],
       ] as const)
     : [];
   return (
@@ -35,7 +65,8 @@ export function RecoverySummary({
                 {formatTime(locale, recovery.generatedAt)}
               </time>
               {(recovery.stale ||
-                now - Date.parse(recovery.generatedAt) > 7_200_000) && (
+                now - Date.parse(recovery.generatedAt) >
+                  RECOVERY_STALE_AFTER_MS) && (
                 <Badge variant="outline">{t('recovery.stale')}</Badge>
               )}
               {recovery.coverage.partial && (
@@ -49,22 +80,30 @@ export function RecoverySummary({
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               {groups.map(([group, counts]) => (
-                <div key={group}>
-                  <h3 className="font-medium">{t(`recovery.${group}`)}</h3>
-                  <dl className="text-sm">
-                    {Object.entries(counts).map(([key, count]) => (
-                      <div className="flex justify-between gap-2" key={key}>
-                        <dt>
-                          {t(
-                            `recovery.labels.${key}` as Parameters<typeof t>[0]
-                          )}
-                        </dt>
-                        <dd className="tabular-nums">{count}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
+                <CountGroup
+                  key={group}
+                  title={t(`recovery.${group}`)}
+                  counts={counts}
+                />
               ))}
+              <div>
+                <h3 className="font-medium">{t('recovery.holds')}</h3>
+                {recovery.holdsPreserved.length ? (
+                  <ul className="mt-1 flex flex-wrap gap-2">
+                    {recovery.holdsPreserved.map((hold) => (
+                      <li key={hold}>
+                        <Badge variant="outline">
+                          {t(`recovery.labels.${hold}` as MessageKey)}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    {t('recovery.none')}
+                  </p>
+                )}
+              </div>
             </div>
           </>
         ) : (

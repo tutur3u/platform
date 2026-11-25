@@ -435,6 +435,34 @@ test('a refused addition falls back to the v1 core and still picks up answers', 
   assert.equal(bodies[1].decisions[0].id, 'ship');
 });
 
+test('an invalid orchestratorThreadId is ignored with a warning and keeps the title fallback', async (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  for (const value of ['', '  ', 7]) {
+    const paths = sandbox();
+    fs.writeFileSync(
+      paths.configFile,
+      JSON.stringify({ orchestratorThreadId: value })
+    );
+    const bodies = [];
+    await runOnce({
+      paths,
+      origin: 'https://tuturuuu.com',
+      fetchImpl: async (url, init) => {
+        if (init.method === 'PUT') bodies.push(JSON.parse(init.body));
+        return {
+          ok: true,
+          status: 200,
+          json: async () => (init.method === 'GET' ? { answers: [] } : {}),
+        };
+      },
+      openDatabase: () => fixtureDatabase(),
+      now: NOW,
+    });
+    assert.notEqual(bodies[0].orchestrator.state, 'offline');
+  }
+  assert.equal(warn.mock.callCount(), 3);
+});
+
 test('a degraded publish stays reported until the full snapshot lands', async () => {
   const paths = sandbox();
   paths.releaseFile = path.join(paths.root, 'release.json');

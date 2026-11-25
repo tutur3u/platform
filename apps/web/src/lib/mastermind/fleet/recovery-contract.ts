@@ -1,15 +1,13 @@
 import { z } from 'zod';
 
+/** Sane upper bound on hosts in one summary; the list comes from the data. */
+export const RECOVERY_MAX_HOSTS = 32;
+/** Age after which the Today card marks the summary stale (publisher: 2 h). */
+export const RECOVERY_STALE_AFTER_MS = 2 * 60 * 60 * 1000;
+
 const count = z.number().int().min(0).max(100_000);
 const timestamp = z.iso.datetime({ precision: 3 });
-const hostId = z.enum([
-  'host-1',
-  'host-2',
-  'host-3',
-  'host-4',
-  'host-5',
-  'host-6',
-]);
+const hostId = z.string().regex(/^host-(?:[1-9]|[12]\d|3[0-2])$/);
 const hold = z.enum([
   'memory_pair',
   'client_desks_unsettled',
@@ -33,7 +31,7 @@ export const fleetRecoverySchema = z
             ok: z.boolean(),
           })
         )
-        .max(hostId.options.length),
+        .max(RECOVERY_MAX_HOSTS),
     }),
     total: count,
     byStatus: z.partialRecord(z.enum(['failed', 'interrupted']), count),

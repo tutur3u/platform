@@ -89,8 +89,24 @@ function parsePayload(json) {
   }
 }
 
+/** The default orchestrator title, then the broader `[Iris]` fallback. */
+export const ORCHESTRATOR_TITLE = /^\[Iris\] Orchestrator$/i;
+export const ORCHESTRATOR_TITLE_FALLBACK = /^\[Iris\]/i;
+
+/**
+ * A configured orchestrator thread id is a non-empty string; anything else
+ * (empty, whitespace, a number) reads as unset so it never pins an offline
+ * identity or disables the title fallback.
+ */
+export function normalizeOrchestratorThreadId(value) {
+  if (typeof value !== 'string') return undefined;
+  const id = value.trim();
+  return id && id.length <= 256 ? id : undefined;
+}
+
 /** Reads the rows the snapshot needs from an open read-only database. */
 export function readFleetRows(db, now = new Date(), orchestratorThreadId) {
+  orchestratorThreadId = normalizeOrchestratorThreadId(orchestratorThreadId);
   const since = new Date(now.getTime() - DAY_MS).toISOString();
   const active = db
     .prepare(
@@ -115,7 +131,7 @@ export function readFleetRows(db, now = new Date(), orchestratorThreadId) {
     )
     .all(since, since);
   const ids = [...new Set([...active, ...recent].map((row) => row.thread_id))];
-  if (typeof orchestratorThreadId === 'string') ids.push(orchestratorThreadId);
+  if (orchestratorThreadId) ids.push(orchestratorThreadId);
   const threads = new Map();
   const lookup = db.prepare(
     `SELECT t.thread_id, t.title, t.updated_at, t.archived_at, t.deleted_at,
@@ -170,8 +186,9 @@ export function buildFleetState(
   {
     now = new Date(),
     localMachine = { id: 'local', label: 'This Mac' },
-    orchestratorPattern = /^\[Iris\] Orchestrator$/i,
-    orchestratorThreadId,
+    orchestratorPattern = ORCHESTRATOR_TITLE,
+    orchestratorFallbackPattern = ORCHESTRATOR_TITLE_FALLBACK,
+    orchestratorThreadId: configuredThreadId,
     orchestratorLabel = 'Iris',
     decisions = [],
   } = {}
@@ -277,6 +294,8 @@ export function buildFleetState(
     );
   }
 
+  const orchestratorThreadId =
+    normalizeOrchestratorThreadId(configuredThreadId);
   // A configured local identity can be idle beyond the recent run window.
   // Keep that identity available without adding it to fleet lane totals.
   const identity = rows.threads.get(orchestratorThreadId);
@@ -359,14 +378,18 @@ export function buildFleetState(
       if (fleetCountStates.has(state) && Number.isInteger(extra) && extra > 0)
         counts[state] += extra;
 
-  const orchestratorEntry =
-    lanes
-      .filter((entry) =>
-        orchestratorThreadId === undefined
-          ? orchestratorPattern.test(entry.title)
-          : entry.threadId === orchestratorThreadId
-      )
-      .sort((a, b) => compareLanes(a.lane, b.lane))[0] ?? idleIdentity;
+  // A configured id pins the identity (missing from the database reads as
+  // offline). Without one, the strict title wins and the broader title is the
+  // fallback, so an unconventionally titled orchestrator never reads offline.
+  const pickOrchestrator = (match) =>
+    lanes.filter(match).sort((a, b) => compareLanes(a.lane, b.lane))[0];
+  const orchestratorEntry = orchestratorThreadId
+    ? (pickOrchestrator((entry) => entry.threadId === orchestratorThreadId) ??
+      idleIdentity)
+    : (pickOrchestrator((entry) => orchestratorPattern.test(entry.title)) ??
+      pickOrchestrator((entry) =>
+        orchestratorFallbackPattern.test(entry.title)
+      ));
   const delegated = { running: 0, waiting: 0 };
   if (orchestratorEntry) {
     const parents = new Map(lanes.map(({ lane }) => [lane.id, lane.parentId]));
