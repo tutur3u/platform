@@ -5,10 +5,12 @@
 --   so an Auth deletion and a late outbox write are serialized: either the
 --   write lands first and the deletion anonymizes it, or the deletion lands
 --   first and the write is an acknowledged no-op.
--- - A closed-out session (deleted, purged, any session erasure, or a completed
---   person erasure for that account) takes no further room or consent writes
---   for that account; they succeed as no-ops so the outbox acknowledges them.
---   An allow is refused once capture has ended.
+-- - A closed-out session (deleted, purged or any session erasure) takes no
+--   further room or consent writes for that account, and an allow takes none
+--   while that person's erasure is pending, running or completed; they succeed
+--   as no-ops so the outbox acknowledges them. A withdraw, deny, close or
+--   revoke is still recorded after a completed person erasure. An allow is
+--   refused once capture has ended.
 -- - Room entries go as soon as a purge happens, and after an erasure once the
 --   session no longer captures; the erasure branch locks the session row so a
 --   concurrent close cannot leave them behind.
@@ -71,9 +73,10 @@ grant execute on function private.meet_ai_self_v1_account_gone(uuid) to service_
 -- A session closed out for one account: capture deleted, transcript purged or
 -- any session erasure job, for every write; and, only for a write that opens
 -- or re-links capture (p_opening, an allow), a person erasure of that account
--- in any status (a running erasure must not gain a new row either). A withdraw, deny, close or revoke after a completed person erasure
--- is still recorded: it is the only way to stop a stream that is still live
--- once the upload fence lifts.
+-- in any status (a running erasure must not gain a new row either). A
+-- withdraw, deny, close or revoke after a completed person erasure is still
+-- recorded: it is the only way to stop a stream that is still live once the
+-- upload fence lifts.
 create function private.meet_ai_self_v1_closed_out(
   p_session public.meet_ai_sessions, p_account_id uuid, p_opening boolean
 ) returns boolean language sql stable set search_path = pg_catalog, pg_temp
