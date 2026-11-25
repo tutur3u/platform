@@ -206,6 +206,8 @@ Drive checkpoint. Preview and Learn retain their current provider. Qualify the
 writeback and concurrent editor behavior before production activation. Verify
 that the legacy runner pool has no eligible Playground capacity while Meet uses
 Cloudflare and Learn still uses the legacy provider.
+The legacy readiness probe requires `python3` and the language toolchain.
+For Java, both the `javac` compiler and the `java` launcher must be on PATH.
 
 The operator calls `POST /control` with the operator credential and
 `{"enabled":false}`. The response records the new generation and the number of

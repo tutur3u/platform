@@ -107,6 +107,35 @@ describe('managed playground removal ownership', () => {
     expect(calls[0]?.[0]).toContain('--memory=128m');
   });
 
+  it.each([
+    ['python', 'command -v python3 >/dev/null'],
+    ['javascript', 'command -v node >/dev/null'],
+    ['typescript', 'command -v bun >/dev/null'],
+    ['c', 'command -v gcc >/dev/null'],
+    ['cpp', 'command -v g++ >/dev/null'],
+    ['java', 'command -v javac >/dev/null && command -v java >/dev/null'],
+    ['rust', 'command -v rustc >/dev/null'],
+    ['go', 'command -v go >/dev/null'],
+    ['ruby', 'command -v ruby >/dev/null'],
+    ['php', 'command -v php >/dev/null'],
+    ['shell', 'command -v sh >/dev/null'],
+  ])('checks the required binaries for %s readiness', async (language, checks) => {
+    vi.stubEnv(
+      'TUTURUUU_PLAYGROUND_IMAGES',
+      JSON.stringify({ [language]: `fixture@sha256:${'a'.repeat(64)}` })
+    );
+    const { getPlaygroundReadiness } =
+      await import('./devbox-playground-sandbox');
+
+    expect((await getPlaygroundReadiness()).languages).toEqual([language]);
+    const args = docker.mock.calls.find(([args]) => args[0] === 'run')?.[0];
+    expect(args?.slice(-3)).toEqual([
+      'sh',
+      '-c',
+      `command -v python3 >/dev/null && ${checks}`,
+    ]);
+  });
+
   it('keeps capacity owned when removal fails and the container remains', async () => {
     const { runPlaygroundJob, playgroundEnvironmentCount } =
       await import('./devbox-playground-sandbox');

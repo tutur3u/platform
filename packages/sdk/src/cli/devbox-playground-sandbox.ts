@@ -342,6 +342,16 @@ export async function getPlaygroundReadiness() {
     const languages: PlaygroundLanguage[] = [];
     for (const [language, image] of Object.entries(images)) {
       const name = `ttr-playground-smoke-${randomUUID()}`;
+      const requiredBinaries = [
+        'python3',
+        language === 'shell'
+          ? 'sh'
+          : judgeLanguageBinary(language as Exclude<PlaygroundLanguage, 'shell'>),
+      ];
+      if (language === 'java') requiredBinaries.push('java');
+      const probe = requiredBinaries
+        .map((binary) => `command -v ${binary} >/dev/null`)
+        .join(' && ');
       const run = await sandboxDocker(
         [
           'run',
@@ -362,7 +372,7 @@ export async function getPlaygroundReadiness() {
           image,
           'sh',
           '-c',
-          `command -v python3 >/dev/null && command -v ${language === 'shell' ? 'sh' : judgeLanguageBinary(language as Exclude<PlaygroundLanguage, 'shell'>)} >/dev/null`,
+          probe,
         ],
         '',
         15000
