@@ -4,7 +4,10 @@ import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service
 import { z } from 'zod';
 import { readPersonalChatBody } from '../../../../../../features/call/server/personal-chat-body';
 import { readMiraDemoAuthority } from '../../../../../../features/live-assistant/server/demo-authority';
-import { requirePrivateMiraChoice } from '../../../../../../features/live-assistant/server/private-consent';
+import {
+  requirePrivateMiraChoice,
+  requirePrivateMiraChoiceState,
+} from '../../../../../../features/live-assistant/server/private-consent';
 import { forwardSharedTutorChat } from '../../../../../../features/live-assistant/server/private-share';
 
 const input = z.object({
@@ -81,9 +84,12 @@ export async function POST(
         'MIRA_PROVIDER_UNAVAILABLE'
       );
 
+    // Read with every consent check, so the latest one decides the forward.
+    const tutorShare = { on: false };
     async function checkConsent() {
-      const current = await requirePrivateMiraChoice(access);
-      if (current.revision !== consent.revision)
+      const current = await requirePrivateMiraChoiceState(access);
+      tutorShare.on = current.shared;
+      if (current.choice.revision !== consent.revision)
         throw new MeetCallAccessError(
           403,
           'Private Mira choice changed',
@@ -98,12 +104,16 @@ export async function POST(
       payer: authority.payer,
     });
     await checkConsent();
-    // Reaches the owner's Private Mira only while they share their tutor chat.
-    await forwardSharedTutorChat(access, [
-      ...payload.data.history,
-      { body: payload.data.question, assistant: false },
-      { body: answer.text, assistant: true },
-    ]);
+    // Only while the owner shares their tutor chat, and never on the answer's
+    // path: the room keeps it only while the share still holds.
+    if (tutorShare.on) {
+      const forward = forwardSharedTutorChat(access, [
+        ...payload.data.history,
+        { body: payload.data.question, assistant: false },
+        { body: answer.text, assistant: true },
+      ]);
+      cloudflare?.ctx?.waitUntil(forward);
+    }
     return answer;
   });
 }

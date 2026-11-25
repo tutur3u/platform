@@ -1,4 +1,5 @@
 import 'server-only';
+import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 import {
   MIRA_SHARE_MAX_CONTEXT_BYTES,
   MIRA_SHARE_MAX_TURNS,
@@ -13,6 +14,10 @@ import {
   requireMiraAccountConfirmation,
   usesMiraAccountConfirmation,
 } from './account-confirmation';
+import {
+  readPrivateMiraChoice,
+  stopPrivateMiraSessions,
+} from './private-consent';
 
 type Access = SignedInMeetCallAccess;
 export type PrivateMiraShare = { enabled: boolean; revision: number };
@@ -49,11 +54,14 @@ export async function readPrivateMiraShare(
 /**
  * Turns the caller's own share on or off. The room keys the grant by the
  * signed-in account, so nobody can grant or revoke for someone else. Turning
- * it on needs a confirmed adult account; turning it off never waits.
+ * it on needs a confirmed adult account; turning it off never waits for that.
+ * Revoking also ends the caller's Private Mira voice sessions, so nothing a
+ * session already read stays in a live model conversation.
  */
 export async function setPrivateMiraShare(
   access: Access,
-  command: z.infer<typeof privateMiraShareCommand>
+  command: z.infer<typeof privateMiraShareCommand>,
+  live?: DurableObjectNamespace
 ): Promise<PrivateMiraShare> {
   if (!usesMiraAccountConfirmation())
     throw new MeetCallAccessError(404, 'Private Mira sharing is unavailable');
@@ -68,6 +76,11 @@ export async function setPrivateMiraShare(
   );
   if (!result.success)
     throw new MeetCallAccessError(503, 'Private Mira sharing is unavailable');
+  // A grant that ever existed may have been read; a retry stops again.
+  if (!command.enabled && result.data.revision > 0) {
+    const { sessions } = await readPrivateMiraChoice(access);
+    await stopPrivateMiraSessions(access, sessions, live);
+  }
   return result.data;
 }
 

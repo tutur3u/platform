@@ -43,7 +43,7 @@ export async function executeLiveTool(
     });
   if (name === 'launch_poll' && !liveMiraPublishesPolls(env, saved)) {
     respond({
-      error: 'Mira only drafts polls. A host or co-host launches them in Polls.',
+      error: 'Mira only drafts polls. A host or co-host launches them.',
     });
     return;
   }

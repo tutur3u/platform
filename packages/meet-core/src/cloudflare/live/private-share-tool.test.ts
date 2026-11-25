@@ -64,6 +64,7 @@ const run = (
       env: {
         MEET_UX_V2: options.uxV2 === false ? 'false' : 'true',
         MEET_AI_DISABLED: 'false',
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
         MEET_AI_ALL_WORKSPACES: 'reviewed-allow-all-2026-11-20',
       } as LiveEnvironment,
       provider: { sendToolResponse } as unknown as Session,
@@ -138,6 +139,7 @@ it('keeps Mira from launching polls under the redesign', async () => {
   f.auth.mockResolvedValue(confirmed(MIRA_ACCOUNT_CONFIRMATION_VERSION));
   f.poll.mockResolvedValue({ ok: true });
   await run('draft_poll');
+  expect(response()).toEqual({ ok: true });
   expect(f.poll).toHaveBeenCalledWith(
     expect.anything(),
     expect.anything(),

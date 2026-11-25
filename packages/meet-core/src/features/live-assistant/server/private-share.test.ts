@@ -4,6 +4,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({
   room: vi.fn(),
   confirm: vi.fn(),
+  choice: vi.fn(),
+  stop: vi.fn(),
   enabled: true,
 }));
 vi.mock('server-only', () => ({}));
@@ -12,8 +14,16 @@ vi.mock('./account-confirmation', () => ({
   requireMiraAccountConfirmation: f.confirm,
   usesMiraAccountConfirmation: () => f.enabled,
 }));
+vi.mock('./private-consent', () => ({
+  readPrivateMiraChoice: f.choice,
+  stopPrivateMiraSessions: f.stop,
+}));
 
-import { forwardSharedTutorChat, readPrivateMiraShare } from './private-share';
+import {
+  forwardSharedTutorChat,
+  readPrivateMiraShare,
+  setPrivateMiraShare,
+} from './private-share';
 
 const access = { user: { id: '00000000-0000-4000-8000-000000000001' } };
 type Access = Parameters<typeof forwardSharedTutorChat>[0];
@@ -71,3 +81,44 @@ it('reports sharing as off when the room cannot confirm it', async () => {
     revision: 0,
   });
 });
+
+const revoke = {
+  action: 'share' as const,
+  enabled: false,
+  expectedActorId: access.user.id,
+};
+const live = {} as Parameters<typeof setPrivateMiraShare>[2];
+
+it('ends the owner’s Private Mira voice sessions when they revoke', async () => {
+  const sessions = ['00000000-0000-4000-8000-000000000004'];
+  f.room.mockResolvedValue({ enabled: false, revision: 2 });
+  f.choice.mockResolvedValue({ sessions });
+  expect(await setPrivateMiraShare(access as Access, revoke, live)).toEqual({
+    enabled: false,
+    revision: 2,
+  });
+  expect(f.room).toHaveBeenCalledWith(access, {
+    action: 'mira.share.set',
+    enabled: false,
+  });
+  expect(f.stop).toHaveBeenCalledWith(access, sessions, live);
+  expect(f.confirm).not.toHaveBeenCalled();
+});
+
+it('stops nothing when there was never a share, and reports a failed stop', async () => {
+  f.room.mockResolvedValue({ enabled: false, revision: 0 });
+  await setPrivateMiraShare(access as Access, revoke, live);
+  expect(f.stop).not.toHaveBeenCalled();
+
+  f.room.mockResolvedValue({ enabled: false, revision: 3 });
+  f.choice.mockResolvedValue({ sessions: ['s'] });
+  f.stop.mockRejectedValue(new Error('Private Mira could not stop'));
+  await expect(
+    setPrivateMiraShare(access as Access, revoke, live)
+  ).rejects.toThrow('Private Mira could not stop');
+  expect(f.room).toHaveBeenLastCalledWith(access, {
+    action: 'mira.share.set',
+    enabled: false,
+  });
+});
+

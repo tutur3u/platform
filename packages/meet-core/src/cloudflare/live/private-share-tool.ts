@@ -3,6 +3,7 @@ import { requireCurrentPrivateGrant } from './private-grant';
 import { liveRoomCommand } from './room';
 import type { SavedSession } from './session-state';
 import type { LiveEnvironment } from './storage';
+import { liveWorkspaceAllowed } from './workspace-gate';
 
 const sharedNotes = z.strictObject({
   tutor: z
@@ -41,7 +42,8 @@ export async function readSharedPrivateNotes(
     saved.claims.app !== 'meet' ||
     saved.claims.mode !== 'personal' ||
     saved.ended ||
-    saved.billingFinalized
+    saved.billingFinalized ||
+    !liveWorkspaceAllowed(env, saved)
   )
     return unavailable;
   try {

@@ -5,6 +5,9 @@ const fixture = vi.hoisted(() => ({
   choice: vi.fn(),
   privateRequest: vi.fn(),
   context: vi.fn(),
+  forward: vi.fn(),
+  waitUntil: vi.fn(),
+  shared: false,
 }));
 
 vi.mock('server-only', () => ({}));
@@ -52,7 +55,15 @@ vi.mock(
   '../../../../../../features/live-assistant/server/private-consent',
   () => ({
     requirePrivateMiraChoice: fixture.choice,
+    requirePrivateMiraChoiceState: async (access: unknown) => ({
+      choice: await fixture.choice(access),
+      shared: fixture.shared,
+    }),
   })
+);
+vi.mock(
+  '../../../../../../features/live-assistant/server/private-share',
+  () => ({ forwardSharedTutorChat: fixture.forward })
 );
 vi.mock('../../../../../../features/call/server/personal-chat-request', () => ({
   requestPersonalMeetChat: fixture.privateRequest,
@@ -63,8 +74,10 @@ import { POST } from './route';
 
 beforeEach(() => {
   vi.resetAllMocks();
+  fixture.shared = false;
   fixture.context.mockResolvedValue({
     env: { MEET_AI_DISABLED: 'false', GOOGLE_GENERATIVE_AI_API_KEY: 'test' },
+    ctx: { waitUntil: fixture.waitUntil },
   });
   fixture.authority.mockResolvedValue({ allowed: true });
   fixture.choice.mockResolvedValue({ revision: 1 });
@@ -120,4 +133,27 @@ it('preserves the real credit failure response', async () => {
   const response = await ask();
   expect(response.status).toBe(403);
   expect(await response.json()).toEqual({ code: 'MIRA_CREDITS_UNAVAILABLE' });
+});
+
+it('skips the tutor share entirely while sharing is off', async () => {
+  fixture.privateRequest.mockResolvedValue({ text: 'A private reply' });
+  expect((await ask()).status).toBe(200);
+  expect(fixture.forward).not.toHaveBeenCalled();
+  expect(fixture.waitUntil).not.toHaveBeenCalled();
+});
+
+it('forwards a shared tutor chat without holding the answer', async () => {
+  fixture.shared = true;
+  fixture.privateRequest.mockResolvedValue({ text: 'A private reply' });
+  // The forward never settles; the answer must still return.
+  fixture.forward.mockReturnValue(new Promise(() => undefined));
+  const response = await ask();
+  expect(await response.json()).toEqual({ text: 'A private reply' });
+  expect(fixture.forward).toHaveBeenCalledWith(expect.anything(), [
+    { body: 'Hello', assistant: false },
+    { body: 'A private reply', assistant: true },
+  ]);
+  expect(fixture.waitUntil).toHaveBeenCalledWith(
+    fixture.forward.mock.results[0]?.value
+  );
 });

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { MIRA_ACCOUNT_CONFIRMATION_VERSION } from '../../../../features/live-assistant/account-confirmation';
-import { actorId, call, f } from './phase-a-fixture';
+import { actorId, call, f, sessionId } from './phase-a-fixture';
 import { POST as live } from './route';
 
 const account = vi.hoisted(() => ({ marker: undefined as unknown }));
@@ -94,3 +94,19 @@ it('lets a confirmed owner share with their own Private Mira', async () => {
     privateShare: { enabled: false, revision: 1 },
   });
 });
+
+it('ends the owner’s Private Mira voice session when they revoke', async () => {
+  vi.stubEnv('MEET_UX_V2', 'true');
+  f.sessions = [sessionId];
+  const response = await share(false);
+  expect(response.status).toBe(200);
+  const stops = f.fetch.mock.calls
+    .map(([, init]) => JSON.parse(String((init as RequestInit).body)))
+    .filter(({ action }) => action === 'stop');
+  expect(stops).toEqual([
+    expect.objectContaining({ action: 'stop', ownerId: actorId }),
+  ]);
+  expect(f.order).toContain('mira.private.ended');
+  expect(f.sessions).toEqual([]);
+});
+

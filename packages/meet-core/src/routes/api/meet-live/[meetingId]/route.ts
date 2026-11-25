@@ -71,9 +71,6 @@ export async function POST(
     const accountFlow = usesMiraAccountConfirmation();
     if (command.action === 'start' && command.mode !== 'personal')
       throw new MeetCallAccessError(403, MIRA_ROOM_DENIED);
-    // Owner-only: the room keys every share by the signed-in account.
-    if (command.action === 'share')
-      return setPrivateMiraShare(access, command);
     const cloudflare = await getCloudflareContext({ async: true });
     const env = cloudflare.env as unknown as {
       MEET_LIVE: DurableObjectNamespace;
@@ -81,6 +78,9 @@ export async function POST(
       GOOGLE_GENERATIVE_AI_API_KEY?: string;
       MEET_AI_DISABLED?: string;
     };
+    // Owner-only: the room keys every share by the signed-in account.
+    if (command.action === 'share')
+      return setPrivateMiraShare(access, command, env.MEET_LIVE);
     if (command.action === 'choice') {
       if (command.expectedActorId && command.expectedActorId !== access.user.id)
         throw new MeetCallAccessError(403, 'Private Mira account changed');
