@@ -17,7 +17,7 @@ const THROWN = new Error('render failed');
 // Stands in for the vinext handler: one response per path.
 const vinext = {
   marker: 'vinext',
-  async fetch(request: Request) {
+  async fetch(request: Request, _env?: unknown, _ctx?: unknown) {
     const { pathname } = new URL(request.url);
     switch (pathname) {
       case '/vi/login':
