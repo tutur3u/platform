@@ -2,25 +2,50 @@
 
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
 const { runStep } = require('../check-changed.js');
 
-const passing = { id: 'src/passing.test.ts', ok: true, passed: true };
-const changed = { id: 'src/changed.test.ts', ok: true, passed: false };
+const counts = { total: 0, passed: 0, failed: 0, skipped: 0 };
+const passing = {
+  ...counts,
+  id: 'src/passing.test.ts',
+  ok: true,
+  state: 'passed',
+  total: 1,
+  passed: 1,
+};
+const changed = {
+  ...counts,
+  id: 'src/changed.test.ts',
+  ok: true,
+  state: 'skipped',
+  total: 1,
+  skipped: 1,
+};
 
-function runVitest({ report, explicitTests = [], stdout = '', status = 0 }) {
+function runVitest({
+  report,
+  explicitTests = [],
+  stdout = '',
+  status = 0,
+  env,
+  root = process.cwd(),
+  cwd = 'packages/meet-core',
+}) {
   let resultFile;
   const result = runStep(
     {
       id: 'vitest:packages/meet-core',
-      cwd: 'packages/meet-core',
+      cwd,
       command: 'bun',
       args: ['x', 'vitest', 'related', ...explicitTests],
       explicitVitestTests: explicitTests,
     },
     {
-      root: process.cwd(),
+      root,
+      env,
       pinVitestTsconfig: (step) => ({ args: step.args, cleanup() {} }),
       spawn(command, args, { env }) {
         assert.equal(command, 'bun');
@@ -131,4 +156,85 @@ test('source-only runs with zero related tests require a successful structured r
     assert.equal(runVitest({ report }).status, 'fail');
   }
   assert.equal(runVitest({ report: finished([]), status: 1 }).status, 'fail');
+});
+
+function skippedSuite(source, name = 'src/conditional.test.ts') {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'vitest-skip-'));
+  fs.mkdirSync(path.join(root, 'src'));
+  fs.writeFileSync(path.join(root, name), source);
+  return root;
+}
+
+const skippedModule = {
+  ...counts,
+  id: 'src/conditional.test.ts',
+  ok: true,
+  state: 'skipped',
+  total: 2,
+  skipped: 2,
+};
+
+function runSkipped({ source, module = skippedModule, env = {} }) {
+  const root = skippedSuite(source);
+  try {
+    return runVitest({
+      report: finished([module]),
+      explicitTests: ['src/conditional.test.ts'],
+      env,
+      root,
+      cwd: '',
+    });
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}
+
+test('an entirely skipped suite passes only when it declares skipIf or runIf', () => {
+  for (const source of [
+    "describe.skipIf(!process.env.URL)('integration', () => {});",
+    "describe.runIf(process.env.RUN)('integration', () => {});",
+    "it.skipIf(true)('x', () => {});",
+  ]) {
+    assert.equal(runSkipped({ source }).status, 'pass');
+  }
+  for (const source of [
+    "describe.skip('x', () => {});",
+    "// describe.skipIf(!ok)('x', () => {});\n/* it.runIf(a)('y') */",
+    "describe('x', () => {});",
+  ]) {
+    assert.equal(runSkipped({ source }).status, 'fail');
+  }
+});
+
+test('the allow-list env accepts an unconditional skipped suite by path', () => {
+  const source = "describe.skip('x', () => {});";
+  assert.equal(
+    runSkipped({
+      source,
+      env: { CHECK_CHANGED_ALLOW_SKIPPED_SUITES: 'src/conditional.test.ts' },
+    }).status,
+    'pass'
+  );
+  assert.equal(
+    runSkipped({
+      source,
+      env: { CHECK_CHANGED_ALLOW_SKIPPED_SUITES: 'src/other.test.ts' },
+    }).status,
+    'fail'
+  );
+});
+
+test('the skipped-suite escape never accepts empty, failed, or errored files', () => {
+  const source = "describe.skipIf(!x)('x', () => {});";
+  const env = { CHECK_CHANGED_ALLOW_SKIPPED_SUITES: 'src/conditional.test.ts' };
+  for (const module of [
+    { ...skippedModule, total: 0, skipped: 0 },
+    { ...skippedModule, state: 'failed', ok: false, failed: 1, skipped: 1 },
+    { ...skippedModule, ok: false },
+    { ...skippedModule, state: 'failed' },
+    { ...skippedModule, total: 3, skipped: 2, failed: 1 },
+    { ...skippedModule, state: 'pending' },
+  ]) {
+    assert.equal(runSkipped({ source, module, env }).status, 'fail');
+  }
 });

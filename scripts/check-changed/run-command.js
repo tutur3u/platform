@@ -14,7 +14,10 @@ function runCommand(step, context) {
   let report;
   try {
     if (step.id.startsWith('vitest:')) {
-      report = prepareVitestResult(cwd, step.explicitVitestTests);
+      report = prepareVitestResult(cwd, step.explicitVitestTests, {
+        env: context.env ?? process.env,
+        root: context.root,
+      });
     }
     const [command, ...args] = [
       ...prefix,
