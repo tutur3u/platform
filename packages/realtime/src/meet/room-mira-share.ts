@@ -199,12 +199,18 @@ export function withMiraShareStatus<
   };
 }
 
+type MiraShareResult = {
+  state: RoomServiceState;
+  body: unknown;
+  status?: number;
+};
+
 export function applyMiraShare(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
   now = Date.now()
-) {
+): MiraShareResult | null {
   const state = pruneMiraShares(snapshot, now);
   const parsed = command.safeParse(input);
   if (!parsed.success) {
@@ -230,9 +236,12 @@ export function applyMiraShare(
   const active = activeMiraShare(state, token, account);
   // `sharedAt` lets the server refuse a grant older than the owner's
   // latest Mira confirmation.
-  const view = (grant: MiraShareGrant | null) => ({
+  const view = (
+    grant: MiraShareGrant | null,
+    revision = state.miraShares?.[account]?.revision ?? 0
+  ) => ({
     enabled: !!grant,
-    revision: state.miraShares?.[account]?.revision ?? 0,
+    revision,
     ...(grant ? { sharedAt: grant.updatedAt } : {}),
   });
 
@@ -262,7 +271,7 @@ export function applyMiraShare(
   const previous = state.miraShares?.[account];
   const save = (grant: MiraShareGrant) => ({
     state: { ...state, miraShares: { ...state.miraShares, [account]: grant } },
-    body: { enabled: grant.enabled, revision: grant.revision },
+    body: view(grant.enabled ? grant : null, grant.revision),
   });
   if (revoking) {
     // Revoking is always allowed and takes the shared context with it. It

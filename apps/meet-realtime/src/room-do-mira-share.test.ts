@@ -100,9 +100,15 @@ function fixture(
     blockConcurrencyWhile: (run: () => Promise<void>) => run(),
     waitUntil: () => undefined,
   } as unknown as DurableObjectState;
+  // An erasure republishes the room's attendance index to the directory
+  // room, as the deployed binding does.
   const room = new MeetRoomDurableObject(state, {
     MEET_REALTIME_TOKEN_SECRET: secret,
-  } as MeetRoomEnv);
+    MEET_ROOM: {
+      idFromName: (name: string) => name,
+      get: () => ({ fetch: async () => new Response(null, { status: 200 }) }),
+    },
+  } as unknown as MeetRoomEnv);
   const call = async (body: object, extra: object = {}) => {
     const response = await room.fetch(
       new Request('https://meet.test/room-service', {

@@ -132,7 +132,7 @@ it('lets the owner share with their own registered Private Mira session', async 
   const state = shared();
   expect(
     roomService(state, ownerToken, { action: 'mira.share.read' }).body
-  ).toEqual({ enabled: true, revision: 1 });
+  ).toEqual({ enabled: true, revision: 1, sharedAt: expect.any(Number) });
   expect((await privateRead(state)).body).toMatchObject({ tutor });
 });
 
