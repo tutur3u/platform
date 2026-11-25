@@ -103,7 +103,6 @@ final productSettingsRegistry = <ProductSettingsEntry>[
     id: 'timer',
     icon: LucideIcons.timer,
     title: (context) => context.l10n.timerTitle,
-    // Timer is opt-in; its routed sub-screen stays reachable by link.
     visible: (context) =>
         AppRegistry.moduleById('timer')?.visibleIn(context) ?? false,
     open: (context) => _push(context, 'timer'),

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,7 +12,6 @@ import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -24,6 +21,7 @@ import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -42,21 +40,16 @@ Future<void> _pump(WidgetTester tester) async {
 
 void main() {
   late AppTabCubit apps;
-  late ExperimentalAppsCubit experiments;
   late _Auth auth;
   late _Workspaces workspaces;
   late _Profile profile;
   late GoRouter router;
   var calendarEntries = 0;
 
-  setUp(() async {
+  setUp(() {
     calendarEntries = 0;
     SharedPreferences.setMockInitialValues({});
     apps = AppTabCubit(settingsRepository: SettingsRepository());
-    experiments = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experiments.load();
     auth = _Auth();
     workspaces = _Workspaces();
     profile = _Profile();
@@ -124,7 +117,6 @@ void main() {
   tearDown(() async {
     router.dispose();
     await apps.close();
-    await experiments.close();
     await auth.close();
     await workspaces.close();
     await profile.close();
@@ -142,7 +134,6 @@ void main() {
       MultiBlocProvider(
         providers: [
           BlocProvider.value(value: apps),
-          BlocProvider.value(value: experiments),
           BlocProvider<AuthCubit>.value(value: auth),
           BlocProvider<WorkspaceCubit>.value(value: workspaces),
           BlocProvider<ShellProfileCubit>.value(value: profile),
@@ -253,9 +244,6 @@ void main() {
   testWidgets('reselecting Apps scrolls to the top then clears the query', (
     tester,
   ) async {
-    for (final id in ['chat', 'documents', 'drive', 'meet', 'notes', 'timer']) {
-      await experiments.setModuleEnabled(moduleId: id, enabled: true);
-    }
     await mount(tester);
     tester.view.physicalSize = const Size(430, 400);
     await _pump(tester);
@@ -374,15 +362,20 @@ void main() {
     );
     expect(apps.state.selectedId, isNull);
   });
+
+  void hideChat() {
+    final next = workspaces.state.copyWith(hiddenModuleIds: ['chat']);
+    when(() => workspaces.state).thenReturn(next);
+  }
+
   testWidgets(
     'availability change before frame rejects formerly unique result',
     (tester) async {
-      await experiments.setModuleEnabled(moduleId: 'chat', enabled: true);
       await mount(tester);
       await search(tester, 'chat');
       final submit = tester.widget<TextField>(searchInput).onSubmitted!;
       submit('chat');
-      await experiments.setModuleEnabled(moduleId: 'chat', enabled: false);
+      hideChat();
       await _pump(tester);
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
       expect(tester.widget<TextField>(searchInput).controller!.text, 'chat');
@@ -393,7 +386,6 @@ void main() {
   testWidgets(
     'post-frame availability change after resolution cancels launch',
     (tester) async {
-      await experiments.setModuleEnabled(moduleId: 'chat', enabled: true);
       await mount(tester);
       await search(tester, 'chat');
       final field = tester.widget<TextField>(searchInput);
@@ -402,9 +394,7 @@ void main() {
         // Registered before the Apps build queues its launch. The match has
         // already resolved, but Bloc's inherited notification is still pending.
         expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-        unawaited(
-          experiments.setModuleEnabled(moduleId: 'chat', enabled: false),
-        );
+        hideChat();
         changedAfterBuild = true;
       });
       field.onSubmitted!('chat');

@@ -41,7 +41,6 @@ class SettingsRepository {
   static const _accountAppearancePendingPrefix = 'appearance-account-pending';
   static const _calendarViewKey = 'calendar-view';
   static const _taskViewModeKey = 'task-view-mode';
-  static const _enabledExperimentalAppsKey = 'enabled-experimental-apps';
   static const _financeAmountsVisibleKey = 'finance-amounts-visible';
   static const _localeKey = 'locale';
   static const _lastTabRouteKey = 'last-tab-route';
@@ -277,38 +276,6 @@ class SettingsRepository {
   Future<void> setTaskViewMode(String mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_taskViewModeKey, mode);
-  }
-
-  Future<Set<String>> getEnabledExperimentalAppIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_enabledExperimentalAppsKey) ?? const [])
-        .map((id) => id.trim())
-        .where((id) => id.isNotEmpty)
-        .toSet();
-  }
-
-  Future<void> setExperimentalAppEnabled({
-    required String moduleId,
-    required bool enabled,
-  }) async {
-    final normalizedModuleId = moduleId.trim();
-    if (normalizedModuleId.isEmpty) {
-      return;
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    final moduleIds =
-        (prefs.getStringList(_enabledExperimentalAppsKey) ?? const [])
-            .map((id) => id.trim())
-            .where((id) => id.isNotEmpty)
-            .toSet();
-    if (enabled) {
-      moduleIds.add(normalizedModuleId);
-    } else {
-      moduleIds.remove(normalizedModuleId);
-    }
-    final sortedModuleIds = moduleIds.toList(growable: false)..sort();
-    await prefs.setStringList(_enabledExperimentalAppsKey, sortedModuleIds);
   }
 
   Future<bool> getFinanceAmountsVisible() async {

@@ -2,7 +2,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 
 /// Mira `open_app` destinations mapped to mobile shell routes. Access gates
-/// (habits, experimental apps) stay with the router redirects.
+/// (such as Habits) stay with the router redirects.
 const assistantAppDestinationRoutes = <String, String>{
   'home': Routes.home,
   'assistant': Routes.assistant,

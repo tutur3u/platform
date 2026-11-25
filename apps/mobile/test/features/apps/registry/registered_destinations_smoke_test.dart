@@ -32,7 +32,6 @@ import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/security/view/app_lock_boundary.dart';
 import 'package:mobile/features/security/view/app_lock_lifecycle.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
@@ -492,7 +491,6 @@ class _DestinationHarness {
   final mastermind = MastermindViewHarness();
   final settings = SettingsRepository();
   late final apps = AppTabCubit(settingsRepository: settings);
-  late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
   late final finance = FinancePreferencesCubit(settingsRepository: settings);
   late final locale = LocaleCubit(settingsRepository: settings);
   late final theme = ThemeCubit(settingsRepository: settings);
@@ -517,7 +515,6 @@ class _DestinationHarness {
       BlocProvider<MastermindSnapshotCubit>.value(value: mastermind.snapshot),
       RepositoryProvider<MastermindRuntime>.value(value: mastermind.runtime),
       BlocProvider.value(value: apps),
-      BlocProvider.value(value: experiments),
       BlocProvider.value(value: finance),
       BlocProvider.value(value: locale),
       BlocProvider.value(value: theme),
@@ -552,7 +549,6 @@ class _DestinationHarness {
       mastermind.dispose(),
       fleet.close(),
       apps.close(),
-      experiments.close(),
       finance.close(),
       locale.close(),
       theme.close(),

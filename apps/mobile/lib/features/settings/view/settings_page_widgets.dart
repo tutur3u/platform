@@ -18,12 +18,6 @@ class _SettingsOverviewSection extends StatelessWidget {
       title: l10n.settingsGeneralGroup,
       children: [
         SettingsTile(
-          grouped: true,
-          icon: LucideIcons.flaskConical,
-          title: l10n.settingsExperimentalAppsSectionTitle,
-          onTap: () => context.push(Routes.settingsExperiments),
-        ),
-        SettingsTile(
           key: const ValueKey('settings-offline-row'),
           grouped: true,
           icon: LucideIcons.hardDriveDownload,

@@ -104,6 +104,42 @@ void main() {
     expect(restored.state.hiddenAppIds, isEmpty);
   });
 
+  test(
+    'joins legacy Notes preferences without rewriting stored values',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'apps-order': ['timer', 'notes', 'mail', 'documents'],
+        'apps-pinned': ['notes', 'mail', 'documents'],
+        'apps-recent': ['mail', 'notes', 'documents', 'timer'],
+        'apps-hidden': ['notes', 'crm'],
+        'last-app-route': '/notes?noteId=keep-me',
+        'enabled-experimental-apps': <String>[],
+      });
+      final cubit = AppTabCubit(settingsRepository: SettingsRepository());
+      addTearDown(cubit.close);
+      await cubit.loadLastApp();
+
+      expect(cubit.state.selectedId, 'documents');
+      expect(cubit.state.appOrder, ['timer', 'documents', 'mail']);
+      expect(cubit.state.pinnedAppIds, ['documents', 'mail']);
+      expect(cubit.state.recentAppIds, ['mail', 'documents', 'timer']);
+      expect(cubit.state.hiddenAppIds, ['crm']);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getStringList('apps-order'), [
+        'timer',
+        'notes',
+        'mail',
+        'documents',
+      ]);
+
+      await cubit.setAppHidden('documents', hidden: true);
+      final restored = AppTabCubit(settingsRepository: SettingsRepository());
+      addTearDown(restored.close);
+      await restored.loadLastApp();
+      expect(restored.state.hiddenAppIds, ['crm', 'documents']);
+    },
+  );
+
   test('pins and unpins persist across cubit recreation', () async {
     final first = AppTabCubit(settingsRepository: SettingsRepository());
     await Future.wait([

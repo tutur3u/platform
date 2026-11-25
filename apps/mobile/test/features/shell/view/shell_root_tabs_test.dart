@@ -13,7 +13,6 @@ import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/view/assistant_settings_route_frame.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -56,8 +55,6 @@ Future<GoRouter> _pumpShell(
   addTearDown(tester.view.reset);
   final settings = SettingsRepository();
   final tabs = AppTabCubit(settingsRepository: settings);
-  final experiments = ExperimentalAppsCubit(settingsRepository: settings);
-  await experiments.load();
   final auth = _Auth();
   final workspace = _Workspace();
   final profile = _Profile();
@@ -120,7 +117,6 @@ Future<GoRouter> _pumpShell(
     await tester.pumpWidget(const SizedBox.shrink());
     router.dispose();
     await tabs.close();
-    await experiments.close();
     await auth.close();
     await workspace.close();
     await profile.close();
@@ -129,7 +125,6 @@ Future<GoRouter> _pumpShell(
     MultiBlocProvider(
       providers: [
         BlocProvider.value(value: tabs),
-        BlocProvider.value(value: experiments),
         BlocProvider<AuthCubit>.value(value: auth),
         BlocProvider<WorkspaceCubit>.value(value: workspace),
         BlocProvider<ShellProfileCubit>.value(value: profile),

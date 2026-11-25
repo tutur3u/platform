@@ -10,7 +10,6 @@ import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet_access/data/fleet_access_models.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,20 +22,17 @@ void main() {
   late FakeFleetAccessSource source;
   late FleetAccessCubit access;
   late AppTabCubit tabs;
-  late ExperimentalAppsCubit experiments;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     final settings = SettingsRepository();
     tabs = AppTabCubit(settingsRepository: settings);
-    experiments = ExperimentalAppsCubit(settingsRepository: settings);
     source = FakeFleetAccessSource();
     access = FleetAccessCubit(source: source);
   });
 
   tearDown(() async {
     await tabs.close();
-    await experiments.close();
     await access.close();
   });
 
@@ -54,7 +50,6 @@ void main() {
       MultiBlocProvider(
         providers: [
           BlocProvider.value(value: tabs),
-          BlocProvider.value(value: experiments),
           BlocProvider.value(value: access),
         ],
         child: Scaffold(
@@ -153,7 +148,6 @@ void main() {
       MultiBlocProvider(
         providers: [
           BlocProvider.value(value: tabs),
-          BlocProvider.value(value: experiments),
           BlocProvider.value(value: access),
         ],
         child: const Scaffold(body: AppsHubPage(query: 'chat links')),

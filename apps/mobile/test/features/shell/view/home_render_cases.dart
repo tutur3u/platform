@@ -123,10 +123,9 @@ void _homeRenderCases() {
           size: size.value,
           appearance: look.value.$1,
           themeMode: look.value.$2,
-          // The finance preview needs a signed-in user; keep the fixture to
-          // the widgets it can fill.
+          // Limit the layout fixture to its tasks and calendar data.
           preferences: const {
-            'home-widgets-hidden': ['finance'],
+            'home-widgets-hidden': ['finance', 'meet', 'notes'],
           },
           homePageBuilder: (token) => HomePage(
             replayToken: token,
@@ -204,7 +203,7 @@ void _homeRenderCases() {
         appearance: appearance.$1,
         themeMode: appearance.$2,
         preferences: const {
-          'home-widgets-hidden': ['finance'],
+          'home-widgets-hidden': ['finance', 'meet', 'notes'],
         },
         homePageBuilder: (token) => HomePage(
           replayToken: token,
@@ -271,7 +270,7 @@ void _homeRenderCases() {
       appearance: appearance.$1,
       themeMode: appearance.$2,
       preferences: const {
-        'home-widgets-hidden': ['finance'],
+        'home-widgets-hidden': ['finance', 'meet', 'notes'],
       },
       extraLocations: const [Routes.tasks],
       homePageBuilder: (token) => HomePage(

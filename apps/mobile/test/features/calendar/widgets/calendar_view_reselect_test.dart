@@ -18,7 +18,6 @@ import 'package:mobile/features/calendar/widgets/timeline_zoom_viewport.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/calendar/widgets/year_view.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -102,10 +101,6 @@ void main() {
             initialState: const ShellProfileState(),
           );
           final apps = AppTabCubit(settingsRepository: SettingsRepository());
-          final experiments = ExperimentalAppsCubit(
-            settingsRepository: SettingsRepository(),
-          );
-          await experiments.load();
           final router = GoRouter(
             initialLocation: Routes.calendar,
             routes: [
@@ -132,7 +127,6 @@ void main() {
             await settings.close();
             await timezone.close();
             await apps.close();
-            await experiments.close();
           });
           await tester.pumpWidget(
             MultiBlocProvider(
@@ -141,7 +135,6 @@ void main() {
                 BlocProvider<WorkspaceCubit>.value(value: workspace),
                 BlocProvider<ShellProfileCubit>.value(value: profile),
                 BlocProvider.value(value: apps),
-                BlocProvider.value(value: experiments),
                 BlocProvider(create: (_) => AssistantChromeCubit()),
                 BlocProvider(create: (_) => ShellMiniNavCubit()),
                 BlocProvider(create: (_) => ShellTitleOverrideCubit()),

@@ -300,6 +300,12 @@ GoRouter createAppRouter(
         return Routes.workspaceSelect;
       }
 
+      final documentsRedirect = Routes.documentsViewRedirect(
+        state.matchedLocation,
+        wsState.hiddenModuleIds,
+      );
+      if (documentsRedirect != null) return documentsRedirect;
+
       // Personal workspace cannot access timer requests page.
       if (shouldRedirectPersonalTimerRequests(state.matchedLocation, wsState)) {
         return Routes.timer;

@@ -5,7 +5,6 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_pins.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
@@ -14,7 +13,7 @@ const _pinnable = [
   'tasks',
   'calendar',
   'finance',
-  'notes',
+  'chat',
   'drive',
   'documents',
   'cms',
@@ -29,18 +28,13 @@ Finder _pin(String id) => find.byKey(ValueKey('pinned-$id'));
 
 void main() {
   late AppTabCubit tabs;
-  late ExperimentalAppsCubit experiments;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     final settings = SettingsRepository();
     tabs = AppTabCubit(settingsRepository: settings);
-    experiments = ExperimentalAppsCubit(settingsRepository: settings);
   });
-  tearDown(() async {
-    await tabs.close();
-    await experiments.close();
-  });
+  tearDown(() => tabs.close());
 
   Future<List<String>> mountPins(
     WidgetTester tester, {
@@ -50,7 +44,6 @@ void main() {
   }) async {
     final ids = _pinnable.take(count).toList();
     for (final id in ids) {
-      await experiments.setModuleEnabled(moduleId: id, enabled: true);
       await tabs.setAppPinned(id, pinned: true);
     }
     tester.view
@@ -58,11 +51,8 @@ void main() {
       ..physicalSize = size;
     addTearDown(tester.view.reset);
     await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: tabs),
-          BlocProvider.value(value: experiments),
-        ],
+      BlocProvider.value(
+        value: tabs,
         child: Scaffold(body: AppsHubPage(onManage: onManage ?? () {})),
       ),
     );

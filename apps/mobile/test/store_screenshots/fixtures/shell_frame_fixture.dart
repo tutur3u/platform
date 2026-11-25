@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -11,7 +9,6 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
@@ -101,15 +98,6 @@ Widget storeShellFrame({
       BlocProvider(create: (_) => ShellMiniNavCubit()),
       BlocProvider(create: (_) => AssistantChromeCubit()),
       BlocProvider(create: (_) => AppTabCubit(settingsRepository: settings)),
-      BlocProvider(
-        create: (_) {
-          final experiments = ExperimentalAppsCubit(
-            settingsRepository: settings,
-          );
-          unawaited(experiments.load());
-          return experiments;
-        },
-      ),
       ...providers,
     ],
     child: ShellPage(

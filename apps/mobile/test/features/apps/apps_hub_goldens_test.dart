@@ -3,6 +3,7 @@ library;
 
 import 'dart:io';
 
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,11 +12,14 @@ import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/widgets/apps_dropdown_picker.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/golden_tolerance.dart';
 import '../../helpers/pump_app.dart';
+
+class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 void main() {
   final original = goldenFileComparator;
@@ -56,23 +60,18 @@ void main() {
           SharedPreferences.setMockInitialValues({
             'apps-pinned': ['tasks', 'calendar', 'finance', 'chat'],
             'apps-recent': ['drive', 'meet', 'documents', 'timer'],
-            'enabled-experimental-apps': [
-              'chat',
-              'meet',
-              'documents',
-              'drive',
-              'timer',
-            ],
           });
           final settings = SettingsRepository();
           final tabs = AppTabCubit(settingsRepository: settings);
-          final experiments = ExperimentalAppsCubit(
-            settingsRepository: settings,
+          final workspace = _Workspace();
+          whenListen(
+            workspace,
+            const Stream<WorkspaceState>.empty(),
+            initialState: const WorkspaceState(hiddenModuleIds: ['crm', 'cms']),
           );
           addTearDown(tabs.close);
-          addTearDown(experiments.close);
+          addTearDown(workspace.close);
           await tabs.loadLastApp();
-          await experiments.load();
 
           await tester.pumpWidget(
             sorbetTestApp(
@@ -82,7 +81,7 @@ void main() {
               home: MultiBlocProvider(
                 providers: [
                   BlocProvider.value(value: tabs),
-                  BlocProvider.value(value: experiments),
+                  BlocProvider.value(value: workspace),
                 ],
                 child: const Scaffold(body: AppsScreen()),
               ),

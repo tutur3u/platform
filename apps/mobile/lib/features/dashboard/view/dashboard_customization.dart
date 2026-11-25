@@ -29,7 +29,7 @@ extension _DashboardCustomization on _DashboardViewState {
         'mail',
       if (modules.any((module) => module.id == 'meet')) 'meet',
       if (modules.any((module) => module.id == 'finance')) 'finance',
-      if (modules.any((module) => module.id == 'notes')) 'notes',
+      if (AppRegistry.notesViewAvailable(context)) 'notes',
       'summary',
     ];
   }

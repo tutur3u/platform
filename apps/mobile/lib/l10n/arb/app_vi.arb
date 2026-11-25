@@ -859,13 +859,6 @@
       }
     }
   },
-  "@settingsExperimentalAppsTileDescription": {
-    "placeholders": {
-      "appName": {
-        "type": "String"
-      }
-    }
-  },
   "@settingsWorkspaceMembersActiveSection": {
     "placeholders": {
       "count": {
@@ -1328,7 +1321,6 @@
   "appsPin": "Ghim {app}",
   "appsUnpin": "Bỏ ghim {app}",
   "appsCustomize": "Tùy chỉnh ứng dụng",
-  "appsHiddenExperimentsSection": "Thử nghiệm đã ẩn",
   "appsHiddenSection": "Ứng dụng đã ẩn",
   "appsHide": "Ẩn ứng dụng",
   "appsHideConfirmDescription": "Ứng dụng sẽ chuyển xuống dưới các ứng dụng đang hiện. Bạn có thể hiện lại bất cứ lúc nào.",
@@ -1338,7 +1330,7 @@
   "appsHubChatDescription": "Tập trung trò chuyện nhóm, tin nhắn trực tiếp, tệp và chat AI tại một nơi.",
   "appsHubCmsDescription": "Quản lý bộ sưu tập CMS, mục nội dung, hàng đợi và xuất bản.",
   "appsHubCrmDescription": "Quản lý khách hàng, phản hồi, nhập dữ liệu và nhật ký tại một nơi.",
-  "appsHubDocumentsDescription": "Viết, chỉnh sửa và xuất bản ghi chú workspace trên điện thoại.",
+  "appsHubDocumentsDescription": "Chỉnh sửa và chia sẻ tài liệu hoặc lưu ghi chú riêng tư.",
   "appsHubDriveDescription": "Duyệt tệp, thư mục, tải lên và liên kết chia sẻ an toàn của workspace.",
   "appsHubEducationDescription": "Quản lý khóa học, ngân hàng câu hỏi, flashcard và lượt làm bài.",
   "appsHubEmpty": "Không tìm thấy ứng dụng",
@@ -4244,7 +4236,6 @@
   "settingsDiagnosticEnvironment": "Môi trường",
   "settingsDiagnosticUser": "ID người dùng đang đăng nhập",
   "settingsDiagnosticWorkspace": "ID không gian làm việc",
-  "settingsDiagnosticFlags": "Tính năng thử nghiệm đang bật",
   "settingsDiagnosticOrigins": "Địa chỉ API",
   "settingsDiagnosticVerbose": "Ghi nhật ký chi tiết",
   "settingsDiagnosticSlowNetwork": "Mô phỏng mạng chậm",
@@ -4349,11 +4340,6 @@
   "settingsDataStatusRefreshing": "Đang làm mới",
   "settingsDefaultWorkspace": "Không gian mặc định",
   "settingsDefaultWorkspaceDescription": "Ứng dụng sẽ mở vào đây mặc định mỗi lần khởi động.",
-  "settingsExperimentalAppsDisabled": "Đã tắt",
-  "settingsExperimentalAppsEnabled": "Đã bật",
-  "settingsExperimentalAppsSectionDescription": "Bật các ứng dụng không cốt lõi trong Trung tâm ứng dụng. Tasks, Calendar và Finance luôn có sẵn theo mặc định.",
-  "settingsExperimentalAppsSectionTitle": "Thử nghiệm",
-  "settingsExperimentalAppsTileDescription": "Hiển thị {appName} trong Trung tâm ứng dụng.",
   "settingsFinanceAmounts": "Số tiền tài chính",
   "settingsFinanceAmountsDescription": "Hiện hoặc ẩn số dư và số tiền giao dịch trên toàn bộ màn hình tài chính.",
   "settingsFirstDayAuto": "Tự động",

@@ -616,8 +616,7 @@ secrets `route.test.ts` files, and the web and workspace secrets `page.test.tsx`
 
 ### Mobile module flags
 
-The mobile app can hide experimental app modules per workspace through
-workspace secrets exposed by
+The mobile app applies per-workspace module visibility through secrets exposed by
 `/api/v1/workspaces/[wsId]/mobile/module-flags`. The route authenticates the
 mobile session, verifies workspace membership with the request-scoped client,
 then reads only the mobile module flag secrets with an admin client.
@@ -625,9 +624,12 @@ then reads only the mobile module flag secrets with an admin client.
 Supported secrets:
 
 - `MOBILE_HIDE_EXPERIMENTAL_MODULES`: truthy values (`1`, `true`, `yes`, `on`)
-  hide the default experimental modules.
+  hide the legacy module set defined by the endpoint. The flag name remains
+  supported for configured workspaces.
 - `MOBILE_HIDDEN_MODULES`: JSON array or comma-separated module IDs for explicit
-  hidden modules.
+  hidden modules. The `documents` and `notes` IDs control their respective
+  views. Mobile shows the Documents launcher destination when either view is
+  available.
 
 Keep these flags as display controls. API routes that expose protected module
 data must still perform their own workspace membership and permission checks.

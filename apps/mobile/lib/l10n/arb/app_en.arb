@@ -917,13 +917,6 @@
       }
     }
   },
-  "@settingsExperimentalAppsTileDescription": {
-    "placeholders": {
-      "appName": {
-        "type": "String"
-      }
-    }
-  },
   "@settingsWorkspaceMembersActiveSection": {
     "placeholders": {
       "count": {
@@ -1427,7 +1420,6 @@
     }
   },
   "appsCustomize": "Customize apps",
-  "appsHiddenExperimentsSection": "Hidden experiments",
   "appsHiddenSection": "Hidden apps",
   "appsHide": "Hide app",
   "appsHideConfirmDescription": "It will move below your shown apps. You can show it again at any time.",
@@ -1437,7 +1429,7 @@
   "appsHubChatDescription": "Keep team conversations, direct messages, files, and AI chats together.",
   "appsHubCmsDescription": "Manage CMS collections, entries, queues, and publishing.",
   "appsHubCrmDescription": "Manage people, feedback, imports, and audit activity in one place.",
-  "appsHubDocumentsDescription": "Write, edit, and publish workspace notes from your phone.",
+  "appsHubDocumentsDescription": "Edit and share documents or keep private notes.",
   "appsHubDriveDescription": "Browse workspace files, folders, uploads, and secure share links.",
   "appsHubEducationDescription": "Manage courses, question banks, flashcards, and learner attempts.",
   "appsHubEmpty": "No apps found",
@@ -4538,7 +4530,6 @@
   "settingsDiagnosticEnvironment": "Environment",
   "settingsDiagnosticUser": "Signed-in user ID",
   "settingsDiagnosticWorkspace": "Workspace ID",
-  "settingsDiagnosticFlags": "Enabled experimental features",
   "settingsDiagnosticOrigins": "API base addresses",
   "settingsDiagnosticVerbose": "Verbose logging",
   "settingsDiagnosticSlowNetwork": "Simulate slow network",
@@ -4673,11 +4664,6 @@
   "settingsDataStatusRefreshing": "Refreshing",
   "settingsDefaultWorkspace": "Default workspace",
   "settingsDefaultWorkspaceDescription": "The app opens here by default on every launch.",
-  "settingsExperimentalAppsDisabled": "Disabled",
-  "settingsExperimentalAppsEnabled": "Enabled",
-  "settingsExperimentalAppsSectionDescription": "Enable non-core apps in the Apps Hub. Tasks, Calendar, and Finance stay available by default.",
-  "settingsExperimentalAppsSectionTitle": "Experiments",
-  "settingsExperimentalAppsTileDescription": "Show {appName} in the Apps Hub.",
   "settingsFinanceAmounts": "Finance amounts",
   "settingsFinanceAmountsDescription": "Show or hide balances and transaction amounts across finance screens.",
   "settingsFirstDayAuto": "Auto",

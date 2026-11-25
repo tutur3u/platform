@@ -13,7 +13,6 @@ import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
 import 'package:mobile/features/assistant/widgets/assistant_mode_title.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -42,9 +41,6 @@ class CompactModelHeaderHarness {
   final titles = ShellTitleOverrideCubit();
   final dock = ShellDockSlotController();
   final apps = AppTabCubit(settingsRepository: SettingsRepository());
-  final experiments = ExperimentalAppsCubit(
-    settingsRepository: SettingsRepository(),
-  );
   final profile = _Profile();
   GoRouter? router;
 
@@ -58,7 +54,6 @@ class CompactModelHeaderHarness {
     double textScale = 2,
   }) async {
     SharedPreferences.setMockInitialValues({});
-    await experiments.load();
     whenListen(
       profile,
       const Stream<ShellProfileState>.empty(),
@@ -90,7 +85,6 @@ class CompactModelHeaderHarness {
                 BlocProvider.value(value: actions),
                 BlocProvider.value(value: titles),
                 BlocProvider.value(value: apps),
-                BlocProvider.value(value: experiments),
                 BlocProvider<ShellProfileCubit>.value(value: profile),
               ],
               child: actualNavbar
@@ -179,7 +173,6 @@ class CompactModelHeaderHarness {
     await workspace.close();
     await chrome.close();
     await apps.close();
-    await experiments.close();
     await profile.close();
     await actions.close();
     await titles.close();

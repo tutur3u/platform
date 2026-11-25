@@ -36,7 +36,6 @@ import 'package:mobile/features/dashboard/view/home_page.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_identity_header.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -128,8 +127,6 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       final settings = SettingsRepository();
       final apps = AppTabCubit(settingsRepository: settings);
-      final experiments = ExperimentalAppsCubit(settingsRepository: settings);
-      await experiments.load();
       final auth = _Auth();
       final workspaces = _Workspaces();
       final profile = _Profile();
@@ -179,7 +176,6 @@ void main() {
         await tester.pumpWidget(const SizedBox.shrink());
         router.dispose();
         await apps.close();
-        await experiments.close();
         await auth.close();
         await workspaces.close();
         await profile.close();
@@ -193,7 +189,6 @@ void main() {
         MultiBlocProvider(
           providers: [
             BlocProvider.value(value: apps),
-            BlocProvider.value(value: experiments),
             BlocProvider<AuthCubit>.value(value: auth),
             BlocProvider<WorkspaceCubit>.value(value: workspaces),
             BlocProvider<ShellProfileCubit>.value(value: profile),

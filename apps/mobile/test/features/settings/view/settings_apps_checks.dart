@@ -2,6 +2,22 @@ part of 'settings_compact_navigation_test.dart';
 
 /// Settings > Apps rows, the routed app sub-screens and quick-jump search.
 void registerSettingsAppsChecks() {
+  testWidgets('legacy Experiments link opens the Settings overview', (
+    tester,
+  ) async {
+    _viewport(tester, const Size(390, 844));
+    final h = _SettingsHarness(initial: Routes.settingsExperiments);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await h.dispose();
+    });
+    await h.pump(tester);
+    expect(h.router.state.matchedLocation, Routes.settings);
+    expect(find.byKey(const ValueKey('settings-search-field')), findsOneWidget);
+    expect(find.text('Experiments'), findsNothing);
+  });
+
   testWidgets('Apps rows summarize values and open central sub-screens', (
     tester,
   ) async {
@@ -26,8 +42,7 @@ void registerSettingsAppsChecks() {
     expect(summary('tasks'), isNull);
     expect(summary('calendar'), 'First day: Auto');
     expect(summary('finance'), 'Amounts hidden');
-    // Timer is opt-in; without the experiment its row stays hidden.
-    expect(find.byKey(const ValueKey('timer')), findsNothing);
+    expect(find.byKey(const ValueKey('timer')), findsOneWidget);
     // One source of truth: the root no longer repeats per-app editors.
     expect(find.byKey(const ValueKey('settings-finance-row')), findsNothing);
     expect(find.byKey(const ValueKey('settings-task-board-row')), findsNothing);
@@ -98,6 +113,10 @@ void registerSettingsAppsChecks() {
       of: find.byKey(const ValueKey('settings-search-field')),
       matching: find.byType(EditableText),
     );
+    await tester.enterText(field, 'experiments');
+    await _settle(tester);
+    expect(find.byKey(const ValueKey('settings-search-empty')), findsOneWidget);
+
     await tester.enterText(field, 'amounts');
     await _settle(tester);
     final result = find.byKey(const ValueKey('settings-search-app-finance-0'));

@@ -4,6 +4,51 @@ import 'package:mobile/core/router/routes.dart';
 
 void main() {
   group('resolveMobileDeepLink', () {
+    test(
+      'Notes links retain note selection and Documents shares keep their route',
+      () {
+        for (final route in ['notes', 'documents/notes']) {
+          final notes = resolveMobileDeepLink(
+            Uri.parse('https://tuturuuu.com/vi/team/$route?noteId=note%2Fid'),
+          );
+          expect(notes?.workspaceSlug, 'team');
+          expect(Uri.parse(notes!.location).path, Routes.notes);
+          expect(
+            Uri.parse(notes.location).queryParameters['noteId'],
+            'note/id',
+          );
+        }
+        final document = resolveMobileDeepLink(
+          Uri.parse('https://tuturuuu.com/en/team/documents/doc-1'),
+        );
+        expect(document?.location, Routes.documentDetailPath('doc-1'));
+        expect(Routes.miniAppRootForLocation(Routes.notes), Routes.documents);
+        expect(
+          Routes.miniAppRootForLocation(Routes.legacyNotes),
+          Routes.documents,
+        );
+      },
+    );
+
+    test('workspace eligibility applies to the two views independently', () {
+      expect(
+        Routes.documentsViewRedirect(Routes.documents, ['documents']),
+        Routes.notes,
+      );
+      expect(
+        Routes.documentsViewRedirect(Routes.legacyNotes, ['notes']),
+        Routes.documents,
+      );
+      expect(
+        Routes.documentsViewRedirect(Routes.notes, ['notes', 'documents']),
+        Routes.apps,
+      );
+      expect(
+        Routes.documentsViewRedirect('/documents/doc-1', ['documents']),
+        isNull,
+      );
+    });
+
     test('Fleet access links open a segment and drop anything else', () {
       for (final entry in {
         'mastermind/fleet-access': Routes.mastermindFleetAccess,

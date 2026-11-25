@@ -45,7 +45,6 @@ import 'package:mobile/features/mail/view/mail_settings_chrome.dart';
 import 'package:mobile/features/mail/view/mail_settings_hub.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';

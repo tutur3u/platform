@@ -7,7 +7,7 @@ import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_today_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// The Apps-hub entry. Not an experimental module: visibility comes only from
+/// The Apps Hub entry. Visibility comes from
 /// the access cubit (root or personal workspace, `manage_mastermind` in root,
 /// configured source). That is cosmetic; the hub's owner allowlist and the
 /// server-side permission checks are the authority.

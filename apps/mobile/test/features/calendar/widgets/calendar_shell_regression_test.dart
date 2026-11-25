@@ -25,7 +25,6 @@ import 'package:mobile/features/calendar/view/calendar_page.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_minute_clock.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
@@ -385,7 +384,6 @@ class _CalendarShellHarness {
   final TimezoneSettingsCubit timezone;
   final settings = SettingsRepository();
   late final apps = AppTabCubit(settingsRepository: settings);
-  late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
   final calendarSettings = CalendarSettingsCubit();
   final chrome = ShellChromeActionsCubit();
   final miniNav = ShellMiniNavCubit();
@@ -400,7 +398,6 @@ class _CalendarShellHarness {
       BlocProvider<ShellProfileCubit>.value(value: profile),
       BlocProvider<TimezoneSettingsCubit>.value(value: timezone),
       BlocProvider.value(value: apps),
-      BlocProvider.value(value: experiments),
       BlocProvider.value(value: calendarSettings),
       BlocProvider.value(value: chrome),
       BlocProvider.value(value: miniNav),
@@ -418,7 +415,6 @@ class _CalendarShellHarness {
       profile.close(),
       timezone.close(),
       apps.close(),
-      experiments.close(),
       calendarSettings.close(),
       chrome.close(),
       miniNav.close(),

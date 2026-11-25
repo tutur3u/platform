@@ -1,12 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 
 void main() {
-  test('Mail requires an experimental toggle in addition to access', () {
-    expect(AppRegistry.coreModuleIds, isNot(contains('mail')));
-    expect(AppRegistry.experimentalModuleIds, contains('mail'));
-  });
   test('Mail discovery accepts exact Tuturuuu accounts', () {
     for (final email in ['phucvo@tuturuuu.com', 'NAME@TUTURUUU.COM']) {
       expect(canDiscoverMail(email), isTrue, reason: email);

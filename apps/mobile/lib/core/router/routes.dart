@@ -49,7 +49,27 @@ abstract final class Routes {
   static const inventory = '/inventory';
   static const drive = '/drive';
   static const documents = '/documents';
-  static const notes = '/notes';
+  static const notes = '/documents/notes';
+  static const legacyNotes = '/notes';
+  static String notesViewLocation(Uri uri) => Uri(
+    path: notes,
+    query: uri.hasQuery ? uri.query : null,
+    fragment: uri.hasFragment ? uri.fragment : null,
+  ).toString();
+  static String? documentsViewRedirect(
+    String location,
+    List<String> hiddenModuleIds,
+  ) {
+    final hiddenDocuments = hiddenModuleIds.contains('documents');
+    final hiddenNotes = hiddenModuleIds.contains('notes');
+    return switch (location) {
+      documents when hiddenDocuments => hiddenNotes ? apps : notes,
+      notes ||
+      legacyNotes when hiddenNotes => hiddenDocuments ? apps : documents,
+      _ => null,
+    };
+  }
+
   static String noteDetailPath(String noteId) =>
       Uri(path: notes, queryParameters: {'noteId': noteId}).toString();
   static const cms = '/cms';
@@ -321,8 +341,8 @@ abstract final class Routes {
     if (normalized == documents || normalized.startsWith('$documents/')) {
       return documents;
     }
-    if (normalized == notes || normalized.startsWith('$notes/')) {
-      return notes;
+    if (normalized == legacyNotes) {
+      return documents;
     }
     if (normalized == cms || normalized.startsWith('$cms/')) {
       return cms;

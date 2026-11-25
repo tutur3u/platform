@@ -74,12 +74,11 @@ void main() {
       expect(await visibleIds(tester, harness), contains('mastermind'));
     });
 
-    test('is registered once, outside the experimental and core sets', () {
+    test('is registered once, outside the core set', () {
       expect(
         AppRegistry.allModules.where((m) => m.id == 'mastermind'),
         hasLength(1),
       );
-      expect(AppRegistry.experimentalModuleIds, isNot(contains('mastermind')));
       expect(AppRegistry.coreModuleIds, isNot(contains('mastermind')));
       expect(mastermindModule.route, Routes.mastermind);
     });

@@ -7,7 +7,6 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
@@ -91,9 +90,6 @@ void main() {
       addTearDown(harness.dispose);
       await harness.setAccess(TestAccess.error);
       final tabs = AppTabCubit(settingsRepository: SettingsRepository());
-      final experimental = ExperimentalAppsCubit(
-        settingsRepository: SettingsRepository(),
-      );
       final workspaces = _MockWorkspaceCubit();
       whenListen(
         workspaces,
@@ -102,9 +98,7 @@ void main() {
           currentWorkspace: Workspace(id: rootWorkspaceId),
         ),
       );
-      await experimental.load();
       addTearDown(tabs.close);
-      addTearDown(experimental.close);
       addTearDown(workspaces.close);
 
       await tester.pumpApp(
@@ -112,7 +106,6 @@ void main() {
           MultiBlocProvider(
             providers: [
               BlocProvider.value(value: tabs),
-              BlocProvider.value(value: experimental),
               BlocProvider<WorkspaceCubit>.value(value: workspaces),
             ],
             child: const AppsHubPage(),

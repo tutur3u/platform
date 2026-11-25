@@ -11,7 +11,6 @@ import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/helpers.dart';
@@ -42,18 +41,13 @@ class _FailingPinSettings extends SettingsRepository {
 
 void main() {
   late AppTabCubit tabs;
-  late ExperimentalAppsCubit experiments;
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     final settings = SettingsRepository();
     tabs = AppTabCubit(settingsRepository: settings);
-    experiments = ExperimentalAppsCubit(settingsRepository: settings);
   });
-  tearDown(() async {
-    await tabs.close();
-    await experiments.close();
-  });
+  tearDown(() => tabs.close());
 
   Future<void> mount(
     WidgetTester tester,
@@ -67,29 +61,36 @@ void main() {
       ..padding = FakeViewPadding(bottom: clearance);
     addTearDown(tester.view.reset);
     await tester.pumpApp(
-      MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: tabs),
-          BlocProvider.value(value: experiments),
-        ],
+      BlocProvider.value(
+        value: tabs,
         child: Scaffold(body: body),
       ),
     );
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows core apps in categories and opens an accessible tile', (
+  testWidgets('lists available apps after upgrade and opens a tile', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({
+      'enabled-experimental-apps': ['notes'],
+    });
     String? selected;
-    await mount(tester, AppsHubPage(onSelected: (app) => selected = app.id));
+    await mount(
+      tester,
+      AppsHubPage(onSelected: (app) => selected = app.id),
+      size: const Size(390, 1400),
+    );
     expect(find.text('Work'), findsOneWidget);
     expect(find.text('Money'), findsOneWidget);
     expect(find.text('Learning'), findsNothing);
     expect(tile('work', 'tasks'), findsOneWidget);
     expect(tile('work', 'calendar'), findsOneWidget);
     expect(tile('money', 'finance'), findsOneWidget);
-    expect(find.byType(AppLauncherTile), findsNWidgets(3));
+    expect(tile('work', 'documents'), findsOneWidget);
+    expect(tile('work', 'notes'), findsNothing);
+    expect(tile('communication', 'chat'), findsOneWidget);
+    expect(tile('money', 'inventory'), findsNothing);
     expect(
       tester.getTopLeft(tile('work', 'tasks')).dy,
       tester.getTopLeft(tile('work', 'calendar')).dy,
@@ -118,7 +119,6 @@ void main() {
     (const Size(834, 1194), 3),
   ]) {
     testWidgets('lays out $columns columns at $size', (tester) async {
-      await experiments.setModuleEnabled(moduleId: 'documents', enabled: true);
       await mount(tester, const AppsHubPage(), size: size);
       final work = find.descendant(
         of: section('work'),
@@ -150,7 +150,7 @@ void main() {
     expect(tile('recent', 'finance'), findsOneWidget);
   });
 
-  testWidgets('disabled and access-denied shortcuts stay out of results', (
+  testWidgets('access-denied apps stay out of results and shortcuts', (
     tester,
   ) async {
     final inventory = _Inventory();
@@ -162,8 +162,6 @@ void main() {
         status: InventoryAccessStatus.loaded,
       ),
     );
-    await experiments.setModuleEnabled(moduleId: 'inventory', enabled: true);
-    await experiments.setModuleEnabled(moduleId: 'chat', enabled: true);
     for (final id in ['chat', 'inventory']) {
       await tabs.setAppPinned(id, pinned: true);
       await tabs.select(AppRegistry.moduleById(id)!);
@@ -178,14 +176,10 @@ void main() {
     expect(tile('results', 'chat'), findsOneWidget);
     expect(section('pinned'), findsNothing);
     expect(section('recent'), findsNothing);
-    await experiments.setModuleEnabled(moduleId: 'chat', enabled: false);
-    await tester.pumpAndSettle();
-    expect(find.text('No matching apps'), findsOneWidget);
-
-    await mount(tester, const AppsHubPage());
-    expect(section('pinned'), findsNothing);
-    expect(section('recent'), findsNothing);
-    expect(section('communication'), findsNothing);
+    await mount(tester, const AppsHubPage(), size: const Size(390, 1400));
+    expect(tile('pinned', 'chat'), findsOneWidget);
+    expect(tile('pinned', 'inventory'), findsNothing);
+    expect(tile('recent', 'inventory'), findsNothing);
     expect(tile('money', 'inventory'), findsNothing);
     await mount(tester, const AppsHubPage(query: 'inventory'));
     expect(find.text('No matching apps'), findsOneWidget);
@@ -194,6 +188,7 @@ void main() {
   for (final (query, id, label) in [
     ('  LiCh  ', 'calendar', 'Lịch'),
     ('tai chinh', 'finance', 'Tài chính'),
+    ('ghi chu', 'documents', 'Tài liệu'),
     ('Ta\u0300i chi\u0301nh', 'finance', 'Tài chính'),
   ]) {
     testWidgets('Vietnamese Apps search finds $label for $query', (
@@ -211,15 +206,7 @@ void main() {
     testWidgets('Classic product icons use distinct AA tones in $brightness', (
       tester,
     ) async {
-      const ids = [
-        'tasks',
-        'finance',
-        'calendar',
-        'documents',
-        'chat',
-        'crm',
-        'notes',
-      ];
+      const ids = ['tasks', 'finance', 'calendar', 'documents', 'chat', 'crm'];
       await tester.pumpThemedHome(
         Scaffold(
           body: Row(
@@ -282,7 +269,7 @@ void main() {
     scroll.position.jumpTo(scroll.position.maxScrollExtent);
     await tester.pumpAndSettle();
     expect(
-      tester.getBottomLeft(tile('money', 'finance')).dy,
+      tester.getBottomLeft(tile('communication', 'meet')).dy,
       lessThanOrEqualTo(size.height - clearance - AppLayout.scrollEndGap),
     );
   });
@@ -290,7 +277,7 @@ void main() {
   testWidgets('Customize pins, reorders, hides and restores apps', (
     tester,
   ) async {
-    await mount(tester, const AppsPickerEditor());
+    await mount(tester, const AppsPickerEditor(), size: const Size(430, 1800));
     await tester.tap(find.byTooltip('Pin Tasks'));
     await tester.pumpAndSettle();
     expect(tabs.state.pinnedAppIds, ['tasks']);
@@ -382,20 +369,22 @@ void main() {
     },
   );
 
-  testWidgets('Customize enables only accessible experiments', (tester) async {
-    await mount(tester, const AppsPickerEditor(), size: const Size(430, 2400));
-    expect(find.text('Hidden experiments'), findsOneWidget);
+  testWidgets('Customize restores a hidden app with workspace access', (
+    tester,
+  ) async {
+    await tabs.setAppHidden('chat', hidden: true);
+    await mount(tester, const AppsPickerEditor(), size: const Size(430, 1800));
     final chat = find.byKey(const ValueKey('chat'));
-    await tester.tap(
-      find.descendant(of: chat, matching: find.byTooltip('Show app')),
+    final restore = find.descendant(
+      of: chat,
+      matching: find.byTooltip('Show app'),
     );
+    expect(find.text('Hidden apps'), findsOneWidget);
+    expect(find.byKey(const ValueKey('inventory')), findsNothing);
+    await tester.tap(restore);
     await tester.pumpAndSettle();
-    expect(experiments.state.isEnabled('chat'), isTrue);
-    final inventory = find.descendant(
-      of: find.byKey(const ValueKey('inventory')),
-      matching: find.byType(AppIconButton),
-    );
-    expect(tester.widget<AppIconButton>(inventory).onPressed, isNull);
-    expect(experiments.state.isEnabled('inventory'), isFalse);
+    expect(tabs.state.hiddenAppIds, isEmpty);
+    expect(find.byTooltip('Pin Chat'), findsOneWidget);
+    expect(find.text('Hidden apps'), findsNothing);
   });
 }

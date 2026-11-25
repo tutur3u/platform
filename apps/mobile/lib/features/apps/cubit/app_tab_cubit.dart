@@ -83,7 +83,21 @@ class AppTabCubit extends Cubit<AppTabState> {
       ids.remove(id);
     }
     if (!isClosed) emit(state.copyWith(hiddenAppIds: List.unmodifiable(ids)));
-    await _settings.setHiddenApps(ids);
+    // Both legacy IDs represent an explicit hide of the combined destination.
+    await _settings.setHiddenApps([
+      ...ids,
+      if (ids.contains('documents')) 'notes',
+    ]);
+  }
+
+  static List<String> _canonicalAppIds(Iterable<String> ids) =>
+      List.unmodifiable(ids.map(AppRegistry.canonicalModuleId).toSet());
+
+  static List<String> _canonicalHiddenIds(List<String> ids) {
+    final hideDocuments = ids.contains('documents') && ids.contains('notes');
+    return _canonicalAppIds(
+      ids.where((id) => hideDocuments || id != 'documents' && id != 'notes'),
+    );
   }
 
   Future<void> _loadLauncherPreferences() async {
@@ -94,8 +108,10 @@ class AppTabCubit extends Cubit<AppTabState> {
       _launcherPreferencesLoaded = true;
       emit(
         state.copyWith(
-          pinnedAppIds: List.unmodifiable(pinned.toSet()),
-          recentAppIds: List.unmodifiable(recent.toSet().take(_recentLimit)),
+          pinnedAppIds: _canonicalAppIds(pinned),
+          recentAppIds: List.unmodifiable(
+            _canonicalAppIds(recent).take(_recentLimit),
+          ),
         ),
       );
     } on Object catch (error, stack) {
@@ -166,7 +182,12 @@ class AppTabCubit extends Cubit<AppTabState> {
       final order = await _settings.getAppOrder();
       final hidden = await _settings.getHiddenApps();
       if (!isClosed) {
-        emit(state.copyWith(appOrder: order, hiddenAppIds: hidden));
+        emit(
+          state.copyWith(
+            appOrder: _canonicalAppIds(order),
+            hiddenAppIds: _canonicalHiddenIds(hidden),
+          ),
+        );
       }
     } on Object {
       // Preferences are optional; keep the default app order on read failure.

@@ -66,8 +66,6 @@ Future<GoRouter> pumpShellRender(
   SharedPreferences.setMockInitialValues(preferences);
   final settings = SettingsRepository();
   final apps = AppTabCubit(settingsRepository: settings);
-  final experiments = ExperimentalAppsCubit(settingsRepository: settings);
-  await experiments.load();
   final auth = _Auth();
   final workspaces = _Workspaces();
   final profile = _Profile();
@@ -110,7 +108,6 @@ Future<GoRouter> pumpShellRender(
     await tester.pumpWidget(const SizedBox.shrink());
     router.dispose();
     await apps.close();
-    await experiments.close();
     await auth.close();
     await workspaces.close();
     await profile.close();
@@ -123,7 +120,6 @@ Future<GoRouter> pumpShellRender(
     MultiBlocProvider(
       providers: [
         BlocProvider.value(value: apps),
-        BlocProvider.value(value: experiments),
         BlocProvider<AuthCubit>.value(value: auth),
         BlocProvider<WorkspaceCubit>.value(value: workspaces),
         BlocProvider<ShellProfileCubit>.value(value: profile),

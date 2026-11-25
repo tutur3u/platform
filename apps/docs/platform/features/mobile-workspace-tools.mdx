@@ -7,14 +7,6 @@ audience: users
 
 ## Overview
 
-The mobile app now ships first-party workspace surfaces for:
-
-- Drive at `Routes.drive`
-- CRM at `Routes.crm`
-- Education at `Routes.education`
-
-These modules are registered in the Apps hub and available through the mini-app navigation system.
-
 The Apps screen groups available tools under Work, Money, Communication,
 Learning, and Tools. Phones use two tiles per row at standard text sizes.
 Wider layouts can show more columns. Search matches app names, descriptions,
@@ -26,8 +18,8 @@ apps. Pinned appears above the categories with an Add pin shortcut. Recents
 shows up to four available apps, most recent first. The device stores pins and
 recent launches. If a pin fails to save, the editor shows a message and keeps
 the saved pin state. Hidden apps appear under Hidden apps in search and stay
-out of categories and shortcuts. Workspace permissions and experiment settings
-apply to categories, search, pins, and recents.
+out of categories and shortcuts. Workspace eligibility and app-specific
+permissions apply to categories, search, pins, and recents.
 
 [Launcher widget tests](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/apps/apps_hub_page_test.dart)
 cover these sections, search, and access changes.
@@ -44,15 +36,30 @@ does not claim that a queued offline edit has synchronized.
 
 Background warmups for optional products should also respect access state before fetching. Do not let Apps hub or boot-time cache warmups call product endpoints blindly; skip the warmup when the corresponding access cubit is not loaded and enabled, and fail soft on opportunistic `404` responses.
 
-Tasks, Calendar, and Finance are the default launcher modules. Meet, Mail, Chat,
-and Notes join the existing opt-in apps in Settings → Experiments; all four are
-off until the user enables them. The choice is cached on the device and restored
-at launch. Turning a module on exposes it in Apps and its eligible Home card;
-turning it off removes those launch surfaces. Mail still requires its account
-access rule, and workspace visibility flags still apply. Deep links retain the
-existing route access rules. Meet includes meeting search, scheduling, editing,
-and deletion when enabled. Every launcher module has an English and Vietnamese
-description.
+Tasks, Calendar, and Finance are available by default. Mail, Chat, Meet,
+Habits, Drive, Documents, CMS, Education, CRM, Inventory, and Timer appear
+automatically when eligible. Notes is available through Documents. Account
+eligibility and workspace visibility govern launcher discovery. App routes
+enforce their feature permissions. Pins, app order, and personal visibility
+choices persist on the device. A saved experiment toggle has no effect on availability.
+The old `/settings/experiments` link opens Settings.
+
+## Documents and Notes
+
+Open **Documents** in Apps to browse workspace documents or switch to **Notes**
+for your private notes. Each view follows its own workspace eligibility and
+permissions. The destination appears when either view is available. Sharing a
+document uses the existing document permissions. Locked notes keep their
+existing lock and recovery options. When you leave Notes, the app saves any
+pending edits and keeps you in Notes if saving fails. Both views use their
+existing content and storage.
+
+Old `/notes` links open `/documents/notes` and preserve the selected note
+when the link includes a note ID. Existing `/documents/:documentId` links
+still open document details. A saved Notes pin or launcher position applies to
+Documents. If both entries were saved, Documents keeps the earlier position
+and appears only once. The combined launcher entry stays hidden if both
+entries were hidden.
 
 ## Workspace member removal
 
@@ -130,9 +137,9 @@ opens assigned work. Task overlays return to their owning board.
 Apps is always available in the root dock. Tap an app to open it with selection
 haptics. Use the top bar's Customize apps action to reorder apps within a
 category or change their visibility. Hiding an app requires confirmation.
-Hidden apps and hidden experiments have separate editor sections. You can show
-an app again when your current account and workspace have access. App order and
-visibility choices persist on the device. Hiding an app keeps its route available.
+Hidden apps appear together in the editor. You can show an app again when your
+current account and workspace have access. App order and visibility choices
+persist on the device. Hiding an app keeps its route available.
 
 Home's task, calendar, Finance, daily summary, and eligible Mail, Meet, and Notes
 cards can be reordered or hidden through the compact top-bar Customize action.
@@ -1524,8 +1531,8 @@ keyboard submits the same query more than once.
 Search matches substrings in the localized label, description, and module ID.
 It ignores case and Vietnamese accents, so `lich` finds **Lịch** and
 `tai chinh` finds **Tài chính**.
-A queued selection is canceled if workspace, account, experiment, access, or
-locale inputs change after its match was resolved and before navigation.
+A queued selection is canceled if workspace, account, app access, or locale
+changes between resolving the match and navigating.
 
 ## Workspace picker search selection
 
@@ -1652,8 +1659,8 @@ Notifications & interaction; per-app settings live under Settings > Apps (see
 [mobile settings shell](/platform/features/mobile-settings-shell)). Offline
 module pages link to that app's settings. Downloads, cache
 limits, cache removal, and unsynchronized changes belong to a dedicated Offline
-section. Account, workspace, experiments, and help retain their existing access
-rules. Each stored namespace expands to a local-only item list, searchable by name or ID.
+section. Account, workspace, and help retain their existing access rules. Each
+stored namespace expands to a local-only item list, searchable by name or ID.
 Rows render lazily in a bounded viewport; search covers the complete scoped local
 collection and survives unrelated coordinator updates. Namespace source-content
 identity triggers rereads only when that namespace changes. Payload sizing is

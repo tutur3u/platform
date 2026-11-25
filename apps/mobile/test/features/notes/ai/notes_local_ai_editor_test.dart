@@ -9,6 +9,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/assistant/local/assistant_local_runtime.dart';
 import 'package:mobile/features/notes/ai/notes_local_ai_cubit.dart';
 import 'package:mobile/features/notes/note_repository.dart';
@@ -85,6 +86,7 @@ Future<({GoRouter router, AiSession session})> _mount(
   String? Function()? actor,
   Stream<Object?>? authEvents,
   Set<String> installed = const {'qwen3-600m'},
+  bool useLegacyRoute = false,
 }) async {
   final workspace = _Workspace();
   when(() => workspace.state).thenReturn(
@@ -97,14 +99,21 @@ Future<({GoRouter router, AiSession session})> _mount(
   );
   when(() => workspace.stream).thenAnswer((_) => const Stream.empty());
   final session = AiSession();
+  final registryRoutes = AppRegistry.routes;
   final router = GoRouter(
-    initialLocation: '${Routes.notes}?noteId=note',
+    initialLocation:
+        '${useLegacyRoute ? Routes.legacyNotes : Routes.notes}?noteId=note',
     routes: [
+      registryRoutes.singleWhere((route) => route.path == Routes.legacyNotes),
       GoRoute(
         path: Routes.notes,
+        onExit: registryRoutes
+            .singleWhere((route) => route.path == Routes.notes)
+            .onExit,
         builder: (_, _) => BlocProvider<WorkspaceCubit>.value(
           value: workspace,
           child: NotesPage(
+            key: notesPageKey,
             repository: repository,
             localAiActor: actor ?? () => 'actor',
             localAiAuthEvents: authEvents,
@@ -122,6 +131,10 @@ Future<({GoRouter router, AiSession session})> _mount(
         ),
       ),
       GoRoute(path: '/elsewhere', builder: (_, _) => const SizedBox()),
+      GoRoute(
+        path: Routes.documents,
+        builder: (_, _) => const Text('Document list fixture'),
+      ),
     ],
   );
   await tester.pumpWidget(
@@ -153,6 +166,34 @@ Future<void> _generate(WidgetTester tester, AiSession session) async {
 }
 
 void main() {
+  testWidgets(
+    'legacy note link opens the note and switching to Documents waits for save',
+    (tester) async {
+      final repo = _Notes()..held = Completer<NoteRecord>();
+      final fixture = await _mount(tester, repo, useLegacyRoute: true);
+      addTearDown(fixture.router.dispose);
+      expect(
+        fixture.router.routeInformationProvider.value.uri.path,
+        Routes.notes,
+      );
+
+      tester
+          .widget<QuillEditor>(find.byType(QuillEditor))
+          .controller
+          .replaceText(0, 0, 'Unsaved ', null);
+      fixture.router.go(Routes.documents);
+      await tester.pump();
+      await tester.pump();
+      expect(repo.writes, hasLength(1));
+      expect(find.byType(NotesPage), findsOneWidget);
+      expect(find.text('Document list fixture'), findsNothing);
+
+      repo.held!.complete(repo.record);
+      await tester.pumpAndSettle();
+      expect(find.text('Document list fixture'), findsOneWidget);
+    },
+  );
+
   testWidgets(
     'only verified installed models are selectable before native load',
     (tester) async {

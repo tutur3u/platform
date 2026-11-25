@@ -595,12 +595,6 @@ abstract class AppLocalizations {
   /// **'Customize apps'**
   String get appsCustomize;
 
-  /// No description provided for @appsHiddenExperimentsSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Hidden experiments'**
-  String get appsHiddenExperimentsSection;
-
   /// No description provided for @appsHiddenSection.
   ///
   /// In en, this message translates to:
@@ -658,7 +652,7 @@ abstract class AppLocalizations {
   /// No description provided for @appsHubDocumentsDescription.
   ///
   /// In en, this message translates to:
-  /// **'Write, edit, and publish workspace notes from your phone.'**
+  /// **'Edit and share documents or keep private notes.'**
   String get appsHubDocumentsDescription;
 
   /// No description provided for @appsHubDriveDescription.
@@ -16657,12 +16651,6 @@ abstract class AppLocalizations {
   /// **'Workspace ID'**
   String get settingsDiagnosticWorkspace;
 
-  /// No description provided for @settingsDiagnosticFlags.
-  ///
-  /// In en, this message translates to:
-  /// **'Enabled experimental features'**
-  String get settingsDiagnosticFlags;
-
   /// No description provided for @settingsDiagnosticOrigins.
   ///
   /// In en, this message translates to:
@@ -17286,36 +17274,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The app opens here by default on every launch.'**
   String get settingsDefaultWorkspaceDescription;
-
-  /// No description provided for @settingsExperimentalAppsDisabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Disabled'**
-  String get settingsExperimentalAppsDisabled;
-
-  /// No description provided for @settingsExperimentalAppsEnabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Enabled'**
-  String get settingsExperimentalAppsEnabled;
-
-  /// No description provided for @settingsExperimentalAppsSectionDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Enable non-core apps in the Apps Hub. Tasks, Calendar, and Finance stay available by default.'**
-  String get settingsExperimentalAppsSectionDescription;
-
-  /// No description provided for @settingsExperimentalAppsSectionTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Experiments'**
-  String get settingsExperimentalAppsSectionTitle;
-
-  /// No description provided for @settingsExperimentalAppsTileDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Show {appName} in the Apps Hub.'**
-  String settingsExperimentalAppsTileDescription(String appName);
 
   /// No description provided for @settingsFinanceAmounts.
   ///

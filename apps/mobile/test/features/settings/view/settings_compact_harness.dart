@@ -187,7 +187,6 @@ class _SettingsHarness {
   late final theme = ThemeCubit(settingsRepository: settings);
   late final locale = LocaleCubit(settingsRepository: settings);
   final actions = ShellChromeActionsCubit();
-  late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
   late final GoRouter router;
 
   /// [shellChrome] provides the chrome actions registry, as the app does, so
@@ -198,7 +197,6 @@ class _SettingsHarness {
     bool shellChrome = false,
   }) async {
     await apps.recordAppOrigin(Routes.apps);
-    if (assistantPageBuilder != null) await experiments.load();
     await tester.pumpWidget(
       MultiBlocProvider(
         providers: [
@@ -213,8 +211,6 @@ class _SettingsHarness {
           BlocProvider.value(value: locale),
           if (assistantPageBuilder != null || shellChrome)
             BlocProvider.value(value: actions),
-          if (assistantPageBuilder != null)
-            BlocProvider.value(value: experiments),
           BlocProvider(create: (_) => ShellMiniNavCubit()),
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
           BlocProvider(create: (_) => AssistantChromeCubit()),
@@ -273,7 +269,6 @@ class _SettingsHarness {
     await theme.close();
     await locale.close();
     await actions.close();
-    if (assistantPageBuilder != null) await experiments.close();
   }
 }
 

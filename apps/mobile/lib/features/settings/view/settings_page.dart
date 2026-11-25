@@ -13,13 +13,11 @@ import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
-import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/onboarding/view/onboarding_page.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/locale_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
@@ -56,7 +54,6 @@ part 'settings_preferences_section.dart';
 enum SettingsSectionDestination {
   overview,
   preferences,
-  experiments,
   infrastructure,
   about,
   session,
@@ -172,12 +169,6 @@ class _SettingsViewState extends State<_SettingsView>
           future: _packageInfoFuture,
           builder: (context, snapshot) {
             final packageInfo = snapshot.data;
-            final experimentalAppsState =
-                widget.section == SettingsSectionDestination.experiments
-                ? context.watch<ExperimentalAppsCubit?>()?.state ??
-                      const ExperimentalAppsState()
-                : const ExperimentalAppsState();
-
             return NovaRefreshIndicator(
               onRefresh: () => _refresh(context),
               child: ResponsiveWrapper(
@@ -203,7 +194,6 @@ class _SettingsViewState extends State<_SettingsView>
                   children: _buildSettingsChildren(
                     context: context,
                     packageInfo: packageInfo,
-                    experimentalAppsState: experimentalAppsState,
                   ),
                 ),
               ),
@@ -217,7 +207,6 @@ class _SettingsViewState extends State<_SettingsView>
   List<Widget> _buildSettingsChildren({
     required BuildContext context,
     required PackageInfo? packageInfo,
-    required ExperimentalAppsState experimentalAppsState,
   }) {
     switch (widget.section) {
       case SettingsSectionDestination.overview:
@@ -289,17 +278,6 @@ class _SettingsViewState extends State<_SettingsView>
             child: _buildPreferencesSection(context),
           ),
         ];
-      case SettingsSectionDestination.experiments:
-        return [
-          StaggeredEntry(
-            index: 0,
-            playOnceKey: 'settings-experimental-apps',
-            child: _ExperimentalAppsSection(
-              enabledModuleIds: experimentalAppsState.enabledModuleIds,
-              onToggleModule: _toggleExperimentalApp,
-            ),
-          ),
-        ];
       case SettingsSectionDestination.infrastructure:
         return [
           const StaggeredEntry(
@@ -360,14 +338,6 @@ class _SettingsViewState extends State<_SettingsView>
     await context.read<CalendarSettingsCubit>().loadWorkspacePreference(
       workspaceId,
     );
-  }
-
-  void _toggleExperimentalApp(String moduleId) {
-    final cubit = context.read<ExperimentalAppsCubit?>();
-    if (cubit == null) {
-      return;
-    }
-    unawaited(cubit.toggleModule(moduleId));
   }
 
   Future<void> _loadMobileVersionsAccess(

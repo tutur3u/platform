@@ -12,7 +12,6 @@ import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/apps/view/apps_hub_results.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_brand_title.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -183,19 +182,13 @@ class _AppsScreenState extends State<AppsScreen>
 
   void _manage() {
     final tabs = context.read<AppTabCubit>();
-    final experiments = context.read<ExperimentalAppsCubit?>();
     _searchFocus.unfocus();
     unawaited(
       showOrderEditorSheet(
         context,
         title: context.l10n.appsCustomize,
-        builder: (_) => MultiBlocProvider(
-          providers: [
-            BlocProvider.value(value: tabs),
-            if (experiments != null) BlocProvider.value(value: experiments),
-          ],
-          child: const AppsPickerEditor(),
-        ),
+        builder: (_) =>
+            BlocProvider.value(value: tabs, child: const AppsPickerEditor()),
       ),
     );
   }

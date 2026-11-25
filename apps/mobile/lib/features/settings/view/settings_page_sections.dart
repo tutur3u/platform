@@ -67,48 +67,6 @@ class _InfrastructureSection extends StatelessWidget {
   }
 }
 
-class _ExperimentalAppsSection extends StatelessWidget {
-  const _ExperimentalAppsSection({
-    required this.enabledModuleIds,
-    required this.onToggleModule,
-  });
-
-  final Set<String> enabledModuleIds;
-  final ValueChanged<String> onToggleModule;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return SettingsSection(
-      title: '',
-      grouped: true,
-      children: [
-        for (final module in AppRegistry.experimentalModules)
-          SettingsTile(
-            grouped: true,
-            icon: module.icon,
-            title: module.label(l10n),
-            subtitle: l10n.settingsExperimentalAppsTileDescription(
-              module.label(l10n),
-            ),
-            value: enabledModuleIds.contains(module.id)
-                ? l10n.settingsExperimentalAppsEnabled
-                : l10n.settingsExperimentalAppsDisabled,
-            onTap: () => onToggleModule(module.id),
-            showChevron: false,
-            trailing: IgnorePointer(
-              child: shad.Switch(
-                value: enabledModuleIds.contains(module.id),
-                onChanged: (_) {},
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
 String _formatVersionLabel(PackageInfo? packageInfo) {
   if (packageInfo == null) {
     return '...';

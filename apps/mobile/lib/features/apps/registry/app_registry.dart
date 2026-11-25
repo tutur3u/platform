@@ -22,7 +22,6 @@ import 'package:mobile/features/mastermind/fleet_access/fleet_access_module.dart
 import 'package:mobile/features/mastermind/mastermind_module.dart';
 import 'package:mobile/features/meet/view/meet_portal_page.dart';
 import 'package:mobile/features/notes/notes_page.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/view/settings_page.dart';
 import 'package:mobile/features/tasks/view/task_list_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
@@ -38,10 +37,6 @@ class AppRegistry {
       GoRoute(
         path: module.route,
         builder: (context, _) => module.pageBuilder(context),
-        onExit: module.route == Routes.notes
-            ? (context, _) async =>
-                  await notesPageKey.currentState?.savePending() ?? true
-            : null,
       ),
     GoRoute(
       path: Routes.taskAssigned,
@@ -53,24 +48,19 @@ class AppRegistry {
           CalendarPage(initialEventId: state.pathParameters['eventId']),
     ),
     GoRoute(path: Routes.crm, redirect: (_, _) => Routes.contacts),
+    GoRoute(
+      path: Routes.legacyNotes,
+      redirect: (_, state) => Routes.notesViewLocation(state.uri),
+    ),
+    GoRoute(
+      path: Routes.notes,
+      builder: (_, _) => NotesPage(key: notesPageKey),
+      onExit: (_, _) async =>
+          await notesPageKey.currentState?.savePending() ?? true,
+    ),
   ];
 
   static const Set<String> coreModuleIds = {'tasks', 'calendar', 'finance'};
-
-  static const Set<String> experimentalModuleIds = {
-    'mail',
-    'chat',
-    'meet',
-    'notes',
-    'habits',
-    'drive',
-    'documents',
-    'cms',
-    'education',
-    'crm',
-    'inventory',
-    'timer',
-  };
 
   static const List<AppModule> allModules = [
     mailModule,
@@ -126,15 +116,6 @@ class AppRegistry {
       pageBuilder: _pageDocuments,
       miniAppNavItems: _documentsMiniNav,
       isVisible: _showDocumentsModule,
-    ),
-    AppModule(
-      id: 'notes',
-      route: Routes.notes,
-      icon: Icons.note_alt_outlined,
-      labelBuilder: _labelNotes,
-      pageBuilder: _pageNotes,
-      miniAppNavItems: _notesMiniNav,
-      isVisible: _showNotesModule,
     ),
     AppModule(
       id: 'cms',
@@ -327,15 +308,14 @@ class AppRegistry {
       route: Routes.documents,
       icon: Icons.description_outlined,
       labelBuilder: _labelDocuments,
+      isVisible: _showDocumentsView,
     ),
-  ];
-
-  static const List<MiniAppNavItem> _notesMiniNav = [
     MiniAppNavItem(
       id: 'notes_home',
       route: Routes.notes,
       icon: Icons.note_alt_outlined,
       labelBuilder: _labelNotes,
+      isVisible: notesViewAvailable,
     ),
   ];
 
@@ -411,54 +391,44 @@ class AppRegistry {
   }
 
   static bool _showInventoryModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'inventory');
+      _moduleAccessAvailable(context, 'inventory');
 
   static bool _showDriveModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'drive');
+      _moduleAccessAvailable(context, 'drive');
 
   static bool _showDocumentsModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'documents');
+      _showDocumentsView(context) || notesViewAvailable(context);
+
+  static bool _showDocumentsView(BuildContext context) =>
+      _moduleAccessAvailable(context, 'documents');
 
   static bool _showCmsModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'cms');
+      _moduleAccessAvailable(context, 'cms');
 
   static bool _showEducationModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'education');
+      _moduleAccessAvailable(context, 'education');
 
   static bool _showCrmModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'crm');
+      _moduleAccessAvailable(context, 'crm');
 
   static bool _showMeetModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'meet');
+      _moduleAccessAvailable(context, 'meet');
 
   static bool _showChatModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'chat');
+      _moduleAccessAvailable(context, 'chat');
 
-  static bool _showNotesModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'notes');
+  static bool notesViewAvailable(BuildContext context) =>
+      _moduleAccessAvailable(context, 'notes');
 
   static bool _showHabitsModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'habits');
+      _moduleAccessAvailable(context, 'habits');
 
   static bool _showTimerModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'timer');
+      _moduleAccessAvailable(context, 'timer');
 
   static bool _hideSettingsModuleFromAppsHub(BuildContext context) => false;
 
-  static bool _isExperimentalModuleAvailable(
-    BuildContext context,
-    String moduleId,
-  ) {
-    return _isExperimentalModuleEnabled(context, moduleId) &&
-        experimentalAccessAvailable(context, moduleId);
-  }
-
-  static bool experimentalAccessAvailable(
-    BuildContext context,
-    String moduleId,
-  ) {
-    if (!experimentalModuleIds.contains(moduleId)) return false;
-    if (moduleId == 'mail') return mailModuleAccessAvailable(context);
+  static bool _moduleAccessAvailable(BuildContext context, String moduleId) {
     if (_isModuleHiddenByWorkspaceSecret(context, moduleId)) return false;
     return switch (moduleId) {
       'inventory' => context.select<InventoryAccessCubit?, bool>(
@@ -480,17 +450,6 @@ class AppRegistry {
     };
   }
 
-  static bool _isExperimentalModuleEnabled(
-    BuildContext context,
-    String moduleId,
-  ) {
-    final state = context
-        .select<ExperimentalAppsCubit?, ExperimentalAppsState?>(
-          (cubit) => cubit?.state,
-        );
-    return state?.isEnabled(moduleId) ?? false;
-  }
-
   static bool _isModuleHiddenByWorkspaceSecret(
     BuildContext context,
     String moduleId,
@@ -507,16 +466,14 @@ class AppRegistry {
         .toList(growable: false);
   }
 
-  static List<AppModule> get experimentalModules {
-    return allModules
-        .where((module) => experimentalModuleIds.contains(module.id))
-        .toList(growable: false);
-  }
+  static String canonicalModuleId(String id) =>
+      id == 'notes' ? 'documents' : id;
 
   static AppModule? moduleById(String? id) {
     if (id == null) return null;
+    final canonicalId = canonicalModuleId(id);
     for (final module in allModules) {
-      if (module.id == id) return module;
+      if (module.id == canonicalId) return module;
     }
     return null;
   }
@@ -530,7 +487,12 @@ class AppRegistry {
       return normalized;
     }
 
-    final normalizedLocation = normalize(location);
+    final normalizedLocation = normalize(
+      Uri.tryParse(location)?.path ?? location,
+    );
+    if (normalizedLocation == Routes.legacyNotes) {
+      return moduleById('documents');
+    }
     if (Routes.isSettingsHubLocation(normalizedLocation)) {
       return moduleById('settings');
     }
@@ -595,8 +557,6 @@ class AppRegistry {
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageDrive(BuildContext context) => const DrivePage();
   static Widget _pageDocuments(BuildContext context) => const DocumentsPage();
-  static Widget _pageNotes(BuildContext context) =>
-      NotesPage(key: notesPageKey);
   static Widget _pageCms(BuildContext context) => const CmsPage();
   static Widget _pageEducation(BuildContext context) => const EducationPage();
   static Widget _pageCrm(BuildContext context) => const CrmPage();

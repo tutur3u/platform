@@ -275,9 +275,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsCustomize => 'Tùy chỉnh ứng dụng';
 
   @override
-  String get appsHiddenExperimentsSection => 'Thử nghiệm đã ẩn';
-
-  @override
   String get appsHiddenSection => 'Ứng dụng đã ẩn';
 
   @override
@@ -305,7 +302,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubCrmDescription => 'Quản lý khách hàng, phản hồi, nhập dữ liệu và nhật ký tại một nơi.';
 
   @override
-  String get appsHubDocumentsDescription => 'Viết, chỉnh sửa và xuất bản ghi chú workspace trên điện thoại.';
+  String get appsHubDocumentsDescription => 'Chỉnh sửa và chia sẻ tài liệu hoặc lưu ghi chú riêng tư.';
 
   @override
   String get appsHubDriveDescription => 'Duyệt tệp, thư mục, tải lên và liên kết chia sẻ an toàn của workspace.';
@@ -8774,9 +8771,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsDiagnosticWorkspace => 'ID không gian làm việc';
 
   @override
-  String get settingsDiagnosticFlags => 'Tính năng thử nghiệm đang bật';
-
-  @override
   String get settingsDiagnosticOrigins => 'Địa chỉ API';
 
   @override
@@ -9103,23 +9097,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsDefaultWorkspaceDescription => 'Ứng dụng sẽ mở vào đây mặc định mỗi lần khởi động.';
-
-  @override
-  String get settingsExperimentalAppsDisabled => 'Đã tắt';
-
-  @override
-  String get settingsExperimentalAppsEnabled => 'Đã bật';
-
-  @override
-  String get settingsExperimentalAppsSectionDescription => 'Bật các ứng dụng không cốt lõi trong Trung tâm ứng dụng. Tasks, Calendar và Finance luôn có sẵn theo mặc định.';
-
-  @override
-  String get settingsExperimentalAppsSectionTitle => 'Thử nghiệm';
-
-  @override
-  String settingsExperimentalAppsTileDescription(String appName) {
-    return 'Hiển thị $appName trong Trung tâm ứng dụng.';
-  }
 
   @override
   String get settingsFinanceAmounts => 'Số tiền tài chính';

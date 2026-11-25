@@ -232,17 +232,6 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
         terms: [l10n.settingsNavWorkspace],
       ),
       route(
-        'experiments',
-        LucideIcons.flaskConical,
-        l10n.settingsExperimentalAppsSectionTitle,
-        general,
-        Routes.settingsExperiments,
-        terms: [
-          for (final module in AppRegistry.experimentalModules)
-            module.label(l10n),
-        ],
-      ),
-      route(
         'offline',
         LucideIcons.hardDriveDownload,
         l10n.offlineSectionTitle,

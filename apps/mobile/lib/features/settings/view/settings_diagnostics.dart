@@ -7,10 +7,8 @@ import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/sync/smart_sync_runtime.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -157,11 +155,6 @@ class _SettingsDiagnosticsState extends State<SettingsDiagnostics> {
     final workspaceId = context.select<WorkspaceCubit, String?>(
       (cubit) => cubit.state.currentWorkspace?.id,
     );
-    final experiments = context.watch<ExperimentalAppsCubit?>()?.state;
-    final flags = [
-      for (final module in AppRegistry.experimentalModules)
-        if (experiments?.isEnabled(module.id) ?? false) module.id,
-    ]..sort();
     return ListenableBuilder(
       listenable: _diagnostics,
       builder: (context, _) => Padding(
@@ -173,7 +166,6 @@ class _SettingsDiagnosticsState extends State<SettingsDiagnostics> {
             _detail(l10n.settingsAppVersion, widget.version),
             _detail(l10n.settingsDiagnosticUser, userId),
             _detail(l10n.settingsDiagnosticWorkspace, workspaceId ?? '—'),
-            _detail(l10n.settingsDiagnosticFlags, flags.join(', ')),
             AppDisclosure(
               title: Text(l10n.settingsDiagnosticOrigins),
               children: [

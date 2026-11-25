@@ -4,14 +4,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
-import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/helpers.dart';
 
@@ -25,43 +23,87 @@ class _MockEducationAccessCubit extends MockCubit<EducationAccessState>
     implements EducationAccessCubit {}
 
 void main() {
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
-
-  testWidgets('new experiments require opt-in and retain Mail access', (
+  testWidgets('ungated apps appear by default with one Documents entry', (
     tester,
   ) async {
-    final experiments = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    addTearDown(experiments.close);
     late List<String> visible;
     await tester.pumpApp(
-      BlocProvider.value(
-        value: experiments,
-        child: Builder(
-          builder: (context) {
-            visible = AppRegistry.modules(
-              context,
-            ).map((module) => module.id).toList();
-            return const SizedBox.shrink();
-          },
-        ),
+      Builder(
+        builder: (context) {
+          visible = AppRegistry.modules(
+            context,
+          ).map((module) => module.id).toList();
+          return const SizedBox.shrink();
+        },
       ),
     );
-    for (final id in ['mail', 'meet', 'chat', 'notes']) {
-      expect(visible, isNot(contains(id)));
-    }
-    for (final id in ['meet', 'chat', 'notes', 'mail']) {
-      await experiments.setModuleEnabled(moduleId: id, enabled: true);
-    }
-    await tester.pumpAndSettle();
-    for (final id in ['meet', 'chat', 'notes']) {
-      expect(visible, contains(id));
-    }
+    expect(
+      visible,
+      containsAll([
+        'meet',
+        'chat',
+        'documents',
+        'drive',
+        'cms',
+        'crm',
+        'timer',
+      ]),
+    );
+    expect(visible, isNot(contains('notes')));
     expect(visible, isNot(contains('mail')));
+    expect(visible, isNot(contains('inventory')));
+    expect(visible, isNot(contains('education')));
+    expect(visible, isNot(contains('habits')));
+    expect(AppRegistry.moduleById('notes')?.id, 'documents');
+    expect(
+      AppRegistry.moduleFromLocation('/notes?noteId=private')?.id,
+      'documents',
+    );
+    expect(AppRegistry.moduleFromLocation(Routes.notes)?.id, 'documents');
   });
+
+  for (final (hidden, accessibleViews) in [
+    (<String>[], [Routes.documents, Routes.notes]),
+    (['documents'], [Routes.notes]),
+    (['notes'], [Routes.documents]),
+    (['documents', 'notes'], <String>[]),
+  ]) {
+    testWidgets('Documents views respect workspace flags $hidden', (
+      tester,
+    ) async {
+      final workspace = _MockWorkspaceCubit();
+      whenListen(
+        workspace,
+        const Stream<WorkspaceState>.empty(),
+        initialState: WorkspaceState(hiddenModuleIds: hidden),
+      );
+      addTearDown(workspace.close);
+      late bool visible;
+      late List<MiniAppNavItem> items;
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspace,
+          child: Builder(
+            builder: (context) {
+              final module = AppRegistry.moduleById('documents')!;
+              visible = module.visibleIn(context);
+              items = module.miniAppNavItemsFor(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      expect(visible, accessibleViews.isNotEmpty);
+      expect(items.map((item) => item.route), accessibleViews);
+      if (items.length == 2) {
+        expect(miniNavSelectedIndex(Routes.notes, items), 1);
+        expect(
+          miniNavSelectedIndex(Routes.documentDetailPath('doc-1'), items),
+          0,
+        );
+      }
+    });
+  }
 
   group('AppRegistry timer mini nav visibility', () {
     testWidgets('hides requests in personal workspace', (tester) async {
@@ -177,13 +219,6 @@ void main() {
       tester,
     ) async {
       final habitsAccessCubit = _MockHabitsAccessCubit();
-      final experimentalAppsCubit = ExperimentalAppsCubit(
-        settingsRepository: SettingsRepository(),
-      );
-      await experimentalAppsCubit.setModuleEnabled(
-        moduleId: 'habits',
-        enabled: true,
-      );
       whenListen(
         habitsAccessCubit,
         const Stream<HabitsAccessState>.empty(),
@@ -194,14 +229,12 @@ void main() {
         ),
       );
       addTearDown(habitsAccessCubit.close);
-      addTearDown(experimentalAppsCubit.close);
 
       late bool isVisible;
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
             BlocProvider<HabitsAccessCubit>.value(value: habitsAccessCubit),
-            BlocProvider.value(value: experimentalAppsCubit),
           ],
           child: Builder(
             builder: (context) {
@@ -220,13 +253,6 @@ void main() {
       tester,
     ) async {
       final habitsAccessCubit = _MockHabitsAccessCubit();
-      final experimentalAppsCubit = ExperimentalAppsCubit(
-        settingsRepository: SettingsRepository(),
-      );
-      await experimentalAppsCubit.setModuleEnabled(
-        moduleId: 'habits',
-        enabled: true,
-      );
       whenListen(
         habitsAccessCubit,
         const Stream<HabitsAccessState>.empty(),
@@ -236,14 +262,12 @@ void main() {
         ),
       );
       addTearDown(habitsAccessCubit.close);
-      addTearDown(experimentalAppsCubit.close);
 
       late bool isVisible;
       await tester.pumpApp(
         MultiBlocProvider(
           providers: [
             BlocProvider<HabitsAccessCubit>.value(value: habitsAccessCubit),
-            BlocProvider.value(value: experimentalAppsCubit),
           ],
           child: Builder(
             builder: (context) {
@@ -260,63 +284,46 @@ void main() {
   });
 
   group('AppRegistry education module visibility', () {
-    testWidgets(
-      'shows education module when experiment and access are enabled',
-      (tester) async {
-        final educationAccessCubit = _MockEducationAccessCubit();
-        final experimentalAppsCubit = ExperimentalAppsCubit(
-          settingsRepository: SettingsRepository(),
-        );
-        await experimentalAppsCubit.setModuleEnabled(
-          moduleId: 'education',
+    testWidgets('shows education module when access is enabled', (
+      tester,
+    ) async {
+      final educationAccessCubit = _MockEducationAccessCubit();
+      whenListen(
+        educationAccessCubit,
+        const Stream<EducationAccessState>.empty(),
+        initialState: const EducationAccessState(
+          status: EducationAccessStatus.loaded,
           enabled: true,
-        );
-        whenListen(
-          educationAccessCubit,
-          const Stream<EducationAccessState>.empty(),
-          initialState: const EducationAccessState(
-            status: EducationAccessStatus.loaded,
-            enabled: true,
-            wsId: 'team-1',
-          ),
-        );
-        addTearDown(educationAccessCubit.close);
-        addTearDown(experimentalAppsCubit.close);
+          wsId: 'team-1',
+        ),
+      );
+      addTearDown(educationAccessCubit.close);
 
-        late bool isVisible;
-        await tester.pumpApp(
-          MultiBlocProvider(
-            providers: [
-              BlocProvider<EducationAccessCubit>.value(
-                value: educationAccessCubit,
-              ),
-              BlocProvider.value(value: experimentalAppsCubit),
-            ],
-            child: Builder(
-              builder: (context) {
-                final module = AppRegistry.moduleById('education')!;
-                isVisible = module.visibleIn(context);
-                return const SizedBox.shrink();
-              },
+      late bool isVisible;
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<EducationAccessCubit>.value(
+              value: educationAccessCubit,
             ),
+          ],
+          child: Builder(
+            builder: (context) {
+              final module = AppRegistry.moduleById('education')!;
+              isVisible = module.visibleIn(context);
+              return const SizedBox.shrink();
+            },
           ),
-        );
+        ),
+      );
 
-        expect(isVisible, isTrue);
-      },
-    );
+      expect(isVisible, isTrue);
+    });
 
     testWidgets('hides education module without backend access', (
       tester,
     ) async {
       final educationAccessCubit = _MockEducationAccessCubit();
-      final experimentalAppsCubit = ExperimentalAppsCubit(
-        settingsRepository: SettingsRepository(),
-      );
-      await experimentalAppsCubit.setModuleEnabled(
-        moduleId: 'education',
-        enabled: true,
-      );
       whenListen(
         educationAccessCubit,
         const Stream<EducationAccessState>.empty(),
@@ -326,7 +333,6 @@ void main() {
         ),
       );
       addTearDown(educationAccessCubit.close);
-      addTearDown(experimentalAppsCubit.close);
 
       late bool isVisible;
       await tester.pumpApp(
@@ -335,7 +341,6 @@ void main() {
             BlocProvider<EducationAccessCubit>.value(
               value: educationAccessCubit,
             ),
-            BlocProvider.value(value: experimentalAppsCubit),
           ],
           child: Builder(
             builder: (context) {
@@ -352,20 +357,9 @@ void main() {
   });
 
   group('AppRegistry workspace-secret module visibility', () {
-    testWidgets('hides experimental modules listed by workspace flags', (
-      tester,
-    ) async {
+    testWidgets('hides modules listed by workspace flags', (tester) async {
       final workspaceCubit = _MockWorkspaceCubit();
       final educationAccessCubit = _MockEducationAccessCubit();
-      final experimentalAppsCubit = ExperimentalAppsCubit(
-        settingsRepository: SettingsRepository(),
-      );
-      for (final moduleId in ['cms', 'drive', 'meet', 'education']) {
-        await experimentalAppsCubit.setModuleEnabled(
-          moduleId: moduleId,
-          enabled: true,
-        );
-      }
       whenListen(
         workspaceCubit,
         const Stream<WorkspaceState>.empty(),
@@ -386,7 +380,6 @@ void main() {
       );
       addTearDown(workspaceCubit.close);
       addTearDown(educationAccessCubit.close);
-      addTearDown(experimentalAppsCubit.close);
 
       late List<String> visibleModuleIds;
       await tester.pumpApp(
@@ -396,7 +389,6 @@ void main() {
             BlocProvider<EducationAccessCubit>.value(
               value: educationAccessCubit,
             ),
-            BlocProvider.value(value: experimentalAppsCubit),
           ],
           child: Builder(
             builder: (context) {

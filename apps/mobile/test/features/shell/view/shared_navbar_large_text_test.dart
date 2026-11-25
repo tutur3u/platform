@@ -24,7 +24,6 @@ import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.d
 import 'package:mobile/features/assistant/widgets/assistant_live_primary_action.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -75,7 +74,6 @@ Future<void> _pump(WidgetTester tester) async {
 
 void main() {
   late AppTabCubit apps;
-  late ExperimentalAppsCubit experiments;
   late _Auth auth;
   late _Workspaces workspaces;
   late _Profile profile;
@@ -119,7 +117,7 @@ void main() {
 
   tearDownAll(() => supa.Supabase.instance.dispose());
 
-  setUp(() async {
+  setUp(() {
     final previousRecorder = RecordPlatform.instance;
     RecordPlatform.instance = _RecordingPlatform();
     addTearDown(() => RecordPlatform.instance = previousRecorder);
@@ -131,10 +129,6 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     assistant = AssistantChromeCubit();
     apps = AppTabCubit(settingsRepository: SettingsRepository());
-    experiments = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experiments.load();
     auth = _Auth();
     workspaces = _Workspaces();
     profile = _Profile();
@@ -185,7 +179,6 @@ void main() {
     router.dispose();
     await assistant.close();
     await apps.close();
-    await experiments.close();
     await auth.close();
     await workspaces.close();
     await profile.close();
@@ -205,7 +198,6 @@ void main() {
         child: MultiBlocProvider(
           providers: [
             BlocProvider.value(value: apps),
-            BlocProvider.value(value: experiments),
             BlocProvider<AuthCubit>.value(value: auth),
             BlocProvider<WorkspaceCubit>.value(value: workspaces),
             BlocProvider<ShellProfileCubit>.value(value: profile),

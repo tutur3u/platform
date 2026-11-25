@@ -14,7 +14,6 @@ import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -51,19 +50,14 @@ Future<void> _pump(WidgetTester tester) async {
 
 void main() {
   late AppTabCubit apps;
-  late ExperimentalAppsCubit experiments;
   late _Auth auth;
   late _Workspaces workspaces;
   late _Profile profile;
   late GoRouter router;
 
-  setUp(() async {
+  setUp(() {
     SharedPreferences.setMockInitialValues({});
     apps = AppTabCubit(settingsRepository: SettingsRepository());
-    experiments = ExperimentalAppsCubit(
-      settingsRepository: SettingsRepository(),
-    );
-    await experiments.load();
     auth = _Auth();
     workspaces = _Workspaces();
     profile = _Profile();
@@ -131,7 +125,6 @@ void main() {
   tearDown(() async {
     router.dispose();
     await apps.close();
-    await experiments.close();
     await auth.close();
     await workspaces.close();
     await profile.close();
@@ -149,7 +142,6 @@ void main() {
       MultiBlocProvider(
         providers: [
           BlocProvider.value(value: apps),
-          BlocProvider.value(value: experiments),
           BlocProvider<AuthCubit>.value(value: auth),
           BlocProvider<WorkspaceCubit>.value(value: workspaces),
           BlocProvider<ShellProfileCubit>.value(value: profile),

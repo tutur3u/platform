@@ -11,7 +11,6 @@ import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
-import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -25,7 +24,8 @@ List<AppModule> appsHubResults(
   final matches = arrangeApps(AppRegistry.modules(context), cubit).where(
     (module) => foldSearchText(
       '${module.label(context.l10n)} '
-      '${appDescription(context, module.id)} ${module.id}',
+      '${appDescription(context, module.id)} ${module.id} '
+      '${module.id == 'documents' ? context.l10n.notesTitle : ''}',
     ).contains(normalized),
   );
   return {for (final module in matches) module.id: module}.values.toList();
@@ -35,7 +35,6 @@ List<AppModule> appsHubResults(
 /// immediately before launch: Bloc notifications may reach the widget after
 /// another post-frame callback has already changed its current state.
 Object appsHubAvailability(BuildContext context) => (
-  context.read<ExperimentalAppsCubit?>()?.state,
   context.read<WorkspaceCubit?>()?.state,
   context.read<AuthCubit?>()?.state,
   context.read<InventoryAccessCubit?>()?.state,

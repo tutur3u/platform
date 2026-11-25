@@ -275,9 +275,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsCustomize => 'Customize apps';
 
   @override
-  String get appsHiddenExperimentsSection => 'Hidden experiments';
-
-  @override
   String get appsHiddenSection => 'Hidden apps';
 
   @override
@@ -305,7 +302,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubCrmDescription => 'Manage people, feedback, imports, and audit activity in one place.';
 
   @override
-  String get appsHubDocumentsDescription => 'Write, edit, and publish workspace notes from your phone.';
+  String get appsHubDocumentsDescription => 'Edit and share documents or keep private notes.';
 
   @override
   String get appsHubDriveDescription => 'Browse workspace files, folders, uploads, and secure share links.';
@@ -8887,9 +8884,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsDiagnosticWorkspace => 'Workspace ID';
 
   @override
-  String get settingsDiagnosticFlags => 'Enabled experimental features';
-
-  @override
   String get settingsDiagnosticOrigins => 'API base addresses';
 
   @override
@@ -9218,23 +9212,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsDefaultWorkspaceDescription => 'The app opens here by default on every launch.';
-
-  @override
-  String get settingsExperimentalAppsDisabled => 'Disabled';
-
-  @override
-  String get settingsExperimentalAppsEnabled => 'Enabled';
-
-  @override
-  String get settingsExperimentalAppsSectionDescription => 'Enable non-core apps in the Apps Hub. Tasks, Calendar, and Finance stay available by default.';
-
-  @override
-  String get settingsExperimentalAppsSectionTitle => 'Experiments';
-
-  @override
-  String settingsExperimentalAppsTileDescription(String appName) {
-    return 'Show $appName in the Apps Hub.';
-  }
 
   @override
   String get settingsFinanceAmounts => 'Finance amounts';

@@ -201,7 +201,8 @@ String? _moduleLocation(Uri uri, List<String> segments) {
     'education' => Routes.education,
     'inventory' => _inventoryLocation(segments),
     'drive' => Routes.drive,
-    'documents' => _documentsLocation(segments),
+    'documents' => _documentsLocation(uri, segments),
+    'notes' => Routes.notesViewLocation(uri),
     'cms' => Routes.cms,
     'contacts' => Routes.contacts,
     'crm' => Routes.contacts,
@@ -406,7 +407,10 @@ String _inventoryLocation(List<String> segments) {
   return Routes.inventory;
 }
 
-String _documentsLocation(List<String> segments) {
+String _documentsLocation(Uri uri, List<String> segments) {
+  if (segments.length > 1 && segments[1] == 'notes') {
+    return Routes.notesViewLocation(uri);
+  }
   if (segments.length > 1) return Routes.documentDetailPath(segments[1]);
   return Routes.documents;
 }

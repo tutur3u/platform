@@ -47,8 +47,7 @@ List<RouteBase> settingsRoutes() => [
   ),
   GoRoute(
     path: Routes.settingsExperiments,
-    builder: (context, state) =>
-        const SettingsPage(section: SettingsSectionDestination.experiments),
+    redirect: (_, _) => Routes.settings,
   ),
   GoRoute(
     path: Routes.settingsInfrastructure,

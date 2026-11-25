@@ -221,12 +221,7 @@ void main() {
       ).called(1);
       expect(find.text('Appearance'), findsOneWidget);
       expect(find.text('Language'), findsOneWidget);
-      await tester.scrollUntilVisible(
-        find.text('Experiments'),
-        300,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.text('Experiments'), findsOneWidget);
+      expect(find.text('Experiments'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('About the app'),
         300,
