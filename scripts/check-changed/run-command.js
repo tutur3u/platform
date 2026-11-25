@@ -3,10 +3,25 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { inResourceLane } = require('../trusted-ttr.js');
 const { prepareVitestResult } = require('./vitest-result.js');
 const { pinVitestTsconfig } = require('./vitest-tsconfig-pin.js');
 
 function runCommand(step, context) {
+  if (step.requiresAdmission && !context.ttr && !inResourceLane(context.env)) {
+    return { status: 'fail', detail: 'Run with ttr resources admission.' };
+  }
+  if (step.prerequisite) {
+    const result = runCommand(step.prerequisite, context);
+    if (result.status !== 'pass') {
+      const reason = result.detail ? ` (${result.detail})` : '';
+      return {
+        ...result,
+        status: 'fail',
+        detail: `${step.prerequisite.label} failed${reason}`,
+      };
+    }
+  }
   const prefix = step.heavy && context.ttr ? context.ttr : [];
   const pin = (context.pinVitestTsconfig ?? pinVitestTsconfig)(
     step,

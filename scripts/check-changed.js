@@ -572,6 +572,11 @@ function main(argv = process.argv.slice(2), deps = {}) {
   }
   if (options.dryRun) {
     for (const step of steps) {
+      if (step.prerequisite) {
+        const { command, args } = step.prerequisite;
+        const prerequisite = [command, ...args].join(' ');
+        log(`  ${step.id} prerequisite: ${prerequisite}`);
+      }
       const command = step.typeCheck
         ? `${options.checker === 'tsrs' ? 'tsrs advisory + tsc' : 'tsc'} -p <projects of ${step.typeCheck.workspace}>`
         : step.inline

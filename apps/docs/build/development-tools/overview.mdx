@@ -30,7 +30,7 @@ This section contains tools, guides, and best practices for developing on the Tu
 
 - Formatting and linting are handled by [Oxc](https://oxc.rs/) (`.oxfmtrc.json` and `.oxlintrc.json`),
   not ESLint or Prettier. Use `bun ff` to format, lint, and check in one pass.
-- Run focused tests, then the build-free `bun check:changed` gate before every
+- Run focused tests, then the `bun check:changed` gate before every
   push. `bun validate` is not run on agent machines because its Turbo graph can
   build workspace dependencies; it and app builds run in CI for the exact commit
   (see [pre-push checks](/build/development-tools/pre-push-checks)).
@@ -233,8 +233,8 @@ wrappers, mobile iOS settings and API mappings, script tests, next-intl setup,
 translation validity/key parity/sorting/namespaces and migration timestamps.
 Platform release alignment runs for release files; Discord Python validation
 runs for Discord changes. No component was replaced with a type-only command.
-`bun check:changed` remains the separate build-free pre-push gate; other
-`check:*` commands retain their roles.
+`bun check:changed` runs the focused pre-push checks. The Meet durable room
+suite requires its scoped library build as described in [Pre-push checks](/build/development-tools/pre-push-checks).
 
 `ttr resources run -- bun check --no-script -p <project>` explicitly invokes Bun's native type-only
 checker. A package script named `check` takes precedence over native checking;

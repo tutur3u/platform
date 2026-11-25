@@ -1,6 +1,6 @@
 ---
 title: "Pre-push checks"
-description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
+description: "Run the focused changed-files gate before pushing to catch CI failures locally."
 updatedAt: "2026-11-22"
 audience: developers
 ---
@@ -23,11 +23,14 @@ bun check:changed --committed     # committed changes only (the hook's mode)
 bun check:changed --files a.ts b.ts
 ```
 
-It never runs builds or `bun validate`. Turbo is used only as
-`turbo run type-check test --dry=json --filter=...[merge-base]` to choose
-packages. That dry run does not execute tasks, including any task whose
+The gate excludes application builds and `bun validate`. For package selection,
+it runs `turbo run type-check test --dry=json --filter=...[merge-base]`.
+That dry run does not execute tasks, including any task whose
 `dependsOn` includes a build. If the dry command fails, selection falls back to
-transitive reverse dependents. Small repository scripts run directly;
+transitive reverse dependents. The Meet durable room suite has a scoped
+prerequisite that builds its library dependencies with the same filters as CI.
+The prerequisite requires `ttr resources` admission and blocks the suite if
+the build fails. Small repository scripts run directly.
 Vitest, Bun tests, type-check and `flutter analyze` are queued through `ttr resources run`
 when resource control is installed and enabled (`--no-ttr` opts out). Without
 the `~/.bun/bin/ttr` directory entry, the gate warns and runs sequentially with Vitest
@@ -50,7 +53,7 @@ set in the environment.
 | `apps/*` or `packages/*` source                                                         | App-session, satellite cookie and server-console guards                                                                                                                                                                                                                                                                                                                                                                  |
 | A workspace's source, `tsconfig*.json` or `package.json`                                | Type-check with `tsc --noEmit` of the dry-graph packages (changed packages and dependents). A failed dry graph uses reverse dependents instead. The gate does not run the Turbo `type-check` task, because that task depends on `^build`.                                                                                                                                                                                      |
 | A workspace's related tests                                                             | Changed and colocated tests use `node --test --test-concurrency=2` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest; files that import `bun:test` run with `bun test` from their workspace directory. The Meet durable room workflow list takes precedence for its files. Vitest steps run `vitest related` on the changed source files with `--maxWorkers=2`. Each test file runs under one runner. Vitest steps also write a structured result through `scripts/check-changed/vitest-reporter.mjs`; an exit-0 run still fails the gate when that result reports a tsconfig, transform, load or collection error, or when a changed test file has no passing test. A changed test file that Vitest's `include` excludes, or that has no collected tests, fails by design; one passing test is enough (`1 passed \| 2 todo` passes). A file whose collected tests are all skipped or todo passes only under the narrow escape described in the nested-worktrees section below. Ordinary log text such as "Failed to load settings" is never matched. Oxfmt and Oxlint stay on the changed files. |
-| `apps/meet-realtime/**`, `packages/realtime/src/**`, `packages/realtime/package.json`, `packages/utils/src/playground-schema.ts`, root `package.json`, `bun.lock`, `.github/workflows/meet-cloudflare.yaml` | `meet-durable-room-tests` reads the full file list from **Test durable room lifecycle and recovery** in the workflow. It runs `bun test` with absolute paths from a temporary directory to avoid the repository's Bun test preload. The parser accepts only test paths under `apps/meet-realtime/`. If CI adds a test elsewhere, extend `TEST_ARGUMENT` in `scripts/check-changed/meet-durable-room.js` in the same change. The gate fails on paths outside the allowed scope. |
+| `apps/meet-realtime/**`, `packages/realtime/src/**`, `packages/realtime/package.json`, `packages/utils/src/playground-schema.ts`, root `package.json`, `bun.lock`, `.github/workflows/meet-cloudflare.yaml` | `meet-durable-room-tests` reads the full file list from **Test durable room lifecycle and recovery** in the workflow. It runs `bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --concurrency=2` through the resource broker, then runs `bun test` with absolute paths from a temporary directory to avoid the repository's Bun test preload. The parser accepts only test paths under `apps/meet-realtime/`. If CI adds a test elsewhere, extend `TEST_ARGUMENT` in `scripts/check-changed/meet-durable-room.js` in the same change. The gate fails on paths outside the allowed scope. |
 | `scripts/`, `.github/actions/`, `plugins/`                                              | Changed and sibling `node --test` files                                                                                                                                                                                                                                                                                                                                                                                  |
 | `.github/workflows/` or `.github/actions/`                                              | Workflow concurrency (including the main validation inventory), Bun pin, workflow-config and `pr-label-gate` policy tests, plus every `scripts/ci` test that scans all workflows or composite actions (it calls `readAllWorkflows()`, lists `.github/workflows` or `.github/actions` itself, or loads a workflow inventory), for example secret scope, permissions, action pins and script injection, because any workflow edit can break them. Paused-runtime tests stay excluded                                                                                                                                                                                                                                                                                                 |
 | `apps/mobile/`                                                                          | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it                                                                                                                                                                                                                                                                   |
@@ -213,9 +216,9 @@ reverse dependents because those files can affect type-checking and test discove
 When script tests are selected, the fence covers `scripts/`, `plugins/` and
 `.github/actions/` as well as the tests' own parent directories, so nested tests
 cannot depend on untracked helpers in a parent or sibling directory.
-The Meet durable room step checks `apps/meet-realtime`, `packages/realtime`
-and `packages/utils` for untracked files because its suites import from all
-three directories.
+The Meet durable room step checks `apps/meet-realtime`, `packages/realtime`,
+`packages/supabase`, `packages/types` and `packages/utils` for untracked files
+because it builds or imports source from those directories.
 The translation usage checks read the working tree of every app and shared
 package, so an untracked file in a workspace the push does not touch can fail
 them, or satisfy an import that CI cannot resolve. The hook does not refuse
@@ -314,7 +317,7 @@ bun apps/web/cloudflare/generate-inventory.ts
 bun apps/web/cloudflare/vinext/gateway-routes.ts
 ```
 
-The build-free changed-files gate runs the corresponding `--check` of each
+The changed-files gate runs the corresponding build-free `--check` of each
 inventory a change can affect: wrappers, docs inventory, the standalone API
 registry (`bun run --cwd apps/api registry:check`), the Web Start census
 (`routes:candidate:check`) and the gateway route table

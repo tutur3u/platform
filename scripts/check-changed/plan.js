@@ -8,7 +8,10 @@ const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 const { cliUsageRatchetSteps } = require('./cli-usage-ratchet.js');
 const { i18nUsageSteps } = require('./i18n-usage.js');
-const { WORKFLOW: MEET_WORKFLOW } = require('./meet-durable-room.js');
+const {
+  BUILD_ARGS: MEET_BUILD_ARGS,
+  WORKFLOW: MEET_WORKFLOW,
+} = require('./meet-durable-room.js');
 const { routeRegistrySteps } = require('./route-registries.js');
 
 const OXC_VERSION = '0.74.0';
@@ -445,9 +448,19 @@ function planChecks(changes, context) {
         ),
       ],
       temporaryCwd: true,
+      prerequisite: {
+        id: 'meet-durable-room-dependencies',
+        label: 'Meet durable room dependency build',
+        command: 'bun',
+        args: MEET_BUILD_ARGS,
+        heavy: true,
+        requiresAdmission: true,
+      },
       inputDirectories: [
         'apps/meet-realtime',
         'packages/realtime',
+        'packages/supabase',
+        'packages/types',
         'packages/utils',
       ],
       heavy: true,

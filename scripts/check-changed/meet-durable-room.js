@@ -7,6 +7,14 @@ const path = require('node:path');
 
 const WORKFLOW = '.github/workflows/meet-cloudflare.yaml';
 const STEP_NAME = 'Test durable room lifecycle and recovery';
+const BUILD_ARGS = [
+  'turbo:local',
+  'run',
+  'build',
+  '--filter=@tuturuuu/types',
+  '--filter=@tuturuuu/supabase',
+  '--concurrency=2',
+];
 const TEST_ARGUMENT =
   /^"\$GITHUB_WORKSPACE\/(apps\/meet-realtime\/(?:[\w-][\w.-]*\/)*[\w-][\w.-]*\.test\.ts)"$/;
 
@@ -77,6 +85,7 @@ function readMeetDurableRoomTests(root) {
 module.exports = {
   WORKFLOW,
   STEP_NAME,
+  BUILD_ARGS,
   parseMeetDurableRoomTests,
   readMeetDurableRoomTests,
 };

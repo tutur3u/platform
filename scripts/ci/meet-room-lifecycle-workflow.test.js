@@ -26,6 +26,9 @@ const workflow = readWorkflow(path.basename(WORKFLOW));
 const lifecycle = workflow.jobs.validate.steps.find(
   (step) => step.name === STEP_NAME
 );
+const dependencyStep = workflow.jobs.validate.steps.find(
+  (step) => step.name === 'Build realtime dependencies and test realtime'
+);
 
 test('check:changed runs the actual lifecycle CI test list through resource admission outside Bun preload ancestry', () => {
   assert.ok(lifecycle);
@@ -83,22 +86,45 @@ test('check:changed runs the actual lifecycle CI test list through resource admi
       guards.args.includes('scripts/ci/meet-room-lifecycle-workflow.test.js')
     );
 
-    let localCwd;
+    const calls = [];
+    const ttr = ['ttr', 'resources', 'run', '--'];
+    assert.ok(dependencyStep?.with?.command);
+    const ciBuild = dependencyStep.with.command.split(' && ')[0].split(' ');
     const localResult = runCommand(local, {
       root: repoRoot,
-      ttr: ['ttr', 'resources', 'run', '--'],
+      ttr,
       spawn: (executable, args, { cwd }) => {
-        localCwd = realpathSync(cwd);
-        assert.equal(path.dirname(localCwd), realpathSync(tmpdir()));
-        assert.deepEqual(
-          [executable, ...args],
-          ['ttr', 'resources', 'run', '--', 'bun', ...ciArgs]
-        );
+        calls.push({ command: [executable, ...args], cwd: realpathSync(cwd) });
         return { status: 0 };
       },
     });
     assert.equal(localResult.status, 'pass');
-    assert.equal(existsSync(localCwd), false);
+    assert.equal(calls.length, 2);
+    assert.deepEqual(calls[0].command, [...ttr, ...ciBuild]);
+    assert.equal(calls[0].cwd, realpathSync(repoRoot));
+    assert.deepEqual(calls[1].command, [...ttr, 'bun', ...ciArgs]);
+    assert.equal(path.dirname(calls[1].cwd), realpathSync(tmpdir()));
+    assert.equal(existsSync(calls[1].cwd), false);
+
+    const failed = runCommand(local, {
+      root: repoRoot,
+      ttr,
+      spawn: (executable, args) => {
+        assert.deepEqual([executable, ...args], [...ttr, ...ciBuild]);
+        return { status: 1, stderr: 'Build failed' };
+      },
+    });
+    assert.equal(failed.status, 'fail');
+    assert.equal(failed.detail, 'Meet durable room dependency build failed');
+    assert.equal(failed.output, 'Build failed');
+
+    const unadmitted = runCommand(local, {
+      root: repoRoot,
+      env: {},
+      spawn: () => assert.fail('The dependency build requires admission'),
+    });
+    assert.equal(unadmitted.status, 'fail');
+    assert.match(unadmitted.detail, /ttr resources admission/);
   } finally {
     rmSync(temporary, { recursive: true, force: true });
   }

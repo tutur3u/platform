@@ -56,6 +56,8 @@ test('Meet durable room tests follow Worker, dependency and workflow changes', (
     assert.deepEqual(step.inputDirectories, [
       'apps/meet-realtime',
       'packages/realtime',
+      'packages/supabase',
+      'packages/types',
       'packages/utils',
     ]);
   }
@@ -72,6 +74,25 @@ test('Meet durable room tests follow Worker, dependency and workflow changes', (
       file
     );
   }
+});
+
+test('the Meet durable room step declares its dependency build', () => {
+  const plan = planChecks(changed(MEET_CI_TEST), context([MEET_CI_TEST]));
+  const step = plan.steps.find(
+    (entry) => entry.id === 'meet-durable-room-tests'
+  );
+  assert.ok(step?.prerequisite);
+  assert.equal(step.prerequisite.heavy, true);
+  assert.equal(step.prerequisite.requiresAdmission, true);
+  assert.equal(step.prerequisite.command, 'bun');
+  assert.deepEqual(step.prerequisite.args, [
+    'turbo:local',
+    'run',
+    'build',
+    '--filter=@tuturuuu/types',
+    '--filter=@tuturuuu/supabase',
+    '--concurrency=2',
+  ]);
 });
 
 test('branch-name pattern mirrors the branch-name-check workflow', () => {
