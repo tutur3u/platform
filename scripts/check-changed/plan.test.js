@@ -29,6 +29,43 @@ function context(existing = [], overrides = {}) {
 const ids = (plan) =>
   plan.steps.map((step) => step.id).filter((id) => id !== 'staging-hosts');
 const changed = (...files) => files.map((file) => ({ status: 'M', file }));
+const MEET_CI_TEST = 'apps/meet-realtime/src/room-do-recovery.test.ts';
+
+test('Meet durable room tests follow Worker, realtime Meet and workflow changes', () => {
+  const planFor = (changes) =>
+    planChecks(
+      changes,
+      context([MEET_CI_TEST], {
+        root: ROOT,
+        readMeetDurableRoomTests: () => [MEET_CI_TEST],
+      })
+    );
+  for (const changes of [
+    changed('apps/meet-realtime/src/room-do.ts'),
+    [{ status: 'D', file: 'packages/realtime/src/meet/room-lifecycle.ts' }],
+    changed('.github/workflows/meet-cloudflare.yaml'),
+  ]) {
+    const step = planFor(changes).steps.find(
+      (entry) => entry.id === 'meet-durable-room-tests'
+    );
+    assert.equal(step.command, 'bun');
+    assert.deepEqual(step.args, ['test', path.resolve(ROOT, MEET_CI_TEST)]);
+    assert.equal(step.temporaryCwd, true);
+    assert.equal(step.heavy, true);
+  }
+  for (const file of [
+    'apps/meet/src/worker.ts',
+    'apps/meet-realtime-example/src/worker.ts',
+    'packages/realtime/src/meeting.ts',
+    'packages/meet-core/src/routes/og/route.tsx',
+  ]) {
+    assert.equal(
+      ids(planFor(changed(file))).includes('meet-durable-room-tests'),
+      false,
+      file
+    );
+  }
+});
 
 test('branch-name pattern mirrors the branch-name-check workflow', () => {
   const workflow = fs.readFileSync(
@@ -153,18 +190,26 @@ test('bun:test suites run with bun test from their workspace, never Vitest or no
     'apps/meet-realtime/src/worker.test.ts':
       "import { test } from 'node:test';",
     'apps/meet-realtime/src/token.test.ts': "import { it } from 'vitest';",
+    [MEET_CI_TEST]: "import { test } from 'node:test';",
   };
   const plan = planChecks(
     changed(
       'apps/meet-realtime/src/channel-room-do.ts',
       'apps/meet-realtime/src/worker.ts',
-      'apps/meet-realtime/src/token.ts'
+      'apps/meet-realtime/src/token.ts',
+      MEET_CI_TEST
     ),
     context(Object.keys(source), {
       readSource: (file) => source[file] ?? '',
+      root: ROOT,
+      readMeetDurableRoomTests: () => [MEET_CI_TEST],
       workspaces: [{ workspace: 'apps/meet-realtime', testScript: '' }],
     })
   );
+  const durable = plan.steps.find(
+    (step) => step.id === 'meet-durable-room-tests'
+  );
+  assert.deepEqual(durable.args, ['test', path.resolve(ROOT, MEET_CI_TEST)]);
   const bun = plan.steps.find(
     (step) => step.id === 'bun-test:apps/meet-realtime'
   );

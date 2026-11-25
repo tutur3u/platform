@@ -8,6 +8,7 @@ const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 const { cliUsageRatchetSteps } = require('./cli-usage-ratchet.js');
 const { i18nUsageSteps } = require('./i18n-usage.js');
+const { WORKFLOW: MEET_WORKFLOW } = require('./meet-durable-room.js');
 const { routeRegistrySteps } = require('./route-registries.js');
 
 const OXC_VERSION = '0.74.0';
@@ -100,12 +101,12 @@ function siblingTests(file, exists) {
 // Vitest receives changed source via `vitest related`. Node and Bun test files
 // stay on their own runners. A source file is included when it has a Vitest
 // sibling, or when it has no sibling test yet.
-function vitestRelatedInputs(files, relatedTests, context, exists) {
+function vitestRelatedInputs(files, relatedTests, runnerOf, exists) {
   const inputs = [];
   for (const file of files) {
     if (!/\.[cm]?[jt]sx?$/.test(file)) continue;
     if (TEST_FILE.test(file)) {
-      const runner = relatedTests.get(file) ?? testRunnerOf(file, context);
+      const runner = relatedTests.get(file) ?? runnerOf(file);
       if (runner === 'vitest') inputs.push(file);
       continue;
     }
@@ -115,7 +116,7 @@ function vitestRelatedInputs(files, relatedTests, context, exists) {
       continue;
     }
     const runners = siblings.map(
-      (sibling) => relatedTests.get(sibling) ?? testRunnerOf(sibling, context)
+      (sibling) => relatedTests.get(sibling) ?? runnerOf(sibling)
     );
     if (runners.includes('vitest')) inputs.push(file);
   }
@@ -212,10 +213,6 @@ function testRunnerOf(file, context) {
   if (imports.has('node:test')) return 'node';
   return /\bnode\s+--test(?:\s|$)/.test(script ?? '') ? 'node' : 'vitest';
 }
-function isNodeTest(file, context) {
-  return testRunnerOf(file, context) === 'node';
-}
-
 /**
  * Build the ordered step list. `changes` is [{ status, file }] relative to the
  * repository root; deleted files only affect path gating.
@@ -427,11 +424,36 @@ function planChecks(changes, context) {
   steps.push(...cliUsageRatchetSteps(changes, context));
 
   const workflowTouched = any(/^\.github\/(workflows|actions)\//);
+  const meetDurableRoomTests = new Set(
+    selected.has('meet-durable-room-tests')
+      ? context.readMeetDurableRoomTests()
+      : []
+  );
+  const runnerOf = (file) =>
+    meetDurableRoomTests.has(file)
+      ? 'meet-durable-room'
+      : testRunnerOf(file, context);
+  if (meetDurableRoomTests.size) {
+    steps.push({
+      id: 'meet-durable-room-tests',
+      label: `Meet durable room lifecycle and recovery (${meetDurableRoomTests.size} files)`,
+      command: 'bun',
+      args: [
+        'test',
+        ...Array.from(meetDurableRoomTests, (file) =>
+          path.resolve(context.root, file)
+        ),
+      ],
+      temporaryCwd: true,
+      inputDirectories: ['apps/meet-realtime', 'packages/realtime'],
+      heavy: true,
+    });
+  }
   const relatedTests = new Map();
   for (const file of present) {
     if (!workspaceOf(file) || file.startsWith(MOBILE_PREFIX)) continue;
     for (const related of siblingTests(file, exists)) {
-      relatedTests.set(related, testRunnerOf(related, context));
+      relatedTests.set(related, runnerOf(related));
     }
   }
   if ([...relatedTests.values()].includes('playwright')) {
@@ -448,7 +470,7 @@ function planChecks(changes, context) {
   const scriptTests = nodeScriptTests(
     all.filter((file) => !isPausedPath(file)),
     exists
-  ).filter((file) => !workspaceOf(file) || isNodeTest(file, context));
+  ).filter((file) => !workspaceOf(file) || runnerOf(file) === 'node');
   const nodeTests = [
     ...new Set([
       ...scriptTests,
@@ -463,6 +485,10 @@ function planChecks(changes, context) {
         : []),
       ...(all.some((file) => PINNED_CONTRACT_FILES.has(file))
         ? MIGRATION_CONTRACT_TESTS
+        : []),
+      ...(all.includes(MEET_WORKFLOW) ||
+      all.includes('scripts/check-changed/meet-durable-room.js')
+        ? ['scripts/ci/meet-room-lifecycle-workflow.test.js']
         : []),
     ]),
   ].filter(exists);
@@ -546,7 +572,7 @@ function planChecks(changes, context) {
       });
     }
     if (!context.hasVitest(workspace)) continue;
-    const inputs = vitestRelatedInputs(files, relatedTests, context, exists);
+    const inputs = vitestRelatedInputs(files, relatedTests, runnerOf, exists);
     if (!inputs.length) continue;
     steps.push({
       id: `vitest:${workspace}`,

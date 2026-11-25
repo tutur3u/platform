@@ -26,6 +26,9 @@ const {
 } = require('./check-changed/cli-usage-ratchet.js');
 const { i18nUsageUntrackedNote } = require('./check-changed/i18n-usage.js');
 const {
+  readMeetDurableRoomTests,
+} = require('./check-changed/meet-durable-room.js');
+const {
   trustedTtr,
   inResourceLane,
   assertWorkspaceBins,
@@ -500,6 +503,8 @@ function main(argv = process.argv.slice(2), deps = {}) {
     oxfmtBinary: localOxfmt(root),
     ...validationBranch(execFile, pushes),
     exists,
+    root,
+    readMeetDurableRoomTests: () => readMeetDurableRoomTests(root),
     readSource: (file) => fs.readFileSync(path.join(root, file), 'utf8'),
     workflowScanningTests: () => findWorkflowScanningTests(root),
     workspaces,
@@ -520,6 +525,7 @@ function main(argv = process.argv.slice(2), deps = {}) {
             ? ['scripts', 'plugins', '.github/actions']
             : []),
           ...steps.map((step) => step.typeCheck?.workspace ?? step.cwd),
+          ...steps.flatMap((step) => step.inputDirectories ?? []),
           ...steps
             .filter((step) => step.id === 'script-tests')
             .flatMap((step) => step.args.filter((arg) => !arg.startsWith('-')))

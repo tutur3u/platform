@@ -12,16 +12,24 @@ const {
 const { tmpdir } = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const {
+  STEP_NAME,
+  WORKFLOW,
+  parseMeetDurableRoomTests,
+  readMeetDurableRoomTests,
+} = require('../check-changed/meet-durable-room.js');
+const { planChecks } = require('../check-changed/plan.js');
+const { runCommand } = require('../check-changed/run-command.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 const repoRoot = path.resolve(__dirname, '../..');
-const workflow = readWorkflow('meet-cloudflare.yaml');
+const workflow = readWorkflow(path.basename(WORKFLOW));
+const lifecycle = workflow.jobs.validate.steps.find(
+  (step) => step.name === STEP_NAME
+);
 
-test('actual lifecycle CI command runs only its explicit worker regressions outside Bun preload ancestry', () => {
-  const step = workflow.jobs.validate.steps.find(
-    (step) => step.name === 'Test durable room lifecycle and recovery'
-  );
-  assert.ok(step);
-  assert.equal(step.shell, 'bash');
+test('check:changed runs the actual lifecycle CI test list through resource admission outside Bun preload ancestry', () => {
+  assert.ok(lifecycle);
+  assert.equal(lifecycle.shell, 'bash');
   const temporary = mkdtempSync(
     path.join(tmpdir(), 'meet-lifecycle-workflow-')
   );
@@ -38,7 +46,7 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
       `#!${process.execPath}\nrequire('node:fs').writeFileSync(process.env.MEET_TEST_RECEIPT, JSON.stringify({ cwd: process.cwd(), argv: process.argv.slice(2) }));\n`,
       { mode: 0o755 }
     );
-    const result = spawnSync('bash', ['-e', '-c', step.run], {
+    const result = spawnSync('bash', ['-e', '-c', lifecycle.run], {
       cwd: workspace,
       encoding: 'utf8',
       env: {
@@ -52,33 +60,59 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
     assert.equal(result.status, 0, result.stderr);
     const observed = JSON.parse(readFileSync(receipt, 'utf8'));
     assert.equal(realpathSync(observed.cwd), realpathSync(runner));
-    const files = [
-      'room-do-empty-lifecycle.test.ts',
-      'room-do-lifecycle-race.test.ts',
-      'room-do-recovery.test.ts',
-      'room-do-settings.test.ts',
-      'room-do-self-capture.test.ts',
-      'room-do-mira-pending.test.ts',
-      'room-do-mira-share.test.ts',
-      'attendance-room-erase.test.ts',
-      'attendance-directory-spill.test.ts',
-      'collaboration-retry-budget.test.ts',
-      'channel-retry-budget.test.ts',
-      'whiteboard-room-do.test.ts',
-      'whiteboard-room-do-guest-budget.test.ts',
-      'whiteboard-room-do-guest-draw.test.ts',
-      'whiteboard-room-do-guest-relay.test.ts',
-      'whiteboard-worker.test.ts',
-      'room-state.test.ts',
-      'channel-checkpoint-request.test.ts',
-    ].map((file) => `apps/meet-realtime/src/${file}`);
-    assert.deepEqual(observed.argv, [
-      'test',
-      ...files.map((file) => path.join(workspace, file)),
-    ]);
-    for (const file of files)
-      assert.ok(existsSync(path.join(repoRoot, file)), file);
+    const [command, ...ciFiles] = observed.argv;
+    assert.equal(command, 'test');
+    const ciArgs = [
+      command,
+      ...ciFiles.map((file) =>
+        path.join(repoRoot, path.relative(workspace, file))
+      ),
+    ];
+    const plan = planChecks([{ status: 'M', file: WORKFLOW }], {
+      root: repoRoot,
+      readMeetDurableRoomTests: () => readMeetDurableRoomTests(repoRoot),
+      exists: (file) => existsSync(path.join(repoRoot, file)),
+    });
+    const local = plan.steps.find(
+      (step) => step.id === 'meet-durable-room-tests'
+    );
+    const guards = plan.steps.find((step) => step.id === 'script-tests');
+    assert.ok(local);
+    assert.ok(guards);
+    assert.ok(
+      guards.args.includes('scripts/ci/meet-room-lifecycle-workflow.test.js')
+    );
+
+    let localCwd;
+    const localResult = runCommand(local, {
+      root: repoRoot,
+      ttr: ['ttr', 'resources', 'run', '--'],
+      spawn: (executable, args, { cwd }) => {
+        localCwd = realpathSync(cwd);
+        assert.equal(path.dirname(localCwd), realpathSync(tmpdir()));
+        assert.deepEqual(
+          [executable, ...args],
+          ['ttr', 'resources', 'run', '--', 'bun', ...ciArgs]
+        );
+        return { status: 0 };
+      },
+    });
+    assert.equal(localResult.status, 'pass');
+    assert.equal(existsSync(localCwd), false);
   } finally {
     rmSync(temporary, { recursive: true, force: true });
+  }
+});
+
+test('the lifecycle command parser rejects an empty list or extra shell commands', () => {
+  for (const run of [
+    'cd "$RUNNER_TEMP"\nbun test',
+    `${lifecycle.run.trimEnd()}\ntrue`,
+  ]) {
+    const changed = { jobs: { validate: { steps: [{ ...lifecycle, run }] } } };
+    assert.throws(
+      () => parseMeetDurableRoomTests(changed),
+      /expected "Test durable room lifecycle and recovery"/
+    );
   }
 });

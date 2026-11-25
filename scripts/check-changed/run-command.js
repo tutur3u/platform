@@ -1,5 +1,7 @@
 'use strict';
 
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { prepareVitestResult } = require('./vitest-result.js');
 const { pinVitestTsconfig } = require('./vitest-tsconfig-pin.js');
@@ -10,9 +12,13 @@ function runCommand(step, context) {
     step,
     context.root
   );
-  const cwd = path.join(context.root, step.cwd ?? '');
+  let temporaryCwd;
   let report;
   try {
+    if (step.temporaryCwd) {
+      temporaryCwd = fs.mkdtempSync(path.join(os.tmpdir(), 'check-changed-'));
+    }
+    const cwd = temporaryCwd ?? path.join(context.root, step.cwd ?? '');
     if (step.id.startsWith('vitest:')) {
       report = prepareVitestResult(cwd, step.explicitVitestTests, {
         env: context.env ?? process.env,
@@ -43,6 +49,7 @@ function runCommand(step, context) {
   } finally {
     report?.cleanup();
     pin.cleanup();
+    if (temporaryCwd) fs.rmSync(temporaryCwd, { recursive: true, force: true });
   }
 }
 

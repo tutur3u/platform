@@ -8,6 +8,7 @@ function validateMap(value = map) {
       throw new Error(`Missing CI scope: ${scope}`);
   for (const id of [
     'docs-audit',
+    'meet-durable-room-tests',
     'sdk-portable',
     'package-release-dependencies',
     'i18n',
