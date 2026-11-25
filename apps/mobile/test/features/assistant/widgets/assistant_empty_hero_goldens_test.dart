@@ -51,10 +51,15 @@ void main() {
           ),
         );
         await tester.pump();
-        await expectLater(
-          find.byKey(const ValueKey('golden')),
-          matchesGoldenFile('goldens/$name.png'),
-        );
+        expect(find.text("Hi, I'm Mira"), findsOneWidget);
+        expect(find.text('Good morning'), findsOneWidget);
+        // Linux owns the raster baselines.
+        if (Platform.isLinux) {
+          await expectLater(
+            find.byKey(const ValueKey('golden')),
+            matchesGoldenFile('goldens/$name.png'),
+          );
+        }
         expect(tester.takeException(), isNull);
       });
     }
