@@ -20,6 +20,7 @@ import {
   type MeetRoomSnapshot,
 } from './room';
 import { startRoomBudget } from './room-budget';
+import { MEET_JOIN_QR_SETTING_KEYS, stampMeetJoinQr } from './room-join-qr';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { publicationCleanupKey } from './room-tracks';
 import { meetClassFeatures } from './class-features';
@@ -136,9 +137,12 @@ export function applyRoomControl(
   const managesAdvancedTools =
     activityKeys.length > 0 &&
     activityKeys.every((key) =>
-      ['advancedTools', 'participantNavigation', 'defaultActivity'].includes(
-        key
-      )
+      [
+        'advancedTools',
+        'participantNavigation',
+        'defaultActivity',
+        ...MEET_JOIN_QR_SETTING_KEYS,
+      ].includes(key)
     );
   const requiresParticipantManagement = managesMedia || managesAdvancedTools;
   if (
@@ -208,11 +212,11 @@ export function applyRoomControl(
       );
     const applied = applyMeetRoomSettings(
       state,
-      {
-        shareNotes: false,
-        ...state.settings,
-        ...message.settings,
-      },
+      stampMeetJoinQr(
+        { shareNotes: false, ...state.settings, ...message.settings },
+        message.settings,
+        now
+      ),
       token,
       now
     );

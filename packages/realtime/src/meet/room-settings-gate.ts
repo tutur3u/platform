@@ -8,6 +8,7 @@ import { canEnableMeetClassViewers } from './permissions';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomCommand } from './room';
 import { enablesNoteSharing } from './room-controls';
+import { stampMeetJoinQr } from './room-join-qr';
 import {
   type MeetRoomSettings,
   parseMeetRoomSettingsPatch,
@@ -45,7 +46,11 @@ export function resolveRoomSettingsPatch(
     !isMeetAiEnabledForWorkspace(token.wsId, env)
   )
     return new Response('Meet AI is temporarily unavailable', { status: 403 });
-  return patch.data;
+  return stampMeetJoinQr(
+    patch.data,
+    body as object,
+    new Date().toISOString()
+  );
 }
 
 /** A room command carrying the workspace's Meet AI eligibility for the host controls. */

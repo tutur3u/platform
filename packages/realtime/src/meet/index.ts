@@ -260,6 +260,12 @@ export {
   roomDocumentTabIdSchema,
   roomDocumentTitleSchema,
 } from './room-documents';
+export {
+  isMeetJoinQrShown,
+  MEET_JOIN_QR_AUTO_HIDE_MINUTES,
+  type MeetJoinQrAutoHide,
+  meetJoinQrHidesAt,
+} from './room-join-qr';
 export type {
   MeetApprovedParticipant,
   MeetReaction,

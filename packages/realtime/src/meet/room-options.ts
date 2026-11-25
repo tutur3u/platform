@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { meetJoinQrPatchSettings, meetJoinQrSettings } from './room-join-qr';
 import { meetingProgrammingSchema } from './room-programming';
 
 export const meetReactionSchema = z.enum([
@@ -44,6 +45,7 @@ export const meetRoomSettingsPatchSchema = z.object({
   advancedTools,
   participantNavigation,
   defaultActivity,
+  ...meetJoinQrPatchSettings,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),
@@ -64,6 +66,7 @@ export const meetRoomSettingsSchema = z.object({
   advancedTools,
   participantNavigation,
   defaultActivity,
+  ...meetJoinQrSettings,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),
