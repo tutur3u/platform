@@ -122,8 +122,8 @@ const frame = (type: 'frame' | 'magicframe') =>
  * whole element costs at most `MAX_GUEST_ELEMENT_COST` to draw. Unknown keys
  * (`customData` included) and fields another type uses are dropped; an
  * element that fails any check is refused as a whole, so it never reaches the
- * other people's editors or the stored scene. The room also checks arrow
- * labels against the scene (`checkArrowLabels`).
+ * other people's editors or the stored scene. The room also drops every
+ * label from a guest's arrows (`stripArrowLabels`).
  */
 export const guestElementSchema = z
   .discriminatedUnion('type', [

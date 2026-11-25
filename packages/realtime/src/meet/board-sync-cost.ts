@@ -47,6 +47,14 @@ export const MAX_ELEMENT_CANVAS_PIXELS = 16_777_216;
 const MEASURED_PIXEL_RATIO = 2;
 /** Every canvas area is a finite integer no larger than this. */
 const MAX_CANVAS_AREA = 1e15;
+/**
+ * A rounded line or arrow is drawn as a curve through its points, which
+ * overshoots their box by up to a quarter on each axis (measured on a
+ * zig-zag: a 1,000 px box draws 1,250 by 1,199).
+ */
+const CURVE_OVERSHOOT = 1.25;
+/** roughjs moves each end of a curve up to twice the roughness, per side. */
+const ROUGH_OFFSET_PER_SIDE = 2;
 /** Canvas pixels that cost one churn token when an element is redrawn. */
 const CANVAS_PIXELS_PER_TOKEN = 4096;
 
@@ -64,6 +72,7 @@ type CostShape = {
   text?: unknown;
   fontSize?: unknown;
   boundElements?: unknown;
+  roundness?: unknown;
 };
 
 const finiteOr = (value: unknown, fallback: number) =>
@@ -197,7 +206,11 @@ export function elementRenderCost(element: CostShape) {
   );
 }
 
-/** Width and height a cached element canvas covers, in canvas units. */
+/**
+ * Width and height a cached element canvas covers, in canvas units: the box,
+ * or the bounds of a stroke's points, grown for a rounded line or arrow's
+ * curve.
+ */
 function canvasBox(element: CostShape, type: string): [number, number] {
   if (!POINT_PATHS.has(type))
     return [
@@ -215,7 +228,17 @@ function canvasBox(element: CostShape, type: string): [number, number] {
     minY = Math.min(minY, y);
     maxY = Math.max(maxY, y);
   }
-  return [maxX - minX, maxY - minY];
+  const width = maxX - minX;
+  const height = maxY - minY;
+  const curved =
+    (type === 'line' || type === 'arrow') &&
+    element.roundness !== null &&
+    element.roundness !== undefined;
+  if (!curved) return [width, height];
+  // At roughness 5 the same zig-zag draws 1,269 by 1,212.
+  const rough =
+    2 * ROUGH_OFFSET_PER_SIDE * Math.abs(finiteOr(element.roughness, 0));
+  return [width * CURVE_OVERSHOOT + rough, height * CURVE_OVERSHOOT + rough];
 }
 
 /** Excalidraw's padding around a cached element canvas (`getCanvasPadding`). */
@@ -240,12 +263,11 @@ function hasLabel(element: CostShape, type: string) {
 
 /**
  * Pixels of the canvases every viewer allocates to cache one element, at a
- * device pixel ratio of two: its box (the bounds of its points for a line,
- * arrow or freehand stroke) plus Excalidraw's padding on each side, up to the
- * per-element cap. An arrow with a text label also gets a square label canvas
- * of its longest side plus ten paddings, which Excalidraw never caps; it is
- * counted whether or not the label exists, so adding the text later costs
- * nothing extra. Deleted elements hold none; a missing or non-finite size
+ * device pixel ratio of two and 100% zoom: its box (`canvasBox`) plus
+ * Excalidraw's padding on each side, up to the per-element cap. An arrow
+ * with a text label also gets a square label canvas of its longest side plus
+ * ten paddings, which Excalidraw never caps; it is counted whether or not the
+ * label exists, so adding the text later costs nothing extra. Deleted elements hold none; a missing or non-finite size
  * counts as the most.
  */
 export function elementCanvasArea(element: CostShape) {

@@ -3,7 +3,7 @@ import {
   elementChurnCost,
   elementRenderCost,
 } from './board-sync-cost';
-import { checkArrowLabels } from './board-sync-labels';
+import { stripArrowLabels } from './board-sync-labels';
 import {
   BOARD_LIMITS,
   type BoardChange,
@@ -138,8 +138,8 @@ export interface GuestWriteLimits {
    * change spends it.
    */
   budget?: { tokens: number };
-  /** Keep only the arrow labels the scene backs (`checkArrowLabels`). */
-  checkLabels?: boolean;
+  /** Drop every text label from arrows (`stripArrowLabels`). */
+  stripLabels?: boolean;
 }
 
 export interface BoundedResult {
@@ -155,9 +155,8 @@ export interface BoundedResult {
  * a scene budget is refused; changes that keep or shrink an element pass them,
  * so a full board can still be cleaned up. The churn budget charges every
  * applied change its render cost and canvas area, so only deletions (which
- * cost nothing) apply once it is spent. With `checkLabels`, arrow labels the
- * scene does not back are dropped first, and the relayed change carries the
- * element as stored.
+ * cost nothing) apply once it is spent. With `stripLabels`, arrow labels are
+ * dropped first, and the relayed change carries the element as stored.
  */
 export function applyBoundedChanges(
   scene: BoardScene,
@@ -168,12 +167,12 @@ export function applyBoundedChanges(
     maxCost = Number.POSITIVE_INFINITY,
     maxArea = Number.POSITIVE_INFINITY,
     budget,
-    checkLabels = false,
+    stripLabels = false,
   }: GuestWriteLimits = {}
 ): BoundedResult {
   const applied: BoardChange[] = [];
   let rejected: BoundedResult['rejected'] = null;
-  const checked = checkLabels ? checkArrowLabels(changes, scene) : changes;
+  const checked = stripLabels ? stripArrowLabels(changes) : changes;
   for (const change of checked) {
     const { element } = change;
     const existing = scene.get(element.id);

@@ -564,8 +564,8 @@ export class WhiteboardRoomDurableObject implements DurableObject {
             : null;
         // Guests are held to the scene's render cost and canvas area, and to
         // their connection's and the board's churn buckets, which every
-        // applied change spends, re-sent copies included. Their arrows keep
-        // only the text labels the scene backs.
+        // applied change spends, re-sent copies included. Their arrows carry
+        // no text labels.
         const now = Date.now();
         const own = guest ? refillChurnBudget(attachment, now) : 0;
         const shared = guest ? refillRoomChurnBudget(this.roomChurn, now) : 0;
@@ -578,7 +578,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
                 maxCost: BOARD_GUEST_LIMITS.maxSceneCost,
                 maxArea: BOARD_GUEST_LIMITS.maxSceneCanvasPixels,
                 budget,
-                checkLabels: true,
+                stripLabels: true,
               }
             : {}
         );

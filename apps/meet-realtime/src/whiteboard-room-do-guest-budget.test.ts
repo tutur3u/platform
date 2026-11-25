@@ -129,7 +129,7 @@ test('holds every guest on the board to one shared churn bucket', async () => {
   );
 });
 
-test('relays a guest arrow without a label the scene does not back', async () => {
+test('relays a guest arrow without its text labels', async () => {
   const f = fixture();
   const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
   const peer = await open(f, { userId: 'u2' });

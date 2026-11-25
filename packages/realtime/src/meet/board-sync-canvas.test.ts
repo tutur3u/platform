@@ -6,7 +6,7 @@ import {
 } from './board-sync-cost';
 import { sanitizeGuestElement } from './board-sync-guest';
 import { guestElement } from './board-sync-guest.fixtures';
-import { checkArrowLabels } from './board-sync-labels';
+import { stripArrowLabels } from './board-sync-labels';
 import { applyBoundedChanges, sceneFrom, sizesFrom } from './board-sync-merge';
 import {
   BOARD_GUEST_LIMITS,
@@ -83,6 +83,41 @@ describe('canvas area', () => {
     );
   });
 
+  it('grows a rounded line or arrow for its curve and roughness', () => {
+    // A zig-zag through a 1,000 px box draws 1,250 by 1,199 as a curve, and
+    // 1,269 by 1,212 at roughness 5.
+    const zigzag = (roughness: number, roundness: unknown) =>
+      guestElement('line', {
+        roughness,
+        roundness,
+        points: [
+          [0, 0],
+          [1000, 0],
+          [1000, 1000],
+          [0, 1000],
+          [0, 0],
+          [1000, 0],
+        ],
+      });
+    const round = { type: 2 };
+    // (1,250·2 + 40)², and (1,270·2 + 40)² with four units per roughness.
+    expect(elementCanvasArea(zigzag(0, round))).toBe(2540 * 2540);
+    expect(elementCanvasArea(zigzag(5, round))).toBe(2580 * 2580);
+    // Straight segments stay within their points.
+    expect(elementCanvasArea(zigzag(5, null))).toBe(2040 * 2040);
+    // A rounded arrow's label canvas grows with it.
+    const arrow = guestElement('arrow', {
+      roughness: 0,
+      roundness: round,
+      boundElements: [{ id: 't', type: 'text' }],
+      points: [
+        [0, 0],
+        [16_000, 0],
+      ],
+    });
+    expect(elementCanvasArea(arrow)).toBe(40_040 * 40 + 40_200 * 40_200);
+  });
+
   // Each costs one to draw, but every viewer caches it on a full-size canvas.
   const large = (id: string, over: Record<string, unknown> = {}) =>
     guestElement('rectangle', { id, width: 2048, height: 2048, ...over });
@@ -147,69 +182,64 @@ describe('canvas area', () => {
 });
 
 describe('arrow labels', () => {
-  const arrow = (id: string, labels: string[]) =>
-    guestElement('arrow', {
-      id,
-      boundElements: [
-        { id: 'r', type: 'arrow' },
-        ...labels.map((label) => ({ id: label, type: 'text' })),
-      ],
-    });
-  const text = (id: string, containerId: string | null) =>
-    guestElement('text', { id, containerId });
   const labelsOf = (change: BoardChange) =>
     (
       change.element as unknown as { boundElements: { id: string }[] }
     ).boundElements.map((bound) => bound.id);
 
-  it('keeps only labels whose text names the arrow as its container', () => {
-    const scene = sceneFrom([
-      text('stored', 'a'),
-      text('elsewhere', 'other'),
-      text('loose', null),
-    ]);
-    const [checked, alone] = checkArrowLabels(
-      [
-        insert(arrow('a', ['a', 'stored', 'elsewhere', 'loose', 'sent', 'x'])),
-        insert(text('sent', 'a')),
-      ],
-      scene
-    );
-    // The arrow itself, other containers, free text and missing ids go.
-    expect(labelsOf(checked!)).toEqual(['r', 'stored', 'sent']);
-    expect(alone!.element.id).toBe('sent');
-  });
-
-  it('stores and relays a self-labelled guest arrow without its label', () => {
-    const scene = sceneFrom([]);
-    const tracker = sizesFrom(scene);
-    const exploit = guestElement('arrow', {
+  it('drops every text label from arrows, backed or not', () => {
+    const arrow = guestElement('arrow', {
       id: 'a',
-      boundElements: [{ id: 'a', type: 'text' }],
-      points: [
-        [0, 0],
-        [16_000, 0],
+      boundElements: [
+        { id: 'r', type: 'arrow' },
+        { id: 'a', type: 'text' },
+        { id: 'label', type: 'text' },
       ],
     });
+    // A rectangle's own text is not an arrow label: Excalidraw caps it.
+    const box = guestElement('rectangle', {
+      id: 'b',
+      boundElements: [{ id: 'inside', type: 'text' }],
+    });
+    const [stripped, label, kept] = stripArrowLabels([
+      insert(arrow),
+      insert(guestElement('text', { id: 'label', containerId: 'a' })),
+      insert(box),
+    ]);
+    expect(labelsOf(stripped!)).toEqual(['r']);
+    expect(label!.element.id).toBe('label');
+    expect(kept!.element).toBe(box);
+  });
+
+  const long = guestElement('arrow', {
+    id: 'a',
+    boundElements: [{ id: 'a', type: 'text' }],
+    points: [
+      [0, 0],
+      [16_000, 0],
+    ],
+  });
+
+  it('stores and relays a guest arrow without its label', () => {
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
     const { applied } = applyBoundedChanges(
       scene,
       tracker,
-      [insert(exploit)],
+      [insert(long)],
       undefined,
-      { maxArea: areaLimit, checkLabels: true }
+      { maxArea: areaLimit, stripLabels: true }
     );
     expect(labelsOf(applied[0]!)).toEqual([]);
     expect(scene.get('a')).toEqual(applied[0]!.element);
     expect(tracker.areaTotal).toBe(32_040 * 40);
-    // Unchecked, the same arrow's label canvas passes the scene area.
-    const fresh = sceneFrom([]);
-    const unchecked = applyBoundedChanges(
-      fresh,
-      sizesFrom(fresh),
-      [insert(exploit)],
-      undefined,
-      { maxArea: areaLimit }
-    );
-    expect(unchecked.rejected).toBe('size');
+  });
+
+  it('keeps and charges a member arrow label', () => {
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const { applied } = applyBoundedChanges(scene, tracker, [insert(long)]);
+    expect(labelsOf(applied[0]!)).toEqual(['a']);
+    expect(tracker.areaTotal).toBe(32_040 * 40 + 32_200 * 32_200);
   });
 });
