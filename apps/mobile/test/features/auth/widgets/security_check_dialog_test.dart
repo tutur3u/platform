@@ -176,6 +176,11 @@ void main() {
         isNotNull,
       );
     }
+    // The first Escape closes the keyboard tooltip of the focused control;
+    // the second closes the check.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(results, isEmpty);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(results, [null]);
