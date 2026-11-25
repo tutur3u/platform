@@ -59,6 +59,11 @@ export const BOARD_GUEST_LIMITS = {
   maxSockets: 30,
   /** Guest join tickets; the call renews them at half their life. */
   ticketTtlSeconds: 60,
+  /**
+   * Fill lines the whole scene may hold (`estimatedFillLines`), members'
+   * elements included, past which a guest's growing edit is refused.
+   */
+  maxSceneFillLines: 200_000,
 } as const;
 
 /** The socket budget for a join ticket's actor. */

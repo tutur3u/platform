@@ -444,7 +444,8 @@ export class WhiteboardRoomDurableObject implements DurableObject {
             ? sanitizeGuestChanges(message.changes)
             : null;
         const { applied, rejected } = await this.room.edit(
-          guest?.changes ?? message.changes
+          guest?.changes ?? message.changes,
+          guest ? { maxFillLines: BOARD_GUEST_LIMITS.maxSceneFillLines } : {}
         );
         const refused = unsupported + (guest?.dropped ?? 0);
         const refusal = rejected ?? (refused > 0 ? 'unsupported' : null);

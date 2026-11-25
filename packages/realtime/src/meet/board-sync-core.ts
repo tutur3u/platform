@@ -355,12 +355,20 @@ export function createBoardRoom(deps: BoardRoomDeps) {
     },
     elements: () => sceneElements(scene),
     snapshotMeta: () => meta,
-    /** Applies an accepted batch; returns what changed, for relay, and what was refused. */
-    async edit(changes: readonly BoardChange[]) {
+    /**
+     * Applies an accepted batch; returns what changed, for relay, and what was
+     * refused. `maxFillLines` caps the scene's fill lines for guest writes.
+     */
+    async edit(
+      changes: readonly BoardChange[],
+      { maxFillLines }: { maxFillLines?: number } = {}
+    ) {
       const { applied, rejected } = applyBoundedChanges(
         scene,
         tracker,
-        changes
+        changes,
+        BOARD_LIMITS.maxSnapshotBytes,
+        maxFillLines
       );
       if (applied.length === 0) return { applied, rejected };
       for (const { element } of applied) dirty.add(element.id);

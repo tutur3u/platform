@@ -1,3 +1,4 @@
+import { estimatedFillLines } from './board-sync-fill';
 import {
   BOARD_LIMITS,
   type BoardChange,
@@ -86,21 +87,31 @@ export function applyBoardChanges(
   return applied;
 }
 
-/** Running byte size of each element, so a batch is checked without re-measuring the scene. */
+/**
+ * Running byte size and fill line estimate of each element, so a batch is
+ * checked without re-measuring the scene.
+ */
 export interface SceneSizes {
   sizes: Map<string, number>;
   total: number;
+  fills: Map<string, number>;
+  fillTotal: number;
 }
 
 export function sizesFrom(scene: BoardScene): SceneSizes {
   const sizes = new Map<string, number>();
+  const fills = new Map<string, number>();
   let total = 0;
+  let fillTotal = 0;
   for (const [id, element] of scene) {
     const bytes = byteLength(element);
     sizes.set(id, bytes);
     total += bytes;
+    const fill = estimatedFillLines(element);
+    fills.set(id, fill);
+    fillTotal += fill;
   }
-  return { sizes, total };
+  return { sizes, total, fills, fillTotal };
 }
 
 export interface BoundedResult {
@@ -110,15 +121,18 @@ export interface BoundedResult {
 }
 
 /**
- * Applies a client batch within the element and byte budgets. Growth that would
- * pass a budget is refused; changes that keep or shrink an element always apply,
- * so a full board can still be cleaned up.
+ * Applies a client batch within the element and byte budgets and, when
+ * `maxFillLines` is given (guest writes), the scene's fill line budget, which
+ * counts every element in the scene. Growth that would pass a budget is
+ * refused; changes that keep or shrink an element always apply, so a full
+ * board can still be cleaned up.
  */
 export function applyBoundedChanges(
   scene: BoardScene,
   tracker: SceneSizes,
   changes: readonly BoardChange[],
-  maxBytes: number = BOARD_LIMITS.maxSnapshotBytes
+  maxBytes: number = BOARD_LIMITS.maxSnapshotBytes,
+  maxFillLines: number = Number.POSITIVE_INFINITY
 ): BoundedResult {
   const applied: BoardChange[] = [];
   let rejected: BoundedResult['rejected'] = null;
@@ -137,9 +151,20 @@ export function applyBoundedChanges(
       rejected ??= 'size';
       continue;
     }
+    const fillBefore = tracker.fills.get(element.id) ?? 0;
+    const fill = estimatedFillLines(held);
+    if (
+      fill > fillBefore &&
+      tracker.fillTotal - fillBefore + fill > maxFillLines
+    ) {
+      rejected ??= 'size';
+      continue;
+    }
     scene.set(element.id, held);
     tracker.sizes.set(element.id, bytes);
     tracker.total += bytes - before;
+    tracker.fills.set(element.id, fill);
+    tracker.fillTotal += fill - fillBefore;
     applied.push(change);
   }
   return { applied, rejected };
@@ -168,6 +193,8 @@ export function pruneTombstones(scene: BoardScene, tracker?: SceneSizes) {
       if (tracker) {
         tracker.total -= tracker.sizes.get(id) ?? 0;
         tracker.sizes.delete(id);
+        tracker.fillTotal -= tracker.fills.get(id) ?? 0;
+        tracker.fills.delete(id);
       }
       removed++;
     }

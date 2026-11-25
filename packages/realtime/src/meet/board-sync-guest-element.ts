@@ -1,5 +1,8 @@
 import { z } from 'zod';
+import { estimatedFillLines } from './board-sync-fill';
 import { BOARD_ELEMENT_TYPES } from './board-sync-schema';
+
+export { estimatedFillLines } from './board-sync-fill';
 
 // `z.number()` refuses NaN and infinities; every number below also has a
 // range, so no guest value can make a viewer draw without bound.
@@ -25,26 +28,12 @@ const binding = z
   .nullable();
 const arrowhead = z.string().max(32).nullable();
 
-/** Fill styles roughjs draws as parallel lines, `strokeWidth * 4` apart. */
-const LINE_FILLS = new Set(['hachure', 'cross-hatch', 'zigzag']);
-/** Fill lines one guest shape may ask every viewer to draw. */
-export const MAX_GUEST_FILL_LINES = 50_000;
-
 /**
- * Roughly how many lines a line fill draws: the shape's diagonal over the
- * gap Excalidraw derives from the stroke width (doubled for cross-hatch).
+ * Fill lines one guest element may ask every viewer to draw; a normal shape
+ * needs a few hundred. The room also caps the whole scene
+ * (`BOARD_GUEST_LIMITS.maxSceneFillLines`).
  */
-export function estimatedFillLines(element: {
-  fillStyle?: string;
-  width?: number;
-  height?: number;
-  strokeWidth?: number;
-}) {
-  if (!element.fillStyle || !LINE_FILLS.has(element.fillStyle)) return 0;
-  const gap = Math.max(0.1, (element.strokeWidth ?? 1) * 4);
-  const lines = Math.hypot(element.width ?? 0, element.height ?? 0) / gap;
-  return element.fillStyle === 'cross-hatch' ? lines * 2 : lines;
-}
+export const MAX_GUEST_FILL_LINES = 10_000;
 
 /**
  * The Excalidraw 0.18 element a person outside the workspace may store, field
@@ -92,7 +81,7 @@ export const guestElementSchema = z
     locked: z.boolean().optional(),
     text: text.optional(),
     originalText: text.optional(),
-    fontSize: range(1, 512).optional(),
+    fontSize: range(1, 2048).optional(),
     fontFamily: integer(0, 1000).optional(),
     textAlign: z.enum(['left', 'center', 'right']).optional(),
     verticalAlign: z.enum(['top', 'middle', 'bottom']).optional(),

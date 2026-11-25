@@ -222,7 +222,7 @@ describe('guest element ranges', () => {
     ['lineHeight', 0.5, 0.4],
     ['lineHeight', 10, 11],
     ['fontSize', 1, 0.5],
-    ['fontSize', 512, 513],
+    ['fontSize', 2048, 2049],
     ['roundness', { type: 3, value: 1e5 }, { type: 3, value: 1e5 + 1 }],
     ['points', [[1e5, -1e5]], [[1e5 + 1, 0]]],
     ['pressures', [0, 1], [1.5]],

@@ -587,3 +587,35 @@ test('the stop fence keeps the guest open windows out of storage', async () => {
   await open(f, { userId: 'g1', actorKind: 'guest' });
   assert.equal(f.values.has('guest-opens'), false);
 });
+
+test('refuses guest fills past the scene budget but relays members', async () => {
+  const f = fixture();
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  const member = await open(f, { userId: 'u2' });
+  // About 4,243 fill lines each; 60 of them pass the 200,000 scene budget.
+  const fills = (prefix: string) =>
+    Array.from({ length: 60 }, (_, i) => ({
+      type: 'insert',
+      element: {
+        ...rect(`${prefix}${i}`),
+        width: 6000,
+        height: 6000,
+        strokeWidth: 0.5,
+        fillStyle: 'hachure',
+        backgroundColor: '#ffc9c9',
+      },
+    }));
+  await f.the.webSocketMessage(
+    guest as any,
+    JSON.stringify({ type: 'elements', changes: fills('g') })
+  );
+  assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
+  const relayed = member.sent.findLast((m) => m.type === 'elements');
+  assert.ok(relayed.changes.length < 60);
+  // Members are not held to it.
+  await f.the.webSocketMessage(
+    member as any,
+    JSON.stringify({ type: 'elements', changes: fills('m') })
+  );
+  assert.equal(guest.sent.at(-1).changes.length, 60);
+});
