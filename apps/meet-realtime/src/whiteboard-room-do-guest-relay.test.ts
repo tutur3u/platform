@@ -177,15 +177,24 @@ test('batches guest reconnect presence and bounds the bytes sent to a full room'
       (sum, message) => sum + Buffer.byteLength(JSON.stringify(message)),
       0
     );
-  assert.ok(
-    bytes < 23 * 1024 * BOARD_LIMITS.maxSockets,
-    `${bytes} presence bytes`
+  const boundedName = '\u0000'.repeat(64);
+  const maxEntry = {
+    id: 'x'.repeat(36), // A connection UUID when the board actor id is absent.
+    displayName: boundedName,
+    role: 'view',
+  } satisfies BoardMember;
+  const maxSnapshotBytes = Buffer.byteLength(
+    JSON.stringify({
+      type: 'presence',
+      members: Array.from({ length: BOARD_LIMITS.maxSockets }, () => maxEntry),
+    })
   );
+  assert.ok(bytes <= maxSnapshotBytes * BOARD_LIMITS.maxSockets);
   const [first] = presence(member);
   const guestId = boardActorId(SECRET, ids.boardId, guest.userId);
   assert.equal(first.members.length, BOARD_LIMITS.maxSockets);
   for (const entry of first.members)
-    assert.equal(entry.displayName, '\u0000'.repeat(64));
+    assert.equal(entry.displayName, boundedName);
   assert.ok(first.members.some((entry: BoardMember) => entry.id === guestId));
 
   f.sockets.pop();
@@ -209,7 +218,11 @@ test('truncates presence display names by UTF-8 bytes at code point boundaries',
   const short = 'a'.repeat(61);
   const exact = `${'b'.repeat(60)}${codePoint}`;
   const member = await open(f, { displayName: `${short}${codePoint}z` });
-  await open(f, { userId: 'g1', actorKind: 'guest', displayName: `${exact}z` });
+  const guest = await open(f, {
+    userId: 'g1',
+    actorKind: 'guest',
+    displayName: `${exact}z`,
+  });
 
   jest.advanceTimersByTime(1000);
   const [snapshot] = presence(member);
@@ -217,6 +230,10 @@ test('truncates presence display names by UTF-8 bytes at code point boundaries',
     snapshot.members.map((entry: BoardMember) => entry.displayName),
     [short, exact]
   );
+  await f.message(member, cursor(1));
+  await f.message(guest, cursor(2));
+  assert.equal(relays(guest)[0].displayName, short);
+  assert.equal(relays(member)[0].displayName, exact);
 });
 
 test('keeps a burst of concurrent joins within the presence fanout cap', async () => {

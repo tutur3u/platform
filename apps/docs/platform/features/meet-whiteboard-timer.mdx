@@ -233,10 +233,11 @@ keep two-minute tickets.
   (except while `MEET_WHITEBOARD_FLUSH_DISABLED` keeps storage off).
 - Each board broadcasts its participant list at most once a second, with at
   most 50 entries sent to at most 50 sockets. Display names in that list are
-  truncated to 64 UTF-8 bytes without splitting a code point. Including JSON
-  escaping, each broadcast is under 23 KiB per socket and 1.2 MB across the
-  room. Joins, leaves and ticket refreshes that change an honoured role are
-  batched into one snapshot of the current participants. New connections
+  truncated to 64 UTF-8 bytes without splitting a code point. Cursor labels
+  use the same limit. Including JSON escaping, each participant list is under
+  23 KiB per socket and 1.2 MB across the room. Joins, leaves and ticket
+  refreshes that change an honoured role are batched into one snapshot of
+  the current participants. New connections
   receive the scene immediately and the participant list with the next
   broadcast.
 - Cursors and selections from people outside the workspace are relayed at

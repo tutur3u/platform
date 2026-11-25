@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { afterEach, beforeEach, jest } from 'bun:test';
 import { guestElement } from '../../../packages/realtime/src/meet/board-sync-guest.fixtures';
 import {
@@ -5,6 +6,7 @@ import {
   type BoardTicket,
 } from '../../../packages/realtime/src/meet/board-sync-schema';
 import { WhiteboardRoomDurableObject } from './whiteboard-room-do';
+import { serializeBoardTicketHeader } from './whiteboard-worker';
 
 export const SECRET = 'test-secret-test-secret';
 export const ids = {
@@ -106,7 +108,7 @@ export function fixture(env: Record<string, string | undefined> = {}) {
     const request = new Request('https://x/whiteboard', {
       headers: {
         Upgrade: 'websocket',
-        'x-board-ticket': JSON.stringify(ticket(over)),
+        'x-board-ticket': serializeBoardTicketHeader(ticket(over)),
       },
     });
     const response = await the.fetch(request).catch((e) => e);
@@ -151,6 +153,10 @@ export async function open(
   f: ReturnType<typeof fixture>,
   over: Partial<BoardTicket> = {}
 ) {
-  await f.join(over).catch(() => undefined);
-  return f.sockets.at(-1)!;
+  const before = f.sockets.length;
+  const result = await f.join(over);
+  const socket = f.sockets[before];
+  if (socket) return socket;
+  if (result instanceof Error) throw result;
+  assert.fail(`Expected an accepted board socket, got HTTP ${result.status}`);
 }

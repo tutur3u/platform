@@ -2,9 +2,18 @@ import { verifyRealtimePayload } from '../../../packages/realtime/src/core/token
 import {
   BOARD_SOCKET_PROTOCOL,
   BOARD_TOKEN_PROTOCOL_PREFIX,
+  type BoardTicket,
   boardTicketSchema,
 } from '../../../packages/realtime/src/meet/board-sync-schema';
 import type { WhiteboardRoomEnv } from './whiteboard-room-do';
+
+export function serializeBoardTicketHeader(ticket: BoardTicket) {
+  // Escape UTF-16 code units so the header carries only ASCII bytes.
+  return JSON.stringify(ticket).replace(
+    /[^\x20-\x7e]/g,
+    (unit) => `\\u${unit.charCodeAt(0).toString(16).padStart(4, '0')}`
+  );
+}
 
 /** Verifies the join ticket, then hands the upgrade to the board's room. */
 export async function whiteboardRequest(
@@ -29,7 +38,7 @@ export async function whiteboardRequest(
     return new Response(null, { status: 401 });
   if (parsed.data.kind !== 'join') return new Response(null, { status: 403 });
   const headers = new Headers(request.headers);
-  headers.set('x-board-ticket', JSON.stringify(parsed.data));
+  headers.set('x-board-ticket', serializeBoardTicketHeader(parsed.data));
   return env.WHITEBOARD_ROOM.get(
     env.WHITEBOARD_ROOM.idFromName(
       `${parsed.data.meetingId}:${parsed.data.boardId}`

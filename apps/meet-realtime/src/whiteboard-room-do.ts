@@ -81,6 +81,13 @@ const CHECKPOINT_PATH = '/api/v1/realtime/whiteboard/checkpoint';
 const OPENS_KEY = 'guest-opens';
 const PRESENCE_INTERVAL_MS = 1000;
 const PRESENCE_NAME_MAX_BYTES = 64;
+const presenceNameEncoder = new TextEncoder();
+const presenceNameBytes = new Uint8Array(PRESENCE_NAME_MAX_BYTES);
+
+function presenceName(name: string) {
+  const { read } = presenceNameEncoder.encodeInto(name, presenceNameBytes);
+  return name.slice(0, read);
+}
 
 async function sha256(text: string) {
   return Buffer.from(
@@ -273,17 +280,13 @@ export class WhiteboardRoomDurableObject implements DurableObject {
 
   private members(): BoardMember[] {
     const now = Date.now();
-    const encoder = new TextEncoder();
-    const nameBytes = new Uint8Array(PRESENCE_NAME_MAX_BYTES);
     return this.sockets().flatMap((socket) => {
       const attachment = this.attachment(socket);
       if (attachment.ticket.exp * 1000 <= now) return [];
-      const { displayName } = attachment.ticket;
-      const { read } = encoder.encodeInto(displayName, nameBytes);
       return [
         {
           id: this.actorOf(attachment),
-          displayName: displayName.slice(0, read),
+          displayName: presenceName(attachment.ticket.displayName),
           role: this.honoured(attachment.ticket).role,
         },
       ];
@@ -536,7 +539,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
             ? {
                 type: 'cursor',
                 senderId: this.actorOf(attachment),
-                displayName: ticket.displayName,
+                displayName: presenceName(ticket.displayName),
                 x: message.x,
                 y: message.y,
                 tool: message.tool,

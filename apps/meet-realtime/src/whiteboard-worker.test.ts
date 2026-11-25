@@ -47,15 +47,18 @@ const upgrade = (url: string, protocols?: string) =>
     },
   });
 
-test('reads the join ticket from the offered subprotocols', async () => {
+test('forwards a verified join ticket with its Unicode name', async () => {
   const e = env();
-  const token = signRealtimePayload(ticket(), SECRET);
+  const join = ticket({ displayName: 'Nguyễn \u{1f600}' });
+  const token = signRealtimePayload(join, SECRET);
   const response = await whiteboardRequest(
     upgrade('https://rt/whiteboard', `tuturuuu.whiteboard, bearer.${token}`),
     e.value
   );
   assert.equal(response.status, 200);
-  assert.ok(e.calls[0]!.headers.get('x-board-ticket'));
+  const forwarded = e.calls[0]?.headers.get('x-board-ticket');
+  assert.ok(forwarded);
+  assert.deepEqual(JSON.parse(forwarded), join);
 });
 
 test('ignores a ticket in the URL and refuses a request without the protocol', async () => {
