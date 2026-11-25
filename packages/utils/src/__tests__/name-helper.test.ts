@@ -13,7 +13,14 @@ describe('Name Helper', () => {
 
     it('finds Unicode letters past punctuation and ignores words without letters', () => {
       expect(getInitials('1 [Đặng] 2 Ánh 3')).toBe('ĐÁ');
-      expect(getInitials('1 [...] 3')).toBe('');
+      expect(getInitials('[QA] meet-g5-live 1', { firstTwoWords: true })).toBe(
+        'QM'
+      );
+    });
+
+    it('uses the first non-space character when the name has no letters', () => {
+      expect(getInitials('  0912 345 678')).toBe('0');
+      expect(getInitials('  0912 345 678', { firstTwoWords: true })).toBe('0');
     });
 
     it('returns empty string for undefined', () => {

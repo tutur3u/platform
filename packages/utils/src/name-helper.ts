@@ -13,7 +13,7 @@ export const getInitials = (
       return letter ? [{ word, letter }] : [];
     });
   const [first, second] = words;
-  if (!first) return '';
+  if (!first) return name.match(/\S/u)?.[0].toUpperCase() ?? '';
   if (!second) return first.letter.toUpperCase();
   if (firstTwoWords) return (first.letter + second.letter).toUpperCase();
 
