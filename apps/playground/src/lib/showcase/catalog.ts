@@ -75,6 +75,8 @@ const SUMMARIES: Record<LaunchableAppSlug | 'roadmap', string> = {
   colab: 'Team workshops and multiplayer learning.',
   lettin: 'Worldbuilding wikis, characters and stories.',
   parley: 'Scenario training and roleplay.',
+  whiteboards:
+    'Sketch, diagram and brainstorm together on real-time whiteboards.',
   roadmap: 'What is shipping next across Tuturuuu.',
 };
 
