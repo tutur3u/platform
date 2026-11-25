@@ -585,11 +585,14 @@ workspace-gated admin, read two additive signals. Callers that don't opt in see
 no change.
 
 **Explicit membership denial.** A workspace-gated exchange (`workspace:session`,
-including a silent refresh) and this members route return `403` with
+including a silent refresh) and the external-app member routes (this list and the
+invite/role routes that share its access check) return `403` with
 `code: "NOT_A_MEMBER"` only when the membership lookup succeeded and found no
-direct `MEMBER` row: the user never joined, was removed, or is now a `GUEST`.
-For the exchange, a pending invite still wins (`PENDING_WORKSPACE_INVITE` on a
-fresh sign-in; a plain `403` on refresh). Bad credentials, missing scopes,
+direct `MEMBER` row: the user never joined, was removed, or is a `GUEST`. For the
+exchange, a pending MEMBER invite to a non-member still wins
+(`PENDING_WORKSPACE_INVITE` on a fresh sign-in; a plain `403` on refresh), and a
+non-member whose invite check sees a concurrent join gets a plain `403`. A
+`GUEST` always gets `NOT_A_MEMBER`, even with a pending upgrade invite. Bad credentials, missing scopes,
 unlinked or mismatched workspaces and failed lookups keep their generic bodies
 without that code. An app may treat `NOT_A_MEMBER` as authoritative grounds to
 revoke its own grants. It must not treat any other `403` that way.
@@ -623,13 +626,17 @@ the body above. Optional `limit` is 1–500 (default 500); `cursor` is opaque.
 - `membershipRevision` is opaque. It changes when the membership row is
   recreated (a remove-and-readd, even one that happens entirely between two
   observations) or when its type changes. `revision` hashes every member's
-  revision, role, role sources and creator flag, plus the default-admin state
-  and pending invitations. It is the same for every caller.
-- Pages list members (by user ID) and then invitations; `total` counts both.
+  revision, role, role sources and creator flag, the default-admin state, and
+  each pending invitation's creation time (never its email, which is masked per
+  caller). It is the same for every caller.
+- Pages list members (by user ID) and then invitations (by creation time);
+  `total` counts both.
   `nextCursor` is set while pages remain. A cursor from an older `revision`
   returns `409` `REVISION_CHANGED` with the new `revision`; restart from page one.
+  Cursors are unsigned but bound to `revision`, and one pointing at or past the
+  end is refused, so a hand-made cursor cannot produce a bare `complete: true`.
 - `complete: true` appears only on the final page, and only when the platform
-  proved the set exhaustive: ranged `workspace_members` reads matched an exact
+  proved the set exhaustive: keyset `workspace_members` reads matched an exact
   count, every membership resolved to a profile, and the enrichment view stayed
   below PostgREST's 1,000-row cap. Otherwise every page has `complete: false`
   and `incompleteReason` (`membership_scan_limit`, `row_cap` or
@@ -637,11 +644,17 @@ the body above. Optional `limit` is 1–500 (default 500); `cursor` is opaque.
   every page of one `revision` with the last page `complete: true`. The route
   reads profiles before memberships, so a concurrent add makes the list
   incomplete instead of silently omitting the new member.
-- Errors: `400` `UNSUPPORTED_VERSION`, `INVALID_LIMIT` or `INVALID_CURSOR`.
+- Errors (checked after authorization): `400` `UNSUPPORTED_VERSION`,
+  `INVALID_LIMIT` or `INVALID_CURSOR`.
   Responses are `no-store`. Both versions count as `GET members` reads under
   [Rate limits](#rate-limits).
-- Residual: role memberships are read in 500-user batches without a range, so
-  a batch over the row cap can under-report `role`. It never drops a member.
+- Residuals: role memberships are read in 500-user batches without a range, so
+  a batch over the row cap can under-report `role` and make `revision` flap
+  (repeated `409`); it never drops a member. `membershipRevision` hashes
+  `workspace_members.created_at`, which a workspace manager could set explicitly
+  when re-adding a user, hiding a remove-and-readd from the revision (absence
+  during an observed window is still seen). Invitations are not cross-checked
+  against the row cap beyond the view count.
 
 Coverage: `apps/web/src/lib/external-apps/workspace-member-list-v2.test.ts`,
 `apps/web/src/lib/external-apps/workspace-members-access.test.ts`,

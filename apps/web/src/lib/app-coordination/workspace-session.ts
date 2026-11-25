@@ -165,11 +165,17 @@ export async function authorizeWorkspaceSessionAppTokenExchange({
     };
   }
 
-  // The membership lookup succeeded and found no direct MEMBER row (missing or
-  // GUEST) with no pending invite. Callers may treat this code as an
-  // authoritative membership denial, unlike the generic 403s above.
+  // Authoritative denial: the lookup found the user as a GUEST, or found no
+  // row and the invite check agrees there is none. If the invite check now
+  // sees a membership (a concurrent join), stay generic rather than let the
+  // caller revoke someone who just became a member.
+  const authoritative =
+    membership.error === 'membership_type_mismatch' ||
+    (membership.error === 'membership_missing' &&
+      inviteStatus.status === 'none');
+
   return {
-    code: 'NOT_A_MEMBER',
+    ...(authoritative ? { code: 'NOT_A_MEMBER' as const } : {}),
     error: 'Forbidden',
     ok: false,
     status: 403,

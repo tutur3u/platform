@@ -166,6 +166,17 @@ describe('member list v2 pagination', () => {
     });
   });
 
+  it('refuses a hand-made cursor at or past the end of the list', async () => {
+    const snap = snapshot();
+    const forged = Buffer.from(
+      JSON.stringify({ o: 3, r: snap.revision, v: 2 })
+    ).toString('base64url');
+    const response = paginateMemberListV2(snap, v2(`&cursor=${forged}`));
+
+    expect(response.status).toBe(400);
+    expect((await body(response)).code).toBe('INVALID_CURSOR');
+  });
+
   it('never claims completeness when the platform cannot prove it', async () => {
     for (const [snap, reason] of [
       [snapshot({ exhaustive: false }), 'membership_scan_limit'],
@@ -251,6 +262,16 @@ describe('member list revisions', () => {
     );
   });
 
+  it('does not depend on whether the caller may read invitation emails', () => {
+    const at = '2026-11-20T03:00:00Z';
+    const visible = snapshot({
+      invitations: [{ createdAt: at, email: 'invitee@example.com' }],
+    });
+    const masked = snapshot({ invitations: [{ createdAt: at, email: null }] });
+    expect(masked.revision).toBe(visible.revision);
+    expect(snapshot().revision).not.toBe(visible.revision);
+  });
+
   it('changes the membership revision on a MEMBER/GUEST change', () => {
     expect(membershipRevision(WS, row('user-a'))).not.toBe(
       membershipRevision(WS, row('user-a', undefined, 'GUEST'))
@@ -287,21 +308,27 @@ describe('scanWorkspaceMemberships', () => {
   function adminReturning(
     pages: Array<{ count?: number; rows: MembershipRow[] }>
   ) {
-    const ranges: Array<[number, number]> = [];
+    const afters: Array<string | null> = [];
     let call = 0;
+    let after: string | null = null;
     const builder = {
       eq: () => builder,
-      order: () => builder,
-      range: async (from: number, to: number) => {
-        ranges.push([from, to]);
+      gt: (_column: string, value: string) => {
+        after = value;
+        return builder;
+      },
+      limit: async () => {
+        afters.push(after);
+        after = null;
         const page = pages[call++] ?? { rows: [] };
         return { count: page.count ?? null, data: page.rows, error: null };
       },
+      order: () => builder,
       select: () => builder,
     };
     return {
       admin: { from: () => builder } as never,
-      ranges,
+      afters,
     };
   }
 
@@ -310,17 +337,15 @@ describe('scanWorkspaceMemberships', () => {
       row(`${prefix}-${String(i).padStart(4, '0')}`)
     );
 
-  it('reads past the PostgREST row cap with ranged reads', async () => {
-    const { admin, ranges } = adminReturning([
-      { count: 1500, rows: many(1000, 'a') },
+  it('reads past the PostgREST row cap with keyset reads', async () => {
+    const first = many(1000, 'a');
+    const { admin, afters } = adminReturning([
+      { count: 1500, rows: first },
       { rows: many(500, 'b') },
     ]);
     const result = await scanWorkspaceMemberships(admin, WS);
 
-    expect(ranges).toEqual([
-      [0, 999],
-      [1000, 1999],
-    ]);
+    expect(afters).toEqual([null, first.at(-1)?.user_id]);
     expect(result.rows).toHaveLength(1500);
     expect(result.exhaustive).toBe(true);
   });

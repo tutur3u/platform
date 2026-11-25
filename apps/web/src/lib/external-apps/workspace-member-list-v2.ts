@@ -131,7 +131,7 @@ export function parseMemberListRequest(
 }
 
 /**
- * Reads every direct membership row of one workspace with ranged reads, so the
+ * Reads every direct membership row of one workspace with keyset reads, so the
  * PostgREST row cap cannot silently truncate it, and proves exhaustiveness
  * against an exact count taken by the first read.
  */
@@ -142,30 +142,37 @@ export async function scanWorkspaceMemberships(
   const rows: MembershipRow[] = [];
   let expected: number | null = null;
 
+  let after: string | null = null;
+
+  // Keyset pagination on the primary-key column: a concurrent delete cannot
+  // shift a later page and skip a member the way offset ranges can.
   for (let page = 0; page < MAX_MEMBERSHIP_SCAN_PAGES; page += 1) {
-    const from = page * POSTGREST_MAX_ROWS;
-    const { count, data, error } = await admin
+    let query = admin
       .from('workspace_members')
       .select(
         'user_id, type, created_at',
         page === 0 ? { count: 'exact' } : undefined
       )
-      .eq('ws_id', wsId)
+      .eq('ws_id', wsId);
+    if (after !== null) query = query.gt('user_id', after);
+    const { count, data, error } = await query
       .order('user_id', { ascending: true })
-      .range(from, from + POSTGREST_MAX_ROWS - 1);
+      .limit(POSTGREST_MAX_ROWS);
 
     if (error) throw error;
     if (page === 0) expected = count ?? null;
 
-    rows.push(...((data ?? []) as MembershipRow[]));
+    const pageRows = (data ?? []) as MembershipRow[];
+    rows.push(...pageRows);
 
-    if ((data ?? []).length < POSTGREST_MAX_ROWS) {
+    if (pageRows.length < POSTGREST_MAX_ROWS) {
       const unique = new Set(rows.map((row) => row.user_id)).size;
       return {
         exhaustive: expected === rows.length && unique === rows.length,
         rows,
       };
     }
+    after = pageRows[pageRows.length - 1]?.user_id ?? null;
   }
 
   return { exhaustive: false, rows };
@@ -221,7 +228,8 @@ export function memberListRevision({
       [...member.roleSources].sort(),
       member.isCreator,
     ]),
-    invitations.map((invitation) => [invitation.email, invitation.createdAt]),
+    // Never the email: it is masked per caller.
+    invitations.map((invitation) => invitation.createdAt),
   ]);
 
   return `r1_${sha256(payload).slice(0, 32)}`;
@@ -259,11 +267,11 @@ export function buildMemberListV2Snapshot({
     });
   }
 
-  // Emails are null unless the app holds the explicit email scope.
-  const invitations = [...v1.invitations].sort(
-    (a, b) =>
-      (a.email ?? '').localeCompare(b.email ?? '') ||
-      (a.createdAt ?? '').localeCompare(b.createdAt ?? '')
+  // Emails are null unless the caller may read them, so order (and hash)
+  // invitations by creation time only; the stable sort keeps v1's database
+  // order for ties. Both are then the same for every caller.
+  const invitations = [...v1.invitations].sort((a, b) =>
+    (a.createdAt ?? '').localeCompare(b.createdAt ?? '')
   );
 
   const incompleteReason: MemberListIncompleteReason | null =
@@ -307,7 +315,9 @@ export function paginateMemberListV2(
     );
   }
 
-  if (offset > total) {
+  // Minted cursors always point inside the list; refusing `offset >= total`
+  // stops a hand-made cursor from producing an empty `complete: true` page.
+  if (request.cursor && offset >= total) {
     return contractError(400, 'INVALID_CURSOR', 'Invalid cursor');
   }
 

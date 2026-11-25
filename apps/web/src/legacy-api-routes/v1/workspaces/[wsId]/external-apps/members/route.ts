@@ -25,12 +25,6 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   const { wsId } = await params;
-  const listRequest = parseMemberListRequest(request);
-
-  if (listRequest instanceof NextResponse) {
-    return listRequest;
-  }
-
   const access = await requireExternalAppWorkspaceMembersAccess({
     request,
     requiredScopes,
@@ -39,6 +33,14 @@ export async function GET(
 
   if (!access.ok) {
     return access.response;
+  }
+
+  // Validate the query only after authorization, so unauthenticated callers
+  // see the same 401/403 whatever they send.
+  const listRequest = parseMemberListRequest(request);
+
+  if (listRequest instanceof NextResponse) {
+    return listRequest;
   }
 
   if (listRequest.version === 2) {

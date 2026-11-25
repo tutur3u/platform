@@ -123,13 +123,23 @@ describe('GET external-apps/members versions', () => {
     });
   });
 
-  it('rejects an unsupported version before authenticating', async () => {
+  it('rejects an unsupported version after authenticating', async () => {
     const response = await call('?version=9');
 
     expect(response.status).toBe(400);
     expect((await response.json()).code).toBe('UNSUPPORTED_VERSION');
-    expect(
-      mocks.requireExternalAppWorkspaceMembersAccess
-    ).not.toHaveBeenCalled();
+    expect(mocks.loadExternalAppWorkspaceMembers).not.toHaveBeenCalled();
+    expect(mocks.loadExternalAppWorkspaceMemberListV2).not.toHaveBeenCalled();
+  });
+
+  it('answers an unauthenticated bad query with the auth error', async () => {
+    mocks.requireExternalAppWorkspaceMembersAccess.mockResolvedValue({
+      ok: false,
+      response: Response.json({ error: 'Unauthorized' }, { status: 401 }),
+    });
+
+    const response = await call('?version=9&cursor=junk');
+
+    expect(response.status).toBe(401);
   });
 });

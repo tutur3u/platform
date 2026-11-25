@@ -45,6 +45,29 @@ describe('authorizeWorkspaceSessionAppTokenExchange', () => {
     });
   });
 
+  it('stays generic when the invite check sees a concurrent join', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: 'membership_missing',
+      ok: false,
+    });
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({ status: 'member' });
+    expect(await authorize()).toEqual({
+      error: 'Forbidden',
+      ok: false,
+      status: 403,
+    });
+  });
+
+  it('keeps NOT_A_MEMBER for a guest whatever the invite check returns', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: 'membership_type_mismatch',
+      membershipType: 'GUEST',
+      ok: false,
+    });
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({ status: 'member' });
+    expect(await authorize()).toMatchObject({ code: 'NOT_A_MEMBER' });
+  });
+
   it('prefers PENDING_WORKSPACE_INVITE over NOT_A_MEMBER', async () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
       error: 'membership_missing',
