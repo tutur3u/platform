@@ -95,6 +95,7 @@ describe('app token exchange route', () => {
       createExchangeRequest({
         appId: 'workspace-app',
         appSecret: 'ttr_app_secret_test',
+        denialCodes: ['NOT_A_MEMBER'],
         refreshToken,
         requestedScopes: ['workspace:session'],
         workspaceId,
@@ -114,6 +115,38 @@ describe('app token exchange route', () => {
       expect.any(String),
       expect.anything()
     );
+  });
+
+  it('keeps a removed member refresh a plain 401 without the opt-in', async () => {
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ workspaceMember: false })
+    );
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'workspace-app',
+        userId: victimUserId,
+        workspaceId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['workspace:session'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).not.toHaveProperty('code');
   });
 
   it('keeps a removed member refresh for another workspace generic', async () => {
@@ -138,6 +171,7 @@ describe('app token exchange route', () => {
       createExchangeRequest({
         appId: 'workspace-app',
         appSecret: 'ttr_app_secret_test',
+        denialCodes: ['NOT_A_MEMBER'],
         refreshToken,
         requestedScopes: ['workspace:session'],
         workspaceId: '44444444-4444-4444-8444-444444444444',

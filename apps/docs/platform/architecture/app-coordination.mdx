@@ -598,7 +598,9 @@ runs first and revokes the refresh family of a workspace-bound token whose user
 is no longer a direct `MEMBER`. The exchange then re-runs the full
 workspace-session check above (link, pending invite, concurrent join, GUEST
 re-read) for the token's own bound workspace, and answers `403` `NOT_A_MEMBER`
-only if that check confirms it and the request names no other workspace. Every
+only if the refresh request opted in with `"denialCodes": ["NOT_A_MEMBER"]`, that
+check confirms it, and the request names no other workspace. Without the opt-in
+the refresh answer stays the `401` existing clients expect. Every
 other outcome stays the generic `401`, as do later uses of the revoked family and
 expired or replayed tokens. The code always refers to the refresh token's bound
 workspace. In a non-production runtime without a replay store, nothing is revoked,

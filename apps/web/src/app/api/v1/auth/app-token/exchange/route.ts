@@ -69,6 +69,8 @@ const exchangeSchema = z.object({
     .optional(),
   appSecret: z.string().min(1).max(200).optional(),
   codeVerifier: z.string().regex(PKCE_CODE_VERIFIER_PATTERN).optional(),
+  // Opt-in denial codes a refresh may answer with instead of a plain 401.
+  denialCodes: z.array(z.string().max(40)).max(10).optional(),
   requestedScopes: z.array(z.string().min(1).max(80)).max(50).optional(),
   targetApp: z
     .string()
@@ -298,6 +300,7 @@ async function exchangeAppToken(request: NextRequest) {
     appId,
     appSecret,
     codeVerifier,
+    denialCodes,
     refreshToken,
     requestedScopes = [],
     targetApp,
@@ -424,15 +427,16 @@ async function exchangeAppToken(request: NextRequest) {
         { status: 503, headers: { 'Retry-After': '30' } }
       );
     }
-    // The family is already revoked. Report NOT_A_MEMBER only when the full
-    // workspace-session check confirms it for the token's own workspace.
+    // The family is already revoked. Report NOT_A_MEMBER only to a caller that
+    // opted in, and only when the full workspace-session check confirms it.
     if (refreshResult && 'denied' in refreshResult) {
-      return (await confirmRefreshNotAMember({
-        admin: sbAdmin,
-        allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
-        claims: refreshResult.claims,
-        requestedWorkspaceId: workspaceId,
-      }))
+      return denialCodes?.includes('NOT_A_MEMBER') &&
+        (await confirmRefreshNotAMember({
+          admin: sbAdmin,
+          allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
+          claims: refreshResult.claims,
+          requestedWorkspaceId: workspaceId,
+        }))
         ? NextResponse.json(
             { code: 'NOT_A_MEMBER', error: 'Forbidden' },
             { status: 403 }
