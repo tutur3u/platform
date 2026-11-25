@@ -82,9 +82,10 @@ export function applyReorderToTask(
  *
  * `apply` mutates the collection (optimistic layer only). `persist` calls the
  * server and writes the confirmed row into the synced query cache. If `persist`
- * throws, TanStack DB discards exactly this transaction's optimistic state (and
- * any later pending transaction that touched the same task), then the promise
- * rejects with the original error so the caller can notify the user.
+ * throws, TanStack DB discards exactly this transaction's optimistic state and
+ * the promise rejects with the original error so the caller can notify the
+ * user. A later write to the same task is already persisting and keeps its own
+ * overlay until it settles.
  */
 export async function runOptimistic<T>(
   apply: () => void,

@@ -96,7 +96,7 @@ it('projects rollout metadata without inventing legacy stages', () => {
     ],
   });
   const rows = model.groups.flatMap((group) => group.rows);
-  expect(rows).toHaveLength(56);
+  expect(rows).toHaveLength(featureFlagCatalog.flags.length);
   expect(rows.map((row) => row.key).sort()).toEqual(
     featureFlagCatalog.flags.map((flag) => flag.key).sort()
   );
