@@ -9,6 +9,8 @@ import {
 import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { createBridgeStatusComponents } from '@tuturuuu/start-bridge/start/status-route';
 import { appBaseHeadScript } from '@tuturuuu/start-bridge/start/base-path';
+import { InstantThemeSwap } from '@tuturuuu/ui/custom/instant-theme-swap';
+import { tuturuuuThemeProviderProps } from '@tuturuuu/ui/custom/theme-provider-preset';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
 import type { RouterContext } from '../router';
@@ -58,12 +60,8 @@ function Document({ children }: { children: ReactNode }) {
       </head>
       <body className="min-h-screen bg-root-background text-foreground antialiased">
         {/* next-themes' pre-paint script carries the CSP nonce too. */}
-        <ThemeProvider
-          attribute="class"
-          enableSystem
-          defaultTheme="system"
-          nonce={requestNonce()}
-        >
+        <ThemeProvider {...tuturuuuThemeProviderProps} nonce={requestNonce()}>
+          <InstantThemeSwap nonce={requestNonce()} />
           {children}
         </ThemeProvider>
         <Scripts />

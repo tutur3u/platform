@@ -1,9 +1,11 @@
 import { OfflineProvider } from '@tuturuuu/offline/provider';
 import { ClientProviders } from '@tuturuuu/satellite/client-providers';
 import { requestNonce } from '@tuturuuu/start-bridge/csp';
+import { InstantThemeSwap } from '@tuturuuu/ui/custom/instant-theme-swap';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { tuturuuuThemeProviderProps } from '@tuturuuu/ui/custom/theme-provider-preset';
 import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { getPlatformReleaseInfo } from '@tuturuuu/utils/platform-release';
@@ -29,12 +31,8 @@ export function AppProviders({
   children: ReactNode;
 }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      themes={['system', 'light', 'dark']}
-      enableSystem
-      scriptProps={{ 'data-cfasync': 'false' }}
-    >
+    <ThemeProvider {...tuturuuuThemeProviderProps}>
+      <InstantThemeSwap />
       <SorbetPrePaintScript nonce={requestNonce()} />
       <OfflineProvider register={false}>
         <NextIntlClientProvider

@@ -1,0 +1,181 @@
+---
+title: "Shell Performance"
+description: "Repeatable production benchmark for theme switching, app-to-app navigation, cold loads and shared chunk reuse across tuturuuu.com/<app>, with the measured baseline."
+updatedAt: "2026-11-25"
+---
+
+Every app is served from one origin (`tuturuuu.com/<app>`) through the apex
+gateway. Theme changes and app switches should feel instant: the theme is a
+class swap with no request, and the shared shell (sidebar, top bar, account
+menu) stays stable between apps. This page holds the benchmark that checks
+this and the numbers each optimization is measured against.
+
+## Running the benchmark
+
+The benchmark is read-only. It signs in as a QA user and never writes data,
+apart from closing first-run dialogs in that QA user's own workspace.
+
+```bash
+# 1. A disposable signed-in session (Pro staff QA user, 72h max).
+ttr qa users create --count 1 --tier pro --staff --workspace \
+  --purpose perf-shell-bench --ttl 24h --json
+ttr qa users session <user-id> --origin https://tuturuuu.com \
+  --format storage-state --out state.json
+
+# 2. Run (3 samples per measurement; the median is reported).
+node apps/web/e2e/perf/shell-benchmark.mjs state.json out.json \
+  https://tuturuuu.com 3
+```
+
+`BENCH_APPS` (cold loads) and `BENCH_SWITCH` (the app-switch sequence)
+override the default app lists. Point the origin at a staged 0% Worker
+version or a local production build to measure a change before promotion. Do
+not run the benchmark against a dev server, because dev bundles skew every
+number.
+
+The benchmark measures:
+
+| Area | How |
+| --- | --- |
+| Theme toggle | Real account-menu path (Theme → Dark/Light, keyboard-activated). Click-to-class time, Event Timing interaction latency, requests fired, layout shift, DOM churn, and the number of CSS transitions the swap starts plus how long they take to settle. |
+| App-to-app switch | One warm browser context visits each app in turn. Reports TTFB, FCP, LCP, CLS, JS/CSS KB downloaded and the `Cache-Control` header on the HTML document. |
+| Cold load | A fresh context per sample (empty HTTP cache). |
+| Chunk reuse | SHA-256 of every script body across apps: identical content under the same URL (reused), identical content under different URLs (wasted downloads), and app-unique bytes. |
+| Back/forward cache | CDP `Page.backForwardCacheNotUsed` reasons after a history back. Headless Chromium also reports `BackForwardCacheDisabledByCommandLine`; the app-caused reasons are the other ones. |
+
+## Baseline (2026-11-25, production)
+
+Chromium headless, 1440×900, from Vietnam, signed in as a Pro staff QA user.
+These are medians of 3 samples. Live production varies by about ±30%, so
+compare a change with a run taken at the same time and place.
+
+### Theme toggle
+
+| App | Click → class | Interaction (INP) | Requests | CLS | CSS transitions started | Visual settle |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mail | 7 ms | 24 ms | 0 | 0 | 93 | 500 ms |
+| Calendar | 24 ms | 64 ms | 0 | 0 | 1406 | 300 ms |
+| Tasks | 12 ms | 32 ms | 0 | 0 | 224 | 500 ms |
+| Finance | 4 ms | 24 ms | 0 | 0 | 316 | 500 ms |
+| Web dashboard | 2-4 ms | n/a | 0 | 0 | 350 | 500 ms |
+
+The class swap itself was already cheap. It caused no request, no reload, no
+React remount and no layout shift. The theme also already follows the user
+across apps, because every app on the shared origin reads the same `theme`
+localStorage key and next-themes syncs other tabs through the `storage` event.
+The switch still looked slow, because every element with `transition-colors`
+or `transition-all` animated to the new palette for 300-500 ms.
+
+next-themes' `disableTransitionOnChange` does not fix this in Chromium. It
+calls `getComputedStyle(document.body)` without reading a property, which does
+not flush styles, so transitions still start. Injecting that exact sequence on
+production left all 92-1403 transitions running.
+
+### App-to-app switch (warm context)
+
+| Step | TTFB | FCP | LCP | JS downloaded | Total downloaded |
+| --- | --- | --- | --- | --- | --- |
+| → Mail (first) | 1512 ms | 2400 ms | 4600 ms | 688 KB | 813 KB |
+| → Calendar | 2345 ms | 2472 ms | 4896 ms | 2289 KB | 2449 KB |
+| → Tasks | 5836 ms | 8044 ms | 8044 ms | 2612 KB | 2765 KB |
+| → Drive (web) | 51 ms | 1128 ms | 1128 ms | 411 KB | 1214 KB |
+| → Finance | 2473 ms | 2876 ms | 2876 ms | 1346 KB | 1636 KB |
+| → Mail (revisit) | 1602 ms | 1636 ms | 2548 ms | 0 KB | 22 KB |
+| → Calendar (revisit) | 2770 ms | 2916 ms | 3180 ms | 0 KB | 52 KB |
+| → Tasks (revisit) | 6213 ms | 6340 ms | 6340 ms | 13 KB | 60 KB |
+
+CLS was 0 for every navigation. Every switch is a full document navigation.
+None of the pages has Speculation Rules, and every HTML response is
+`Cache-Control: private, no-store`, which also blocks the back/forward cache
+(`MainResourceHasCacheControlNoStore`,
+`JsNetworkRequestReceivedCacheControlNoStoreResource`).
+
+### Cold load (empty cache)
+
+| App | TTFB | FCP | LCP | JS requests | JS KB | Total KB |
+| --- | --- | --- | --- | --- | --- | --- |
+| Mail | 1422 ms | 1616 ms | 2884 ms | 21 | 689 | 814 |
+| Calendar | 2053 ms | 2972 ms | 4368 ms | 28 | 2315 | 2479 |
+| Tasks | 5099 ms | 5328 ms | 5328 ms | 20 | 2634 | 2800 |
+| Finance | 3317 ms | 3636 ms | 3636 ms | 290 | 1372 | 1670 |
+| Meet | 1472 ms | 1728 ms | 1728 ms | 87 | 560 | 833 |
+| Drive (web) | 187 ms | 1416 ms | 1416 ms | 88 | 438 | 1243 |
+| Chat (web) | 167 ms | 1216 ms | 1216 ms | 88 | 437 | 1243 |
+| Web dashboard | 164 ms | 1380 ms | 1596 ms | 324 | 2463 | 3019 |
+
+### Chunk reuse across apps
+
+This was measured over 610 distinct scripts from the eight cold loads.
+
+- About 2.5 MB is identical content under the same URL. That is the
+  `/_f/dashboard` chunks shared by the web-hosted surfaces (dashboard, Drive,
+  Chat).
+- Only 106 KB is identical content under different URLs. Each satellite
+  (`/mail/assets`, `/calendar/assets`, `/tasks/assets`, `/finance/assets`,
+  `/meet/assets`) bundles its own copy of React, `@tuturuuu/ui` and vendor
+  code, with different chunk boundaries and hashes. Serving the same files
+  from one shared path does not fix this on its own. The satellites first need
+  one shared build of the common packages.
+- About 32 MB is app-unique, so a user's first visit to each satellite
+  re-downloads 0.7-2.6 MB of JS.
+
+## Ranked opportunities
+
+1. **Server time (TTFB 1.4-6.2 s on satellites, including revisits).** This is
+   the largest cost of every app switch. Tasks spends about 5-6 s before the
+   first byte. Profile the per-request session and workspace resolution and the
+   Supabase round trips in the satellite Workers. Cache the shell data (user,
+   workspaces, apps list) with stale-while-revalidate.
+2. **Per-app vendor and UI bundles (0.7-2.6 MB per first visit).** Share one
+   build of React and `@tuturuuu/ui` across satellites behind one immutable
+   path, or prefetch the next app's entry chunks.
+3. **Cross-app navigation.** Add Speculation Rules (`prefetch`, then
+   `prerender` for sidebar app links) and cross-document View Transitions for
+   the shell. Restore back/forward cache eligibility where `no-store` is not
+   needed for safety.
+4. **Theme swap animation (300-500 ms).** Fixed by `InstantThemeSwap` below.
+
+## Theme switching contract
+
+Every app's theme provider spreads `tuturuuuThemeProviderProps` from
+`@tuturuuu/ui/custom/theme-provider-preset` and renders
+`<InstantThemeSwap nonce={nonce} />` from `@tuturuuu/ui/custom/instant-theme-swap`
+inside it. This covers the shared satellite providers (`providers.tsx`,
+`public-providers.tsx`), web, workspace, Mail, Calendar, Tasks, Meet,
+Mastermind, Chat, Contacts, Forms, Learn, Mind, Nova, Pay, Teach, Colab and
+the native apps shell.
+
+The guard watches the light/dark class on `<html>` and acts before the next
+frame, whether the change comes from the menu, another tab or the OS
+preference. It flushes styles once while transitions are disabled, so the new
+colors become the starting values and nothing animates. Per the CSS
+Transitions spec, the flush also cancels any transition already in flight,
+such as a sidebar collapse, which jumps to its end state at the moment of the
+switch. The injected rule carries the request CSP nonce.
+
+The guard was measured by injecting it into the current production pages (the
+numbers for the shipped build follow once it deploys):
+
+| App | Running transitions (before → after) | Visual settle (before → after) |
+| --- | --- | --- |
+| Mail | 92 → 0 | 500 ms → 9 ms |
+| Calendar | 1403 → 0 | 300 ms → 20 ms |
+| Tasks | 206 → 0 | 500 ms → 16 ms |
+| Finance | 309 → 0 | 500 ms → 10 ms |
+| Web dashboard | 350 → 0 | 500 ms → 12 ms |
+
+Regression coverage:
+
+- `apps/web/e2e/theme-switch.noauth.spec.ts` drives the swap through the
+  cross-tab `storage` path. It asserts no main-frame document request, CLS 0,
+  no color transitions, and the class applied within 250 ms of the event
+  landing. It is read-only. The web e2e global setup accepts only local
+  origins, so to check a deployed origin (production or a 0% Worker version),
+  run the file with a Playwright config that drops `globalSetup` and sets
+  `BASE_URL`. Subframes such as the Turnstile widget may re-theme themselves
+  and are excluded.
+- `packages/ui/src/components/ui/custom/instant-theme-swap.test.tsx` and
+  `theme-provider-preset.test.tsx` pin the guard and the shared options.
+
+A new app shell must use the preset and render the guard. Do not set
+`disableTransitionOnChange` as a substitute.

@@ -1,7 +1,9 @@
 import { ClientProviders } from '@tuturuuu/satellite/client-providers';
 import { requestNonce } from '@tuturuuu/start-bridge/csp';
+import { InstantThemeSwap } from '@tuturuuu/ui/custom/instant-theme-swap';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { tuturuuuThemeProviderProps } from '@tuturuuu/ui/custom/theme-provider-preset';
 import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
@@ -21,13 +23,8 @@ export function GatewayProviders({
 }) {
   const nonce = requestNonce();
   return (
-    <ThemeProvider
-      attribute="class"
-      themes={['system', 'light', 'dark']}
-      enableSystem
-      scriptProps={{ 'data-cfasync': 'false' }}
-      nonce={nonce}
-    >
+    <ThemeProvider {...tuturuuuThemeProviderProps} nonce={nonce}>
+      <InstantThemeSwap nonce={nonce} />
       <SorbetPrePaintScript nonce={nonce} />
       <IntlProvider
         locale={data.locale}

@@ -3,10 +3,12 @@ import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { BridgeParamsContext } from '@tuturuuu/start-bridge/next/navigation';
 import { FadeSettingInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/fade-setting-initializer';
 import { TaskSoundEffectsInitializer } from '@tuturuuu/tasks-ui/tu-do/shared/task-sound-effects';
+import { InstantThemeSwap } from '@tuturuuu/ui/custom/instant-theme-swap';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
+import { tuturuuuThemeProviderProps } from '@tuturuuu/ui/custom/theme-provider-preset';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
@@ -32,13 +34,8 @@ export function AppProviders({
   children: ReactNode;
 }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      themes={['system', 'light', 'dark']}
-      enableSystem
-      scriptProps={{ 'data-cfasync': 'false' }}
-      nonce={requestNonce()}
-    >
+    <ThemeProvider {...tuturuuuThemeProviderProps} nonce={requestNonce()}>
+      <InstantThemeSwap nonce={requestNonce()} />
       <SorbetPrePaintScript nonce={requestNonce()} />
       <NextIntlClientProvider
         locale={locale}

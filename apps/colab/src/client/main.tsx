@@ -7,6 +7,7 @@ import { logoutCurrentWebAccountWithInternalApi } from '@tuturuuu/internal-api/a
 import { colabRequest } from '@tuturuuu/internal-api/colab';
 import type { Identity } from '@tuturuuu/multiplayer';
 import { Button } from '@tuturuuu/ui/button';
+import { InstantThemeSwap } from '@tuturuuu/ui/custom/instant-theme-swap';
 import {
   clearLocalePreference,
   persistLocalePreference,
@@ -15,6 +16,7 @@ import {
   type SidebarBehavior,
   SidebarProvider,
 } from '@tuturuuu/ui/custom/sidebar-context';
+import { tuturuuuThemeProviderProps } from '@tuturuuu/ui/custom/theme-provider-preset';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { useState } from 'react';
@@ -193,13 +195,8 @@ function Root() {
     setPreference(value);
   };
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-      scriptProps={{ 'data-cfasync': 'false' }}
-    >
+    <ThemeProvider {...tuturuuuThemeProviderProps}>
+      <InstantThemeSwap />
       <LocaleContext value={locale}>
         <LocalePreferenceContext value={preference}>
           <QueryClientProvider client={queryClient}>

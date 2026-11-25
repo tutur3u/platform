@@ -2,7 +2,9 @@ import '@/lib/dayjs-setup';
 import { getSupabaseSessionUser } from '@tuturuuu/auth/supabase-session-user';
 import { requestNonce } from '@tuturuuu/start-bridge/csp';
 import { ExperimentalUiSync } from '@tuturuuu/ui/custom/experimental-ui-sync';
+import { InstantThemeSwap } from '@tuturuuu/ui/custom/instant-theme-swap';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
+import { tuturuuuThemeProviderProps } from '@tuturuuu/ui/custom/theme-provider-preset';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { type AbstractIntlMessages, NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
@@ -14,21 +16,8 @@ import { QueryProvider } from './query-provider';
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   const nonce = requestNonce();
   return (
-    <NextThemesProvider
-      attribute="class"
-      themes={['system', 'light', 'dark']}
-      enableSystem
-      // Rocket Loader is a Cloudflare optimization that defers the loading
-      // of inline and external scripts to prioritize the website content.
-      // Since next-themes relies on a script injection to avoid screen
-      // flashing on page load, Rocket Loader breaks this functionality.
-      // Individual scripts can be ignored by adding the data-cfasync="false"
-      // attribute to the script tag:
-      scriptProps={{ 'data-cfasync': 'false' }}
-      // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
-      // for more details
-      nonce={nonce}
-    >
+    <NextThemesProvider {...tuturuuuThemeProviderProps} nonce={nonce}>
+      <InstantThemeSwap nonce={nonce} />
       <SorbetPrePaintScript nonce={nonce} />
       {children}
     </NextThemesProvider>

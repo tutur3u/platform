@@ -1,4 +1,6 @@
+import { InstantThemeSwap } from '@tuturuuu/ui/custom/instant-theme-swap';
 import { SorbetPrePaintScript } from '@tuturuuu/ui/custom/sorbet-pre-paint';
+import { tuturuuuThemeProviderProps } from '@tuturuuu/ui/custom/theme-provider-preset';
 import {
   getLaunchableAppByTitle,
   type LaunchableAppSlug,
@@ -37,21 +39,8 @@ export function Providers({
     getLaunchableAppByTitle(appName.replace(/^Tuturuuu\s+/i, ''))?.slug;
 
   return (
-    <ThemeProvider
-      attribute="class"
-      themes={['system', 'light', 'dark']}
-      enableSystem
-      // Rocket Loader is a Cloudflare optimization that defers the loading
-      // of inline and external scripts to prioritize the website content.
-      // Since next-themes relies on a script injection to avoid screen
-      // flashing on page load, Rocket Loader breaks this functionality.
-      // Individual scripts can be ignored by adding the data-cfasync="false"
-      // attribute to the script tag:
-      scriptProps={{ 'data-cfasync': 'false' }}
-      nonce={nonce}
-      // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
-      // for more details
-    >
+    <ThemeProvider {...tuturuuuThemeProviderProps} nonce={nonce}>
+      <InstantThemeSwap nonce={nonce} />
       <SorbetPrePaintScript nonce={nonce} />
       {/*
         ThemeProvider stays ABOVE the Suspense boundary on purpose. next-themes

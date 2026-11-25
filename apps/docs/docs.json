@@ -318,6 +318,7 @@
                   "build/devops/github-actions-runbook",
                   "build/devops/ci-reconciler",
                   "build/devops/caching",
+                  "build/devops/shell-performance",
                   "build/devops/code-owners",
                   "build/devops/e2e-proof-reuse",
                   "build/devops/turbo-remote-cache",
