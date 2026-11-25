@@ -58,6 +58,7 @@ test('forwards a verified join ticket with its Unicode name', async () => {
   assert.equal(response.status, 200);
   const forwarded = e.calls[0]?.headers.get('x-board-ticket');
   assert.ok(forwarded);
+  assert.match(forwarded, /^[\x20-\x7e]+$/);
   assert.deepEqual(JSON.parse(forwarded), join);
 });
 

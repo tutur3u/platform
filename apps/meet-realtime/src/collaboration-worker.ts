@@ -1,4 +1,5 @@
 import { collaborationTicketSchema } from '@tuturuuu/realtime/collaboration/server';
+import { serializeJsonHeader } from '../../../packages/realtime/src/core/json-header';
 import { verifyRealtimePayload } from '../../../packages/realtime/src/core/token';
 import type { CollaborationRoomEnv } from './collaboration-room-do';
 export async function collaborationRequest(
@@ -28,7 +29,7 @@ export async function collaborationRequest(
           : 'checkpoint';
   if (parsed.data.kind !== expected) return new Response(null, { status: 403 });
   const headers = new Headers(request.headers);
-  headers.set('x-collaboration-ticket', JSON.stringify(parsed.data));
+  headers.set('x-collaboration-ticket', serializeJsonHeader(parsed.data));
   return env.COLLABORATION_ROOM.get(
     env.COLLABORATION_ROOM.idFromName(parsed.data.roomId)
   ).fetch(new Request(request, { headers }));

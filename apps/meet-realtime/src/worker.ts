@@ -15,7 +15,7 @@ export { WhiteboardRoomDurableObject } from './whiteboard-room-do';
 
 import { ATTENDANCE_DIRECTORY_ROOM } from '../../../packages/realtime/src/meet/attendance-directory';
 import { verifyMeetServiceCredential } from '../../../packages/realtime/src/meet/service-credential';
-import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
+import { meetRoomRequest } from './meet-room-worker';
 import type { MeetRoomEnv } from './room-do';
 
 export { MeetRoomDurableObject } from './room-do';
@@ -78,40 +78,6 @@ export default {
       return room.fetch(request);
     }
 
-    const roomStateRequest =
-      (url.pathname === '/room-state' &&
-        ['GET', 'PATCH'].includes(request.method)) ||
-      (['/room-device', '/room-service'].includes(url.pathname) &&
-        request.method === 'POST');
-    if (url.pathname !== '/realtime' && !roomStateRequest) {
-      return new Response('Not found', { status: 404 });
-    }
-
-    if (!roomStateRequest && request.headers.get('Upgrade') !== 'websocket') {
-      return new Response('Expected WebSocket upgrade', { status: 426 });
-    }
-
-    const token = verifyMeetRealtimeToken(
-      roomStateRequest
-        ? (request.headers
-            .get('Authorization')
-            ?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ?? '')
-        : (url.searchParams.get('token') ?? ''),
-      env.MEET_REALTIME_TOKEN_SECRET
-    );
-
-    if (!token) {
-      return new Response('Unauthorized', { status: 401 });
-    }
-
-    // The room id is derived from the signed token, never from the query
-    // string, so a client cannot address a room it was not issued a token for.
-    const id = env.MEET_ROOM.idFromName(token.roomId);
-    const room = env.MEET_ROOM.get(id);
-
-    const headers = new Headers(request.headers);
-    headers.set('x-meet-token', JSON.stringify(token));
-
-    return room.fetch(new Request(request, { headers }));
+    return meetRoomRequest(request, url, env);
   },
 };

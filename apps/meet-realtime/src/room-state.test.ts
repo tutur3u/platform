@@ -5,6 +5,8 @@ import {
   type MeetRealtimeServerMessage,
   meetRealtimeTokenPayloadSchema,
 } from '../../../packages/realtime/src/meet';
+import { signMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
+import { meetRoomRequest } from './meet-room-worker';
 import {
   getRoom,
   type MeetWebSocket,
@@ -39,6 +41,40 @@ function connect(role: 'host' | 'speaker', scopes: readonly string[]) {
 }
 
 afterEach(() => void rooms.delete(ROOM));
+
+test('the Meet Worker forwards a Unicode display name as ASCII JSON', async () => {
+  const secret = 'meet-worker-test-secret';
+  const token = meetRealtimeTokenPayloadSchema.parse({
+    roomId: ROOM,
+    wsId: crypto.randomUUID(),
+    meetingId: crypto.randomUUID(),
+    userId: crypto.randomUUID(),
+    role: 'host',
+    scopes: getMeetRealtimeScopesForRole('host'),
+    displayName: 'Nguyễn \u{1f600}',
+    exp: Math.floor(Date.now() / 1000) + 60,
+  });
+  const url = new URL('https://meet.example.invalid/realtime');
+  url.searchParams.set('token', signMeetRealtimeToken(token, secret));
+  const request = new Request(url, { headers: { Upgrade: 'websocket' } });
+  const response = await meetRoomRequest(request, url, {
+    MEET_REALTIME_TOKEN_SECRET: secret,
+    MEET_ROOM: {
+      idFromName: (name: string) => name,
+      get: (id: string) => ({
+        fetch: async (forwarded: Request) => {
+          assert.equal(id, token.roomId);
+          const header = forwarded.headers.get('x-meet-token');
+          assert.ok(header);
+          assert.match(header, /^[\x20-\x7e]+$/);
+          assert.deepEqual(JSON.parse(header), token);
+          return new Response(null, { status: 204 });
+        },
+      }),
+    } as unknown as DurableObjectNamespace,
+  });
+  assert.equal(response.status, 204);
+});
 
 test('the local transport sends private activity frames only to people admitted right now', () => {
   const host = connect('host', getMeetRealtimeScopesForRole('host'));

@@ -5,7 +5,45 @@ import {
   Y,
 } from '../../../packages/realtime/src/collaboration';
 import { REALTIME_SERVICE_USER_AGENT } from '../../../packages/realtime/src/core/service-request';
+import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import { CollaborationRoomDurableObject } from './collaboration-room-do';
+import { collaborationRequest } from './collaboration-worker';
+
+test('the collaboration Worker forwards a Unicode name as ASCII JSON', async () => {
+  const secret = 'collaboration-worker-test-secret';
+  const ticket = {
+    aud: 'tuturuuu.collaboration',
+    kind: 'join',
+    roomId: 'unicode-room',
+    resourceId: crypto.randomUUID(),
+    ownerId: crypto.randomUUID(),
+    userId: crypto.randomUUID(),
+    resource: 'playground',
+    role: 'viewer',
+    displayName: 'Nguyễn \u{1f600}',
+    exp: Math.floor(Date.now() / 1000) + 60,
+  };
+  const url = new URL('https://meet.example.invalid/collaboration');
+  url.searchParams.set('token', signRealtimePayload(ticket, secret));
+  const request = new Request(url, { headers: { Upgrade: 'websocket' } });
+  const response = await collaborationRequest(request, {
+    MEET_REALTIME_TOKEN_SECRET: secret,
+    COLLABORATION_ROOM: {
+      idFromName: (name: string) => name,
+      get: (id: string) => ({
+        fetch: async (forwarded: Request) => {
+          assert.equal(id, ticket.roomId);
+          const header = forwarded.headers.get('x-collaboration-ticket');
+          assert.ok(header);
+          assert.match(header, /^[\x20-\x7e]+$/);
+          assert.deepEqual(JSON.parse(header), ticket);
+          return new Response(null, { status: 204 });
+        },
+      }),
+    } as unknown as DurableObjectNamespace,
+  });
+  assert.equal(response.status, 204);
+});
 
 const checkpointOverride = 'https://checkpoint.example.invalid';
 const metadata = {
