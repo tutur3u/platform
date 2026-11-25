@@ -5,6 +5,7 @@ import {
   memoryCommandSchema,
 } from '../../features/live-assistant/memory-command';
 import { applyMemoryCommand } from './memory-store';
+import { liveRoomCommand } from './room';
 import { LiveDatabaseError, type LiveEnvironment } from './storage';
 
 type Entry = {
@@ -13,6 +14,8 @@ type Entry = {
   sessionId: string;
   expiresAt: number;
   mode?: 'personal' | 'room';
+  /** The meeting's workspace, so a withdrawal can reach its room. */
+  workspaceId?: string;
 };
 type PendingMemory = { ownerId: string; command: MemoryCommand };
 const identitySchema = z.object({
@@ -20,6 +23,7 @@ const identitySchema = z.object({
   meetingId: z.uuid().optional(),
   sessionId: z.uuid().optional(),
   mode: z.enum(['personal', 'room']).optional(),
+  workspaceId: z.uuid().optional(),
   command: memoryCommandSchema.optional(),
 });
 
@@ -75,6 +79,34 @@ export async function liveRegistry(
   };
   const pending = await storage.get<PendingMemory>('pending-memory');
   if (pending) await finishMemory(pending);
+  if (path === '/registry/withdraw') {
+    // A withdrawn Mira confirmation ends every Private Mira session of the
+    // owner and revokes the tutor chat each one could read, in every meeting.
+    // The owner's own Private Mira may revoke a share, never turn one on.
+    for (const entry of entries.filter((entry) => entry.mode !== 'room')) {
+      if (entry.workspaceId)
+        await liveRoomCommand(
+          env,
+          {
+            ownerId: entry.ownerId,
+            meetingId: entry.meetingId,
+            mode: 'personal',
+          },
+          {
+            workspaceId: entry.workspaceId,
+            isHost: false,
+            displayName: 'Mira',
+          },
+          { action: 'mira.share.set', enabled: false }
+        ).catch(() => {
+          console.warn('Private Mira share revoke on withdrawal failed');
+        });
+      await stopEntry(entry);
+    }
+    entries = entries.filter((entry) => entry.mode === 'room');
+    await storage.put('active', entries);
+    return Response.json({ ok: true });
+  }
   if (path === '/registry/memory' && input.command) {
     const operation = { ownerId: input.ownerId, command: input.command };
     await storage.put('pending-memory', operation);
@@ -94,6 +126,7 @@ export async function liveRegistry(
     );
     if (existing) {
       existing.expiresAt = Date.now() + 24 * 60 * 60_000;
+      existing.workspaceId ??= input.workspaceId;
       await storage.put('active', current);
       return Response.json({ ok: true });
     }
@@ -104,6 +137,7 @@ export async function liveRegistry(
       meetingId: input.meetingId,
       sessionId: input.sessionId,
       mode: input.mode,
+      workspaceId: input.workspaceId,
       expiresAt: Date.now() + 24 * 60 * 60_000,
     });
     await storage.put('active', current);

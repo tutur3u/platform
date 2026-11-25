@@ -4,7 +4,6 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({
   room: vi.fn(),
   confirm: vi.fn(),
-  choice: vi.fn(),
   stop: vi.fn(),
   enabled: true,
 }));
@@ -15,13 +14,13 @@ vi.mock('./account-confirmation', () => ({
   usesMiraAccountConfirmation: () => f.enabled,
 }));
 vi.mock('./private-consent', () => ({
-  readPrivateMiraChoice: f.choice,
   stopPrivateMiraSessions: f.stop,
 }));
 
 import {
   forwardSharedTutorChat,
   readPrivateMiraShare,
+  revokePrivateMiraShare,
   setPrivateMiraShare,
 } from './private-share';
 
@@ -89,10 +88,13 @@ const revoke = {
 };
 const live = {} as Parameters<typeof setPrivateMiraShare>[2];
 
-it('ends the owner’s Private Mira voice sessions when they revoke', async () => {
-  const sessions = ['00000000-0000-4000-8000-000000000004'];
-  f.room.mockResolvedValue({ enabled: false, revision: 2 });
-  f.choice.mockResolvedValue({ sessions });
+const session = '00000000-0000-4000-8000-000000000004';
+
+it('ends the sessions the room returns on revoke, admitted or not', async () => {
+  const sessions = [session];
+  // The room returns the owner's registered sessions with the revoke, so a
+  // person who already left the call has their sessions stopped too.
+  f.room.mockResolvedValue({ enabled: false, revision: 2, sessions });
   expect(await setPrivateMiraShare(access as Access, revoke, live)).toEqual({
     enabled: false,
     revision: 2,
@@ -110,8 +112,11 @@ it('stops nothing when there was never a share, and reports a failed stop', asyn
   await setPrivateMiraShare(access as Access, revoke, live);
   expect(f.stop).not.toHaveBeenCalled();
 
-  f.room.mockResolvedValue({ enabled: false, revision: 3 });
-  f.choice.mockResolvedValue({ sessions: ['s'] });
+  f.room.mockResolvedValue({
+    enabled: false,
+    revision: 3,
+    sessions: [session],
+  });
   f.stop.mockRejectedValue(new Error('Private Mira could not stop'));
   await expect(
     setPrivateMiraShare(access as Access, revoke, live)
@@ -120,5 +125,15 @@ it('stops nothing when there was never a share, and reports a failed stop', asyn
     action: 'mira.share.set',
     enabled: false,
   });
+});
+
+it('stops the sessions even without a share when asked to, as on withdrawal', async () => {
+  f.room.mockResolvedValue({
+    enabled: false,
+    revision: 0,
+    sessions: [session],
+  });
+  await revokePrivateMiraShare(access as Access, live, { always: true });
+  expect(f.stop).toHaveBeenCalledWith(access, [session], live);
 });
 

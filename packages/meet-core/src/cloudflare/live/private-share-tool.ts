@@ -35,7 +35,7 @@ export async function readSharedPrivateNotes(
   saved: SavedSession
 ): Promise<Record<string, unknown>> {
   const unavailable = {
-    error: 'This person has not shared notes with you in this meeting',
+    error: 'This person has not shared their tutor chat in this meeting',
   };
   if (
     env.MEET_UX_V2 !== 'true' ||

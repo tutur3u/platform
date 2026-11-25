@@ -1,8 +1,11 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ apply: vi.fn() }));
+const mocks = vi.hoisted(() => ({ apply: vi.fn(), room: vi.fn() }));
 vi.mock('../../cloudflare/live/memory-store', () => ({
   applyMemoryCommand: mocks.apply,
+}));
+vi.mock('../../cloudflare/live/room', () => ({
+  liveRoomCommand: mocks.room,
 }));
 
 import { liveRegistry } from '../../cloudflare/live/registry';
@@ -132,4 +135,34 @@ it('renews the registering session without stopping it after lease expiry', asyn
   }>;
   expect(entry?.sessionId).toBe(sessionId);
   expect(entry!.expiresAt).toBeGreaterThan(Date.now());
+});
+
+it('on withdrawal revokes each meeting share and stops every Private Mira', async () => {
+  const f = fixture();
+  const workspaceId = '00000000-0000-4000-8000-000000000009';
+  await f.call('register', {
+    meetingId,
+    sessionId,
+    mode: 'personal',
+    workspaceId,
+  });
+  const room = { ownerId, meetingId, sessionId: meetingId, mode: 'room' };
+  f.values.set('active', [
+    ...(f.values.get('active') as object[]),
+    { ...room, expiresAt: Date.now() + 60000 },
+  ]);
+  mocks.room.mockRejectedValueOnce(new Error('live_room_503'));
+  const response = await f.call('withdraw', {});
+  expect(response.status).toBe(200);
+  expect(mocks.room).toHaveBeenCalledExactlyOnceWith(
+    expect.anything(),
+    { ownerId, meetingId, mode: 'personal' },
+    { workspaceId, isHost: false, displayName: 'Mira' },
+    { action: 'mira.share.set', enabled: false }
+  );
+  // A failed revoke still stops the session that could read the share.
+  expect(f.stop).toHaveBeenCalledOnce();
+  expect(f.values.get('active')).toEqual([
+    expect.objectContaining({ mode: 'room' }),
+  ]);
 });

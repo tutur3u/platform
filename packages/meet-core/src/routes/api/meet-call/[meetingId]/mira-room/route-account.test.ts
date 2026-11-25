@@ -423,6 +423,42 @@ describe('account confirmation in the redesigned Meet flow', () => {
     });
   });
 
+  it('revokes a tutor chat share and stops its sessions on withdrawal', async () => {
+    f.getUserById.mockResolvedValue(reply(marker));
+    f.updateUserById.mockResolvedValue(reply({}));
+    f.room.mockImplementation(async (_access, command: { action: string }) => {
+      if (command.action === 'mira.share.set')
+        return { enabled: false, revision: 2, sessions: [PENDING] };
+      if (command.action === 'mira.private.read')
+        return {
+          version: MIRA_PRIVATE_NOTICE_VERSION,
+          admitted: true,
+          choice: null,
+          sessions: [],
+        };
+      return { ...confirmedRoom, choice: 'off', lastChoice: 'off' };
+    });
+    f.cf.mockResolvedValue({
+      env: {
+        MEET_LIVE: {
+          idFromName: (id: string) => id,
+          get: () => ({ fetch: f.stopPrivate }),
+        },
+      },
+    });
+    f.stopPrivate.mockResolvedValue(new Response(null, { status: 200 }));
+    expect((await post(withdrawAccount())).status).toBe(200);
+    expect(f.room).toHaveBeenCalledWith(expect.anything(), {
+      action: 'mira.share.set',
+      enabled: false,
+    });
+    expect(f.stopPrivate).toHaveBeenCalledOnce();
+    expect(f.room).toHaveBeenCalledWith(expect.anything(), {
+      action: 'mira.private.ended',
+      sessionId: PENDING,
+    });
+  });
+
   it.each(['confirm', 'toggle', 'auto_on'])(
     'refuses on from %s under a live unmarked acceptance',
     async (source) => {

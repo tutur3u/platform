@@ -16,7 +16,7 @@ export type LiveRoomIdentity = {
 };
 export async function liveRoomCommand<T>(
   env: LiveEnvironment,
-  claims: LiveSessionClaims,
+  claims: Pick<LiveSessionClaims, 'meetingId' | 'ownerId' | 'mode'>,
   identity: LiveRoomIdentity,
   command: unknown,
   signal?: AbortSignal

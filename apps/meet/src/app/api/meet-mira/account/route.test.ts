@@ -1,6 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const f = vi.hoisted(() => ({ actor: vi.fn(), update: vi.fn() }));
+const f = vi.hoisted(() => ({
+  actor: vi.fn(),
+  update: vi.fn(),
+  live: vi.fn(),
+}));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
@@ -11,6 +15,14 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     auth: { admin: { updateUserById: f.update } },
   }),
 }));
+
+vi.mock(
+  '@tuturuuu/meet-core/features/live-assistant/privacy-reset',
+  async (original) => ({
+    ...(await original<object>()),
+    withdrawPrivateLiveSessions: f.live,
+  })
+);
 
 import { POST } from './route';
 
@@ -53,4 +65,13 @@ it('rejects a cross-origin request, a changed account, and a missing session', a
   f.actor.mockResolvedValue(null);
   expect((await post()).status).toBe(401);
   expect(f.update).not.toHaveBeenCalled();
+});
+
+it('ends the account’s Private Mira sessions and shares after withdrawing', async () => {
+  expect((await post()).status).toBe(200);
+  expect(f.live).toHaveBeenCalledExactlyOnceWith(account);
+  f.live.mockClear();
+  f.update.mockResolvedValue({ data: null, error: { message: 'down' } });
+  expect((await post()).status).toBe(503);
+  expect(f.live).not.toHaveBeenCalled();
 });

@@ -1,5 +1,8 @@
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
-import { withdrawMiraAccount } from '@tuturuuu/meet-core/features/live-assistant/privacy-reset';
+import {
+  withdrawMiraAccount,
+  withdrawPrivateLiveSessions,
+} from '@tuturuuu/meet-core/features/live-assistant/privacy-reset';
 import { readLiveRequestBody } from '@tuturuuu/meet-core/features/live-assistant/request-body';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { z } from 'zod';
@@ -27,6 +30,8 @@ export async function POST(request: Request) {
     );
   try {
     await withdrawMiraAccount({ user }, input.data.expectedActorId);
+    // Ends Private Mira and any shared tutor chat in the owner's meetings.
+    await withdrawPrivateLiveSessions(user.id);
     return Response.json({ ok: true }, { headers });
   } catch (error) {
     const status = error instanceof MeetCallAccessError ? error.status : 503;

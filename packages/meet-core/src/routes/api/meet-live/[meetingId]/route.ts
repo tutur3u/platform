@@ -277,7 +277,13 @@ export async function POST(
         throw new MeetCallAccessError(403, 'Private Mira choice changed');
       const registered = await registry.fetch(
         'https://live.internal/registry/register',
-        { method: 'POST', body: JSON.stringify(claims) }
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            ...claims,
+            workspaceId: access.meeting.ws_id,
+          }),
+        }
       );
       if (!registered.ok)
         throw new MeetCallAccessError(

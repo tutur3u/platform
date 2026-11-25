@@ -14,10 +14,7 @@ import {
   requireMiraAccountConfirmation,
   usesMiraAccountConfirmation,
 } from './account-confirmation';
-import {
-  readPrivateMiraChoice,
-  stopPrivateMiraSessions,
-} from './private-consent';
+import { stopPrivateMiraSessions } from './private-consent';
 
 type Access = SignedInMeetCallAccess;
 export type PrivateMiraShare = { enabled: boolean; revision: number };
@@ -30,6 +27,9 @@ export const privateMiraShareCommand = z.strictObject({
 const shareView = z.object({
   enabled: z.boolean(),
   revision: z.number().int().nonnegative(),
+});
+const revokeView = shareView.extend({
+  sessions: z.array(z.uuid()).max(2).default([]),
 });
 const off: PrivateMiraShare = { enabled: false, revision: 0 };
 
@@ -52,11 +52,31 @@ export async function readPrivateMiraShare(
 }
 
 /**
+ * Revokes the caller's own share and ends every Private Mira voice session
+ * the room has registered for them, admitted or not, so nothing a session
+ * already read stays in a live model conversation. A retry stops them again.
+ * With `always`, the sessions stop even when the caller never shared.
+ */
+export async function revokePrivateMiraShare(
+  access: Access,
+  live?: DurableObjectNamespace,
+  options: { always?: boolean } = {}
+): Promise<PrivateMiraShare> {
+  const result = revokeView.safeParse(
+    await callRoomService(access, { action: 'mira.share.set', enabled: false })
+  );
+  if (!result.success)
+    throw new MeetCallAccessError(503, 'Private Mira sharing is unavailable');
+  const { sessions, ...share } = result.data;
+  if (share.revision > 0 || options.always)
+    await stopPrivateMiraSessions(access, sessions, live);
+  return share;
+}
+
+/**
  * Turns the caller's own share on or off. The room keys the grant by the
  * signed-in account, so nobody can grant or revoke for someone else. Turning
  * it on needs a confirmed adult account; turning it off never waits for that.
- * Revoking also ends the caller's Private Mira voice sessions, so nothing a
- * session already read stays in a live model conversation.
  */
 export async function setPrivateMiraShare(
   access: Access,
@@ -67,20 +87,13 @@ export async function setPrivateMiraShare(
     throw new MeetCallAccessError(404, 'Private Mira sharing is unavailable');
   if (isGuest(access) || command.expectedActorId !== access.user.id)
     throw new MeetCallAccessError(403, 'Private Mira account changed');
-  if (command.enabled) await requireMiraAccountConfirmation(access);
+  if (!command.enabled) return revokePrivateMiraShare(access, live);
+  await requireMiraAccountConfirmation(access);
   const result = shareView.safeParse(
-    await callRoomService(access, {
-      action: 'mira.share.set',
-      enabled: command.enabled,
-    })
+    await callRoomService(access, { action: 'mira.share.set', enabled: true })
   );
   if (!result.success)
     throw new MeetCallAccessError(503, 'Private Mira sharing is unavailable');
-  // A grant that ever existed may have been read; a retry stops again.
-  if (!command.enabled && result.data.revision > 0) {
-    const { sessions } = await readPrivateMiraChoice(access);
-    await stopPrivateMiraSessions(access, sessions, live);
-  }
   return result.data;
 }
 

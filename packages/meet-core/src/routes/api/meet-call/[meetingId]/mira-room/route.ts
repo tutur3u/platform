@@ -27,6 +27,7 @@ import {
   readPrivateMiraChoice,
   stopPrivateMiraSessions,
 } from '../../../../../features/live-assistant/server/private-consent';
+import { revokePrivateMiraShare } from '../../../../../features/live-assistant/server/private-share';
 import {
   acceptRoomMira,
   endRoomMira,
@@ -264,6 +265,13 @@ export async function POST(
           'withdraw_incomplete'
         );
       }
+      // The withdrawal also revokes any tutor chat shared with Private Mira.
+      // The room returns every registered session, admitted or not, to stop.
+      await revokePrivateMiraShare(access, undefined, { always: true }).catch(
+        () => {
+          console.warn('Private Mira share revoke on withdrawal failed');
+        }
+      );
       if (!(await readRoomMiraAvailability(access)))
         return { available: false };
       return readView(access);

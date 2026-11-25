@@ -51,7 +51,12 @@ beforeEach(() => {
   const room = f.callRoom.getMockImplementation()!;
   f.callRoom.mockImplementation(async (access, input) =>
     String(input.action).startsWith('mira.share.')
-      ? { enabled: input.enabled === true, revision: 1 }
+      ? {
+          enabled: input.enabled === true,
+          revision: 1,
+          // The room returns the owner's registered sessions with a revoke.
+          ...(input.enabled === false ? { sessions: [...f.sessions] } : {}),
+        }
       : room(access, input)
   );
 });
@@ -108,5 +113,7 @@ it('ends the owner’s Private Mira voice session when they revoke', async () =>
   ]);
   expect(f.order).toContain('mira.private.ended');
   expect(f.sessions).toEqual([]);
+  // No admitted-only read: a person who left the call is stopped too.
+  expect(f.order).not.toContain('mira.private.read');
 });
 

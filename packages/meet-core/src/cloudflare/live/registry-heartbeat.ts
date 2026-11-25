@@ -11,13 +11,14 @@ export class LiveRegistryError extends Error {
 /** Keep long sessions discoverable by privacy changes, including after the initial 24 hours. */
 export async function refreshLiveRegistry(
   env: LiveEnvironment,
-  claims: LiveSessionClaims
+  claims: LiveSessionClaims,
+  workspaceId?: string
 ) {
   const response = await env.MEET_LIVE.get(
     env.MEET_LIVE.idFromName(`owner:${claims.ownerId}`)
   ).fetch('https://live.internal/registry/register', {
     method: 'POST',
-    body: JSON.stringify(claims),
+    body: JSON.stringify({ ...claims, workspaceId }),
   });
   if (!response.ok) throw new LiveRegistryError(response.status);
 }
@@ -45,7 +46,7 @@ export async function maintainLiveRegistry(
     throw new LiveRegistryError(409);
   if (now - last < 12 * 60 * 60_000) return;
   try {
-    await refreshLiveRegistry(env, saved.claims);
+    await refreshLiveRegistry(env, saved.claims, saved.identity.workspaceId);
     saved.registryUpdatedAt = Date.now();
   } catch (error) {
     // Stop before the 24-hour registry lease expires: memory revocations must
