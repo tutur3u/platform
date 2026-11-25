@@ -20,6 +20,8 @@ class AssistantCompletedActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final colors = tokens.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: AppPanel(
@@ -29,9 +31,29 @@ class AssistantCompletedActionCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppChip(
-                avatar: const Icon(LucideIcons.check, size: 16),
-                label: Text(context.l10n.assistantToolStepDone),
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.xs + 2),
+                child: Row(
+                  key: const ValueKey('assistant-action-done'),
+                  spacing: AppSpacing.xs + 2,
+                  children: [
+                    Icon(
+                      LucideIcons.circleCheck,
+                      size: 14,
+                      color: colors.success,
+                    ),
+                    Flexible(
+                      child: Text(
+                        context.l10n.assistantToolStepDone,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tokens.typography.label.copyWith(
+                          color: colors.success,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               AssistantToolStepTile(part: part),
             ],

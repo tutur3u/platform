@@ -64,6 +64,9 @@ class AssistantComposerPanel extends StatelessWidget {
                   padding: insets,
                   child: AppCard(
                     padding: EdgeInsets.zero,
+                    // Outlined in every appearance so the prompt reads as an
+                    // input surface on dark backgrounds too.
+                    borderColor: AppTokens.of(context).colorScheme.border,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisSize: MainAxisSize.min,

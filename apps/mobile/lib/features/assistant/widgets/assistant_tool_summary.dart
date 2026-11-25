@@ -39,16 +39,16 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
     final tokens = AppTokens.of(context);
     final palette = tokens.colorScheme;
     final running = widget.running;
-    final failedCount = parts.where(isAssistantToolPartFailed).length;
-    final failed = !running && failedCount > 0;
     final latestPart = running
         ? parts.lastWhere(isAssistantToolPartPending, orElse: () => parts.last)
         : parts.last;
-    final latest = assistantToolStepLabel(
-      l10n,
-      latestPart.toolName,
-      running: running,
-    );
+    final failedCount = parts.where(isAssistantToolPartFailed).length;
+    final failed = !running && failedCount > 0;
+    // A failed turn leads with what needs attention rather than a past-tense
+    // label for a step that did not finish.
+    final latest = failed
+        ? l10n.assistantToolStepsFailed(failedCount)
+        : assistantToolStepLabel(l10n, latestPart.toolName, running: running);
     final count = l10n.assistantToolStepCount(parts.length);
     final countStyle = theme.textTheme.labelMedium?.copyWith(
       color: colors.onSurfaceVariant,
@@ -56,8 +56,6 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
     );
     final status = running
         ? l10n.assistantToolStepsInProgress
-        : failed
-        ? l10n.assistantToolStepsFailed(failedCount)
         : l10n.assistantToolStepsDone;
     final radius = BorderRadius.circular(AppRadius.md);
     return Column(
@@ -70,7 +68,7 @@ class _AssistantToolSummaryState extends State<AssistantToolSummary> {
           excludeSemantics: true,
           onTap: _toggle,
           expanded: _expanded,
-          label: '$status: $latest · $count',
+          label: failed ? '$latest · $count' : '$status: $latest · $count',
           // The status card mirrors the web tool section: a quiet surface
           // that turns destructive when a step needs attention.
           child: DecoratedBox(
