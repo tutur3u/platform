@@ -1042,24 +1042,31 @@ cannot be recalled. Transcription mutations remain host-only.
   QR. It encodes the same `/r/<code>` link the Share dialog gives guests and
   exposes nothing Share does not.
 - Form: from `lg` up, while the stage shows a plain grid, it is a small card
-  ("Scan to join") and the stage keeps a 160 px left gutter free, so tiles,
-  their name strip and their resume-audio button lay out beside the card
-  instead of under it. Anything that fills the stage (a screen share, the
-  spotlight or sidebar layout, a focused tile, an open activity, or the
-  presence-only roster) switches it to a "Join QR" chip that opens the code
-  in a popover, and the gutter is released. Below `lg` it is always the chip.
-  Anyone can shrink the card to the chip for themselves.
+  ("Scan to join") and the stage keeps an 11rem left gutter free (the 9rem
+  card, its 1rem inset and a 1rem gap), so tiles, their name strip and their
+  resume-audio button lay out beside the card instead of under it. Anything
+  that fills the stage (a screen share, the spotlight or sidebar layout, a
+  focused tile, an open activity, or the presence-only roster) switches it to
+  a "Join QR" chip that opens the code in a popover, and the gutter is
+  released. Below `lg` it is always the chip. The chip sits 4rem above the
+  stage's bottom edge, clear of a bottom-left tile's name and identity strip
+  and inside the stage, so it never reaches the control bar. Anyone can
+  shrink the card to the chip for themselves.
 - Default: on in every `MEET_UX_V2` meeting, for every participant, with
   auto-hide off. A room that has never stored the setting shows it.
 - Room controls: hosts and co-hosts (the participant manage scope, the same
   as Activities settings) turn it on or off for the room with **Join QR on
   stage** in More, and set auto-hide (Off, 2, 5 or 10 minutes) or **Hide for
-  everyone** from the card's options. Participants cannot change it.
+  everyone** from the card's options. Participants cannot change it. The
+  gate is `offersJoinQrOptions` in `use-stage-join-qr.ts`.
 - Auto-hide clock: the room stamps its own time (`joinQrShownAt`) when a
   manager shows the QR or changes auto-hide; hiding keeps the stamp. Each
-  `room.settings` message carries the room's `serverNow`, and clients read
-  the deadline through the measured clock skew (the class timer's pattern),
-  so a device with a fast or slow clock hides it with everyone else.
+  `room.settings` message carries the room's `serverNow`. The call state
+  measures the clock skew when the message arrives (`settingsClockSkew`; the
+  room timer keeps `classTimerClockSkew` the same way), and every view reads
+  the deadline through it. A device with a fast or slow clock hides the QR
+  with everyone else, and a view that mounts late, such as the More switch,
+  shows the same state as the stage.
 - Room support: a room announces `features: ['joinQr']` with its settings.
   A room on an older realtime Worker announces none and drops the QR keys,
   so until it does, the More switch is disabled with "Available after the
@@ -1071,8 +1078,8 @@ cannot be recalled. Transcription mutations remain host-only.
 
 Regression coverage: `room-join-qr.test.ts` and `room-skip-lobby.test.ts`
 under `packages/realtime/src/meet`; `stage-join-qr.test.tsx`,
-`stage-join-qr-layout.test.tsx` and `lib/call-state-settings.test.ts` under
-`packages/meet-core/src/features/call`.
+`stage-join-qr-layout.test.tsx`, `class-timer.test.tsx` and
+`lib/call-state-settings.test.ts` under `packages/meet-core/src/features/call`.
 
 ### People control placement (`MEET_UX_V2`)
 
