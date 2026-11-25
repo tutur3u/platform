@@ -195,6 +195,10 @@
       "component": "authz",
       "package-name": "@tuturuuu/authz"
     },
+    "packages/data": {
+      "component": "data",
+      "package-name": "@tuturuuu/data"
+    },
     "packages/devbox": {
       "component": "devbox",
       "package-name": "@tuturuuu/devbox"

@@ -1,0 +1,26 @@
+{
+  "name": "@tuturuuu/data",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Framework-free scoped query builder, table registry and raw-SQL registry for Tuturuuu data Workers.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "@tuturuuu/authz": "workspace:*",
+    "kysely": "^0.29.9"
+  }
+}
