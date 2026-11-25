@@ -23,7 +23,10 @@ const binding = z
     focus: range(-1, 1).optional(),
     gap: range(0, 1e4).optional(),
     // A ratio of the bound element's box; elbow arrows may sit just outside.
-    fixedPoint: z.tuple([range(-1, 2), range(-1, 2)]).nullable().optional(),
+    fixedPoint: z
+      .tuple([range(-1, 2), range(-1, 2)])
+      .nullable()
+      .optional(),
   })
   .nullable();
 const arrowhead = z.string().max(32).nullable();
@@ -165,7 +168,6 @@ export const guestElementSchema = z
       element.pressures?.length === element.points.length,
     { message: 'Freehand strokes need pressures or simulated pressure' }
   )
-  .refine(
-    (element) => elementRenderCost(element) <= MAX_GUEST_ELEMENT_COST,
-    { message: 'Element costs too much to draw' }
-  );
+  .refine((element) => elementRenderCost(element) <= MAX_GUEST_ELEMENT_COST, {
+    message: 'Element costs too much to draw',
+  });

@@ -21,7 +21,6 @@ import {
 
 installRoomTestHooks();
 
-
 test('loads the board once and sends the scene to a joiner', async () => {
   const f = fixture();
   const socket = await open(f);

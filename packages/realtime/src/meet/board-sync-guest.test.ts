@@ -318,10 +318,13 @@ describe('guest element ranges', () => {
       { elementId: 'b', fixedPoint: [-1, 2] },
       { elementId: 'b', fixedPoint: [0, 3] },
     ],
-  ])('keeps a %s %s at its bound and refuses it past', (type, key, edge, past) => {
-    const at = (value: unknown) =>
-      sanitizeGuestElement(guestElement(type, { [key]: value }));
-    expect(at(edge)).not.toBeNull();
-    expect(at(past)).toBeNull();
-  });
+  ])(
+    'keeps a %s %s at its bound and refuses it past',
+    (type, key, edge, past) => {
+      const at = (value: unknown) =>
+        sanitizeGuestElement(guestElement(type, { [key]: value }));
+      expect(at(edge)).not.toBeNull();
+      expect(at(past)).toBeNull();
+    }
+  );
 });

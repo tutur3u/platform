@@ -129,8 +129,7 @@ function fillCost(element: CostShape, type: string) {
   );
   const outline = edges.reduce((sum, length) => sum + length, 0);
   return (
-    crossings * factor * CURVE_FACTOR +
-    (outline / SCAN_STEPS_PER_UNIT) * scans
+    crossings * factor * CURVE_FACTOR + (outline / SCAN_STEPS_PER_UNIT) * scans
   );
 }
 

@@ -295,9 +295,7 @@ describe('canvas area', () => {
     const huge = guestElement('rectangle', { width: 1e4, height: 1e4 });
     expect(elementCanvasArea(huge)).toBe(MAX_ELEMENT_CANVAS_PIXELS);
     expect(elementCanvasArea({ ...huge, isDeleted: true })).toBe(0);
-    expect(elementCanvasArea({ type: 'text' })).toBe(
-      MAX_ELEMENT_CANVAS_PIXELS
-    );
+    expect(elementCanvasArea({ type: 'text' })).toBe(MAX_ELEMENT_CANVAS_PIXELS);
   });
 
   // Each costs one to draw, but every viewer caches it on a full-size canvas.

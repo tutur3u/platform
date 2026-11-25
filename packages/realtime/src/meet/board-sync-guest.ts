@@ -121,10 +121,5 @@ export function refillChurnBudget(bucket: ChurnBucket, now: number) {
  */
 export function refillRoomChurnBudget(bucket: ChurnBucket, now: number) {
   const { roomChurnCapacity, roomChurnRefillPerSecond } = BOARD_GUEST_LIMITS;
-  return refillBucket(
-    bucket,
-    now,
-    roomChurnCapacity,
-    roomChurnRefillPerSecond
-  );
+  return refillBucket(bucket, now, roomChurnCapacity, roomChurnRefillPerSecond);
 }

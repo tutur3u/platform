@@ -162,9 +162,7 @@ describe('board socket transport', () => {
     await send([line(1)]);
     expect(socket.sent).toHaveLength(0);
     await send([line(1), rect]);
-    expect(socket.sent[0].changes.map((c: any) => c.element.id)).toEqual([
-      'a',
-    ]);
+    expect(socket.sent[0].changes.map((c: any) => c.element.id)).toEqual(['a']);
     await send([line(2)]);
     expect(socket.sent[1].changes[0].element.points).toHaveLength(2);
   });

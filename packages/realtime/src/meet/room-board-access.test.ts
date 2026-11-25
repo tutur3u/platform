@@ -76,9 +76,9 @@ describe('board access', () => {
     expect(access(new Set())?.status).toBe(403);
     expect(access(new Set(['someone-else']))?.status).toBe(403);
     const host = { ...guest, role: 'host' } as MeetRealtimeTokenPayload;
-    expect(
-      applyRoomBoardAccess(empty, host, board, new Set())
-    ).toMatchObject({ body: { ok: true } });
+    expect(applyRoomBoardAccess(empty, host, board, new Set())).toMatchObject({
+      body: { ok: true },
+    });
   });
 
   it('refuses a browser token even with an open socket', () => {
