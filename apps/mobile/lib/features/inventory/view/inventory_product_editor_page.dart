@@ -10,6 +10,7 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_movement.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_media_upload.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
@@ -114,8 +115,9 @@ class _InventoryProductEditorPageState
   bool _uploadingImage = false;
   bool _canAdjustStock = false;
 
-  /// Stock rows as loaded, compared with the server before adjusting.
-  List<InventoryStockEntry> _baseline = const [];
+  /// Stored stock rows read fresh for Adjust stock, compared with the
+  /// server before writing; null until they load.
+  List<InventoryStockRow>? _baseline;
 
   String? _formError;
   bool _hasUnavailableOptions = false;

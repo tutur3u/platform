@@ -115,6 +115,9 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
   /// Extra pages fetched to fill a client-side filter; bounded per load.
   int _fillPages = 0;
   bool _filling = false;
+
+  /// The load request the running fill loop belongs to.
+  int _fillToken = 0;
   bool _canAdjustStock = false;
   final Map<String, String> _deletedNames = {};
   int _count = 0;

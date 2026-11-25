@@ -34,9 +34,11 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
   /// Each reload or filter change resets the budget; once it runs out the
   /// list offers to search further instead of claiming nothing matches.
   Future<void> _fillClientFilter() async {
-    if (_filling) return;
+    // One loop per load request: a reload starts its own loop even while
+    // the previous request's loop is still unwinding.
+    if (_filling && _fillToken == _requestToken) return;
     _filling = true;
-    final token = _requestToken;
+    final token = _fillToken = _requestToken;
     try {
       while (mounted &&
           token == _requestToken &&
@@ -54,8 +56,14 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
         if (_products.length == loaded) break;
       }
     } finally {
-      _filling = false;
-      if (mounted) _set(() {});
+      if (_fillToken == token) _filling = false;
+      if (mounted) {
+        _set(() {});
+        // A request that settled while this loop held the flag still fills.
+        if (token != _requestToken && !_filling && !_isLoadingInitial) {
+          unawaited(_fillClientFilter());
+        }
+      }
     }
   }
 

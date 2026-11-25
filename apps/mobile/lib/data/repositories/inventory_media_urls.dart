@@ -1,100 +1,169 @@
 import 'dart:typed_data';
 
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/data/repositories/inventory_product_image_cache.dart';
 import 'package:mobile/data/sources/api_client.dart';
-
-final RegExp _workspaceId = RegExp(
-  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-  caseSensitive: false,
-);
 
 /// Stable sign-on-read URL for an uploaded workspace object, the absolute
 /// form of the web's `buildWorkspaceStorageShareUrl`.
 ///
-/// [origin] defaults to the platform API origin that serves the route.
+/// [origin] defaults to the canonical platform API origin, never a
+/// device-local alias such as the Android emulator's host loopback.
 String inventoryImageShareUrl(String wsId, String path, {String? origin}) {
   final route = DriveEndpoints.share(Uri.encodeComponent(wsId));
   final query = Uri(queryParameters: {'path': path}).query;
-  return '${origin ?? ApiConfig.baseUrlForPath(route)}$route?$query';
+  return '${origin ?? ApiConfig.canonicalBaseUrlForPath(route)}$route?$query';
 }
 
-/// The workspace object behind a stored product image URL: a share URL on
-/// the platform origin, or a Supabase signed `workspaces` URL (whose token
-/// expires). Other URLs, such as public CDN images, return null and load
-/// directly.
-({String wsId, String path})? inventoryImageStorageTarget(
+/// Where a stored product image URL is read from.
+sealed class InventoryImageSource {
+  const InventoryImageSource();
+}
+
+/// Any other HTTPS URL (for example a public CDN image), read directly.
+final class InventoryImageDirect extends InventoryImageSource {
+  const InventoryImageDirect();
+}
+
+/// A workspace object: a share URL on the platform origin, or a Supabase
+/// signed `workspaces` URL ([legacy]) whose token expires.
+final class InventoryImageObject extends InventoryImageSource {
+  const InventoryImageObject(this.path, {required this.legacy});
+
+  final String path;
+  final bool legacy;
+}
+
+/// A storage URL for another workspace or an unexpected host; never read.
+final class InventoryImageRefused extends InventoryImageSource {
+  const InventoryImageRefused();
+}
+
+/// Classifies [url] for a product of [workspaceId]. Storage URLs are only
+/// trusted for that workspace on an allow-listed host: the platform API
+/// origin for share URLs and the configured Supabase project for signed
+/// ones.
+InventoryImageSource classifyInventoryImageUrl(
   String url, {
-  String? origin,
+  required String workspaceId,
+  Set<String>? platformHosts,
+  Set<String>? storageHosts,
 }) {
   final uri = Uri.tryParse(url);
-  if (uri == null || uri.scheme != 'https') return null;
+  if (uri == null || uri.scheme != 'https') {
+    return const InventoryImageRefused();
+  }
   final segments = uri.pathSegments;
-  if (segments.length == 6 &&
+  final isShare =
+      segments.length == 6 &&
       segments[0] == 'api' &&
       segments[1] == 'v1' &&
       segments[2] == 'workspaces' &&
       segments[4] == 'storage' &&
-      segments[5] == 'share') {
-    final platform = Uri.tryParse(
-      origin ?? ApiConfig.baseUrlForPath(DriveEndpoints.share(segments[3])),
-    );
+      segments[5] == 'share';
+  if (isShare) {
     final path = uri.queryParameters['path'];
-    if (platform == null ||
-        platform.host != uri.host ||
-        !_workspaceId.hasMatch(segments[3]) ||
+    if (!(platformHosts ?? _platformHosts()).contains(uri.host) ||
+        segments[3].toLowerCase() != workspaceId.toLowerCase() ||
         path == null ||
         !_safePath(path)) {
-      return null;
+      return const InventoryImageRefused();
     }
-    return (wsId: segments[3], path: path);
+    return InventoryImageObject(path, legacy: false);
   }
   const signed = ['storage', 'v1', 'object', 'sign', 'workspaces'];
-  if (segments.length > 6 &&
-      uri.queryParameters.containsKey('token') &&
+  final isSigned =
+      segments.length > 6 &&
       [for (var i = 0; i < signed.length; i++) segments[i]].join('/') ==
-          signed.join('/') &&
-      _workspaceId.hasMatch(segments[5])) {
+          signed.join('/');
+  if (isSigned) {
     final path = segments.skip(6).join('/');
-    return _safePath(path) ? (wsId: segments[5], path: path) : null;
+    if (!(storageHosts ?? _storageHosts()).contains(uri.host) ||
+        !uri.queryParameters.containsKey('token') ||
+        segments[5].toLowerCase() != workspaceId.toLowerCase() ||
+        !_safePath(path)) {
+      return const InventoryImageRefused();
+    }
+    return InventoryImageObject(path, legacy: true);
   }
-  return null;
+  return const InventoryImageDirect();
 }
 
-bool _isShareUrl(String url) =>
-    Uri.tryParse(url)?.path.endsWith('/storage/share') ?? false;
+Set<String> _platformHosts() {
+  final route = DriveEndpoints.share('ws');
+  return {
+    for (final origin in [
+      ApiConfig.canonicalBaseUrlForPath(route),
+      ApiConfig.baseUrlForPath(route),
+    ])
+      ?Uri.tryParse(origin)?.host,
+  }..remove('');
+}
+
+Set<String> _storageHosts() =>
+    {?Uri.tryParse(Env.supabaseUrl)?.host}..remove('');
 
 bool _safePath(String path) =>
     path.isNotEmpty &&
     !path.split('/').any((part) => part.isEmpty || part == '.' || part == '..');
 
-/// Loads a product image. Workspace objects get a fresh signed URL from the
-/// share route with the session; the media request itself never carries the
-/// session token.
+/// A product image that cannot be shown; the UI keeps its placeholder.
+class InventoryImageUnavailable implements Exception {
+  const InventoryImageUnavailable();
+}
+
+/// Share paths the server refused this session, so a reader without access
+/// is not asked again on every rebuild.
+final Set<String> _refusedShares = {};
+
+/// Loads a product image of [workspaceId]. Workspace objects get a fresh
+/// signed URL from the share route with the session; the media request
+/// itself never carries the session token. When the share route refuses
+/// (it needs drive or finance media access), a legacy signed URL is read
+/// as stored and anything else throws [InventoryImageUnavailable].
 Future<Uint8List> fetchInventoryProductImage(
   String url, {
+  required String workspaceId,
   ApiClient? api,
   Future<Uint8List> Function(String url)? download,
-  String? origin,
+  Set<String>? platformHosts,
+  Set<String>? storageHosts,
 }) async {
   final fetch = download ?? InventoryProductImageCache.downloadBytes;
-  final target = inventoryImageStorageTarget(url, origin: origin);
-  if (target == null) return await fetch(url);
-  final Map<String, dynamic> signed;
-  try {
-    signed = await (api ?? ApiClient()).postJson(
-      DriveEndpoints.share(target.wsId),
-      {'path': target.path},
-    );
-  } on ApiException {
-    // A stored signed URL still works until it expires, even for readers
-    // the share route refuses.
-    if (_isShareUrl(url)) rethrow;
-    return await fetch(url);
+  final source = classifyInventoryImageUrl(
+    url,
+    workspaceId: workspaceId,
+    platformHosts: platformHosts,
+    storageHosts: storageHosts,
+  );
+  switch (source) {
+    case InventoryImageRefused():
+      throw const InventoryImageUnavailable();
+    case InventoryImageDirect():
+      return await fetch(url);
+    case InventoryImageObject(:final path, :final legacy):
+      final refusalKey = '$workspaceId/$path';
+      Future<Uint8List> refused() async {
+        if (legacy) return await fetch(url);
+        throw const InventoryImageUnavailable();
+      }
+
+      if (_refusedShares.contains(refusalKey)) return await refused();
+      final Map<String, dynamic> signed;
+      try {
+        signed = await (api ?? ApiClient()).postJson(
+          DriveEndpoints.share(workspaceId),
+          {'path': path},
+        );
+      } on ApiException catch (error) {
+        if (const {401, 403, 404}.contains(error.statusCode)) {
+          _refusedShares.add(refusalKey);
+        }
+        return await refused();
+      }
+      final signedUrl = signed['signedUrl'];
+      if (signedUrl is! String || signedUrl.isEmpty) return await refused();
+      return await fetch(signedUrl);
   }
-  final signedUrl = signed['signedUrl'];
-  if (signedUrl is! String || signedUrl.isEmpty) {
-    throw StateError('Product image URL unavailable.');
-  }
-  return await fetch(signedUrl);
 }

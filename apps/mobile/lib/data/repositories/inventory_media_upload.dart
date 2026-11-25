@@ -74,7 +74,8 @@ Future<String> uploadInventoryProductImage({
       response = await _put(
         client,
         uploadUri,
-        {...headers}..remove('Content-Type'),
+        {...headers}
+          ..removeWhere((name, _) => name.toLowerCase() == 'content-type'),
         bytes,
       );
     }

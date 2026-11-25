@@ -8926,5 +8926,6 @@
   "inventoryStockChanged": "Tồn kho đã thay đổi kể từ khi bạn mở. Số lượng mới nhất đang hiển thị; hãy kiểm tra và lưu lại.",
   "inventoryFilterNoLoadedMatch": "Không có kết quả trong {count} sản phẩm đầu tiên",
   "inventoryFilterSearchMore": "Tìm thêm sản phẩm",
-  "inventoryFilterSearching": "Đang tìm thêm sản phẩm…"
+  "inventoryFilterSearching": "Đang tìm thêm sản phẩm…",
+  "inventoryFilterShowingFrom": "Đang hiện kết quả trong {count} sản phẩm đầu tiên"
 }

@@ -137,40 +137,60 @@ extension InventoryProductMutations on InventoryRepository {
     ]);
   }
 
+  /// The stored stock rows with every column, read fresh from the server.
+  Future<List<InventoryStockRow>> getProductStockRows(
+    String wsId,
+    String productId,
+  ) async {
+    final response = await _api.getJson(
+      InventoryEndpoints.productInventory(wsId, productId),
+    );
+    return (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(InventoryStockRow.fromJson)
+        .toList(growable: false);
+  }
+
   /// Replaces a product's stock rows through the stock endpoint, which
   /// records each change in stock history.
   ///
   /// Runs online only: the endpoint takes the desired rows, so a queued
   /// replay could overwrite sales made in the meantime. Before writing, the
-  /// current rows are re-read and compared with [baseline] (the rows the
-  /// editor started from); any difference throws [InventoryStockConflict]
-  /// with the latest product instead of overwriting it.
+  /// stored rows are re-read and compared with [baseline] (the rows the
+  /// editor started from) on every column; any difference throws
+  /// [InventoryStockConflict] with the latest rows instead of overwriting
+  /// them. Each row keeps its stored revenue share; the endpoint would
+  /// otherwise reset it.
   Future<void> adjustProductStock({
     required String wsId,
     required String productId,
-    required List<InventoryStockEntry> baseline,
+    required List<InventoryStockRow> baseline,
     required List<InventoryStockEntry> inventory,
   }) async {
     if (!await _networkAvailable()) throw const InventoryStockOffline();
-    final InventoryProduct? latest;
     try {
-      latest = await getProduct(wsId, productId, forceRefresh: true);
-    } on ApiException catch (error) {
-      if (isOfflineTransportFailure(error)) {
-        throw const InventoryStockOffline();
+      final latest = await getProductStockRows(wsId, productId);
+      if (!inventoryStockRowsMatch(latest, baseline)) {
+        throw InventoryStockConflict(latest);
       }
-      rethrow;
-    }
-    if (latest == null) {
-      throw const ApiException(message: 'Product not found', statusCode: 404);
-    }
-    if (!inventoryStockRowsEqual(latest.inventory, baseline)) {
-      throw InventoryStockConflict(latest);
-    }
-    try {
+      final stored = {for (final row in latest) row.key: row};
       await _api.patchJson(
         InventoryEndpoints.productInventory(wsId, productId),
-        {'inventory': _stockPayload(inventory)},
+        {
+          'inventory': [
+            for (final row in inventory)
+              {
+                ..._stockPayload([row]).single,
+                'revenue_share_partner_id':
+                    stored['${row.warehouseId}:${row.unitId}']
+                        ?.revenueSharePartnerId,
+                'revenue_share_bps':
+                    stored['${row.warehouseId}:${row.unitId}']
+                        ?.revenueShareBps ??
+                    0,
+              },
+          ],
+        },
       );
     } on ApiException catch (error) {
       if (isOfflineTransportFailure(error)) {
@@ -198,27 +218,6 @@ extension InventoryProductMutations on InventoryRepository {
           .toList(growable: false);
 }
 
-/// Whether two stock row lists hold the same quantities, minimums and
-/// prices per warehouse and unit, in any order.
-bool inventoryStockRowsEqual(
-  List<InventoryStockEntry> a,
-  List<InventoryStockEntry> b,
-) {
-  if (a.length != b.length) return false;
-  String key(InventoryStockEntry row) => '${row.warehouseId}:${row.unitId}';
-  final rows = {for (final row in a) key(row): row};
-  for (final row in b) {
-    final other = rows[key(row)];
-    if (other == null ||
-        other.amount != row.amount ||
-        other.minAmount != row.minAmount ||
-        other.price != row.price) {
-      return false;
-    }
-  }
-  return true;
-}
-
 /// Stock adjustment needs a connection.
 class InventoryStockOffline implements Exception {
   const InventoryStockOffline();
@@ -228,5 +227,5 @@ class InventoryStockOffline implements Exception {
 class InventoryStockConflict implements Exception {
   const InventoryStockConflict(this.latest);
 
-  final InventoryProduct latest;
+  final List<InventoryStockRow> latest;
 }

@@ -94,12 +94,6 @@ void main() {
       expect(summary.matches(InventoryStockFilter.out), isFalse);
     });
 
-    test('stock rows compare by location regardless of order', () {
-      final a = [_row('Bag', 1), _row('Cup', 2)];
-      expect(inventoryStockRowsEqual(a, a.reversed.toList()), isTrue);
-      expect(inventoryStockRowsEqual(a, [_row('Bag', 1)]), isFalse);
-    });
-
     test('reports a price range from the lowest price', () {
       final summary = InventoryStockSummary.of(
         _product([_row('Bag', 5, price: 30), _row('Bag', 5, price: 12)]),
@@ -132,57 +126,129 @@ void main() {
     expect(product.inventory.last.warehouseName, 'Van');
   });
 
+  test('stored stock rows compare every column by location', () {
+    InventoryStockRow row(String unit, {int bps = 0, String? partner}) =>
+        InventoryStockRow(
+          unitId: unit,
+          warehouseId: 'w',
+          amount: 3,
+          minAmount: 1,
+          price: 10,
+          revenueSharePartnerId: partner,
+          revenueShareBps: bps,
+        );
+    final rows = [row('bag', bps: 3000, partner: 'p'), row('cup')];
+    expect(inventoryStockRowsMatch(rows, rows.reversed.toList()), isTrue);
+    expect(
+      inventoryStockRowsMatch(rows, [
+        row('bag', bps: 1000, partner: 'p'),
+        row('cup'),
+      ]),
+      isFalse,
+    );
+    expect(inventoryStockRowsMatch(rows, [rows.first]), isFalse);
+    expect(
+      InventoryStockRow.fromJson(const {
+        'unit_id': 'u',
+        'warehouse_id': 'w',
+        'amount': 2,
+        'min_amount': 1,
+        'price': 5,
+        'revenue_share_partner_id': 'p',
+        'revenue_share_bps': 3000,
+      }),
+      const InventoryStockRow(
+        unitId: 'u',
+        warehouseId: 'w',
+        amount: 2,
+        minAmount: 1,
+        price: 5,
+        revenueSharePartnerId: 'p',
+        revenueShareBps: 3000,
+      ),
+    );
+  });
+
   group('stored image URLs', () {
     const ws = '82cf845a-49b0-459d-a5ee-1005e8de4fae';
+    const other = '11111111-2222-4333-8444-555555555555';
     const origin = 'https://tuturuuu.com';
+    const platform = {'tuturuuu.com'};
+    const storage = {'project.supabase.co'};
+    InventoryImageSource classify(String url) => classifyInventoryImageUrl(
+      url,
+      workspaceId: ws,
+      platformHosts: platform,
+      storageHosts: storage,
+    );
 
-    test('share and legacy signed URLs resolve to the workspace object', () {
+    test('share URLs use the canonical origin and classify as objects', () {
       final share = inventoryImageShareUrl(
         ws,
         'inventory/media/a b.png',
         origin: origin,
       );
-      expect(share, startsWith('https://tuturuuu.com/api/v1/workspaces/$ws/'));
-      expect(inventoryImageStorageTarget(share, origin: origin), (
-        wsId: ws,
-        path: 'inventory/media/a b.png',
-      ));
+      expect(share, startsWith('$origin/api/v1/workspaces/$ws/storage/share'));
       expect(
-        inventoryImageStorageTarget(
-          origin: origin,
-          'https://x.supabase.co/storage/v1/object/sign/workspaces/$ws/'
+        classify(share),
+        isA<InventoryImageObject>()
+            .having((o) => o.path, 'path', 'inventory/media/a b.png')
+            .having((o) => o.legacy, 'legacy', isFalse),
+      );
+      expect(
+        classify(
+          'https://project.supabase.co/storage/v1/object/sign/workspaces/$ws/'
           'inventory/media/a.png?token=t',
         ),
-        (wsId: ws, path: 'inventory/media/a.png'),
+        isA<InventoryImageObject>().having((o) => o.legacy, 'legacy', isTrue),
       );
-      for (final other in [
+      expect(
+        classify('https://cdn.tuturuuu.com/public/a.png'),
+        isA<InventoryImageDirect>(),
+      );
+    });
+
+    test('other workspaces, hosts and unsafe paths are refused', () {
+      for (final url in [
+        '$origin/api/v1/workspaces/$other/storage/share?path=a',
         'https://evil.example/api/v1/workspaces/$ws/storage/share?path=a',
-        'https://tuturuuu.com/api/v1/workspaces/$ws/storage/share?path=../a',
-        'https://cdn.tuturuuu.com/public/a.png',
+        '$origin/api/v1/workspaces/$ws/storage/share?path=../a',
         'http://tuturuuu.com/api/v1/workspaces/$ws/storage/share?path=a',
+        'https://evil.example/storage/v1/object/sign/workspaces/$ws/a.png?token=t',
+        'https://project.supabase.co/storage/v1/object/sign/workspaces/$other/a.png?token=t',
       ]) {
-        expect(
-          inventoryImageStorageTarget(other, origin: origin),
-          isNull,
-          reason: other,
-        );
+        expect(classify(url), isA<InventoryImageRefused>(), reason: url);
       }
     });
+
+    Future<List<String>> load(
+      String url,
+      _Api api, {
+      String workspaceId = ws,
+    }) async {
+      final fetched = <String>[];
+      await fetchInventoryProductImage(
+        url,
+        workspaceId: workspaceId,
+        api: api,
+        platformHosts: platform,
+        storageHosts: storage,
+        download: (url) async {
+          fetched.add(url);
+          return Uint8List(0);
+        },
+      );
+      return fetched;
+    }
 
     test('loads workspace objects through a fresh signed URL', () async {
       final api = _Api();
       when(
         () => api.postJson(any(), any()),
       ).thenAnswer((_) async => {'signedUrl': 'https://storage.example/fresh'});
-      final fetched = <String>[];
-      await fetchInventoryProductImage(
+      final fetched = await load(
         inventoryImageShareUrl(ws, 'inventory/media/a.png', origin: origin),
-        origin: origin,
-        api: api,
-        download: (url) async {
-          fetched.add(url);
-          return Uint8List(0);
-        },
+        api,
       );
       expect(fetched, ['https://storage.example/fresh']);
       verify(
@@ -192,25 +258,53 @@ void main() {
       ).called(1);
     });
 
+    test(
+      'a refused share shows the placeholder and is not asked again',
+      () async {
+        final api = _Api();
+        when(
+          () => api.postJson(any(), any()),
+        ).thenThrow(const ApiException(message: 'Forbidden', statusCode: 403));
+        final share = inventoryImageShareUrl(
+          ws,
+          'inventory/media/refused.png',
+          origin: origin,
+        );
+        for (var attempt = 0; attempt < 2; attempt++) {
+          await expectLater(
+            load(share, api),
+            throwsA(isA<InventoryImageUnavailable>()),
+          );
+        }
+        verify(() => api.postJson(any(), any())).called(1);
+      },
+    );
+
     test('a refused legacy signed URL falls back to itself', () async {
       final api = _Api();
       when(
         () => api.postJson(any(), any()),
       ).thenThrow(const ApiException(message: 'Forbidden', statusCode: 403));
       const legacy =
-          'https://x.supabase.co/storage/v1/object/sign/workspaces/$ws/a.png'
-          '?token=t';
-      final fetched = <String>[];
-      await fetchInventoryProductImage(
-        legacy,
-        origin: origin,
-        api: api,
-        download: (url) async {
-          fetched.add(url);
-          return Uint8List(0);
-        },
+          'https://project.supabase.co/storage/v1/object/sign/workspaces/$ws/'
+          'legacy.png?token=t';
+      expect(await load(legacy, api), [legacy]);
+    });
+
+    test('another workspace never reaches the network', () async {
+      final api = _Api();
+      await expectLater(
+        load(
+          inventoryImageShareUrl(
+            other,
+            'inventory/media/a.png',
+            origin: origin,
+          ),
+          api,
+        ),
+        throwsA(isA<InventoryImageUnavailable>()),
       );
-      expect(fetched, [legacy]);
+      verifyNever(() => api.postJson(any(), any()));
     });
   });
 
@@ -364,7 +458,12 @@ void main() {
       when(() => api.postJson(any(), any())).thenAnswer((call) async {
         final path = call.positionalArguments.first as String;
         return path.endsWith('upload-url')
-            ? {'signedUrl': ticketUrl, 'path': 'p/a.png'}
+            ? {
+                'signedUrl': ticketUrl,
+                'path': 'p/a.png',
+                // A provider may name the header in lowercase.
+                'headers': {'content-type': 'image/png'},
+              }
             : {'readUrl': 'https://storage.example/read/a.png'};
       });
       final sent = <http.Request>[];
@@ -383,6 +482,7 @@ void main() {
       expect(sent, hasLength(2));
       expect(sent.first.headers['Content-Type'], startsWith('image/png'));
       expect(sent.last.headers.containsKey('Content-Type'), isFalse);
+      expect(sent.last.headers.containsKey('content-type'), isFalse);
 
       ticketUrl = 'http://storage.example/upload';
       sent.clear();

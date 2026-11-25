@@ -60,11 +60,46 @@ void main() {
       settingsRepository = SettingsRepository();
     });
 
-    for (final testCase in <({String name, double? server, bool online})>[
-      (name: 'saves through the stock endpoint', server: null, online: true),
-      (name: 'refuses when the server stock changed', server: 4, online: true),
-      (name: 'needs a connection', server: null, online: false),
-    ]) {
+    /// A consignment row: partner P takes 30% (3000 basis points).
+    Map<String, dynamic> storedRow({double? amount = 7.5, int bps = 3000}) => {
+      'unit_id': 'unit_1',
+      'warehouse_id': 'warehouse_1',
+      'amount': amount,
+      'min_amount': 2,
+      'price': 12.5,
+      'revenue_share_partner_id': 'partner-p',
+      'revenue_share_bps': bps,
+    };
+
+    for (final testCase
+        in <
+          ({String name, Map<String, dynamic> server, bool online, bool saves})
+        >[
+          (
+            name: 'saves through the stock endpoint and keeps revenue share',
+            server: storedRow(),
+            online: true,
+            saves: true,
+          ),
+          (
+            name: 'refuses when the server amount changed',
+            server: storedRow(amount: 4),
+            online: true,
+            saves: false,
+          ),
+          (
+            name: 'refuses when the server revenue share changed',
+            server: storedRow(bps: 1000),
+            online: true,
+            saves: false,
+          ),
+          (
+            name: 'needs a connection',
+            server: storedRow(),
+            online: false,
+            saves: false,
+          ),
+        ]) {
       testWidgets('Adjust stock ${testCase.name}', (tester) async {
         tester.view
           ..devicePixelRatio = 1
@@ -84,6 +119,17 @@ void main() {
         when(
           () => api.patchJson(any(), any()),
         ).thenAnswer((_) async => <String, dynamic>{});
+        // The form loads the stored rows, then the save re-reads them.
+        var stockReads = 0;
+        when(
+          () => api.getJson(
+            '/api/v1/workspaces/ws_1/products/synthetic-product/inventory',
+          ),
+        ).thenAnswer(
+          (_) async => {
+            'data': [if (stockReads++ == 0) storedRow() else testCase.server],
+          },
+        );
         final key = await mountEditorModal(
           tester,
           MultiBlocProvider(
@@ -100,9 +146,6 @@ void main() {
                 cacheStore: cache,
                 amount: 7.5,
                 networkAvailable: () async => testCase.online,
-                serverAmount: testCase.server == null
-                    ? null
-                    : () => testCase.server,
               ),
               financeRepository: financeRepository,
               settingsRepository: settingsRepository,
@@ -119,7 +162,7 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('Save product').hitTestable());
         await tester.pumpAndSettle();
-        if (testCase.online && testCase.server == null) {
+        if (testCase.saves) {
           final call = verify(
             () => api.patchJson(
               '/api/v1/workspaces/ws_1/products/synthetic-product/inventory',
@@ -132,6 +175,10 @@ void main() {
           // An empty quantity is unlimited stock, never zero.
           expect(row['amount'], isNull);
           expect(row['price'], 12.5);
+          // The endpoint resets omitted revenue share; the stored values go
+          // back unchanged.
+          expect(row['revenue_share_partner_id'], 'partner-p');
+          expect(row['revenue_share_bps'], 3000);
           expect(find.byType(InventoryProductEditorPage), findsNothing);
           await tester.drainShadToastTimers();
           return;
@@ -153,9 +200,10 @@ void main() {
             find.textContaining('Stock changed since you opened this'),
             findsOneWidget,
           );
+          // The form now shows the server's rows.
           expect(
             tester.widget<EditableText>(editorAmountField()).controller.text,
-            '4.0',
+            '${testCase.server['amount']}',
           );
         }
         await captureEditor(tester, key, 'editor-adjust-${testCase.name}');

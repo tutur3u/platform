@@ -21240,4 +21240,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryFilterSearching => 'Đang tìm thêm sản phẩm…';
+
+  @override
+  String inventoryFilterShowingFrom(Object count) {
+    return 'Đang hiện kết quả trong $count sản phẩm đầu tiên';
+  }
 }

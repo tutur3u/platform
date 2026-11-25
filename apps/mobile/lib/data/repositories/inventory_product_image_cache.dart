@@ -24,14 +24,14 @@ class InventoryProductImageCache {
     Future<Uint8List> Function(String url)? fetchBytes,
   }) : store = store ?? CacheStore.instance,
        currentUserId = currentUserId ?? currentCacheUserId,
-       _fetchBytes = fetchBytes ?? fetchInventoryProductImage;
+       _fetchBytes = fetchBytes;
 
   static final InventoryProductImageCache instance =
       InventoryProductImageCache();
   static const int maxImageBytes = 8 * 1024 * 1024;
   final CacheStore store;
   final String? Function() currentUserId;
-  final Future<Uint8List> Function(String url) _fetchBytes;
+  final Future<Uint8List> Function(String url)? _fetchBytes;
 
   CacheKey key(InventoryProduct product, String userId) => CacheKey(
     namespace: 'inventory.product-image',
@@ -84,7 +84,12 @@ class InventoryProductImageCache {
         decode: _decode,
         fetch: () async {
           final bytes = await OfflineApiRequest.paced(
-            () => _fetchBytes(product.avatarUrl!),
+            () =>
+                _fetchBytes?.call(product.avatarUrl!) ??
+                fetchInventoryProductImage(
+                  product.avatarUrl!,
+                  workspaceId: product.wsId,
+                ),
           );
           checkScope();
           await _validate(bytes);

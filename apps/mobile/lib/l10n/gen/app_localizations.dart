@@ -39240,6 +39240,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Searching more products…'**
   String get inventoryFilterSearching;
+
+  /// No description provided for @inventoryFilterShowingFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing matches from the first {count} products'**
+  String inventoryFilterShowingFrom(Object count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

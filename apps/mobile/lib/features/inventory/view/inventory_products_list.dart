@@ -131,7 +131,7 @@ extension _InventoryProductsList on _InventoryProductsPageState {
           )
         : _fillExhausted && products.isNotEmpty
         ? _FooterAction(
-            message: l10n.inventoryFilterNoLoadedMatch(_products.length),
+            message: l10n.inventoryFilterShowingFrom(_products.length),
             actionLabel: l10n.inventoryFilterSearchMore,
             onPressed: _searchMore,
           )

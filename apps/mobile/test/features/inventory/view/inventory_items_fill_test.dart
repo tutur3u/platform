@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/features/inventory/inventory_catalog_signal.dart';
@@ -5,13 +6,24 @@ import 'package:mobile/features/inventory/inventory_catalog_signal.dart';
 import '../../../helpers/design_render_harness.dart';
 import 'inventory_items_fixture.dart';
 
-/// [count] items; the ones at [outFrom] and after are out of stock.
-List<InventoryProduct> _catalog(int count, int outFrom) => [
+/// [count] items; the ones at [outFrom] and after, plus [alsoOut], are
+/// out of stock.
+List<InventoryProduct> _catalog(
+  int count,
+  int outFrom, {
+  Set<int> alsoOut = const {},
+}) => [
   for (var index = 0; index < count; index++)
     item(
       'item-$index',
       'Item ${index.toString().padLeft(3, '0')}',
-      stock: [itemStock('Main store', 'Bag', index >= outFrom ? 0 : 5)],
+      stock: [
+        itemStock(
+          'Main store',
+          'Bag',
+          index >= outFrom || alsoOut.contains(index) ? 0 : 5,
+        ),
+      ],
     ),
 ];
 
@@ -78,6 +90,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(_pages(inventory), [1, 2, 3, 4, 5, 6, 7]);
     expect(find.text('Item 185'), findsOneWidget);
+  });
+
+  testWidgets('a reload during a fill starts its own fill', (tester) async {
+    final (:inventory, shell: _) = await pumpItemsPage(
+      tester,
+      catalog: _catalog(100, 80),
+      configure: (repo) =>
+          repo.holdWhen = (call) => call.status == 'active' && call.page == 2,
+    );
+    await tester.ensureVisible(find.text('Stock'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Stock'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Out of stock').last);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    // The first fill waits on page 2 while the status changes.
+    expect(_pages(inventory), [1, 2]);
+    await tester.tap(find.text('All').first);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    inventory.release();
+    await tester.pumpAndSettle();
+    expect(
+      [
+        for (final call in inventory.calls)
+          if (call.status == 'all') call.page,
+      ],
+      [1, 2, 3, 4],
+    );
+    expect(find.text('Item 080'), findsOneWidget);
+    expect(find.text('No products match these filters'), findsNothing);
+  });
+
+  testWidgets('a spent budget with matches says where they come from', (
+    tester,
+  ) async {
+    await pumpItemsPage(tester, catalog: _catalog(200, 185, alsoOut: {5}));
+    await _pick(tester, 'Stock', 'Out of stock');
+    expect(find.text('Item 005'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Showing matches from the first 150 products'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text('No matches in the first 150 products'), findsNothing);
   });
 
   group('compact detail return', () {

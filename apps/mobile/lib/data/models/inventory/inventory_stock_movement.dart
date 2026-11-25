@@ -111,3 +111,62 @@ class InventoryStockHistoryPage extends Equatable {
   @override
   List<Object?> get props => [movements, hasMore, offset];
 }
+
+/// One stored stock row from `GET products/{id}/inventory`, with every
+/// column a stock write must send back unchanged.
+class InventoryStockRow extends Equatable {
+  const InventoryStockRow({
+    required this.unitId,
+    required this.warehouseId,
+    required this.amount,
+    required this.minAmount,
+    required this.price,
+    this.revenueSharePartnerId,
+    this.revenueShareBps = 0,
+  });
+
+  factory InventoryStockRow.fromJson(Map<String, dynamic> json) =>
+      InventoryStockRow(
+        unitId: json['unit_id'] as String? ?? '',
+        warehouseId: json['warehouse_id'] as String? ?? '',
+        amount: (json['amount'] as num?)?.toDouble(),
+        minAmount: (json['min_amount'] as num?)?.toDouble() ?? 0,
+        price: (json['price'] as num?)?.toDouble() ?? 0,
+        revenueSharePartnerId: json['revenue_share_partner_id'] as String?,
+        revenueShareBps: (json['revenue_share_bps'] as num?)?.toInt() ?? 0,
+      );
+
+  final String unitId;
+  final String warehouseId;
+  final double? amount;
+  final double minAmount;
+  final double price;
+
+  /// Consignment partner and their share in basis points; kept as stored.
+  final String? revenueSharePartnerId;
+  final int revenueShareBps;
+
+  String get key => '$warehouseId:$unitId';
+
+  @override
+  List<Object?> get props => [
+    unitId,
+    warehouseId,
+    amount,
+    minAmount,
+    price,
+    revenueSharePartnerId,
+    revenueShareBps,
+  ];
+}
+
+/// Whether two stock row lists match on every stored column per warehouse
+/// and unit, in any order.
+bool inventoryStockRowsMatch(
+  List<InventoryStockRow> a,
+  List<InventoryStockRow> b,
+) {
+  if (a.length != b.length) return false;
+  final rows = {for (final row in a) row.key: row};
+  return b.every((row) => rows[row.key] == row);
+}

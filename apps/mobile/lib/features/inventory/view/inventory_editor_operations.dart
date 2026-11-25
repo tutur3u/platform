@@ -10,7 +10,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
       _categoryId = _ownerId = _manufacturerId = _financeCategoryId = null;
       _avatarUrl = null;
       _avatarChanged = false;
-      _baseline = const [];
+      _baseline = null;
       _categories = _manufacturers = _units = _warehouses = const [];
       _owners = const [];
       _financeCategories = const [];
@@ -66,7 +66,11 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
           _financeCategories,
         ),
         if (widget.productId != null)
-          _inventoryRepository.getProduct(wsId, widget.productId!)
+          _inventoryRepository.getProduct(
+            wsId,
+            widget.productId!,
+            forceRefresh: widget.stockFirst,
+          )
         else
           Future<InventoryProduct?>.value(),
       ]);
@@ -89,7 +93,6 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
         _ownerId = product.ownerId;
         _financeCategoryId = product.financeCategoryId;
         _avatarUrl = product.avatarUrl;
-        _baseline = product.inventory;
         _rows = product.inventory
             .map(
               (row) => _InventoryRowDraft(
@@ -130,6 +133,9 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
         _refreshing = false;
         _loading = false;
       });
+      if (widget.stockFirst && _baseline == null) {
+        unawaited(_loadStockBaseline());
+      }
     } on ApiException catch (error) {
       if (!current()) return;
       _update(() {

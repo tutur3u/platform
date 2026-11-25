@@ -10876,5 +10876,6 @@
   "inventoryStockChanged": "Stock changed since you opened this. The latest amounts are shown; review them and save again.",
   "inventoryFilterNoLoadedMatch": "No matches in the first {count} products",
   "inventoryFilterSearchMore": "Search more products",
-  "inventoryFilterSearching": "Searching more products…"
+  "inventoryFilterSearching": "Searching more products…",
+  "inventoryFilterShowingFrom": "Showing matches from the first {count} products"
 }

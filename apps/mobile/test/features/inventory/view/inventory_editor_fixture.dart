@@ -114,23 +114,15 @@ class ExistingProductRepository extends EditorInventoryRepository {
     super.mutationQueue,
     super.cacheUserId,
     super.networkAvailable,
-    this.serverAmount,
   });
   final double? amount;
-
-  /// The amount a fresh (forced) read returns; defaults to [amount].
-  final double? Function()? serverAmount;
 
   @override
   Future<InventoryProduct?> getProduct(
     String wsId,
     String productId, {
     bool forceRefresh = false,
-  }) async => _product(
-    wsId,
-    productId,
-    forceRefresh && serverAmount != null ? serverAmount!() : amount,
-  );
+  }) async => _product(wsId, productId, amount);
 
   InventoryProduct _product(String wsId, String productId, double? amount) =>
       InventoryProduct(

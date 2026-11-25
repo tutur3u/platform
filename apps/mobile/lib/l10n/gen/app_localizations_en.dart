@@ -21498,4 +21498,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryFilterSearching => 'Searching more products…';
+
+  @override
+  String inventoryFilterShowingFrom(Object count) {
+    return 'Showing matches from the first $count products';
+  }
 }

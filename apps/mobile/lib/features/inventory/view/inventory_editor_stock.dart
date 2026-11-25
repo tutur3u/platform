@@ -26,6 +26,26 @@ extension _InventoryEditorStock on _InventoryProductEditorPageState {
     }
   }
 
+  /// Reads the stored rows, revenue share included, so the form starts
+  /// from the server's current stock rather than a cached product.
+  Future<bool> _loadStockBaseline() async {
+    final wsId = _wsId;
+    final productId = widget.productId;
+    if (wsId == null || productId == null) return false;
+    final scope = _scope;
+    try {
+      final rows = await _inventoryRepository.getProductStockRows(
+        wsId,
+        productId,
+      );
+      if (!mounted || _scope != scope) return false;
+      _update(() => _replaceRows(rows));
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
   /// Saves Adjust stock through the history-recording stock endpoint. It
   /// needs a connection, and refuses when the server's rows no longer match
   /// the rows this form started from; the form then shows the latest rows.
@@ -37,12 +57,26 @@ extension _InventoryEditorStock on _InventoryProductEditorPageState {
     final productId = widget.productId;
     if (productId == null) return;
     final l10n = context.l10n;
+    final baseline = _baseline;
+    if (baseline == null) {
+      // Without the stored rows the write could not keep their revenue
+      // share or detect a conflict; show the rows to start from instead.
+      final loaded = await _loadStockBaseline();
+      if (mounted) {
+        _update(
+          () => _formError = loaded
+              ? l10n.inventoryStockChanged
+              : l10n.inventoryStockNeedsOnline,
+        );
+      }
+      return;
+    }
     _update(() => _saving = true);
     try {
       await _inventoryRepository.adjustProductStock(
         wsId: wsId,
         productId: productId,
-        baseline: _baseline,
+        baseline: baseline,
         inventory: entries,
       );
       if (!mounted || _scope != scope) return;
@@ -53,7 +87,7 @@ extension _InventoryEditorStock on _InventoryProductEditorPageState {
     } on InventoryStockConflict catch (conflict) {
       if (!mounted || _scope != scope) return;
       _update(() {
-        _replaceRows(conflict.latest.inventory);
+        _replaceRows(conflict.latest);
         _formError = l10n.inventoryStockChanged;
       });
     } on ApiException catch (error) {
@@ -65,7 +99,7 @@ extension _InventoryEditorStock on _InventoryProductEditorPageState {
     }
   }
 
-  void _replaceRows(List<InventoryStockEntry> rows) {
+  void _replaceRows(List<InventoryStockRow> rows) {
     for (final row in _rows) {
       row.dispose();
     }

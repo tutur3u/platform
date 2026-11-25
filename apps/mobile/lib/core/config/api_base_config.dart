@@ -56,6 +56,11 @@ class ApiConfig {
   static String baseUrlForPath(String path) =>
       _forDevice(_origins.baseUrlForPath(path));
 
+  /// The configured origin for [path] without the Android emulator rewrite,
+  /// for URLs that are stored and read on other devices.
+  static String canonicalBaseUrlForPath(String path) =>
+      _origins.baseUrlForPath(path);
+
   static String _forDevice(String url) {
     if (Platform.isAndroid && url.contains('localhost')) {
       return url.replaceAll('localhost', '10.0.2.2');
