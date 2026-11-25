@@ -254,6 +254,7 @@ export function ProgrammingWorkbench({
     selectedSave
   );
   const runnerDown = gate.id;
+  const outputOpen = !!runnerDown || outputDisclosure.open;
   const output = {
     view: {
       ...outputView(!!problem, testOutput, result.data),
@@ -291,7 +292,7 @@ export function ProgrammingWorkbench({
         }
       : undefined;
   const showPreview = meeting
-    ? outputDisclosure.open && outputTab === 'preview'
+    ? outputOpen && outputTab === 'preview'
     : preview;
   const menu: WorkbenchAction[] = [
     ...(problem
@@ -527,7 +528,12 @@ export function ProgrammingWorkbench({
             tab={outputTab}
             onTab={setOutputTab}
             disclosure={
-              meeting.collapsibleOutput ? outputDisclosure : undefined
+              meeting.collapsibleOutput
+                ? {
+                    open: outputOpen,
+                    toggle: runnerDown ? undefined : outputDisclosure.toggle,
+                  }
+                : undefined
             }
             test={tests}
             testing={test.isPending}

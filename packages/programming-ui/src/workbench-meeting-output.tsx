@@ -49,7 +49,7 @@ export function WorkbenchMeetingOutput({
 }: Omit<SharedOutput, 'open' | 'onToggle' | 'embedded' | 'preview'> & {
   tab: OutputTab;
   onTab: (tab: OutputTab) => void;
-  disclosure?: { open: boolean; toggle: () => void };
+  disclosure?: { open: boolean; toggle?: () => void };
   test?: WorkbenchTestRun;
   testing: boolean;
   canTest: boolean;
@@ -291,6 +291,7 @@ export function WorkbenchMeetingOutput({
           size="sm"
           variant="ghost"
           className="justify-start rounded-none px-2.5"
+          disabled={!disclosure.toggle}
           aria-expanded={open}
           aria-controls={`${id}-output`}
           onClick={disclosure.toggle}

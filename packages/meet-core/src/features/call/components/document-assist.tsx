@@ -11,15 +11,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
-import { useActivityModalOpen } from '../stage-layout/activity-pane-context';
+import { useState } from 'react';
 import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
-import { MiraMark } from './mira-mark';
+import { useActivityModalOpen } from '../stage-layout/activity-pane-context';
 import {
   type DocumentNode,
   miraTextToContent,
   sectionAt,
 } from './document-mira-edit';
+import { MiraMark } from './mira-mark';
 
 type Mode = MeetingDocumentAssistInput['mode'];
 /** The editor surface Mira needs: selection, document and insertion. */
@@ -114,10 +114,16 @@ export function DocumentAssist({
 }) {
   const t = useTranslations('meet.collaboration');
   const [open, setOpen] = useState(false);
-  const modalOpen = useActivityModalOpen(open);
+  const canOpen = useActivityModalOpen(true);
   const [mode, setMode] = useState<Mode>('refine');
   const [instruction, setInstruction] = useState('');
-  const target = useRef<Target | null>(null);
+  const [target, setTarget] = useState<Target | null>(null);
+
+  if (!canOpen && (open || target)) {
+    setOpen(false);
+    setTarget(null);
+  }
+
   const assist = useMutation({
     mutationFn: (input: { mode: Mode; target: Target }) =>
       assistMeetDocument(meetingId, {
@@ -150,7 +156,7 @@ export function DocumentAssist({
         after: result.text,
       });
       setInstruction('');
-      target.current = null;
+      setTarget(null);
       setOpen(false);
     },
   });
@@ -159,19 +165,19 @@ export function DocumentAssist({
     return doc ? doc.textBetween(0, doc.content.size, '\n').slice(0, 8000) : '';
   }
   const modes: Mode[] = ['refine', 'draft', 'summarize'];
-  const needsSelection = mode === 'refine' && !target.current?.text.trim();
+  const needsSelection = mode === 'refine' && !target?.text.trim();
   return (
     <Popover
-      open={modalOpen}
+      open={open && canOpen}
       onOpenChange={(next) => {
         if (assist.isPending) return;
         // Keyboard activation has no pointerdown, so capture on open as well.
-        if (next && !target.current) {
+        if (next && !target) {
           const current = editor();
-          target.current = current ? captureTarget(current, awareness) : null;
+          setTarget(current ? captureTarget(current, awareness) : null);
         }
         if (!next) {
-          target.current = null;
+          setTarget(null);
           assist.reset();
         }
         setOpen(next);
@@ -184,7 +190,7 @@ export function DocumentAssist({
           className="rounded-full px-2.5 font-extrabold text-dynamic-purple hover:bg-dynamic-purple/10 hover:text-dynamic-purple"
           onPointerDown={() => {
             const current = editor();
-            target.current = current ? captureTarget(current, awareness) : null;
+            setTarget(current ? captureTarget(current, awareness) : null);
           }}
         >
           <Sparkles className="size-4" />
@@ -240,7 +246,7 @@ export function DocumentAssist({
           onClick={() =>
             assist.mutate({
               mode,
-              target: target.current ?? { text: '' },
+              target: target ?? { text: '' },
             })
           }
         >

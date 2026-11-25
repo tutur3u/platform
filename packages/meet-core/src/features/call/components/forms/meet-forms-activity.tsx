@@ -1,11 +1,11 @@
 'use client';
 
 import { Turnstile } from '@marsidev/react-turnstile';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   readTurnstileScriptNonce,
   SAFARI_SAFE_TURNSTILE_OPTIONS,
 } from '@tuturuuu/cloudflare/turnstile/client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -17,7 +17,13 @@ import {
 } from '@tuturuuu/ui/select';
 import { MAX_DISPLAY_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useLocale } from 'next-intl';
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { ActivitySelect } from '../../stage-layout/activity-select';
 import { FormsResultsPanel } from '../forms-results/forms-results-panel';
 import { ResizableCallPanel } from '../resizable-call-panel';

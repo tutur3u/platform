@@ -12,7 +12,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../apps/meet/messages/en.json';
 import { ProgrammingWorkbench } from './programming-workbench';
 import type { WorkbenchExecution } from './use-workbench-run';
-import type { WorkbenchMeeting } from './workbench-meeting';
+import type { RunnerAvailability, WorkbenchMeeting } from './workbench-meeting';
 
 vi.mock('./use-programming-room', () => {
   const client = {
@@ -120,6 +120,54 @@ it.each(['run', 'test'] as const)(
     }
   }
 );
+
+it('reveals collapsed meeting output when the runner refuses', () => {
+  const client = new QueryClient();
+  const execution: WorkbenchExecution = {
+    run: vi.fn(async () => ({ runId: 'run' })),
+    read: vi.fn(),
+  };
+  const view = (runnerAvailability: RunnerAvailability) => (
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ProgrammingWorkbench
+          projectId="demo"
+          execution={execution}
+          meeting={{
+            collapsibleOutput: true,
+            runnerAvailability,
+            mira: {
+              presence: null,
+              manage: false,
+              pending: false,
+              onAction: vi.fn(),
+            },
+          }}
+        />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+
+  const { rerender } = render(view('ready'));
+  const disclosure = screen.getByRole('button', { name: t.outputPanes });
+  expect(disclosure.getAttribute('aria-expanded')).toBe('false');
+
+  rerender(view('unavailable'));
+  expect(disclosure.getAttribute('aria-expanded')).toBe('true');
+  expect(disclosure.hasAttribute('disabled')).toBe(true);
+  const run = screen.getByRole('button', { name: t.run });
+  expect(run.getAttribute('aria-disabled')).toBe('true');
+  const description = document.getElementById(
+    run.getAttribute('aria-describedby') ?? ''
+  );
+  expect(description?.textContent).toContain(t.runnerUnavailableTitle);
+  expect(description?.closest('[hidden]')).toBeNull();
+  expect(screen.getByRole('button', { name: t.retry })).toBeTruthy();
+  expect(localStorage.getItem('meet:programming-output-open')).toBeNull();
+
+  rerender(view('ready'));
+  expect(disclosure.getAttribute('aria-expanded')).toBe('false');
+});
 
 it('closes the share dialog when the workbench is suspended', () => {
   const client = new QueryClient();

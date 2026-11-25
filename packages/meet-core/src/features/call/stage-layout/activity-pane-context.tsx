@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { SizeClass } from './layout-geometry';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
+import type { SizeClass } from './layout-geometry';
 
 /** What an activity can learn about the pane it renders in. */
 export interface ActivityPaneValue {

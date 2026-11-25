@@ -13,14 +13,14 @@ import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import type { ComponentProps } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
-import type { MeetToolDefinition } from '../tools/registry';
-import { activityGroup, groupActivities } from './activities-catalog';
 import {
   ActivitiesRequestProvider,
   useActivitiesRequest,
 } from '../stage-layout/activities-request';
-import type { ActivityNavigation } from './activity-launch-control';
+import type { MeetToolDefinition } from '../tools/registry';
+import { activityGroup, groupActivities } from './activities-catalog';
 import { ActivitiesMenu } from './activities-menu';
+import type { ActivityNavigation } from './activity-launch-control';
 
 const icon = () => null;
 const tool = (id: string, label: string): MeetToolDefinition => ({
@@ -432,17 +432,52 @@ it('stops leading without launching an activity or closing Activities', async ()
   } satisfies ActivityNavigation;
   renderMenu({ navigation });
   open();
+  const activities = screen.getByRole('dialog');
   const options = showPollOptions();
   const stop = within(screen.getByRole('menu')).getByRole('menuitem', {
     name: messages.meet.call.follow.stop,
   });
+  stop.focus();
+  expect(document.activeElement).toBe(stop);
   fireEvent.click(stop);
+  await waitFor(() => expect(document.activeElement).toBe(options));
   expect(navigation.stopLeading).toHaveBeenCalledOnce();
   expect(navigation.openFollow).not.toHaveBeenCalled();
   expect(navigation.reveal).not.toHaveBeenCalled();
-  expect(dialog()).toBeTruthy();
+  expect(dialog()).toBe(activities);
   expect(screen.queryByRole('menu', { hidden: true })).toBeNull();
-  await waitFor(() => expect(document.activeElement).toBe(options));
+});
+
+it('keeps activity options closed when room navigation is restored', () => {
+  const navigation = activityNavigation(true);
+  const view = (allowed: boolean) => (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <NuqsTestingAdapter>
+        <ActivitiesMenu
+          tools={[polls]}
+          openToolIds={[]}
+          onTool={vi.fn()}
+          navigation={{ ...navigation, allowed }}
+        />
+      </NuqsTestingAdapter>
+    </NextIntlClientProvider>
+  );
+  const { rerender } = render(view(true));
+  open();
+  showPollOptions();
+  expect(screen.getByRole('menu')).toBeTruthy();
+
+  rerender(view(false));
+  const optionsName = `More ways to open ${pollsLabel}`;
+  expect(screen.queryByRole('button', { name: optionsName })).toBeNull();
+  expect(screen.queryByRole('menu', { hidden: true })).toBeNull();
+
+  rerender(view(true));
+  const options = screen.getByRole('button', { name: optionsName });
+  expect(options.getAttribute('aria-expanded')).toBe('false');
+  expect(screen.queryByRole('menu', { hidden: true })).toBeNull();
+  showPollOptions();
+  expect(screen.getByRole('menu')).toBeTruthy();
 });
 
 it('opens targeted Summon with the selected activity after closing Activities', async () => {
