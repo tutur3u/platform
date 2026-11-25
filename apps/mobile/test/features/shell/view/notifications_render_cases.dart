@@ -139,21 +139,11 @@ void _notificationsRenderCases() {
           );
           final firstRow = find.byKey(const ValueKey('notification-row-n1'));
           expect(tester.getSize(firstRow).height, greaterThanOrEqualTo(44));
-          final left = tester.getTopLeft(firstRow).dx;
-          if (size.key == 'phone') {
-            expect(left, AppLayout.gutter(DeviceClass.compact));
-          } else {
-            // Wider windows centre the feed within the detail page width.
-            expect(
-              tester.getSize(firstRow).width,
-              lessThanOrEqualTo(
-                AppLayout.maxContentWidth(
-                  AppPageKind.detail,
-                  DeviceClass.expanded,
-                )!,
-              ),
-            );
-          }
+          _expectDetailContentEdges(
+            tester,
+            page: find.byType(NotificationsPage),
+            content: firstRow,
+          );
           // Search belongs to screens that search their own content.
           expect(find.byIcon(AppIcons.search), findsNothing);
           final chrome = tester

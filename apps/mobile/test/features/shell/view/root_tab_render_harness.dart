@@ -31,6 +31,23 @@ final renderAppearances = <String, (AppearanceSettings, shad.ThemeMode)>{
   ),
 };
 
+void _expectDetailContentEdges(
+  WidgetTester tester, {
+  required Finder page,
+  required Finder content,
+}) {
+  final body = tester.getRect(page);
+  final deviceClass = Breakpoints.fromWidth(body.width);
+  final cap = AppLayout.maxContentWidth(AppPageKind.detail, deviceClass);
+  final centering = cap == null || cap >= body.width
+      ? 0.0
+      : (body.width - cap) / 2;
+  final inset = centering + AppLayout.gutter(deviceClass);
+  final row = tester.getRect(content);
+  expect(row.left, closeTo(body.left + inset, 0.01));
+  expect(row.right, closeTo(body.right - inset, 0.01));
+}
+
 const renderWorkspace = Workspace(id: 'synthetic-ws', name: 'Northwind Studio');
 
 Future<void> settleShell(WidgetTester tester) async {

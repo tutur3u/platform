@@ -67,22 +67,11 @@ void _profileRenderCases() {
             findsOneWidget,
           );
         }
-        if (size.key == 'phone') {
-          expect(
-            tester.getTopLeft(identity).dx,
-            AppLayout.gutter(DeviceClass.compact),
-          );
-        } else {
-          expect(
-            tester.getSize(identity).width,
-            lessThanOrEqualTo(
-              AppLayout.maxContentWidth(
-                AppPageKind.detail,
-                DeviceClass.expanded,
-              )!,
-            ),
-          );
-        }
+        _expectDetailContentEdges(
+          tester,
+          page: find.byType(ProfileOverviewPage),
+          content: identity,
+        );
         expect(
           tester.getSize(find.byKey(profileEditIdentityKey)).height,
           greaterThanOrEqualTo(44),
