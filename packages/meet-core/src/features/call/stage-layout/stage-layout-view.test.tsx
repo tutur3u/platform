@@ -17,6 +17,7 @@ import {
   useActivitiesRequest,
 } from './activities-request';
 import { ActivityFullscreen } from '../tools/live-activities/activity-fullscreen';
+import { NewAttemptAction } from '../tools/live-activities/assessment/new-attempt-action';
 import { ActivityShell } from './activity-shell';
 import { useActivityActive } from './activity-pane-context';
 import type { ViewportTier } from './layout-model';
@@ -88,7 +89,10 @@ function Harness({
                 <Probe id={id} />
               </ActivityFullscreen>
             ) : (
-              <Probe id={id} />
+              <>
+                <Probe id={id} />
+                {id === 'assessment' && <NewAttemptAction onConfirm={() => {}} />}
+              </>
             ),
         }))}
       />
@@ -575,33 +579,24 @@ const presenting = (sharers: readonly string[] = []) => (
   </NextIntlClientProvider>
 );
 
-it('places the activity video rail after the activity and switches to a row layout for wider screens', () => {
-  render(presenting());
-  const people = screen.getByTestId('people');
-  expect(people.closest('[data-activity-video-rail]')).toBeNull();
-
-  open('document');
-  const rail = people.closest('[data-activity-video-rail]');
-  expect(rail?.classList.contains('order-last')).toBe(true);
-  expect(rail?.classList.contains('h-24')).toBe(true);
-  expect(rail?.classList.contains('md:landscape:w-40')).toBe(true);
-  expect(rail?.parentElement?.classList.contains('flex-col')).toBe(true);
-  expect(rail?.parentElement?.classList.contains('md:landscape:flex-row')).toBe(
-    true
-  );
-  expect(rail?.parentElement?.classList.contains('lg:flex-row')).toBe(true);
-});
-
 it('gives a new screen share the stage and restores the same mounted activity when it ends', () => {
   const { rerender } = render(presenting());
   open('document');
   const input = screen.getByRole('textbox', { name: 'document input' });
   fireEvent.change(input, { target: { value: 'Unsaved draft' } });
   const media = screen.getByTestId('people');
+  const pane = screen.getByLabelText('document', { selector: '[data-pane-id]' });
+  input.focus();
 
   rerender(presenting(['peer']));
   const chip = screen.getByRole('button', { name: 'Reopen document' });
   expect(chip.textContent).toBe('document');
+  expect(document.activeElement).toBe(chip);
+  expect(
+    screen
+      .getByText(messages.meet.call.stage_layout.auto_minimized)
+      .getAttribute('role')
+  ).toBe('status');
   expect(screen.queryByRole('textbox', { name: 'document input' })).toBeNull();
   expect(screen.getByTestId('document-active').textContent).toBe('false');
   expect(media.closest('[data-activity-video-rail]')).toBeNull();
@@ -609,6 +604,7 @@ it('gives a new screen share the stage and restores the same mounted activity wh
   rerender(presenting());
   expect(screen.queryByRole('button', { name: 'Reopen document' })).toBeNull();
   expect(screen.getByRole('textbox', { name: 'document input' })).toBe(input);
+  expect(document.activeElement).toBe(pane);
   expect(input).toHaveProperty('value', 'Unsaved draft');
   expect(screen.getByTestId('people')).toBe(media);
   expect(mounts.document).toBe(1);
@@ -647,4 +643,14 @@ it('keeps a fullscreen activity draft when screen shares overlap', () => {
   expect(screen.getByRole('dialog', { name: 'Q&A full screen' })).toBeTruthy();
   expect(screen.getByRole('textbox', { name: 'fullscreen-qa input' })).toBe(input);
   expect(input).toHaveProperty('value', 'Question draft');
+});
+
+it('closes a portaled assessment confirmation when its pane is hidden', () => {
+  const { rerender } = render(presenting());
+  open('assessment');
+  const name = messages.meet.call.live_activities.assessment.new_attempt;
+  fireEvent.click(screen.getByRole('button', { name }));
+  expect(screen.getByRole('alertdialog', { name })).toBeTruthy();
+  rerender(presenting(['peer']));
+  expect(screen.queryByRole('alertdialog', { hidden: true })).toBeNull();
 });

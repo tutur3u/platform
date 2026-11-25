@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { useMeetUxV2 } from '../prejoin/prejoin-context';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 
 const PHONE_QUERY = '(max-width: 639px)';
 
@@ -24,7 +24,7 @@ export function usePhoneViewport() {
  * presentation; none of it enters the synced stage layout.
  */
 export function usePhoneChrome() {
-  const enabled = useMeetUxV2();
+  const enabled = useMeetCallUx();
   const phone = usePhoneViewport();
   return enabled && phone;
 }

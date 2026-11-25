@@ -270,3 +270,27 @@ it('remembers the output disclosure across workbench mounts', () => {
     localStorage.clear();
   }
 });
+
+it('opens and closes the output disclosure when browser storage throws', () => {
+  const read = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    throw new DOMException('Storage is blocked', 'SecurityError');
+  });
+  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new DOMException('Storage is blocked', 'SecurityError');
+  });
+  try {
+    mountMeetingOutput('console');
+    const toggle = screen.getByRole('button', { name: t.outputPanes });
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('Program output')).toBeTruthy();
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('tabpanel')).toBeNull();
+    expect(write).toHaveBeenCalledTimes(2);
+  } finally {
+    read.mockRestore();
+    write.mockRestore();
+  }
+});

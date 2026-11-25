@@ -13,6 +13,7 @@ import messages from '../../../../../../apps/meet/messages/en.json';
 import { type CallLayout, CallStage } from '../components/call-stage';
 import type { MeetRoomController } from '../lib/room-controller';
 import { StageLayoutView } from './stage-layout-view';
+import { useActivityPresentation } from './use-activity-presentation';
 import { useStageLayout } from './use-stage-layout';
 
 vi.mock('../components/media-receiving-status', () => ({
@@ -80,10 +81,12 @@ function Harness({
   media,
   layout,
   focus = null,
+  activityUx = false,
 }: {
   media: MeetRoomController;
   layout: CallLayout;
   focus?: string | null;
+  activityUx?: boolean;
 }) {
   controller = useStageLayout({
     accountId: 'u',
@@ -91,11 +94,14 @@ function Harness({
     isAvailable: () => true,
     tier: 'desktop',
   });
+  const hasActivities = controller.openIds.length > 0;
+  const presentation = useActivityPresentation(hasActivities, []);
   return (
     <div style={{ width: 1200, height: 800 }}>
       <StageLayoutView
         controller={controller}
         peopleCount={2}
+        presentation={activityUx ? presentation : undefined}
         activities={controller.openIds.map((id) => ({
           id,
           title: id,
@@ -106,7 +112,8 @@ function Harness({
           <CallStage
             room={media}
             layout={layout}
-            compact={controller.openIds.length > 0}
+            activityRail={activityUx && hasActivities}
+            compact={hasActivities}
             focus={focus}
             onFocus={vi.fn()}
             onChat={vi.fn()}
@@ -200,4 +207,22 @@ it('preserves every camera and screen media node while layouts, focus and activi
   }
   rerender(view(media, 'spotlight', 'departed:camera'));
   expect(screen.getByTestId('participant-second-screen')).toBe(nodes[2]);
+});
+
+it('puts the CallStage camera rail after the activity group in DOM order', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <Harness media={room()} layout="auto" activityUx />
+    </NextIntlClientProvider>
+  );
+  const camera = screen.getByTestId('participant-peer-camera');
+  expect(camera.closest('[data-activity-video-rail]')).toBeNull();
+  act(() => controller.open('document'));
+  const group = screen.getByRole('group', {
+    name: messages.meet.call.stage_layout.region,
+  });
+  const rail = camera.closest('[data-activity-video-rail]');
+  expect(rail).toBeTruthy();
+  expect(group.nextElementSibling).toBe(rail);
+  expect(screen.getByTestId('participant-peer-camera')).toBe(camera);
 });

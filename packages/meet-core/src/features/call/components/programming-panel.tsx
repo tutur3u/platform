@@ -1,9 +1,9 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMeetUxV2 } from '../prejoin/prejoin-context';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import {
   useActivityActive,
-  useActivityPane,
+  useActivityModalOpen,
 } from '../stage-layout/activity-pane-context';
 import {
   checkMeetProgramming,
@@ -85,8 +85,7 @@ export function ProgrammingPanel({
   previewUrl?: (port: number) => string;
 }) {
   const t = useTranslations('programmingPlayground');
-  const meetUxV2 = useMeetUxV2();
-  const visible = useActivityPane()?.visible ?? true;
+  const meetUxV2 = useMeetCallUx();
   const locale = useLocale() === 'vi' ? 'vi' : 'en';
   const cache = useQueryClient();
   // A hidden tab or pane keeps its editor and room state but stops polling.
@@ -96,6 +95,7 @@ export function ProgrammingPanel({
   const [language, setLanguage] = useState<ProgrammingLanguage>('python');
   // Hosts land in the open dialog when nothing is open yet.
   const [setupOpen, setSetupOpen] = useState(canManage && !selection);
+  const setupVisible = useActivityModalOpen(setupOpen);
   const [runnerAvailabilityByLanguage, setRunnerAvailabilityByLanguage] =
     useState<Partial<Record<ProgrammingLanguage, RunnerAvailability>>>({});
   const key = [
@@ -261,7 +261,7 @@ export function ProgrammingPanel({
     <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 wrap-anywhere">
       {canManage && (
         <ProgrammingSetup
-          open={setupOpen && (!meetUxV2 || visible)}
+          open={setupVisible}
           onOpenChange={setSetupOpen}
           wsId={wsId}
           accountId={accountId}

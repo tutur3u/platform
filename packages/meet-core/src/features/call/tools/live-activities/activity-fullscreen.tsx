@@ -5,8 +5,11 @@ import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { type ReactNode, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { useMeetUxV2 } from '../../prejoin/prejoin-context';
-import { useActivityPane } from '../../stage-layout/activity-pane-context';
+import {
+  useActivityModalOpen,
+  useActivityPane,
+} from '../../stage-layout/activity-pane-context';
+import { useMeetCallUx } from '../../prejoin/use-meet-call-ux';
 import { ToolAction, ToolIconAction } from '../tool-ui';
 
 /**
@@ -34,9 +37,9 @@ export function ActivityFullscreen({
   children: ReactNode;
 }) {
   const t = useTranslations('meet.call.live_activities');
-  const meetUxV2 = useMeetUxV2();
+  const meetUxV2 = useMeetCallUx();
   const pane = useActivityPane();
-  const visible = !meetUxV2 || !pane || pane.visible;
+  const modalOpen = useActivityModalOpen(open);
   // Keep the fullscreen body's local draft in a stable portal host while
   // closing the modal so a share can use the stage and receive focus.
   const [host] = useState(() =>
@@ -57,7 +60,7 @@ export function ActivityFullscreen({
   return (
     <>
       {host && createPortal(children, host)}
-      <Dialog open={open && visible} onOpenChange={onOpenChange}>
+      <Dialog open={modalOpen} onOpenChange={onOpenChange}>
         <DialogContent
           presentation="fullscreen"
           showCloseButton={false}

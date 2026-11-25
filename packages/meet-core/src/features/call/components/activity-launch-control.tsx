@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Magnet, Navigation } from '@tuturuuu/icons';
+import { ChevronDown, Magnet, Navigation, Users } from '@tuturuuu/icons';
 import type { MeetRoomView } from '@tuturuuu/realtime/meet';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -11,13 +11,24 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
 
 export type ActivityNavigation = Pick<
   RoomNavigation,
-  'allowed' | 'canManage' | 'leading' | 'others' | 'paused' | 'summon'
+  | 'allowed'
+  | 'canManage'
+  | 'leading'
+  | 'others'
+  | 'paused'
+  | 'stopLeading'
+  | 'summon'
 > & {
-  openFollow: () => void;
+  openFollow: (returnFocus?: HTMLButtonElement | null) => void;
+  openSummon: (
+    view: MeetRoomView,
+    returnFocus?: HTMLButtonElement | null
+  ) => void;
   reveal: (activityId: string) => void;
 };
 
@@ -29,11 +40,17 @@ export function ActivityLaunchControl({
   navigation,
 }: {
   label: string;
-  onOpen: () => void;
+  onOpen: (afterClose?: () => void) => void;
   view: MeetRoomView | null;
   navigation: ActivityNavigation;
 }) {
   const t = useTranslations('meet.call');
+  const reasonId = useId();
+  const disabledReason = !navigation.others.length
+    ? t('navigation.alone')
+    : navigation.paused
+      ? t('navigation.rate_limited')
+      : null;
   const canGuide = !!view && navigation.allowed;
   const open = (
     <Button
@@ -41,14 +58,14 @@ export function ActivityLaunchControl({
       size="sm"
       className={canGuide ? 'rounded-l-full rounded-r-none' : 'rounded-full'}
       aria-label={t('activities.open_named', { name: label })}
-      onClick={onOpen}
+      onClick={() => onOpen()}
     >
       {t('activities.open')}
     </Button>
   );
   if (!canGuide) return open;
   return (
-    <div className="inline-flex">
+    <div className="inline-flex" role="group" aria-label={label}>
       <Tooltip>
         <TooltipTrigger asChild>{open}</TooltipTrigger>
         <TooltipContent>
@@ -71,8 +88,18 @@ export function ActivityLaunchControl({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {disabledReason && (
+            <p
+              id={reasonId}
+              role="presentation"
+              className="px-2 py-1 text-muted-foreground text-xs"
+            >
+              {disabledReason}
+            </p>
+          )}
           <DropdownMenuItem
-            disabled={navigation.paused || navigation.others.length === 0}
+            disabled={!!disabledReason}
+            aria-describedby={disabledReason ? reasonId : undefined}
             onSelect={() => {
               navigation.summon('everyone', view);
               onOpen();
@@ -82,10 +109,21 @@ export function ActivityLaunchControl({
             {t('activities.bring_everyone')}
           </DropdownMenuItem>
           <DropdownMenuItem
-            disabled={!navigation.leading && navigation.others.length === 0}
+            disabled={!!disabledReason}
+            aria-describedby={disabledReason ? reasonId : undefined}
+            onSelect={() => onOpen(() => navigation.openSummon(view))}
+          >
+            <Users aria-hidden="true" className="size-4" />
+            {t('activities.choose_people')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            disabled={!navigation.leading && !!disabledReason}
+            aria-describedby={
+              !navigation.leading && disabledReason ? reasonId : undefined
+            }
             onSelect={() => {
-              if (!navigation.leading) onOpen();
-              navigation.openFollow();
+              if (navigation.leading) navigation.stopLeading();
+              else onOpen(() => navigation.openFollow());
             }}
           >
             <Navigation aria-hidden="true" className="size-4" />

@@ -2,11 +2,12 @@
 import { CodeXml, FileText, LayoutGrid, Presentation } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
+import { SettingsDialogFocusContext } from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   BOARD_ACTIVITY,
   CLASSROOM_ACTIVITIES,
@@ -73,6 +74,16 @@ export function ActivitiesMenu({
   const collaborationT = useTranslations('meet.collaboration');
   const all = useTranslations();
   const [open, setOpen] = useState(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const afterClose = useRef<(() => void) | undefined>(undefined);
+  const onCloseAutoFocus = (event: Event) => {
+    const next = afterClose.current;
+    if (!next) return;
+    afterClose.current = undefined;
+    event.preventDefault();
+    trigger.current?.focus();
+    next();
+  };
   // The stage can ask for the dialog (its phone switcher lists "Open another
   // activity"); a new request opens it.
   const request = useActivitiesRequest();
@@ -173,6 +184,7 @@ export function ActivitiesMenu({
         <TooltipTrigger asChild>
           <DialogTrigger asChild>
             <Button
+              ref={trigger}
               aria-label={label}
               className={cn(
                 controlPillClass,
@@ -204,23 +216,35 @@ export function ActivitiesMenu({
       </Tooltip>
       {open && (
         <ActivitiesNavigationContext.Provider
-          value={{ legacyAllowed: !navigation && navigationAllowed, navigation }}
+          value={{
+            legacyAllowed: !navigation && navigationAllowed,
+            navigation: navigation && {
+              ...navigation,
+              openFollow: () => navigation.openFollow(trigger.current),
+              openSummon: (view) => navigation.openSummon(view, trigger.current),
+            },
+          }}
         >
-          <ActivitiesDialog
-            tiles={tiles}
-            persistedTab={persistedTab}
-            setPersistedTab={setPersistedTab}
-            onClose={() => changeOpen(false)}
-            onReveal={navigation?.reveal}
-            onFeedback={
-              preview
-                ? () => {
-                    preview.onFeedback();
-                    changeOpen(false);
-                  }
-                : undefined
-            }
-          />
+          <SettingsDialogFocusContext.Provider value={onCloseAutoFocus}>
+            <ActivitiesDialog
+              tiles={tiles}
+              persistedTab={persistedTab}
+              setPersistedTab={setPersistedTab}
+              onClose={(next) => {
+                afterClose.current = next;
+                changeOpen(false);
+              }}
+              onReveal={navigation?.reveal}
+              onFeedback={
+                preview
+                  ? () => {
+                      preview.onFeedback();
+                      changeOpen(false);
+                    }
+                  : undefined
+              }
+            />
+          </SettingsDialogFocusContext.Provider>
         </ActivitiesNavigationContext.Provider>
       )}
     </Dialog>

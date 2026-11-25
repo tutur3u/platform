@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from 'react';
 import type { SizeClass } from './layout-geometry';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 
 /** What an activity can learn about the pane it renders in. */
 export interface ActivityPaneValue {
@@ -34,3 +35,10 @@ export const useActivityPane = () => useContext(ActivityPaneContext);
  * mounted, so collaboration state survives; it only stops redrawing.
  */
 export const useActivityActive = () => useActivityPane()?.active ?? true;
+
+/** Portals escape the pane's inert subtree and need the visibility gate too. */
+export function useActivityModalOpen(open: boolean) {
+  const enabled = useMeetCallUx();
+  const pane = useActivityPane();
+  return open && (!enabled || (pane?.visible ?? true));
+}

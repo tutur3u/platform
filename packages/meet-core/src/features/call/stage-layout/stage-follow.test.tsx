@@ -7,6 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { NavigationEvent } from '../components/room-navigation-policy';
 import type { MeetRoomController } from '../lib/room-controller';
+import { useActivityPresentation } from './use-activity-presentation';
 import { useStageLayout } from './use-stage-layout';
 import { useStageNavigation } from './use-stage-navigation';
 
@@ -20,6 +21,10 @@ const people = {
   me: { userId: 'me', displayName: 'Minh' },
 };
 let events: NavigationEvent[] = [];
+let allowed = true;
+let sharers: readonly string[] = [];
+let presenting: ReturnType<typeof useActivityPresentation>;
+const requestNavigation = vi.fn();
 let stage: ReturnType<typeof useStageLayout>;
 let nav: ReturnType<typeof useStageNavigation>;
 let summoned: string[] = [];
@@ -35,17 +40,18 @@ function Harness() {
   });
   const room = useRef({
     state: {},
-    requestNavigation: vi.fn(),
+    requestNavigation,
   }).current;
   room.state = {
     participants: people,
     selfUserId: 'me',
     navigation: events,
-    settings: {},
+    settings: { participantNavigation: allowed },
     role: 'participant',
     canManageParticipants: false,
     error: null,
   };
+  presenting = useActivityPresentation(stage.openIds.length > 0, sharers);
   nav = useStageNavigation({
     room: room as unknown as MeetRoomController,
     stage,
@@ -53,6 +59,7 @@ function Harness() {
     onDrawer,
     onBroughtIn: () => {},
     onSummoned: (id) => summoned.push(id),
+    onNavigate: presenting.restoreAutoMinimized,
     access: {
       browse: true,
       account: true,
@@ -82,6 +89,9 @@ const deliver = (
 
 beforeEach(() => {
   events = [];
+  allowed = true;
+  sharers = [];
+  requestNavigation.mockClear();
   summoned = [];
   drawerNow = null;
   onDrawer.mockClear();
@@ -217,3 +227,27 @@ it('only closes the brought-in activity once the person has moved on', () => {
   expect(stage.focused).toBe('tool:pen-whiteboard');
   expect(onDrawer).not.toHaveBeenCalled();
 });
+
+it('does not send a Summon from a participant when room navigation is disallowed', () => {
+  allowed = false;
+  mount();
+  expect(nav.allowed).toBe(false);
+  act(() => nav.summon(['leader'], { surface: 'document' }));
+  expect(requestNavigation).not.toHaveBeenCalled();
+  expect(nav.paused).toBe(false);
+});
+
+it.each(['summon', 'follow'] as const)(
+  'restores an automatically minimized layout for an incoming %s',
+  (mode) => {
+    const view = mount();
+    act(() => stage.open('programming'));
+    sharers = ['leader'];
+    view.rerender(tree());
+    expect(presenting.autoMinimized).toBe(true);
+    deliver({ surface: 'document' }, mode);
+    view.rerender(tree());
+    expect(stage.focused).toBe('document');
+    expect(presenting.minimized).toBe(false);
+  }
+);

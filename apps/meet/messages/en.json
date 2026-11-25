@@ -4329,6 +4329,7 @@
         "bring_hint": "Opens for you; Bring everyone moves others",
         "button": "Activities",
         "button_open": "Activities, {count} open",
+        "choose_people": "Choose people…",
         "descriptions": {
           "board": "Draw together on a Tuturuuu Whiteboard that stays saved",
           "breakouts": "Split people into small groups",
@@ -5692,6 +5693,7 @@
       "solo_hint": "Camera and microphone stay on this device until someone joins. AI still uses an internet connection.",
       "solo_mode": "Solo mode",
       "stage_layout": {
+        "auto_minimized": "Activities minimized for screen sharing.",
         "close": "Close {title}",
         "error": "Couldn't load {title}",
         "exit_fullscreen": "Exit full screen {title}",

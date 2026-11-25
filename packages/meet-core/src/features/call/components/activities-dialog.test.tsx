@@ -5,6 +5,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
@@ -18,6 +19,7 @@ import {
   ActivitiesRequestProvider,
   useActivitiesRequest,
 } from '../stage-layout/activities-request';
+import type { ActivityNavigation } from './activity-launch-control';
 import { ActivitiesMenu } from './activities-menu';
 
 const icon = () => null;
@@ -349,6 +351,8 @@ function activityNavigation(allowed: boolean) {
     reveal: vi.fn(),
     summon: vi.fn(),
     openFollow: vi.fn(),
+    openSummon: vi.fn(),
+    stopLeading: vi.fn(),
   };
 }
 
@@ -390,4 +394,85 @@ it('keeps local Open available when the room disallows navigation', () => {
   fireEvent.click(screen.getByRole('button', { name: `Open ${pollsLabel}` }));
   expect(navigation.reveal).toHaveBeenCalledWith('tool:polls');
   expect(navigation.summon).not.toHaveBeenCalled();
+});
+
+const showPollOptions = () => {
+  const options = screen.getByRole('button', {
+    name: `More ways to open ${pollsLabel}`,
+  });
+  options.focus();
+  fireEvent.keyDown(options, { key: 'Enter' });
+  return options;
+};
+
+it('closes Activities and returns focus to its trigger before opening Follow', async () => {
+  const navigation = activityNavigation(true);
+  renderMenu({ navigation });
+  const trigger = screen.getByRole('button', { name: a.button });
+  navigation.openFollow.mockImplementation((origin) => {
+    expect(dialog()).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    expect(origin).toBe(trigger);
+  });
+  open();
+  showPollOptions();
+  fireEvent.click(
+    screen.getByRole('menuitem', { name: messages.meet.call.follow.button })
+  );
+  await waitFor(() => expect(navigation.openFollow).toHaveBeenCalledOnce());
+  expect(navigation.reveal).toHaveBeenCalledWith('tool:polls');
+});
+
+it('stops leading without launching an activity or closing Activities', async () => {
+  const navigation = {
+    ...activityNavigation(true),
+    leading: { targets: 'everyone', count: 1 },
+  } satisfies ActivityNavigation;
+  renderMenu({ navigation });
+  open();
+  const options = showPollOptions();
+  fireEvent.click(
+    screen.getByRole('menuitem', { name: messages.meet.call.follow.stop })
+  );
+  expect(navigation.stopLeading).toHaveBeenCalledOnce();
+  expect(navigation.openFollow).not.toHaveBeenCalled();
+  expect(navigation.reveal).not.toHaveBeenCalled();
+  expect(dialog()).toBeTruthy();
+  await waitFor(() => expect(document.activeElement).toBe(options));
+});
+
+it('opens targeted Summon with the selected activity after closing Activities', async () => {
+  const navigation = activityNavigation(true);
+  renderMenu({ navigation });
+  const trigger = screen.getByRole('button', { name: a.button });
+  open();
+  showPollOptions();
+  fireEvent.click(screen.getByRole('menuitem', { name: a.choose_people }));
+  await waitFor(() =>
+    expect(navigation.openSummon).toHaveBeenCalledWith(
+      { surface: 'tool', toolId: 'polls' },
+      trigger
+    )
+  );
+  expect(dialog()).toBeNull();
+  expect(navigation.summon).not.toHaveBeenCalled();
+});
+
+it.each([
+  { paused: false, others: [], reason: messages.meet.call.navigation.alone },
+  {
+    paused: true,
+    others: [{ userId: 'peer', displayName: 'Peer' }],
+    reason: messages.meet.call.navigation.rate_limited,
+  },
+])('describes disabled room actions with "$reason"', ({ paused, others, reason }) => {
+  renderMenu({ navigation: { ...activityNavigation(true), paused, others } });
+  open();
+  showPollOptions();
+  for (const label of [a.bring_everyone, a.choose_people, messages.meet.call.follow.button]) {
+    const item = screen.getByRole('menuitem', { name: label });
+    expect(item.getAttribute('aria-disabled')).toBe('true');
+    const description = item.getAttribute('aria-describedby');
+    expect(document.getElementById(description ?? '')?.textContent).toBe(reason);
+  }
 });

@@ -1,5 +1,6 @@
 'use client';
 import { Magnet, Navigation } from '@tuturuuu/icons';
+import type { MeetRoomView } from '@tuturuuu/realtime/meet';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -8,27 +9,35 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useState } from 'react';
-import type { RoomNavigation } from '../hooks/use-room-navigation';
+import { type ReactNode, useRef, useState } from 'react';
+import {
+  type RoomNavigation,
+  useSurfaceLabel,
+} from '../hooks/use-room-navigation';
 import { ControlButton, ControlMenuLabel } from './control-button';
 import {
   RoomNavigationTargets,
   useTargetSelection,
 } from './room-navigation-targets';
 
-type Kind = 'follow' | 'summon';
+type NavigationDialog =
+  | { kind: 'follow' }
+  | { kind: 'summon'; view?: MeetRoomView };
 
 function NavigationPanel({
-  kind,
+  dialog,
   nav,
   onDone,
 }: {
-  kind: Kind;
+  dialog: NavigationDialog;
   nav: RoomNavigation;
   onDone: () => void;
 }) {
   const t = useTranslations('meet.call');
+  const label = useSurfaceLabel();
   const selection = useTargetSelection(nav.others);
+  const { kind } = dialog;
+  const destination = dialog.kind === 'summon' ? dialog.view : undefined;
   if (kind === 'follow' && nav.leading)
     return (
       <div className="flex items-center gap-3 p-1">
@@ -53,7 +62,7 @@ function NavigationPanel({
   const submit = () => {
     if (!selection.targets) return;
     if (kind === 'follow') nav.startLeading(selection.targets);
-    else nav.summon(selection.targets);
+    else nav.summon(selection.targets, destination);
     selection.reset();
     onDone();
   };
@@ -62,7 +71,9 @@ function NavigationPanel({
       <p className="px-2.5 pt-1 font-semibold text-muted-foreground text-xs">
         {kind === 'follow'
           ? t('follow.title')
-          : t('summon.title', { surface: nav.surfaceName })}
+          : t('summon.title', {
+              surface: destination ? label(destination) : nav.surfaceName,
+            })}
       </p>
       <RoomNavigationTargets people={nav.others} selection={selection} />
       <div className="mx-1 h-px bg-border" />
@@ -97,10 +108,22 @@ function NavigationPanel({
 export function useRoomNavigationControls(nav: RoomNavigation): {
   menu: ReactNode;
   dialogs: ReactNode;
-  openFollow: () => void;
+  openFollow: (returnFocus?: HTMLButtonElement | null) => void;
+  openSummon: (
+    view: MeetRoomView,
+    returnFocus?: HTMLButtonElement | null
+  ) => void;
 } {
   const t = useTranslations('meet.call');
-  const [dialog, setDialog] = useState<Kind | null>(null);
+  const [dialog, setDialog] = useState<NavigationDialog | null>(null);
+  const returnFocus = useRef<HTMLButtonElement | null>(null);
+  const openDialog = (
+    next: NavigationDialog,
+    origin?: HTMLButtonElement | null
+  ) => {
+    returnFocus.current = origin ?? null;
+    setDialog(next);
+  };
   const followLabel = nav.leading
     ? t('follow.active', { count: nav.leading.count })
     : t('follow.button');
@@ -118,7 +141,9 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
         nav.canManage ? 'navigation.summon_hint_host' : 'navigation.summon_hint'
       );
   return {
-    openFollow: () => setDialog('follow'),
+    openFollow: (origin) => openDialog({ kind: 'follow' }, origin),
+    openSummon: (view, origin) =>
+      openDialog({ kind: 'summon', view }, origin),
     menu: (
       <>
         <ControlMenuLabel>{t('navigation.guide')}</ControlMenuLabel>
@@ -127,15 +152,15 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
           icon={Navigation}
           label={followLabel}
           hint={followHint}
-          locked={alone}
-          onClick={() => setDialog('follow')}
+          locked={alone && !nav.leading}
+          onClick={() => openDialog({ kind: 'follow' })}
         />
         <ControlButton
           icon={Magnet}
           label={summonLabel}
           hint={summonHint}
           locked={alone}
-          onClick={() => setDialog('summon')}
+          onClick={() => openDialog({ kind: 'summon' })}
         />
       </>
     ),
@@ -146,15 +171,24 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
           if (!open) setDialog(null);
         }}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent
+          className="sm:max-w-sm"
+          onCloseAutoFocus={(event) => {
+            const origin = returnFocus.current;
+            returnFocus.current = null;
+            if (!origin?.isConnected) return;
+            event.preventDefault();
+            origin.focus();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>
-              {dialog === 'summon' ? summonLabel : followLabel}
+              {dialog?.kind === 'summon' ? summonLabel : followLabel}
             </DialogTitle>
           </DialogHeader>
           {dialog && (
             <NavigationPanel
-              kind={dialog}
+              dialog={dialog}
               nav={nav}
               onDone={() => setDialog(null)}
             />

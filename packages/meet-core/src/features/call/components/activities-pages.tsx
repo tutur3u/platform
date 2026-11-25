@@ -59,7 +59,7 @@ function LaunchButton({
   onLaunch,
 }: {
   tile: ActivityTile;
-  onLaunch: (tile: ActivityTile) => void;
+  onLaunch: (tile: ActivityTile, afterClose?: () => void) => void;
 }) {
   const t = useTranslations('meet.call.activities');
   const { legacyAllowed, navigation } = useContext(ActivitiesNavigationContext);
@@ -68,7 +68,7 @@ function LaunchButton({
     return (
       <ActivityLaunchControl
         label={tile.label}
-        onOpen={() => onLaunch(tile)}
+        onOpen={(afterClose) => onLaunch(tile, afterClose)}
         view={viewOfActivity(tile.stageId)}
         navigation={navigation}
       />
@@ -113,7 +113,7 @@ function ActivityCard({
   onLaunch,
 }: {
   tile: ActivityTile;
-  onLaunch: (tile: ActivityTile) => void;
+  onLaunch: (tile: ActivityTile, afterClose?: () => void) => void;
 }) {
   return (
     <li className="flex flex-col gap-3 rounded-xl border bg-card p-4">
@@ -141,7 +141,7 @@ function ActivitySection({
 }: {
   title: string;
   tiles: readonly ActivityTile[];
-  onLaunch: (tile: ActivityTile) => void;
+  onLaunch: (tile: ActivityTile, afterClose?: () => void) => void;
 }) {
   const id = useId();
   if (!tiles.length) return null;
@@ -166,7 +166,7 @@ export function AllActivitiesPage({
   onFeedback,
 }: {
   tiles: readonly ActivityTile[];
-  onLaunch: (tile: ActivityTile) => void;
+  onLaunch: (tile: ActivityTile, afterClose?: () => void) => void;
   /** Set in a showcase preview, where attendees share feedback instead. */
   onFeedback?: () => void;
 }) {
@@ -212,7 +212,7 @@ export function ActivityDetailPage({
   onLaunch,
 }: {
   tile: ActivityTile;
-  onLaunch: (tile: ActivityTile) => void;
+  onLaunch: (tile: ActivityTile, afterClose?: () => void) => void;
 }) {
   const roomT = useTranslations('meet.call.room_tools');
   return (

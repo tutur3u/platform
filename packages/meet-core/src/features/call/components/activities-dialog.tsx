@@ -36,7 +36,7 @@ export function ActivitiesDialog({
   /** The `activitiesTab` URL value, owned by the trigger that clears it. */
   persistedTab: string | null;
   setPersistedTab: (tab: string | null) => unknown;
-  onClose: () => void;
+  onClose: (afterClose?: () => void) => void;
   onReveal?: (activityId: string) => void;
   onFeedback?: () => void;
 }) {
@@ -82,16 +82,17 @@ export function ActivitiesDialog({
       })),
     })),
   ];
-  const launch = (tile: ActivityTile) => {
+  const launch = (tile: ActivityTile, afterClose?: () => void) => {
     if (tile.page) {
       select(tile.id);
       return;
     }
+    // LaunchButton hides launch controls for preview tiles without open.
     if (tile.stageId && onReveal) onReveal(tile.stageId);
     else if (!tile.active) tile.open?.();
     // Reopening Activities lands on the overview.
     void setPersistedTab(null);
-    onClose();
+    onClose(afterClose);
   };
   const current = tiles.find((tile) => tile.id === tab);
   return (
@@ -113,7 +114,7 @@ export function ActivitiesDialog({
           onFeedback={onFeedback}
         />
       ) : current.page ? (
-        current.page(onClose)
+        current.page(() => onClose())
       ) : (
         <ActivityDetailPage tile={current} onLaunch={launch} />
       )}

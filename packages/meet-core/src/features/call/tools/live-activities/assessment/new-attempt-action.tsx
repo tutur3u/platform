@@ -14,8 +14,7 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useMeetUxV2 } from '../../../prejoin/prejoin-context';
-import { useActivityPane } from '../../../stage-layout/activity-pane-context';
+import { useActivityModalOpen } from '../../../stage-layout/activity-pane-context';
 import { ToolAction } from '../../tool-ui';
 
 /**
@@ -26,8 +25,7 @@ import { ToolAction } from '../../tool-ui';
 export function NewAttemptAction({ onConfirm }: { onConfirm: () => void }) {
   const t = useTranslations('meet.call.live_activities');
   const [asking, setAsking] = useState(false);
-  const meetUxV2 = useMeetUxV2();
-  const visible = useActivityPane()?.visible ?? true;
+  const modalOpen = useActivityModalOpen(asking);
   return (
     <>
       <ToolAction
@@ -35,10 +33,7 @@ export function NewAttemptAction({ onConfirm }: { onConfirm: () => void }) {
         label={t('assessment.new_attempt')}
         onClick={() => setAsking(true)}
       />
-      <AlertDialog
-        open={asking && (!meetUxV2 || visible)}
-        onOpenChange={setAsking}
-      >
+      <AlertDialog open={modalOpen} onOpenChange={setAsking}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('assessment.new_attempt')}</AlertDialogTitle>

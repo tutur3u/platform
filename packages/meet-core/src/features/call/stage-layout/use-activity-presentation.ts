@@ -3,7 +3,7 @@
 import { useState } from 'react';
 
 type Presentation = {
-  sharers: readonly string[];
+  seen: ReadonlySet<string>;
   minimized: 'manual' | 'share' | false;
 };
 
@@ -13,25 +13,36 @@ export function useActivityPresentation(
   sharers: readonly string[]
 ) {
   const [state, setState] = useState<Presentation>({
-    sharers: [],
+    seen: new Set(),
     minimized: false,
   });
-  const started = sharers.some((id) => !state.sharers.includes(id));
+  const started = sharers.some((id) => !state.seen.has(id));
+  const ended = sharers.length === 0 && state.seen.size > 0;
   let minimized = state.minimized;
   if (!hasPanes) minimized = false;
   else if (started && !minimized) minimized = 'share';
   else if (!sharers.length && minimized === 'share') minimized = false;
-  if (
-    started ||
-    sharers.length !== state.sharers.length ||
-    minimized !== state.minimized
-  )
-    setState({ sharers, minimized });
+  if (started || ended || minimized !== state.minimized) {
+    // Individual media updates can flicker while the session stays active.
+    const seen = ended
+      ? new Set<string>()
+      : started
+        ? new Set([...state.seen, ...sharers])
+        : state.seen;
+    setState({ seen, minimized });
+  }
 
   return {
     minimized: !!minimized,
+    autoMinimized: minimized === 'share',
     minimize: () => setState((current) => ({ ...current, minimized: 'manual' })),
     restore: () => setState((current) => ({ ...current, minimized: false })),
+    restoreAutoMinimized: () =>
+      setState((current) =>
+        current.minimized === 'share'
+          ? { ...current, minimized: false }
+          : current
+      ),
   };
 }
 

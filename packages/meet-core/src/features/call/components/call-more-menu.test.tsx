@@ -4,6 +4,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -163,6 +164,37 @@ it('moves Follow and Summon into More under Guide the room with their hints', ()
   expect(menu().queryByText(call.activities.hint)).toBeNull();
   fireEvent.click(follow);
   expect(screen.getByRole('dialog', { name: call.follow.button })).toBeTruthy();
+});
+
+it('keeps Follow and Summon in More with the activity split controls enabled', () => {
+  renderDock({ revealActivity: vi.fn() });
+  openMore();
+  expect(menu().getByRole('button', { name: call.follow.button })).toBeTruthy();
+  expect(menu().getByRole('button', { name: call.summon.button })).toBeTruthy();
+});
+
+it('moves keyboard focus into Follow and back to the Activities trigger', async () => {
+  renderDock({
+    revealActivity: vi.fn(),
+    tools: {
+      shown: meetTools.filter(({ id }) => id === 'polls'),
+      openIds: [],
+      toggle: noop,
+    },
+  });
+  const trigger = screen.getByRole('button', { name: call.activities.button });
+  fireEvent.click(trigger);
+  const options = screen.getByRole('button', {
+    name: `More ways to open ${call.polls.title}`,
+  });
+  options.focus();
+  fireEvent.keyDown(options, { key: 'Enter' });
+  fireEvent.click(screen.getByRole('menuitem', { name: call.follow.button }));
+
+  const follow = await screen.findByRole('dialog', { name: call.follow.button });
+  expect(follow.contains(document.activeElement)).toBe(true);
+  fireEvent.keyDown(follow, { key: 'Escape' });
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
 });
 
 it('keeps Follow and Summon visible but disabled with the reason when alone', () => {

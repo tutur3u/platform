@@ -35,18 +35,20 @@ export function AskMiraMenu({
     <Popover open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={disabled}
-              aria-label={t('ask_mira')}
-              className={className}
-            >
-              <Sparkles aria-hidden="true" className="size-4" />
-            </Button>
-          </PopoverTrigger>
+          <span className="inline-flex self-end">
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                disabled={disabled}
+                aria-label={t('ask_mira')}
+                className={className}
+              >
+                <Sparkles aria-hidden="true" className="size-4" />
+              </Button>
+            </PopoverTrigger>
+          </span>
         </TooltipTrigger>
         <TooltipContent>{t('ask_mira')}</TooltipContent>
       </Tooltip>

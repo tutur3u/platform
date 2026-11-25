@@ -10,6 +10,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -101,6 +102,10 @@ export function StageLayoutView({
     [controller.layout, drag]
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const chipRef = useRef<HTMLButtonElement>(null);
+  const paneHadFocus = useRef(false);
+  const restoreFocus = useRef(false);
+  const wasMinimized = useRef(false);
   const [peopleHidden, setPeopleHidden] = useState(false);
   const [slots, setSlots] = useState<Record<string, HTMLElement | null>>({});
   const [switcher, setSwitcher] = useState(false);
@@ -160,6 +165,21 @@ export function StageLayoutView({
     controller.maximize(maximizedId === paneId ? null : paneId);
 
   const focusedPaneId = layout.focusedPaneId ?? panes[0]?.id;
+  const restorePaneId = maximizedId ?? focusedPaneId;
+  useLayoutEffect(() => {
+    if (minimized === wasMinimized.current) return;
+    wasMinimized.current = minimized;
+    if (minimized) {
+      if (paneHadFocus.current) chipRef.current?.focus();
+      paneHadFocus.current = false;
+    } else if (restoreFocus.current && restorePaneId) {
+      containerRef.current
+        ?.querySelector<HTMLElement>(`[data-pane-id="${restorePaneId}"]`)
+        ?.focus();
+    }
+    if (!minimized) restoreFocus.current = false;
+  }, [minimized, restorePaneId]);
+
   // Shift+Alt+Enter toggles fullscreen from anywhere in the stage, the code
   // editor included, which is why it is read in the capture phase.
   const fullscreenKey = (event: KeyboardEvent) => {
@@ -213,82 +233,6 @@ export function StageLayoutView({
         activityRail && 'md:landscape:flex-row lg:flex-row'
       )}
     >
-      {stage != null && (
-        <div
-          data-activity-video-rail={activityRail || undefined}
-          aria-hidden={mode === 'pill' || overlayHidden || undefined}
-          inert={mode === 'pill' || overlayHidden || undefined}
-          className={cn(
-            'relative min-w-0',
-            activityRail
-              ? 'order-last h-24 shrink-0 md:landscape:h-auto md:landscape:w-40 lg:h-auto lg:w-44'
-              : mode === 'full' && 'min-h-0 flex-1',
-            mode === 'row' && 'h-32 shrink-0',
-            mode === 'pill' && 'h-0 overflow-hidden',
-            mode === 'overlay' &&
-              'absolute right-3 bottom-3 z-30 h-28 w-48 overflow-hidden rounded-2xl border bg-background shadow-elevation-2',
-            overlayHidden && 'h-0 w-0 border-0'
-          )}
-        >
-          {stage}
-          {mode === 'overlay' && (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="absolute top-1 right-1 size-7 rounded-full bg-background/80 backdrop-blur"
-              aria-label={t('video_hide')}
-              title={t('video_hide')}
-              onClick={() => setPeopleHidden(true)}
-            >
-              <ChevronDown aria-hidden="true" className="size-4" />
-            </Button>
-          )}
-          {mode === 'row' && (
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="absolute top-1 right-1 size-7 rounded-full bg-background/80 backdrop-blur"
-              aria-label={t('video_hide')}
-              title={t('video_hide')}
-              onClick={() => controller.setStrip('pill')}
-            >
-              <ChevronUp aria-hidden="true" className="size-4" />
-            </Button>
-          )}
-        </div>
-      )}
-      {stage != null && overlayHidden && (
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="absolute right-3 bottom-3 z-30 h-8 gap-1.5 rounded-full bg-background px-3"
-          aria-label={t('video_show')}
-          onClick={() => setPeopleHidden(false)}
-        >
-          <Video aria-hidden="true" className="size-4" />
-          {t('video_count', { count: peopleCount })}
-          <ChevronUp aria-hidden="true" className="size-4" />
-        </Button>
-      )}
-      {stage != null && mode === 'pill' && (
-        <div className="flex shrink-0 justify-end">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-8 gap-1.5 rounded-full px-3"
-            aria-label={t('video_show')}
-            onClick={() => controller.setStrip('row')}
-          >
-            <Video aria-hidden="true" className="size-4" />
-            {t('video_count', { count: peopleCount })}
-            <ChevronDown aria-hidden="true" className="size-4" />
-          </Button>
-        </div>
-      )}
       {hasPanes && (
         <div
           ref={containerRef}
@@ -300,6 +244,16 @@ export function StageLayoutView({
             'min-h-0 min-w-0',
             minimized ? 'invisible absolute inset-0' : 'relative flex-1'
           )}
+          onFocusCapture={() => {
+            paneHadFocus.current = true;
+          }}
+          onBlurCapture={(event) => {
+            if (
+              event.relatedTarget &&
+              !event.currentTarget.contains(event.relatedTarget)
+            )
+              paneHadFocus.current = false;
+          }}
           onKeyDownCapture={fullscreenKey}
           onKeyDown={cycleFocus}
         >
@@ -420,6 +374,88 @@ export function StageLayoutView({
             })}
         </div>
       )}
+      {stage != null && (
+        <div
+          data-activity-video-rail={activityRail || undefined}
+          aria-hidden={mode === 'pill' || overlayHidden || undefined}
+          inert={mode === 'pill' || overlayHidden || undefined}
+          className={cn(
+            'relative min-w-0',
+            activityRail
+              ? 'h-24 shrink-0 md:landscape:h-auto md:landscape:w-40 lg:h-auto lg:w-44'
+              : mode === 'full' && 'min-h-0 flex-1',
+            !presentation && 'order-first',
+            mode === 'row' && 'h-32 shrink-0',
+            mode === 'pill' && 'h-0 overflow-hidden',
+            mode === 'overlay' &&
+              'absolute right-3 bottom-3 z-30 h-28 w-48 overflow-hidden rounded-2xl border bg-background shadow-elevation-2',
+            overlayHidden && 'h-0 w-0 border-0'
+          )}
+        >
+          {stage}
+          {mode === 'overlay' && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="absolute top-1 right-1 size-7 rounded-full bg-background/80 backdrop-blur"
+              aria-label={t('video_hide')}
+              title={t('video_hide')}
+              onClick={() => setPeopleHidden(true)}
+            >
+              <ChevronDown aria-hidden="true" className="size-4" />
+            </Button>
+          )}
+          {mode === 'row' && (
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="absolute top-1 right-1 size-7 rounded-full bg-background/80 backdrop-blur"
+              aria-label={t('video_hide')}
+              title={t('video_hide')}
+              onClick={() => controller.setStrip('pill')}
+            >
+              <ChevronUp aria-hidden="true" className="size-4" />
+            </Button>
+          )}
+        </div>
+      )}
+      {stage != null && overlayHidden && (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="absolute right-3 bottom-3 z-30 h-8 gap-1.5 rounded-full bg-background px-3"
+          aria-label={t('video_show')}
+          onClick={() => setPeopleHidden(false)}
+        >
+          <Video aria-hidden="true" className="size-4" />
+          {t('video_count', { count: peopleCount })}
+          <ChevronUp aria-hidden="true" className="size-4" />
+        </Button>
+      )}
+      {stage != null && mode === 'pill' && (
+        <div className="order-first flex shrink-0 justify-end">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 rounded-full px-3"
+            aria-label={t('video_show')}
+            onClick={() => controller.setStrip('row')}
+          >
+            <Video aria-hidden="true" className="size-4" />
+            {t('video_count', { count: peopleCount })}
+            <ChevronDown aria-hidden="true" className="size-4" />
+          </Button>
+        </div>
+      )}
+      {presentation && (
+        <div role="status" aria-live="polite" className="sr-only">
+          {presentation.autoMinimized ? t('auto_minimized') : ''}
+        </div>
+      )}
       {minimized && presentation && (
         <div className="flex shrink-0 justify-center">
           <Button
@@ -427,8 +463,18 @@ export function StageLayoutView({
             variant="outline"
             size="sm"
             className="h-9 max-w-full rounded-full pointer-coarse:h-11"
+            ref={chipRef}
             aria-label={t('reopen', { title: dockActivity.title })}
-            onClick={presentation.restore}
+            onFocus={() => {
+              restoreFocus.current = true;
+            }}
+            onBlur={(event) => {
+              if (event.relatedTarget) restoreFocus.current = false;
+            }}
+            onClick={() => {
+              restoreFocus.current = true;
+              presentation.restore();
+            }}
           >
             <dockActivity.icon aria-hidden="true" className="size-4" />
             <span className="truncate">{dockActivity.title}</span>

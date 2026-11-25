@@ -4907,6 +4907,7 @@
       },
       "activities": {
         "button": "Activities",
+        "choose_people": "Choose people…",
         "title": "Activities",
         "hint": "Opens for you; Summon brings others",
         "settings": "Activities",
@@ -5252,6 +5253,7 @@
       "class_timer_started": "Timer started",
       "class_timer_stopped": "Timer stopped",
       "stage_layout": {
+        "auto_minimized": "Activities minimized for screen sharing.",
         "fullscreen": "Full screen {title}",
         "exit_fullscreen": "Exit full screen {title}",
         "close": "Close {title}",

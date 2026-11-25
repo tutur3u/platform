@@ -36,6 +36,7 @@ export function useStageNavigation({
   onDrawer,
   onBroughtIn,
   onSummoned,
+  onNavigate,
   access,
 }: {
   room: Parameters<typeof useRoomNavigation>[0]['room'];
@@ -56,6 +57,7 @@ export function useStageNavigation({
   onBroughtIn: () => void;
   /** A host or co-host opened this tool for the person; it is theirs this session. */
   onSummoned?: (activityId: string) => void;
+  onNavigate?: () => void;
   access: Parameters<typeof useRoomNavigation>[0]['access'];
 }) {
   const latest = useRef(stage);
@@ -101,6 +103,7 @@ export function useStageNavigation({
     surface,
     layout: stage.snapshot,
     apply: (next, { forced, layout }) => {
+      onNavigate?.();
       if (layout) {
         onDrawer(next.drawer);
         return { reached: mirror(layout, forced) };

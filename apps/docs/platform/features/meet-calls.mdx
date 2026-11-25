@@ -988,9 +988,10 @@ An active screen share stays in the primary stage while you page through cameras
 The camera filmstrip scrolls horizontally, or sits at the side in the desktop
 Sidebar layout. A presenter can keep their own camera in a floating preview.
 
-With activities open, the video feeds sit in a row above the panes or collapse
-to a pill (see [Activity layout](#activity-layout)). The floating self-view snaps
-to any corner and has three sizes.
+With activities open, Meet places video beside or below the panes when
+`MEET_UX_V2` is on. The legacy layout uses a row above the panes or a count pill
+(see [Activity layout](#activity-layout)). The floating self-view snaps to any
+corner and has three sizes.
 
 Use the arrow keys on a focused divider to resize it. Double-click a divider
 to reset it. On the dock and spotlight dividers, Home and End select the size
@@ -1565,14 +1566,15 @@ More holds the remaining actions as rows that share one grid (a 20px icon
 slot, the label, a trailing slot; 40px tall, 44px on touch screens): phone
 fallbacks, recording, **Transcript & notes** (a switch, only for people who may
 read notes), Layout, Camera effects, **Meeting settings** and the presence-only
-switch for hosts. With `MEET_UX_V2` off, **Guide the room** includes **Follow**
-and **Summon** between Camera effects and Meeting settings. Each row's tooltip
+switch for hosts. People allowed to guide the room also have **Follow** and
+**Summon** under **Guide the room**, between Camera effects and Meeting settings. Each row's tooltip
 also provides its accessible description. For a host or co-host: Follow "People you pick move with you whenever
 you change what you have open" and Summon "Brings the people you pick to what
 you have open, once". For anyone else, both are worded as invitations. Alone in
-the call, both rows stay listed and focusable but `aria-disabled`, with the
-reason as their tooltip and description. Layout, Camera effects, Follow and Summon each open their own
-dialog. Regression coverage: `call-more-menu.test.tsx`.
+the call, the rows stay listed and focusable with a reason when disabled. A
+leader can still stop Follow. Layout, Camera effects, Follow and Summon each
+open their own dialog.
+[Control dock tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/call-more-menu.test.tsx).
 
 People keeps join requests and the participant list ahead of optional room
 settings. Moderators use a per-person menu for mute, media permissions and
@@ -1656,12 +1658,17 @@ With `MEET_UX_V2` on in Meet, activities that support room navigation have
 one **Open** control in the Activities picker. Its primary button opens or
 focuses the activity locally. The adjacent menu appears for people allowed to
 guide the room. **Bring everyone** summons the whole room to that activity
-once, and **Follow** opens the same target picker for ongoing Follow. The
-primary button's tooltip tells hosts and co-hosts "Opens for you; Bring
-everyone moves others". Other permitted participants see that it sends an
-invitation. With the flag off, the separate More actions can each target one
-person, several people, or everyone.
-[Activities picker tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/activities-dialog.test.tsx).
+once. **Choose people…** opens the Summon picker for that activity, and **Follow**
+opens the picker for ongoing Follow. If you are already leading, **Stop**
+ends Follow and keeps the Activities picker open. The primary
+button's tooltip tells hosts and co-hosts "Opens for you; Bring everyone moves
+others". Other permitted participants see that Summon sends an invitation.
+
+In both layouts, the dock's **More** menu offers **Follow** and **Summon** for
+the current view. Each picker can target one person, several people, or everyone.
+[Activities picker tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/activities-dialog.test.tsx) ·
+[Control dock tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/call-more-menu.test.tsx) ·
+[Room navigation tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-follow.test.tsx).
 
 Default and permissions:
 
@@ -1771,11 +1778,17 @@ media, or tool access.
   choice. The media stage stays mounted through these layout changes.
 - **Screen sharing.** In Meet with `MEET_UX_V2` on, starting a screen share
   gives the media stage the available space. Open activity panes stay
-  mounted and collapse into a chip with the focused activity's title and icon.
-  Selecting the chip restores the pane layout, even during a share. Ending the
-  last share restores an activity layout that the share minimized. Using
-  **Minimize activities** keeps the chip in the dock until you reopen it.
-  [Stage layout tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-layout-view.test.tsx).
+  mounted behind a chip below the stage. The chip shows the focused activity's
+  title and icon. Minimizing exits browser fullscreen, and dialogs close while
+  their panes are hidden. If focus was in an activity, it moves to the chip.
+  Screen readers announce automatic minimization.
+  Selecting the chip restores the layout and focuses the visible pane, even
+  during a share. A new sharer can minimize it again during the same session.
+  Ending the last share or navigating through an incoming Summon or Follow
+  restores automatically minimized activities. Using **Minimize activities**
+  keeps them minimized until you reopen them.
+  [Stage layout tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-layout-view.test.tsx) ·
+  [Presentation tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/use-activity-presentation.test.tsx).
 - **Adaptive content.** Each pane is a container for container queries, not
   viewport breakpoints: compact under 360px, medium from 360px to 720px, wide
   beyond. A pane smaller than 280 by 220 shows "Needs more room" with a
@@ -3224,7 +3237,8 @@ Learn uses the same workbench without the meeting-only controls.
   collapse them. The browser remembers the last manual choice, and running
   code, running tests or opening the preview can reveal the output for that
   session.
-  [Workbench output tests](https://github.com/tutur3u/platform/blob/main/packages/programming-ui/src/workbench-output.test.tsx).
+  [Output disclosure tests](https://github.com/tutur3u/platform/blob/main/packages/programming-ui/src/workbench-output.test.tsx) ·
+  [Run and Test disclosure tests](https://github.com/tutur3u/platform/blob/main/packages/programming-ui/src/programming-workbench-output.test.tsx).
 - **Ask Mira.** The host's Ask Mira menu sits at the end of the file tab row.
   Mira's own status (checking, attribution, a failure) takes a row above the
   editor only while it has something to say.

@@ -31,8 +31,7 @@ import { useRoomTools } from './call-room-tools';
 import { CallControlDock } from './call-control-dock';
 import { CallHeader } from './call-header';
 import { ActivitiesRequestProvider } from '../stage-layout/activities-request';
-import { useMeetUxV2 } from '../prejoin/prejoin-context';
-import { useActivityPresentation } from '../stage-layout/use-activity-presentation';
+import { useCallActivityPresentation } from '../stage-layout/use-call-activity-presentation';
 import { PresenceStage } from '../stage-layout/presence-stage';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
@@ -104,7 +103,6 @@ function CallShellContent({
 }) {
   const t = useTranslations('meet.call');
   const aiT = useTranslations('meet.ai');
-  const activityUxV2 = useMeetUxV2() && MEETING_APP === 'meet';
   const router = useRouter();
   const [joined, setJoined] = useState(false);
   const [left, setLeft] = useState(false);
@@ -277,22 +275,8 @@ function CallShellContent({
     meetingId,
     isAvailable: availability.isAvailable,
   });
-  const hasActivities = stage.openIds.length > 0;
-  const sharers =
-    activityUxV2 && !presenceOnly
-      ? participants
-          .filter(
-            (person) =>
-              person.media.screenEnabled ||
-              (person.userId === state.selfUserId && !!room.screenStream)
-          )
-          .map((person) => person.userId)
-      : [];
-  const presenting = useActivityPresentation(
-    activityUxV2 && hasActivities,
-    sharers
-  );
-  const activityRail = activityUxV2 && hasActivities && !presenting.minimized;
+  const { presentation, activityRail, showActivities, revealActivity } =
+    useCallActivityPresentation(room, stage);
   const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
   const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
   const showBoard = stage.isOpen(BOARD_ACTIVITY);
@@ -328,6 +312,7 @@ function CallShellContent({
     onDrawer: (next) => setDrawer(next as typeof drawer),
     onBroughtIn: () => setBroughtIn(true),
     onSummoned: availability.summon,
+    onNavigate: presentation?.restoreAutoMinimized,
     access: {
       browse: roomTools.canUse,
       account: !requiresAccount,
@@ -477,7 +462,7 @@ function CallShellContent({
           <RoomStage
             controller={stage}
             peopleCount={participants.length}
-            presentation={activityUxV2 ? presenting : undefined}
+            presentation={presentation}
             tools={meetTools}
             renderTool={tools.renderPanel}
             renderClassroom={activities.renderPanel}
@@ -520,11 +505,11 @@ function CallShellContent({
                   room={room}
                   layout={layout}
                   activityRail={activityRail}
-                  compact={hasActivities && !presenting.minimized}
+                  compact={showActivities}
                   focus={focus}
                   onFocus={focusFeed}
                 />
-              ) : hasActivities && !presenting.minimized ? null : (
+              ) : showActivities ? null : (
                 <PresenceStage
                   stage={stage}
                   canBrowse={roomTools.canUse}
@@ -537,7 +522,7 @@ function CallShellContent({
                     onTool: tools.toggle,
                   }}
                   navigationAllowed={nav.allowed}
-                  openFromDock={activityUxV2}
+                  openFromDock={!!presentation}
                 />
               )
             }
@@ -633,14 +618,7 @@ function CallShellContent({
           setFocus(null);
         }}
         nav={nav}
-        revealActivity={
-          activityUxV2
-            ? (id) => {
-                stage.open(id);
-                presenting.restore();
-              }
-            : undefined
-        }
+        revealActivity={revealActivity}
         transcript={
           canReadNotes
             ? {

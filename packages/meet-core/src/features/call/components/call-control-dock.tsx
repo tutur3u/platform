@@ -137,7 +137,12 @@ export function CallControlDock({
       navigationAllowed={nav.allowed}
       navigation={
         revealActivity
-          ? { ...nav, openFollow: navControls.openFollow, reveal: revealActivity }
+          ? {
+              ...nav,
+              openFollow: navControls.openFollow,
+              openSummon: navControls.openSummon,
+              reveal: revealActivity,
+            }
           : undefined
       }
       collaboration={
@@ -165,7 +170,7 @@ export function CallControlDock({
         activePanel={panel}
         activities={activitiesMenu}
         reactions={<CallReactionsMenu react={room.react} />}
-        navigation={nav.allowed && !revealActivity ? navControls.menu : undefined}
+        navigation={nav.allowed ? navControls.menu : undefined}
         onOpenSettings={
           settingsLinked ? () => settingsDialog.setOpen(true) : undefined
         }
