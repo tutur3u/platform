@@ -236,3 +236,32 @@ after the app-base and Trusted Types head scripts. Mail and Tasks use it.
   a navigation, so it can rotate the Supabase session cookie exactly as an
   ordinary page load would; with at most two retained, this is the same
   refresh race as two open tabs.
+
+## Edge cache hit rate
+
+The zone dashboard's cache hit rate counts eyeball requests only. A
+read-only GraphQL query on `httpRequestsAdaptiveGroups` (token permission:
+Zone Analytics Read on `tuturuuu.com`), grouped by `requestSource`,
+`cacheStatus` and path, shows where requests and bytes go.
+
+Baseline, 2026-11-25 06:00–22:00 UTC:
+
+"Cached" is the share of requests whose `cacheStatus` was `hit` or `stale`;
+bytes are decimal (1 MB = 10^6 bytes) from `edgeResponseBytes`.
+
+| Source | Requests | Cached | Notes |
+| --- | --- | --- | --- |
+| Eyeball | 147k (58%) | 41.1% of requests, 27.5% of bytes | Close to the dashboard's 40.56% for its own 24-hour window |
+| Worker subrequests into the zone | 53k (21%) | 7% | Mostly satellites calling Web's API over HTTPS |
+| Gateway Cache API operations | 28k (11%) | 53% | Per-colo lookups and puts |
+| Early Hints lookups | 24k (10%) | 5% | Expected misses on non-HTML requests; Early Hints stays on |
+
+Uncached eyeball bytes were dominated by HTML (1.87 GB), led by `/login`
+(933 MB across 6.9k requests; the page is 143,627 bytes uncompressed), then authenticated API
+responses (457 MB). Static assets accounted for about 200 MB. Authenticated
+HTML and API responses must never enter a shared cache.
+
+**Scanner probes.** Paths that only vulnerability scanners request get a
+small `404` from the gateway; see
+[Gateway Worker](/build/devops/gateway-worker#scanner-probes). Without it,
+each probe renders a full dashboard document (HTTP 200, about 2.6 MB).

@@ -213,6 +213,26 @@ describe('mounted app ingress', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('leaves probe-shaped paths to a mounted app and refuses them on Web', async () => {
+    const { handle } = handler();
+    const { env, fetch } = mountEnv('/learn,/learn/*');
+
+    const mountedFile = await handle(
+      new Request('https://tuturuuu.com/learn/o/r/blob/schema.sql'),
+      env
+    );
+    expect(await mountedFile.text()).toBe('mounted');
+    expect(fetch).toHaveBeenCalledOnce();
+
+    const probe = await handle(
+      new Request('https://tuturuuu.com/wp-login.php'),
+      env
+    );
+    expect(probe.status).toBe(404);
+    expect(probe.headers.get('x-gateway-cache')).toBe('PROBE');
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it('keeps unmounted paths on the web-rest forwarding contract', async () => {
     const origin = vi.fn(async (_request: Request) => new Response('web'));
     vi.stubGlobal('fetch', origin);

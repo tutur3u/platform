@@ -54,6 +54,28 @@ requests they match.
   origin answers `502`, a throwing family `502`, and a request that already
   passed through the gateway (`x-gateway-hop`) `508`.
 
+## Scanner probes
+
+After mounted apps are dispatched and before the Web and Marketing families
+run, the gateway answers paths that only vulnerability scanners request with
+`404 Not Found` (`Cache-Control: public, max-age=3600`,
+`X-Gateway-Cache: PROBE`, `X-Robots-Tag: noindex`):
+
+- server-script and backup extensions: `.php`, `.phtml`, `.asp`, `.aspx`,
+  `.jsp`, `.cgi`, `.sql`, `.bak`, `.old`, `.swp`, `.env`, `.ini`;
+- dotted path segments (`.git`, `.svn`, `.hg`, `.env*`, `.aws`, `.ssh`,
+  `.DS_Store`), matched as whole segments. Named segments such as
+  `wordpress` or `wp-admin` are not matched, because they are valid
+  workspace handles served at `tuturuuu.com/<handle>`;
+- credential and server-config files at the site root (`/config.json`,
+  `/credentials.json`, `/service-account.json`, `/.npmrc`, …).
+
+Paths containing `/api/`, paths under `/.well-known/` and every mounted app
+path are never matched, so a mounted code viewer can serve repository files
+such as `schema.sql`. The response is built in front of the edge cache and
+is only cached by browsers. Coverage: `apps/gateway/src/scanner-probe.test.ts`
+and `apps/gateway/src/worker-mount.test.ts`.
+
 ## Configuration
 
 | Name | Kind | Purpose |

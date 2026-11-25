@@ -7,6 +7,7 @@ import {
   isMountedClientForwardingHeader,
 } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
+import { isScannerProbe, scannerProbeResponse } from './scanner-probe';
 import { dispatchWebFamily, webFamilyTarget } from './web-family';
 import { vinextFamilyTarget, webFallbackTarget } from './web-route-table';
 import {
@@ -546,6 +547,9 @@ export function createHandler(deps: HandlerDeps) {
         return plain(502, 'gateway mounted app unreachable');
       }
     }
+    // Mounted apps own their paths (repository files in a code viewer can
+    // end in `.sql` or `.env`); only Web and Marketing paths are filtered.
+    if (isScannerProbe(pathname)) return scannerProbeResponse();
     const match = matchRoute(pathname, deps.manifest);
     const chosen = chooseOrigin(env, deps.manifest, match, request);
     const origin = chosen.url;
