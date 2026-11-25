@@ -19,12 +19,20 @@ describe('sanitizeExchangeAppId', () => {
     expect(sanitizeExchangeAppId('a'.repeat(100))).toBe('a'.repeat(64));
   });
 
-  it.each([undefined, null, 5, '', 'a b', 'a.b', 'a/b', 'a@b.com', 'é', 'a\nb'])(
-    'logs %j as invalid',
-    (value) => {
-      expect(sanitizeExchangeAppId(value)).toBe('invalid');
-    }
-  );
+  it.each([
+    undefined,
+    null,
+    5,
+    '',
+    'a b',
+    'a.b',
+    'a/b',
+    'a@b.com',
+    'é',
+    'a\nb',
+  ])('logs %j as invalid', (value) => {
+    expect(sanitizeExchangeAppId(value)).toBe('invalid');
+  });
 });
 
 describe('classifyExchangeOutcome', () => {
@@ -41,9 +49,9 @@ describe('classifyExchangeOutcome', () => {
     );
     expect(classify(400, { code: 'PKCE_REQUIRED' })).toBe('bad-request');
     expect(classify(400)).toBe('bad-request');
-    expect(
-      classify(401, { error: 'Workspace-bound sign-in required' })
-    ).toBe('strict-binding-refused');
+    expect(classify(401, { error: 'Workspace-bound sign-in required' })).toBe(
+      'strict-binding-refused'
+    );
     expect(classify(401, { error: 'Invalid or expired token' })).toBe(
       'unauthorized'
     );

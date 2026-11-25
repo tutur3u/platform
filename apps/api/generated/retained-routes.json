@@ -1014,7 +1014,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/app-token/exchange/route.ts",
-    "sourceSha256": "745b95f8409d1f83e6f507b3d1a814a51d0d75d6cc900ea8be386cd024a2bf87",
+    "sourceSha256": "21c808ec612b33cb015312a43c804f4538fb51a05afa590bf98250eeedc6000c",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

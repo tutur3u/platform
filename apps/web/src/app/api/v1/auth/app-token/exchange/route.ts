@@ -695,8 +695,6 @@ export async function POST(request: NextRequest) {
       route: '/api/v1/auth/app-token/exchange',
     },
     () =>
-      runLoggedExchange((logContext) =>
-        exchangeAppToken(request, logContext)
-      )
+      runLoggedExchange((logContext) => exchangeAppToken(request, logContext))
   );
 }
