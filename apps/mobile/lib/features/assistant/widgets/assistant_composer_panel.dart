@@ -31,6 +31,7 @@ class AssistantComposerPanel extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final deviceClass = Breakpoints.fromWidth(constraints.maxWidth);
+          final colors = AppTokens.of(context).colorScheme;
           final withDock =
               shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
               ShellNavigationMode.dock;
@@ -56,20 +57,26 @@ class AssistantComposerPanel extends StatelessWidget {
                 onHeightChanged: onHeightChanged,
                 child: Padding(
                   padding: insets,
-                  child: _Outlined(
-                    child: AppCard(
-                      padding: EdgeInsets.zero,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(AppSpacing.xs),
-                            child: child,
-                          ),
-                          ?controls,
-                        ],
-                      ),
+                  child: AppCard(
+                    key: const ValueKey('assistant-composer-outline'),
+                    padding: EdgeInsets.zero,
+                    // The prompt reads as an input surface in every
+                    // appearance. Dark schemes share their border colour with
+                    // the muted surface, so the outline uses a translucent
+                    // muted foreground there.
+                    borderColor: colors.isDark
+                        ? colors.mutedForeground.withValues(alpha: 0.4)
+                        : colors.border,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(AppSpacing.xs),
+                          child: child,
+                        ),
+                        ?controls,
+                      ],
                     ),
                   ),
                 ),
@@ -78,35 +85,6 @@ class AssistantComposerPanel extends StatelessWidget {
           );
         },
       ),
-    );
-  }
-}
-
-/// Outlines the composer in every appearance so the prompt reads as an input
-/// surface. The line is painted over the card's fill, which covers a border
-/// painted beneath it. Dark schemes share their border colour with the muted
-/// surface, so the outline steps up to a translucent muted foreground there.
-class _Outlined extends StatelessWidget {
-  const _Outlined({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    final colors = tokens.colorScheme;
-    return DecoratedBox(
-      key: const ValueKey('assistant-composer-outline'),
-      position: DecorationPosition.foreground,
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: colors.isDark
-              ? colors.mutedForeground.withValues(alpha: 0.4)
-              : colors.border,
-        ),
-        borderRadius: BorderRadius.circular(tokens.shapes.card),
-      ),
-      child: child,
     );
   }
 }

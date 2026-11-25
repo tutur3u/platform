@@ -161,16 +161,15 @@ void main() {
         );
         expect(controls.bottom, lessThanOrEqualTo(composer.bottom));
 
-        // The outline paints over the card fill so it stays visible.
-        final outline = tester.widget<DecoratedBox>(
+        // The composer card carries its own outline colour.
+        final outline = tester.widget<AppCard>(
           find.byKey(const ValueKey('assistant-composer-outline')),
         );
-        expect(outline.position, DecorationPosition.foreground);
         final colors = AppTokens.of(
           tester.element(find.byType(AssistantComposerPanel)),
         ).colorScheme;
         expect(
-          ((outline.decoration as BoxDecoration).border! as Border).top.color,
+          outline.borderColor,
           brightness == Brightness.dark
               ? colors.mutedForeground.withValues(alpha: 0.4)
               : colors.border,
