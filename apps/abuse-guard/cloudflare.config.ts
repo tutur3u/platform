@@ -18,10 +18,16 @@ export default defineConfig({
       logs: { enabled: true, headSamplingRate: 0.05, invocationLogs: true },
     },
     env: {
-      ABUSE_GUARD_DAILY_OP_BUDGET: bindings.text('1000000'),
+      // Admitted commands per UTC day, split by FAMILY_BUDGET_SHARES. Size it
+      // so proxy's 20% share covers one command per rate window on every
+      // proxied API request for a full UTC day: an exhausted share returns
+      // guard_stopped, and proxy callers fall back to per-instance limits
+      // until the next UTC day. The total also bounds billable guard work.
+      ABUSE_GUARD_DAILY_OP_BUDGET: bindings.text('5000000'),
       // Optional explicit split, e.g. `offline=600000,replay=100000`; empty
-      // uses the default shares (offline 50%, proxy 20%, replay/password/meet
-      // 10% each).
+      // uses the default shares (offline 35%, proxy 20%, replay, password,
+      // meet and ratelimit 10% each, live 5%). Unlisted families keep their
+      // share of the total, and the split must not exceed the total.
       ABUSE_GUARD_FAMILY_BUDGETS: bindings.text(''),
       ABUSE_GUARD_LOCATION_HINT: bindings.text('apac'),
       ABUSE_GUARD_SECRETS: bindings.secret(),

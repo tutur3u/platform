@@ -300,11 +300,29 @@ describe('guardApiProxyRequest on the abuse-guard store', () => {
     await expect(guard()).resolves.toBeNull();
     expect(warn).toHaveBeenCalledWith(
       '[ProxyGuard] guard store unavailable; applying per-instance limits',
-      'Error'
+      'Error',
+      'unknown'
     );
     // The single-read policy allows one request per minute.
     expect((await guard())?.status).toBe(429);
     expect(mocks.limit).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('names the guard failure code when the store answers with a budget stop', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.hitWindows.mockRejectedValue(
+      Object.assign(new Error('Abuse guard store unavailable: guard_stopped'), {
+        name: 'AbuseGuardUnavailableError',
+        code: 'guard_stopped',
+      })
+    );
+    await expect(guard()).resolves.toBeNull();
+    expect(warn).toHaveBeenCalledWith(
+      '[ProxyGuard] guard store unavailable; applying per-instance limits',
+      'AbuseGuardUnavailableError',
+      'guard_stopped'
+    );
     warn.mockRestore();
   });
 

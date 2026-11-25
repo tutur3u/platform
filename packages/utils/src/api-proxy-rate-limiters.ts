@@ -22,6 +22,24 @@ import {
   reportLegacyFamilyWithoutStore,
 } from './upstash-rest';
 
+const GUARD_FAILURE_CODES = new Set([
+  'bad_request',
+  'unauthorized',
+  'guard_limited',
+  'guard_stopped',
+  'guard_unavailable',
+  'timeout',
+  'network',
+  'invalid_response',
+]);
+
+function guardFailureCode(error: Error) {
+  const code = (error as { code?: unknown }).code;
+  return typeof code === 'string' && GUARD_FAILURE_CODES.has(code)
+    ? code
+    : 'unknown';
+}
+
 type RateLimitBucket = {
   limiter: RateLimiter;
   window: RateLimitWindow;
@@ -175,12 +193,15 @@ function createGuardRateLimitBuckets(
           } catch (error) {
             if (now >= nextOutageWarningAt) {
               nextOutageWarningAt = now + 60_000;
+              const guardError =
+                error instanceof Error &&
+                error.name === 'AbuseGuardUnavailableError';
               console.warn(
                 '[ProxyGuard] guard store unavailable; applying per-instance limits',
-                error instanceof Error &&
-                  error.name === 'AbuseGuardUnavailableError'
-                  ? 'AbuseGuardUnavailableError'
-                  : 'Error'
+                guardError ? 'AbuseGuardUnavailableError' : 'Error',
+                // A fixed failure code (timeout, network, guard_stopped, ...)
+                // tells an outage from a daily budget stop.
+                guardError ? guardFailureCode(error) : 'unknown'
               );
             }
             const denied = outageLimiter.hit(

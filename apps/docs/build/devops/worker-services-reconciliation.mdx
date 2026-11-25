@@ -65,7 +65,7 @@ Per D74 security and operational policies:
 - **Worker Name**: `tuturuuu-abuse-guard` (Account `e8912e2867beecc673d171907bf09649`).
 - **Routes**: `workersDev: false`, `previewUrls: false`. Custom domain attached during admitted staging publication.
 - **Bindings**:
-  - `ABUSE_GUARD_DAILY_OP_BUDGET`: Text (`1000000`).
+  - `ABUSE_GUARD_DAILY_OP_BUDGET`: Text (`5000000`). The proxy family's 20% share (1,000,000 commands per UTC day) covers one command per rate window on every proxied API request. When a share is exhausted, that family's callers get `guard_stopped` until the next UTC day, and proxy callers log `[ProxyGuard] guard store unavailable … guard_stopped` while applying per-instance limits.
   - `ABUSE_GUARD_FAMILY_BUDGETS`: Text (default empty).
   - `ABUSE_GUARD_LOCATION_HINT`: Text (`apac`).
   - `ABUSE_GUARD_SECRETS`: Secret.
