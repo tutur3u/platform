@@ -7,6 +7,19 @@ double _mailSidebarWidth(double bodyWidth) {
   return 0;
 }
 
+/// Web Mail's system folders, in its sidebar order.
+Map<String, String> _mailSystemFolders(AppLocalizations l10n) => {
+  'inbox': l10n.mailInbox,
+  'snoozed': l10n.mailSnoozed,
+  'muted': l10n.mailMuted,
+  'sent': l10n.mailSent,
+  'drafts': l10n.mailDrafts,
+  'starred': l10n.mailStarred,
+  'archive': l10n.mailArchive,
+  'spam': l10n.mailSpam,
+  'trash': l10n.mailTrash,
+};
+
 IconData _mailFolderIcon(String folder) => switch (folder) {
   'starred' => Icons.star_outline,
   'drafts' => Icons.drafts_outlined,

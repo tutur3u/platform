@@ -17592,6 +17592,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailMessageActions => 'Message actions';
 
   @override
+  String get mailMarkInboxRead => 'Mark all inbox emails as read';
+
+  @override
+  String get mailMarkArchiveRead => 'Mark all archived emails as read';
+
+  @override
+  String get mailSynced => 'Up to date';
+
+  @override
+  String get mailSyncing => 'Syncing changes';
+
+  @override
+  String get mailSyncFailed => 'Sync needs attention';
+
+  @override
+  String mailTagCount(int count) {
+    return '$count tags';
+  }
+
+  @override
+  String mailMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mailUnknownSender => 'Unknown sender';
+
+  @override
   String get fleetStatusNeedsUser => 'Needs you';
 
   @override

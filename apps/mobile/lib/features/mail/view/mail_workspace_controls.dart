@@ -222,4 +222,41 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
       ],
     );
   }
+
+  /// The folder (or the label or custom folder filtering it) the list shows.
+  String _mailListTitle(AppLocalizations l10n) {
+    String? nameOf(List<Map<String, dynamic>> rows, String? id) => id == null
+        ? null
+        : rows.firstWhere(
+                (row) => row['id'] == id,
+                orElse: () => const <String, dynamic>{},
+              )['name']
+              as String?;
+    return nameOf(_labels, _labelId) ??
+        nameOf(_folders, _folderId) ??
+        _mailSystemFolders(l10n)[_folder] ??
+        l10n.mailFolders;
+  }
+
+  Widget _buildMailListHeader() {
+    final l10n = context.l10n;
+    final markRead =
+        _mailboxId != null && ['inbox', 'archive'].contains(_folder);
+    return MailListHeader(
+      title: _mailListTitle(l10n),
+      address: _mailbox['address'] as String?,
+      syncState: _loading
+          ? MailSyncState.syncing
+          : _failed
+          ? MailSyncState.failed
+          : MailSyncState.synced,
+      onRefresh: () => unawaited(!_accessVerified ? _bootstrap() : _load()),
+      markReadTooltip: !markRead
+          ? null
+          : _folder == 'inbox'
+          ? l10n.mailMarkInboxRead
+          : l10n.mailMarkArchiveRead,
+      onMarkRead: markRead && !_mutating ? _markAllRead : null,
+    );
+  }
 }

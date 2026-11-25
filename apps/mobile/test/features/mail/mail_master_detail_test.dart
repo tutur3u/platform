@@ -314,7 +314,7 @@ void main() {
     expect(compose.label, 'Compose');
     expect(compose.onPressed, isNotNull);
     expect(ids, isNot(contains('mail-primary-action')));
-    expect(titles.state.resolveForLocation(Routes.mail), 'Inbox');
+    expect(titles.state.resolveForLocation(Routes.mail), 'Mail');
     final back = actions.state.backForLocation(Routes.mail);
     expect(back, isNotNull);
     await back!();

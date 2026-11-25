@@ -17381,6 +17381,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailMessageActions => 'Thao tác với thư';
 
   @override
+  String get mailMarkInboxRead => 'Đánh dấu tất cả thư trong hộp thư đến là đã đọc';
+
+  @override
+  String get mailMarkArchiveRead => 'Đánh dấu tất cả thư lưu trữ là đã đọc';
+
+  @override
+  String get mailSynced => 'Đã đồng bộ';
+
+  @override
+  String get mailSyncing => 'Đang đồng bộ thay đổi';
+
+  @override
+  String get mailSyncFailed => 'Cần kiểm tra đồng bộ';
+
+  @override
+  String mailTagCount(int count) {
+    return '$count nhãn';
+  }
+
+  @override
+  String mailMessageCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thư',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mailUnknownSender => 'Người gửi không xác định';
+
+  @override
   String get fleetStatusNeedsUser => 'Cần bạn';
 
   @override

@@ -32407,6 +32407,54 @@ abstract class AppLocalizations {
   /// **'Message actions'**
   String get mailMessageActions;
 
+  /// No description provided for @mailMarkInboxRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all inbox emails as read'**
+  String get mailMarkInboxRead;
+
+  /// No description provided for @mailMarkArchiveRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all archived emails as read'**
+  String get mailMarkArchiveRead;
+
+  /// No description provided for @mailSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to date'**
+  String get mailSynced;
+
+  /// No description provided for @mailSyncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Syncing changes'**
+  String get mailSyncing;
+
+  /// No description provided for @mailSyncFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync needs attention'**
+  String get mailSyncFailed;
+
+  /// No description provided for @mailTagCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} tags'**
+  String mailTagCount(int count);
+
+  /// No description provided for @mailMessageCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 message} other{{count} messages}}'**
+  String mailMessageCount(int count);
+
+  /// No description provided for @mailUnknownSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown sender'**
+  String get mailUnknownSender;
+
   /// No description provided for @fleetStatusNeedsUser.
   ///
   /// In en, this message translates to:

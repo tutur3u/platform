@@ -51,15 +51,6 @@ extension _MailShellActions on _MailWorkspaceState {
             }
           },
         ),
-        if (_mailboxId != null && ['inbox', 'archive'].contains(_folder))
-          ShellActionSpec(
-            id: 'mail-mark-read',
-            icon: Icons.mark_email_read_outlined,
-            tooltip: l10n.mailMarkAllRead,
-            enabled: !_mutating,
-            callbackToken: (_mailboxId, _folder, _mutating),
-            onPressed: _markAllRead,
-          ),
         if (_mailboxId != null)
           ShellActionSpec(
             id: 'mail-settings',

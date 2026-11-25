@@ -21,7 +21,7 @@ void main() {
     ).thenAnswer((_) async {});
     await f.mount(tester);
     await f.swipeFirstToTrash(tester);
-    await tester.tap(find.byTooltip('Mark all read'));
+    await tester.tap(find.byKey(const ValueKey('mail-mark-folder-read')));
     await tester.pump();
     await tester.tap(find.byTooltip('Search mail'));
     await tester.pumpAndSettle();
@@ -53,12 +53,9 @@ void main() {
     final miniNav = ShellMiniNavCubit();
     addTearDown(miniNav.close);
     // The shell keeps its mailbox picker available during the wait.
-    final actions = await f.mountShell(tester, miniNav: miniNav);
+    await f.mountShell(tester, miniNav: miniNav);
     await f.swipeFirstToTrash(tester);
-    actions.state
-        .resolveForLocation(Routes.mail)
-        .singleWhere((action) => action.id == 'mail-mark-read')
-        .onPressed!();
+    await tester.tap(find.byKey(const ValueKey('mail-mark-folder-read')));
     await tester.pump();
     miniNav.state
         .resolveForLocation(Routes.mail)!
@@ -93,7 +90,7 @@ void main() {
     await f.mount(tester);
     await f.swipeFirstToTrash(tester);
 
-    await tester.tap(find.byTooltip('Mark all read'));
+    await tester.tap(find.byKey(const ValueKey('mail-mark-folder-read')));
     await tester.pumpAndSettle();
     verify(f.trashFirst).called(1);
     expect(find.text('Undo'), findsNothing);
@@ -144,7 +141,7 @@ void main() {
     });
     await f.mount(tester);
     await f.swipeFirstToTrash(tester);
-    await tester.tap(find.byTooltip('Mark all read'));
+    await tester.tap(find.byKey(const ValueKey('mail-mark-folder-read')));
     await tester.pump();
     await tester.tap(find.text('Load more'));
     await tester.pumpAndSettle();
@@ -172,7 +169,11 @@ void main() {
         await tester.longPress(find.text('Second'));
         await tester.pumpAndSettle();
       }
-      await tester.tap(find.byTooltip(selection ? 'Archive' : 'Mark all read'));
+      await tester.tap(
+        selection
+            ? find.byTooltip('Archive')
+            : find.byKey(const ValueKey('mail-mark-folder-read')),
+      );
       await tester.pump();
 
       user = 'second-account';

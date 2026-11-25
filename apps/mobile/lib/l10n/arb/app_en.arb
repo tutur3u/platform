@@ -8505,6 +8505,28 @@
   "mailFilterUnread": "Unread",
   "mailQuickFilter": "Quick filter",
   "mailMessageActions": "Message actions",
+  "mailMarkInboxRead": "Mark all inbox emails as read",
+  "mailMarkArchiveRead": "Mark all archived emails as read",
+  "mailSynced": "Up to date",
+  "mailSyncing": "Syncing changes",
+  "mailSyncFailed": "Sync needs attention",
+  "mailTagCount": "{count} tags",
+  "@mailTagCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailMessageCount": "{count, plural, =1{1 message} other{{count} messages}}",
+  "@mailMessageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailUnknownSender": "Unknown sender",
   "fleetStatusNeedsUser": "Needs you",
   "fleetStatusRunning": "Running",
   "fleetStatusWaitingReview": "In review",

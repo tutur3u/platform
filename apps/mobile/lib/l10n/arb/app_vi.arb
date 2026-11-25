@@ -7687,6 +7687,28 @@
   "mailFilterUnread": "Chưa đọc",
   "mailQuickFilter": "Lọc nhanh",
   "mailMessageActions": "Thao tác với thư",
+  "mailMarkInboxRead": "Đánh dấu tất cả thư trong hộp thư đến là đã đọc",
+  "mailMarkArchiveRead": "Đánh dấu tất cả thư lưu trữ là đã đọc",
+  "mailSynced": "Đã đồng bộ",
+  "mailSyncing": "Đang đồng bộ thay đổi",
+  "mailSyncFailed": "Cần kiểm tra đồng bộ",
+  "mailTagCount": "{count} nhãn",
+  "@mailTagCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailMessageCount": "{count, plural, other{{count} thư}}",
+  "@mailMessageCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailUnknownSender": "Người gửi không xác định",
   "fleetStatusNeedsUser": "Cần bạn",
   "fleetStatusRunning": "Đang chạy",
   "fleetStatusWaitingReview": "Chờ duyệt",

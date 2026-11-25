@@ -8,17 +8,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
 
   Widget _buildWorkspaceBody(BuildContext context, double bodyWidth) {
     final l10n = context.l10n;
-    final folders = {
-      'inbox': l10n.mailInbox,
-      'snoozed': l10n.mailSnoozed,
-      'muted': l10n.mailMuted,
-      'sent': l10n.mailSent,
-      'drafts': l10n.mailDrafts,
-      'starred': l10n.mailStarred,
-      'archive': l10n.mailArchive,
-      'spam': l10n.mailSpam,
-      'trash': l10n.mailTrash,
-    };
+    final folders = _mailSystemFolders(l10n);
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
     Future<void> chooseFolder() async {
       final folder = await _chooseMailOption(
@@ -58,7 +48,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
               ShellTitleOverride(
                 ownerId: 'mail-inbox',
                 locations: const {Routes.mail},
-                title: l10n.mailInbox,
+                title: l10n.mailTitle,
               ),
               _buildMailShellActions(
                 wide: wide,
@@ -114,22 +104,13 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
               appBar: sharedShell
                   ? null
                   : AppBar(
-                      title: hasSidebar
-                          ? Text(folders[_folder] ?? l10n.mailFolders)
-                          : folderPicker,
+                      title: hasSidebar ? Text(l10n.mailTitle) : folderPicker,
                       actions: [
                         if (hasSidebar)
                           IconButton(
                             tooltip: l10n.mailSearch,
                             onPressed: _startMailSearch,
                             icon: const Icon(AppIcons.search),
-                          ),
-                        if (_mailboxId != null &&
-                            ['inbox', 'archive'].contains(_folder))
-                          IconButton(
-                            tooltip: l10n.mailMarkAllRead,
-                            onPressed: _mutating ? null : _markAllRead,
-                            icon: const Icon(Icons.mark_email_read_outlined),
                           ),
                         if (_mailboxId != null)
                           IconButton(
@@ -240,6 +221,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
             sliver: SliverToBoxAdapter(
               child: Column(
                 children: [
+                  _buildMailListHeader(),
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child: _buildMailControls(
@@ -295,10 +277,11 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                     (sharedShell ? AppLayout.scrollEndGap : 100) +
                         MediaQuery.paddingOf(context).bottom,
                   ),
+                  // Rounded rows with accent fills, a hairline apart, in
+                  // place of divider lines.
                   sliver: SliverList.separated(
                     itemCount: _items.length + 1,
-                    separatorBuilder: (_, index) =>
-                        const Divider(height: 1, indent: 32),
+                    separatorBuilder: (_, index) => const SizedBox(height: 2),
                     itemBuilder: (context, index) {
                       if (index == _items.length) {
                         if (_hasMore) {
@@ -320,39 +303,42 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                         id: item['id'] as String,
                         ensureVisible: keyboardActive,
                         onChanged: _rowVisibilityChanged,
-                        child: MailSwipeTile(
-                          key: ValueKey(item['id']),
-                          id: item['id'] as String,
-                          preferences: _swipePreferences,
-                          enabled:
-                              !_mutating &&
-                              _accessVerified &&
-                              _selected.isEmpty &&
-                              _folder != 'drafts',
-                          onAction: (action) => _swipeMessage(item, action),
-                          child: MailMessageTile(
-                            item: item,
-                            desktop: wide,
-                            keyboardActive: keyboardActive,
-                            workspaceId: widget.workspaceId,
-                            thread: _threads,
-                            active:
-                                _split && _activeSelection?.id == item['id'],
-                            selected: _selected.contains(item['id']),
-                            onSelect: () =>
-                                _toggleSelection(item['id'] as String),
-                            onPressStart: () => _warmPreview(item),
-                            onTap: () {
-                              if (_mutating) return;
-                              if (_keyboardRowId != null) {
-                                _updateState(() => _keyboardRowId = null);
-                              }
-                              if (_selected.isEmpty) {
-                                unawaited(_open(item));
-                              } else {
-                                _toggleSelection(item['id'] as String);
-                              }
-                            },
+                        child: _MailRowFrame(
+                          child: MailSwipeTile(
+                            key: ValueKey(item['id']),
+                            id: item['id'] as String,
+                            preferences: _swipePreferences,
+                            enabled:
+                                !_mutating &&
+                                _accessVerified &&
+                                _selected.isEmpty &&
+                                _folder != 'drafts',
+                            onAction: (action) => _swipeMessage(item, action),
+                            child: MailMessageTile(
+                              item: item,
+                              folder: _folder,
+                              desktop: wide,
+                              keyboardActive: keyboardActive,
+                              workspaceId: widget.workspaceId,
+                              thread: _threads,
+                              active:
+                                  _split && _activeSelection?.id == item['id'],
+                              selected: _selected.contains(item['id']),
+                              onSelect: () =>
+                                  _toggleSelection(item['id'] as String),
+                              onPressStart: () => _warmPreview(item),
+                              onTap: () {
+                                if (_mutating) return;
+                                if (_keyboardRowId != null) {
+                                  _updateState(() => _keyboardRowId = null);
+                                }
+                                if (_selected.isEmpty) {
+                                  unawaited(_open(item));
+                                } else {
+                                  _toggleSelection(item['id'] as String);
+                                }
+                              },
+                            ),
                           ),
                         ),
                       );
@@ -365,4 +351,18 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
       ),
     );
   }
+}
+
+/// Insets a row from the list edge and clips its swipe background to the
+/// row's rounded shape.
+class _MailRowFrame extends StatelessWidget {
+  const _MailRowFrame({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+    child: ClipRRect(borderRadius: MailMessageTile.radius, child: child),
+  );
 }

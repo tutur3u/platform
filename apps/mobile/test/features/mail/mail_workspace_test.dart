@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart' show AppIconButton;
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
@@ -760,7 +761,7 @@ void main() {
     );
     await mount(tester);
     await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Mark all read'));
+    await tester.tap(find.byKey(const ValueKey('mail-mark-folder-read')));
     await tester.pump();
     await tester.tap(find.text('Load more'));
     await tester.pumpAndSettle();
@@ -768,11 +769,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(
       tester
-          .widget<IconButton>(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget is IconButton && widget.tooltip == 'Mark all read',
-            ),
+          .widget<AppIconButton>(
+            find.byKey(const ValueKey('mail-mark-folder-read')),
           )
           .onPressed,
       isNotNull,

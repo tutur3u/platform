@@ -6,9 +6,12 @@ import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
+import 'package:mobile/features/mail/view/mail_row_parts.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
+/// One conversation or message in the Mail list, laid out like web Mail's
+/// rows: avatar, sender and date; subject; snippet; then label badges.
 class MailMessageTile extends StatelessWidget {
   const MailMessageTile({
     required this.item,
@@ -17,10 +20,12 @@ class MailMessageTile extends StatelessWidget {
     required this.onTap,
     required this.onSelect,
     required this.workspaceId,
+    this.folder,
     this.active = false,
     this.desktop = false,
     this.keyboardActive = false,
     this.onPressStart,
+    this.now,
     super.key,
   });
   final Map<String, dynamic> item;
@@ -29,6 +34,9 @@ class MailMessageTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onSelect;
   final String workspaceId;
+
+  /// The folder on screen; its own system label is not repeated as a badge.
+  final String? folder;
 
   /// Fires once a press holds still briefly, ahead of [onTap], so the body
   /// can start loading. A press that turns into a scroll never fires it.
@@ -39,27 +47,196 @@ class MailMessageTile extends StatelessWidget {
   final bool desktop;
   final bool keyboardActive;
 
+  /// The clock the date is formatted against; the current time when null.
+  final DateTime? now;
+
+  static const radius = BorderRadius.all(Radius.circular(8));
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final tokens = AppTokens.of(context);
     final colors = tokens.colorScheme;
+    final l10n = context.l10n;
     final unread =
         item['unread'] == true || (item['unreadCount'] as int? ?? 0) > 0;
+    final participants = thread
+        ? mailRows(item['participants'])
+        : const <Map<String, dynamic>>[];
+    final first = participants.firstOrNull ?? const <String, dynamic>{};
+    final address =
+        (thread ? first['address'] : item['fromAddress']) as String? ?? '';
+    final name = (thread ? first['displayName'] : item['fromName']) as String?;
+    final senderName = name?.trim().isNotEmpty == true
+        ? name!.trim()
+        : address.isNotEmpty
+        ? address
+        : l10n.mailUnknownSender;
+    final extraParticipants = participants.length > 1
+        ? participants.length - 1
+        : 0;
+    final messageCount = item['messageCount'] as int? ?? 0;
     final subject = item['subject'] as String?;
-    final sender = thread
-        ? mailRows(
-            item['participants'],
-          ).map((p) => p['displayName'] ?? p['address']).join(', ')
-        : (item['fromName'] ?? item['fromAddress']) as String? ?? '';
     final date = mailMessageDate(item, thread: thread);
-    final labels = mailRows(item['labels']);
+    final labels = visibleMailLabels(mailRows(item['labels']), folder);
     final delivery = item['deliveryRecipient'] as String?;
     final snippet =
         (item[thread ? 'latestSnippet' : 'snippet'] as String?) ?? '';
-    final strong = colors.foreground;
-    final muted = colors.mutedForeground;
-    final body = theme.textTheme.bodyMedium;
+    final text = unread ? colors.foreground : colors.mutedForeground;
+    final weight = unread ? FontWeight.w600 : FontWeight.w400;
+    final ui = tokens.typography.ui.copyWith(height: 1.35);
+    final primarySize = desktop ? 14.0 : 15.0;
+    final secondarySize = desktop ? 12.0 : 13.0;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final use24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
+    final fill = active || keyboardActive
+        ? colors.accent
+        : selected
+        ? colors.accent.withValues(alpha: 0.8)
+        : colors.accent.withValues(alpha: 0);
+
+    final leading = !desktop && selected
+        ? SizedBox.square(
+            dimension: 24,
+            child: Icon(Icons.check_circle, size: 22, color: colors.primary),
+          )
+        : MailParticipantAvatar(address: address, name: name);
+
+    final header = Row(
+      children: [
+        leading,
+        const SizedBox(width: AppSpacing.sm),
+        if (unread) ...[
+          Semantics(
+            label: l10n.mailFilterUnread,
+            child: MailDot(color: colors.foreground),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
+        Expanded(
+          child: Text.rich(
+            TextSpan(
+              text: senderName,
+              children: [
+                if (extraParticipants > 0)
+                  TextSpan(text: ' +$extraParticipants'),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: ui.copyWith(
+              fontSize: primarySize,
+              color: text,
+              fontWeight: weight,
+            ),
+          ),
+        ),
+        if (messageCount > 1) ...[
+          const SizedBox(width: AppSpacing.sm),
+          Semantics(
+            label: l10n.mailMessageCount(messageCount),
+            child: ExcludeSemantics(
+              child: Text(
+                '$messageCount',
+                style: ui.copyWith(
+                  fontSize: 12,
+                  color: colors.mutedForeground,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ),
+        ],
+        if (date != null) ...[
+          const SizedBox(width: AppSpacing.sm),
+          AppTooltip(
+            message: formatMailThreadDateTitle(
+              date,
+              locale: locale,
+              use24HourFormat: use24Hour,
+            ),
+            child: Text(
+              formatMailThreadDate(
+                date,
+                locale: locale,
+                use24HourFormat: use24Hour,
+                now: now,
+              ),
+              key: const ValueKey('mail-row-date'),
+              style: ui.copyWith(
+                fontSize: 12,
+                color: unread ? colors.foreground : colors.mutedForeground,
+                fontWeight: unread ? FontWeight.w500 : FontWeight.w400,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+
+    final subjectRow = Row(
+      children: [
+        Expanded(
+          child: Text(
+            subject?.isNotEmpty == true ? subject! : l10n.mailNoSubject,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: ui.copyWith(fontSize: 14, color: text, fontWeight: weight),
+          ),
+        ),
+        if (item['hasAttachments'] == true) ...[
+          const SizedBox(width: AppSpacing.sm),
+          Icon(
+            LucideIcons.paperclip,
+            key: const ValueKey('mail-row-attachment'),
+            size: 14,
+            color: colors.mutedForeground,
+          ),
+        ],
+        if (item['starred'] == true) ...[
+          const SizedBox(width: AppSpacing.sm),
+          Icon(
+            LucideIcons.star,
+            key: const ValueKey('mail-row-star'),
+            size: 14,
+            color: text,
+          ),
+        ],
+      ],
+    );
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        header,
+        const SizedBox(height: AppSpacing.xs),
+        subjectRow,
+        const SizedBox(height: 2),
+        Text(
+          snippet,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: ui.copyWith(
+            fontSize: secondarySize,
+            color: colors.mutedForeground,
+          ),
+        ),
+        if (delivery != null && delivery.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            '${l10n.mailTo}: $delivery',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: ui.copyWith(fontSize: 12, color: colors.mutedForeground),
+          ),
+        ],
+        if (labels.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.sm),
+          MailLabelBadges(labels: labels),
+        ],
+      ],
+    );
+
     return PendingSyncFrame(
       workspaceId: workspaceId,
       entityId: item['id'] as String? ?? '',
@@ -67,174 +244,35 @@ class MailMessageTile extends StatelessWidget {
       child: Semantics(
         selected: selected || active,
         child: Material(
-          color: selected || keyboardActive
-              ? colors.primary.withValues(alpha: 0.08)
-              : active
-              ? colors.muted
-              : Colors.transparent,
+          color: fill,
+          borderRadius: radius,
+          clipBehavior: Clip.antiAlias,
           child: _PressWarmup(
             onPressStart: onPressStart,
             child: InkWell(
               onTap: onTap,
+              borderRadius: radius,
+              hoverColor: colors.accent.withValues(alpha: 0.6),
               onLongPress: () {
                 unawaited(AppHaptics.pickup());
                 onSelect();
               },
-              child: Padding(
-                padding: desktop
-                    ? const EdgeInsets.fromLTRB(10, 7, 16, 7)
-                    : const EdgeInsets.fromLTRB(10, 9, 16, 9),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (desktop)
-                      AppTooltip(
-                        message: context.l10n.mailKeyboardSelect,
-                        excludeFromSemantics: true,
-                        child: Semantics(
-                          button: true,
-                          checked: selected,
-                          label: context.l10n.mailKeyboardSelect,
-                          child: InkWell(
-                            onTap: onSelect,
-                            child: SizedBox.square(
-                              dimension: 32,
-                              child: Center(
-                                child: unread && !selected
-                                    ? DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          color: colors.info,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const SizedBox.square(
-                                          dimension: 8,
-                                        ),
-                                      )
-                                    : Icon(
-                                        selected
-                                            ? Icons.check_box_outlined
-                                            : Icons.check_box_outline_blank,
-                                        size: 16,
-                                        color: selected
-                                            ? colors.primary
-                                            : muted,
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      SizedBox(
-                        width: 16,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: selected
-                              ? Icon(
-                                  Icons.check_circle,
-                                  size: 16,
-                                  color: colors.primary,
-                                )
-                              : unread
-                              ? Center(
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: colors.info,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const SizedBox.square(dimension: 8),
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  sender,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: body?.copyWith(
-                                    fontSize: 15,
-                                    height: 1.3,
-                                    color: strong,
-                                    fontWeight: unread
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              if (item['starred'] == true) ...[
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.star_rounded,
-                                  size: 14,
-                                  color: colors.warning,
-                                ),
-                              ],
-                              if (item['hasAttachments'] == true) ...[
-                                const SizedBox(width: 4),
-                                Icon(Icons.attach_file, size: 13, color: muted),
-                              ],
-                              if (date != null) ...[
-                                const SizedBox(width: 8),
-                                Text(
-                                  formatMailMessageDate(
-                                    context,
-                                    date,
-                                    compact: true,
-                                  ),
-                                  style: body?.copyWith(
-                                    fontSize: 12,
-                                    color: unread ? strong : muted,
-                                    fontWeight: unread
-                                        ? FontWeight.w600
-                                        : FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 1),
-                          _SubjectBadgesRow(
-                            subject: subject?.isNotEmpty == true
-                                ? subject!
-                                : context.l10n.mailNoSubject,
-                            style: body?.copyWith(
-                              fontSize: 14,
-                              height: 1.3,
-                              color: strong,
-                              fontWeight: unread
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                            ),
-                            badges: [
-                              for (final label in labels.take(2))
-                                if (label['name'] case final String name) name,
-                              if (delivery != null) delivery,
-                            ],
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            snippet,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: body?.copyWith(
-                              fontSize: 13,
-                              height: 1.35,
-                              color: muted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                  padding: desktop
+                      ? const EdgeInsets.fromLTRB(4, 10, 12, 10)
+                      : const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (desktop) ...[
+                        _SelectBox(selected: selected, onSelect: onSelect),
+                        const SizedBox(width: AppSpacing.xs),
+                      ],
+                      Expanded(child: content),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -245,81 +283,40 @@ class MailMessageTile extends StatelessWidget {
   }
 }
 
-/// Subject text followed by up to three badges that share a width budget so
-/// narrow phones never overflow even at large text scales.
-class _SubjectBadgesRow extends StatelessWidget {
-  const _SubjectBadgesRow({
-    required this.subject,
-    required this.style,
-    required this.badges,
-  });
+/// The desktop row's selection checkbox, beside the avatar as on web.
+class _SelectBox extends StatelessWidget {
+  const _SelectBox({required this.selected, required this.onSelect});
 
-  final String subject;
-  final TextStyle? style;
-  final List<String> badges;
+  final bool selected;
+  final VoidCallback onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final subjectText = Text(
-      subject,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: style,
-    );
-    if (badges.isEmpty) return subjectText;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final totalWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : 272.0;
-        final minSubjectWidth = (totalWidth * 0.38).clamp(0.0, totalWidth);
-        final badgeBudget = (totalWidth - minSubjectWidth).clamp(
-          0.0,
-          totalWidth,
-        );
-        final marginTotal = 6.0 * badges.length;
-        final perBadgeMax = ((badgeBudget - marginTotal) / badges.length).clamp(
-          0.0,
-          120.0,
-        );
-        return Row(
-          children: [
-            Flexible(child: subjectText),
-            if (perBadgeMax >= 24.0)
-              for (final text in badges) _RowBadge(text, maxWidth: perBadgeMax),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// A small outlined label beside the subject.
-class _RowBadge extends StatelessWidget {
-  const _RowBadge(this.text, {this.maxWidth = 120});
-
-  final String text;
-  final double maxWidth;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    return Container(
-      margin: const EdgeInsetsDirectional.only(start: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-      constraints: BoxConstraints(maxWidth: maxWidth),
-      decoration: BoxDecoration(
-        border: Border.all(color: tokens.colorScheme.border),
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Text(
-        text,
-        maxLines: 1,
-        softWrap: false,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          fontSize: 10.5,
-          color: tokens.colorScheme.mutedForeground,
+    final colors = AppTokens.of(context).colorScheme;
+    final label = context.l10n.mailKeyboardSelect;
+    return AppTooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        checked: selected,
+        label: label,
+        child: InkWell(
+          onTap: onSelect,
+          customBorder: const CircleBorder(),
+          child: SizedBox(
+            width: 32,
+            height: 24,
+            child: Center(
+              child: Icon(
+                selected
+                    ? Icons.check_box_outlined
+                    : Icons.check_box_outline_blank,
+                size: 16,
+                color: selected ? colors.primary : colors.mutedForeground,
+              ),
+            ),
+          ),
         ),
       ),
     );

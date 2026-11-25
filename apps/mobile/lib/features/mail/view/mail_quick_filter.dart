@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -25,7 +24,7 @@ String mailFilterQuery(String search, MailQuickFilter filter) => [
   ?filter.operator,
 ].where((part) => part.isNotEmpty).join(' ');
 
-/// A horizontally scrolling row of filter chips above the inbox.
+/// The filter chips above the inbox, wrapping onto a second line if needed.
 class MailQuickFilterBar extends StatelessWidget {
   const MailQuickFilterBar({
     required this.value,
@@ -50,27 +49,26 @@ class MailQuickFilterBar extends StatelessWidget {
     return Semantics(
       container: true,
       label: l10n.mailQuickFilter,
-      child: AppHorizontalScrollView(
-        child: Row(
-          key: const ValueKey('mail-quick-filter'),
-          children: [
-            for (final filter in MailQuickFilter.values) ...[
-              if (filter != MailQuickFilter.all)
-                const SizedBox(width: AppSpacing.sm),
-              AppChip(
-                key: ValueKey('mail-quick-filter-${filter.name}'),
-                selected: value == filter,
-                inMutuallyExclusiveGroup: true,
-                label: Text(label(filter)),
-                onSelected: enabled
-                    ? (_) {
-                        if (value != filter) onChanged(filter);
-                      }
-                    : null,
-              ),
-            ],
-          ],
-        ),
+      // Chips wrap rather than scroll, so a narrow window or a large text
+      // size never cuts a label off at the edge.
+      child: Wrap(
+        key: const ValueKey('mail-quick-filter'),
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: [
+          for (final filter in MailQuickFilter.values)
+            AppChip(
+              key: ValueKey('mail-quick-filter-${filter.name}'),
+              selected: value == filter,
+              inMutuallyExclusiveGroup: true,
+              label: Text(label(filter)),
+              onSelected: enabled
+                  ? (_) {
+                      if (value != filter) onChanged(filter);
+                    }
+                  : null,
+            ),
+        ],
       ),
     );
   }

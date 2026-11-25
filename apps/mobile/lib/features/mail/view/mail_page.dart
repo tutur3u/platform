@@ -28,6 +28,7 @@ import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_document_request.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
 import 'package:mobile/features/mail/view/mail_keyboard.dart';
+import 'package:mobile/features/mail/view/mail_list_header.dart';
 import 'package:mobile/features/mail/view/mail_list_retry.dart';
 import 'package:mobile/features/mail/view/mail_list_states.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';

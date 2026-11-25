@@ -71,3 +71,42 @@ String formatMailRelativeDate(
   }
   return formatMailMessageDate(context, date, compact: true, now: current);
 }
+
+/// A list row's date, as on web: the time today, the day and month this
+/// year, and the full day, month and year for older mail.
+String formatMailThreadDate(
+  DateTime date, {
+  required String locale,
+  required bool use24HourFormat,
+  DateTime? now,
+}) {
+  final local = date.toLocal();
+  final today = (now ?? DateTime.now()).toLocal();
+  final pattern = DateUtils.isSameDay(local, today)
+      ? (use24HourFormat ? 'Hm' : 'jm')
+      : local.year == today.year
+      ? 'd MMM'
+      : 'd MMM y';
+  return _formats
+      .putIfAbsent(
+        (pattern, locale),
+        () => switch (pattern) {
+          'Hm' => DateFormat.Hm(locale),
+          'jm' => DateFormat.jm(locale),
+          _ => DateFormat(pattern, locale),
+        },
+      )
+      .format(local);
+}
+
+/// The full timestamp a row's date shows in its tooltip.
+String formatMailThreadDateTitle(
+  DateTime date, {
+  required String locale,
+  required bool use24HourFormat,
+}) => _formats
+    .putIfAbsent((use24HourFormat ? 'yMMMd Hm' : 'yMMMd jm', locale), () {
+      final format = DateFormat.yMMMd(locale);
+      return use24HourFormat ? format.add_Hm() : format.add_jm();
+    })
+    .format(date.toLocal());
