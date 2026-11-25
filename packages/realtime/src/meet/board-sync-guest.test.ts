@@ -153,6 +153,23 @@ describe('guest element required fields', () => {
     ).toBeNull();
   });
 
+  it('needs a pressure per point or simulated pressure when freehand', () => {
+    const stroke = (over: Record<string, unknown>) =>
+      sanitizeGuestElement(guestElement('freedraw', over));
+    // Without either, Excalidraw draws it invisibly and logs every render.
+    expect(stroke({ simulatePressure: false, pressures: [] })).toBeNull();
+    expect(
+      stroke({ simulatePressure: undefined, pressures: undefined })
+    ).toBeNull();
+    expect(
+      stroke({ simulatePressure: false, pressures: [0.5, 0.5] })
+    ).toBeNull();
+    expect(
+      stroke({ simulatePressure: false, pressures: [0.5, 0.5, 0.5] })
+    ).not.toBeNull();
+    expect(stroke({ simulatePressure: true, pressures: [] })).not.toBeNull();
+  });
+
   it('refuses a rectangle or diamond without a height', () => {
     for (const type of ['rectangle', 'diamond'])
       expect(
@@ -239,9 +256,10 @@ describe('guest element ranges', () => {
     // Even inside every single range, the render cost still refuses.
     const wide = guestElement('rectangle', {
       ...filled,
+      fillStyle: 'cross-hatch',
       strokeWidth: 0.5,
-      width: 1e5,
-      height: 1e5,
+      width: 1e4,
+      height: 1e4,
     });
     expect(elementRenderCost(wide)).toBeGreaterThan(MAX_GUEST_ELEMENT_COST);
     expect(sanitizeGuestElement(wide)).toBeNull();
@@ -253,9 +271,9 @@ describe('guest element ranges', () => {
   it.each([
     ['rectangle', 'x', 1e6, 1e6 + 1],
     ['rectangle', 'y', -1e6, -1e6 - 1],
-    ['rectangle', 'width', 1e5, 1e5 + 1],
+    ['rectangle', 'width', 1e4, 1e4 + 1],
     ['rectangle', 'width', 0, -1],
-    ['rectangle', 'height', 1e5, 1e5 + 1],
+    ['rectangle', 'height', 1e4, 1e4 + 1],
     ['rectangle', 'strokeWidth', 0.5, 0.49],
     ['rectangle', 'strokeWidth', 64, 65],
     ['rectangle', 'roughness', 5, 6],

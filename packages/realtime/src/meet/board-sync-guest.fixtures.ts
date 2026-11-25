@@ -44,6 +44,8 @@ const BY_TYPE: Readonly<Record<string, Record<string, unknown>>> = {
       [10, 10],
       [20, 5],
     ],
+    pressures: [],
+    simulatePressure: true,
   },
   text: { text: 'Hello', fontSize: 20, fontFamily: 5, lineHeight: 1.25 },
 };

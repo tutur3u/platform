@@ -1,146 +1,26 @@
 import assert from 'node:assert/strict';
-import { afterEach, beforeEach, test } from 'bun:test';
+import { test } from 'bun:test';
 import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import { boardActorId } from '../../../packages/realtime/src/meet/board-sync-actor';
 import { guestElement } from '../../../packages/realtime/src/meet/board-sync-guest.fixtures';
 import {
   BOARD_GUEST_LIMITS,
   BOARD_LIMITS,
-  BOARD_TICKET_AUDIENCE,
-  type BoardTicket,
 } from '../../../packages/realtime/src/meet/board-sync-schema';
-import { WhiteboardRoomDurableObject } from './whiteboard-room-do';
+import {
+  clock,
+  fixture,
+  full,
+  ids,
+  installRoomTestHooks,
+  open,
+  rect,
+  SECRET,
+  ticket,
+} from './whiteboard-room-do.fixtures';
 
-const SECRET = 'test-secret-test-secret';
-const ids = {
-  meetingId: crypto.randomUUID(),
-  wsId: crypto.randomUUID(),
-  boardId: crypto.randomUUID(),
-};
-let now = 1_800_000_000_000;
-const realNow = Date.now;
-const realFetch = globalThis.fetch;
-const ticket = (over: Partial<BoardTicket> = {}): BoardTicket => ({
-  aud: BOARD_TICKET_AUDIENCE,
-  kind: 'join',
-  ...ids,
-  actorKind: 'member',
-  userId: 'u1',
-  displayName: 'Ada',
-  role: 'edit',
-  exp: Math.floor(now / 1000) + 120,
-  ...over,
-});
-/** A complete rectangle, as a guest's editor sends it. */
-const full = (id: string, over: Record<string, unknown> = {}) =>
-  guestElement('rectangle', { id, ...over });
-const rect = (id: string, version = 1) => ({
-  id,
-  type: 'rectangle',
-  version,
-  versionNonce: 1,
-});
+installRoomTestHooks();
 
-function fakeSocket() {
-  const sent: any[] = [];
-  let attachment: unknown;
-  let closed: number | null = null;
-  return {
-    sent,
-    get closed() {
-      return closed;
-    },
-    readyState: 1,
-    send: (data: string) => sent.push(JSON.parse(data)),
-    close: (code = 1000) => {
-      closed = code;
-    },
-    serializeAttachment: (value: unknown) => {
-      attachment = structuredClone(value);
-    },
-    deserializeAttachment: () => structuredClone(attachment),
-  };
-}
-
-function fixture(env: Record<string, string> = {}) {
-  const values = new Map<string, unknown>();
-  const ops = { puts: 0, alarms: 0, fetches: 0 };
-  const sockets: ReturnType<typeof fakeSocket>[] = [];
-  const state = {
-    storage: {
-      get: async (key: string) => structuredClone(values.get(key)),
-      put: async (entries: Record<string, unknown>) => {
-        ops.puts++;
-        for (const [k, v] of Object.entries(entries))
-          values.set(k, structuredClone(v));
-      },
-      delete: async (keys: string[]) => {
-        for (const key of keys) values.delete(key);
-      },
-      setAlarm: async () => {
-        ops.alarms++;
-      },
-    },
-    getWebSockets: () => sockets,
-    acceptWebSocket: (s: ReturnType<typeof fakeSocket>) => sockets.push(s),
-    blockConcurrencyWhile: (run: () => Promise<void>) => run(),
-  } as unknown as DurableObjectState;
-  (globalThis as any).WebSocketPair = class {
-    0 = fakeSocket();
-    1 = fakeSocket();
-  };
-  const config = {
-    WHITEBOARD_ROOM: {} as DurableObjectNamespace,
-    MEET_REALTIME_TOKEN_SECRET: SECRET,
-    PLATFORM_API_BASE_URL: 'https://platform.example.invalid',
-    ...env,
-  };
-  const the = new WhiteboardRoomDurableObject(state, config);
-  /** A new instance over the same storage and sockets, like an eviction. */
-  const restart = () => new WhiteboardRoomDurableObject(state, config);
-  async function join(over: Partial<BoardTicket> = {}) {
-    const request = new Request('https://x/whiteboard', {
-      headers: {
-        Upgrade: 'websocket',
-        'x-board-ticket': JSON.stringify(ticket(over)),
-      },
-    });
-    const response = await the.fetch(request).catch((e) => e);
-    return response;
-  }
-  return { the, values, ops, sockets, state, join, restart };
-}
-
-beforeEach(() => {
-  Date.now = () => now;
-  globalThis.fetch = (async (_url: URL, init: RequestInit) => {
-    const op = JSON.parse(String(init.body)).op;
-    (globalThis as any).__fetches.push(op);
-    const status = (globalThis as any).__status?.[op];
-    if (status) return new Response(null, { status });
-    return Response.json({
-      updatedAt: 'u',
-      elements: op === 'load' ? [rect('seed')] : undefined,
-    });
-  }) as typeof fetch;
-  (globalThis as any).__fetches = [];
-  (globalThis as any).__status = {};
-});
-afterEach(() => {
-  Date.now = realNow;
-  globalThis.fetch = realFetch;
-});
-
-// A real Response with status 101 is not constructible in Node; the adapter
-// returns one only after the socket is accepted, so tests assert on the
-// accepted socket instead of the response.
-async function open(
-  f: ReturnType<typeof fixture>,
-  over: Partial<BoardTicket> = {}
-) {
-  await f.join(over).catch(() => undefined);
-  return f.sockets.at(-1)!;
-}
 
 test('loads the board once and sends the scene to a joiner', async () => {
   const f = fixture();
@@ -156,7 +36,7 @@ test('loads the board once and sends the scene to a joiner', async () => {
 
 test('refuses an expired or unsigned join and a different board', async () => {
   const f = fixture();
-  const expired = await f.join({ exp: Math.floor(now / 1000) - 1 });
+  const expired = await f.join({ exp: Math.floor(clock.now / 1000) - 1 });
   assert.equal(expired.status, 401);
   await open(f);
   const other = await f.join({ boardId: crypto.randomUUID() });
@@ -228,7 +108,7 @@ test('flushes on the alarm after the last participant leaves', async () => {
   );
   f.sockets.splice(0);
   await f.the.webSocketClose();
-  now += BOARD_LIMITS.idleFlushMs + 10;
+  clock.now += BOARD_LIMITS.idleFlushMs + 10;
   await f.the.alarm();
   assert.deepEqual((globalThis as any).__fetches, ['load', 'flush']);
 });
@@ -246,7 +126,7 @@ test('the stop fence halts flushes and storage writes but keeps relaying', async
       })
     );
   assert.equal(peer.sent.filter((m) => m.type === 'elements').length, 20);
-  now += 60 * 60_000;
+  clock.now += 60 * 60_000;
   await f.the.alarm();
   assert.deepEqual((globalThis as any).__fetches, ['load']);
   assert.equal(f.values.has('meta'), false);
@@ -270,9 +150,9 @@ test('never delivers a broadcast to a socket whose ticket expired', async () => 
   const editor = await open(f);
   const stale = await open(f, {
     userId: 'u2',
-    exp: Math.floor(now / 1000) + 5,
+    exp: Math.floor(clock.now / 1000) + 5,
   });
-  now += 10_000;
+  clock.now += 10_000;
   await f.the
     .webSocketMessage(
       editor as any,
@@ -288,11 +168,11 @@ test('after an eviction the restored room sweeps expired sockets without a new m
   await open(f);
   const stale = await open(f, {
     userId: 'u2',
-    exp: Math.floor(now / 1000) + 5,
+    exp: Math.floor(clock.now / 1000) + 5,
   });
   const alarmsBefore = f.ops.alarms;
   const restored = f.restart();
-  now += 10_000;
+  clock.now += 10_000;
   await restored.alarm();
   assert.ok(f.ops.alarms >= alarmsBefore);
   assert.equal(stale.closed, 1008);
@@ -305,7 +185,7 @@ test('a viewer may ask for the scene only once every two seconds', async () => {
   for (let i = 0; i < 5; i++)
     await f.the.webSocketMessage(viewer as any, '{"type":"sync"}');
   assert.equal(viewer.sent.filter((m) => m.type === 'sync').length, base + 1);
-  now += 2500;
+  clock.now += 2500;
   await f.the.webSocketMessage(viewer as any, '{"type":"sync"}');
   assert.equal(viewer.sent.filter((m) => m.type === 'sync').length, base + 2);
 });
@@ -350,7 +230,7 @@ test('tells the sender when the board is full and keeps the socket open', async 
   const editor = await open(f);
   let refused = 0;
   for (let i = 0; i < 60; i++) {
-    now += 1000;
+    clock.now += 1000;
     await f.the.webSocketMessage(
       editor as any,
       JSON.stringify({
@@ -383,7 +263,7 @@ test('a room closed by the platform reopens at the next join once the board is b
   );
   f.sockets.splice(0);
   await f.the.webSocketClose();
-  now += BOARD_LIMITS.idleFlushMs + 10;
+  clock.now += BOARD_LIMITS.idleFlushMs + 10;
   await f.the.alarm();
   (globalThis as any).__status = { load: 404 };
   assert.equal((await f.join({ userId: 'u3' })).status, 410);
@@ -467,7 +347,7 @@ test('limits how often one guest may reopen a board socket', async () => {
     await open(f);
     f.sockets.splice(0);
   }
-  now += 60_000;
+  clock.now += 60_000;
   await open(f, guest);
   assert.equal(f.sockets.length, 1);
 });
@@ -605,76 +485,4 @@ test('the stop fence keeps the guest open windows out of storage', async () => {
   const f = fixture({ MEET_WHITEBOARD_FLUSH_DISABLED: 'true' });
   await open(f, { userId: 'g1', actorKind: 'guest' });
   assert.equal(f.values.has('guest-opens'), false);
-});
-
-/** About 4,775 render cost: a large hachure fill with a thin stroke. */
-const heavy = (id: string, version = 1) =>
-  full(id, {
-    version,
-    width: 6000,
-    height: 6000,
-    strokeWidth: 0.5,
-    fillStyle: 'hachure',
-    backgroundColor: '#ffc9c9',
-  });
-
-test('cuts a costly guest batch short but relays members', async () => {
-  const f = fixture();
-  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
-  const member = await open(f, { userId: 'u2' });
-  // 60 shapes of about 4,775 each pass the guest's churn bucket and the
-  // 200,000 scene budget; board-sync-cost.test.ts covers each budget alone.
-  const fills = (prefix: string) =>
-    Array.from({ length: 60 }, (_, i) => ({
-      type: 'insert',
-      element: heavy(`${prefix}${i}`),
-    }));
-  await f.the.webSocketMessage(
-    guest as any,
-    JSON.stringify({ type: 'elements', changes: fills('g') })
-  );
-  assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
-  const relayed = member.sent.findLast((m) => m.type === 'elements');
-  assert.ok(relayed.changes.length < 60);
-  // Members are not held to it.
-  await f.the.webSocketMessage(
-    member as any,
-    JSON.stringify({ type: 'elements', changes: fills('m') })
-  );
-  assert.equal(guest.sent.at(-1).changes.length, 60);
-});
-
-test('spends a guest churn bucket on every re-sent shape, across eviction', async () => {
-  const f = fixture();
-  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
-  const send = (the: typeof f.the, version: number) =>
-    the.webSocketMessage(
-      guest as any,
-      JSON.stringify({
-        type: 'elements',
-        changes: [{ type: 'insert', element: heavy('same', version) }],
-      })
-    );
-  // 40,000 tokens buy eight copies of a 4,775 shape.
-  for (let version = 1; version <= 8; version++) await send(f.the, version);
-  assert.equal(
-    guest.sent.some((m) => m.type === 'rejected'),
-    false
-  );
-  await send(f.the, 9);
-  assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
-  // The bucket rides in the socket attachment, so an eviction keeps it.
-  const restored = f.restart();
-  guest.sent.length = 0;
-  await send(restored, 10);
-  assert.deepEqual(guest.sent.at(-1), { type: 'rejected', reason: 'size' });
-  // Two seconds refill 8,000 tokens: one more copy applies.
-  now += 2000;
-  guest.sent.length = 0;
-  await send(restored, 11);
-  assert.equal(
-    guest.sent.some((m) => m.type === 'rejected'),
-    false
-  );
-  assert.equal(guest.closed, null);
 });

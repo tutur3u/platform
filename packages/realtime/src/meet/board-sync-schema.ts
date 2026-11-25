@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_ELEMENT_CANVAS_PIXELS } from './board-sync-cost';
 
 /**
  * Protocol, ticket and budgets for the persistent Meet whiteboard. The room
@@ -65,12 +66,25 @@ export const BOARD_GUEST_LIMITS = {
    */
   maxSceneCost: 200_000,
   /**
+   * Canvas pixels every viewer may cache for the whole scene
+   * (`elementCanvasArea`), members' elements included: eight elements at
+   * Excalidraw's per-element cap, about 512 MiB.
+   */
+  maxSceneCanvasPixels: 8 * MAX_ELEMENT_CANVAS_PIXELS,
+  /**
    * Each guest connection's churn bucket: render cost it may apply at once,
    * and how much returns each second. Every applied change is charged, so
    * re-sending the same costly shape is bounded too.
    */
   churnCapacity: 40_000,
   churnRefillPerSecond: 4_000,
+  /**
+   * The board's shared guest churn bucket, which every guest connection also
+   * spends, so the room's thirty guest sockets cannot add up their buckets.
+   * It refills from empty in ten seconds.
+   */
+  roomChurnCapacity: 120_000,
+  roomChurnRefillPerSecond: 12_000,
 } as const;
 
 /** The socket budget for a join ticket's actor. */

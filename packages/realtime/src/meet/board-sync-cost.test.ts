@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampRenderCost,
+  elementCanvasArea,
   elementRenderCost,
+  MAX_ELEMENT_CANVAS_PIXELS,
   MAX_RENDER_COST,
 } from './board-sync-cost';
-import { refillChurnBudget, sanitizeGuestElement } from './board-sync-guest';
+import {
+  refillChurnBudget,
+  refillRoomChurnBudget,
+  sanitizeGuestElement,
+} from './board-sync-guest';
 import { guestElement } from './board-sync-guest.fixtures';
 import { applyBoundedChanges, sceneFrom, sizesFrom } from './board-sync-merge';
 import {
@@ -42,6 +48,34 @@ describe('elementRenderCost fills', () => {
     expect(sanitizeGuestElement(element)).toBeNull();
   });
 
+  it('scans the whole outline of a concave shape, not its span', () => {
+    // hachure-fill touches every active edge on each scan step, so a comb
+    // whose span is small still scans the length of all its teeth.
+    const element = guestElement('line', {
+      ...filled,
+      roughness: 0,
+      strokeWidth: 64,
+      points: comb(200, 500, 2),
+    });
+    expect(elementRenderCost(element)).toBe(13_996);
+    expect(sanitizeGuestElement(element)).toBeNull();
+    const short = { ...element, points: comb(200, 200, 2) };
+    expect(elementRenderCost(short)).toBe(6203);
+    expect(sanitizeGuestElement(short)).not.toBeNull();
+  });
+
+  it('traces each point of a solid fill on a line', () => {
+    const points = Array.from({ length: 4000 }, (_, i) => [i * 3, i % 2]);
+    const line = guestElement('line', {
+      backgroundColor: '#ffc9c9',
+      fillStyle: 'solid',
+      roughness: 0,
+      points,
+    });
+    // One, 4,000 stroke segments and 5,000 for the fill with its curves.
+    expect(elementRenderCost(line)).toBe(9001);
+  });
+
   it('accepts a normal filled freehand loop', () => {
     const points = Array.from({ length: 60 }, (_, i) => {
       const angle = (i / 59) * 2 * Math.PI;
@@ -65,7 +99,7 @@ describe('elementRenderCost fills', () => {
     expect(elementRenderCost(wide)).toBeGreaterThan(lines + diagonal / 16);
   });
 
-  it('counts zigzag and cross-hatch as two lines per hachure line', () => {
+  it('counts zigzag and cross-hatch twice, and cross-hatch scans twice', () => {
     // A 1,600 diagonal at a gap of 10: 161 lines and 100 scan units.
     const box = (fillStyle: string) =>
       elementRenderCost(
@@ -79,7 +113,7 @@ describe('elementRenderCost fills', () => {
       );
     expect(box('hachure')).toBe(1 + 161 + 100);
     expect(box('zigzag')).toBe(1 + 2 * 161 + 100);
-    expect(box('cross-hatch')).toBe(1 + 2 * 161 + 100);
+    expect(box('cross-hatch')).toBe(1 + 2 * 161 + 2 * 100);
     expect(box('solid')).toBe(1);
   });
 
@@ -91,8 +125,9 @@ describe('elementRenderCost fills', () => {
   });
 
   it('draws no fill for arrows, text, transparent or deleted shapes', () => {
+    // Two points, each stroked twice for roughness: no fill.
     const arrow = guestElement('arrow', filled);
-    expect(elementRenderCost(arrow)).toBe(1);
+    expect(elementRenderCost(arrow)).toBe(1 + 2 * 2);
     expect(
       elementRenderCost(guestElement('rectangle', { fillStyle: 'hachure' }))
     ).toBe(1);
@@ -116,7 +151,23 @@ describe('elementRenderCost strokes and text', () => {
         [16_000, 0],
       ],
     });
-    expect(elementRenderCost(line)).toBe(1 + 1250);
+    // Two points stroked once (dashes never double), and 16,000 units of
+    // curve, 1.7 times longer, at one dash per 16.
+    expect(elementRenderCost(line)).toBe(1 + 2 + 1700);
+  });
+
+  it('counts each point of a stroke, twice for a rough line', () => {
+    const points = Array.from({ length: 5000 }, (_, i) => [i * 3, i % 2]);
+    const line = (roughness: number) =>
+      guestElement('line', { roughness, points });
+    expect(elementRenderCost(line(0))).toBe(1 + 5000);
+    expect(elementRenderCost(line(1))).toBe(1 + 2 * 5000);
+    expect(sanitizeGuestElement(line(0))).not.toBeNull();
+    expect(sanitizeGuestElement(line(1))).toBeNull();
+    // A freehand stroke is one outline path, rough or not.
+    const free = guestElement('freedraw', { roughness: 1, points });
+    expect(elementRenderCost(free)).toBe(1 + 5000);
+    expect(sanitizeGuestElement(free)).not.toBeNull();
   });
 
   it('counts one per line of text', () => {
@@ -221,6 +272,78 @@ describe('scene render budget', () => {
   });
 });
 
+describe('canvas area', () => {
+  it('measures the box, or the point bounds of a stroke, up to the cap', () => {
+    expect(elementCanvasArea(guestElement('rectangle'))).toBe(200 * 100);
+    const line = guestElement('line', {
+      width: 0,
+      height: 0,
+      points: [
+        [0, 0],
+        [300, -50],
+        [100, 40],
+      ],
+    });
+    expect(elementCanvasArea(line)).toBe(300 * 90);
+    const flat = guestElement('line', {
+      points: [
+        [0, 0],
+        [500, 0],
+      ],
+    });
+    expect(elementCanvasArea(flat)).toBe(500);
+    const huge = guestElement('rectangle', { width: 1e4, height: 1e4 });
+    expect(elementCanvasArea(huge)).toBe(MAX_ELEMENT_CANVAS_PIXELS);
+    expect(elementCanvasArea({ ...huge, isDeleted: true })).toBe(0);
+    expect(elementCanvasArea({ type: 'text' })).toBe(
+      MAX_ELEMENT_CANVAS_PIXELS
+    );
+  });
+
+  // Each costs one to draw, but every viewer caches it on a full-size canvas.
+  const large = (id: string, over: Record<string, unknown> = {}) =>
+    guestElement('rectangle', { id, width: 1e4, height: 1e4, ...over });
+  const areaLimit = BOARD_GUEST_LIMITS.maxSceneCanvasPixels;
+
+  it('refuses a guest flood of large shapes past the scene area', () => {
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const flood = Array.from({ length: 2000 }, (_, i) =>
+      insert(large(`g${i}`))
+    );
+    const { applied, rejected } = applyBoundedChanges(
+      scene,
+      tracker,
+      flood,
+      undefined,
+      { maxCost: sceneLimit, maxArea: areaLimit }
+    );
+    expect(rejected).toBe('size');
+    expect(applied).toHaveLength(8);
+    expect(tracker.areaTotal).toBe(areaLimit);
+    expect(tracker.costTotal).toBe(8);
+  });
+
+  it('counts members and frees the area on shrink and delete', () => {
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const members = Array.from({ length: 8 }, (_, i) => insert(large(`m${i}`)));
+    applyBoundedChanges(scene, tracker, members);
+    const guest = (element: BoardElement) =>
+      applyBoundedChanges(scene, tracker, [insert(element)], undefined, {
+        maxArea: areaLimit,
+      });
+    expect(guest(large('g1')).rejected).toBe('size');
+    expect(
+      guest(large('m0', { version: 2, width: 10, height: 10 })).applied
+    ).toHaveLength(1);
+    expect(guest(large('g1')).rejected).toBe('size');
+    guest(large('m1', { version: 2, isDeleted: true }));
+    expect(guest(large('g1')).applied).toHaveLength(1);
+    expect(sizesFrom(scene).areaTotal).toBe(tracker.areaTotal);
+  });
+});
+
 describe('churn budget', () => {
   it('charges every applied change, re-sent copies included', () => {
     const scene = sceneFrom([]);
@@ -251,6 +374,19 @@ describe('churn budget', () => {
     );
     expect(refillChurnBudget({ tokens: 0, tokensAt: 0 }, 3_600_000)).toBe(
       churnCapacity
+    );
+  });
+
+  it('shares a room bucket of three connections, full in ten seconds', () => {
+    const { churnCapacity, roomChurnCapacity, roomChurnRefillPerSecond } =
+      BOARD_GUEST_LIMITS;
+    expect(roomChurnCapacity).toBe(3 * churnCapacity);
+    expect(refillRoomChurnBudget({}, 0)).toBe(roomChurnCapacity);
+    expect(refillRoomChurnBudget({ tokens: 0, tokensAt: 0 }, 1000)).toBe(
+      roomChurnRefillPerSecond
+    );
+    expect(refillRoomChurnBudget({ tokens: 0, tokensAt: 0 }, 10_000)).toBe(
+      roomChurnCapacity
     );
   });
 });

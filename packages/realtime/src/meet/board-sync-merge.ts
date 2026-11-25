@@ -1,4 +1,4 @@
-import { elementRenderCost } from './board-sync-cost';
+import { elementCanvasArea, elementRenderCost } from './board-sync-cost';
 import {
   BOARD_LIMITS,
   type BoardChange,
@@ -88,21 +88,26 @@ export function applyBoardChanges(
 }
 
 /**
- * Running byte size and render cost (`elementRenderCost`) of each element, so
- * a batch is checked without re-measuring the scene.
+ * Running byte size, render cost (`elementRenderCost`) and cached canvas
+ * pixels (`elementCanvasArea`) of each element, so a batch is checked without
+ * re-measuring the scene.
  */
 export interface SceneSizes {
   sizes: Map<string, number>;
   total: number;
   costs: Map<string, number>;
   costTotal: number;
+  areas: Map<string, number>;
+  areaTotal: number;
 }
 
 export function sizesFrom(scene: BoardScene): SceneSizes {
   const sizes = new Map<string, number>();
   const costs = new Map<string, number>();
+  const areas = new Map<string, number>();
   let total = 0;
   let costTotal = 0;
+  let areaTotal = 0;
   for (const [id, element] of scene) {
     const bytes = byteLength(element);
     sizes.set(id, bytes);
@@ -110,14 +115,19 @@ export function sizesFrom(scene: BoardScene): SceneSizes {
     const cost = elementRenderCost(element);
     costs.set(id, cost);
     costTotal += cost;
+    const area = elementCanvasArea(element);
+    areas.set(id, area);
+    areaTotal += area;
   }
-  return { sizes, total, costs, costTotal };
+  return { sizes, total, costs, costTotal, areas, areaTotal };
 }
 
 /** Limits a guest write is held to; members' writes pass none. */
 export interface GuestWriteLimits {
   /** Render cost the scene may hold before growth is refused. */
   maxCost?: number;
+  /** Cached canvas pixels the scene may hold before growth is refused. */
+  maxArea?: number;
   /** Render cost this write may still apply; each applied change spends it. */
   budget?: { tokens: number };
 }
@@ -130,18 +140,23 @@ export interface BoundedResult {
 
 /**
  * Applies a client batch within the element and byte budgets and, for guest
- * writes, the scene's render cost budget (which counts every element in the
- * scene) and the writer's churn budget. Growth that would pass a scene budget
- * is refused; changes that keep or shrink an element pass them, so a full
- * board can still be cleaned up. The churn budget charges every applied
- * change, so only deletions (which cost nothing) apply once it is spent.
+ * writes, the scene's render cost and canvas area budgets (which count every
+ * element in the scene) and the writer's churn budget. Growth that would pass
+ * a scene budget is refused; changes that keep or shrink an element pass them,
+ * so a full board can still be cleaned up. The churn budget charges every
+ * applied change, so only deletions (which cost nothing) apply once it is
+ * spent.
  */
 export function applyBoundedChanges(
   scene: BoardScene,
   tracker: SceneSizes,
   changes: readonly BoardChange[],
   maxBytes: number = BOARD_LIMITS.maxSnapshotBytes,
-  { maxCost = Number.POSITIVE_INFINITY, budget }: GuestWriteLimits = {}
+  {
+    maxCost = Number.POSITIVE_INFINITY,
+    maxArea = Number.POSITIVE_INFINITY,
+    budget,
+  }: GuestWriteLimits = {}
 ): BoundedResult {
   const applied: BoardChange[] = [];
   let rejected: BoundedResult['rejected'] = null;
@@ -168,6 +183,13 @@ export function applyBoundedChanges(
       rejected ??= 'size';
       continue;
     }
+    const areaBefore = tracker.areas.get(element.id) ?? 0;
+    const area = elementCanvasArea(held);
+    const nextArea = tracker.areaTotal - areaBefore + area;
+    if (area > areaBefore && !(nextArea <= maxArea)) {
+      rejected ??= 'size';
+      continue;
+    }
     if (budget && !(cost <= budget.tokens)) {
       rejected ??= 'size';
       continue;
@@ -177,6 +199,8 @@ export function applyBoundedChanges(
     tracker.total += bytes - before;
     tracker.costs.set(element.id, cost);
     tracker.costTotal = nextCost;
+    tracker.areas.set(element.id, area);
+    tracker.areaTotal = nextArea;
     if (budget) budget.tokens -= cost;
     applied.push(change);
   }
@@ -208,6 +232,8 @@ export function pruneTombstones(scene: BoardScene, tracker?: SceneSizes) {
         tracker.sizes.delete(id);
         tracker.costTotal -= tracker.costs.get(id) ?? 0;
         tracker.costs.delete(id);
+        tracker.areaTotal -= tracker.areas.get(id) ?? 0;
+        tracker.areas.delete(id);
       }
       removed++;
     }

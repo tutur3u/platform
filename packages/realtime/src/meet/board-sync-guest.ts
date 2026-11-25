@@ -86,21 +86,45 @@ export function chargeBoardOpen(
   return true;
 }
 
+/** A token bucket's level, and when it was last charged. */
+export type ChurnBucket = { tokens?: number; tokensAt?: number };
+
+/**
+ * A token bucket after refilling to `now`. A bucket with no level yet starts
+ * full.
+ */
+function refillBucket(
+  bucket: ChurnBucket,
+  now: number,
+  capacity: number,
+  refillPerSecond: number
+) {
+  if (bucket.tokens === undefined || bucket.tokensAt === undefined)
+    return capacity;
+  const elapsed = Math.max(0, now - bucket.tokensAt) / 1000;
+  return Math.min(capacity, bucket.tokens + elapsed * refillPerSecond);
+}
+
 /**
  * A guest connection's churn bucket after refilling to `now`. A connection
  * with no bucket yet (a new one, or one accepted before buckets existed)
  * starts full.
  */
-export function refillChurnBudget(
-  bucket: { tokens?: number; tokensAt?: number },
-  now: number
-) {
+export function refillChurnBudget(bucket: ChurnBucket, now: number) {
   const { churnCapacity, churnRefillPerSecond } = BOARD_GUEST_LIMITS;
-  if (bucket.tokens === undefined || bucket.tokensAt === undefined)
-    return churnCapacity;
-  const elapsed = Math.max(0, now - bucket.tokensAt) / 1000;
-  return Math.min(
-    churnCapacity,
-    bucket.tokens + elapsed * churnRefillPerSecond
+  return refillBucket(bucket, now, churnCapacity, churnRefillPerSecond);
+}
+
+/**
+ * The board's shared guest churn bucket after refilling to `now`; a room
+ * with no bucket yet starts full.
+ */
+export function refillRoomChurnBudget(bucket: ChurnBucket, now: number) {
+  const { roomChurnCapacity, roomChurnRefillPerSecond } = BOARD_GUEST_LIMITS;
+  return refillBucket(
+    bucket,
+    now,
+    roomChurnCapacity,
+    roomChurnRefillPerSecond
   );
 }

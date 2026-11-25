@@ -17,8 +17,10 @@ import { chunkElements } from '../../../packages/realtime/src/meet/board-sync-me
 import { boardFlushFenced } from '../../../packages/realtime/src/meet/board-sync-flush';
 import {
   type BoardOpenWindows,
+  type ChurnBucket,
   chargeBoardOpen,
   refillChurnBudget,
+  refillRoomChurnBudget,
   sanitizeGuestChanges,
 } from '../../../packages/realtime/src/meet/board-sync-guest';
 import {
@@ -94,6 +96,15 @@ export class WhiteboardRoomDurableObject implements DurableObject {
    * an eviction does not reset the limit; `chargeBoardOpen` bounds its size.
    */
   private opens: BoardOpenWindows = new Map();
+  /**
+   * The board's shared guest churn bucket (`refillRoomChurnBudget`), held in
+   * memory, so it costs no storage write. An eviction restarts it full,
+   * which grants nothing extra: a hibernating object is evicted only after
+   * about ten seconds without an event, and the bucket refills from empty in
+   * ten seconds anyway. A runtime restart grants at most one extra bucket.
+   * Each connection's own bucket survives either in its attachment.
+   */
+  private roomChurn: ChurnBucket = {};
 
   constructor(
     private state: DurableObjectState,
@@ -452,18 +463,34 @@ export class WhiteboardRoomDurableObject implements DurableObject {
           ticket.actorKind === 'guest'
             ? sanitizeGuestChanges(message.changes)
             : null;
-        // Guests are held to the scene's render cost and their churn bucket,
-        // which every applied change spends, re-sent copies included.
-        const budget = guest
-          ? { tokens: refillChurnBudget(attachment, Date.now()) }
-          : undefined;
+        // Guests are held to the scene's render cost and canvas area, and to
+        // their connection's and the board's churn buckets, which every
+        // applied change spends, re-sent copies included.
+        const now = Date.now();
+        const own = guest ? refillChurnBudget(attachment, now) : 0;
+        const shared = guest ? refillRoomChurnBudget(this.roomChurn, now) : 0;
+        const budget = guest ? { tokens: Math.min(own, shared) } : undefined;
+        const start = budget?.tokens ?? 0;
         const { applied, rejected } = await this.room.edit(
           guest?.changes ?? message.changes,
-          budget ? { maxCost: BOARD_GUEST_LIMITS.maxSceneCost, budget } : {}
+          budget
+            ? {
+                maxCost: BOARD_GUEST_LIMITS.maxSceneCost,
+                maxArea: BOARD_GUEST_LIMITS.maxSceneCanvasPixels,
+                budget,
+              }
+            : {}
         );
         if (budget) {
-          attachment.tokens = budget.tokens;
-          attachment.tokensAt = Date.now();
+          const spent = start - budget.tokens;
+          attachment.tokens = own - spent;
+          attachment.tokensAt = now;
+          // Charged against the current level: another socket's batch may
+          // have spent from it while this one was applied.
+          this.roomChurn = {
+            tokens: refillRoomChurnBudget(this.roomChurn, now) - spent,
+            tokensAt: now,
+          };
           socket.serializeAttachment(attachment);
         }
         const refused = unsupported + (guest?.dropped ?? 0);

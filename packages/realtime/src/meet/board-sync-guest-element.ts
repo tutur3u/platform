@@ -8,7 +8,9 @@ const integer = (min: number, max: number) =>
   z.number().int().min(min).max(max);
 const RANDOM_MAX = 2 ** 31;
 const coordinate = range(-1e6, 1e6);
-const size = range(0, 1e5);
+// Excalidraw caches each element on a canvas of up to 16.7M pixels; a guest
+// shape's sides stay within 10,000 and the scene caps the total area.
+const size = range(0, 1e4);
 const pointValue = range(-1e5, 1e5);
 const id = z.string().min(1).max(64);
 const color = z.string().max(64);
@@ -28,8 +30,9 @@ const arrowhead = z.string().max(32).nullable();
 
 /**
  * Render cost one guest element may carry (`elementRenderCost`); a normal
- * shape costs a few hundred at most. The room also caps the whole scene
- * (`BOARD_GUEST_LIMITS.maxSceneCost`).
+ * shape costs a few hundred at most. The room also caps the whole scene's
+ * render cost and cached canvas area (`BOARD_GUEST_LIMITS.maxSceneCost`,
+ * `maxSceneCanvasPixels`).
  */
 export const MAX_GUEST_ELEMENT_COST = 10_000;
 /** Lines of text one guest text element may hold. */
@@ -108,7 +111,8 @@ const frame = (type: 'frame' | 'magicframe') =>
  * The Excalidraw 0.18 element a person outside the workspace may store, per
  * element type: every field that type draws from is required, numbers are
  * within drawing ranges, strings and arrays are bounded, text holds at most
- * `MAX_GUEST_TEXT_LINES` lines, and the whole element costs at most
+ * `MAX_GUEST_TEXT_LINES` lines, a freehand stroke has a pressure per point or
+ * simulates pressure, and the whole element costs at most
  * `MAX_GUEST_ELEMENT_COST` to draw. Unknown keys (`customData` included) and
  * fields another type uses are dropped; an element that fails any check is
  * refused as a whole, so it never reaches the other people's editors or the
@@ -151,6 +155,15 @@ export const guestElementSchema = z
       element.type !== 'text' ||
       element.text.split('\n').length <= MAX_GUEST_TEXT_LINES,
     { message: 'Text has too many lines' }
+  )
+  .refine(
+    // Without either, Excalidraw draws the stroke invisibly and logs an
+    // error on every render.
+    (element) =>
+      element.type !== 'freedraw' ||
+      element.simulatePressure === true ||
+      element.pressures?.length === element.points.length,
+    { message: 'Freehand strokes need pressures or simulated pressure' }
   )
   .refine(
     (element) => elementRenderCost(element) <= MAX_GUEST_ELEMENT_COST,
