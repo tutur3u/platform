@@ -25,7 +25,14 @@ function strings(value, path = '') {
 
 function context(ref, allowed = 'false', event = 'workflow_dispatch') {
   return {
-    github: { ref, event_name: event, actor: 'trusted-author' },
+    github: {
+      ref,
+      event_name: event,
+      actor: 'trusted-author',
+      workflow_ref:
+        'tutur3u/platform/.github/workflows/vercel-production.yaml@refs/heads/production',
+    },
+    contains: (value, part) => value.includes(part),
     needs: {
       'affected-gate': { result: 'success', outputs: { run: 'true' } },
       'production-policy': { result: 'success', outputs: { allowed } },

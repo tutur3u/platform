@@ -493,14 +493,17 @@ jobs:
       STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
 
   # Production pushes reach this workflow only through the Production
-  # Deployment Planner, which selects it when the app is affected. The policy
+  # Deployment Planner, which selects it when the app is affected. Only a run
+  # whose top-level workflow is the planner publishes: a direct dispatch of
+  # this workflow on production is not part of the upload history, so the
+  # manual route is a wave1-native-production.yaml dispatch. The policy
   # job re-reads the tuturuuu.ci.ts admission before any credential is
   # forwarded; the reusable publisher checks it again, builds and restores its
   # own sealed production bytes, then uploads once with a read-only preflight,
   # a rollback receipt and an unchanged serving-topology check.
   production-policy:
     needs: affected-gate
-    if: (needs.affected-gate.outputs.run == 'true' && github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (needs.affected-gate.outputs.run == 'true' && github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
@@ -520,7 +523,7 @@ jobs:
 
   native-publish-production:
     needs: [check-ci, production-policy, restore-acceptance]
-    if: (github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.check-ci.outputs.should_run == 'true' && needs.production-policy.outputs.allowed == 'true' && needs.restore-acceptance.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@') && needs.check-ci.outputs.should_run == 'true' && needs.production-policy.outputs.allowed == 'true' && needs.restore-acceptance.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       actions: read

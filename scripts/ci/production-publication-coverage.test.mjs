@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { productionPublicationExemptions } from '../../tuturuuu.ci.ts';
 import {
   activeProductionApps,
+  isNamedOwner,
   productionPublicationCoverage,
   productionPublicationCoverageProblems,
 } from './production-publication-coverage.ts';
@@ -37,7 +38,7 @@ test('active apps cover every exclusion, policy record and planner target', () =
 
 const exemption = {
   reason: 'fixture',
-  owner: 'prod-owner',
+  owner: 'vhpx',
   approvedOn: '2026-11-25',
   source: 'none',
 };
@@ -60,8 +61,27 @@ test('a held app without an exemption fails', () => {
 });
 
 for (const [name, record, message] of [
-  ['an unowned record', { ...exemption, owner: 'UNASSIGNED' }, /named owner/],
+  [
+    'an unassigned owner',
+    { ...exemption, owner: 'UNASSIGNED' },
+    /GitHub login or @org\/team/,
+  ],
   ['a blank owner', { ...exemption, owner: ' ' }, /owner must be/],
+  [
+    'a lane label as owner',
+    { ...exemption, owner: 'prod-owner' },
+    /GitHub login or @org\/team/,
+  ],
+  [
+    'an owner that is not a login',
+    { ...exemption, owner: 'Release team' },
+    /GitHub login or @org\/team/,
+  ],
+  [
+    'a login with a trailing hyphen',
+    { ...exemption, owner: 'vhpx-' },
+    /GitHub login or @org\/team/,
+  ],
   [
     'a missing date',
     { reason: 'x', owner: 'x', source: 'none' },
@@ -90,14 +110,25 @@ for (const [name, record, message] of [
 }
 
 test('the check does not depend on the current date', (t) => {
-  const real = Date.now;
-  t.after(() => {
-    Date.now = real;
-  });
-  for (const year of [2026, 2030, 2099]) {
-    Date.now = () => Date.UTC(year, 0, 1);
+  // Fake timers cover both Date.now() and new Date().
+  t.mock.timers.enable({ apis: ['Date'] });
+  for (const year of [2000, 2026, 2030, 2099]) {
+    t.mock.timers.setTime(Date.UTC(year, 0, 1));
+    assert.equal(new Date().getUTCFullYear(), year);
+    assert.equal(new Date(Date.now()).getUTCFullYear(), year);
     assert.deepEqual(productionPublicationCoverageProblems({ rootDir }), []);
+    assert.match(
+      problems({ git: { ...exemption, approvedOn: '2026-11-25' } }).join('\n'),
+      /^$/
+    );
   }
+});
+
+test('named owners accept GitHub logins and team handles', () => {
+  for (const owner of ['vhpx', 'a-b', '@tutur3u/platform-release'])
+    assert.ok(isNamedOwner(owner), owner);
+  for (const owner of ['', '-x', 'a--b', 'prod-owner', 'release-lane', 'TBD'])
+    assert.ok(!isNamedOwner(owner), owner);
 });
 
 test('an exemption holds an app from automatic publication', () => {

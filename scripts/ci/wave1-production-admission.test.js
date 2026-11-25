@@ -42,12 +42,23 @@ function evaluate(condition, scope) {
   );
 }
 
-function scope({ ref, event, policy, gates = {}, inputs = {} }) {
+const PLANNER_REF =
+  'tutur3u/platform/.github/workflows/vercel-production.yaml@refs/heads/production';
+
+function scope({
+  ref,
+  event,
+  policy,
+  gates = {},
+  inputs = {},
+  workflowRef = PLANNER_REF,
+}) {
   const outcome = (result) => ({ result, outputs: {} });
   return {
     github: {
       ref,
       event_name: event,
+      workflow_ref: workflowRef,
       event: { pull_request: { labelNames: [READY], draft: false } },
     },
     inputs,
@@ -94,6 +105,18 @@ for (const app of ['mail', 'calendar', 'apps']) {
     for (const cell of matrix()) {
       for (const shouldRun of ['true', 'false']) {
         for (const restore of ['success', 'failure']) {
+          // A direct dispatch of the caller is not the planner and never publishes.
+          assert.equal(
+            evaluate(
+              publish.if,
+              scope({
+                ...cell,
+                gates: { shouldRun, restore },
+                workflowRef: `tutur3u/platform/.github/workflows/${app}-cloudflare.yaml@refs/heads/production`,
+              })
+            ),
+            false
+          );
           const reachable = evaluate(
             publish.if,
             scope({ ...cell, gates: { shouldRun, restore } })
@@ -184,4 +207,33 @@ test('the reachability matrix detects a publisher that ignores admission', () =>
     (cell) => cell.policy.allowed !== 'true' && evaluate(ungated, scope(cell))
   );
   assert.ok(leaks.length > 0, 'an ungated publisher must be reachable');
+});
+
+test('a called publisher enforces the automatic hold; a manual dispatch does not', () => {
+  const publisher = readWorkflow('wave1-native-production.yaml');
+  const input = publisher.on.workflow_call.inputs.automatic;
+  assert.deepEqual(
+    { type: input.type, default: input.default },
+    { type: 'boolean', default: true }
+  );
+  assert.equal(publisher.on.workflow_dispatch.inputs.automatic, undefined);
+  const step = publisher.jobs['production-policy'].steps.find(
+    ({ id }) => id === 'policy'
+  );
+  assert.equal(step.env.AUTOMATIC, '$' + '{{ inputs.automatic == true }}');
+  assert.match(
+    step.run,
+    /if \[ "\$AUTOMATIC" = true \]; then\n\s+node .* --automatic\n/u
+  );
+  assert.equal(
+    publisher.jobs.publish.env.WAVE1_AUTOMATIC_PUBLICATION,
+    '$' + '{{ inputs.automatic == true }}'
+  );
+  // No caller turns the hold off.
+  for (const app of ['mail', 'calendar', 'apps']) {
+    const caller = readWorkflow(`${app}-cloudflare.yaml`).jobs[
+      'native-publish-production'
+    ];
+    assert.deepEqual(caller.with, { app });
+  }
 });

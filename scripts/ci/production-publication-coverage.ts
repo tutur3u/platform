@@ -33,7 +33,20 @@ const PLANNER = '.github/workflows/vercel-production.yaml';
 const SERVING = '.github/workflows/serving-workers-production.yaml';
 const WAVE1_PUBLISHER =
   'uses: ./.github/workflows/wave1-native-production.yaml';
-const unowned = new Set(['', 'UNASSIGNED', 'NONE', 'UNKNOWN', 'TBD']);
+// An owner is a GitHub login or an @org/team handle that can be notified.
+// Lane and role labels such as prod-owner name no person, so they are refused
+// even though they fit the login shape.
+const githubLogin = /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/;
+const githubTeam =
+  /^@[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}\/[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
+const placeholders = new Set(['unassigned', 'none', 'unknown', 'tbd', 'owner']);
+
+export function isNamedOwner(owner: unknown): boolean {
+  if (typeof owner !== 'string') return false;
+  const lower = owner.toLowerCase();
+  if (placeholders.has(lower) || /-(?:owner|lane)$/.test(lower)) return false;
+  return githubLogin.test(owner) || githubTeam.test(owner);
+}
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;
 
 function read(rootDir: string, path: string): string {
@@ -159,11 +172,10 @@ export function productionPublicationCoverageProblems({
       if (typeof text !== 'string' || !text.trim() || /[\r\n]/.test(text))
         problems.push(`${app}: exemption ${field} must be one non-empty line`);
     }
-    if (
-      typeof entry.owner === 'string' &&
-      unowned.has(entry.owner.trim().toUpperCase())
-    )
-      problems.push(`${app}: exemption needs a named owner`);
+    if (typeof entry.owner === 'string' && !isNamedOwner(entry.owner))
+      problems.push(
+        `${app}: exemption owner must be a GitHub login or @org/team handle`
+      );
     if (
       typeof entry.source === 'string' &&
       entry.source !== 'none' &&
