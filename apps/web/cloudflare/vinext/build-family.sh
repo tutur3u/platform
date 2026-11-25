@@ -48,6 +48,10 @@ done
 # (src/app/[locale]/layout.tsx); cloudflare.config.ts binds it into the Worker.
 PLATFORM_DEPLOYMENT_STAMP="$(git -C "$repo_dir" rev-parse HEAD | cut -c1-12)"
 export PLATFORM_DEPLOYMENT_STAMP
+# The full commit is baked into the Worker and the asset _headers as the
+# x-tuturuuu-build response header (cloudflare/vinext/build-stamp-plugin.ts).
+PLATFORM_BUILD_COMMIT="$(git -C "$repo_dir" rev-parse HEAD)"
+export PLATFORM_BUILD_COMMIT
 
 # Login returns to a mounted app's /<app>/verify-token only for apps in this
 # list, so it must name exactly the mounts live on the gateway. It is derived

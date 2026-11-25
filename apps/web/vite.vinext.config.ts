@@ -9,6 +9,7 @@ import postcssSimpleVars from 'postcss-simple-vars';
 import vinext from 'vinext';
 import { patchCssModules } from 'vite-css-modules';
 import { defineConfig } from 'vite-plus';
+import { buildStamp } from './cloudflare/vinext/build-stamp-plugin';
 import { workersFetchFirst } from './cloudflare/vinext/workers-fetch-first';
 import { createWebNextConfig } from './next-config.web';
 
@@ -25,6 +26,9 @@ const family = process.env.WEB_VINEXT_FAMILY?.trim();
 export default defineConfig({
   plugins: [
     workersFetchFirst(),
+    // Every family response and static asset carries x-tuturuuu-build:
+    // <commit> (build-family.sh sets PLATFORM_BUILD_COMMIT).
+    buildStamp(process.env.PLATFORM_BUILD_COMMIT),
     patchCssModules({ exportMode: 'default' }),
     // Tailwind resolves `@import`/`@plugin` itself; Vite's PostCSS import
     // inlining would resolve package `@plugin`s from the importing package.

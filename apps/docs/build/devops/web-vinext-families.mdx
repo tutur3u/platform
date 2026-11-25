@@ -103,6 +103,15 @@ changes with each build. `cloudflare/vinext/service-worker.test.ts` checks the
 single owner, the order of the build steps, the binding and the parity with the
 Next.js route.
 
+Every family response, including 404s, redirects, 401/403/405 API answers,
+errors and static assets, carries `x-tuturuuu-build: <full 40-hex commit>`.
+`build-family.sh` exports `PLATFORM_BUILD_COMMIT`, and
+`cloudflare/vinext/build-stamp-plugin.ts` bakes it into the Worker entry
+wrapper and the client `_headers`; the wrapper overwrites any upstream value
+and omits the header when the build has no commit. Staged 0% smokes
+(`Cloudflare-Workers-Version-Overrides`) read it as the signed-out version
+identity; `build-stamp.test.ts` covers the contract.
+
 Worker builds emit no source maps (`build.sourcemap: false`): Cloudflare
 rejects an upload whose source maps exceed 60 MiB (error 10021), and the
 `public-auth` maps alone reach about 70 MiB.
