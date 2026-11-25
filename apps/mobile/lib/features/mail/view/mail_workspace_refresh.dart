@@ -20,7 +20,12 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
     });
     await _restoreView(generation);
     try {
-      final result = await _repository.bootstrap(widget.workspaceId);
+      // Cancelled reads re-read at once; a still-cancelled bootstrap falls
+      // through to the failure path so Retry stays offered.
+      final result = await readMailListWithRetry(
+        () => _repository.bootstrap(widget.workspaceId),
+        isCurrent: () => mounted && generation == _bootstrapGeneration,
+      );
       if (!mounted || generation != _bootstrapGeneration) return;
       _updateState(() {
         _mailboxes = mailRows(result['mailboxes']);
@@ -74,10 +79,6 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
       }
     } on Object catch (error) {
       if (!mounted || generation != _bootstrapGeneration) return;
-      if (isMailReadInterruption(error) && _listResolved) {
-        _updateState(() => _loading = false);
-        return;
-      }
       if (error is ApiException &&
           (error.statusCode == 401 || error.statusCode == 403)) {
         await _denyCachedAccess();

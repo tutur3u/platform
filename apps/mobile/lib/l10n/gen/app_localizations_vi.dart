@@ -7070,6 +7070,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailNoBlockedSenders => 'Chưa chặn người gửi nào';
 
   @override
+  String get mailNoMailboxes => 'Không có hộp thư khả dụng';
+
+  @override
   String get mailNoSubject => '(Không có tiêu đề)';
 
   @override

@@ -228,11 +228,16 @@ extension _ShellPageLayout on _ShellPageState {
         body: globalBody,
         header: immersive
             ? null
-            : _buildAppBar(
-                context,
-                activeModule: activeModule,
-                injectedMiniNavRegistration: injectedMiniNavRegistration,
-                railVisible: railVisible,
+            // The bar measures the body beside the rail, as page insets do,
+            // so the title starts at the same gutter as the content.
+            : LayoutBuilder(
+                builder: (context, constraints) => _buildAppBar(
+                  context,
+                  activeModule: activeModule,
+                  injectedMiniNavRegistration: injectedMiniNavRegistration,
+                  railVisible: railVisible,
+                  bodyWidth: constraints.maxWidth,
+                ),
               ),
         navigationBar:
             showBottomNav &&
@@ -343,6 +348,7 @@ extension _ShellPageLayout on _ShellPageState {
     required bool railVisible,
     AppModule? activeModule,
     ShellMiniNavRegistration? injectedMiniNavRegistration,
+    double? bodyWidth,
   }) {
     final location = widget.matchedLocation;
     final searchAction = context
@@ -363,6 +369,7 @@ extension _ShellPageLayout on _ShellPageState {
       padding: shellTopBarPaddingFor(
         MediaQuery.sizeOf(context).width,
         besideRail: railVisible,
+        bodyWidth: bodyWidth,
       ),
       backgroundColor: Colors.transparent,
       trailingGap: 4,

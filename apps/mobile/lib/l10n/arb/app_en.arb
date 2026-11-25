@@ -3980,6 +3980,7 @@
   "mailMove": "Move",
   "mailName": "Name",
   "mailNoBlockedSenders": "No blocked senders",
+  "mailNoMailboxes": "No mailboxes available",
   "mailNoSubject": "(No subject)",
   "mailOpenFailed": "Could not open this message. Please try again.",
   "mailOrganization": "Organization",

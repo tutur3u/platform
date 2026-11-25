@@ -252,9 +252,8 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                   if (!wide && _selected.isNotEmpty) _buildMailBulkToolbar(),
                   if (_failed && _listResolved)
                     MailRefreshNotice(
-                      onRetry: () => unawaited(
-                        !_accessVerified ? _bootstrap() : _load(),
-                      ),
+                      onRetry: () =>
+                          unawaited(!_accessVerified ? _bootstrap() : _load()),
                     ),
                 ],
               ),

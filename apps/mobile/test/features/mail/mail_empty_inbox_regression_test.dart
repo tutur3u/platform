@@ -118,7 +118,7 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 350));
         expect(find.byType(MailReader), findsNothing);
-        expect(find.text('No messages here'), findsOneWidget);
+        expect(find.text('No messages'), findsOneWidget);
         expect(find.text('Loading'), findsNothing);
         expect(
           requests,
@@ -152,7 +152,7 @@ void main() {
         expect(
           find.text(
             success
-                ? (afterExit ? 'New arrival' : 'No messages here')
+                ? (afterExit ? 'New arrival' : 'No messages')
                 : 'Last message',
           ),
           findsOneWidget,

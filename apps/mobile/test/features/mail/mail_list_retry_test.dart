@@ -138,9 +138,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Kept row'), findsOneWidget);
 
-      answer = () async => throw StateError('Mail request was invalidated');
+      var cancelled = 0;
+      answer = () async {
+        cancelled++;
+        throw StateError('Mail request was invalidated');
+      };
       await tester.pump(const Duration(minutes: 1));
       await tester.pumpAndSettle();
+
+      // The first read and both allowed re-reads were attempted.
+      expect(cancelled, 3);
 
       expect(find.text('Kept row'), findsOneWidget);
       expect(find.text(_refreshNotice), findsNothing);

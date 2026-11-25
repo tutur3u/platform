@@ -202,7 +202,7 @@ class _MailSettingsHubState extends State<MailSettingsHub> {
                       onPressed: _load,
                       child: Text(context.l10n.commonRetry),
                     ),
-                  if (_mailboxes.isEmpty) Text(context.l10n.mailEmpty),
+                  if (_mailboxes.isEmpty) Text(context.l10n.mailNoMailboxes),
                   for (final box in _mailboxes)
                     MailSettingsAccountRow(
                       address:

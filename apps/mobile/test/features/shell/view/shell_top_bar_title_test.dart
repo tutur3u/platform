@@ -89,6 +89,12 @@ void main() {
         );
       }
       expect(shellTopBarPaddingFor(390).left, shellTopBarPadding.left);
+      // A 900dp window less an 80dp rail lays its pages out as medium; the
+      // title must use that body width, not the expanded window class.
+      expect(
+        shellTopBarPaddingFor(900, besideRail: true, bodyWidth: 820).left,
+        AppLayout.gutter(DeviceClass.medium),
+      );
     });
 
     testWidgets('settings title ignores the selected mini app label', (

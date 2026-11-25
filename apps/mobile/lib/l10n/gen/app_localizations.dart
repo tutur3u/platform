@@ -13435,6 +13435,12 @@ abstract class AppLocalizations {
   /// **'No blocked senders'**
   String get mailNoBlockedSenders;
 
+  /// No description provided for @mailNoMailboxes.
+  ///
+  /// In en, this message translates to:
+  /// **'No mailboxes available'**
+  String get mailNoMailboxes;
+
   /// No description provided for @mailNoSubject.
   ///
   /// In en, this message translates to:

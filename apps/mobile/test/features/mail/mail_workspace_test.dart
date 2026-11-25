@@ -104,7 +104,7 @@ void main() {
       ],
     });
     await tester.pumpAndSettle();
-    expect(find.text('No messages here'), findsOneWidget);
+    expect(find.text('No messages'), findsOneWidget);
   });
 
   testWidgets('retry verifies mailbox access before enabling Inbox actions', (

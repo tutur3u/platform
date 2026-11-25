@@ -12,6 +12,10 @@ const _interruptions = {
 };
 
 /// Whether [error] cancelled a mail read rather than failing it.
+///
+/// "Mail request scope changed" is deliberately excluded: the cache raises it
+/// for a write racing a read and for denial or logout alike, so it keeps the
+/// visible refresh notice rather than risk hiding a lost session.
 bool isMailReadInterruption(Object error) =>
     error is StateError && _interruptions.contains(error.message);
 

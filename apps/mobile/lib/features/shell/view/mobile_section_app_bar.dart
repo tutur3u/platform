@@ -18,11 +18,19 @@ const EdgeInsets shellTopBarPadding = EdgeInsets.fromLTRB(20, 5, 8, 5);
 /// keep the title at the plain gutter so trailing actions fit.
 ///
 /// Beside the navigation rail the title starts at the page gutter for the
-/// window's device class, so it lines up with the content column below it.
-EdgeInsets shellTopBarPaddingFor(double width, {bool besideRail = false}) {
+/// [bodyWidth] beside the rail (falling back to [width]), the same width
+/// `AppPageInsets` resolves page content against, so the two line up.
+EdgeInsets shellTopBarPaddingFor(
+  double width, {
+  bool besideRail = false,
+  double? bodyWidth,
+}) {
   if (besideRail) {
+    final measured = bodyWidth != null && bodyWidth.isFinite
+        ? bodyWidth
+        : width;
     return shellTopBarPadding.copyWith(
-      left: AppLayout.gutter(Breakpoints.fromWidth(width)),
+      left: AppLayout.gutter(Breakpoints.fromWidth(measured)),
     );
   }
   return width < 360

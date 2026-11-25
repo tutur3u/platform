@@ -7148,6 +7148,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailNoBlockedSenders => 'No blocked senders';
 
   @override
+  String get mailNoMailboxes => 'No mailboxes available';
+
+  @override
   String get mailNoSubject => '(No subject)';
 
   @override

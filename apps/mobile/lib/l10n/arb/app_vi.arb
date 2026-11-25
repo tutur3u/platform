@@ -3641,6 +3641,7 @@
   "mailMove": "Chuyển",
   "mailName": "Tên",
   "mailNoBlockedSenders": "Chưa chặn người gửi nào",
+  "mailNoMailboxes": "Không có hộp thư khả dụng",
   "mailNoSubject": "(Không có tiêu đề)",
   "mailOpenFailed": "Không thể mở thư này. Vui lòng thử lại.",
   "mailOrganization": "Thành viên tổ chức",
