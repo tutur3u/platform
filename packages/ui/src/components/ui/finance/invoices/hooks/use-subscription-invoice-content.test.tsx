@@ -30,6 +30,7 @@ const base = {
         is_course_published: false,
         is_guest: false,
         notes: null,
+        updated_at: null,
         starting_date: '2026-01-01',
       },
     },

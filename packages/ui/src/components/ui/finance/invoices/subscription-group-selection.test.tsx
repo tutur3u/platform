@@ -142,6 +142,7 @@ const membership: UserGroup[] = groups.map((id) => ({
     is_course_published: false,
     is_guest: false,
     notes: null,
+    updated_at: null,
     starting_date: '2026-01-01',
     ws_id: 'ws',
     sessions: ['2026-01-05', '2026-01-12'],

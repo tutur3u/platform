@@ -21,6 +21,7 @@ function context(owner: string): UserGroup[] {
         is_course_published: false,
         is_guest: false,
         notes: null,
+        updated_at: null,
         ws_id: 'ws-1',
         id: 'group-1',
         name: owner,
