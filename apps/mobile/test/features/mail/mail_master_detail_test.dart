@@ -184,6 +184,35 @@ void main() {
     await drain(tester);
   });
 
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets(
+      'a bare Escape closes the pane on a ${platform.name} tablet keyboard',
+      (tester) async {
+        useMailKeyboardPlatform(platform);
+        await _mount(tester);
+        await tester.tap(find.text('Synthetic subject 1'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyJ);
+        await tester.pump();
+        expect(find.byType(MailReader), findsOneWidget);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await tester.pump();
+        expect(find.byType(MailReader), findsNothing);
+        expect(find.text(_empty), findsOneWidget);
+        await drain(tester);
+      },
+    );
+  }
+
   testWidgets('a notification deep link opens its pane on tablets', (
     tester,
   ) async {

@@ -11,7 +11,7 @@ extension _MailWorkspaceKeyboard on _MailWorkspaceState {
     skipTraversal: true,
     onKeyEvent: (_, event) {
       if (event is! KeyDownEvent ||
-          !usesMailKeyboard(context) ||
+          !usesMailActionBar(context) ||
           !MailReadingPreferences.instance.keyboardEnabled ||
           !(ModalRoute.isCurrentOf(context) ?? true) ||
           (_childRouteOpen && routeSelection == null) ||
@@ -21,6 +21,16 @@ extension _MailWorkspaceKeyboard on _MailWorkspaceState {
         return KeyEventResult.ignored;
       }
       final keyboard = HardwareKeyboard.instance;
+      if (!mailKeyboardBinds(
+        event.logicalKey,
+        modified:
+            keyboard.isShiftPressed ||
+            keyboard.isControlPressed ||
+            keyboard.isMetaPressed ||
+            keyboard.isAltPressed,
+      )) {
+        return KeyEventResult.ignored;
+      }
       final command = mailKeyboardCommand(
         event.logicalKey,
         character: event.character,
