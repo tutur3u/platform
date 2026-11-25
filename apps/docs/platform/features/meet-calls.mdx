@@ -1050,8 +1050,10 @@ cannot be recalled. Transcription mutations remain host-only.
   a "Join QR" chip that opens the code in a popover, and the gutter is
   released. Below `lg` it is always the chip. The chip sits 4rem above the
   stage's bottom edge, clear of a bottom-left tile's name and identity strip
-  and inside the stage, so it never reaches the control bar. Anyone can
-  shrink the card to the chip for themselves.
+  and inside the stage, so it never reaches the control bar. A tile's
+  resume-audio action (shown when the browser blocks autoplay) sits at the
+  tile's centre, so the chip never covers it. Anyone can shrink the card to
+  the chip for themselves.
 - Default: on in every `MEET_UX_V2` meeting, for every participant, with
   auto-hide off. A room that has never stored the setting shows it.
 - Room controls: hosts and co-hosts (the participant manage scope, the same
@@ -1078,7 +1080,8 @@ cannot be recalled. Transcription mutations remain host-only.
 
 Regression coverage: `room-join-qr.test.ts` and `room-skip-lobby.test.ts`
 under `packages/realtime/src/meet`; `stage-join-qr.test.tsx`,
-`stage-join-qr-layout.test.tsx`, `class-timer.test.tsx` and
+`stage-join-qr-layout.test.tsx`, `participant-tile-blocked.test.tsx`,
+`class-timer.test.tsx`, `hooks/use-meet-room.test.tsx` and
 `lib/call-state-settings.test.ts` under `packages/meet-core/src/features/call`.
 
 ### People control placement (`MEET_UX_V2`)
