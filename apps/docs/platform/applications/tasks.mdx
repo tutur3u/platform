@@ -241,8 +241,18 @@ deployment and use the same value in the Supabase Database Webhook header
 configuration. Use a secret placeholder in local examples and operational
 documentation; never record the deployed value.
 
-The route fails closed before parsing the payload or creating an admin Supabase
-client. Missing or empty server configuration returns a server configuration
+The Tasks API proxy runs this webhook, the CI alert sink and two cron routes
+without an app session: `GET /api/cron/tasks/cleanup-media` (the daily cleanup
+above; Cron Control defines `tasks-cleanup-media` but does not enable it) and
+`GET /api/cron/tasks/generate-embeddings`, which has no scheduler. Both cron
+routes check `authorization: Bearer <CRON_SECRET>` (or `VERCEL_CRON_SECRET`). Each
+route is listed by exact path and method in
+`apps/tasks/src/sessionless-api.ts`. Cookies are stripped, and `authorization`
+is kept only for the two cron routes. Any other method or path variant takes
+the normal session path.
+
+The webhook route fails closed before parsing the payload or creating an admin
+Supabase client. Missing or empty server configuration returns a server configuration
 error, while an absent or mismatched request header returns `401 Unauthorized`.
 
 CLI task commands call the Tasks origin with bearer app-session tokens minted by

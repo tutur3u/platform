@@ -20,6 +20,24 @@ export const SESSIONLESS_API_ROUTES: readonly SessionlessApiRoute[] = [
   },
   // CI alert sink: `x-ci-alert-token`.
   { path: '/api/v1/ci/alerts', methods: ['POST'], keepAuthorization: false },
+  // Task embedding webhook: `x-webhook-secret`.
+  {
+    path: '/api/v1/webhooks/tasks/embedding',
+    methods: ['POST'],
+    keepAuthorization: false,
+  },
+  // Cron routes checking `authorization: Bearer <CRON_SECRET>`; cleanup-media
+  // is the daily media cleanup, generate-embeddings has no scheduler.
+  {
+    path: '/api/cron/tasks/cleanup-media',
+    methods: ['GET'],
+    keepAuthorization: true,
+  },
+  {
+    path: '/api/cron/tasks/generate-embeddings',
+    methods: ['GET'],
+    keepAuthorization: true,
+  },
 ];
 
 export function findSessionlessApiRoute(

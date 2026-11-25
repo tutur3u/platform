@@ -95,7 +95,10 @@ describe('Tasks proxy sessionless API routes', () => {
     });
   });
 
-  it.each([['POST', '/api/v1/ci/alerts']])(
+  it.each([
+    ['POST', '/api/v1/ci/alerts'],
+    ['POST', '/api/v1/webhooks/tasks/embedding'],
+  ])(
     '%s %s skips the session and drops ambient identity',
     async (method, path) => {
       for (const request of [subdomain(method, path), mounted(method, path)]) {
@@ -123,11 +126,30 @@ describe('Tasks proxy sessionless API routes', () => {
     expect(request.headers.has('cookie')).toBe(true);
   });
 
+  it.each([
+    ['/api/cron/tasks/cleanup-media'],
+    ['/api/cron/tasks/generate-embeddings'],
+  ])('GET %s keeps its CRON_SECRET bearer without a session', async (path) => {
+    for (const request of [subdomain('GET', path), mounted('GET', path)]) {
+      await proxy(request);
+      expect(request.headers.has('cookie')).toBe(false);
+      expect(request.headers.get('authorization')).toBe('Bearer user-token');
+    }
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.resolveMountedTasksSession).not.toHaveBeenCalled();
+  });
+
   it('matches only exact paths and methods', () => {
     expect(findSessionlessApiRoute('/api/v1/ci/alerts', 'POST')).not.toBeNull();
     expect(findSessionlessApiRoute('/api/v1/ci/alerts', 'PUT')).toBeNull();
     expect(findSessionlessApiRoute('/api/v1/ci/alerts/', 'POST')).toBeNull();
     expect(findSessionlessApiRoute('/api/build-info', 'HEAD')).not.toBeNull();
     expect(findSessionlessApiRoute('/api/build-info', 'POST')).toBeNull();
+    expect(
+      findSessionlessApiRoute('/api/cron/tasks/cleanup-media', 'POST')
+    ).toBeNull();
+    expect(
+      findSessionlessApiRoute('/api/v1/webhooks/tasks/embedding', 'GET')
+    ).toBeNull();
   });
 });
