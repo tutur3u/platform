@@ -57,6 +57,7 @@ const railShellRoutes = <String>[
   Routes.profileRoot,
   Routes.notifications,
   Routes.settingsAccounts,
+  Routes.settingsAppearance,
   Routes.inventory,
   Routes.inventorySales,
   Routes.inventoryProducts,
@@ -73,8 +74,11 @@ Future<RailShell> pumpRailShell(
   Widget Function(int replayToken)? assistantPage,
   AuthState authState = const AuthState.unauthenticated(),
   TextDirection? textDirection,
+  String? sidebarBehavior,
 }) async {
-  SharedPreferences.setMockInitialValues({});
+  SharedPreferences.setMockInitialValues({
+    if (sidebarBehavior != null) 'sidebar-behavior:device': sidebarBehavior,
+  });
   final auth = _Auth();
   final workspace = _Workspace();
   final profile = _Profile();

@@ -19,6 +19,7 @@ import 'package:mobile/features/settings/view/appearance/appearance_interface_se
 import 'package:mobile/features/settings/view/appearance/appearance_labels.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_pickers.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_preview.dart';
+import 'package:mobile/features/settings/view/appearance/appearance_sidebar_section.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_sorbet_section.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_text_section.dart';
 import 'package:mobile/features/settings/view/appearance/appearance_theme_gallery.dart';
@@ -209,6 +210,7 @@ class _AppearancePageState extends State<AppearancePage> {
               showShape: classic,
               onChanged: (next) => choose(() => cubit.setAppearance(next)),
             ),
+            const AppearanceSidebarSection(),
             _ResetButton(state: state, cubit: cubit),
           ],
         ),

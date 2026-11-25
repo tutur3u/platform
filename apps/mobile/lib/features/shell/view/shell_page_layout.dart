@@ -12,236 +12,79 @@ extension _ShellPageLayout on _ShellPageState {
 
     if (!isMiniAppRoute) {
       _cachedGlobalBody = _buildGlobalBody();
-      _activeLayerPage = 0;
       _showMiniNav = true;
       _lastLayeredLocation = null;
-
-      if (_layerController.hasClients && _layerController.page?.round() != 0) {
-        _syncingLayerPage = true;
-        unawaited(
-          _layerController
-              .animateToPage(
-                0,
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-              )
-              .catchError((_) {})
-              .whenComplete(() {
-                if (!mounted) return;
-                _setShellState(() => _syncingLayerPage = false);
-              }),
-        );
-      } else {
-        _syncingLayerPage = false;
-      }
-
-      return;
-    }
-
-    _activeLayerPage = 1;
-    if (!wasMiniAppRoute || widget.matchedLocation != _lastLayeredLocation) {
+    } else if (!wasMiniAppRoute ||
+        widget.matchedLocation != _lastLayeredLocation) {
       _lastLayeredLocation = widget.matchedLocation;
       _showMiniNav = true;
     }
-
-    if (_layerController.hasClients && _layerController.page?.round() != 1) {
-      _syncingLayerPage = true;
+    _activeLayerPage = isMiniAppRoute ? 1 : 0;
+    _syncingLayerPage = _layerController.hasClients &&
+        _layerController.page?.round() != _activeLayerPage;
+    if (_syncingLayerPage) {
       unawaited(
         _layerController
             .animateToPage(
-              1,
+              _activeLayerPage,
               duration: const Duration(milliseconds: 220),
               curve: Curves.easeOutCubic,
             )
             .catchError((_) {})
             .whenComplete(() {
-              if (!mounted) return;
-              _setShellState(() => _syncingLayerPage = false);
+              if (mounted) _setShellState(() => _syncingLayerPage = false);
             }),
       );
-    } else {
-      _syncingLayerPage = false;
     }
   }
 
   Widget _buildNormalizedChild() {
     return _trackPageScrolling(
       widget.matchedLocation,
-      Builder(
-        builder: (bodyContext) => MediaQuery.removePadding(
-          context: bodyContext,
-          removeTop: true,
-          child: Theme(
-            data: Theme.of(bodyContext).copyWith(
-              scaffoldBackgroundColor:
-                  AppearanceScope.hasAmbientBackground(bodyContext)
-                  ? Colors.transparent
-                  : shad.Theme.of(bodyContext).colorScheme.background,
-            ),
-            child: SizedBox.expand(child: widget.child),
-          ),
-        ),
+      ShellRoutedBody(
+        background: (context) => AppearanceScope.hasAmbientBackground(context)
+            ? Colors.transparent
+            : shad.Theme.of(context).colorScheme.background,
+        child: widget.child,
       ),
     );
   }
 
   Widget _buildGlobalBody() {
     final rootVisible = _isRootTabLocation(_bodyLocation);
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Offstage(
-          offstage: !rootVisible,
-          child: TickerMode(
-            enabled: rootVisible,
-            child: !_hasVisitedRoot
-                ? const SizedBox.shrink()
-                : Builder(
-                    builder: (bodyContext) {
-                      final media = MediaQuery.of(bodyContext);
-                      return MediaQuery(
-                        // Root pages add their own scroll clearance for the
-                        // floating header. Keep the physical status-bar inset
-                        // available while removing automatic top padding.
-                        data: media
-                            .removePadding(removeTop: true)
-                            .copyWith(viewPadding: media.viewPadding),
-                        child: _trackPageScrolling(
-                          rootVisible
-                              ? widget.matchedLocation
-                              : _lastRootLocation,
-                          LazyIndexedStack(
-                            // Body transitions are separate from the persistent
-                            // dock; outgoing bodies own no dock.
-                            animate: true,
-                            index: _ShellPageState._calculateSelectedIndex(
-                              _lastRootLocation,
-                            ),
-                            builders: [
-                              (_) =>
-                                  widget.homePageBuilder?.call(
-                                    _rootTabReplayTokens[Routes.home] ?? 0,
-                                  ) ??
-                                  HomePage(
-                                    replayToken:
-                                        _rootTabReplayTokens[Routes.home] ?? 0,
-                                  ),
-                              (_) =>
-                                  widget.assistantPageBuilder?.call(
-                                    _rootTabReplayTokens[Routes.assistant] ?? 0,
-                                  ) ??
-                                  AssistantPage(
-                                    shellLocation: widget.matchedLocation,
-                                    replayToken:
-                                        _rootTabReplayTokens[Routes
-                                            .assistant] ??
-                                        0,
-                                  ),
-                              (_) => AppsScreen(
-                                isActive: widget.matchedLocation == Routes.apps,
-                                replayToken:
-                                    _rootTabReplayTokens[Routes.apps] ?? 0,
-                              ),
-                              (context) =>
-                                  widget.notificationsPageBuilder?.call(
-                                    context,
-                                  ) ??
-                                  NotificationsPage(
-                                    isActive:
-                                        widget.matchedLocation ==
-                                        Routes.notifications,
-                                  ),
-                              (_) {
-                                final token =
-                                    _rootTabReplayTokens[Routes.profileRoot] ??
-                                    0;
-                                return widget.profilePageBuilder?.call(token) ??
-                                    ProfileOverviewPage(replayToken: token);
-                              },
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+    int token(String route) => _rootTabReplayTokens[route] ?? 0;
+    return ShellRootBody(
+      rootVisible: rootVisible,
+      root: !_hasVisitedRoot
+          ? null
+          : (_) => _trackPageScrolling(
+              rootVisible ? widget.matchedLocation : _lastRootLocation,
+              LazyIndexedStack(
+                animate: true,
+                index: _ShellPageState._calculateSelectedIndex(_lastRootLocation),
+                builders: [
+                  (_) => widget.homePageBuilder?.call(token(Routes.home)) ??
+                      HomePage(replayToken: token(Routes.home)),
+                  (_) =>
+                      widget.assistantPageBuilder?.call(token(Routes.assistant)) ??
+                      AssistantPage(
+                        shellLocation: widget.matchedLocation,
+                        replayToken: token(Routes.assistant),
+                      ),
+                  (_) => AppsScreen(
+                    isActive: widget.matchedLocation == Routes.apps,
+                    replayToken: token(Routes.apps),
                   ),
-          ),
-        ),
-        if (!rootVisible) _buildNormalizedChild(),
-      ],
-    );
-  }
-
-  Widget _buildFloatingNavigationBar({
-    required BuildContext context,
-    required bool isCompact,
-    required Widget child,
-  }) {
-    if (isCompact) {
-      return child;
-    }
-
-    // The morphing island owns its glass, outline and glow. A second surface
-    // here leaves a visible double stroke around the floating navigation.
-    return Padding(padding: EdgeInsets.zero, child: child);
-  }
-
-  Widget _buildNavigationBarContainer({
-    required BuildContext context,
-    required bool isCompact,
-    required Widget child,
-  }) {
-    if (isCompact) {
-      return SizedBox(
-        width: double.infinity,
-        height:
-            _ShellPageState._compactBottomNavHeight +
-            (MediaQuery.textScalerOf(context).scale(10) - 10).clamp(
-                  0,
-                  double.infinity,
-                ) *
-                1.6,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: child,
-          ),
-        ),
-      );
-    }
-
-    final maxWidth = MediaQuery.sizeOf(context).width - 24;
-
-    return SizedBox(
-      child: Center(
-        widthFactor: 1,
-        heightFactor: 1,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxWidth > 0 ? maxWidth : 0),
-          child: child,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompactFooter({
-    required BuildContext context,
-    required Widget navigationBar,
-  }) {
-    final systemBottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    final bottomPadding = systemBottomInset <= 0
-        ? 0.0
-        : (systemBottomInset * 0.42).clamp(10.0, 16.0);
-
-    return Container(
-      key: const ValueKey('compact-shell-footer'),
-      color: AppearanceScope.hasAmbientBackground(context)
-          ? Colors.transparent
-          : shad.Theme.of(context).colorScheme.background,
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: ShellKeyboardChrome(
-        keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
-        child: navigationBar,
-      ),
+                  (context) => widget.notificationsPageBuilder?.call(context) ??
+                      NotificationsPage(
+                        isActive: widget.matchedLocation == Routes.notifications,
+                      ),
+                  (_) => widget.profilePageBuilder?.call(token(Routes.profileRoot)) ??
+                      ProfileOverviewPage(replayToken: token(Routes.profileRoot)),
+                ],
+              ),
+            ),
+      detail: (_) => _buildNormalizedChild(),
     );
   }
 
@@ -255,20 +98,6 @@ extension _ShellPageLayout on _ShellPageState {
     BuildContext context,
     AppTabState state, {
     required AppModule? activeModule,
-    ShellMiniNavRegistration? injectedMiniNavRegistration,
-  }) {
-    return _buildGlobalCompactScaffold(
-      context,
-      state,
-      activeModule: activeModule,
-      injectedMiniNavRegistration: injectedMiniNavRegistration,
-    );
-  }
-
-  Widget _buildGlobalCompactScaffold(
-    BuildContext context,
-    AppTabState state, {
-    AppModule? activeModule,
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
     final l10n = context.l10n;
@@ -353,233 +182,147 @@ extension _ShellPageLayout on _ShellPageState {
             onTap: () => navContent.onSelected(backKey),
             onLongPress: navContent.onBackLongPress,
           );
-    final navigationBar = _buildNavigationBarContainer(
-      context: context,
-      isCompact: isCompact,
-      child: _buildFloatingNavigationBar(
-        context: context,
-        isCompact: isCompact,
-        child: navContent,
-      ),
+    final navigationBar = ShellResponsiveDock(
+      compact: isCompact,
+      compactHeight: _ShellPageState._compactBottomNavHeight,
+      child: navContent,
     );
     final globalBody = _buildGlobalBody();
-    final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
     final windowSize = MediaQuery.sizeOf(context);
     final railMode =
         shellNavigationModeFor(windowSize) == ShellNavigationMode.rail;
-    final sidebar = shellNavigationExtendedFor(windowSize);
     final railVisible = railMode && showBottomNav;
     final showsWorkspacePicker = _isRootTabLocation(widget.matchedLocation);
     final destinations = navChildren
         .where((item) => item.key != backKey)
         .toList();
 
-    return shad.Scaffold(
-      footers: showBottomNav && isCompact && !composerVisible
-          ? [
-              _buildCompactFooter(
-                context: context,
-                navigationBar: navigationBar,
+    return ShellSidebarScaffold(
+      location: widget.matchedLocation,
+      showSidebar: railVisible,
+      includeWorkspacePicker: showsWorkspacePicker,
+      compactFooter: showBottomNav && isCompact && !composerVisible
+          ? _compactFooter(navigationBar)
+          : null,
+      back: dockBack,
+      items: destinations
+          .where((item) => item.key != ShellRootTab.profile.key)
+          .toList(),
+      selectedKey: selectedKey,
+      onSelected: navContent.onSelected,
+      onProfileSelected: () =>
+          unawaited(_onItemTapped(Routes.profileRoot, context)),
+      body: _buildBodyWithFloatingNav(
+        body: globalBody,
+        header: immersive
+            ? null
+            : _buildAppBar(
+                context,
+                activeModule: activeModule,
+                injectedMiniNavRegistration: injectedMiniNavRegistration,
+                railVisible: railVisible,
               ),
-            ]
-          : const [],
-      // Preserve Assistant state when keyboard/fullscreen hides navigation.
-      child: AdaptiveShellFrame(
-        railExtent: sidebar
-            ? shellNavigationSidebarExtent
-            : shellNavigationRailExtent,
-        rail: railVisible
-            ? ShellNavigationRail(
-                leading: dockBack,
-                items: destinations
-                    .where((item) => item.key != ShellRootTab.profile.key)
-                    .toList(),
-                selectedKey: selectedKey,
-                onSelected: navContent.onSelected,
-                extended: sidebar,
-                footer: ShellSidebarAccount(
-                  extended: sidebar,
-                  matchedLocation: widget.matchedLocation,
-                  includeWorkspacePicker: showsWorkspacePicker,
-                  onProfileSelected: () =>
-                      unawaited(_onItemTapped(Routes.profileRoot, context)),
-                ),
-              )
+        navigationBar:
+            showBottomNav &&
+                !railMode &&
+                destinations.length > 1 &&
+                (!isCompact || composerVisible)
+            ? navigationBar
             : null,
-        body: _buildBodyWithFloatingNav(
-          body: globalBody,
-          header: immersive
-              ? null
-              : _buildAppBar(
-                  context,
-                  activeModule: activeModule,
-                  injectedMiniNavRegistration: injectedMiniNavRegistration,
-                  railVisible: railVisible,
-                ),
-          navigationBar:
-              showBottomNav &&
-                  !railMode &&
-                  destinations.length > 1 &&
-                  (!isCompact || composerVisible)
-              ? navigationBar
-              : null,
-          bodyBottomInset: floatingNavInset,
-          composerVisible: composerVisible,
-          navigationWidth: ShellDockMetrics.widthFor(
-            MediaQuery.sizeOf(context).width,
-          ),
-          hideIdleNavigation: railMode,
-          fixedZones: true,
-          dockLeading: showBottomNav && !railMode ? dockBack : null,
-        ),
+        bodyBottomInset: showBottomNav ? _floatingNavBodyInset() : 0,
+        composerVisible: composerVisible,
+        navigationWidth: ShellDockMetrics.widthFor(windowSize.width),
+        hideIdleNavigation: railMode,
+        fixedZones: true,
+        dockLeading: showBottomNav && !railMode ? dockBack : null,
       ),
     );
   }
 
-  // Retained while the layered compact-shell variant is still under review.
+  Widget _compactFooter(Widget navigationBar) => ShellCompactFooter(
+    background: AppearanceScope.hasAmbientBackground(context)
+        ? Colors.transparent
+        : shad.Theme.of(context).colorScheme.background,
+    child: ShellKeyboardChrome(
+      keyboardVisible: MediaQuery.viewInsetsOf(context).bottom > 0,
+      child: navigationBar,
+    ),
+  );
+
+  // Retained for the layered compact-shell variant.
   // ignore: unused_element
   Widget _buildLayeredCompactLayout(
     BuildContext context,
     AppTabState state,
     AppModule activeModule,
   ) {
-    final globalBody = _cachedGlobalBody ?? const DashboardPage();
-    final activeMiniNavItems = activeModule.miniAppNavItemsFor(context);
-    final miniItems = _buildMiniAppNavItems(
-      context,
-      activeModule,
-      activeMiniNavItems,
-    );
-    final miniSelectedKey = _miniSelectedKey(context, activeMiniNavItems);
-    final globalSelectedKey = _selectedKeyForLocation(_bodyLocation);
-    final isCompact = _usesCompactNavigation(context);
+    final items = activeModule.miniAppNavItemsFor(context);
+    final mini = _showMiniNav;
+    final compact = _usesCompactNavigation(context);
     final showBottomNav = MediaQuery.viewInsetsOf(context).bottom <= 0;
-    final compactMiniItems = <Widget>[
-      ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: _ShellPageState._compactMiniBackButtonMinWidth,
-        ),
-        child: miniItems.first,
-      ),
-      ...miniItems.skip(1).map((item) => Expanded(child: item)),
-    ];
-    final navigationBar = _buildNavigationBarContainer(
-      context: context,
-      isCompact: isCompact,
-      child: _buildFloatingNavigationBar(
-        context: context,
-        isCompact: isCompact,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onHorizontalDragEnd: _onNavBarHorizontalDragEnd,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 180),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: _showMiniNav
-                ? (isCompact
-                      ? shad.NavigationBar(
-                          key: _ShellPageState._miniLayerKey,
-                          selectedKey: miniSelectedKey,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 4,
-                          ),
-                          onSelected: (key) => _onMiniAppItemTapped(
-                            key,
-                            context,
-                            activeModule,
-                            activeMiniNavItems,
-                          ),
-                          children: compactMiniItems,
-                        )
-                      : CustomNavigationBar(
-                          key: _ShellPageState._miniLayerKey,
-                          selectedKey: miniSelectedKey,
-                          onSelected: (key) => _onMiniAppItemTapped(
-                            key,
-                            context,
-                            activeModule,
-                            activeMiniNavItems,
-                          ),
-                          expandItems: false,
-                          minItemWidth:
-                              _ShellPageState._floatingNavMinItemWidth,
-                          children: miniItems,
-                        ))
-                : Builder(
-                    builder: (navContext) => Listener(
-                      behavior: HitTestBehavior.translucent,
-                      onPointerDown: (event) =>
-                          _startLongPressTimer(event, navContext),
-                      onPointerUp: (event) =>
-                          _handlePointerUp(event, navContext),
-                      onPointerCancel: _stopLongPressTimer,
-                      child: isCompact
-                          ? shad.NavigationBar(
-                              key: _ShellPageState._globalLayerKey,
-                              selectedKey: globalSelectedKey,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              onSelected: (key) =>
-                                  _onItemTapped(_routeForRootKey(key), context),
-                              children: _buildNavItems(
-                                context,
-                                context.l10n,
-                              ).map((item) => Expanded(child: item)).toList(),
-                            )
-                          : CustomNavigationBar(
-                              key: _ShellPageState._globalLayerKey,
-                              selectedKey: globalSelectedKey,
-                              onSelected: (key) =>
-                                  _onItemTapped(_routeForRootKey(key), context),
-                              expandItems: false,
-                              minItemWidth:
-                                  _ShellPageState._floatingNavMinItemWidth,
-                              children: _buildNavItems(context, context.l10n),
-                            ),
-                    ),
-                  ),
-          ),
-        ),
+    final destinations = mini
+        ? _buildMiniAppNavItems(context, activeModule, items)
+        : _buildNavItems(context, context.l10n);
+    final navKey = mini
+        ? _ShellPageState._miniLayerKey
+        : _ShellPageState._globalLayerKey;
+    final selected = mini
+        ? _miniSelectedKey(context, items)
+        : _selectedKeyForLocation(_bodyLocation);
+    void onSelected(Key? key) {
+      if (mini) {
+        _onMiniAppItemTapped(key, context, activeModule, items);
+      } else {
+        _onItemTapped(_routeForRootKey(key), context);
+      }
+    }
+
+    final navigationBar = ShellLayeredNavigation(
+      compact: compact,
+      mini: mini,
+      navKey: navKey,
+      selected: selected,
+      destinations: destinations,
+      onSelected: onSelected,
+      minItemWidth: _ShellPageState._floatingNavMinItemWidth,
+      miniBackWidth: _ShellPageState._compactMiniBackButtonMinWidth,
+      compactHeight: _ShellPageState._compactBottomNavHeight,
+      onHorizontalDragEnd: _onNavBarHorizontalDragEnd,
+      wrapGlobal: (navContext, child) => Listener(
+        key: navKey,
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (event) => _startLongPressTimer(event, navContext),
+        onPointerUp: (event) => _handlePointerUp(event, navContext),
+        onPointerCancel: _stopLongPressTimer,
+        child: child,
       ),
     );
-    final pageView = PageView(
+    final pages = ShellLayeredPages(
       controller: _layerController,
-      physics: const NeverScrollableScrollPhysics(),
       onPageChanged: (page) {
         _setShellState(() {
           _activeLayerPage = page;
           _syncingLayerPage = false;
         });
       },
-      children: [
-        KeyedSubtree(key: _ShellPageState._globalLayerKey, child: globalBody),
-        KeyedSubtree(
-          key: _ShellPageState._miniLayerKey,
-          child: _buildNormalizedChild(),
-        ),
-      ],
+      globalBody: KeyedSubtree(
+        key: _ShellPageState._globalLayerKey,
+        child: _cachedGlobalBody ?? const DashboardPage(),
+      ),
+      miniBody: KeyedSubtree(
+        key: _ShellPageState._miniLayerKey,
+        child: _buildNormalizedChild(),
+      ),
     );
-
     return shad.Scaffold(
-      footers: showBottomNav && isCompact
-          ? [
-              _buildCompactFooter(
-                context: context,
-                navigationBar: navigationBar,
-              ),
-            ]
-          : const [],
-      child: showBottomNav && !isCompact
+      footers: showBottomNav && compact ? [_compactFooter(navigationBar)] : [],
+      child: showBottomNav && !compact
           ? _buildBodyWithFloatingNav(
-              body: pageView,
+              body: pages,
               navigationBar: navigationBar,
               bodyBottomInset: _floatingNavBodyInset(),
             )
-          : pageView,
+          : pages,
     );
   }
 
@@ -639,42 +382,16 @@ extension _ShellPageLayout on _ShellPageState {
                   child: ShellTopBarTitle(
                     key: ValueKey(location),
                     matchedLocation: location,
-                    fallbackTitle: _selectedMiniNavTitle(
+                    fallbackTitle: shellSidebarDestinationTitle(
                       context,
                       activeModule: activeModule,
-                      injectedMiniNavRegistration: injectedMiniNavRegistration,
+                      registration: injectedMiniNavRegistration,
+                      selectedIndex: (items) => _miniSelectedIndex(location, items),
                     ),
                   ),
                 ),
               ),
             ),
-    );
-  }
-
-  String? _selectedMiniNavTitle(
-    BuildContext context, {
-    AppModule? activeModule,
-    ShellMiniNavRegistration? injectedMiniNavRegistration,
-  }) {
-    if (injectedMiniNavRegistration != null) {
-      for (final item in injectedMiniNavRegistration.items) {
-        if (item.selected) {
-          return item.label;
-        }
-      }
-    }
-
-    if (activeModule == null) {
-      return null;
-    }
-
-    final items = activeModule.miniAppNavItemsFor(context);
-    if (items.isEmpty) {
-      return activeModule.label(context.l10n);
-    }
-
-    return items[_miniSelectedIndex(widget.matchedLocation, items)].label(
-      context.l10n,
     );
   }
 }

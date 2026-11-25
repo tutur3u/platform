@@ -3,66 +3,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
-import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
+import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
+import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_account.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_brand.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_dock_layout.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_frame.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
+import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 export 'package:mobile/features/shell/view/shell_sidebar_account.dart';
-
-/// How the shell presents its primary navigation for the current width.
-enum ShellNavigationMode {
-  /// Floating bottom dock (phones and portrait tablets).
-  dock,
-
-  /// Leading vertical rail (landscape tablets, laptops and desktops).
-  rail,
-}
-
-/// Picks the shell navigation mode for a window [size].
-///
-/// The rail needs an expanded width (>= 840dp) on a tablet-or-larger window
-/// (shortest side >= 600dp). Phones keep the floating dock in landscape too.
-ShellNavigationMode shellNavigationModeFor(Size size) =>
-    size.width >= AppLayout.navigationRailMinWidth &&
-        size.shortestSide >= Breakpoints.mediumMin
-    ? ShellNavigationMode.rail
-    : ShellNavigationMode.dock;
-
-/// Window width from which the rail extends into a labelled sidebar
-/// (13-inch laptops and wider windows).
-const double shellSidebarMinWidth = 1280;
-
-/// Width of the icon rail, excluding the leading safe area.
-const double shellNavigationRailExtent = 80;
-
-/// Width of the labelled sidebar, excluding the leading safe area.
-const double shellNavigationSidebarExtent = 240;
-
-/// Size of one rail destination; matches the dock's 52dp slots.
-const double shellNavigationRailSlot = 52;
-
-/// Height of one labelled sidebar destination.
-const double shellNavigationSidebarRowHeight = 48;
-
-/// Whether a rail-mode window of [size] shows the labelled sidebar.
-bool shellNavigationExtendedFor(Size size) =>
-    shellNavigationModeFor(size) == ShellNavigationMode.rail &&
-    size.width >= shellSidebarMinWidth;
-
-/// Leading navigation width for a window of [size], excluding the safe
-/// area: 0 with the dock, the rail or the sidebar width otherwise.
-double shellNavigationExtentFor(Size size) =>
-    switch (shellNavigationModeFor(size)) {
-      ShellNavigationMode.dock => 0,
-      ShellNavigationMode.rail =>
-        shellNavigationExtendedFor(size)
-            ? shellNavigationSidebarExtent
-            : shellNavigationRailExtent,
-    };
+export 'package:mobile/features/shell/view/shell_sidebar_body.dart';
+export 'package:mobile/features/shell/view/shell_sidebar_destination_title.dart';
+export 'package:mobile/features/shell/view/shell_sidebar_dock_layout.dart';
+export 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 
 /// Full-height leading navigation for wide layouts, with Back and a
 /// persistent brand header and account footer.
@@ -78,6 +37,8 @@ class ShellNavigationRail extends StatelessWidget {
     required this.onSelected,
     this.footer,
     this.leading,
+    this.modeMenu,
+    this.onBrandTap,
     this.extended = false,
     super.key,
   });
@@ -87,6 +48,8 @@ class ShellNavigationRail extends StatelessWidget {
   final ValueChanged<Key?> onSelected;
   final Widget? footer;
   final Widget? leading;
+  final Widget? modeMenu;
+  final VoidCallback? onBrandTap;
   final bool extended;
 
   @override
@@ -128,7 +91,16 @@ class ShellNavigationRail extends StatelessWidget {
               child: Column(
                 spacing: AppSpacing.sm,
                 children: [
-                  ShellSidebarBrand(extended: extended),
+                  if (onBrandTap case final reveal?)
+                    Tooltip(
+                      message: context.l10n.appearanceSidebarOpen,
+                      child: InkWell(
+                        onTap: reveal,
+                        child: ShellSidebarBrand(extended: extended),
+                      ),
+                    )
+                  else
+                    ShellSidebarBrand(extended: extended),
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
@@ -149,6 +121,7 @@ class ShellNavigationRail extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (modeMenu case final menu?) menu,
                   if (footer case final account?) account,
                 ],
               ),
@@ -272,62 +245,147 @@ String? shellNavigationItemLabel(shad.NavigationItem item) {
   return label == null || label.isEmpty ? null : label;
 }
 
-/// Places [rail] on the leading edge and [body] beside it.
-///
-/// Both modes build the same tree shape (a [Stack] whose first child holds
-/// the body under a stable key), so switching between dock and rail on
-/// rotation, resize or immersive toggles never remounts the body, its root
-/// tabs or the dock. The rail consumes the leading horizontal safe area, so
-/// it is removed from the body's MediaQuery.
-///
-/// The rail paints after the body: routed pages may contain `BlockSemantics`,
-/// which would otherwise drop the semantics of a rail painted before them.
-class AdaptiveShellFrame extends StatelessWidget {
-  const AdaptiveShellFrame({
+class ShellSidebarScaffold extends StatelessWidget {
+  const ShellSidebarScaffold({
+    required this.location,
+    required this.showSidebar,
+    required this.includeWorkspacePicker,
+    required this.items,
+    required this.selectedKey,
+    required this.onSelected,
+    required this.onProfileSelected,
     required this.body,
-    this.rail,
-    this.railExtent = shellNavigationRailExtent,
+    this.compactFooter,
+    this.back,
     super.key,
   });
 
+  final String location;
+  final bool showSidebar;
+  final bool includeWorkspacePicker;
+  final List<shad.NavigationItem> items;
+  final Key? selectedKey;
+  final ValueChanged<Key?> onSelected;
+  final VoidCallback onProfileSelected;
   final Widget body;
-  final Widget? rail;
+  final Widget? compactFooter;
+  final ShellDockBackZone? back;
 
-  /// Width of [rail] before the leading safe area: the icon rail or the
-  /// labelled sidebar ([shellNavigationExtentFor]).
-  final double railExtent;
+  @override
+  Widget build(BuildContext context) => shad.Scaffold(
+    footers: [if (compactFooter case final footer?) footer],
+    child: ShellSidebarFrame(
+      location: location,
+      railBuilder: showSidebar ? _buildRail : null,
+      body: body,
+    ),
+  );
+
+  Widget _buildRail(
+    bool extended,
+    Widget modeMenu,
+    VoidCallback dismiss, {
+    VoidCallback? onBrandTap,
+  }) {
+    final back = this.back;
+    return ShellNavigationRail(
+      leading: back == null
+          ? null
+          : ShellDockBackZone(
+              back: back.back,
+              onTap: () {
+                dismiss();
+                back.onTap();
+              },
+              onLongPress: () {
+                dismiss();
+                back.onLongPress?.call();
+              },
+            ),
+      modeMenu: modeMenu,
+      onBrandTap: onBrandTap,
+      items: items,
+      selectedKey: selectedKey,
+      onSelected: (key) {
+        dismiss();
+        onSelected(key);
+      },
+      extended: extended,
+      footer: ShellSidebarAccount(
+        extended: extended,
+        matchedLocation: location,
+        includeWorkspacePicker: includeWorkspacePicker,
+        onProfileSelected: () {
+          dismiss();
+          onProfileSelected();
+        },
+      ),
+    );
+  }
+}
+
+class ShellLayeredNavigation extends StatelessWidget {
+  const ShellLayeredNavigation({
+    required this.compact,
+    required this.mini,
+    required this.navKey,
+    required this.selected,
+    required this.destinations,
+    required this.onSelected,
+    required this.minItemWidth,
+    required this.miniBackWidth,
+    required this.compactHeight,
+    required this.onHorizontalDragEnd,
+    required this.wrapGlobal,
+    super.key,
+  });
+
+  final bool compact;
+  final bool mini;
+  final Key navKey;
+  final Key? selected;
+  final List<shad.NavigationItem> destinations;
+  final ValueChanged<Key?> onSelected;
+  final double minItemWidth;
+  final double miniBackWidth;
+  final double compactHeight;
+  final ValueChanged<DragEndDetails> onHorizontalDragEnd;
+  final Widget Function(BuildContext, Widget) wrapGlobal;
 
   @override
   Widget build(BuildContext context) {
-    final rail = this.rail;
-    final rtl = Directionality.of(context) == TextDirection.rtl;
-    final padding = MediaQuery.paddingOf(context);
-    final extent = rail == null
-        ? 0.0
-        : railExtent + (rtl ? padding.right : padding.left);
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Padding(
-          key: const ValueKey('adaptive-shell-body'),
-          padding: EdgeInsetsDirectional.only(start: extent),
-          child: MediaQuery.removePadding(
-            context: context,
-            removeLeft: rail != null && !rtl,
-            removeRight: rail != null && rtl,
-            child: body,
-          ),
-        ),
-        if (rail != null)
-          PositionedDirectional(
-            key: const ValueKey('adaptive-shell-rail'),
-            start: 0,
-            top: 0,
-            bottom: 0,
-            width: extent,
-            child: rail,
-          ),
-      ],
+    final navigation = compact
+        ? shad.NavigationBar(
+            key: navKey,
+            selectedKey: selected,
+            padding: EdgeInsets.symmetric(horizontal: mini ? 4 : 8, vertical: 4),
+            onSelected: onSelected,
+            children: [
+              for (final (index, item) in destinations.indexed)
+                if (mini && index == 0)
+                  ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: miniBackWidth),
+                    child: item,
+                  )
+                else
+                  Expanded(child: item),
+            ],
+          )
+        : CustomNavigationBar(
+            key: navKey,
+            selectedKey: selected,
+            onSelected: onSelected,
+            expandItems: false,
+            minItemWidth: minItemWidth,
+            children: destinations,
+          );
+    return ShellLayeredDock(
+      compact: compact,
+      compactHeight: compactHeight,
+      onHorizontalDragEnd: onHorizontalDragEnd,
+      child: mini
+          ? navigation
+          : Builder(builder: (context) => wrapGlobal(context, navigation)),
     );
   }
 }
