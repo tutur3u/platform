@@ -15,6 +15,11 @@ const ALLOWED_ENVIRONMENTS = {
     'lettin-production',
     'meet-cloudflare-production',
     'meet-production',
+    'wave1-whiteboards-production',
+  ],
+  TUTURUUU_APP_COORDINATION_SECRET: [
+    'lettin-production',
+    'wave1-whiteboards-production',
   ],
   SUPABASE_ACCESS_TOKEN: [
     'supabase-family-key',

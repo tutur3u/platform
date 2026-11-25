@@ -58,6 +58,35 @@ report mode (`TTR_TRUSTED_TYPES_WHITEBOARDS` unset or `report`) until a
 signed-in crawl of the editor shows no violations; moving it to `enforce` is a
 separate reviewed change.
 
+## Worker secrets
+
+`whiteboards-worker-secrets.yaml` is a dispatch-only job in the protected
+environment `wave1-whiteboards-production` (restricted to `main`). It writes the
+Worker secrets from GitHub secrets, by name, and reads the names and types back;
+no person or agent handles a value, GitHub masks them, and a value that is
+missing, shaped wrong or a placeholder stops the job before any write.
+
+| Worker secret | GitHub secret | Needed |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `PRODUCTION_SUPABASE_URL` (repository, inherited) | required |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` (repository, inherited) | required |
+| `SUPABASE_SECRET_KEY` | `PRODUCTION_SUPABASE_SECRET_KEY` (repository, inherited) | required |
+| `TUTURUUU_APP_COORDINATION_SECRET` | `TUTURUUU_APP_COORDINATION_SECRET` | optional |
+| `APP_COORDINATION_TOKEN_SECRET` | `APP_COORDINATION_TOKEN_SECRET` | optional |
+
+The two coordination secrets are one value shared by every app, which no agent can
+copy, so the job treats them as optional exactly as Lettin's deploy does: the
+signer chain falls back to `SUPABASE_SECRET_KEY` (see
+[app coordination secret rollout](/build/devops/app-coordination-secret-rollout)).
+Check cross-app sign-in into Whiteboards on that fallback during the smoke, and
+set the shared value later through the owner's secret process.
+
+The Cloudflare credential is `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` in the same
+environment: Workers Scripts write. `node scripts/ci/whiteboards-worker-secrets.mjs plan`
+prints the mapping; `scripts/ci/whiteboards-worker-secrets.test.mjs` pins it.
+Create the environment first, restricted to `main`; GitHub creates an
+unprotected one on first use, which would fall back to repository secrets.
+
 ## Build and qualification
 
 `whiteboards-cloudflare.yaml` runs the reusable native workflow (build, routes,
@@ -91,9 +120,11 @@ so the product keeps working until the app is live. Each step is verified before
    no gateway route exists. The launcher and the Apps catalog list Whiteboards at
    `whiteboards.tuturuuu.com`, so do step 2 straight after this lands.
 2. **Publish the sealed production artifact** from the exact release SHA:
-   provision the four Worker secrets first, upload the route-free
-   `tuturuuu-whiteboards` build, then attach `whiteboards.tuturuuu.com` to it so
-   the launcher link works. Record the Worker version.
+   upload the route-free `tuturuuu-whiteboards` build (a new Worker cannot take
+   secrets before it exists, and it answers 503 until it has them), dispatch
+   [Whiteboards Worker Secrets](#worker-secrets) on `main`, then attach
+   `whiteboards.tuturuuu.com` to it so the launcher link works. Record the
+   Worker version.
 3. **Signed-in crawl** of the board list and one editor session through a
    `Cloudflare-Workers-Version-Overrides` staged version; check realtime
    (two members on one board), image upload and the Trusted Types report log.
