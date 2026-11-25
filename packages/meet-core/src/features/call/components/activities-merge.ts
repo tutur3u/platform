@@ -4,6 +4,7 @@ import {
   MERGED_TILE_ID,
   type MergedActivityKind,
   mergedKindOf,
+  PEN_FIRST_WHITEBOARD_IDS,
 } from '../stage-layout/merged-activities';
 import type { ActivityTile } from './activities-pages';
 
@@ -25,14 +26,21 @@ const sourceId = (tile: ActivityTile) => tile.stageId ?? tile.id;
  * best older entry this person has (see `MERGED_ACTIVITY_IDS`), with its
  * launch action, stage id or page, under the merged name. It sits where the
  * first of its older entries was; the other older entries leave the list.
+ * `penBoardFirst` puts the pen board ahead of the Tuturuuu Whiteboard (see
+ * `whiteboardPolicy`).
  */
 export function mergeActivityTiles(
   tiles: readonly ActivityTile[],
-  copy: MergedTileCopy
+  copy: MergedTileCopy,
+  { penBoardFirst = false }: { penBoardFirst?: boolean } = {}
 ): ActivityTile[] {
+  const order = (kind: MergedActivityKind) =>
+    kind === 'whiteboard' && penBoardFirst
+      ? PEN_FIRST_WHITEBOARD_IDS
+      : MERGED_ACTIVITY_IDS[kind];
   const chosen = new Map<MergedActivityKind, ActivityTile>();
   for (const kind of Object.keys(MERGED_ACTIVITY_IDS) as MergedActivityKind[])
-    for (const id of MERGED_ACTIVITY_IDS[kind]) {
+    for (const id of order(kind)) {
       const tile = tiles.find((entry) => sourceId(entry) === id);
       if (!tile) continue;
       chosen.set(kind, tile);

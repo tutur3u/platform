@@ -21,11 +21,13 @@ export function accountGatedCollaboration(
   document: ComponentProps<typeof DocumentPanel> | null,
   board: {
     show: boolean;
+    /** Guests may open it (`whiteboardPolicy`); the server still decides. */
+    guests?: boolean;
     props: ComponentProps<typeof BoardPanel>;
   } | null = null
 ) {
   if (board?.show)
-    return requiresAccount ? (
+    return requiresAccount && !board.guests ? (
       <AccountRequiredState />
     ) : (
       <BoardPanel {...board.props} />

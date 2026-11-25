@@ -297,6 +297,27 @@ describe('room page', () => {
     });
   });
 
+  it('passes the guest whiteboard switch to the room, off by default', async () => {
+    signIn('host');
+    mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
+    const previous = process.env.MEET_GUEST_WHITEBOARD;
+    try {
+      delete process.env.MEET_GUEST_WHITEBOARD;
+      expect(await loadPageModel(`/r/${code}`)).toMatchObject({
+        kind: 'room',
+        guestWhiteboard: false,
+      });
+      process.env.MEET_GUEST_WHITEBOARD = 'true';
+      expect(await loadPageModel(`/r/${code}`)).toMatchObject({
+        kind: 'room',
+        guestWhiteboard: true,
+      });
+    } finally {
+      if (previous === undefined) delete process.env.MEET_GUEST_WHITEBOARD;
+      else process.env.MEET_GUEST_WHITEBOARD = previous;
+    }
+  });
+
   it('keeps the host private meta when public previews are off', async () => {
     signIn('host');
     mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });

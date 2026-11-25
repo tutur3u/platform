@@ -7,7 +7,10 @@ import {
 } from '../components/room-navigation-policy';
 import { useRoomNavigation } from '../hooks/use-room-navigation';
 import { paneOfActivity } from './layout-model';
-import { useStageNavigation } from './use-stage-navigation';
+import {
+  canMirrorActivity,
+  useStageNavigation,
+} from './use-stage-navigation';
 import { useStageLayout } from './use-stage-layout';
 
 vi.mock('../hooks/use-room-navigation', () => ({
@@ -161,4 +164,15 @@ it('returns to the previous activity without notifying incoming navigation', () 
   act(() => back?.());
   expect(stage.focused).toBe('programming');
   expect(onNavigate).toHaveBeenCalledTimes(1);
+});
+
+it('lets a guest follow onto the Tuturuuu Whiteboard only when allowed', () => {
+  const guest = { browse: true, account: false, tools: true, toolIds: [] };
+  expect(canMirrorActivity('board', guest, false)).toBe(false);
+  expect(canMirrorActivity('board', guest, true)).toBe(false);
+  expect(canMirrorActivity('board', guest, false, true)).toBe(true);
+  // The switch reaches only the board, never Co-Programming or the document.
+  expect(canMirrorActivity('programming', guest, true, true)).toBe(false);
+  expect(canMirrorActivity('document', guest, true, true)).toBe(false);
+  expect(canMirrorActivity('whiteboard', guest, false)).toBe(true);
 });

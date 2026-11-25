@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'bun:test';
 import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import {
+  BOARD_GUEST_LIMITS,
   BOARD_LIMITS,
   BOARD_TICKET_AUDIENCE,
   type BoardTicket,
@@ -385,4 +386,64 @@ test('a room closed by the platform reopens at the next join once the board is b
   (globalThis as any).__status = {};
   const reopened = await open(f, { userId: 'u3' });
   assert.equal(reopened.sent[0].type, 'sync');
+});
+
+test('holds a guest to half the message rate of a member', async () => {
+  const f = fixture();
+  const member = await open(f);
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  for (let i = 0; i <= BOARD_GUEST_LIMITS.messageRate; i++)
+    for (const socket of [member, guest])
+      await f.the.webSocketMessage(
+        socket as any,
+        JSON.stringify({ type: 'cursor', x: 1, y: 1 })
+      );
+  assert.equal(guest.closed, 1008);
+  assert.equal(member.closed, null);
+});
+
+test('refuses a guest message above the guest size budget', async () => {
+  const f = fixture();
+  const message = JSON.stringify({
+    type: 'elements',
+    changes: Array.from({ length: 5 }, (_, i) => ({
+      type: 'insert',
+      element: { ...rect(`wide${i}`), text: 'x'.repeat(60_000) },
+    })),
+  });
+  assert.ok(message.length > BOARD_GUEST_LIMITS.maxMessageBytes);
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  await f.the.webSocketMessage(guest as any, message);
+  assert.equal(guest.closed, 1009);
+  const member = await open(f, { userId: 'u2' });
+  await f.the.webSocketMessage(member as any, message);
+  assert.equal(member.closed, null);
+});
+
+test('caps the sockets one guest may hold on a board', async () => {
+  const f = fixture();
+  for (let i = 0; i < BOARD_GUEST_LIMITS.socketsPerUser; i++)
+    await open(f, { userId: 'g1', actorKind: 'guest' });
+  const refused = await f.join({ userId: 'g1', actorKind: 'guest' });
+  assert.equal(refused.status, 429);
+  assert.equal(f.sockets.length, BOARD_GUEST_LIMITS.socketsPerUser);
+  await open(f, { userId: 'g2', actorKind: 'guest' });
+  assert.equal(f.sockets.length, BOARD_GUEST_LIMITS.socketsPerUser + 1);
+});
+
+test('closes a guest viewer that tries to draw', async () => {
+  const f = fixture();
+  const viewer = await open(f, {
+    userId: 'g1',
+    actorKind: 'guest',
+    role: 'view',
+  });
+  await f.the.webSocketMessage(
+    viewer as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [{ type: 'insert', element: rect('a') }],
+    })
+  );
+  assert.equal(viewer.closed, 1008);
 });

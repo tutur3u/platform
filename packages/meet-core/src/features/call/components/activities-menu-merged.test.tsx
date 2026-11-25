@@ -47,7 +47,7 @@ afterEach(() => {
   ux.v2 = true;
 });
 
-function renderMenu(withBoard = true) {
+function renderMenu(withBoard = true, penBoardFirst = false) {
   const action = () => ({ active: false, toggle: vi.fn() });
   const board = action();
   const classroom = action();
@@ -59,6 +59,7 @@ function renderMenu(withBoard = true) {
           tools={[polls, timers, pen]}
           openToolIds={[]}
           onTool={onTool}
+          penBoardFirst={penBoardFirst}
           collaboration={{
             programming: action(),
             document: action(),
@@ -126,6 +127,15 @@ it('opens the pen board as the Whiteboard where the board is not offered', () =>
   );
   expect(onTool).toHaveBeenCalledWith('pen-whiteboard');
   expect(classroom.toggle).not.toHaveBeenCalled();
+});
+
+it('opens the pen board in a room with a guest who cannot open the board', () => {
+  const { board, onTool } = renderMenu(true, true);
+  fireEvent.click(
+    screen.getByRole('button', { name: `Start ${a.merged.whiteboard}` })
+  );
+  expect(onTool).toHaveBeenCalledWith('pen-whiteboard');
+  expect(board.toggle).not.toHaveBeenCalled();
 });
 
 it('keeps every older entry without Meet UX v2', () => {

@@ -57,6 +57,19 @@ describe('mergeActivityTiles', () => {
     ]);
   });
 
+  it('opens the pen board first while a guest could not open the board', () => {
+    const merged = mergeActivityTiles([board, pen, classroom], copy, {
+      penBoardFirst: true,
+    });
+    expect(merged).toEqual([
+      expect.objectContaining({ id: 'whiteboard', stageId: pen.stageId }),
+    ]);
+    // Without the pen board or the classroom board, the board still opens.
+    expect(
+      mergeActivityTiles([board], copy, { penBoardFirst: true })[0]
+    ).toMatchObject({ stageId: 'board' });
+  });
+
   it('lists one Timer: the pane when it is offered, else the room page', () => {
     const both = mergeActivityTiles([timers, polls, roomTimer], copy);
     expect(both.map((entry) => entry.id)).toEqual(['timer', 'polls']);

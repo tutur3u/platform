@@ -92,6 +92,7 @@ const guest = () =>
 
 beforeEach(() => {
   process.env.MEET_REALTIME_TOKEN_SECRET = 'disposable-test-secret';
+  process.env.MEET_GUEST_WHITEBOARD = 'true';
   fx.room.mockReset().mockResolvedValue({});
   fx.rpc.mockReset();
   fx.perm.mockReset().mockResolvedValue({ data: false, error: null });
@@ -178,6 +179,76 @@ describe('join', () => {
         status: 403,
       }
     );
+  });
+});
+
+describe('anonymous guests', () => {
+  it('refuses every board read while the guest whiteboard is off', async () => {
+    for (const value of [undefined, 'false', '1', 'TRUE']) {
+      if (value === undefined) delete process.env.MEET_GUEST_WHITEBOARD;
+      else process.env.MEET_GUEST_WHITEBOARD = value;
+      await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject(
+        { status: 403 }
+      );
+      await expect(mod.listMeetingWhiteboards(guest())).rejects.toMatchObject({
+        status: 403,
+      });
+    }
+    expect(fx.room).not.toHaveBeenCalled();
+    // Signed-in people are not behind the switch.
+    expect(
+      (
+        await mod.joinMeetingWhiteboard(
+          member({ canReadWorkspace: false, isHost: false }),
+          b1
+        )
+      ).role
+    ).toBe('view');
+  });
+
+  it('needs a guest connected to the room for every read', async () => {
+    await mod.joinMeetingWhiteboard(guest(), b1);
+    await mod.listMeetingWhiteboards(guest());
+    expect(fx.room.mock.calls.map((call) => call[1])).toEqual([
+      { action: 'programming.read', mira: true },
+      { action: 'programming.read', mira: true },
+    ]);
+  });
+
+  it('ends access when the guest leaves or is removed', async () => {
+    const first = await mod.joinMeetingWhiteboard(guest(), b1);
+    expect(first.refreshSeconds).toBeLessThanOrEqual(60);
+    const ticket = verifyRealtimePayload(
+      first.token,
+      'disposable-test-secret'
+    ) as { exp: number };
+    expect(ticket.exp * 1000 - Date.now()).toBeLessThanOrEqual(120_000);
+    // The room refuses a guest who is no longer connected, so no renewal.
+    fx.room.mockRejectedValue(Object.assign(new Error('no'), { status: 403 }));
+    await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject({
+      status: 403,
+    });
+  });
+
+  it('ends access when the board leaves the meeting', async () => {
+    fx.links = [];
+    await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect((await mod.listMeetingWhiteboards(guest())).links).toEqual([]);
+  });
+
+  it('never reaches a board linked to another meeting or workspace', async () => {
+    const other = '44444444-5555-4666-8777-888888888888';
+    await expect(
+      mod.joinMeetingWhiteboard(guest(), other)
+    ).rejects.toMatchObject({ status: 404 });
+    fx.links = [
+      { whiteboard_id: b1, ws_id: 'another-workspace', guest_access: 'draw' },
+    ];
+    await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject({
+      status: 404,
+    });
   });
 });
 

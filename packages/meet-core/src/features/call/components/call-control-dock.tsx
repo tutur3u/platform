@@ -70,6 +70,7 @@ export function CallControlDock({
   programming,
   document,
   board,
+  penBoardFirst,
   layout,
   setLayout,
   nav,
@@ -105,6 +106,8 @@ export function CallControlDock({
   document: Toggle;
   /** Absent where the person cannot use the board, such as a v2 guest. */
   board?: Toggle;
+  /** The Whiteboard entry opens the pen board first (`whiteboardPolicy`). */
+  penBoardFirst?: boolean;
   layout: CallLayout;
   setLayout: (layout: CallLayout) => void;
   nav: RoomNavigation;
@@ -136,6 +139,7 @@ export function CallControlDock({
       extra={activities.entries}
       pages={pages}
       navigationAllowed={nav.allowed}
+      penBoardFirst={penBoardFirst}
       navigation={
         revealActivity
           ? {

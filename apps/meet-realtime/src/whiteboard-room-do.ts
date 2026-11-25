@@ -28,6 +28,7 @@ import {
   boardChangeSchema,
   boardCheckpointResultSchema,
   boardClientMessage,
+  boardSocketBudget,
   boardTicketSchema,
 } from '../../../packages/realtime/src/meet/board-sync-schema';
 
@@ -214,6 +215,13 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       return new Response(null, { status: 403 });
     if (this.sockets().length >= BOARD_LIMITS.maxSockets)
       return new Response('Room full', { status: 429 });
+    const perUser = boardSocketBudget(ticket.data.actorKind).socketsPerUser;
+    if (
+      this.sockets().filter(
+        (socket) => this.attachment(socket).ticket.userId === ticket.data.userId
+      ).length >= perUser
+    )
+      return new Response('Too many connections', { status: 429 });
     this.identity ??= { meetingId, wsId, boardId };
     // The fence keeps every storage write off; the identity is stored on the
     // first join after it lifts, which a flush after eviction needs.
@@ -275,16 +283,17 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     const attachment = this.attachment(socket);
     if (attachment.ticket.exp * 1000 <= Date.now())
       return socket.close(1008, 'Ticket expired');
+    const budget = boardSocketBudget(attachment.ticket.actorKind);
     if (
       typeof data !== 'string' ||
-      new TextEncoder().encode(data).length > BOARD_LIMITS.maxMessageBytes
+      new TextEncoder().encode(data).length > budget.maxMessageBytes
     )
       return socket.close(1009, 'Message exceeds limit');
     if (Date.now() - attachment.windowAt >= 1000) {
       attachment.windowAt = Date.now();
       attachment.messages = 0;
     }
-    if (++attachment.messages > BOARD_LIMITS.messageRate)
+    if (++attachment.messages > budget.messageRate)
       return socket.close(1008, 'Message rate exceeded');
     socket.serializeAttachment(attachment);
     let message: ReturnType<typeof boardClientMessage.parse>;

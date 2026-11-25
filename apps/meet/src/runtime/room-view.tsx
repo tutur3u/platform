@@ -118,6 +118,7 @@ export function RoomView({
           requiresAccount={requiresAccount}
           formsEnabled={model.formsEnabled}
           meetUxV2={model.meetUxV2}
+          guestWhiteboard={model.guestWhiteboard}
           nameSetup={nameSetup}
           formsTurnstileSiteKey={model.formsTurnstileSiteKey}
           classroomToolsEnabled={model.classroomToolsEnabled}

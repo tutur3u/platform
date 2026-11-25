@@ -20,6 +20,7 @@ import {
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
 import { channelEndpoint } from './documents';
+import { isMeetGuestWhiteboardEnabled } from './guest-whiteboard';
 import { callRoomService, type MeetCallRouteAccess } from './room-service';
 
 type Access = MeetCallRouteAccess;
@@ -63,6 +64,20 @@ const isGuest = (access: Access) => 'guest' in access && access.guest === true;
 /** The room proves lifecycle and admission before any board is shown. */
 const proveAdmission = (access: Access) =>
   callRoomService(access, { action: 'programming.read' });
+
+/**
+ * Board reads for an anonymous guest need the guest whiteboard switch and a
+ * live connection to the room: the presence-scoped read (`mira: true`) refuses
+ * a guest who left, was removed or was only remembered as approved. Tickets
+ * last two minutes and are renewed through this check, so a guest who leaves
+ * loses the board within that time.
+ */
+async function proveBoardAdmission(access: Access) {
+  if (!isGuest(access)) return proveAdmission(access);
+  if (!isMeetGuestWhiteboardEnabled())
+    throw new MeetCallAccessError(403, 'Whiteboard access denied');
+  return callRoomService(access, { action: 'programming.read', mira: true });
+}
 
 function whiteboardEndpoint() {
   const url = channelEndpoint();
@@ -117,7 +132,7 @@ const roleOf = (access: Access, level: BoardGuestAccess) =>
   );
 
 export async function listMeetingWhiteboards(access: Access) {
-  await proveAdmission(access);
+  await proveBoardAdmission(access);
   const db = await adminDb();
   const { ws_id: wsId, id: meetingId } = access.meeting;
   const [links, manage] = await Promise.all([
@@ -164,7 +179,7 @@ export async function listMeetingWhiteboards(access: Access) {
 }
 
 export async function joinMeetingWhiteboard(access: Access, id: string) {
-  await proveAdmission(access);
+  await proveBoardAdmission(access);
   const db = await adminDb();
   const { ws_id: wsId, id: meetingId } = access.meeting;
   const link = (await readLinks(db, meetingId)).find(

@@ -27,6 +27,16 @@ export const MERGED_ACTIVITY_IDS: Readonly<
   timer: [PERSONAL_TIMER_ACTIVITY, CLASS_TIMER_PAGE],
 };
 
+/**
+ * The whiteboard order while a guest in the room cannot open the Tuturuuu
+ * Whiteboard: the pen board everyone can draw on comes first.
+ */
+export const PEN_FIRST_WHITEBOARD_IDS: readonly string[] = [
+  PEN_WHITEBOARD_ACTIVITY,
+  CLASSROOM_WHITEBOARD_ACTIVITY,
+  BOARD_ACTIVITY,
+];
+
 /** The merged kind a stage id or catalog id stands for, if any. */
 export function mergedKindOf(id: string | null | undefined) {
   if (!id) return null;

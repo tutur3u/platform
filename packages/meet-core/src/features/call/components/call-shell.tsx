@@ -67,6 +67,7 @@ import { RoomStage } from '../stage-layout/room-stage';
 import { useStageLayout } from '../stage-layout/use-stage-layout';
 import { useStageNavigation } from '../stage-layout/use-stage-navigation';
 import { useDefaultActivity } from '../stage-layout/use-default-activity';
+import { whiteboardPolicy } from '../stage-layout/whiteboard-policy';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { FollowBanner } from './room-navigation-controls';
 function CallShellContent({
@@ -76,6 +77,7 @@ function CallShellContent({
   canReadWorkspace = true,
   classroomToolsEnabled,
   requiresAccount = false,
+  guestWhiteboard = false,
   formsEnabled = false,
   formsTurnstileSiteKey,
   leaveHref,
@@ -92,6 +94,8 @@ function CallShellContent({
   canReadWorkspace?: boolean;
   classroomToolsEnabled?: boolean;
   requiresAccount?: boolean;
+  /** The server's `MEET_GUEST_WHITEBOARD` switch. */
+  guestWhiteboard?: boolean;
   formsEnabled?: boolean;
   formsTurnstileSiteKey?: string;
   leaveHref: string;
@@ -281,9 +285,17 @@ function CallShellContent({
   const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
   const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
   const showBoard = stage.isOpen(BOARD_ACTIVITY);
-  // Meet UX v2: one Timer pane with the room timer, and one Whiteboard that
-  // leaves the account-only board out for guests (see `mergeActivityTiles`).
+  // Meet UX v2: one Timer pane with the room timer, and one Whiteboard whose
+  // board depends on guests and the guest switch (see `whiteboardPolicy`).
   const merged = useMeetCallUx();
+  const whiteboard = whiteboardPolicy({
+    merged,
+    guestWhiteboard,
+    requiresAccount,
+    guestsPresent: Object.values(state.participants).some(
+      (person) => person.guest
+    ),
+  });
   const tools = useMeetTools({
     stage,
     meetingId,
@@ -323,6 +335,7 @@ function CallShellContent({
       tools: liveTools,
       toolIds: meetTools.map((tool) => tool.id),
     },
+    guestBoard: whiteboard.guestBoard,
   });
   // The host's default activity opens for everyone who joins, as a Summon
   // would: it is theirs for this session even where tools are for hosts.
@@ -492,6 +505,7 @@ function CallShellContent({
                 },
                 {
                   show: id === BOARD_ACTIVITY,
+                  guests: whiteboard.guestBoard,
                   props: {
                     meetingId,
                     accountId,
@@ -614,13 +628,14 @@ function CallShellContent({
           toggle: () => stage.toggle(DOCUMENT_ACTIVITY),
         }}
         board={
-          merged && requiresAccount
-            ? undefined
-            : {
+          whiteboard.offerBoard
+            ? {
                 active: showBoard,
                 toggle: () => stage.toggle(BOARD_ACTIVITY),
               }
+            : undefined
         }
+        penBoardFirst={whiteboard.penBoardFirst}
         layout={layout}
         setLayout={(next) => {
           setLayout(next);

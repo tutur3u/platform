@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef } from 'react';
 import {
   canOpenRoomView,
   currentRoomView,
+  type RoomViewAccess,
 } from '../components/room-navigation-policy';
 import { useRoomNavigation } from '../hooks/use-room-navigation';
 import {
@@ -17,6 +18,25 @@ import {
 } from './activity-ids';
 import { openActivities } from './layout-model';
 import type { StageLayoutController } from './use-stage-layout';
+
+/**
+ * Whether a leader's activity may open for this person while mirroring. The
+ * Tuturuuu Whiteboard needs an account like Co-Programming does, unless the
+ * server lets guests open it (`whiteboardPolicy`).
+ */
+export function canMirrorActivity(
+  id: string,
+  access: RoomViewAccess,
+  forced: boolean,
+  guestBoard = false
+) {
+  const board = id === BOARD_ACTIVITY;
+  const view = board
+    ? ({ surface: 'document' } as const)
+    : viewOfActivity(id);
+  const allowed = board && guestBoard ? { ...access, account: true } : access;
+  return !view || canOpenRoomView(view, allowed, forced);
+}
 
 export type ActivityNavigation = {
   id: string;
@@ -44,6 +64,7 @@ export function useStageNavigation({
   onSummoned,
   onNavigate,
   access,
+  guestBoard = false,
 }: {
   room: Parameters<typeof useRoomNavigation>[0]['room'];
   stage: Pick<
@@ -65,6 +86,8 @@ export function useStageNavigation({
   onSummoned?: (activityId: string) => void;
   onNavigate?: (navigation: ActivityNavigation) => void;
   access: Parameters<typeof useRoomNavigation>[0]['access'];
+  /** A guest may follow a leader onto the Tuturuuu Whiteboard. */
+  guestBoard?: boolean;
 }) {
   const latest = useRef(stage);
   latest.current = stage;
@@ -83,14 +106,8 @@ export function useStageNavigation({
       maximizedPaneId: layout.maximizedPaneId,
       nextId: 1,
     });
-    const keep = (id: string) => {
-      // The saved whiteboard needs an account like Co-Programming does.
-      const view =
-        id === BOARD_ACTIVITY
-          ? ({ surface: 'document' } as const)
-          : viewOfActivity(id);
-      return !view || canOpenRoomView(view, access, forced);
-    };
+    const keep = (id: string) =>
+      canMirrorActivity(id, access, forced, guestBoard);
     if (forced) {
       if (
         ids.some(

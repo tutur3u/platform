@@ -59,6 +59,7 @@ export function ActivitiesMenu({
   preview,
   navigationAllowed = false,
   navigation,
+  penBoardFirst = false,
 }: {
   tools: readonly MeetToolDefinition[];
   /** Ids of the tools open on the stage. */
@@ -77,6 +78,8 @@ export function ActivitiesMenu({
   /** Whether this person may Follow and Summon (`nav.allowed`). */
   navigationAllowed?: boolean;
   navigation?: ActivityNavigation;
+  /** Meet UX v2: the Whiteboard opens the pen board (`whiteboardPolicy`). */
+  penBoardFirst?: boolean;
 }) {
   const t = useTranslations('meet.call.activities');
   const programmingT = useTranslations('programmingPlayground');
@@ -170,19 +173,20 @@ export function ActivitiesMenu({
     ...pages,
   ];
   // Meet UX v2 lists one Whiteboard and one Timer; older kinds still open.
+  const mergedCopy = {
+    whiteboard: {
+      label: t('merged.whiteboard'),
+      description: t('merged.whiteboard_description'),
+      icon: PenTool,
+    },
+    timer: {
+      label: t('merged.timer'),
+      description: t('merged.timer_description'),
+      icon: Timer,
+    },
+  };
   const listed = merged
-    ? mergeActivityTiles(entries, {
-        whiteboard: {
-          label: t('merged.whiteboard'),
-          description: t('merged.whiteboard_description'),
-          icon: PenTool,
-        },
-        timer: {
-          label: t('merged.timer'),
-          description: t('merged.timer_description'),
-          icon: Timer,
-        },
-      })
+    ? mergeActivityTiles(entries, mergedCopy, { penBoardFirst })
     : entries;
   const tiles = listed.map((tile) => ({
     ...tile,

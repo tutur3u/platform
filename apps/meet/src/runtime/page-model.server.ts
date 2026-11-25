@@ -29,6 +29,7 @@ import {
 } from '@tuturuuu/meet-core/features/live-assistant/server/room-mira-evidence';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
 import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
+import { isMeetGuestWhiteboardEnabled } from '@tuturuuu/meet-core/features/call/server/guest-whiteboard';
 import { isMeetUxV2Enabled } from '@tuturuuu/meet-core/features/call/server/ux-v2';
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import {
@@ -193,6 +194,7 @@ async function roomModel(code: string, locale: string, url: URL) {
     kind: 'room' as const,
     formsEnabled: !access.guest && isMeetFormsEnabled(),
     meetUxV2: isMeetUxV2Enabled(),
+    guestWhiteboard: isMeetGuestWhiteboardEnabled(),
     formsTurnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim(),
     meta: roomMeta(info),
     access: {

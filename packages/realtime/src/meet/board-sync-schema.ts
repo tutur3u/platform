@@ -41,6 +41,29 @@ export const BOARD_LIMITS = {
   sweepMs: 60_000,
 } as const;
 
+/**
+ * Socket budgets for people outside the workspace (anonymous guests and
+ * signed-in non-members), whom the link's guest access caps: half the message
+ * rate, a quarter of the message size and a few sockets per person, so one
+ * guest cannot crowd the room or its writes.
+ */
+export const BOARD_GUEST_LIMITS = {
+  messageRate: 20,
+  maxMessageBytes: 262_144,
+  socketsPerUser: 3,
+} as const;
+
+/** The socket budget for a join ticket's actor. */
+export function boardSocketBudget(actorKind: 'member' | 'guest' | 'system') {
+  return actorKind === 'guest'
+    ? BOARD_GUEST_LIMITS
+    : {
+        messageRate: BOARD_LIMITS.messageRate,
+        maxMessageBytes: BOARD_LIMITS.maxMessageBytes,
+        socketsPerUser: BOARD_LIMITS.maxSockets,
+      };
+}
+
 /** A flush stops after this many failed or conflicting attempts per outage. */
 export const BOARD_FLUSH_RETRY = {
   maxAttempts: 3,
