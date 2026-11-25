@@ -344,6 +344,13 @@ const storageAclReviewedLater = [
     reason:
       'SSO signer S1d transaction confirmation. It never names workspace_storage, has no ALTER DEFAULT PRIVILEGES and runs no dynamic SQL. Its role statements are CREATE ROLE sso_signer NOLOGIN NOINHERIT with no IN ROLE, ROLE or ADMIN clause, and three ALTER ROLE sso_signer SET timeouts. Its only GRANTs give sso_signer USAGE on schema public and EXECUTE on public.sso_signer_confirm_transaction(uuid, uuid, text); its only REVOKE removes that function from PUBLIC, anon, authenticated and service_role.',
   },
+  {
+    file: 'apps/database/supabase/migrations/20261125085300_workspace_storage_service_roots.sql',
+    sourceDigest:
+      'f732c594b90b962f1fdaaf29ae90ea1eafac6fffb9b01ba49e5d8cc278d365de',
+    reason:
+      'Redefines the body of workspace_storage.object_access with the same signature to classify external-projects, project-updates and template-backgrounds roots, then ends with REVOKE ALL on that function from public, anon and authenticated and a reviewed GRANT EXECUTE to authenticated and service_role, the same final ACL as 20261122182652. It has no role membership changes, no ALTER DEFAULT PRIVILEGES and no dynamic SQL; its only other statements are COMMENT ON FUNCTION and session-local lock and statement timeouts.',
+  },
 ];
 
 function withoutReviewedLater(sources, reviewed = storageAclReviewedLater) {
