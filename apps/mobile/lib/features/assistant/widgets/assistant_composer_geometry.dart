@@ -1,8 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
+import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
 /// Shared by the composer and shell so large text never overlaps navigation.
 double assistantComposerHeight(BuildContext context) =>
@@ -26,6 +29,32 @@ double assistantComposerBottomOffset(BuildContext context) {
       ? ShellDockMetrics.bottomOffset(safeBottom)
       : assistantComposerBottomGap;
 }
+
+/// The in-page composer clears the floating navigation when present and owns
+/// its edge spacing beside the rail or above the keyboard.
+double assistantPageComposerBottomOffset(BuildContext context) {
+  final media = MediaQuery.of(context);
+  final keyboardVisible = media.viewInsets.bottom > 0;
+  final safeBottom = keyboardVisible ? 0.0 : media.viewPadding.bottom;
+  final gap = Breakpoints.fromWidth(media.size.width) == DeviceClass.compact
+      ? AppSpacing.md
+      : AppSpacing.xl;
+  final minimumOffset = safeBottom + gap;
+  if (!keyboardVisible &&
+      shellNavigationModeFor(media.size) == ShellNavigationMode.dock) {
+    return math.max(minimumOffset, media.padding.bottom);
+  }
+  return minimumOffset;
+}
+
+/// Keep the last message and jump action above the full measured panel.
+double assistantPageTranscriptBottomClearance(
+  BuildContext context, {
+  double? composerHeight,
+}) =>
+    (composerHeight ?? assistantComposerHeight(context) + AppSpacing.xs * 2) +
+    assistantPageComposerBottomOffset(context) +
+    AppSpacing.md;
 
 /// Shell Scaffold consumes the IME inset before this viewport. Its inherited
 /// padding already includes navigation clearance when the composer is hidden.

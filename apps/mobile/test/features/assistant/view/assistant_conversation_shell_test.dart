@@ -68,9 +68,53 @@ void main() {
       ..padding = FakeViewPadding.zero
       ..viewInsets = const FakeViewPadding(bottom: 305);
     await tester.pumpAndSettle();
-    expect(tester.getBottomLeft(composer).dy, closeTo(844 - 305, 1));
+    expect(
+      tester.getBottomLeft(composer).dy,
+      closeTo(844 - 305 - AppSpacing.md, 1),
+    );
     final opacity = find.byKey(const ValueKey('floating-shell-dock-opacity'));
     expect(tester.widget<AnimatedOpacity>(opacity).opacity, 0);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('desktop composer keeps the last message clear above the IME', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(1440, 900)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pumpAssistantShell(
+      tester,
+      repository: AssistantShellFixtureRepository()..longTranscript = true,
+    );
+
+    final composer = find.byType(AssistantComposerSizeReporter);
+    final thread = find.byType(CustomScrollView);
+    final position = tester
+        .state<ScrollableState>(
+          find.descendant(of: thread, matching: find.byType(Scrollable)),
+        )
+        .position;
+    for (final keyboard in [0.0, 300.0]) {
+      tester.view.viewInsets = FakeViewPadding(bottom: keyboard);
+      await tester.pumpAndSettle();
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pumpAndSettle();
+
+      final composerRect = tester.getRect(composer);
+      final threadRect = tester.getRect(thread);
+      final lastMessageRect = tester.getRect(
+        find.byType(AssistantTranscriptBubble).last,
+      );
+      expect(composerRect.bottom, closeTo(900 - keyboard - AppSpacing.xl, 1));
+      expect(composerRect.center.dx, closeTo(threadRect.center.dx, 1));
+      expect(lastMessageRect.bottom, greaterThan(threadRect.top));
+      expect(
+        lastMessageRect.bottom,
+        lessThanOrEqualTo(composerRect.top - AppSpacing.md + 1),
+      );
+    }
     expect(tester.takeException(), isNull);
   });
 

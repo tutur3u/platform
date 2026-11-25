@@ -535,9 +535,10 @@ class _AssistantPageState extends State<AssistantPage>
   }
 
   double _composerReservedSpace(BuildContext context) =>
-      assistantPageComposerClearance(context) +
-      (_composerHeight ?? assistantComposerHeight(context)) +
-      12;
+      assistantPageTranscriptBottomClearance(
+        context,
+        composerHeight: _composerHeight,
+      );
 
   void _setComposerHeight(double height) {
     if (mounted && _composerHeight != height) {
