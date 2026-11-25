@@ -4,6 +4,10 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { productionPublicationHold } from './production-publication-policy.ts';
 import {
+  productionServingTopologyFor,
+  servingTopologyRefusal,
+} from './production-serving-topology.ts';
+import {
   artifactDigest,
   publicInputsDigest,
   verify,
@@ -84,6 +88,7 @@ export async function main({
   preflightTimeoutMs = 90_000,
   settingsTiming,
   readWorkerConfig,
+  servingTopology,
 } = {}) {
   const [app, sha, mode] = argv;
   assert.ok(['all', 'preflight', 'upload', 'verify'].includes(mode));
@@ -125,6 +130,9 @@ export async function main({
       'Read credentials forbidden in upload step'
     );
   appRoot ??= resolve('apps', app);
+  // Tests pass null for a route-free Worker; production reads tuturuuu.ci.ts.
+  if (servingTopology === undefined)
+    servingTopology = productionServingTopologyFor(app);
   const validate = () => {
     assert.equal(
       productionPublicationHold(`${app}-cloudflare.yaml`),
@@ -176,11 +184,6 @@ export async function main({
       'Unbounded domain inventory'
     );
     const domains = allDomains.filter((domain) => domain.service === p.name);
-    assert.deepEqual(
-      domains,
-      [],
-      'Worker already has a Custom Domain; use the release owner'
-    );
     const zoneResponse = await boundedJson(
       `https://api.cloudflare.com/client/v4/zones?account.id=${p.accountId}&per_page=100`,
       topologyToken,
@@ -216,11 +219,10 @@ export async function main({
           .map((route) => ({ zoneId: zone.id, ...route }))
       );
     }
-    assert.deepEqual(
-      routes,
-      [],
-      'Worker already has a route; use the release owner'
-    );
+    // Route-free unless tuturuuu.ci.ts records the reviewed serving topology;
+    // either way the caller asserts the upload leaves it unchanged.
+    const refusal = servingTopologyRefusal(servingTopology, domains, routes);
+    assert.equal(refusal, null, refusal ?? undefined);
     const serving = await provider(`${script}/subdomain`, topologyToken);
     assert.equal(
       serving.enabled,

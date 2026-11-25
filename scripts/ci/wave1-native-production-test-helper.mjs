@@ -72,6 +72,9 @@ export function setup(
     ids: [],
     prior: false,
     attached: false,
+    attachedHostname: undefined,
+    // null keeps the fixture route-free whatever tuturuuu.ci.ts records.
+    servingTopology: null,
     duringUpload: false,
     priorMode: 'started',
     attachedRoute: false,
@@ -187,7 +190,16 @@ export function setup(
         })),
       });
     if (url.endsWith('/domains'))
-      result = state.attached ? [{ service: receipt.profile.name }] : [];
+      result = state.attached
+        ? [
+            {
+              service: receipt.profile.name,
+              ...(state.attachedHostname
+                ? { hostname: state.attachedHostname }
+                : {}),
+            },
+          ]
+        : [];
     else if (url.endsWith('/routes'))
       result =
         state.attachedRoute && url.includes('2'.repeat(32))
@@ -305,6 +317,7 @@ export function setup(
         fetcher,
         exec,
         appRoot,
+        servingTopology: state.servingTopology,
         settingsTiming: {
           now: () => state.settingsWaitMs,
           sleep: (ms) => {

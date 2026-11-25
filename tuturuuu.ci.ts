@@ -1,4 +1,5 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
+import type { ProductionServingTopology } from './scripts/ci/production-serving-topology.ts';
 
 export const ci = {
   'roadmap-cloudflare.yaml': true,
@@ -273,3 +274,19 @@ export const productionPublicationPolicy = {
   // route-free upload of the sealed artifact.
   whiteboards: { state: 'held', reason: 'held for wave-1 cutover' },
 } satisfies ProductionPublicationPolicy;
+
+// Custom Domains and zone routes that already serve an admitted wave-1
+// Worker. wave1-native-production.mjs refuses an upload unless the Worker's
+// observed topology equals this record, before and after the upload, so the
+// upload activates the new version behind the unchanged hostnames and its
+// receipt records the previous deployment for one-step rollback. An app
+// without a record must stay route-free. Change a record only in a reviewed
+// release-owner PR.
+export const productionServingTopology = {
+  calendar: {
+    reason:
+      'calendar.tuturuuu.com is a Custom Domain on tuturuuu-calendar; uploads activate behind it and keep the prior deployment for rollback',
+    customDomains: ['calendar.tuturuuu.com'],
+    routes: [],
+  },
+} satisfies ProductionServingTopology;

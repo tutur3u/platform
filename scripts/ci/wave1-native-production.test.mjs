@@ -232,6 +232,69 @@ test('topology change after upload is not accepted', async (t) => {
   );
 });
 
+const calendarTopology = {
+  reason: 'fixture',
+  customDomains: ['calendar.tuturuuu.com'],
+  routes: [],
+};
+
+test('a reviewed Custom Domain publishes behind the unchanged hostname', async (t) => {
+  const p = setup(t);
+  p.state.servingTopology = calendarTopology;
+  p.state.attached = true;
+  p.state.attachedHostname = 'calendar.tuturuuu.com';
+  const result = await p.run();
+  assert.equal(result.state, 'accepted-private');
+  assert.equal(p.state.writes, 1);
+  assert.deepEqual(
+    result.topology.domains.map(({ hostname }) => hostname),
+    ['calendar.tuturuuu.com']
+  );
+  assert.equal(result.rollback.versions[0].version_id, oldId);
+});
+
+for (const [name, mutate, message] of [
+  [
+    'an unreviewed Custom Domain',
+    (state) => {
+      state.attachedHostname = 'other.tuturuuu.com';
+    },
+    /Custom Domains differ/,
+  ],
+  [
+    'a missing reviewed Custom Domain',
+    (state) => {
+      state.attached = false;
+    },
+    /Custom Domains differ/,
+  ],
+  [
+    'an extra route',
+    (state) => {
+      state.attachedRoute = true;
+    },
+    /routes differ/,
+  ],
+]) {
+  test(`a reviewed serving topology refuses ${name} before upload`, async (t) => {
+    const p = setup(t);
+    p.state.servingTopology = calendarTopology;
+    p.state.attached = true;
+    p.state.attachedHostname = 'calendar.tuturuuu.com';
+    mutate(p.state);
+    await assert.rejects(p.run(), message);
+    assert.equal(p.state.writes, 0);
+  });
+}
+
+test('a route-free Worker without a record refuses an attached Custom Domain', async (t) => {
+  const p = setup(t);
+  p.state.attached = true;
+  p.state.attachedHostname = 'calendar.tuturuuu.com';
+  await assert.rejects(p.run(), /record a reviewed productionServingTopology/);
+  assert.equal(p.state.writes, 0);
+});
+
 test('a planner push and a dispatch publish; other events refuse', async (t) => {
   const p = setup(t);
   p.env.GITHUB_EVENT_NAME = 'push';
