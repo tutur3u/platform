@@ -101,10 +101,17 @@ export function createGitHub({ token, fetchImpl = fetch, repository }) {
       }
       return all;
     },
+    // False when the workflow file at the candidate commit has no
+    // workflow_dispatch trigger (422): a commit older than that trigger
+    // keeps its evidence from the main push.
     async dispatch(file, sha) {
-      await call('POST', `/actions/workflows/${file}/dispatches`, {
-        ref: candidateBranch(sha),
-      });
+      const { status } = await call(
+        'POST',
+        `/actions/workflows/${file}/dispatches`,
+        { ref: candidateBranch(sha) },
+        { allow: [422] }
+      );
+      return status !== 422;
     },
     async rerun(runId) {
       await call('POST', `/actions/runs/${runId}/rerun`);
@@ -148,10 +155,12 @@ export async function nominate({ github, sha, now = Date.now(), log }) {
   // Dispatch only workflows without a candidate run, so a repeated
   // nomination of the same SHA never doubles the set.
   const dispatched = [];
+  const undispatchable = [];
   for (const workflow of summary.workflows) {
     if (!workflow.dispatched || workflow.hasCandidateRun) continue;
-    await github.dispatch(workflow.file, sha);
-    dispatched.push(workflow.file);
+    if ((await github.dispatch(workflow.file, sha)) === false)
+      undispatchable.push(workflow.file);
+    else dispatched.push(workflow.file);
   }
   const dated = [];
   for (const other of existing.filter((candidate) => candidate !== sha))
@@ -160,9 +169,9 @@ export async function nominate({ github, sha, now = Date.now(), log }) {
   const pruned = planPrune({ candidates: dated, keep: sha, now });
   for (const old of pruned) await github.deleteRef(old);
   log?.(
-    `candidate ${sha}: ref ${plan.createRef ? 'created' : 'kept'}; dispatched ${dispatched.join(', ') || 'nothing'}; pruned ${pruned.join(', ') || 'nothing'}`
+    `candidate ${sha}: ref ${plan.createRef ? 'created' : 'kept'}; dispatched ${dispatched.join(', ') || 'nothing'}; not dispatchable at this commit ${undispatchable.join(', ') || 'none'}; pruned ${pruned.join(', ') || 'nothing'}`
   );
-  return { createdRef: plan.createRef, dispatched, pruned };
+  return { createdRef: plan.createRef, dispatched, undispatchable, pruned };
 }
 
 export async function status({ github, sha, recover = true, log }) {
@@ -182,11 +191,16 @@ export async function status({ github, sha, recover = true, log }) {
   // Dispatching needs the candidate ref; status never creates one.
   if (!candidates.includes(sha)) recovery.dispatch = [];
   for (const runId of recovery.rerun) await github.rerun(runId);
-  for (const file of recovery.dispatch) await github.dispatch(file, sha);
-  log?.(
-    `candidate ${sha}: ${summary.verdict}; reran ${recovery.rerun.join(', ') || 'nothing'}; dispatched ${recovery.dispatch.join(', ') || 'nothing'}`
+  const undispatchable = [];
+  for (const file of recovery.dispatch)
+    if ((await github.dispatch(file, sha)) === false) undispatchable.push(file);
+  recovery.dispatch = recovery.dispatch.filter(
+    (file) => !undispatchable.includes(file)
   );
-  return { summary, recovery };
+  log?.(
+    `candidate ${sha}: ${summary.verdict}; reran ${recovery.rerun.join(', ') || 'nothing'}; dispatched ${recovery.dispatch.join(', ') || 'nothing'}; not dispatchable at this commit ${undispatchable.join(', ') || 'none'}`
+  );
+  return { summary, recovery, undispatchable };
 }
 
 async function main(argv, env) {
