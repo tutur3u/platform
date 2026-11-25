@@ -134,3 +134,50 @@ for (const width of [390, 1440]) {
     await expect(rows).toHaveCount(before);
   });
 }
+
+// The header, tabs and frame hold one position whether the list is loading,
+// empty or populated, with or without the Mark all read action.
+for (const width of [390, 1440]) {
+  test(`header geometry is identical in every state at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: HEIGHT });
+    const boxes: Record<string, unknown> = {};
+    for (const state of ['loading', 'empty', 'list']) {
+      await page.goto(`/?anchor=navbar&locale=en&state=${state}`);
+      await page
+        .getByRole('button', { name: /^Notifications|^Thông báo/ })
+        .click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      if (state === 'loading')
+        await expect(dialog.getByRole('status')).toBeAttached();
+      else if (state === 'empty')
+        await expect(
+          dialog.getByText(/all caught up|No notifications/i)
+        ).toBeVisible();
+      else
+        await expect(
+          page.locator('[data-notification-row]').first()
+        ).toBeVisible();
+      boxes[state] = await dialog.evaluate((node) => {
+        const rect = (el: Element | null | undefined) => {
+          const r = el?.getBoundingClientRect();
+          return (
+            r &&
+            [r.x, r.y, r.width, r.height].map((n) => Math.round(n * 10) / 10)
+          );
+        };
+        return {
+          allTab: rect(node.querySelectorAll('[role="tab"]')[1]),
+          dialog: rect(node),
+          tablist: rect(node.querySelector('[role="tablist"]')),
+          title: rect(node.querySelector('h2')),
+          unreadTab: rect(node.querySelectorAll('[role="tab"]')[0]),
+        };
+      });
+    }
+    expect(boxes.empty).toEqual(boxes.list);
+    expect(boxes.loading).toEqual(boxes.list);
+  });
+}
