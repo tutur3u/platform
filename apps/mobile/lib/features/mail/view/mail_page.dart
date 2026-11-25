@@ -32,6 +32,7 @@ import 'package:mobile/features/mail/view/mail_list_header.dart';
 import 'package:mobile/features/mail/view/mail_list_retry.dart';
 import 'package:mobile/features/mail/view/mail_list_states.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
+import 'package:mobile/features/mail/view/mail_pane_split_preference.dart';
 import 'package:mobile/features/mail/view/mail_quick_filter.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/mail/view/mail_reading_preferences.dart';

@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/layout/master_detail_split.dart';
+
+export 'package:mobile/core/layout/master_detail_split.dart';
 
 /// Split policy for list/detail screens. Decisions use the body width the
 /// screen receives (after the shell rail), never the window.
@@ -40,6 +43,7 @@ class AppMasterDetail extends StatefulWidget {
     this.detailKey,
     this.onSplitChanged,
     this.onCloseDetail,
+    this.split,
     super.key,
   });
 
@@ -54,6 +58,10 @@ class AppMasterDetail extends StatefulWidget {
 
   /// Escape inside the detail pane calls this to clear the selection.
   final VoidCallback? onCloseDetail;
+
+  /// Makes the list width user-resizable. Without it the list takes about a
+  /// third of the body, clamped to the list width limits.
+  final AppMasterDetailSplit? split;
 
   /// Whether the nearest [AppMasterDetail] currently shows both panes.
   static bool isSplitOf(BuildContext context) =>
@@ -119,7 +127,12 @@ class _AppMasterDetailState extends State<AppMasterDetail> {
           child: master,
         );
       }
-      final listWidth = AppMasterDetailLayout.listWidth(constraints.maxWidth);
+      final resizable = widget.split;
+      final body = constraints.maxWidth;
+      final listWidth = resizable == null
+          ? AppMasterDetailLayout.listWidth(body)
+          : (body - AppMasterDetailSplitHandle.extent) *
+                resizable.bounds.clamp(resizable.fraction);
       return _AppMasterDetailScope(
         split: true,
         detailPane: false,
@@ -130,11 +143,17 @@ class _AppMasterDetailState extends State<AppMasterDetail> {
               width: listWidth,
               child: FocusTraversalGroup(child: master),
             ),
-            VerticalDivider(
-              width: 1,
-              thickness: 1,
-              color: Theme.of(context).dividerColor,
-            ),
+            if (resizable != null)
+              AppMasterDetailSplitHandle(
+                split: resizable,
+                bodyWidth: body - AppMasterDetailSplitHandle.extent,
+              )
+            else
+              VerticalDivider(
+                width: 1,
+                thickness: 1,
+                color: Theme.of(context).dividerColor,
+              ),
             Expanded(
               child: _AppMasterDetailScope(
                 split: true,

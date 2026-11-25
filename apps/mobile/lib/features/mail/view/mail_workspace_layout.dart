@@ -173,17 +173,31 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
     required Widget folderPicker,
   }) {
     final l10n = context.l10n;
-    return AppMasterDetail(
-      detail: _buildDetailPane(),
-      detailKey: _activeSelection?.id,
-      onSplitChanged: _onSplitChanged,
-      onCloseDetail: _closeSelection,
-      emptyDetail: AppMasterDetailEmpty(
-        icon: Icons.mark_email_read_outlined,
-        title: l10n.mailPreviewEmptyTitle,
-        message: l10n.mailPreviewEmptyMessage,
+    final splitPreference = MailPaneSplitPreference.instance;
+    unawaited(splitPreference.load());
+    return ValueListenableBuilder<double>(
+      valueListenable: splitPreference,
+      builder: (context, fraction, master) => AppMasterDetail(
+        detail: _buildDetailPane(),
+        detailKey: _activeSelection?.id,
+        onSplitChanged: _onSplitChanged,
+        onCloseDetail: _closeSelection,
+        emptyDetail: AppMasterDetailEmpty(
+          icon: Icons.mark_email_read_outlined,
+          title: l10n.mailPreviewEmptyTitle,
+          message: l10n.mailPreviewEmptyMessage,
+        ),
+        split: AppMasterDetailSplit(
+          bounds: mailPaneSplitBounds,
+          fraction: fraction,
+          semanticLabel: l10n.mailPaneResize,
+          onChanged: (value, {required persist}) =>
+              unawaited(splitPreference.select(value, persist: persist)),
+          onReset: () => unawaited(splitPreference.reset()),
+        ),
+        master: master!,
       ),
-      master: Column(
+      child: Column(
         children: [
           if (wide && _selected.isNotEmpty) _buildMailBulkToolbar(),
           Expanded(

@@ -8463,6 +8463,7 @@
   },
   "mailConversation": "Conversation",
   "mailThreadActions": "Conversation actions",
+  "mailPaneResize": "Resize the list and reader",
   "mailNoAttachments": "No attachments",
   "mailMember": "Member",
   "mailReceived": "Received",

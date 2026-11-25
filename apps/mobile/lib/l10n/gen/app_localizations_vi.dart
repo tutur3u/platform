@@ -17307,6 +17307,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailThreadActions => 'Thao tác cuộc trò chuyện';
 
   @override
+  String get mailPaneResize => 'Đổi kích thước danh sách và khung đọc';
+
+  @override
   String get mailNoAttachments => 'Không có tệp đính kèm';
 
   @override

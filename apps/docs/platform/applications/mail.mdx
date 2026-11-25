@@ -82,7 +82,13 @@ the pushed reader. Notification deep links open in the pane on wide layouts. On
 wide layouts, the first Back (dock, rail or system) and Escape close the pane;
 the next Back leaves Mail. The pane header is a compact toolbar (the default
 action, Reply, More and Close); the shell navbar and dock keep the inbox title,
-filters and actions.
+filters and actions. As on web Mail, the list takes 38% of the split by
+default; a drag handle between the panes keeps the list between 28% and 48%
+and the reader at 45% or more. The chosen split is stored on the device with
+the other Mail settings. On desktop the handle also takes focus: arrow keys
+step it (Shift for larger steps), Home and End jump to the limits, and a double
+click restores the default. Assistive technologies see it as an adjustable
+slider. Coverage: `mail_pane_split_test.dart`.
 
 The mobile reader follows web Mail's thread layout. The subject is the
 content's first, large semibold heading and wraps instead of truncating. Below

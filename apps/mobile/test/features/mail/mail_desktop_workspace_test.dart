@@ -43,7 +43,8 @@ void main() {
     final emptyReader = tester.getRect(find.text('Select a conversation'));
     expect(sidebar.width, greaterThanOrEqualTo(160));
     expect(sidebar.right, lessThan(list.left));
-    expect(list.width, inInclusiveRange(360, 420));
+    // The list takes web Mail's default 38% of the master-detail body.
+    expect(list.width, inInclusiveRange(420, 460));
     expect(list.right, lessThan(emptyReader.left));
 
     await tester.tap(find.text('Synthetic subject 1'));

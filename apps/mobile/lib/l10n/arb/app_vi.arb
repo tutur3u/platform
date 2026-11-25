@@ -7638,6 +7638,7 @@
   },
   "mailConversation": "Cuộc trò chuyện",
   "mailThreadActions": "Thao tác cuộc trò chuyện",
+  "mailPaneResize": "Đổi kích thước danh sách và khung đọc",
   "mailNoAttachments": "Không có tệp đính kèm",
   "mailMember": "Thành viên",
   "mailReceived": "Đã nhận",

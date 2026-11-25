@@ -32281,6 +32281,12 @@ abstract class AppLocalizations {
   /// **'Conversation actions'**
   String get mailThreadActions;
 
+  /// No description provided for @mailPaneResize.
+  ///
+  /// In en, this message translates to:
+  /// **'Resize the list and reader'**
+  String get mailPaneResize;
+
   /// No description provided for @mailNoAttachments.
   ///
   /// In en, this message translates to:

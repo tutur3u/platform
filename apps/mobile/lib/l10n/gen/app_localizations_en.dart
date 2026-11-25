@@ -17517,6 +17517,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailThreadActions => 'Conversation actions';
 
   @override
+  String get mailPaneResize => 'Resize the list and reader';
+
+  @override
   String get mailNoAttachments => 'No attachments';
 
   @override
