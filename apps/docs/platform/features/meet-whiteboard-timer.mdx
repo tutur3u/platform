@@ -133,12 +133,15 @@ For everyone on the board, the editor never caches a shape above its
 zoomed shapes and text look blocky, which the product owner accepted. Images
 keep their full zoom detail; the Meet board accepts no images from anyone. It
 rebuilds a cache only when its scale changes and fits an arrow's label canvas
-within the per-element cap. Each frame draws at most the 24 topmost elements
-that each cover half the view or more; above that, older covering elements
-are skipped until the view zooms out or moves, so a dense stack zoomed in
-cannot stall the board. Smaller elements always draw, and the rule is the
-same for members and guests (see Excalidraw canvas cap in the development
-guide; regression test
+within the per-element cap. Each frame spends a budget of 32 viewports of
+visible area, counting each element's approximate box from the topmost down;
+once it is spent, older elements are not drawn in that frame, but stay on the
+board, reappear when the view zooms out or moves, and can still be selected.
+This limits the drawing work for a dense stack zoomed in; it is not a
+guarantee of frame time. Ordinary boards fit: 40 diagonal lines or 40
+zig-zag strokes at 200% count about 25 viewports. The rule is the same
+for members and guests (see Excalidraw canvas cap in the development guide;
+regression test
 `packages/whiteboard/src/excalidraw-canvas-cap.test.ts`, which runs at a
 device pixel ratio of two while the guest budget measures at three). Every
 element has one render cost, roughly the lines and points a viewer draws for
@@ -328,7 +331,7 @@ Under `packages/whiteboard/src`:
 
 - `excalidraw-canvas-cap.test.ts`: the patched Excalidraw cache for the dev
   and prod builds: sizing at zoom 1 to 3, the image exemption, the rebuild
-  rule, and at most 24 viewport-covering elements per frame at 10x zoom.
+  rule, and the 32-viewport visible-area budget per frame.
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do-guest-draw.test.ts`
 (a guest edit ticket refused and closed while guest drawing is held or the

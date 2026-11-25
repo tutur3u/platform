@@ -83,15 +83,27 @@ The patch changes the element canvas cache in both shipped builds
   reuses the same caches. It recomputes the scale only when the zoom differs
   from the one the cache entry last saw, and records the new zoom when the
   scale is unchanged, so steady frames skip the check.
-- The static scene draws at most 24 viewport-covering elements per frame: an
-  element whose unrotated box covers half the visible area or more. Drawing
-  one costs about a viewport of pixels however its cache is sized, so a dense
-  stack zoomed in would otherwise cost one viewport per element. The 24
-  topmost (last drawn) are kept; above that, older covering elements are
-  skipped until the view zooms out or moves so that fewer cover it. Smaller
-  elements always draw, members' and guests' alike, and exports draw
-  everything. `__ttrCoveringToSkip`, appended to each chunk, picks the
-  skipped elements.
+- The static scene spends a visible-area budget of 32 viewports per frame.
+  Drawing a cached canvas costs about its visible area in pixels, transparent
+  or not, so a dense stack zoomed in would otherwise cost a viewport or more
+  per element. Walking from the topmost (last drawn) element, each element
+  costs its box clipped to the view, in viewports; once the total passes 32,
+  every older element is skipped for that frame. The box is approximate: it
+  is the unrotated box of the element's bounds, so a thin diagonal line or a
+  loose freehand stroke costs its whole box rather than its ink, and a
+  container's bound text is not counted separately but goes with its
+  container. Skipped elements are still in the scene: they reappear when the
+  view zooms out or moves, and they can still be selected and edited while
+  hidden. The rule is the same for members and guests, and exports draw
+  everything. `__ttrOverAreaBudget`, appended to each chunk, picks the skipped
+  elements. Counting by ink instead would let a stack of long thin lines,
+  each drawn over its whole box, escape the budget. The review's test boards,
+  40 diagonal lines and 40 zig-zag freehand strokes at 200% in a 1024 by 768
+  view, count about 25 and 25.5 viewports, so they draw completely; a budget
+  of 24 would hide part of both. In the review of the earlier half-coverage
+  rule, the reviewer measured about 18 s per frame in software Chromium at a
+  device pixel ratio of three for 6,700 small boxes at 3000%, which this
+  budget replaces.
 
 The patch is produced by a script that applies each edit to the pristine
 chunks and refuses unless every edit matches exactly once. Replace the whole
@@ -101,7 +113,9 @@ run the script inside `bun patch @excalidraw/excalidraw`, then
 
 `packages/whiteboard/src/excalidraw-canvas-cap.test.ts` runs the patched code
 of both builds: the sizing at zoom 1 to 3, the image exemption, the rebuild
-rule and its skipped checks, and the covering-element limit at 10x zoom. It
+rule and its skipped checks, and the visible-area budget (6,700 stacked boxes
+at 30x, 1,000 view-covering boxes at 3x, and ordinary 40-line and 40-stroke
+boards at 2x, which draw completely). It
 runs at a device pixel ratio of two, while the server's guest budget measures
 canvases at three. It fails against the unpatched package. Any
 `@excalidraw/excalidraw` upgrade must re-apply the patch to the new build's
