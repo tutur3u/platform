@@ -317,6 +317,53 @@ describe('tasks app task pages', () => {
     expect(mocks.createWorkspaceTaskBoard).toHaveBeenCalledTimes(1);
   });
 
+  it('never shares a per-user workspace alias resolution across requests', async () => {
+    let finishFirst:
+      | ((value: {
+          boards: { id: string; name: string }[];
+          count: number;
+        }) => void)
+      | undefined;
+    mocks.listWorkspaceTaskBoards
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishFirst = resolve;
+          })
+      )
+      .mockResolvedValueOnce({
+        boards: [{ id: 'user-b-board', name: 'Tasks' }],
+        count: 1,
+      });
+    const { resolveTaskBoardEntrypoint } =
+      await import('@/lib/tasks/task-board-entrypoint');
+
+    const userA = resolveTaskBoardEntrypoint('personal', {
+      defaultHeaders: { authorization: 'Bearer user-a' },
+    });
+    const userB = resolveTaskBoardEntrypoint('personal', {
+      defaultHeaders: { authorization: 'Bearer user-b' },
+    });
+    await vi.waitFor(() =>
+      expect(mocks.listWorkspaceTaskBoards).toHaveBeenCalledTimes(2)
+    );
+    finishFirst?.({
+      boards: [{ id: 'user-a-board', name: 'Tasks' }],
+      count: 1,
+    });
+
+    await expect(userA).resolves.toBe('user-a-board');
+    await expect(userB).resolves.toBe('user-b-board');
+    expect(mocks.listWorkspaceTaskBoards).toHaveBeenNthCalledWith(
+      2,
+      'personal',
+      expect.anything(),
+      expect.objectContaining({
+        defaultHeaders: { authorization: 'Bearer user-b' },
+      })
+    );
+  });
+
   it('uses an explicit proxy locale when creating a default board', async () => {
     mocks.listWorkspaceTaskBoards.mockResolvedValue({ boards: [], count: 0 });
     mocks.listWorkspaceTaskLists.mockResolvedValue({ lists: [] });

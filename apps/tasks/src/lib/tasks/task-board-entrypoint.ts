@@ -150,11 +150,25 @@ async function resolveTaskBoardEntrypointOnce(
   }
 }
 
+// Aliases are resolved server-side from each caller's session (`personal` is a
+// different workspace for every user), so their resolutions must never be
+// shared across requests. `internal` is a fixed workspace but is kept out of
+// the shared map conservatively, like every alias.
+const WORKSPACE_ALIASES = new Set(['personal', 'internal']);
+
 export async function resolveTaskBoardEntrypoint(
   workspaceId: string,
   internalApiOptions: InternalApiClientOptions,
   options: ResolveTaskBoardEntrypointOptions = {}
 ) {
+  if (WORKSPACE_ALIASES.has(workspaceId.toLowerCase())) {
+    return resolveTaskBoardEntrypointOnce(
+      workspaceId,
+      internalApiOptions,
+      options
+    );
+  }
+
   const pending = inFlightEntrypointResolutions.get(workspaceId);
   if (pending) return pending;
 
