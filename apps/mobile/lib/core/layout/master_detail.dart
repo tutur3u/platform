@@ -17,6 +17,9 @@ abstract final class AppMasterDetailLayout {
   static const double listMinWidth = 320;
   static const double listMaxWidth = 400;
 
+  /// Narrowest a user-resizable list gets, whatever its stored fraction.
+  static const double resizableListMinWidth = 260;
+
   static bool isSplit(double width) => width.isFinite && width >= splitMinWidth;
 
   /// List pane width: about a third of the body, clamped to 320-400dp.
@@ -129,10 +132,18 @@ class _AppMasterDetailState extends State<AppMasterDetail> {
       }
       final resizable = widget.split;
       final body = constraints.maxWidth;
+      final available = body - AppMasterDetailSplitHandle.extent;
+      // A resizable list keeps a readable floor, so a narrow split window
+      // never squeezes it below [resizableListMinWidth].
       final listWidth = resizable == null
           ? AppMasterDetailLayout.listWidth(body)
-          : (body - AppMasterDetailSplitHandle.extent) *
-                resizable.bounds.clamp(resizable.fraction);
+          : math.max(
+              math.min(
+                AppMasterDetailLayout.resizableListMinWidth,
+                available / 2,
+              ),
+              available * resizable.bounds.clamp(resizable.fraction),
+            );
       return _AppMasterDetailScope(
         split: true,
         detailPane: false,

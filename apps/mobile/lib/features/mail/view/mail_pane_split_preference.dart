@@ -26,11 +26,11 @@ class MailPaneSplitPreference extends ValueNotifier<double> {
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getDouble(storageKey);
-      if (!_selected && saved != null) {
-        value = mailPaneSplitBounds.normalize(saved);
+      final saved = prefs.get(storageKey);
+      if (!_selected && saved is num) {
+        value = mailPaneSplitBounds.normalize(saved.toDouble());
       }
-    } on Exception {
+    } on Object {
       // The default split applies when preference storage is unavailable.
     }
   }

@@ -159,6 +159,14 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a mailbox that cannot send keeps read state off the header', (
+    tester,
+  ) async {
+    await _pump(tester, repository: _Repository());
+    expect(find.byKey(const ValueKey('mail-reader-actions')), findsOneWidget);
+    expect(find.byKey(const ValueKey('mail-reader-read')), findsNothing);
+  });
+
   testWidgets('header actions run the reader mutations', (tester) async {
     final repository = _Repository();
     when(
@@ -170,7 +178,7 @@ void main() {
         thread: any(named: 'thread'),
       ),
     ).thenAnswer((_) async {});
-    await _pump(tester, repository: repository);
+    await _pump(tester, repository: repository, canSend: true);
     final group = find.byKey(const ValueKey('mail-reader-actions'));
     expect(group, findsOneWidget);
     // Archive is the default action, so the group leaves it to the bar.

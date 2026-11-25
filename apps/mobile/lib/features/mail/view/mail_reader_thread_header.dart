@@ -130,10 +130,15 @@ extension _MailReaderThreadHeader on _MailReaderState {
     final colors = AppTokens.of(context).colorScheme;
     final ready = !_busy && _detail != null;
     final inTrash = widget.sourceFolder == 'trash';
-    final quick = _dockPlan().quick;
+    final plan = _dockPlan();
+    final quick = plan.quick;
+    // A command shows in one place: skip the read toggle when it is the
+    // default action or already on a non-sending mailbox's action bar.
     final quickRead =
         quick == MailQuickAction.markRead ||
-        quick == MailQuickAction.markUnread;
+        quick == MailQuickAction.markUnread ||
+        plan.bar.contains(MailDockMore.markRead) ||
+        plan.bar.contains(MailDockMore.markUnread);
     final quickArchive =
         quick == MailQuickAction.archive || quick == MailQuickAction.restore;
     Widget button({

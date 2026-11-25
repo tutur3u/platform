@@ -14,8 +14,8 @@ const _body = 1008.0;
 const ValueKey<String> _handle = ValueKey('master-detail-split-handle');
 
 /// The Mail split as the workspace wires it, in a known body width.
-Future<void> _pump(WidgetTester tester) async {
-  tester.view.physicalSize = const Size(_body, 800);
+Future<void> _pump(WidgetTester tester, {double body = _body}) async {
+  tester.view.physicalSize = Size(body, 800);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final preference = MailPaneSplitPreference.instance;
@@ -74,6 +74,25 @@ void main() {
     SharedPreferences.setMockInitialValues({'mail.paneSplit': 0.9});
     await MailPaneSplitPreference.instance.load();
     expect(MailPaneSplitPreference.instance.value, 0.38);
+  });
+
+  test('a stored value of the wrong type falls back to the default', () async {
+    SharedPreferences.setMockInitialValues({'mail.paneSplit': 'wide'});
+    await MailPaneSplitPreference.instance.load();
+    expect(MailPaneSplitPreference.instance.value, 0.38);
+  });
+
+  testWidgets('a narrow split window keeps the list at its 260dp floor', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({'mail.paneSplit': 0.28});
+    await MailPaneSplitPreference.instance.load();
+    await _pump(tester, body: 760);
+    expect(
+      tester.getSize(find.byKey(const ValueKey('list'))).width,
+      closeTo(AppMasterDetailLayout.resizableListMinWidth, 0.5),
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('dragging clamps the list and persists where it ends', (
