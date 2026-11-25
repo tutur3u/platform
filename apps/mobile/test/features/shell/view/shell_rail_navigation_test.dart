@@ -48,8 +48,8 @@ void main() {
   for (final (name, size, gutter) in [
     ('phone', const Size(390, 844), 16.0),
     ('tablet-portrait', const Size(768, 1024), 24.0 + 84),
-    // Beside the 240dp sidebar: (1040 - 720) / 2 centring.
-    ('desktop', const Size(1280, 800), 32.0 + 160),
+    // Beside the 240dp sidebar the 1040dp body fits the 1120dp detail width.
+    ('desktop', const Size(1280, 800), 36.0),
   ]) {
     testWidgets('page primitives use body-width gutters on $name', (
       tester,

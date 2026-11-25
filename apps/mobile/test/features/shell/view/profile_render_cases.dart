@@ -73,7 +73,15 @@ void _profileRenderCases() {
             AppLayout.gutter(DeviceClass.compact),
           );
         } else {
-          expect(tester.getSize(identity).width, lessThanOrEqualTo(720));
+          expect(
+            tester.getSize(identity).width,
+            lessThanOrEqualTo(
+              AppLayout.maxContentWidth(
+                AppPageKind.detail,
+                DeviceClass.expanded,
+              )!,
+            ),
+          );
         }
         expect(
           tester.getSize(find.byKey(profileEditIdentityKey)).height,

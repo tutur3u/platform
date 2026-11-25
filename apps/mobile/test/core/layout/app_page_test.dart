@@ -46,7 +46,7 @@ void main() {
     for (final (width, left) in [
       (390.0, 16.0),
       (700.0, 24.0 + 50),
-      (1200.0, 32.0 + 240),
+      (1200.0, 36.0 + 40),
     ]) {
       testWidgets('width $width starts content at $left', (tester) async {
         await _pump(tester, _list(), width: width);
@@ -61,7 +61,7 @@ void main() {
 
     testWidgets('root pages use the wide canvas', (tester) async {
       await _pump(tester, _list(kind: AppPageKind.root), width: 1200);
-      expect(tester.getRect(find.byKey(_first)).left, 32);
+      expect(tester.getRect(find.byKey(_first)).left, 36);
     });
   });
 
@@ -104,7 +104,7 @@ void main() {
         bottomClearance: 80,
       );
       final rect = tester.getRect(find.byKey(_first));
-      expect(rect.width, 480 - 64);
+      expect(rect.width, 552 - 72);
       expect(rect.center.dx, 500);
       expect(rect.bottom, 900 - 80 - AppLayout.boxEndGap);
       expect(inner.bottom, 0);

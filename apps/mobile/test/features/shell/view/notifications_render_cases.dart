@@ -143,8 +143,16 @@ void _notificationsRenderCases() {
           if (size.key == 'phone') {
             expect(left, AppLayout.gutter(DeviceClass.compact));
           } else {
-            // Wider windows centre the feed at the detail page width.
-            expect(tester.getSize(firstRow).width, lessThanOrEqualTo(720));
+            // Wider windows centre the feed within the detail page width.
+            expect(
+              tester.getSize(firstRow).width,
+              lessThanOrEqualTo(
+                AppLayout.maxContentWidth(
+                  AppPageKind.detail,
+                  DeviceClass.expanded,
+                )!,
+              ),
+            );
           }
           // Search belongs to screens that search their own content.
           expect(find.byIcon(AppIcons.search), findsNothing);
