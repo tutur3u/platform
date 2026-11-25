@@ -138,7 +138,10 @@ extension _MailWorkspaceKeyboard on _MailWorkspaceState {
       case MailKeyboardCommand.unread:
       case MailKeyboardCommand.star:
         break;
-      default:
+      case MailKeyboardCommand.help:
+      case MailKeyboardCommand.back:
+      case MailKeyboardCommand.search:
+      case MailKeyboardCommand.compose:
         return false;
     }
 

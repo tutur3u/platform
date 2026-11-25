@@ -17,7 +17,7 @@ class _Preferences extends SidebarPreferences {
   Future<SidebarBehavior?> loadAccount(String userId) async {
     if (!firstRead.isCompleted) firstRead.complete();
     final pending = reads[userId];
-    if (pending != null) return pending.future;
+    if (pending != null) return await pending.future;
     return remote[userId];
   }
 

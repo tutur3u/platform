@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior.dart';
@@ -33,7 +35,7 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
     _userId = userId;
     try {
       _device = await _preferences.readDevice();
-    } catch (error) {
+    } on Object catch (error) {
       debugPrint('Could not read sidebar device preference: $error');
     }
     if (isClosed) return;
@@ -128,7 +130,7 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
       await _writeLocally(
         () => _preferences.writeAccount(userId, remote, pending: false),
       );
-    } catch (error) {
+    } on Object catch (error) {
       debugPrint('Could not sync sidebar preference: $error');
     }
   }
@@ -138,7 +140,7 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
       try {
         await write();
         return true;
-      } catch (error) {
+      } on Object catch (error) {
         debugPrint('Could not store sidebar preference: $error');
         return false;
       }
@@ -164,14 +166,14 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
             await _preferences.writeAccount(userId, behavior, pending: false);
           }
         });
-      } catch (error) {
+      } on Object catch (error) {
         // The pending value is retried when this account is bound again.
         debugPrint('Could not upload sidebar preference: $error');
       }
     });
     _uploads[userId] = send;
     return send.whenComplete(() {
-      if (identical(_uploads[userId], send)) _uploads.remove(userId);
+      if (identical(_uploads[userId], send)) unawaited(_uploads.remove(userId));
     });
   }
 }

@@ -6,7 +6,6 @@ import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/mail/view/mail_reading_preferences.dart';
-import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/pump_app.dart';
 import 'mail_preview_harness.dart';

@@ -284,9 +284,9 @@ extension _ShellPageLayout on _ShellPageState {
         : _selectedKeyForLocation(_bodyLocation);
     void onSelected(Key? key) {
       if (mini) {
-        _onMiniAppItemTapped(key, context, activeModule, items);
+        unawaited(_onMiniAppItemTapped(key, context, activeModule, items));
       } else {
-        _onItemTapped(_routeForRootKey(key), context);
+        unawaited(_onItemTapped(_routeForRootKey(key), context));
       }
     }
 

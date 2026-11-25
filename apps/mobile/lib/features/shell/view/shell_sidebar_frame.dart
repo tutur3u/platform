@@ -37,7 +37,7 @@ class ShellSidebarFrame extends StatelessWidget {
     final wide =
         shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
         ShellNavigationMode.rail;
-    final userId = context.select((AuthCubit? auth) {
+    final userId = context.select<AuthCubit?, String?>((auth) {
       final state = auth?.state;
       return state?.status == AuthStatus.authenticated ? state?.user?.id : null;
     });

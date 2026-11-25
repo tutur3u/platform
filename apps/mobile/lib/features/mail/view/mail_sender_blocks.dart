@@ -75,7 +75,10 @@ class _MailSenderBlocksState extends State<_MailSenderBlocks> {
 
   void _checkScope() {
     if (!widget.isScopeCurrent()) {
-      throw const ApiException(message: 'Mail settings scope changed');
+      throw const ApiException(
+        message: 'Mail settings scope changed',
+        statusCode: 0,
+      );
     }
   }
 

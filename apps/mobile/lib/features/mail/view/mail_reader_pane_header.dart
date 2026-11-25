@@ -105,7 +105,7 @@ bool handleMailReaderCommand(
       reader.widget.canSend &&
       reader._messages.isNotEmpty &&
       !reader._quarantined;
-  final Future<void> Function()? run = switch (command) {
+  final run = switch (command) {
     MailKeyboardCommand.compose when reader.widget.canSend =>
       () => reader._reply(null),
     MailKeyboardCommand.reply when canReply => reader._replyLast,

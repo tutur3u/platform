@@ -13,11 +13,11 @@ import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'shell_rail_harness.dart';
 
 const _desktop = Size(1400, 800);
-const _body = ValueKey('sidebar-mode-test-body');
-const _overlay = ValueKey('shell-sidebar-overlay');
-const _logo = ValueKey('shell-sidebar-logo');
+const ValueKey<String> _body = ValueKey('sidebar-mode-test-body');
+const ValueKey<String> _overlay = ValueKey('shell-sidebar-overlay');
+const ValueKey<String> _logo = ValueKey('shell-sidebar-logo');
 
-Widget _page(String route) => SizedBox.expand(key: _body);
+Widget _page(String route) => const SizedBox.expand(key: _body);
 
 Rect _bodyRect(WidgetTester tester) => tester.getRect(find.byKey(_body));
 
