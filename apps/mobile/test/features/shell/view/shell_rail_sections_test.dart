@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_rail_sections.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 import '../../../helpers/pump_app.dart';
+import 'shell_rail_harness.dart';
 
 void main() {
   Future<List<Key?>> pumpRail(WidgetTester tester, {required bool extended}) {
@@ -24,34 +23,7 @@ void main() {
                 extended: extended,
                 selectedKey: const ValueKey('inbox'),
                 onSelected: taps.add,
-                items: const [
-                  shad.NavigationItem(
-                    key: ValueKey('section'),
-                    child: ShellDockNavIcon(
-                      icon: Icons.folder_outlined,
-                      label: 'Labels',
-                      heading: true,
-                      expanded: false,
-                      count: 2,
-                    ),
-                  ),
-                  shad.NavigationItem(
-                    key: ValueKey('inbox'),
-                    child: ShellDockNavIcon(
-                      icon: Icons.inbox_outlined,
-                      label: 'Inbox',
-                      count: 4,
-                    ),
-                  ),
-                  shad.NavigationItem(
-                    key: ValueKey('label'),
-                    child: ShellDockNavIcon(
-                      icon: Icons.label_outline,
-                      label: 'Finance',
-                      dotColor: Color(0xFF22C55E),
-                    ),
-                  ),
-                ],
+                items: railSectionItems(),
               ),
             ),
           ),

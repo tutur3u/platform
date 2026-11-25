@@ -21,6 +21,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
@@ -246,3 +247,33 @@ class _MountProbeState extends State<MountProbe> {
   Widget build(BuildContext context) =>
       Center(child: Text(widget.label, key: ValueKey('probe-${widget.label}')));
 }
+
+/// A section heading, a counted entry and a label entry with a colour dot.
+List<shad.NavigationItem> railSectionItems() => const [
+  shad.NavigationItem(
+    key: ValueKey('section'),
+    child: ShellDockNavIcon(
+      icon: Icons.folder_outlined,
+      label: 'Labels',
+      heading: true,
+      expanded: false,
+      count: 2,
+    ),
+  ),
+  shad.NavigationItem(
+    key: ValueKey('inbox'),
+    child: ShellDockNavIcon(
+      icon: Icons.inbox_outlined,
+      label: 'Inbox',
+      count: 4,
+    ),
+  ),
+  shad.NavigationItem(
+    key: ValueKey('label'),
+    child: ShellDockNavIcon(
+      icon: Icons.label_outline,
+      label: 'Finance',
+      dotColor: Color(0xFF22C55E),
+    ),
+  ),
+];
