@@ -284,25 +284,20 @@ export const proxy = withCanonicalLocaleCookie(
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - robots.txt (SEO)
-     * - sitemap.xml (SEO)
-     * - site.webmanifest (SEO)
+     * Match every request path except the framework and public static files
+     * this app ships, each named exactly (or by directory):
+     * - _next/static, _next/image (framework assets)
      * - monitoring (analytics)
-     * Excludes files with the following extensions for static assets:
-     * - svg
-     * - png
-     * - jpg
-     * - jpeg
-     * - pdf
-     * - gif
-     * - webp
+     * - media/ (public images)
+     * - favicon.ico, robots.txt, sitemap.xml, site.webmanifest
+     * - apple-touch-icon.png, favicon-16x16.png, favicon-32x32.png,
+     *   android-chrome-192x192.png, android-chrome-512x512.png
+     *
+     * There is deliberately no extension-based exclusion: a board or workspace
+     * path that ends in .png, .svg or .pdf still runs the proxy and its
+     * session check.
      */
-
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
+    '/((?!(?:_next/static|_next/image|monitoring|media)(?:/|$)|(?:favicon\\.ico|robots\\.txt|sitemap\\.xml|site\\.webmanifest|apple-touch-icon\\.png|favicon-(?:16x16|32x32)\\.png|android-chrome-(?:192x192|512x512)\\.png)$).*)',
   ],
 };
 
