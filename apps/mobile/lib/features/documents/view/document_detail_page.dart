@@ -12,7 +12,6 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
-import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/documents/document_media_upload.dart';
 import 'package:mobile/features/documents/document_mention_source.dart';
@@ -42,7 +41,9 @@ class DocumentDetailPage extends StatefulWidget {
     this.repository,
     this.onSaved,
     this.uploader,
-    this.mentionOptions,
+    this.mentionSource,
+    this.mediaPicker,
+    this.linkOpener,
   });
 
   final String documentId;
@@ -52,10 +53,15 @@ class DocumentDetailPage extends StatefulWidget {
   /// Uploads inserted media; defaults to the workspace storage flow.
   final DocumentMediaUploader? uploader;
 
-  /// Loads what `@` can mention in a workspace; defaults to its members,
-  /// projects and tasks.
-  final Future<List<DocumentMentionOption>> Function(Workspace workspace)?
-  mentionOptions;
+  /// What `@` can mention in a workspace; defaults to its members, the
+  /// workspace, projects and tasks.
+  final DocumentMentionSource Function(Workspace workspace)? mentionSource;
+
+  /// Picks media to insert; defaults to the platform pickers.
+  final DocumentMediaPicker? mediaPicker;
+
+  /// Opens a tapped link; defaults to opening it with the session.
+  final ValueChanged<String>? linkOpener;
 
   @override
   State<DocumentDetailPage> createState() => _DocumentDetailPageState();
@@ -139,7 +145,8 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
             startsDocumentMention(
               _editor.document.toPlainText(),
               typed.offset,
-            )) {
+            ) &&
+            !documentOffsetIsCode(_editor, typed.offset)) {
           unawaited(_mention(trigger: typed.offset));
         }
       });
@@ -366,13 +373,37 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   Future<void> _mention({int? trigger}) {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     if (workspace == null) return Future<void>.value();
-    final options = _mentionOptions ??=
-        widget.mentionOptions?.call(workspace) ??
-        loadDocumentMentionOptions(TaskRepository(), workspace);
+    final l10n = context.l10n;
+    final source =
+        widget.mentionSource?.call(workspace) ??
+        TaskDocumentMentionSource(
+          workspace,
+          fallbacks: (
+            workspace: l10n.documentsMentionWorkspace,
+            untitledProject: l10n.documentsMentionUntitledProject,
+            untitledTask: l10n.documentsMentionUntitledTask,
+          ),
+        );
+    // A loaded list is reused; a failed load is dropped so the next
+    // opening tries again.
+    var options = _mentionOptions;
+    if (options == null) {
+      final loading = source.load();
+      _mentionOptions = options = loading;
+      unawaited(
+        loading.then<void>(
+          (_) {},
+          onError: (Object _) {
+            if (identical(_mentionOptions, loading)) _mentionOptions = null;
+          },
+        ),
+      );
+    }
     return insertDocumentMention(
       context,
       _editor,
       options: options,
+      searchTasks: source.searchTasks,
       trigger: trigger,
     );
   }
@@ -397,6 +428,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
         kind: media!,
         wsId: wsId,
         uploader: _uploader,
+        pick: widget.mediaPicker ?? pickDocumentMedia,
       ),
     });
   }
@@ -532,6 +564,8 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             ),
                             onEditImage: (offset, node) =>
                                 unawaited(_editImage(offset, node)),
+                            onOpenLink:
+                                widget.linkOpener ?? defaultDocumentLinkOpener,
                             onEditTable: (offset, node) => unawaited(
                               editDocumentTable(context, _editor, offset, node),
                             ),

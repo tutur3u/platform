@@ -14,6 +14,8 @@ class TaskLinkOption extends Equatable {
     this.completed,
     this.closedAt,
     this.assigneeCount = 0,
+    this.listColor,
+    this.assignees,
   });
 
   factory TaskLinkOption.fromJson(Map<String, dynamic> json) {
@@ -43,7 +45,38 @@ class TaskLinkOption extends Equatable {
           ? DateTime.tryParse(json['closed_at'] as String)
           : null,
       assigneeCount: _readAssigneeCount(json),
+      listColor: _readListColor(json),
+      assignees: _readAssignees(json),
     );
+  }
+
+  static String? _readListColor(Map<String, dynamic> json) {
+    final direct = json['list_color'];
+    if (direct is String && direct.trim().isNotEmpty) return direct;
+    final taskList = json['task_lists'];
+    if (taskList is! Map<String, dynamic>) return null;
+    final color = taskList['color'];
+    return color is String && color.trim().isNotEmpty ? color : null;
+  }
+
+  /// Assignees as `{id, display_name, avatar_url}`, the shape the web's
+  /// task mentions store; null when the response lists none.
+  static List<Map<String, dynamic>>? _readAssignees(Map<String, dynamic> json) {
+    final raw = json['assignees'];
+    if (raw is! List) return null;
+    return [
+      for (final entry in raw)
+        if (entry is Map)
+          if (entry['user'] is Map ? entry['user'] as Map : entry
+              case final user when user['id'] is String)
+            {
+              'id': user['id'],
+              if (user['display_name'] is String)
+                'display_name': user['display_name'],
+              if (user['avatar_url'] is String)
+                'avatar_url': user['avatar_url'],
+            },
+    ];
   }
 
   static String? _readListName(Map<String, dynamic> json) {
@@ -136,6 +169,12 @@ class TaskLinkOption extends Equatable {
   final DateTime? closedAt;
   final int assigneeCount;
 
+  /// The task's list colour, when the response includes it.
+  final String? listColor;
+
+  /// The task's assignees, when the response lists them.
+  final List<Map<String, dynamic>>? assignees;
+
   String? get ticketLabel {
     final display = displayNumber;
     if (display == null) {
@@ -162,5 +201,7 @@ class TaskLinkOption extends Equatable {
     completed,
     closedAt,
     assigneeCount,
+    listColor,
+    assignees,
   ];
 }

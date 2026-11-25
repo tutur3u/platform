@@ -6,6 +6,7 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/documents/document_table.dart';
 import 'package:mobile/features/documents/view/document_block_insert.dart';
 import 'package:mobile/features/documents/view/document_table_editor_sheet.dart';
+import 'package:mobile/features/documents/view/document_table_grid.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The Quill embed type for a TipTap table, carried as its JSON.
@@ -68,48 +69,33 @@ class DocumentTableView extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
-    final cols = table.columnCount;
-    if (table.rowCount == 0 || cols == 0) return const SizedBox.shrink();
-    final header = table.hasHeaderRow;
+    if (table.rowCount == 0 || table.columnCount == 0) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: Table(
-          defaultColumnWidth: const IntrinsicColumnWidth(),
-          border: TableBorder.all(color: c.border),
-          children: [
-            for (var r = 0; r < table.rowCount; r++)
-              TableRow(
-                decoration: r == 0 && header
-                    ? BoxDecoration(color: c.muted)
-                    : null,
-                children: [
-                  for (var col = 0; col < cols; col++)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
-                      ),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minWidth: 48,
-                          maxWidth: 280,
-                        ),
-                        child: Text(
-                          table.textAt(r, col),
-                          style: tokens.typography.small.copyWith(
-                            color: c.foreground,
-                            fontWeight: r == 0 && header
-                                ? FontWeight.w600
-                                : null,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+        child: DocumentTableGrid(
+          table: table,
+          cellBuilder: (context, row, col) => Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 48, maxWidth: 280),
+              child: Text(
+                table.textAt(row, col),
+                style: tokens.typography.small.copyWith(
+                  color: c.foreground,
+                  fontWeight: table.rows[row][col]['type'] == 'tableHeader'
+                      ? FontWeight.w600
+                      : null,
+                ),
               ),
-          ],
+            ),
+          ),
         ),
       ),
     );
@@ -143,8 +129,11 @@ Future<void> editDocumentTable(
     builder: (_) => DocumentTableEditorSheet(node: node),
   );
   if (edit == null || !context.mounted) return;
+  // The sheet edited [node]; apply the result only while the document still
+  // holds that same table there, not another one moved into its place.
   final embedded = documentEmbedAt(editor, offset, documentTableEmbedType);
-  if (embedded == null) return;
+  if (embedded is! String || _tableNode(embedded) == null) return;
+  if (jsonEncode(_tableNode(embedded)) != jsonEncode(node)) return;
   if (edit.delete) {
     deleteDocumentBlock(editor, offset);
     return;

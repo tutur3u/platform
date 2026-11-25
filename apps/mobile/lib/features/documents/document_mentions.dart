@@ -14,6 +14,8 @@ class DocumentMentionOption {
     this.displayNumber,
     this.priority,
     this.workspaceId,
+    this.listColor,
+    this.assignees,
   });
 
   final String id;
@@ -26,6 +28,10 @@ class DocumentMentionOption {
   final int? displayNumber;
   final String? priority;
   final String? workspaceId;
+
+  /// A task's list colour and assignees, which the web's task chip shows.
+  final String? listColor;
+  final List<Map<String, dynamic>>? assignees;
 
   String get entityType => type.name;
 }
@@ -47,8 +53,11 @@ Map<String, dynamic> documentMentionAttrs(DocumentMentionOption option) {
     'avatarUrl': option.avatarUrl,
     'subtitle': task ? option.label : option.subtitle,
     'priority': task ? option.priority : null,
-    'listColor': null,
-    'assignees': null,
+    'listColor': task ? option.listColor : null,
+    // The web stores a task's assignees as a JSON string.
+    'assignees': task && option.assignees != null
+        ? jsonEncode(option.assignees)
+        : null,
     'workspaceId': task ? option.workspaceId : null,
   };
 }
@@ -110,15 +119,20 @@ String _webDate(DateTime date) =>
     '${_months[date.month - 1]} ${date.day}, ${date.year}';
 
 /// The options matching [query], by label or subtitle, ignoring case.
+///
+/// [labelOf] gives the label the picker shows, such as a date shortcut's
+/// localized name; it defaults to the stored label.
 List<DocumentMentionOption> filterDocumentMentions(
   List<DocumentMentionOption> options,
-  String query,
-) {
+  String query, {
+  String Function(DocumentMentionOption option)? labelOf,
+}) {
   final q = query.trim().toLowerCase();
   if (q.isEmpty) return options;
   return [
     for (final option in options)
-      if (option.label.toLowerCase().contains(q) ||
+      if ((labelOf?.call(option) ?? option.label).toLowerCase().contains(q) ||
+          option.label.toLowerCase().contains(q) ||
           (option.subtitle?.toLowerCase().contains(q) ?? false))
         option,
   ];

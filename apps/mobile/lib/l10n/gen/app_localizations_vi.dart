@@ -3535,6 +3535,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsMentionTomorrow => 'Ngày mai';
 
   @override
+  String get documentsMentionUntitledProject => 'Dự án chưa đặt tên';
+
+  @override
+  String get documentsMentionUntitledTask => 'Công việc chưa đặt tên';
+
+  @override
+  String get documentsMentionWorkspace => 'Không gian làm việc';
+
+  @override
   String get documentsMentionWorkspaces => 'Không gian làm việc';
 
   @override
@@ -3613,6 +3622,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsTableRemoveRow => 'Xóa hàng cuối';
 
   @override
+  String get documentsTableRichCells => 'Ô có định dạng được giữ nguyên. Hãy chỉnh sửa chúng trên web.';
+
+  @override
   String get documentsTableRows => 'Hàng';
 
   @override
@@ -3626,6 +3638,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get documentsUploadFailed => 'Không thể tải tệp lên';
+
+  @override
+  String get documentsUploadFileTooLarge => 'Tệp tối đa 100 MB.';
+
+  @override
+  String get documentsUploadImageTooLarge => 'Hình ảnh tối đa 5 MB.';
+
+  @override
+  String get documentsUploadVideoTooLarge => 'Video tối đa 50 MB.';
 
   @override
   String get documentsUploading => 'Đang tải lên…';

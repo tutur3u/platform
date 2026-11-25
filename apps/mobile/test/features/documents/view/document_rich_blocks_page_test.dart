@@ -14,11 +14,13 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/documents/document_media_upload.dart';
 import 'package:mobile/features/documents/document_mentions.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
+import 'package:mobile/features/documents/view/document_mention_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
+import 'document_mention_fakes.dart';
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -63,8 +65,9 @@ const _members = [
 /// Pumps the document page on a phone and returns what it saves.
 Future<List<Map<String, dynamic>>> _pump(
   WidgetTester tester,
-  List<Map<String, dynamic>> content,
-) async {
+  List<Map<String, dynamic>> content, {
+  FakeMentionSource? mentions,
+}) async {
   tester.view
     ..devicePixelRatio = 1
     ..physicalSize = const Size(390, 844);
@@ -111,7 +114,7 @@ Future<List<Map<String, dynamic>>> _pump(
       child: DocumentDetailPage(
         documentId: 'doc-1',
         repository: repository,
-        mentionOptions: (_) async => _members,
+        mentionSource: (_) => mentions ?? FakeMentionSource(_members),
       ),
     ),
   );
@@ -179,6 +182,74 @@ void main() {
     expect(((inline[1] as Map)['attrs'] as Map)['userId'], 'u1');
     expect(inline.last, {'type': 'text', 'text': ' '});
     expect(jsonEncode(inline), isNot(contains('@')));
+  });
+
+  testWidgets('a failed mention load shows an error and retries', (
+    tester,
+  ) async {
+    final mentions = FakeMentionSource(_members, failures: 1);
+    await _pump(tester, [_p('Ask ')], mentions: mentions);
+    await tester.ensureVisible(find.byTooltip('Mention'));
+    await tester.tap(find.byTooltip('Mention'));
+    await tester.pumpAndSettle();
+    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('Linh'), findsNothing);
+    Navigator.of(tester.element(find.text('Something went wrong'))).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Mention'));
+    await tester.pumpAndSettle();
+    expect(find.text('Linh'), findsOneWidget);
+    expect(mentions.loads, 2);
+  });
+
+  testWidgets('typing @ in a code block does not open the picker', (
+    tester,
+  ) async {
+    await _pump(tester, [
+      {
+        'type': 'codeBlock',
+        'attrs': {'language': null},
+        'content': [
+          {'type': 'text', 'text': 'a '},
+        ],
+      },
+    ]);
+    _editor(
+      tester,
+    ).replaceText(2, 0, '@', const TextSelection.collapsed(offset: 3));
+    await tester.pumpAndSettle();
+    expect(find.text('Linh'), findsNothing);
+    expect(_editor(tester).document.toPlainText(), 'a @\n');
+  });
+
+  testWidgets('the picker searches tasks on the server', (tester) async {
+    final mentions = FakeMentionSource(
+      _members,
+      found: const [
+        DocumentMentionOption(
+          id: 't9',
+          label: 'Ship the archive',
+          displayNumber: 512,
+          type: DocumentMentionType.task,
+        ),
+      ],
+    );
+    await _pump(tester, [_p('Ask ')], mentions: mentions);
+    await tester.ensureVisible(find.byTooltip('Mention'));
+    await tester.tap(find.byTooltip('Mention'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(DocumentMentionSheet),
+        matching: find.byType(TextField),
+      ),
+      'Ship',
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pumpAndSettle();
+    expect(mentions.queries, ['Ship']);
+    expect(find.text('#512 Ship the archive'), findsOneWidget);
   });
 
   testWidgets('tapping an image resizes it to a web preset', (tester) async {

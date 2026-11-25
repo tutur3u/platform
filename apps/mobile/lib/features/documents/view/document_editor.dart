@@ -17,6 +17,9 @@ import 'package:mobile/l10n/l10n.dart';
 
 enum DocumentSaveStatus { idle, saving, saved, error }
 
+/// Opens a document link with the session when it needs one.
+void defaultDocumentLinkOpener(String url) => unawaited(openDocumentLink(url));
+
 /// Full-screen document body: metadata, status and a Quill editor. The
 /// document title lives in the shell top bar, where it is edited inline.
 class DocumentEditor extends StatelessWidget {
@@ -30,6 +33,7 @@ class DocumentEditor extends StatelessWidget {
     required this.onHighlight,
     this.onEditImage,
     this.onEditTable,
+    this.onOpenLink = defaultDocumentLinkOpener,
     this.lastEdited,
     super.key,
   });
@@ -43,6 +47,9 @@ class DocumentEditor extends StatelessWidget {
   final VoidCallback onHighlight;
   final DocumentImageEditCallback? onEditImage;
   final DocumentTableEditCallback? onEditTable;
+
+  /// Opens a tapped link, given as stored.
+  final ValueChanged<String> onOpenLink;
   final String? lastEdited;
 
   @override
@@ -110,7 +117,9 @@ class DocumentEditor extends StatelessWidget {
                   editor: editor,
                   onLink: onLink,
                 ),
-                onLaunchUrl: (url) => unawaited(openDocumentLink(url)),
+                // Workspace file links are relative, as the web stores them.
+                customLinkPrefixes: const [documentWorkspaceLinkPrefix],
+                onLaunchUrl: onOpenLink,
                 embedBuilders: [
                   DocumentImageEmbedBuilder(onEdit: onEditImage),
                   const TaskDescriptionVideoEmbedBuilder(),

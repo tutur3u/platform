@@ -3551,6 +3551,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsMentionTomorrow => 'Tomorrow';
 
   @override
+  String get documentsMentionUntitledProject => 'Untitled project';
+
+  @override
+  String get documentsMentionUntitledTask => 'Untitled task';
+
+  @override
+  String get documentsMentionWorkspace => 'Workspace';
+
+  @override
   String get documentsMentionWorkspaces => 'Workspaces';
 
   @override
@@ -3629,6 +3638,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsTableRemoveRow => 'Remove last row';
 
   @override
+  String get documentsTableRichCells => 'Formatted cells keep their formatting. Edit them on the web.';
+
+  @override
   String get documentsTableRows => 'Rows';
 
   @override
@@ -3642,6 +3654,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get documentsUploadFailed => 'Couldn\'t upload the file';
+
+  @override
+  String get documentsUploadFileTooLarge => 'Files can be at most 100 MB.';
+
+  @override
+  String get documentsUploadImageTooLarge => 'Images can be at most 5 MB.';
+
+  @override
+  String get documentsUploadVideoTooLarge => 'Videos can be at most 50 MB.';
 
   @override
   String get documentsUploading => 'Uploading…';

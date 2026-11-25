@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/documents/document_table.dart';
+import 'package:mobile/features/documents/view/document_table_grid.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// What the table editor returns: the edited node, or a deletion.
@@ -90,6 +91,11 @@ class _DocumentTableEditorSheetState extends State<DocumentTableEditorSheet> {
     final cols = _table.columnCount;
     final header = _table.hasHeaderRow;
     final shape = !_merged;
+    final rich = [
+      for (var r = 0; r < rows; r++)
+        for (var col = 0; col < _table.rows[r].length; col++)
+          if (!_table.isPlainCell(r, col)) true,
+    ].isNotEmpty;
     return AppSheetScaffold(
       title: l10n.documentsTableEdit,
       icon: LucideIcons.table,
@@ -146,11 +152,14 @@ class _DocumentTableEditorSheetState extends State<DocumentTableEditorSheet> {
             value: header,
             onChanged: (_) => _reshape(_table.toggleHeaderRow),
           ),
-          if (_merged)
+          for (final hint in [
+            if (_merged) l10n.documentsTableMergedCells,
+            if (rich) l10n.documentsTableRichCells,
+          ])
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
-                l10n.documentsTableMergedCells,
+                hint,
                 style: tokens.typography.small.copyWith(
                   color: c.mutedForeground,
                 ),
@@ -158,45 +167,46 @@ class _DocumentTableEditorSheetState extends State<DocumentTableEditorSheet> {
             ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Table(
-              defaultColumnWidth: const FixedColumnWidth(160),
-              border: TableBorder.all(
-                color: c.border,
-                borderRadius: BorderRadius.circular(AppRadius.xs),
-              ),
-              children: [
-                for (var r = 0; r < _cells.length; r++)
-                  TableRow(
-                    decoration: r == 0 && header
-                        ? BoxDecoration(color: c.muted)
-                        : null,
-                    children: [
-                      for (var col = 0; col < cols; col++)
-                        if (col < _cells[r].length)
-                          Padding(
-                            padding: const EdgeInsets.all(AppSpacing.xxs),
-                            child: AppTextField(
-                              key: ValueKey('document-table-field-$r-$col'),
-                              controller: _cells[r][col],
-                              placeholder: l10n.inputPlaceholderTableCell,
-                              borderless: true,
-                              hintMaxLines: 1,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm,
-                                vertical: AppSpacing.xs,
-                              ),
-                              minLines: 1,
-                              maxLines: 4,
-                              style: r == 0 && header
-                                  ? const TextStyle(fontWeight: FontWeight.w600)
-                                  : null,
-                            ),
-                          )
-                        else
-                          const SizedBox.shrink(),
-                    ],
+            child: DocumentTableGrid(
+              table: _table,
+              columnWidth: const FixedColumnWidth(160),
+              cellBuilder: (context, r, col) {
+                final bold = _table.rows[r][col]['type'] == 'tableHeader'
+                    ? const TextStyle(fontWeight: FontWeight.w600)
+                    : null;
+                if (!_table.isPlainCell(r, col)) {
+                  return Padding(
+                    key: ValueKey('document-table-rich-$r-$col'),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    child: Text(
+                      _table.textAt(r, col),
+                      style: tokens.typography.base
+                          .merge(bold)
+                          .copyWith(color: c.mutedForeground),
+                    ),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xxs),
+                  child: AppTextField(
+                    key: ValueKey('document-table-field-$r-$col'),
+                    controller: _cells[r][col],
+                    placeholder: l10n.inputPlaceholderTableCell,
+                    borderless: true,
+                    hintMaxLines: 1,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    minLines: 1,
+                    maxLines: 4,
+                    style: bold,
                   ),
-              ],
+                );
+              },
             ),
           ),
         ],

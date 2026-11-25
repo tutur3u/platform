@@ -18,10 +18,17 @@ const DocumentMentionOption documentCustomDateOption = DocumentMentionOption(
 /// workspace, projects, tasks and dates, filtered by the search. Pops the
 /// chosen option, or [documentCustomDateOption] to pick a date.
 class DocumentMentionSheet extends StatefulWidget {
-  const DocumentMentionSheet({required this.options, super.key});
+  const DocumentMentionSheet({
+    required this.options,
+    this.searchTasks,
+    super.key,
+  });
 
   /// The workspace's mentionable entities; dates are added here.
   final Future<List<DocumentMentionOption>> options;
+
+  /// Searches tasks on the server, beyond the first ones [options] lists.
+  final Future<List<DocumentMentionOption>> Function(String query)? searchTasks;
 
   @override
   State<DocumentMentionSheet> createState() => _DocumentMentionSheetState();
@@ -34,6 +41,9 @@ class _DocumentMentionSheetState extends State<DocumentMentionSheet> {
   );
   List<DocumentMentionOption>? _loaded;
   bool _failed = false;
+  List<DocumentMentionOption> _found = const [];
+  Timer? _debounce;
+  int _searchToken = 0;
 
   @override
   void initState() {
@@ -52,15 +62,59 @@ class _DocumentMentionSheetState extends State<DocumentMentionSheet> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _search.dispose();
     super.dispose();
+  }
+
+  /// Asks the server for tasks once typing pauses.
+  void _onQuery(String query) {
+    setState(() {});
+    final search = widget.searchTasks;
+    _debounce?.cancel();
+    final q = query.trim();
+    if (search == null || q.length < 2) {
+      if (_found.isNotEmpty) setState(() => _found = const []);
+      return;
+    }
+    final token = ++_searchToken;
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        final found = await search(q);
+        if (mounted && token == _searchToken) setState(() => _found = found);
+      } on Object {
+        // The local list still shows; a failed search adds nothing.
+      }
+    });
+  }
+
+  /// The label the picker shows: date shortcuts in the reader's language.
+  String _label(AppLocalizations l10n, DocumentMentionOption option) {
+    if (option.type != DocumentMentionType.date) return option.label;
+    return switch (option.id) {
+      'today' => l10n.documentsMentionToday,
+      'tomorrow' => l10n.documentsMentionTomorrow,
+      'next-week' => l10n.documentsMentionNextWeek,
+      'next-month' => l10n.documentsMentionNextMonth,
+      _ => option.label,
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final query = _search.text;
-    final options = filterDocumentMentions([...?_loaded, ..._dates], query);
+    final local = [...?_loaded, ..._dates];
+    final known = {for (final option in local) option.id};
+    final options = filterDocumentMentions(
+      [
+        ...local,
+        for (final task in _found)
+          if (!known.contains(task.id)) task,
+      ],
+      query,
+      labelOf: (option) => _label(l10n, option),
+    );
     final groups = [
       for (final type in DocumentMentionType.values)
         (
@@ -78,7 +132,7 @@ class _DocumentMentionSheetState extends State<DocumentMentionSheet> {
       search: AppSheetSearch(
         controller: _search,
         hint: l10n.documentsMentionSearch,
-        onChanged: (_) => setState(() {}),
+        onChanged: _onQuery,
         startActive: true,
       ),
       slivers: [
@@ -116,7 +170,8 @@ class _DocumentMentionSheetState extends State<DocumentMentionSheet> {
                 caption: _groupTitle(l10n, type),
                 bottomGap: AppSpacing.md,
                 children: [
-                  for (final option in items) _MentionRow(option: option),
+                  for (final option in items)
+                    _MentionRow(option: option, label: _label(l10n, option)),
                 ],
               ),
             ),
@@ -152,13 +207,13 @@ String _groupTitle(AppLocalizations l10n, DocumentMentionType type) =>
     };
 
 class _MentionRow extends StatelessWidget {
-  const _MentionRow({required this.option});
+  const _MentionRow({required this.option, required this.label});
 
   final DocumentMentionOption option;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final (icon, tone) = switch (option.type) {
       DocumentMentionType.user => (LucideIcons.user, AppTone.success),
       DocumentMentionType.workspace => (
@@ -171,18 +226,6 @@ class _MentionRow extends StatelessWidget {
     };
     final avatar = option.avatarUrl;
     final number = option.displayNumber;
-    // Date shortcuts store the web's English name; the row shows ours.
-    final label = switch (option.id) {
-      'today' when option.type == DocumentMentionType.date =>
-        l10n.documentsMentionToday,
-      'tomorrow' when option.type == DocumentMentionType.date =>
-        l10n.documentsMentionTomorrow,
-      'next-week' when option.type == DocumentMentionType.date =>
-        l10n.documentsMentionNextWeek,
-      'next-month' when option.type == DocumentMentionType.date =>
-        l10n.documentsMentionNextMonth,
-      _ => option.label,
-    };
     return AppGroupedRow(
       leading: avatar != null && avatar.trim().isNotEmpty
           ? NetworkAvatar(

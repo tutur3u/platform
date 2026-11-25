@@ -6,6 +6,9 @@
 /// paragraphs, widths), and new cells take the web's defaults.
 library;
 
+import 'dart:convert';
+import 'dart:math';
+
 /// The attributes the web gives a new cell.
 Map<String, dynamic> _defaultCellAttrs() => {
   'colspan': 1,
@@ -109,10 +112,31 @@ class DocumentTable {
     ].join('\n');
   }
 
-  /// Sets the cell's text. A cell whose text is unchanged stays as stored.
+  /// Whether the cell's text can be edited here without losing anything:
+  /// paragraphs of unformatted text that share one set of attributes.
+  /// Marks, mentions, breaks, lists and other blocks keep a cell read-only,
+  /// to be edited on the web.
+  bool isPlainCell(int row, int col) {
+    if (row >= rows.length || col >= rows[row].length) return false;
+    final blocks = _maps(rows[row][col]['content']);
+    final attrs = blocks.isEmpty ? null : jsonEncode(blocks.first['attrs']);
+    for (final block in blocks) {
+      if (block['type'] != 'paragraph') return false;
+      if (jsonEncode(block['attrs']) != attrs) return false;
+      for (final inline in _maps(block['content'])) {
+        if (inline['type'] != 'text') return false;
+        final marks = inline['marks'];
+        if (marks is List && marks.isNotEmpty) return false;
+      }
+    }
+    return true;
+  }
+
+  /// Sets the cell's text. A cell whose text is unchanged, or that is not
+  /// [isPlainCell], stays as stored.
   void setText(int row, int col, String text) {
     if (row >= rows.length || col >= rows[row].length) return;
-    if (textAt(row, col) == text) return;
+    if (textAt(row, col) == text || !isPlainCell(row, col)) return;
     final cell = rows[row][col];
     final first = _maps(cell['content']).firstOrNull;
     final attrs = first != null && first['type'] == 'paragraph'
@@ -181,9 +205,80 @@ class DocumentTable {
         {...?_rowNodes[r], 'type': 'tableRow', 'content': rows[r]},
     ],
   };
+
+  /// The cells laid out on a grid, honouring `colspan` and `rowspan` as
+  /// the web's table does. Each slot names the cell covering it.
+  List<List<DocumentTableSlot?>> grid() {
+    final slots = <List<DocumentTableSlot?>>[];
+    void ensure(int row, int col) {
+      while (slots.length <= row) {
+        slots.add([]);
+      }
+      final line = slots[row];
+      while (line.length <= col) {
+        line.add(null);
+      }
+    }
+
+    for (var r = 0; r < rows.length; r++) {
+      var g = 0;
+      for (var c = 0; c < rows[r].length; c++) {
+        ensure(r, g);
+        while (slots[r][g] != null) {
+          g++;
+          ensure(r, g);
+        }
+        final attrs = rows[r][c]['attrs'];
+        final colspan = attrs is Map ? _span(attrs['colspan']) : 1;
+        final rowspan = attrs is Map ? _span(attrs['rowspan']) : 1;
+        for (var dr = 0; dr < rowspan; dr++) {
+          for (var dc = 0; dc < colspan; dc++) {
+            ensure(r + dr, g + dc);
+            slots[r + dr][g + dc] = DocumentTableSlot(
+              row: r,
+              col: c,
+              origin: dr == 0 && dc == 0,
+              lastRow: dr == rowspan - 1,
+              lastCol: dc == colspan - 1,
+            );
+          }
+        }
+        g += colspan;
+      }
+    }
+    final width = slots.fold(0, (most, row) => max(most, row.length));
+    for (final row in slots) {
+      while (row.length < width) {
+        row.add(null);
+      }
+    }
+    return slots;
+  }
 }
 
-int _span(Object? value) => value is num ? value.toInt() : 1;
+/// One grid position of a table and the cell covering it.
+class DocumentTableSlot {
+  const DocumentTableSlot({
+    required this.row,
+    required this.col,
+    required this.origin,
+    required this.lastRow,
+    required this.lastCol,
+  });
+
+  /// The covering cell, as indices into [DocumentTable.rows].
+  final int row;
+  final int col;
+
+  /// Whether this is the cell's top-left position, which shows its text.
+  final bool origin;
+
+  /// Whether the cell ends here, so a border follows below or after it.
+  final bool lastRow;
+  final bool lastCol;
+}
+
+int _span(Object? value) => value is num && value >= 1 ? value.toInt() : 1;
 
 List<Map<String, dynamic>> _maps(Object? content) => [
   if (content is List)

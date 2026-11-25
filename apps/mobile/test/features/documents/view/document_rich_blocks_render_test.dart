@@ -15,6 +15,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/design_render_harness.dart';
+import 'document_mention_fakes.dart';
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
@@ -126,7 +127,7 @@ Future<void> _pump(
             child: DocumentDetailPage(
               documentId: 'doc-1',
               repository: repository,
-              mentionOptions: (_) async => const [
+              mentionSource: (_) => FakeMentionSource(const [
                 DocumentMentionOption(
                   id: 'u1',
                   label: 'Linh Tran',
@@ -150,7 +151,7 @@ Future<void> _pump(
                   displayNumber: 42,
                   type: DocumentMentionType.task,
                 ),
-              ],
+              ]),
             ),
           ),
         ),

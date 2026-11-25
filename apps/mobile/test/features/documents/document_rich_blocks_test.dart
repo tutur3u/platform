@@ -291,7 +291,8 @@ void main() {
       final saved = _saved(opened.snapshot, editor).single;
       expect(saved['attrs'], {
         ...(image['attrs'] as Map),
-        'width': 640,
+        // A string width, as the web's resize handle writes, stays one.
+        'width': '640',
         'containerStyle': 'width: 640px; height: auto; cursor: pointer;',
       });
     });

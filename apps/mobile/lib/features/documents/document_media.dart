@@ -117,7 +117,9 @@ Map<String, dynamic> resizeDocumentImage(
     ...node,
     'attrs': {
       ...attrs,
-      'width': width,
+      // The web's resize handle stores the width as a string; a stored
+      // string stays one, so both editors read the same type back.
+      'width': attrs['width'] is String ? '$width' : width,
       if (style is String && _widthPattern.hasMatch(style))
         'containerStyle': style.replaceFirst(
           _widthPattern,

@@ -124,16 +124,19 @@ class _GridCell extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(3),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            width: 34,
-            height: 26,
-            decoration: BoxDecoration(
-              color: fill,
-              borderRadius: BorderRadius.circular(AppRadius.xs),
-              border: Border.all(color: on ? c.primary : c.border),
+        // Each square is a full 44 by 44 touch target around its mark.
+        child: SizedBox.square(
+          dimension: 44,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              width: 36,
+              height: 30,
+              decoration: BoxDecoration(
+                color: fill,
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+                border: Border.all(color: on ? c.primary : c.border),
+              ),
             ),
           ),
         ),

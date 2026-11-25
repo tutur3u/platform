@@ -6841,6 +6841,24 @@ abstract class AppLocalizations {
   /// **'Tomorrow'**
   String get documentsMentionTomorrow;
 
+  /// No description provided for @documentsMentionUntitledProject.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled project'**
+  String get documentsMentionUntitledProject;
+
+  /// No description provided for @documentsMentionUntitledTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get documentsMentionUntitledTask;
+
+  /// No description provided for @documentsMentionWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get documentsMentionWorkspace;
+
   /// No description provided for @documentsMentionWorkspaces.
   ///
   /// In en, this message translates to:
@@ -6997,6 +7015,12 @@ abstract class AppLocalizations {
   /// **'Remove last row'**
   String get documentsTableRemoveRow;
 
+  /// No description provided for @documentsTableRichCells.
+  ///
+  /// In en, this message translates to:
+  /// **'Formatted cells keep their formatting. Edit them on the web.'**
+  String get documentsTableRichCells;
+
   /// No description provided for @documentsTableRows.
   ///
   /// In en, this message translates to:
@@ -7026,6 +7050,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t upload the file'**
   String get documentsUploadFailed;
+
+  /// No description provided for @documentsUploadFileTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Files can be at most 100 MB.'**
+  String get documentsUploadFileTooLarge;
+
+  /// No description provided for @documentsUploadImageTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Images can be at most 5 MB.'**
+  String get documentsUploadImageTooLarge;
+
+  /// No description provided for @documentsUploadVideoTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos can be at most 50 MB.'**
+  String get documentsUploadVideoTooLarge;
 
   /// No description provided for @documentsUploading.
   ///

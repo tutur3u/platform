@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/documents/document_media.dart';
+import 'package:mobile/features/documents/document_media_pick.dart';
 import 'package:mobile/features/documents/document_media_upload.dart';
 import 'package:mobile/features/documents/document_mentions.dart';
 import 'package:mobile/features/documents/document_table.dart';
@@ -17,6 +16,9 @@ import 'package:mobile/features/documents/view/document_mention_sheet.dart';
 import 'package:mobile/features/documents/view/document_table_embed.dart';
 import 'package:mobile/features/documents/view/document_table_insert_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
+
+export 'package:mobile/features/documents/document_media_pick.dart'
+    show DocumentMediaKind, DocumentMediaPicker, pickDocumentMedia;
 
 /// Whether this device has a camera the image picker can open.
 bool get documentCameraAvailable =>
@@ -47,66 +49,45 @@ Future<void> insertDocumentTable(
   await editDocumentTable(context, editor, offset, node);
 }
 
-/// The kinds of media the insert group uploads.
-enum DocumentMediaKind { image, camera, video, file }
-
-/// A picked file, ready to upload.
-typedef _Picked = ({String name, Uint8List bytes, String? contentType});
-
-Future<_Picked?> _pick(DocumentMediaKind kind) async {
-  if (kind == DocumentMediaKind.file) {
-    final file = await FilePicker.pickFile();
-    if (file == null) return null;
-    return (
-      name: file.name,
-      bytes: await file.readAsBytes(),
-      contentType: null,
-    );
-  }
-  final picker = ImagePicker();
-  final picked = switch (kind) {
-    DocumentMediaKind.video => await picker.pickVideo(
-      source: ImageSource.gallery,
-    ),
-    DocumentMediaKind.camera => await picker.pickImage(
-      source: ImageSource.camera,
-    ),
-    _ => await picker.pickImage(source: ImageSource.gallery),
-  };
-  if (picked == null) return null;
-  return (
-    name: picked.name,
-    bytes: await picked.readAsBytes(),
-    contentType: picked.mimeType,
-  );
-}
-
 /// Picks media of [kind], uploads it to workspace [wsId] as the web does,
 /// and inserts it at the caret: an image or video block, or a link named
-/// after the file. Failures show a toast and leave the document alone.
+/// after the file. A file over the web's limit for its kind is refused
+/// before it is read. Failures show a toast and leave the document alone.
 Future<void> insertDocumentMedia(
   BuildContext context,
   QuillController editor, {
   required DocumentMediaKind kind,
   required String wsId,
   required DocumentMediaUploader uploader,
+  DocumentMediaPicker pick = pickDocumentMedia,
 }) async {
   final l10n = context.l10n;
-  final _Picked? picked;
+  final DocumentPickedFile? picked;
+  final int size;
   try {
-    picked = await _pick(kind);
+    picked = await pick(kind);
+    size = picked == null ? 0 : await picked.length();
   } on Object {
     if (context.mounted) _toast(context, l10n.documentsUploadFailed);
     return;
   }
   if (picked == null || !context.mounted) return;
+  if (size > documentUploadLimit(kind)) {
+    _toast(context, switch (kind) {
+      DocumentMediaKind.image ||
+      DocumentMediaKind.camera => l10n.documentsUploadImageTooLarge,
+      DocumentMediaKind.video => l10n.documentsUploadVideoTooLarge,
+      DocumentMediaKind.file => l10n.documentsUploadFileTooLarge,
+    });
+    return;
+  }
   _toast(context, l10n.documentsUploading, neutral: true);
   final String src;
   try {
     src = await uploader.upload(
       wsId,
       name: picked.name,
-      bytes: picked.bytes,
+      bytes: await picked.readAsBytes(),
       contentType: picked.contentType,
     );
   } on ApiException catch (error) {
@@ -157,6 +138,15 @@ void insertDocumentFileLink(
     ..formatText(at + name.length, 1, const LinkAttribute(null));
 }
 
+/// Whether the character at [offset] is code (a code block line or inline
+/// code), where `@` is text, as on the web.
+bool documentOffsetIsCode(QuillController editor, int offset) {
+  if (offset < 0 || offset >= editor.document.length) return false;
+  final style = editor.document.collectStyle(offset, 1);
+  return style.containsKey(Attribute.codeBlock.key) ||
+      style.containsKey(Attribute.inlineCode.key);
+}
+
 /// Opens the mention picker and inserts the chosen mention at the caret.
 /// With [trigger], the `@` typed at that offset is replaced; dismissing
 /// the picker leaves it as typed.
@@ -164,12 +154,14 @@ Future<void> insertDocumentMention(
   BuildContext context,
   QuillController editor, {
   required Future<List<DocumentMentionOption>> options,
+  Future<List<DocumentMentionOption>> Function(String query)? searchTasks,
   int? trigger,
 }) async {
   var option = await showAppSheet<DocumentMentionOption>(
     context: context,
     size: AppSheetSize.large,
-    builder: (_) => DocumentMentionSheet(options: options),
+    builder: (_) =>
+        DocumentMentionSheet(options: options, searchTasks: searchTasks),
   );
   if (option == null || !context.mounted) return;
   if (identical(option, documentCustomDateOption)) {
