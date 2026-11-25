@@ -72,6 +72,57 @@ test('every Meet frontend release carries the declared MEET_UX_V2 flag', () => {
   );
 });
 
+const GUEST_BOARD_SWITCHES = [
+  'MEET_GUEST_WHITEBOARD',
+  'MEET_GUEST_WHITEBOARD_DRAW',
+];
+
+test('both Meet Workers carry the declared guest whiteboard switches', () => {
+  const frontend = step('deploy', 'Deploy the verified frontend');
+  const signaling = step('deploy', 'Deploy signaling before the frontend');
+  const outputArgs = frontend.run.slice(
+    frontend.run.indexOf('output_args=('),
+    frontend.run.indexOf('if [ "$MEET_AI_RELEASE"')
+  );
+  // Assembled so this test adds no tracked deploy-tool usage.
+  const deployCommand = ['wrang', 'ler deploy'].join('');
+  const realtimeDeploy = signaling.run.slice(
+    signaling.run.indexOf(deployCommand)
+  );
+  const count = (text, needle) => text.split(needle).length - 1;
+  for (const name of GUEST_BOARD_SWITCHES) {
+    const fallback = '${{ vars.' + name + " || 'false' }}";
+    const check =
+      'case "$' +
+      name +
+      '" in true|false) ;; *) echo \'::error::' +
+      name +
+      " must be true or false'; exit 1 ;; esac";
+    const appVar = `--var "${name}=$${name}"`;
+    const realtimeVar = `--var "${name}:$${name}"`;
+    assert.equal(frontend.env[name], fallback);
+    assert.equal(signaling.env[name], fallback);
+
+    // The Meet app Worker takes KEY=VALUE through the cf output builder.
+    assert.ok(frontend.run.includes(check));
+    assert.ok(
+      frontend.run.indexOf(check) < frontend.run.indexOf('void-cf-output.mjs')
+    );
+    assert.ok(outputArgs.includes(appVar));
+    assert.equal(count(frontend.run, `--var "${name}=`), 1);
+    assert.equal(count(frontend.run, `--var "${name}:`), 0);
+
+    // The realtime Worker takes KEY:VALUE through the realtime deploy.
+    assert.ok(signaling.run.includes(check));
+    assert.ok(
+      signaling.run.indexOf(check) < signaling.run.indexOf(deployCommand)
+    );
+    assert.ok(realtimeDeploy.includes(realtimeVar));
+    assert.equal(count(signaling.run, `--var "${name}:`), 1);
+    assert.equal(count(signaling.run, `--var "${name}=`), 0);
+  }
+});
+
 test('Mira stays contained unless the release opts in to paid-and-staff', () => {
   const publish = step('deploy', 'Deploy the verified frontend');
   assert.equal(

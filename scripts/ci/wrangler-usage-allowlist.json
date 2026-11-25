@@ -289,9 +289,9 @@
       "gap": "void-wave1-publication",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/commit/d24b0cbb9d8a17a6845772800d7ce2e571d78edc",
-        "reason": "The Meet frontend publishes through the cf Void publisher (void-cf-output.mjs and void-cf-publisher.mjs) and carries no Wrangler line. Realtime publication, secret-name checks and the paired restore helper keep their admitted Wrangler operations; the realtime deploy appends MEET_AI_DISABLED:true only for a contained MEET_AI_RELEASE, because source configs leave the Meet AI kill switch off under the reviewed all-workspaces opt-in. Usage counts are unchanged."
+        "reason": "The Meet frontend publishes through the cf Void publisher (void-cf-output.mjs and void-cf-publisher.mjs) and carries no Wrangler line. Realtime publication, secret-name checks and the paired restore helper keep their admitted Wrangler operations; the realtime deploy appends MEET_AI_DISABLED:true only for a contained MEET_AI_RELEASE, because source configs leave the Meet AI kill switch off under the reviewed all-workspaces opt-in. It also passes the validated MEET_GUEST_WHITEBOARD and MEET_GUEST_WHITEBOARD_DRAW repository variables as declared vars. Usage counts are unchanged."
       },
-      "digest": "188aa967c74935f0a9f3411e1335753392c33a26706b62705afbcc9c4bda9211"
+      "digest": "cc9e078c4795400a972001d20c0c65af34f6665f27c2524097f58a8ecd72b1ee"
     },
     ".github/workflows/mind-cloudflare.yaml": {
       "lines": 6,

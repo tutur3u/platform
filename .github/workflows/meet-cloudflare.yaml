@@ -735,14 +735,19 @@ jobs:
           # Source configs leave the Meet AI kill switch off; a contained
           # release turns it back on for the room Worker too.
           MEET_AI_RELEASE: ${{ vars.MEET_AI_RELEASE || 'contained' }}
+          MEET_GUEST_WHITEBOARD: ${{ vars.MEET_GUEST_WHITEBOARD || 'false' }}
+          MEET_GUEST_WHITEBOARD_DRAW: ${{ vars.MEET_GUEST_WHITEBOARD_DRAW || 'false' }}
         id: signaling
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           case "$MEET_AI_RELEASE" in contained|paid-and-staff) ;; *) echo '::error::MEET_AI_RELEASE must be contained or paid-and-staff'; exit 1 ;; esac
+          case "$MEET_GUEST_WHITEBOARD" in true|false) ;; *) echo '::error::MEET_GUEST_WHITEBOARD must be true or false'; exit 1 ;; esac
+          case "$MEET_GUEST_WHITEBOARD_DRAW" in true|false) ;; *) echo '::error::MEET_GUEST_WHITEBOARD_DRAW must be true or false'; exit 1 ;; esac
           node scripts/ci/meet-realtime-release.mjs verify "$SOURCE_SHA"
           contain=()
           if [ "$MEET_AI_RELEASE" = contained ]; then contain=(--var MEET_AI_DISABLED:true); fi
-          bun x --no-install wrangler deploy --no-bundle -c apps/meet-realtime/dist/worker/wrangler.json --message "$SOURCE_SHA" "${contain[@]}"
+          bun x --no-install wrangler deploy --no-bundle -c apps/meet-realtime/dist/worker/wrangler.json --message "$SOURCE_SHA" "${contain[@]}" \
+            --var "MEET_GUEST_WHITEBOARD:$MEET_GUEST_WHITEBOARD" --var "MEET_GUEST_WHITEBOARD_DRAW:$MEET_GUEST_WHITEBOARD_DRAW"
       - name: Deploy the verified frontend
         if: steps.admission.outputs.superseded != 'true'
         env:
@@ -757,6 +762,8 @@ jobs:
           # Private Mira stays contained unless the release opts in.
           MEET_AI_RELEASE: ${{ vars.MEET_AI_RELEASE || 'contained' }}
           MEET_UX_V2: ${{ vars.MEET_UX_V2 || 'false' }}
+          MEET_GUEST_WHITEBOARD: ${{ vars.MEET_GUEST_WHITEBOARD || 'false' }}
+          MEET_GUEST_WHITEBOARD_DRAW: ${{ vars.MEET_GUEST_WHITEBOARD_DRAW || 'false' }}
           PAID_TIER_SECRET: ${{ steps.secret-names.outputs.paid_tier_secret }}
         id: frontend
         working-directory: apps/meet
@@ -767,12 +774,16 @@ jobs:
           case "$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS" in 301|302|307) ;; *) echo '::error::TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS must be 301, 302 or 307'; exit 1 ;; esac
           case "$MEET_AI_RELEASE" in contained|paid-and-staff) ;; *) echo '::error::MEET_AI_RELEASE must be contained or paid-and-staff'; exit 1 ;; esac
           case "$MEET_UX_V2" in true|false) ;; *) echo '::error::MEET_UX_V2 must be true or false'; exit 1 ;; esac
+          case "$MEET_GUEST_WHITEBOARD" in true|false) ;; *) echo '::error::MEET_GUEST_WHITEBOARD must be true or false'; exit 1 ;; esac
+          case "$MEET_GUEST_WHITEBOARD_DRAW" in true|false) ;; *) echo '::error::MEET_GUEST_WHITEBOARD_DRAW must be true or false'; exit 1 ;; esac
           export CF_SEND_TELEMETRY=false
           out="$RUNNER_TEMP/meet-cf-output"
           output_args=(--config "${{ steps.meet-output.outputs.config }}" --out "$out" --sha "$SOURCE_SHA"
             --var "TTR_ONE_ORIGIN_MEET=$TTR_ONE_ORIGIN_MEET"
             --var "TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS"
-            --var "MEET_UX_V2=$MEET_UX_V2")
+            --var "MEET_UX_V2=$MEET_UX_V2"
+            --var "MEET_GUEST_WHITEBOARD=$MEET_GUEST_WHITEBOARD"
+            --var "MEET_GUEST_WHITEBOARD_DRAW=$MEET_GUEST_WHITEBOARD_DRAW")
           if [ "$MEET_AI_RELEASE" = contained ]; then
             output_args+=(--var MEET_AI_DISABLED=true)
           fi

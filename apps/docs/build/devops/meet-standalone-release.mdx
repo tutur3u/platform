@@ -116,6 +116,21 @@ dashboard is not a declared override, so the next release drops it.
 To roll back, set the repository variable to `false` and dispatch the release
 again.
 
+## Guest whiteboard switches
+
+The repository variables `MEET_GUEST_WHITEBOARD` and
+`MEET_GUEST_WHITEBOARD_DRAW` (`true` or `false`, default `false`) set the Worker
+vars of the same names on both the Meet app Worker and `meet-realtime` on every
+release. Production carries no value before the first release that declares
+them, which serves both switches off. The release reads the variables at release
+time and passes them as declared overrides (`--var NAME=value` to the frontend
+output, `--var NAME:value` to the realtime `wrangler deploy`); any other value
+fails the deploy step. Guests draw on the whiteboard only when both switches are
+`true`.
+
+To roll back, set both repository variables to `false` (or delete them) and
+dispatch the release again for the same SHA.
+
 ## Artifacts and rollback
 
 The validate job builds and seals the frontend and realtime output. Realtime's
