@@ -146,7 +146,5 @@ it('keeps the resume-audio name when a narrow tile shows only its icon', () => {
   // Below a 12rem tile the label is read but not shown: icon only.
   expect(label.className).toContain('@max-[12rem]:sr-only');
   expect(resume.className).toContain('@max-[12rem]:size-9');
-  expect(resume.querySelector('svg')?.getAttribute('aria-hidden')).toBe(
-    'true'
-  );
+  expect(resume.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
 });

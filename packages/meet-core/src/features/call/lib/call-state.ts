@@ -438,8 +438,7 @@ export function reduceCallState(
         ...state,
         classTimer: message.timer,
         classTimerClockSkew:
-          clockSkew(message.serverNow, receivedAt) ??
-          state.classTimerClockSkew,
+          clockSkew(message.serverNow, receivedAt) ?? state.classTimerClockSkew,
         error: null,
       };
     case 'error':

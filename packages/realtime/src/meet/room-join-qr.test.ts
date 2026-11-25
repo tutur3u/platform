@@ -121,9 +121,7 @@ describe('stage join QR settings', () => {
     expect(result.reply).toEqual([
       expect.objectContaining({ ...expected, requestId: 'qr-1' }),
     ]);
-    expect(result.broadcast).toContainEqual(
-      expect.objectContaining(expected)
-    );
+    expect(result.broadcast).toContainEqual(expect.objectContaining(expected));
   });
 
   it('rejects auto-hide values outside Off, 2, 5 and 10 minutes', () => {

@@ -45,10 +45,7 @@ export function managesJoinQr(
  * so the options never silently do nothing on an older realtime Worker.
  */
 export function offersJoinQrOptions(
-  state: Pick<
-    CallState,
-    'settingsFeatures' | 'canManageParticipants' | 'role'
-  >
+  state: Pick<CallState, 'settingsFeatures' | 'canManageParticipants' | 'role'>
 ) {
   return managesJoinQr(state) && roomKeepsJoinQr(state);
 }

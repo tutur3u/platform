@@ -98,9 +98,7 @@ describe('StageJoinQr', () => {
 
   it('stays hidden while a manager has hidden it', () => {
     render(
-      <Stage
-        state={roomState({ settings: { ...base, joinQrHidden: true } })}
-      />
+      <Stage state={roomState({ settings: { ...base, joinQrHidden: true } })} />
     );
     expect(stageQr()).toBeNull();
   });

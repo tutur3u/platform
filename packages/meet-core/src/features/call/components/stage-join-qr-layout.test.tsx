@@ -121,13 +121,16 @@ it('needs the room to announce the joinQr feature', () => {
 it('offers the card options to managers only in a room that keeps them', () => {
   const host = { role: 'host' as const, canManageParticipants: true };
   const cohost = { role: 'speaker' as const, canManageParticipants: true };
-  const participant = { role: 'speaker' as const, canManageParticipants: false };
+  const participant = {
+    role: 'speaker' as const,
+    canManageParticipants: false,
+  };
   expect(offersJoinQrOptions({ ...host, settingsFeatures: ['joinQr'] })).toBe(
     true
   );
-  expect(
-    offersJoinQrOptions({ ...cohost, settingsFeatures: ['joinQr'] })
-  ).toBe(true);
+  expect(offersJoinQrOptions({ ...cohost, settingsFeatures: ['joinQr'] })).toBe(
+    true
+  );
   // An older realtime Worker announces no features: no options for anyone.
   expect(offersJoinQrOptions({ ...host, settingsFeatures: [] })).toBe(false);
   expect(offersJoinQrOptions({ ...cohost })).toBe(false);

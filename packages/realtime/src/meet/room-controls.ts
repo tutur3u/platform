@@ -40,10 +40,7 @@ export function approvedParticipantsMessage(
     participants: Object.values(state.approved ?? {}),
   };
 }
-export function roomSettingsMessage(
-  state: MeetRoomSnapshot,
-  now?: string
-) {
+export function roomSettingsMessage(state: MeetRoomSnapshot, now?: string) {
   return {
     type: 'room.settings' as const,
     settings: state.settings ?? { shareNotes: false },

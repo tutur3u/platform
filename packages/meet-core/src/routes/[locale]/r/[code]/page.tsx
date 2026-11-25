@@ -136,10 +136,7 @@ export default async function RoomPage({
     workspaceSlug,
   } = access;
   const wsId = meeting.ws_id;
-  const meetingName = meetingDisplayName(
-    meeting.name,
-    t('untitled_meeting')
-  );
+  const meetingName = meetingDisplayName(meeting.name, t('untitled_meeting'));
   const leaveHref =
     MEETING_APP !== 'parley' && canReadWorkspace
       ? `/${workspaceSlug}/meetings/${meeting.id}`

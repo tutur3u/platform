@@ -49,10 +49,7 @@ export function RoomView({
   const { access, policy } = model;
   const { meeting, user, isHost, canReadWorkspace, workspaceSlug } = access;
   const requiresAccount = 'guest' in access && access.guest === true;
-  const meetingName = meetingDisplayName(
-    meeting.name,
-    t('untitled_meeting')
-  );
+  const meetingName = meetingDisplayName(meeting.name, t('untitled_meeting'));
   const leaveHref = canReadWorkspace
     ? `/${workspaceSlug}/meetings/${meeting.id}`
     : '/';

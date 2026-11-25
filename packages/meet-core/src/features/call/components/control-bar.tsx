@@ -15,12 +15,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import {
-  type ReactNode,
-  type Ref,
-  useRef,
-  useSyncExternalStore,
-} from 'react';
+import { type ReactNode, type Ref, useRef, useSyncExternalStore } from 'react';
 import { usePanelFocusReturn } from '../hooks/use-panel-focus-return';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { readRoomControls, subscribeRoomControls } from '../lib/room-actions';

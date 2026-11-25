@@ -37,9 +37,7 @@ describe('meetingDisplayName', () => {
   it('matches a stored default with decomposed diacritics', () => {
     const decomposed = 'Cuộc họp chưa đặt tên'.normalize('NFD');
     expect(decomposed).not.toBe('Cuộc họp chưa đặt tên');
-    expect(meetingDisplayName(decomposed, EN_DEFAULT)).toBe(
-      'Untitled meeting'
-    );
+    expect(meetingDisplayName(decomposed, EN_DEFAULT)).toBe('Untitled meeting');
   });
 
   it('keeps a chosen title verbatim', () => {
