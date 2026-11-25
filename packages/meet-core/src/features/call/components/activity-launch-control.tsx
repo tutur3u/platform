@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -93,13 +94,14 @@ export function ActivityLaunchControl({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {disabledReason && (
-            <p
+            <DropdownMenuLabel
               id={reasonId}
-              role="presentation"
+              role="menuitem"
+              aria-disabled="true"
               className="px-2 py-1 text-muted-foreground text-xs"
             >
               {disabledReason}
-            </p>
+            </DropdownMenuLabel>
           )}
           <DropdownMenuItem
             disabled={!!disabledReason}

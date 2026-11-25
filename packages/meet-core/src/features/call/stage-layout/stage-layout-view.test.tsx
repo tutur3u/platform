@@ -637,19 +637,24 @@ it('keeps manual minimize after sharing until the chip is clicked', () => {
   expect(mounts.document).toBe(1);
 });
 
-it('keeps a fullscreen activity draft when screen shares overlap', () => {
+it('moves fullscreen Q&A focus to the chip and preserves the draft', () => {
   const { rerender } = render(presenting());
   open('fullscreen-qa');
   const input = screen.getByRole('textbox', { name: 'fullscreen-qa input' });
   fireEvent.change(input, { target: { value: 'Question draft' } });
+  input.focus();
+  expect(document.activeElement).toBe(input);
 
   rerender(presenting(['peer']));
   expect(screen.queryByRole('dialog', { name: 'Q&A full screen' })).toBeNull();
+  const chip = screen.getByRole('button', { name: 'Reopen fullscreen-qa' });
+  expect(document.activeElement).toBe(chip);
   rerender(presenting(['peer', 'another-peer']));
   rerender(presenting(['another-peer']));
   expect(screen.queryByRole('dialog', { name: 'Q&A full screen' })).toBeNull();
-  const chip = screen.getByRole('button', { name: 'Reopen fullscreen-qa' });
-  expect(chip).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Reopen fullscreen-qa' })).toBe(
+    chip
+  );
 
   vi.useFakeTimers();
   rerender(presenting());

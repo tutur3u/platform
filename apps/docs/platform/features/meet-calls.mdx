@@ -1785,11 +1785,13 @@ media, or tool access.
   Selecting the chip restores the layout and focuses the visible pane, even
   during a share. A new sharer can minimize it again during the same session.
   Automatically minimized activities return after about 1.5 seconds without
-  a sharer, or when an incoming Summon or Follow opens an activity. A host
-  or co-host's **Bring everyone** or **Choose people…** also restores
-  manually minimized activities and announces who brought you there.
-  Follow keeps your manual minimize choice, pulses the chip, and announces
-  who opened the activity and its name. Navigation to the people view and
+  a sharer, or when a Summon or a change to the followed activity opens an
+  activity. A host or co-host's Summon and accepting a Summon invitation also
+  restore manually minimized activities and announce who brought you there.
+  When the followed activity changes while the panes are manually minimized,
+  the chip pulses and announces who opened the activity and its name. Layout
+  updates that keep the same activity in focus leave the panes minimized and
+  preserve the current announcement. Navigation to the people view and
   **Go back** leave the minimize choice alone.
   [Follow and Summon tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-follow.test.tsx).
   [Stage layout tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-layout-view.test.tsx) ·
@@ -2719,10 +2721,14 @@ This is browser capture, not a Cloudflare server-side recording service.
 
 ## Chat and Mira
 
-Attach, Ask Mira and Send are square icon buttons aligned to the last line of
-the room message field as it grows. The Mira sparkle has an **Ask Mira**
-tooltip and an accessible name. The message field keeps its placeholder.
-[Room composer tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/conversation-panel-room.test.tsx).
+In Meet with `MEET_UX_V2` on, Attach, Ask Mira and Send are square icon buttons
+aligned to the last line of the room message field as it grows. The Mira sparkle
+has an **Ask Mira** tooltip and an accessible name. While Q&A is open, the
+placeholder says **Message everyone · Ask questions in Q&A**. With the flag
+off and in Parley, the original composer shows the **Ask Mira** label when
+space permits and uses the original Q&A placeholder.
+[Room composer tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/conversation-panel-room.test.tsx) ·
+[Placeholder tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/chat-placeholder.test.tsx).
 
 Room chat supports Markdown, avatars, and up to five 25 MiB attachments per message. Chat saving defaults on; admins can stop retaining new messages in Settings without deleting earlier messages. The recent 500-message snapshot survives Worker eviction; chat retries reuse a stable message ID to avoid duplicates after lost acknowledgements.
 Files use the creator's personal Drive provider and storage capacity checks. Room

@@ -103,6 +103,8 @@ export function StageLayoutView({
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLButtonElement>(null);
+  // React focus events also reach the group from its portaled dialogs.
+  const activityFocus = useRef<Element | null>(null);
   const restoreFocus = useRef(false);
   const setChipRef = useCallback((chip: HTMLButtonElement | null) => {
     if (!chip) return;
@@ -114,7 +116,6 @@ export function StageLayoutView({
       chipRef.current = null;
     };
   }, []);
-  const wasMinimized = useRef(false);
   const [peopleHidden, setPeopleHidden] = useState(false);
   const [slots, setSlots] = useState<Record<string, HTMLElement | null>>({});
   const [switcher, setSwitcher] = useState(false);
@@ -176,18 +177,23 @@ export function StageLayoutView({
 
   const focusedPaneId = layout.focusedPaneId ?? panes[0]?.id;
   const restorePaneId = maximizedId ?? focusedPaneId;
+  // Let a closing dialog release its focus trap before focusing the chip.
+  useEffect(() => {
+    if (!minimized) return;
+    const focused = activityFocus.current;
+    const active = document.activeElement;
+    activityFocus.current = null;
+    if (focused && (active === focused || active === document.body))
+      chipRef.current?.focus();
+  }, [minimized]);
   useLayoutEffect(() => {
-    if (minimized === wasMinimized.current) return;
-    wasMinimized.current = minimized;
-    if (minimized) {
-      if (containerRef.current?.contains(document.activeElement))
-        chipRef.current?.focus();
-    } else if (restoreFocus.current && restorePaneId) {
+    if (minimized) return;
+    if (restoreFocus.current && restorePaneId) {
       containerRef.current
         ?.querySelector<HTMLElement>(`[data-pane-id="${restorePaneId}"]`)
         ?.focus();
     }
-    if (!minimized) restoreFocus.current = false;
+    restoreFocus.current = false;
   }, [minimized, restorePaneId]);
 
   // Shift+Alt+Enter toggles fullscreen from anywhere in the stage, the code
@@ -254,6 +260,12 @@ export function StageLayoutView({
             'min-h-0 min-w-0',
             minimized ? 'invisible absolute inset-0' : 'relative flex-1'
           )}
+          onFocusCapture={(event) => {
+            activityFocus.current = event.target;
+          }}
+          onBlurCapture={() => {
+            activityFocus.current = null;
+          }}
           onKeyDownCapture={fullscreenKey}
           onKeyDown={cycleFocus}
         >
@@ -455,12 +467,12 @@ export function StageLayoutView({
         <div role="status" aria-live="polite" className="sr-only">
           {notice ? (
             <span key={notice.id}>
-              {notice.kind === 'forced-summon'
-                ? t('brought_here', { leader: notice.leader })
-                : t('leader_opened', {
+              {notice.kind === 'follow'
+                ? t('leader_opened', {
                     leader: notice.leader,
                     activity: meta(notice.activityId).title,
-                  })}
+                  })
+                : t('brought_here', { leader: notice.leader })}
             </span>
           ) : (
             presentation.autoMinimized && t('auto_minimized')

@@ -8,6 +8,7 @@ import messages from '../../../../../../apps/meet/messages/en.json';
 import type { NavigationEvent } from '../components/room-navigation-policy';
 import type { MeetRoomController } from '../lib/room-controller';
 import { paneLeaves } from './layout-model';
+import { useActivityPresentation } from './use-activity-presentation';
 import { useStageLayout } from './use-stage-layout';
 import { useStageNavigation } from './use-stage-navigation';
 
@@ -24,6 +25,8 @@ let events: NavigationEvent[] = [];
 let available: (id: string) => boolean = () => true;
 let account = true;
 let brought = 0;
+let sharers: string[] = [];
+let presentation: ReturnType<typeof useActivityPresentation>;
 let stage: ReturnType<typeof useStageLayout>;
 let nav: ReturnType<typeof useStageNavigation>;
 const requestNavigation = vi.fn();
@@ -35,6 +38,7 @@ function Harness() {
     isAvailable: available,
     tier: 'desktop',
   });
+  presentation = useActivityPresentation(stage.openIds.length > 0, sharers);
   const room = useRef({ state: {}, requestNavigation }).current;
   room.state = {
     participants: people,
@@ -53,6 +57,7 @@ function Harness() {
     onBroughtIn: () => {
       brought += 1;
     },
+    onNavigate: presentation.navigate,
     access: {
       browse: true,
       account,
@@ -125,6 +130,7 @@ beforeEach(() => {
   available = () => true;
   account = true;
   brought = 0;
+  sharers = [];
   requestNavigation.mockClear();
 });
 afterEach(() => {
@@ -176,6 +182,51 @@ it('locks the person’s own rearranging while following', () => {
   expect(splitSizes()).toEqual([60, 40]);
   expect(stage.layout.maximizedPaneId).toBeNull();
   expect(nav.following?.leaderId).toBe('leader');
+});
+
+it('keeps activities minimized when Follow only resizes panes', () => {
+  const view = render(tree());
+  deliver('follow', { ...sideBySide, focusedPaneId: 'p1' });
+  view.rerender(tree());
+  act(() => presentation.minimize());
+
+  deliver('follow.update', sideBySide);
+  view.rerender(tree());
+  const notice = presentation.notice;
+  expect(notice).toEqual({
+    id: 'e2',
+    leader: 'Lan',
+    kind: 'follow',
+    activityId: 'tool:live-qa',
+  });
+  expect(presentation.minimized).toBe(true);
+
+  const root = sideBySide.root;
+  if (root?.kind !== 'split') throw new Error('Expected a split layout');
+  deliver('follow.update', {
+    ...sideBySide,
+    root: { ...root, sizes: [30, 70] },
+  });
+  view.rerender(tree());
+  expect(splitSizes()).toEqual([30, 70]);
+  expect(presentation.notice).toBe(notice);
+
+  act(() => presentation.restore());
+  sharers = ['host'];
+  view.rerender(tree());
+  expect(presentation.autoMinimized).toBe(true);
+  deliver('follow.update', {
+    ...sideBySide,
+    root: { ...root, sizes: [40, 60] },
+  });
+  deliver('follow.update', {
+    ...sideBySide,
+    root: { ...root, sizes: [50, 50] },
+  });
+  view.rerender(tree());
+  expect(splitSizes()).toEqual([50, 50]);
+  expect(presentation.autoMinimized).toBe(true);
+  expect(presentation.notice).toBeNull();
 });
 
 it('unlocks on leaving follow mode and keeps what was on screen', () => {
@@ -336,11 +387,12 @@ it('leaves the saved whiteboard out for a guest', () => {
   expect(stage.openIds).toEqual(['tool:polls']);
 });
 
-it('leaves follow mode when the person joins someone else’s surface', async () => {
+it('restores a minimized activity after accepting a Summon', async () => {
   const { toast } = await import('@tuturuuu/ui/sonner');
   const view = render(tree());
   deliver('follow', sideBySide);
   view.rerender(tree());
+  act(() => presentation.minimize());
   events = [
     ...events,
     {
@@ -352,6 +404,7 @@ it('leaves follow mode when the person joins someone else’s surface', async ()
     },
   ];
   view.rerender(tree());
+  expect(presentation.minimized).toBe(true);
   const options = vi.mocked(toast).mock.calls.at(-1)?.[1] as {
     action?: { onClick: () => void };
   };
@@ -360,6 +413,12 @@ it('leaves follow mode when the person joins someone else’s surface', async ()
   expect(nav.following).toBeNull();
   expect(stage.locked).toBe(false);
   expect(stage.focused).toBe('tool:polls');
+  expect(presentation.minimized).toBe(false);
+  expect(presentation.notice).toEqual({
+    id: 'e2',
+    leader: 'Hoa',
+    kind: 'invited-summon',
+  });
 });
 
 it('opens the collaboration surfaces a host’s Follow brings, the whiteboard included', () => {

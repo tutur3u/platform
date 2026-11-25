@@ -5,12 +5,10 @@ import type { ActivityNavigation } from './use-stage-navigation';
 
 const SHARE_END_DELAY_MS = 1500;
 
-type NavigationNotice = Exclude<ActivityNavigation, { kind: 'invited-summon' }>;
-
 type Presentation = {
   seen: ReadonlySet<string>;
   minimized: 'manual' | 'share' | false;
-  notice: NavigationNotice | null;
+  notice: ActivityNavigation | null;
 };
 
 /** A local presentation choice. The open panes and shared layout stay intact. */
@@ -63,11 +61,11 @@ export function useActivityPresentation(
       setState((current) => ({ ...current, minimized: false, notice: null })),
     navigate: (navigation: ActivityNavigation) =>
       setState((current) => {
-        if (navigation.kind === 'forced-summon')
+        if (navigation.kind !== 'follow')
           return { ...current, minimized: false, notice: navigation };
         if (current.minimized === 'share')
           return { ...current, minimized: false, notice: null };
-        if (current.minimized === 'manual' && navigation.kind === 'follow')
+        if (current.minimized === 'manual')
           return { ...current, notice: navigation };
         return current;
       }),

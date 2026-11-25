@@ -68,6 +68,8 @@ export function useStageNavigation({
 }) {
   const latest = useRef(stage);
   latest.current = stage;
+  const focusedActivity = useRef(stage.focused);
+  focusedActivity.current = stage.focused;
   const surface = {
     programming: stage.focused === PROGRAMMING_ACTIVITY,
     document: stage.focused === DOCUMENT_ACTIVITY,
@@ -108,8 +110,10 @@ export function useStageNavigation({
     surface,
     layout: stage.snapshot,
     apply: (next, { forced, layout, source }) => {
+      const before = focusedActivity.current;
       const notify = (activityId: string) => {
-        if (!source) return;
+        if (!source || (source.kind === 'follow' && activityId === before))
+          return;
         const { id, leader, kind } = source;
         onNavigate?.(
           kind === 'follow'
@@ -120,6 +124,8 @@ export function useStageNavigation({
       if (layout) {
         onDrawer(next.drawer);
         const focused = mirror(layout, forced);
+        // Several updates can be applied before the mirrored layout renders.
+        focusedActivity.current = focused;
         const reached =
           viewOfActivity(focused) ?? ({ surface: 'stage' } as const);
         if (focused && reached.surface !== 'stage') notify(focused);
@@ -136,12 +142,12 @@ export function useStageNavigation({
         if (forced && next.tool) onSummoned?.(next.tool);
         // Going back returns to the activity the person was in, and closes
         // the one they were brought to if it was not open before.
-        const before = stage.focused;
         const drawerBefore = drawer;
         const brought = !stage.isOpen(target);
         // Being brought somewhere is not the person's own edit, so it lands
         // even while follow mode still locks the stage.
         stage.bring(target);
+        focusedActivity.current = target;
         notify(target);
         return {
           back: () => {

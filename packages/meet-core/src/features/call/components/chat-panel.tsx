@@ -22,6 +22,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
 import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
@@ -39,6 +40,7 @@ import {
   type MiraSlashCommand,
   miraSlashCommandDraft,
 } from '../lib/mira-slash-commands';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { AskMiraMenu } from './ask-mira-menu';
 import { AssistantPrivateReview } from './assistant-private-review';
 import {
@@ -64,8 +66,6 @@ import {
   MiraToolCard,
 } from './mira-tool-card';
 import type { MiraSurface, MiraSurfaceActivity } from './mira-where-strip';
-
-const composerButtonClass = 'size-9 shrink-0 self-end';
 
 type RoomMira = {
   typing?: boolean;
@@ -175,6 +175,13 @@ export function ChatPanel({
 }) {
   const t = useTranslations('meet.call');
   const tm = useTranslations('meet.call.miraEverywhere');
+  const meetUxV2 = useMeetCallUx();
+  const composerButtonClass = meetUxV2 ? 'size-9 shrink-0 self-end' : undefined;
+  const placeholderKey = qaLive
+    ? meetUxV2
+      ? 'chat_placeholder_qa_v2'
+      : 'chat_placeholder_qa'
+    : 'chat_placeholder';
   const paletteId = useId();
   const queryClient = useQueryClient();
   const reviews = useQuery({
@@ -534,7 +541,13 @@ export function ChatPanel({
         {hasMeetAssistantMention(draft) && (
           <MiraAdultNotice id={`${paletteId}-adults`} />
         )}
-        <div className="flex items-center gap-1">
+        <div
+          className={
+            meetUxV2
+              ? 'flex items-center gap-1'
+              : '@container flex items-end gap-1'
+          }
+        >
           <input
             ref={input}
             type="file"
@@ -563,7 +576,7 @@ export function ChatPanel({
             <Paperclip className="size-4" />
           </Button>
           <AskMiraMenu
-            className={composerButtonClass}
+            iconButtonClassName={composerButtonClass}
             disabled={busy || !!draft.trim()}
             onPick={(action) => {
               setDraft(`@mira ${t(`${action}_prompt`)}`);
@@ -595,8 +608,11 @@ export function ChatPanel({
             rows={1}
             disabled={busy}
             aria-label={t('chat')}
-            placeholder={t(qaLive ? 'chat_placeholder_qa' : 'chat_placeholder')}
-            className="max-h-32 min-h-9 min-w-0 flex-1 resize-none py-[5px] leading-6"
+            placeholder={t(placeholderKey)}
+            className={cn(
+              'max-h-32 min-h-9 min-w-0 flex-1 resize-none',
+              meetUxV2 ? 'py-[5px] leading-6' : 'py-1.5'
+            )}
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) return;
               if (commands.length) {

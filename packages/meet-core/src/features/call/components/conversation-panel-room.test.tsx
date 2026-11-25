@@ -12,6 +12,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import vi_messages from '../../../../../../apps/meet/messages/vi.json';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
+import { ConversationPanel } from './conversation-panel';
 
 const f = vi.hoisted(() => ({ ask: vi.fn() }));
 vi.mock('@tuturuuu/internal-api', () => ({
@@ -39,7 +41,9 @@ vi.mock('./assistant-private-review', () => ({
   AssistantPrivateReview: () => null,
 }));
 vi.mock('./personal-chat', () => ({ PersonalChat: () => <div>Private</div> }));
-import { ConversationPanel } from './conversation-panel';
+vi.mock('../prejoin/use-meet-call-ux', () => ({
+  useMeetCallUx: vi.fn(),
+}));
 
 const call = messages.meet.call;
 beforeEach(() => {
@@ -50,7 +54,8 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-function show() {
+function show(meetUxV2 = false) {
+  vi.mocked(useMeetCallUx).mockReturnValue(meetUxV2);
   const onSendChat = vi.fn(async () => ({ id: 'sent' }));
   render(
     <QueryClientProvider
@@ -163,7 +168,7 @@ it('ships the Ask Mira labels in Vietnamese', () => {
 });
 
 it('keeps the three chat buttons square and Mira icon-only with a tooltip', async () => {
-  show();
+  show(true);
   const composer = screen.getByRole('textbox', { name: call.chat });
   const attach = screen.getByRole('button', { name: call.attach_files });
   const mira = screen.getByRole('button', { name: call.ask_mira });

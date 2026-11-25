@@ -4907,7 +4907,6 @@
       },
       "activities": {
         "button": "Activities",
-        "choose_people": "Choose people…",
         "title": "Activities",
         "hint": "Opens for you; Summon brings others",
         "settings": "Activities",
@@ -5253,13 +5252,10 @@
       "class_timer_started": "Timer started",
       "class_timer_stopped": "Timer stopped",
       "stage_layout": {
-        "auto_minimized": "Activities minimized for screen sharing.",
-        "brought_here": "Brought here by {leader}",
         "close": "Close {title}",
         "error": "Couldn't load {title}",
         "exit_fullscreen": "Exit full screen {title}",
         "fullscreen": "Full screen {title}",
-        "leader_opened": "{leader} opened {activity}",
         "loading": "Loading {title}",
         "maximize": "Maximize {title}",
         "move": "Move {title}",

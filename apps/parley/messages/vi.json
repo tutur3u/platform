@@ -4907,7 +4907,6 @@
       },
       "activities": {
         "button": "Hoạt động",
-        "choose_people": "Chọn người…",
         "title": "Hoạt động",
         "hint": "Mở cho bạn; Triệu tập để đưa người khác đến",
         "settings": "Hoạt động",
@@ -5253,13 +5252,10 @@
       "class_timer_started": "Đã bắt đầu hẹn giờ",
       "class_timer_stopped": "Đã dừng hẹn giờ",
       "stage_layout": {
-        "auto_minimized": "Đã thu nhỏ hoạt động để nhường chỗ cho nội dung chia sẻ màn hình.",
-        "brought_here": "{leader} đã đưa bạn đến đây",
         "close": "Đóng {title}",
         "error": "Không tải được {title}",
         "exit_fullscreen": "Thoát toàn màn hình {title}",
         "fullscreen": "Toàn màn hình {title}",
-        "leader_opened": "{leader} đã mở {activity}",
         "loading": "Đang tải {title}",
         "maximize": "Phóng to {title}",
         "move": "Di chuyển {title}",

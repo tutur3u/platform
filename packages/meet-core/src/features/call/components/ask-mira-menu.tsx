@@ -21,37 +21,46 @@ const icons = {
  * writes its prompt into the composer for the person to send.
  */
 export function AskMiraMenu({
-  className,
+  iconButtonClassName,
   disabled,
   onPick,
 }: {
-  className: string;
+  iconButtonClassName?: string;
   disabled?: boolean;
   onPick: (action: AskMiraAction) => void;
 }) {
   const t = useTranslations('meet.call');
   const [open, setOpen] = useState(false);
+  const label = t('ask_mira');
+  const trigger = (
+    <PopoverTrigger asChild>
+      <Button
+        type="button"
+        variant="ghost"
+        size={iconButtonClassName ? 'icon' : 'sm'}
+        disabled={disabled}
+        aria-label={label}
+        className={iconButtonClassName ?? 'shrink-0 gap-1.5'}
+      >
+        <Sparkles aria-hidden="true" className="size-4" />
+        {!iconButtonClassName && (
+          <span className="hidden @[23rem]:inline">{label}</span>
+        )}
+      </Button>
+    </PopoverTrigger>
+  );
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="inline-flex self-end">
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                disabled={disabled}
-                aria-label={t('ask_mira')}
-                className={className}
-              >
-                <Sparkles aria-hidden="true" className="size-4" />
-              </Button>
-            </PopoverTrigger>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent>{t('ask_mira')}</TooltipContent>
-      </Tooltip>
+      {iconButtonClassName ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex self-end">{trigger}</span>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+      ) : (
+        trigger
+      )}
       <PopoverContent
         align="start"
         side="top"
