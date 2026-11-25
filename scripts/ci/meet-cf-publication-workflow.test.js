@@ -50,6 +50,28 @@ test('every Meet release carries the shared-origin repository variables', () => 
   );
 });
 
+test('every Meet frontend release carries the declared MEET_UX_V2 flag', () => {
+  const publish = step('deploy', 'Deploy the verified frontend');
+  assert.equal(publish.env.MEET_UX_V2, "${{ vars.MEET_UX_V2 || 'false' }}");
+  const check =
+    'case "$MEET_UX_V2" in true|false) ;; *) echo \'::error::MEET_UX_V2 must be true or false\'; exit 1 ;; esac';
+  assert.ok(publish.run.includes(check));
+  assert.ok(
+    publish.run.indexOf(check) < publish.run.indexOf('void-cf-output.mjs')
+  );
+  // A hand-set Worker var is not a declared override, so the publisher drops it.
+  const outputArgs = publish.run.slice(
+    publish.run.indexOf('output_args=('),
+    publish.run.indexOf('if [ "$MEET_AI_RELEASE"')
+  );
+  assert.ok(outputArgs.includes('--var "MEET_UX_V2=$MEET_UX_V2"'));
+  assert.equal(publish.run.match(/--var "MEET_UX_V2=/g).length, 1);
+  assert.doesNotMatch(
+    JSON.stringify(step('deploy', 'Deploy signaling before the frontend')),
+    /MEET_UX_V2/
+  );
+});
+
 test('Mira stays contained unless the release opts in to paid-and-staff', () => {
   const publish = step('deploy', 'Deploy the verified frontend');
   assert.equal(

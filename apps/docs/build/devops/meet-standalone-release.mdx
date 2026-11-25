@@ -103,6 +103,19 @@ the other pilot gates in
 [Per-speaker transcription](/platform/features/meet-per-speaker-transcription#release-gates).
 Turning the flag off is always allowed and acts as a hard stop.
 
+## Meet UX v2 flag
+
+The repository variable `MEET_UX_V2` (`true` or `false`, default `false`) sets
+the Meet app Worker var of the same name on every release. Production carries
+no value before the first release that declares it, which serves the flag off.
+Only the Meet app reads it; `meet-realtime` does not. The release reads the
+variable at release time and passes it as a declared `--var` override; any other
+value fails the frontend deploy step. A Worker var set by hand in the Cloudflare
+dashboard is not a declared override, so the next release drops it.
+
+To roll back, set the repository variable to `false` and dispatch the release
+again.
+
 ## Artifacts and rollback
 
 The validate job builds and seals the frontend and realtime output. Realtime's
