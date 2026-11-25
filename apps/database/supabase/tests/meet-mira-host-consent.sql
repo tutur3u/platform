@@ -52,6 +52,27 @@ select throws_ok($$update private.meet_mira_participant_choices set choice = 'of
 select ok((select private.end_meet_mira_acceptance(pg_temp.cid(9921), 1, null, 'minor_reported')), 'a minor report ends the acceptance');
 select ok(not (select private.end_meet_mira_acceptance(pg_temp.cid(9921), 1, pg_temp.cid(9901), 'turned_off')), 'an acceptance ends once');
 select is((select revision from private.record_meet_mira_acceptance(pg_temp.cid(9921), pg_temp.cid(9901), 'v1', array['chat', 'notes'])), 2, 'a new acceptance, such as an expansion, takes the next revision');
+insert into private.meet_mira_participant_choices(
+  id, meeting_id, ws_id, user_id, choice, source,
+  acceptance_revision, notice_version, text_hash, locale
+) values (
+  pg_temp.cid(9943), pg_temp.cid(9921), pg_temp.cid(9911), pg_temp.cid(9902),
+  'on', 'auto_on', 2, 'v1', repeat('c', 64), 'vi'
+);
+select ok((
+  select meeting_id = pg_temp.cid(9921) and source = 'auto_on'
+    and text_hash = repeat('c', 64) and locale = 'vi' and acceptance_id is not null
+  from private.meet_mira_participant_choices where id = pg_temp.cid(9943)
+), 'automatic activation retains the meeting, acceptance and localized notice hash');
+select throws_ok($$
+  insert into private.meet_mira_participant_choices(
+    meeting_id, ws_id, guest, participant_ref, choice, source,
+    acceptance_revision, notice_version, text_hash, locale
+  ) values (
+    pg_temp.cid(9921), pg_temp.cid(9911), true, pg_temp.cid(9951),
+    'on', 'auto_on', 2, 'v1', repeat('c', 64), 'en'
+  )
+$$, '23514', null, 'guest evidence cannot record automatic activation');
 reset role;
 select throws_ok($$update private.meet_mira_participant_choices set choice = 'off' where id = pg_temp.cid(9941)$$, '55000', 'Mira consent evidence is immutable', 'even the owner cannot rewrite a choice');
 select throws_ok($$update private.meet_mira_host_acceptances set capabilities = array['chat', 'notes', 'captions'] where meeting_id = pg_temp.cid(9921) and revision = 1 and event = 'accept'$$, '55000', 'Mira consent evidence is immutable', 'an acceptance cannot be widened in place');
