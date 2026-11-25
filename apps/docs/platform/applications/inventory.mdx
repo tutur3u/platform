@@ -133,10 +133,12 @@ sort (newest, oldest, name A-Z, name Z-A) are server parameters (`categoryId`,
 so Warehouse and Stock (in stock, low, out) filter the loaded rows. While fewer
 than twelve loaded rows match, the list loads up to four more pages one after
 another, shown as "Searching more products…"; every reload or filter change
-restarts that budget. When the budget runs out with pages left, the list says
-"No matches in the first N products" with Search more products, as an empty
-state or a footer, instead of claiming nothing matches; scrolling also keeps
-loading pages. Warehouse and Stock are hidden without stock access. A filtered
+restarts that budget, and a reload that lands while an earlier fill is still
+unwinding starts its own fill. When the budget runs out with pages left, the
+list says "No matches in the first N products" with Search more products when
+nothing matched, or "Showing matches from the first N products" under the rows
+that did, instead of claiming nothing matches; scrolling also keeps loading
+pages. Warehouse and Stock are hidden without stock access. A filtered
 list with every page loaded and no match offers Clear filters. Products created
 offline and still queued appear where the active sort puts them: on the first
 page, or on the last page when sorting oldest first.
@@ -175,10 +177,15 @@ Adjust stock edits only the stock rows and saves them with `PATCH
 products/{id}/inventory`, which records each change in stock history. It needs a
 connection: that endpoint takes the desired rows, so replaying a queued
 adjustment later could overwrite sales made in between. Offline, the form keeps
-the edit and says a connection is needed. Before writing, it re-reads the product
-and compares its rows with the rows the form opened with; if quantity, minimum
-or price changed on the server, it shows the latest rows and asks the actor to
-review and save again rather than overwriting them.
+the edit and says a connection is needed. The form starts from the stored rows
+read fresh from `GET products/{id}/inventory`, which returns every column, not
+from a cached product. Each row sends its stored revenue-share partner and
+basis points back unchanged, because the endpoint resets omitted revenue share
+to none; a new row starts with none. Before writing, it re-reads the stored rows
+and compares them with the rows the form opened with on every column (quantity,
+minimum, price, revenue-share partner and basis points); on any difference it
+shows the latest rows and asks the actor to review and save again rather than
+overwriting them.
 
 The editor uploads a product image through `POST inventory/media/upload-url`
 (target `product-featured-image`) and an HTTPS `PUT` to the server-issued signed
@@ -186,16 +193,24 @@ URL, retried once without `Content-Type` as web does. `POST
 inventory/media/read-url` then has the server validate the finished upload. The
 product stores the stable sign-on-read share URL,
 `https://tuturuuu.com/api/v1/workspaces/{ws}/storage/share?path={path}` (the
-absolute form of `buildWorkspaceStorageShareUrl`), not the signed read URL,
-which expires after at most seven days. Mobile loads a share URL by asking the
-share route for a fresh signed URL with the session and downloading that without
-the token; a stored Supabase signed `workspaces` URL is read the same way and
-falls back to itself when the share route refuses. JPEG, PNG, WebP and GIF up
+absolute form of `buildWorkspaceStorageShareUrl`, always on the canonical
+platform origin, never a device-local alias), not the signed read URL, which
+expires after at most seven days. Mobile loads a share URL by asking the share
+route for a fresh signed URL with the session and downloading that without the
+token; a stored Supabase signed `workspaces` URL is read the same way. Storage
+URLs are trusted only for the product's own workspace and on an allow-listed
+host (the platform API origin for share URLs, the configured Supabase project
+for signed ones); any other storage URL shows the placeholder without a request. JPEG, PNG, WebP and GIF up
 to 8 MB are accepted. The upload runs online when the image is picked, so a
 queued offline save carries only a server-issued URL; Remove photo saves
 `avatar_url: null`. The share route requires `view_drive` (or finance or task
-media access), so readers without it see the placeholder; an inventory-scoped
-sign-on-read route would lift that. The web product dialog still stores the
+media access). When it refuses, a legacy signed URL is read as stored until it
+expires, and a share URL shows the placeholder with no error; the refusal is
+remembered for the session so the route is not asked again. Inventory readers
+without drive access therefore see placeholders for share-URL images until an
+inventory-scoped sign-on-read route (checking inventory read access and signing
+only the product's inventory media paths) exists; that route is tracked as
+backlog item `inventory-image-read-route`. The web product dialog still stores the
 signed read URL. An image picked and then abandoned stays in storage because
 the inventory media API has no delete. Product batches remain web-only: the
 batches API lists workspace batches and cannot filter by product.
