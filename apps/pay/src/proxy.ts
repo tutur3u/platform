@@ -11,6 +11,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -142,7 +143,7 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
   if (!pathLocale) return null;
 
-  const url = new URL(request.url);
+  const url = request.nextUrl.clone();
   url.pathname = stripLocale(request.nextUrl.pathname);
 
   const response = NextResponse.redirect(url);
@@ -150,7 +151,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'pay' });
+
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = mountedAuth.isMounted(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -178,10 +182,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isMachineApi || isBuildInfoRead
         ? null
-        : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
-            targetApp: 'pay',
-          });
+        : mounted
+          ? await mountedAuth.resolveSession(request)
+          : await refreshAppSessionForRequest(request, {
+              sessionMode: 'supabase-first',
+              targetApp: 'pay',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -218,6 +224,18 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
   if (canonicalPublicRedirect) {
     return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+  }
+
+  if (mounted) {
+    const path = stripLocale(request.nextUrl.pathname);
+    if (path.startsWith('/login') || path === '/')
+      return intlMiddleware(request);
+    const auth = await mountedAuth.auth(request);
+    if (auth.status >= 400 || auth.headers.has('location')) return auth;
+    const response = intlMiddleware(request);
+    setLocaleCookie(response, request, getPreferredLocale(request));
+    propagateAuthCookies(auth, response);
+    return response;
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {

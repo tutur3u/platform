@@ -14,6 +14,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -125,6 +126,14 @@ function getNextValue(request: NextRequest) {
   return `${unlocalizedPath}${request.nextUrl.search}`;
 }
 
+function getInventoryLoginUrl(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  url.pathname = '/login';
+  url.search = '';
+  url.searchParams.set('next', getNextValue(request));
+  return url;
+}
+
 function getCanonicalLocaleRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
   if (!pathLocale) return null;
@@ -185,7 +194,10 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
   return method === 'GET' && PUBLIC_ORDER_API_PATTERN.test(pathname);
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'inventory' });
+
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = mountedAuth.isMounted(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -211,10 +223,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       !hasBearerApiSession &&
       (!isPublicStorefrontApi || hasApiSessionCredentials(request));
     const appSessionRefresh = shouldRefreshAppSession
-      ? await refreshAppSessionForRequest(request, {
-          sessionMode: 'supabase-first',
-          targetApp: 'inventory',
-        })
+      ? mounted
+        ? await mountedAuth.resolveSession(request)
+        : await refreshAppSessionForRequest(request, {
+            sessionMode: 'supabase-first',
+            targetApp: 'inventory',
+          })
       : null;
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
@@ -253,6 +267,30 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
   if (canonicalLocaleRedirect) {
     return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+  }
+
+  if (mounted) {
+    const path = stripLocale(request.nextUrl.pathname);
+    if (path.startsWith('/login') || path.startsWith('/store'))
+      return intlMiddleware(request);
+    const auth = await mountedAuth.auth(request);
+    if (auth.status >= 400) return auth;
+    const location = auth.headers.get('location');
+    if (location) {
+      const destination = new URL(location, request.url);
+      if (
+        !path.startsWith('/verify-token') &&
+        destination.origin === request.nextUrl.origin &&
+        destination.pathname === '/login' &&
+        !destination.searchParams.has('mfa')
+      ) {
+        auth.headers.set('location', getInventoryLoginUrl(request).href);
+      }
+      return auth;
+    }
+    const response = intlMiddleware(request);
+    propagateAuthCookies(auth, response);
+    return response;
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
@@ -301,12 +339,10 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     );
 
     if (!hasSatelliteSession) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      url.search = '';
-      url.searchParams.set('next', getNextValue(request));
-
-      return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
+      return clearSupabaseAuthCookies(
+        request,
+        NextResponse.redirect(getInventoryLoginUrl(request))
+      );
     }
 
     const response = intlMiddleware(request);

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   guardApiProxyRequest: vi.fn(async () => null),
   hasSupportedSupabaseAuthCookie: vi.fn(),
   isPersonalWorkspace: vi.fn(),
+  resolveMountedSharedSession: vi.fn(),
   refreshAppSessionForRequest: vi.fn(async () => ({
     ok: true,
     response: NextResponse.next(),
@@ -21,16 +22,24 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasSupportedSupabaseAuthCookie: () => mocks.hasSupportedSupabaseAuthCookie(),
   hasWebAppSessionTokenFromRequest: () => false,
 }));
-vi.mock('@tuturuuu/auth/proxy', async () => ({
-  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
-    '@tuturuuu/auth/proxy'
-  )),
-  consumeVerifyTokenRequest: async () => null,
-  createCentralizedAuthProxy: () => mocks.authProxy,
-  getRequestHeadersWithResponseCookies: () => new Headers(),
-  propagateAuthCookies: () => {},
-  refreshAppSessionForRequest: mocks.refreshAppSessionForRequest,
-}));
+vi.mock('@tuturuuu/auth/proxy', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tuturuuu/auth/proxy')>();
+  return {
+    ...actual,
+    consumeVerifyTokenRequest: async () => null,
+    createCentralizedAuthProxy: () => mocks.authProxy,
+    createMountedAppAuth: (
+      options: Parameters<typeof actual.createMountedAppAuth>[0]
+    ) =>
+      actual.createMountedAppAuth(options, {
+        resolveMountedSharedSession: mocks.resolveMountedSharedSession,
+        consumeMountedSharedSession: actual.consumeMountedSharedSession,
+      }),
+    getRequestHeadersWithResponseCookies: () => new Headers(),
+    propagateAuthCookies: () => {},
+    refreshAppSessionForRequest: mocks.refreshAppSessionForRequest,
+  };
+});
 vi.mock('@tuturuuu/internal-api', () => ({
   getCurrentUserDefaultWorkspace: () => mocks.getCurrentUserDefaultWorkspace(),
   withForwardedInternalApiAuth: () => ({}),
@@ -56,6 +65,10 @@ describe('Track proxy redirects under a basePath', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authProxy.mockResolvedValue(NextResponse.next());
+    mocks.resolveMountedSharedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
     mocks.isPersonalWorkspace.mockResolvedValue(false);
   });
@@ -103,6 +116,25 @@ describe('Track proxy redirects under a basePath', () => {
     expect(response.headers.get('location')).toBe(
       'https://tuturuuu.com/track/personal'
     );
+  });
+
+  it('uses the mounted callback when a protected request is signed out', async () => {
+    mocks.resolveMountedSharedSession.mockResolvedValue({
+      error: 'App session refresh unavailable',
+      ok: false,
+    });
+    const response = await proxy(mounted('/personal/history?tag=a&tag=b'));
+    const login = new URL(response.headers.get('location') ?? '');
+    const callback = new URL(login.searchParams.get('returnUrl') ?? '');
+
+    expect(login.origin + login.pathname).toBe('https://tuturuuu.com/login');
+    expect(callback.origin + callback.pathname).toBe(
+      'https://tuturuuu.com/track/verify-token'
+    );
+    expect(callback.searchParams.get('nextUrl')).toBe(
+      '/personal/history?tag=a&tag=b'
+    );
+    expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
   it('is unchanged at the subdomain root', async () => {

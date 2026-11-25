@@ -39,20 +39,27 @@ import { NextResponse } from 'next/server';
 import { BASE_URL, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import {
+  handleChatAppRedirectRoute,
+  handleContactsAppRedirectRoute,
+  handleDriveAppRedirectRoute,
+  handleFinanceAppRedirectRoute,
+  handleFormsAppRedirectRoute,
+  handleMailAppRedirectRoute,
+  handleMeetAppRedirectRoute,
+  handleSharedFormRedirectRoute,
+  handleTrackAppRedirectRoute,
+  redirectToToolsApp,
+} from './lib/apex-app-redirects';
+import {
   calendarPreferenceGuardOptions,
   handleCalendarPreferenceGuardResponse,
 } from './lib/calendar-preference-guard';
-import { getChatAppOrigin } from './lib/chat-app-url';
-import { getContactsAppOrigin } from './lib/contacts-app-url';
 import * as designPublic from './lib/design-public-redirect';
 import {
   EMAIL_ROUTE_WORKSPACE_PATTERN,
   webProxyRoutePolicies,
 } from './lib/proxy-route-policies';
-import { getDriveAppOrigin } from './lib/drive-app-url';
 import { isVersionedExternalProjectAssetDeliveryRequest } from './lib/external-projects/asset-delivery-request';
-import { getFinanceAppOrigin } from './lib/finance-app-url';
-import { getFormsAppOrigin } from './lib/forms-app-url';
 import {
   applyAuthShellCacheHeaders,
   CACHEABLE_AUTH_SHELL_PATHS,
@@ -62,8 +69,6 @@ import {
   legacySettingsTab,
 } from './lib/legacy-settings-redirect';
 import { handleLocale } from './lib/locale-proxy';
-import { getMailAppOrigin } from './lib/mail-app-url';
-import { getMeetAppOrigin } from './lib/meet-app-url';
 import { webProxyPayloadLimit } from './lib/proxy-payload-limit';
 import {
   isRoadmapPublicPath,
@@ -72,8 +77,6 @@ import {
 import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
 import { withWebProxyGuards } from './lib/web-identity-abuse-guard';
-import { getToolsAppOrigin } from './lib/tools-app-url';
-import { getTrackAppOrigin } from './lib/track-app-url';
 import { isUnknownRouteShape } from './lib/route-shape';
 import { defaultWorkspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
 import {
@@ -256,167 +259,6 @@ function handleCacheableAuthShellRoute(req: NextRequest): NextResponse | null {
 
 function redirectToPath(req: NextRequest, pathname: string) {
   return NextResponse.redirect(new URL(pathname, req.nextUrl));
-}
-
-function redirectToToolsApp(req: NextRequest, pathname: string) {
-  const redirectUrl = new URL(getToolsAppOrigin());
-  redirectUrl.pathname = pathname;
-  redirectUrl.search = req.nextUrl.search;
-
-  return NextResponse.redirect(redirectUrl);
-}
-
-function handleMailAppRedirectRoute(req: NextRequest): NextResponse | null {
-  return handleWorkspaceSatelliteRedirectRoute(req, {
-    appOrigin: getMailAppOrigin(),
-    routeSegment: 'mail',
-  });
-}
-
-function handleFinanceAppRedirectRoute(req: NextRequest): NextResponse | null {
-  return handleWorkspaceSatelliteRedirectRoute(req, {
-    appOrigin: getFinanceAppOrigin(),
-    routeSegment: 'finance',
-  });
-}
-
-function handleDriveAppRedirectRoute(req: NextRequest): NextResponse | null {
-  return handleWorkspaceSatelliteRedirectRoute(req, {
-    appOrigin: getDriveAppOrigin(),
-    routeSegment: 'drive',
-  });
-}
-
-function handleChatAppRedirectRoute(req: NextRequest): NextResponse | null {
-  return handleWorkspaceSatelliteRedirectRoute(req, {
-    appOrigin: getChatAppOrigin(),
-    routeSegment: 'chat',
-  });
-}
-
-function handleTrackAppRedirectRoute(req: NextRequest): NextResponse | null {
-  return handleWorkspaceSatelliteRedirectRoute(req, {
-    appOrigin: getTrackAppOrigin(),
-    routeSegment: 'time-tracker',
-  });
-}
-
-function handleMeetAppRedirectRoute(req: NextRequest): NextResponse | null {
-  const response = handleWorkspaceSatelliteRedirectRoute(req, {
-    appOrigin: getMeetAppOrigin(),
-    routeSegment: 'meet',
-    workspacePrefix: 'workspace',
-  });
-
-  return response;
-}
-
-function handleContactsAppRedirectRoute(req: NextRequest): NextResponse | null {
-  for (const routeSegment of ['users', 'workforce', 'posts']) {
-    const response = handleWorkspaceSatelliteRedirectRoute(req, {
-      appOrigin: getContactsAppOrigin(),
-      routeSegment,
-      preserveRouteSegment: true,
-    });
-
-    if (response) return response;
-  }
-
-  return null;
-}
-
-function handleFormsAppRedirectRoute(req: NextRequest): NextResponse | null {
-  return handleWorkspaceSatelliteRedirectRoute(req, {
-    appOrigin: getFormsAppOrigin(),
-    routeSegment: 'forms',
-    preserveRouteSegment: true,
-  });
-}
-
-/**
- * Permanent redirect for already-distributed shared-form links.
- *
- * Public forms moved to `forms.tuturuuu.com/f/<shareCode>`. Every link people
- * have already sent points at `tuturuuu.com/<locale>/shared/forms/<shareCode>`,
- * and social platforms have cached OG cards against those URLs — so this must
- * be a permanent (308) redirect and must serve crawlers, not just browsers.
- */
-function handleSharedFormRedirectRoute(req: NextRequest): NextResponse | null {
-  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
-  const hasLocale =
-    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
-  const offset = hasLocale ? 1 : 0;
-
-  if (
-    pathSegments[offset] !== 'shared' ||
-    pathSegments[offset + 1] !== 'forms'
-  ) {
-    return null;
-  }
-
-  const shareCode = pathSegments[offset + 2];
-  if (!shareCode) return null;
-
-  const redirectUrl = new URL(getFormsAppOrigin());
-  redirectUrl.pathname = [
-    '',
-    'f',
-    shareCode,
-    // Preserve `/opengraph-image` and `/twitter-image` sub-paths.
-    ...pathSegments.slice(offset + 3),
-  ].join('/');
-  redirectUrl.search = req.nextUrl.search;
-
-  return NextResponse.redirect(redirectUrl, 308);
-}
-
-function handleWorkspaceSatelliteRedirectRoute(
-  req: NextRequest,
-  {
-    appOrigin,
-    preserveRouteSegment = false,
-    routeSegment,
-    workspacePrefix,
-  }: {
-    appOrigin: string;
-    preserveRouteSegment?: boolean;
-    routeSegment: string;
-    workspacePrefix?: string;
-  }
-): NextResponse | null {
-  const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
-  const hasLocale =
-    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale);
-  const workspaceIndex = hasLocale ? 1 : 0;
-  const workspaceSlug = pathSegments[workspaceIndex];
-
-  if (!workspaceSlug || pathSegments[workspaceIndex + 1] !== routeSegment) {
-    return null;
-  }
-
-  const normalizedWorkspaceSlug = workspaceSlug.toLowerCase();
-  const isWorkspaceRoute =
-    normalizedWorkspaceSlug === PERSONAL_WORKSPACE_SLUG ||
-    normalizedWorkspaceSlug === INTERNAL_WORKSPACE_SLUG ||
-    normalizedWorkspaceSlug === ROOT_WORKSPACE_ID.toLowerCase() ||
-    isWorkspaceUuidLiteral(workspaceSlug);
-
-  if (!isWorkspaceRoute) {
-    return null;
-  }
-
-  const suffixSegments = pathSegments.slice(workspaceIndex + 2);
-  const redirectUrl = new URL(appOrigin);
-  redirectUrl.pathname = [
-    redirectUrl.pathname.replace(/\/$/u, ''),
-    ...(workspacePrefix ? [workspacePrefix] : []),
-    workspaceSlug,
-    ...(preserveRouteSegment ? [routeSegment] : []),
-    ...suffixSegments,
-  ].join('/');
-  redirectUrl.search = req.nextUrl.search;
-
-  return NextResponse.redirect(redirectUrl);
 }
 
 function handlePublicMarketingRedirectRoute(

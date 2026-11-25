@@ -57,13 +57,19 @@ describe('getMountedAppVerifyTokenMatch', () => {
     ).toBeNull();
   });
 
-  it('refuses an app-name path when the registry mounts the app elsewhere', () => {
+  it('accepts only the canonical Storefront callback path', () => {
+    expect(
+      getMountedAppVerifyTokenMatch(
+        'https://tuturuuu.com/store/verify-token',
+        new Set(['storefront'])
+      )
+    ).toBeNull();
     expect(
       getMountedAppVerifyTokenMatch(
         'https://tuturuuu.com/storefront/verify-token',
         new Set(['storefront'])
-      )
-    ).toBeNull();
+      )?.name
+    ).toBe('storefront');
   });
 
   it('accepts a locale segment before verify-token', () => {

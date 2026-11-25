@@ -16,8 +16,8 @@ const mounts = (...apps: string[]) => new Set(apps);
 afterEach(() => vi.unstubAllEnvs());
 
 describe('app mount registry', () => {
-  it('maps storefront to /store and other apps to /<app>', () => {
-    expect(getAppBasePath('storefront')).toBe('/store');
+  it('maps storefront to its Worker base and other apps to /<app>', () => {
+    expect(getAppBasePath('storefront')).toBe('/storefront');
     expect(getAppBasePath('tasks')).toBe('/tasks');
     expect(getAppBasePath('platform')).toBeNull();
     expect(getAppBasePath('constructor')).toBeNull();
@@ -75,7 +75,7 @@ describe('app mount registry', () => {
         'https://storefront.tuturuuu.com',
         mounts('storefront')
       )
-    ).toBe('https://tuturuuu.com/store');
+    ).toBe('https://tuturuuu.com/storefront');
   });
 
   it('reads active mounts from the env, case-insensitively', () => {
@@ -121,8 +121,8 @@ describe('app mount registry', () => {
       )
     ).toEqual({ app: 'tasks', basePath: '/tasks', appPath: '/personal' });
     expect(
-      resolveMountedAppFromUrl('https://tuturuuu.com/store/acme', active)
-    ).toEqual({ app: 'storefront', basePath: '/store', appPath: '/acme' });
+      resolveMountedAppFromUrl('https://tuturuuu.com/storefront/acme', active)
+    ).toEqual({ app: 'storefront', basePath: '/storefront', appPath: '/acme' });
     expect(
       resolveMountedAppFromUrl('https://tuturuuu.com/tasks-team', active)
     ).toBeNull();

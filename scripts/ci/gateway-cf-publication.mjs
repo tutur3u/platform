@@ -11,6 +11,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { apexMigrationActive } from '../active-app-mounts.mjs';
 import {
   BUILD_OUTPUT_PREFIX,
   parseCfVersionId,
@@ -118,7 +119,8 @@ export function writeMergedDeployConfig(
       JSON.parse(readFileSync(FAMILIES, 'utf8')),
       JSON.parse(readFileSync(VINEXT_FAMILIES, 'utf8'))
     ),
-    env
+    env,
+    apexMigrationActive
   );
   writeFileSync(outPath, `${JSON.stringify(config, null, 2)}\n`);
   return config;

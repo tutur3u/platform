@@ -16,7 +16,8 @@ export default defineBridgeAppConfig<PayEnvironment>({
   csp: defaultContentSecurityPolicy,
   mounts: {
     rootHosts: rootHost ? [rootHost] : [],
-    mountHosts: [],
+    mountHosts: rootHost === 'pay.tuturuuu.com' ? ['tuturuuu.com'] : [],
+    basePath: '/pay',
     unknownHost: 'reject',
   },
   wrapResponse(response, { request }) {

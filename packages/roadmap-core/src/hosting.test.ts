@@ -239,7 +239,7 @@ describe('hosting: subdomain-to-apex migration states', () => {
     const summary = migrationSummary(offline, offline.registry);
     assert.equal(summary.counts.unverified, summary.total);
     const store = summary.entries.find((e) => e.app === 'storefront');
-    assert.equal(store?.to, 'https://tuturuuu.com/store');
+    assert.equal(store?.to, 'https://tuturuuu.com/storefront');
     assert.equal(store?.from, 'https://store.tuturuuu.com');
     // Broken variant: a "done" carried in an offline file does not count.
     const carried: HostingSnapshot = {

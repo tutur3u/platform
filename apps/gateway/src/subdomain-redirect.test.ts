@@ -18,6 +18,33 @@ function setup(apps = 'tasks', app = 'tasks') {
 const navigation = { 'sec-fetch-mode': 'navigate', accept: 'text/html' };
 
 describe('handleSubdomainRedirect', () => {
+  it.each([
+    ['infra', '/admin'],
+    ['admin', '/admin'],
+    ['infrastructure', '/admin'],
+    ['store', '/storefront'],
+    ['stores', '/storefront'],
+    ['storefronts', '/storefront'],
+    ['storefront', '/storefront'],
+  ])(
+    'routes legacy %s navigation to its canonical mount',
+    async (app, base) => {
+      const { env, fetch } = setup(app, app);
+      const response = await handleSubdomainRedirect(
+        new Request(`https://${app}.tuturuuu.com/vi/personal?ref=a%2Fb&ref=x`, {
+          headers: navigation,
+        }),
+        env
+      );
+
+      expect(response.status).toBe(301);
+      expect(response.headers.get('location')).toBe(
+        `https://tuturuuu.com${base}/vi/personal?ref=a%2Fb&ref=x`
+      );
+      expect(fetch).not.toHaveBeenCalled();
+    }
+  );
+
   it('301s a Finance deep link with its query and leaves its callback in place', async () => {
     const { fetch } = setup();
     const env = {

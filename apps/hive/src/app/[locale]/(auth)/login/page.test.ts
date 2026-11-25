@@ -1,3 +1,4 @@
+import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { Children, isValidElement, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -107,6 +108,30 @@ describe('Hive login page redirect targets', () => {
         searchParams: Promise.resolve({ next: '/dashboard' }),
       })
     ).rejects.toThrow('redirect:/dashboard');
+  });
+
+  it('keeps the verifier and destination on the Hive mount', async () => {
+    const LoginPage = (await import('./page')).default;
+    const result = await withBridgeRequest(
+      {
+        request: new Request('https://tuturuuu.com/hive/login'),
+        appBase: '/hive',
+      },
+      () =>
+        LoginPage({
+          searchParams: Promise.resolve({ next: '/personal?tag=a&tag=b' }),
+        })
+    );
+    const href = findHref(result, (value) =>
+      value.startsWith('https://tuturuuu.com/login?')
+    );
+    const callback = new URL(
+      new URL(href ?? '').searchParams.get('returnUrl') ?? ''
+    );
+    expect(callback.origin + callback.pathname).toBe(
+      'https://tuturuuu.com/hive/verify-token'
+    );
+    expect(callback.searchParams.get('nextUrl')).toBe('/personal?tag=a&tag=b');
   });
 
   it('encodes unsafe unauthenticated handoffs with a local verifier fallback', async () => {

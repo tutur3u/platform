@@ -10,6 +10,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  createMountedAppAuth,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -91,7 +92,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'hive' });
+
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = mountedAuth.isMounted(request);
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname);
     const isBuildInfoRead =
@@ -106,10 +110,12 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead
         ? null
-        : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
-            targetApp: 'hive',
-          });
+        : mounted
+          ? await mountedAuth.resolveSession(request)
+          : await refreshAppSessionForRequest(request, {
+              sessionMode: 'supabase-first',
+              targetApp: 'hive',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return appSessionFailureResponse(
@@ -138,6 +144,33 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
   if (canonicalLocaleRedirect) {
     return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+  }
+
+  if (mounted) {
+    const path = stripLocale(request.nextUrl.pathname);
+    if (path.startsWith('/login') || path.startsWith('/~recover-browser-state'))
+      return intlMiddleware(request);
+    const auth = await mountedAuth.auth(request);
+    if (auth.status >= 400) return auth;
+    const location = auth.headers.get('location');
+    if (location) {
+      const destination = new URL(location, request.url);
+      if (
+        !path.startsWith('/verify-token') &&
+        destination.origin === request.nextUrl.origin &&
+        destination.pathname === '/login' &&
+        !destination.searchParams.has('mfa')
+      ) {
+        const landing = createHivePublicUrl('/login', request);
+        const next = getNextValue(request);
+        if (next) landing.searchParams.set('next', next);
+        auth.headers.set('location', landing.href);
+      }
+      return auth;
+    }
+    const response = intlMiddleware(request);
+    propagateAuthCookies(auth, response);
+    return response;
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {

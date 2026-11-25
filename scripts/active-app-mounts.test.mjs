@@ -8,9 +8,9 @@ import { fileURLToPath } from 'node:url';
 import {
   committedMountBases,
   missingLivePaths,
-  PENDING_WEB_MOUNTS,
   parseJsonc,
   readCommittedConfig,
+  readRedirectConfig,
   resolveActiveMounts,
 } from './active-app-mounts.mjs';
 
@@ -67,18 +67,14 @@ test('commits the Tasks mount with its subtree and service binding', () => {
   );
 });
 
-test('keeps a gateway-routed mount off Web until it is released', () => {
-  assert.ok(PENDING_WEB_MOUNTS.has('/tasks'));
+test('lists the Tasks mount only after activation', () => {
   assert.deepEqual(
     resolveActiveMounts(
       committedMountBases(config('/admin,/admin/*,/tasks,/tasks/*')),
-      registry
+      registry,
+      true
     ),
-    ['infra']
-  );
-  assert.throws(
-    () => resolveActiveMounts(['/tasks'], registry),
-    /No committed/u
+    ['infra', 'tasks']
   );
 });
 
@@ -123,4 +119,56 @@ test('the committed inventory resolves, and the CLI checks it against live', () 
     () => execFileSync('node', [SCRIPT, '--live', stale], { stdio: 'pipe' }),
     /not live/u
   );
+});
+
+test('keeps gateway and legacy redirect routing at the baseline while off', () => {
+  const gateway = readCommittedConfig(false);
+  const redirect = readRedirectConfig(false);
+  assert.equal(
+    gateway.vars.GATEWAY_MOUNTED_PATHS,
+    '/learn,/nova,/nova/*,/roadmap,/tools,/tools/*,/teach,/teach/*,/lms,/lms/*,/admin,/admin/*,/meet,/meet/*,/mail,/mail/*,/contacts,/contacts/*,/calendar,/calendar/*,/apps,/apps/*,/finance,/finance/*,/tasks,/tasks/*'
+  );
+  assert.equal(
+    redirect.vars.SUBDOMAIN_REDIRECT_APPS,
+    'apps,mail,calendar,meet,tasks,finance'
+  );
+  assert.deepEqual(
+    resolveActiveMounts(committedMountBases(gateway), registry, false),
+    [
+      'calendar',
+      'contacts',
+      'finance',
+      'infra',
+      'learn',
+      'mail',
+      'meet',
+      'nova',
+      'teach',
+    ]
+  );
+});
+
+test('every candidate legacy redirect has a binding to its mounted Worker', () => {
+  const gateway = readCommittedConfig(true);
+  const redirect = readRedirectConfig(true);
+  const bases = new Set(committedMountBases(gateway));
+  const aliasApps = new Map([
+    ['admin', 'infra'],
+    ['infrastructure', 'infra'],
+    ['store', 'storefront'],
+    ['stores', 'storefront'],
+    ['storefronts', 'storefront'],
+  ]);
+  for (const host of redirect.vars.SUBDOMAIN_REDIRECT_APPS.split(',')) {
+    const base = registry.getAppBasePath(aliasApps.get(host) ?? host);
+    assert.ok(bases.has(base), `Missing gateway mount for ${host}`);
+    const upstream = gateway.services.find(
+      (entry) => entry.binding === `MOUNT_${base.slice(1).toUpperCase()}`
+    );
+    const legacy = redirect.services.find(
+      (entry) => entry.binding === `APP_${host.toUpperCase()}`
+    );
+    assert.ok(upstream && legacy, `Missing service binding for ${host}`);
+    assert.equal(legacy.service, upstream.service);
+  }
 });

@@ -39,7 +39,8 @@ export function trackMounts(env: TrackPolicyEnv) {
     .filter((host) => STAGING_HOST.test(host));
   return {
     rootHosts: [...TRACK_ROOT_HOSTS, ...staging],
-    mountHosts: [],
+    mountHosts: ['tuturuuu.com'],
+    basePath: '/track',
     unknownHost: 'reject' as const,
   };
 }

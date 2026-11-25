@@ -15,6 +15,9 @@
  * exists, so Workers without Node compatibility can import it.
  */
 
+/** Enabled together with the acknowledged gateway and legacy host cutover. */
+export const APEX_MIGRATION_ACTIVE = false;
+
 /** The shared origin that mounted apps are served under. */
 export const SHARED_APP_ORIGIN = 'https://tuturuuu.com';
 
@@ -31,9 +34,11 @@ export const ONE_ORIGIN_APP_BASE_PATHS = {
   cms: '/cms',
   contacts: '/contacts',
   drive: '/drive',
+  external: '/external',
   finance: '/finance',
   forms: '/forms',
   git: '/git',
+  hive: '/hive',
   infra: '/admin',
   inventory: '/inventory',
   learn: '/learn',
@@ -42,11 +47,14 @@ export const ONE_ORIGIN_APP_BASE_PATHS = {
   mind: '/mind',
   nova: '/nova',
   pay: '/pay',
-  storefront: '/store',
+  playground: '/playground',
+  rewise: '/rewise',
+  storefront: '/storefront',
   tasks: '/tasks',
   teach: '/teach',
   tools: '/tools',
   track: '/track',
+  workspace: '/workspace',
 } as const;
 
 export type MountableAppName = keyof typeof ONE_ORIGIN_APP_BASE_PATHS;

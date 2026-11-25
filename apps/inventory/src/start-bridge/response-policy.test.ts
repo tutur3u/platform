@@ -47,13 +47,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('inventory root-only response policy', () => {
+describe('inventory response policy', () => {
   it.each([canonical, staging])('admits only the declared root %s', (host) => {
     const mounts = {
       app: 'inventory',
-      rootHosts: [canonical],
-      mountHosts: ['tuturuuu.com'],
-      basePath: '/inventory',
       ...config.mounts,
     };
     expect(resolveAppBase(new URL(`https://${host}/`), mounts)).toEqual({
@@ -62,17 +59,23 @@ describe('inventory root-only response policy', () => {
     });
   });
 
+  it('serves the exact Inventory mount on the apex', () => {
+    const mounts = { app: 'inventory', ...config.mounts };
+    expect(
+      resolveAppBase(new URL('https://tuturuuu.com/inventory/personal'), mounts)
+    ).toEqual({ mode: 'mounted', basePath: '/inventory' });
+    expect(
+      resolveAppBase(new URL('https://tuturuuu.com/personal'), mounts)
+    ).toBeNull();
+  });
+
   it.each([
-    'tuturuuu.com',
     'unknown.invalid',
     'inventory.tuturuuu.com.attacker.invalid',
     'tuturuuu-inventory-vite-staging.example.workers.dev',
-  ])('rejects apex and unlisted host %s', (host) => {
+  ])('rejects an unlisted host %s', (host) => {
     const mounts = {
       app: 'inventory',
-      rootHosts: [canonical],
-      mountHosts: ['tuturuuu.com'],
-      basePath: '/inventory',
       ...config.mounts,
     };
     expect(

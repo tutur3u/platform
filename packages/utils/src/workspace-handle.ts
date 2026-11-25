@@ -38,6 +38,7 @@ export const RESERVED_WORKSPACE_HANDLES: readonly string[] = [
   'design',
   'docs',
   'drive',
+  'external',
   'finance',
   'forms',
   'git',

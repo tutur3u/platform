@@ -390,8 +390,9 @@ holds it: reassign its zone route `<app>.tuturuuu.com/*`, or update its Worker
 custom domain to the redirect Worker. Capture the prior attachment first.
 
 - Bind the app Worker as `APP_<APP>` (`APP_TASKS`). A hostname without a
-  binding answers `404`. The shared Worker includes bindings for Apps,
-  Calendar, Drive, Finance, Mail, Meet and Tasks. Mastermind keeps its own hostname.
+  binding answers `404`. The legacy label selects the binding. The mount
+  registry selects the destination, including `infrastructure` for
+  `/admin` and `store` for `/storefront`.
 - `SUBDOMAIN_REDIRECT_APPS` lists the apps whose navigations (`GET`/`HEAD`
   with `Sec-Fetch-Mode: navigate`, or `Accept: text/html` without Fetch
   Metadata) answer `301` to `https://tuturuuu.com/<app><path><query>`. The
@@ -407,14 +408,52 @@ custom domain to the redirect Worker. Capture the prior attachment first.
 - An unlisted app is served through its binding without redirecting, so the
   hostname can be attached before the redirect is switched on.
 
-The checked-in redirect allowlist starts with Apps. Use the acknowledged
-provider packet to select the list for the staged version and capture the
-serving version and each hostname attachment. Stage at 0% and verify existing
-Apps traffic through the staged version before promotion. After each
-attachment, smoke the legacy root, a localized deep link with duplicate query
-keys, and that app's API or auth callback. Finance Phase B stays with the
-Finance cutover owner and requires explicit signed-in acceptance before its
-hostname is attached for the redirect.
+### Apex migration status
+
+| Surface | Candidate | Acceptance required |
+| --- | --- | --- |
+| Drive, Chat, AI Studio, CMS, Forms, Git, Mind, Storefront, Rewise and Workspace | Gateway mount and legacy redirect | Mounted sign-in, locale, deep link, asset and legacy callback |
+| External and Playground | Gateway mount and legacy redirect | Public navigation, assets and app-specific fetches. Excluded from the Web session callback list |
+| Inventory, Pay, Track and Hive | Gateway mount and legacy redirect | Exact production-profile artifact, path-scoped cookies and signed-in smoke |
+| Tasks, Finance, Calendar, Mail, Meet, Contacts, Admin, Learn, Teach, Tools and Nova | Legacy redirects for existing mounts | Signed-in smoke where supported and legacy machine-path passthrough. Tools is public |
+| Colab | Requires mount work | Prefix SPA history and asset URLs, cover legacy upgrade traffic, verify scoped sessions and central API paths |
+| Lettin | Requires mount work | Make login returns, localized workspace routes and asset paths mount aware. Verify its Worker bindings and mail callbacks |
+| Parley | Meet consolidation proposal | Map old rooms to Meet destinations and preserve active sessions and realtime clients until migration acceptance |
+| Shortener | Retain `ttr.gg` | Keep existing short-link and redirect contracts at that origin |
+| Documents and Whiteboards | Separate delivery lanes | Coordinate ownership of `/docs` and `/whiteboards`. Technical documentation stays at `docs.tuturuuu.com` |
+| Mastermind | Retains its own hostname | Existing exception |
+
+The candidate is one coordinated cutover. The shared switch in
+`packages/utils/src/app-mounts.ts` defaults to off. With it off, CI
+and Web use the existing mount inventory and the redirect Worker renders
+the existing allowlist. Use the renderer to preserve serving redirects rather
+than deploying the pre-migration template directly. During the acknowledged
+cutover, set `APEX_MIGRATION_ACTIVE` to
+`true` in the same source used by the gateway publisher, Web family
+builds and `node scripts/active-app-mounts.mjs --render-redirect`. Render
+the redirect config into the Worker source directory so its entry path
+resolves. Capture the live gateway and
+redirect Worker versions, target service versions and every legacy hostname
+attachment before preparing the provider packet. Include the rollback versions
+and attachments, proposed changes, and smoke probes. Check live workspace
+handles for collisions with every new mount before the gateway switch. Send the packet SHA-256
+and exact source commit to Iris for acknowledgment before pushing or changing
+production. Use scoped tokens for the acknowledged packet.
+
+Follow the order in [Drive's apex release checklist](./drive-start-void#switch)
+and the [Finance artifact guidance](./finance-start-void). Confirm each target
+Worker serves both its mounted and legacy layout before the gateway routes to
+it. Keep Vite assets relative for dual-host artifacts. Verify the candidate
+gateway routes before enabling Web's mounted login returns, and stage the
+redirect Worker before switching legacy hostname attachments. Avoid Meet,
+Learn and Teach routing changes from December 2 at 00:00 through December 5
+at 23:59 ICT.
+
+Probe the app root, a signed-in round trip, a localized deep link with duplicate
+query keys, a referenced asset and the legacy 301 after cutover. Exercise
+legacy callback and machine-path passthrough and confirm shared APIs still
+reach Web. Restore the captured attachments and Worker versions if the batch
+fails acceptance.
 
 The `301` carries `Cache-Control: no-store`, so browsers do not keep it:
 a rollback takes effect on the next request, and a later fetch or webhook

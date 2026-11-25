@@ -1,6 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  apexMigrationActive,
+  withApexGatewayConfig,
+} from '../active-app-mounts.mjs';
 
 // Deploy config for the tuturuuu.com gateway (apps/gateway) built from the
 // committed wrangler.jsonc and the serving Worker's version, so a CI deploy keeps
@@ -122,7 +126,14 @@ function checkForbiddenNames(base, liveBindings, env) {
  * @param {{families: Array<{id: string, enabled: boolean, worker: string}>}} families
  * @param {Record<string, string | undefined>} env
  */
-export function deployConfig(base, liveBindings, families, env) {
+export function deployConfig(
+  base,
+  liveBindings,
+  families,
+  env,
+  apexActive = false
+) {
+  base = withApexGatewayConfig(base, apexActive);
   checkForbiddenNames(base, liveBindings, env);
   const vars = { ...base.vars };
   const services = new Map(
@@ -413,7 +424,8 @@ async function main([command, ...args]) {
           )
         )
       ),
-      process.env
+      process.env,
+      apexMigrationActive
     );
     console.log(`GATEWAY_WEB_FAMILIES=${config.vars.GATEWAY_WEB_FAMILIES}`);
     for (const name of FORBIDDEN_NAMES) console.log(`${name}=unset`);

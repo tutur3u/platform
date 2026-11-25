@@ -103,6 +103,23 @@ describe('Pay NEXT_LOCALE cookie scope', () => {
     }
   );
 
+  it.each(['/personal/billing', '/verify-token'])(
+    'keeps the mounted locale redirect inside Pay for %s',
+    async (path) => {
+      const response = await proxy(
+        new NextRequest(`https://tuturuuu.com/pay/vi${path}?ref=a%2Fb&ref=x`, {
+          nextConfig: { basePath: '/pay' },
+        })
+      );
+
+      expect(response.status).toBe(307);
+      expect(response.headers.get('location')).toBe(
+        `https://tuturuuu.com/pay${path}?ref=a%2Fb&ref=x`
+      );
+      expect(response.cookies.get('NEXT_LOCALE')?.value).toBe('vi');
+    }
+  );
+
   it('does not refresh a session for anonymous public requests', async () => {
     await proxy(request('/', { host: 'evil.example' }));
     expect(mocks.refresh).not.toHaveBeenCalled();

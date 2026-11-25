@@ -14,16 +14,18 @@ const decorate = (url: string, headers?: HeadersInit, method = 'GET') =>
     new Request(url, { method })
   );
 
-describe('Track Worker mounts (root-only, fail-closed)', () => {
-  it('serves only the subdomain root and rejects every other host', () => {
+describe('Track Worker mounts (legacy root and apex)', () => {
+  it('serves the legacy root and the exact apex mount, rejecting other paths', () => {
     const mounts = { app: 'track', ...trackMounts({}) };
 
     expect(appConfig.mounts).toEqual(trackMounts({}));
     expect(
       resolveAppBase(new URL('https://track.tuturuuu.com/personal'), mounts)
     ).toEqual({ mode: 'root', basePath: '' });
+    expect(
+      resolveAppBase(new URL('https://tuturuuu.com/track/personal'), mounts)
+    ).toEqual({ mode: 'mounted', basePath: '/track' });
     for (const url of [
-      'https://tuturuuu.com/track/personal',
       'https://tuturuuu.com/api/build-info',
       'https://evil.example/',
       'https://track.tuturuuu.com.evil.example/',
@@ -44,7 +46,8 @@ describe('Track Worker mounts (root-only, fail-closed)', () => {
         'tuturuuu-track-vite-staging.ops.workers.dev',
         'track.tutur3u.com',
       ],
-      mountHosts: [],
+      mountHosts: ['tuturuuu.com'],
+      basePath: '/track',
       unknownHost: 'reject',
     });
   });

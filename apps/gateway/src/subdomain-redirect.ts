@@ -1,3 +1,4 @@
+import { getAppBasePath } from '../../../packages/utils/src/app-mounts';
 import { decideOneOriginRequest } from '../../../packages/utils/src/one-origin-routing';
 
 /** A Worker service binding. */
@@ -22,6 +23,14 @@ export interface SubdomainRedirectEnv {
   SUBDOMAIN_REDIRECT_APPS?: string;
   [name: string]: string | ServiceBinding | undefined;
 }
+
+const LEGACY_MOUNT_APPS = new Map([
+  ['admin', 'infra'],
+  ['infrastructure', 'infra'],
+  ['store', 'storefront'],
+  ['stores', 'storefront'],
+  ['storefronts', 'storefront'],
+]);
 
 const APP_LABEL = /^[a-z][a-z0-9-]*$/u;
 
@@ -108,7 +117,8 @@ export async function handleSubdomainRedirect(
     .map((entry) => entry.trim().toLowerCase())
     .includes(target.app);
   if (listed && target.app !== 'mastermind') {
-    const basePath = `/${target.app}`;
+    const registryApp = LEGACY_MOUNT_APPS.get(target.app) ?? target.app;
+    const basePath = getAppBasePath(registryApp) ?? `/${target.app}`;
     const sharedOrigin = `https://${target.shared}`;
     const decision = decideOneOriginRequest(request, {
       basePath,

@@ -1,4 +1,4 @@
-import { getAppProductionBaseUrl } from './app-mounts';
+import { APEX_MIGRATION_ACTIVE, getAppProductionBaseUrl } from './app-mounts';
 import { toWorkspaceSlug } from './constants';
 import { getTuturuuuPortlessAppOrigin } from './portless';
 
@@ -535,6 +535,8 @@ export function getLaunchableAppOrigin(
 
   // A mounted app resolves to https://tuturuuu.com/<base>; unchanged otherwise.
   if (resolvedEnvironment === 'production') {
+    if (APEX_MIGRATION_ACTIVE && app.slug === 'tools')
+      return 'https://tuturuuu.com/tools';
     return getAppProductionBaseUrl(app.slug, app.productionUrl);
   }
   if (resolvedEnvironment === 'localhost') {

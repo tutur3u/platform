@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getLaunchableApp,
   getLaunchableAppByHostname,
@@ -10,6 +10,11 @@ import {
   resolveLaunchableAppPath,
   resolveLaunchableAppUrl,
 } from './launchable-apps';
+
+vi.mock('./app-mounts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./app-mounts')>()),
+  APEX_MIGRATION_ACTIVE: false,
+}));
 
 const personalWorkspace: LaunchableWorkspace = {
   id: 'workspace-id',
@@ -35,6 +40,13 @@ describe('launchable apps', () => {
     expect(getLaunchableAppByTitle('questionnaires')?.slug).toBe('forms');
     expect(getLaunchableAppByTitle('repositories')?.slug).toBe('git');
     expect(getLaunchableAppByTitle('apps gateway')?.slug).toBe('apps');
+  });
+
+  it('launches Tools on its legacy origin before Apex activation', () => {
+    const tools = getLaunchableApp('tools');
+    expect(
+      tools && getLaunchableAppOrigin(tools, { environment: 'production' })
+    ).toBe('https://tools.tuturuuu.com');
   });
 
   it('resolves production and Portless hostnames', () => {

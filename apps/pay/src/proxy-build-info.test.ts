@@ -9,11 +9,9 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   hasWebAppSessionTokenFromRequest: () => false,
 }));
 vi.mock('@tuturuuu/auth/proxy', async () => ({
-  resolveCanonicalRequestOrigin: (
-    await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
-      '@tuturuuu/auth/proxy'
-    )
-  ).resolveCanonicalRequestOrigin,
+  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
+    '@tuturuuu/auth/proxy'
+  )),
   refreshAppSessionForRequest: mocks.refresh,
   guardApiProxyRequest: mocks.guard,
   appSessionFailureResponse: vi.fn(),
