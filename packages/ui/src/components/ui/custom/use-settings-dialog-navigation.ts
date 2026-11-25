@@ -2,7 +2,6 @@
 
 import { Compass } from '@tuturuuu/icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { leavePublicProfileAddress } from '../../../hooks/public-profile-address';
 import {
   resolveSettingsTab,
   SHARED_SETTINGS_TAB_IDS,
@@ -118,7 +117,6 @@ export function useSettingsDialogNavigation({
 
   const selectActiveTab = useCallback(
     (tab: string) => {
-      leavePublicProfileAddress();
       onActiveTabChange(tab);
       void setPersistedTab(tab);
     },

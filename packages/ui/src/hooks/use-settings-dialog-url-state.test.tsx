@@ -63,30 +63,27 @@ describe('useSettingsDialogUrlState', () => {
   });
 });
 
-describe('useSettingsDialogUrlState with the public profile address', () => {
-  it('reports the Public profile tab while /u/<name> is shown and restores the address before switching tabs', async () => {
-    const address = await import('./public-profile-address.js');
-    window.history.replaceState(
-      null,
-      '',
-      '/ws?settingsDialog=open&settingsTab=public_profile'
-    );
+describe('useSettingsDialogUrlState on the Public profile tab', () => {
+  it('keeps the page address, switches tabs and closes from the query alone', async () => {
+    window.history.replaceState(null, '', '/ws');
     const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
-    const { result } = renderUrlState('', onUrlUpdate);
-    expect(result.current.open).toBe(false);
-
-    act(() => {
-      address.enterPublicProfileAddress('/u/creator');
-    });
-    expect(window.location.pathname).toBe('/u/creator');
+    const { result } = renderUrlState(
+      '?settingsDialog=open&settingsTab=public_profile',
+      onUrlUpdate
+    );
     expect(result.current.open).toBe(true);
     expect(result.current.tab).toBe('public_profile');
+    expect(window.location.pathname).toBe('/ws');
 
     act(() => result.current.openSettings('security'));
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalledTimes(1));
+    expect(result.current.tab).toBe('security');
     expect(window.location.pathname).toBe('/ws');
-    expect(address.isPublicProfileAddressActive()).toBe(false);
-    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
-    expect(onUrlUpdate.mock.calls.at(-1)?.[0].options.history).toBe('replace');
+
+    act(() => result.current.closeSettings());
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalledTimes(2));
+    expect(result.current.open).toBe(false);
+    expect(window.location.pathname).toBe('/ws');
   });
 });
 
@@ -162,30 +159,5 @@ describe('one account dialog at a time', () => {
     act(() => result.current.openUpgrade());
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
     expect(onUrlUpdate.mock.calls.at(-1)?.[0].options.history).toBe('push');
-  });
-
-  it('restores the page address and replaces history when Upgrade opens from /u/<name>', async () => {
-    const address = await import('./public-profile-address.js');
-    const { useUpgradeDialogUrlState } =
-      await import('./use-upgrade-dialog-url-state.js');
-    window.history.replaceState(null, '', '/ws?settingsTab=public_profile');
-    const onUrlUpdate = vi.fn<OnUrlUpdateFunction>();
-    const { result } = renderHook(() => useUpgradeDialogUrlState(), {
-      wrapper: withNuqsTestingAdapter({ onUrlUpdate, searchParams: '' }),
-    });
-    act(() => {
-      address.enterPublicProfileAddress('/u/x');
-    });
-    expect(window.location.pathname).toBe('/u/x');
-
-    act(() => result.current.openUpgrade('plans'));
-    expect(window.location.pathname).toBe('/ws');
-    expect(address.isPublicProfileAddressActive()).toBe(false);
-    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
-    const update = onUrlUpdate.mock.calls.at(-1)?.[0];
-    expect(update?.options.history).toBe('replace');
-    expect(update?.searchParams.get('upgradeDialog')).toBe('open');
-    expect(update?.searchParams.has('settingsTab')).toBe(false);
-    expect(update?.searchParams.has('settingsDialog')).toBe(false);
   });
 });

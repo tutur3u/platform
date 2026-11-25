@@ -32,21 +32,20 @@ product rules for its entries.
   (`SHARED_SETTINGS_TAB_IDS.publicProfile`) in the current app's settings
   dialog. The tab renders `PublicProfileCard`, the component the
   `/u/[username]` page renders, limited to name, bio, avatar and banner.
-- **Address:** when the profile URL shares the page's origin (apps/web on
-  tuturuuu.com), the tab replaces the address with `/u/<username>` without
-  navigating (`packages/ui/src/hooks/public-profile-address.ts`). The shared
-  `useSettingsDialogUrlState` hook keeps the dialog open on that tagged entry.
-  Closing, switching tabs or Back restores the previous address. Other origins
-  keep `?settingsDialog=open&settingsTab=public_profile`.
-- **Deep links:** loading `/u/<username>` renders the full public page; a reload
-  while the tab is open does the same.
+- **Address:** the tab never rewrites the page address; every app keeps
+  `?settingsDialog=open&settingsTab=public_profile`. The URL query is the only
+  dialog state and the settings hooks never rewrite the pathname, so every tab
+  can be switched and the dialog closed. Do not show `/u/<username>` in the
+  address bar while the dialog is open.
+- **Deep links:** loading `/u/<username>` renders the full public page; the
+  settings dialog is never mounted over it.
 - **Exceptions:** users without a username see a prompt to choose one in the
   Profile tab. A menu rendered without a settings dialog keeps the link to the
   public page.
-- **Regression coverage:** `public-profile-address.test.ts`,
-  `use-settings-dialog-url-state.test.tsx` and
+- **Regression coverage:** `use-settings-dialog-url-state.test.tsx` and
   `public-profile-menu-item.test.tsx` in `packages/ui`;
-  `public-profile-panel.test.tsx` in `packages/satellite`; the `/u/[username]`
+  `public-profile-panel.test.tsx` and `public-profile-settings-flow.test.tsx`
+  (open, switch tab, close with the address unchanged) in `packages/satellite`; the `/u/[username]`
   page test in `apps/web`.
 
 ## Upgrade
@@ -73,7 +72,7 @@ product rules for its entries.
   page opens its plan list and runs the existing Polar checkout and guarded
   plan-change flows. "View full billing" opens the same page without the hint.
 - **One dialog at a time**: opening Upgrade clears the settings dialog params
-  (and any `/u/<username>` address), and opening Settings clears the Upgrade
+  and opening Settings clears the Upgrade
   params.
 - **Exceptions**: Free is never offered a checkout button, and plans below the
   current tier show "Manage in billing" instead. The pay billing page opens its

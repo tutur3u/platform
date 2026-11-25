@@ -9,18 +9,12 @@ const dialogState = vi.hoisted(() => ({
   tab: 'public_profile' as string | null,
 }));
 const mocks = vi.hoisted(() => ({
-  enter: vi.fn(),
   getProfile: vi.fn(),
-  leave: vi.fn(),
   openSettings: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api', () => ({
   getCurrentUserProfile: mocks.getProfile,
-}));
-vi.mock('@tuturuuu/ui/hooks/public-profile-address', () => ({
-  enterPublicProfileAddress: mocks.enter,
-  leavePublicProfileAddress: mocks.leave,
 }));
 vi.mock('@tuturuuu/ui/hooks/use-settings-dialog-url-state', () => ({
   useSettingsDialogUrlState: () => ({
@@ -67,8 +61,9 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('PublicProfileSettingsPanel', () => {
-  it('renders only the public projection and shows the profile address', async () => {
+  it('renders only the public projection without touching the page address', async () => {
     mocks.getProfile.mockResolvedValue(PROFILE);
+    window.history.replaceState(null, '', '/ws-1/home');
     const { container, unmount } = renderPanel('https://tuturuuu.example');
 
     expect(
@@ -84,12 +79,9 @@ describe('PublicProfileSettingsPanel', () => {
       'private-id',
     ])
       expect(html).not.toContain(hidden);
-    expect(mocks.enter).toHaveBeenCalledWith(
-      'https://tuturuuu.example/u/creator'
-    );
-
+    expect(window.location.pathname).toBe('/ws-1/home');
     unmount();
-    expect(mocks.leave).toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/ws-1/home');
   });
 
   it('switches to the Profile tab to edit', async () => {
@@ -105,51 +97,5 @@ describe('PublicProfileSettingsPanel', () => {
     mocks.getProfile.mockResolvedValue({ ...PROFILE, handle: null });
     renderPanel('https://tuturuuu.example');
     expect(await screen.findByText('public_profile.no_username')).toBeTruthy();
-    expect(mocks.enter).not.toHaveBeenCalled();
-  });
-
-  it('shows the profile address again each time the tab reopens', async () => {
-    mocks.getProfile.mockResolvedValue(PROFILE);
-    const { rerender } = renderPanel('https://tuturuuu.example');
-    await screen.findByRole('heading', { level: 2, name: 'Public Creator' });
-    expect(mocks.enter).toHaveBeenCalledTimes(1);
-
-    dialogState.open = false;
-    dialogState.tab = null;
-    rerender(
-      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
-    );
-    expect(mocks.leave).toHaveBeenCalledTimes(1);
-
-    dialogState.open = true;
-    dialogState.tab = 'public_profile';
-    rerender(
-      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
-    );
-    expect(mocks.enter).toHaveBeenCalledTimes(2);
-    expect(mocks.enter).toHaveBeenLastCalledWith(
-      'https://tuturuuu.example/u/creator'
-    );
-  });
-
-  it('leaves the profile address when another tab is selected', async () => {
-    mocks.getProfile.mockResolvedValue(PROFILE);
-    const { rerender } = renderPanel('https://tuturuuu.example');
-    await screen.findByRole('heading', { level: 2, name: 'Public Creator' });
-
-    dialogState.tab = 'security';
-    rerender(
-      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
-    );
-    expect(mocks.leave).toHaveBeenCalledTimes(1);
-
-    dialogState.tab = 'public_profile';
-    rerender(
-      <PublicProfileSettingsPanel centralUrl="https://tuturuuu.example" />
-    );
-    expect(mocks.enter).toHaveBeenCalledTimes(2);
-    expect(mocks.enter).toHaveBeenLastCalledWith(
-      'https://tuturuuu.example/u/creator'
-    );
   });
 });

@@ -3,10 +3,6 @@
 import { parseAsString, useQueryStates } from 'nuqs';
 import { useCallback } from 'react';
 import {
-  isPublicProfileAddressActive,
-  leavePublicProfileAddress,
-} from './public-profile-address';
-import {
   SETTINGS_DIALOG_DEEP_LINK_PARAMS,
   parseSettingsDialogQuery,
 } from './settings-dialog-url';
@@ -62,11 +58,7 @@ export function useUpgradeDialogUrlState() {
     (nextTab?: UpgradeTabId) => {
       // Swapping from another account dialog replaces its entry, so Back
       // does not reopen the dialog that was just replaced.
-      const switching =
-        open ||
-        parseSettingsDialogQuery(query).open ||
-        isPublicProfileAddressActive();
-      leavePublicProfileAddress();
+      const switching = open || parseSettingsDialogQuery(query).open;
       void setQuery(
         {
           ...CLOSED_SETTINGS_QUERY,

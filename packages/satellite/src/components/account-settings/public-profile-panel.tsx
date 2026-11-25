@@ -5,37 +5,28 @@ import { PencilLine } from '@tuturuuu/icons';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { PublicProfileCard } from '@tuturuuu/ui/custom/public-profile-card';
-import {
-  enterPublicProfileAddress,
-  leavePublicProfileAddress,
-} from '@tuturuuu/ui/hooks/public-profile-address';
 import { SHARED_SETTINGS_TAB_IDS } from '@tuturuuu/ui/hooks/settings-dialog-url';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import {
-  getPublicProfilePath,
-  getPublicProfileUrl,
-} from '@tuturuuu/utils/public-profile-url';
+import { getPublicProfilePath } from '@tuturuuu/utils/public-profile-url';
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
 import { satelliteProfileQueryKey } from '../profile-settings/profile-avatar-editor';
 
 /**
  * The signed-in user's public profile inside the settings dialog. It renders
- * the same card as `/u/[username]` and, on the central origin, shows that
- * address while the tab is open.
+ * the same card as `/u/[username]` and never touches the page address: the
+ * dialog state stays in `?settingsTab=public_profile`, so tabs can be switched
+ * and the dialog closed like any other tab.
  */
-export function PublicProfileSettingsPanel({
-  centralUrl,
-}: {
-  /** Web app origin that serves `/u/[username]`; defaults to this origin. */
-  centralUrl?: string;
-} = {}) {
+export function PublicProfileSettingsPanel(
+  // Kept for existing callers; the card builds its own public link.
+  _props: {
+    /** @deprecated No longer used; the address is not rewritten. */
+    centralUrl?: string;
+  } = {}
+) {
   const t = useTranslations('public_profile');
-  const { open, openSettings, tab } = useSettingsDialogUrlState();
-  // The dialog body can stay mounted between opens, so the address follows
-  // whether this tab is showing rather than whether the panel is mounted.
-  const showing = open && tab === SHARED_SETTINGS_TAB_IDS.publicProfile;
+  const { openSettings } = useSettingsDialogUrlState();
   const profileQuery = useQuery({
     queryFn: () => getCurrentUserProfile(),
     queryKey: [...satelliteProfileQueryKey],
@@ -44,17 +35,6 @@ export function PublicProfileSettingsPanel({
   const profile = profileQuery.data;
   const profilePath = getPublicProfilePath(profile?.handle);
   const username = profilePath ? profilePath.slice('/u/'.length) : null;
-  const profileUrl = getPublicProfileUrl(
-    username,
-    centralUrl ||
-      (typeof window === 'undefined' ? undefined : window.location.origin)
-  );
-
-  useEffect(() => {
-    if (!profileUrl || !showing) return;
-    enterPublicProfileAddress(profileUrl);
-    return () => leavePublicProfileAddress();
-  }, [profileUrl, showing]);
 
   const editProfile = (
     <Button
