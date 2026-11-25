@@ -22,6 +22,9 @@ test('beta tracks are opt-in, deduplicated, and never public or internal', () =>
   assert.throws(() => parseBetaTracks('tv:internal'), /tv:internal/);
   assert.deepEqual(parseBetaTracks('wear:beta'), ['wear:beta']);
   assert.throws(() => parseBetaTracks('Alpha Track'), /Invalid/);
+  assert.throws(() => parseBetaTracks('alpha\n::add-mask::private'), {
+    message: 'Invalid Google Play track name',
+  });
 });
 
 test('Vietnamese Play notes keep whole bullets within the Play limit', () => {
@@ -388,6 +391,7 @@ test('unreadable responses are described by shape, never by value', () => {
     'object{kind:string,releases:object}'
   );
   assert.ok(!responseShape({ releases: 'secret' }).includes('secret'));
+  assert.equal(responseShape({ '\n::add-mask::private': 1 }), 'object{…}');
 });
 
 test('an unreadable target track is never planned over', () => {
@@ -420,9 +424,13 @@ test('an unknown or missing release state stops the commit', () => {
   assert.throws(
     () =>
       pendingReviewTracks({
-        alpha: { releases: [{ releaseLifecycleState: 'SOMETHING_NEW' }] },
+        alpha: {
+          releases: [
+            { releaseLifecycleState: 'RELEASE_LIFECYCLE_STATE_SOMETHING_NEW' },
+          ],
+        },
       }),
-    /unknown release state on track alpha \(SOMETHING_NEW\)/
+    /unknown release state on track alpha \(RELEASE_LIFECYCLE_STATE_SOMETHING_NEW\)/
   );
 });
 
@@ -459,5 +467,30 @@ test('promotion refuses when internal already serves a newer code', () => {
         targets: { alpha: {} },
       }),
     /internal already serves a build newer than 578001/
+  );
+});
+
+test('provider-supplied track names and release states cannot inject log commands', () => {
+  const name = 'alpha\n::add-mask::private';
+  assert.throws(() => pendingReviewTracks({ [name]: [] }), {
+    message:
+      'Google Play returned an unreadable release list for track [unnamed] (array(0))',
+  });
+  assert.throws(
+    () =>
+      pendingReviewTracks({
+        [name]: {
+          releases: [
+            {
+              releaseLifecycleState:
+                'RELEASE_LIFECYCLE_STATE_FUTURE\n::add-mask::private',
+            },
+          ],
+        },
+      }),
+    {
+      message:
+        'Google Play returned an unknown release state on track [unnamed] ([unrecognised])',
+    }
   );
 });

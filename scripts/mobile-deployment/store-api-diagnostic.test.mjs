@@ -259,6 +259,8 @@ test('Play request errors omit identifiers and reject Apple-shaped bodies', asyn
   const base =
     'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.example.private';
   for (const [suffix, expected] of [
+    ['/edits/opaque-edit', '/edits/[redacted]'],
+    ['/edits/opaque-edit/listings', '/edits/[redacted]/listings'],
     ['/edits/opaque-edit/tracks/private-track', '/edits/[redacted]/tracks'],
     ['/tracks/private-track/releases', '/tracks/[redacted]/releases'],
     ['/unknown/private-id', '/[redacted]'],
@@ -267,6 +269,12 @@ test('Play request errors omit identifiers and reject Apple-shaped bodies', asyn
       message: `Store API request failed (400, /androidpublisher/v3/applications/[redacted]${expected})`,
     });
   }
+  await assert.rejects(
+    json('https://androidpublisher.googleapis.com/unknown/private-id'),
+    {
+      message: 'Store API request failed (400, /androidpublisher/[redacted])',
+    }
+  );
   await assert.rejects(
     json('https://api.appstoreconnect.apple.com/v1/builds'),
     {

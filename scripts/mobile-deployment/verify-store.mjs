@@ -22,7 +22,7 @@ export { storeApiErrorDiagnostic };
 
 const APP_ID = 'com.tuturuuu.app.mobile';
 const APPLE_ORIGIN = 'https://api.appstoreconnect.apple.com';
-const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
+export const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
 
 export function jwt(header, claims, key) {
   const encode = (value) =>

@@ -4,13 +4,13 @@
 import { appendFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
-import { json, jwt } from './verify-store.mjs';
+import { GOOGLE_ORIGIN, json, jwt } from './verify-store.mjs';
 
 const APP_ID = 'com.tuturuuu.app.mobile';
-const GOOGLE_ORIGIN = 'https://androidpublisher.googleapis.com';
 export const PLAY_NOTES_LIMIT = 500;
 export const VI_NOTES_HEADER = 'Bản thử nghiệm mới:';
 const TRACK_PATTERN = /^[a-z0-9:_-]{1,64}$/u;
+const LIFECYCLE_STATE_PATTERN = /^RELEASE_LIFECYCLE_STATE_[A-Z_]{1,40}$/u;
 const RESERVED_TRACKS = new Set(['production', 'internal', 'qa']);
 const ROLLOUT_STATUSES = new Set(['inProgress', 'halted', 'draft']);
 
@@ -25,7 +25,7 @@ export function parseBetaTracks(value) {
   ];
   for (const track of tracks) {
     if (!TRACK_PATTERN.test(track))
-      throw new Error(`Invalid Google Play track name: ${track}`);
+      throw new Error('Invalid Google Play track name');
     // Public release stays a human App Review / rollout decision. Form-factor
     // tracks such as `wear:production` carry the same meaning after the prefix.
     if (RESERVED_TRACKS.has(track.split(':').at(-1)))
@@ -118,15 +118,16 @@ function readableTrack(page) {
 
 /**
  * The JSON shape of an unexpected response, for logs: types and top-level
- * key names only, never values, so store data cannot leak into CI output.
+ * known key names only. Provider-supplied names and values are omitted.
  */
 export function responseShape(value) {
   if (value === null) return 'null';
   if (Array.isArray(value)) return `array(${value.length})`;
   if (typeof value !== 'object') return typeof value;
-  const keys = Object.keys(value).sort();
+  const keys = ['kind', 'releases', 'track'].filter((key) =>
+    Object.hasOwn(value, key)
+  );
   const listed = keys
-    .slice(0, 8)
     .map((key) => {
       const field = value[key];
       const type =
@@ -134,24 +135,30 @@ export function responseShape(value) {
       return `${key}:${type}`;
     })
     .join(',');
-  return `object{${listed}${keys.length > 8 ? ',…' : ''}}`;
+  return `object{${listed}${Object.keys(value).length > keys.length ? '…' : ''}}`;
 }
 
 /** Tracks holding releases that a commit would send for review with ours. */
 export function pendingReviewTracks(byTrack) {
   for (const [track, page] of Object.entries(byTrack)) {
+    const trackLabel = TRACK_PATTERN.test(track) ? track : '[unnamed]';
     // An empty list may omit `releases`, or come back with no content at all
     // (204, read as null); anything else is not a list result.
     if (page !== null && !readableTrack(page))
       throw new Error(
-        `Google Play returned an unreadable release list for track ${track} (${responseShape(page)})`
+        `Google Play returned an unreadable release list for track ${trackLabel} (${responseShape(page)})`
       );
     for (const release of page?.releases ?? []) {
       const state = release?.releaseLifecycleState;
-      if (state !== NOT_SENT_FOR_REVIEW && !SETTLED_STATES.has(state))
+      if (state !== NOT_SENT_FOR_REVIEW && !SETTLED_STATES.has(state)) {
+        const stateLabel =
+          typeof state === 'string' && LIFECYCLE_STATE_PATTERN.test(state)
+            ? state
+            : '[unrecognised]';
         throw new Error(
-          `Google Play returned an unknown release state on track ${track} (${typeof state === 'string' ? state : responseShape(state)})`
+          `Google Play returned an unknown release state on track ${trackLabel} (${stateLabel})`
         );
+      }
     }
   }
   return Object.entries(byTrack)
