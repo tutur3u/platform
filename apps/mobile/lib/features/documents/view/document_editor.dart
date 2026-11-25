@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/documents/view/document_opaque_embeds.dart';
+import 'package:mobile/features/tasks_boards/widgets/task_description_embed_builders.dart';
+import 'package:mobile/features/tasks_boards/widgets/task_description_viewer.dart'
+    show taskDescriptionStyles;
 import 'package:mobile/l10n/l10n.dart';
 
 enum DocumentSaveStatus { idle, saving, saved, error }
@@ -30,7 +34,9 @@ class DocumentEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final tokens = AppTokens.of(context);
-    final editorStyles = DefaultStyles.getInstance(context);
+    // The task description's styles resolve the web's swatch variables
+    // (`var(--calendar-bg-red)`) in the current theme, as the web does.
+    final editorStyles = taskDescriptionStyles(context);
     final statusLabel = switch (status) {
       DocumentSaveStatus.idle => null,
       DocumentSaveStatus.saving => l10n.documentsSaving,
@@ -77,6 +83,15 @@ class DocumentEditor extends StatelessWidget {
                   bottom: AppSpacing.lg,
                 ),
                 customStyles: editorStyles,
+                embedBuilders: const [
+                  TaskDescriptionImageEmbedBuilder(),
+                  TaskDescriptionVideoEmbedBuilder(),
+                  TaskDescriptionMentionEmbedBuilder(),
+                  TaskDescriptionTableEmbedBuilder(),
+                  TaskDescriptionDividerEmbedBuilder(),
+                  DocumentOpaqueBlockEmbedBuilder(),
+                  DocumentOpaqueInlineEmbedBuilder(),
+                ],
               ),
             ),
           ),

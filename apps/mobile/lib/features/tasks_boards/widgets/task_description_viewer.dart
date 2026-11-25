@@ -100,7 +100,7 @@ class _TaskDescriptionViewerState extends State<TaskDescriptionViewer> {
     return QuillEditor.basic(
       controller: controller,
       config: QuillEditorConfig(
-        customStyles: _taskDescriptionStyles(context),
+        customStyles: taskDescriptionStyles(context),
         onLaunchUrl: _openLink,
         embedBuilders: const [
           TaskDescriptionImageEmbedBuilder(),
@@ -119,7 +119,7 @@ class _TaskDescriptionViewerState extends State<TaskDescriptionViewer> {
 /// code, ruled quotes and underlined links. The palette resolves the web's
 /// swatch colours (`var(--red)`, `var(--calendar-bg-red)`) in the current
 /// theme.
-DefaultStyles _taskDescriptionStyles(BuildContext context) {
+DefaultStyles taskDescriptionStyles(BuildContext context) {
   final tokens = AppTokens.of(context);
   final c = tokens.colorScheme;
   final body = tokens.typography.p.copyWith(

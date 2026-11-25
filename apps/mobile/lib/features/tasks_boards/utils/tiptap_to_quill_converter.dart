@@ -5,7 +5,10 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/utils/tiptap_document_codec.dart';
 import 'package:mobile/features/tasks_boards/utils/tiptap_quill_marks.dart';
 import 'package:mobile/features/tasks_boards/utils/tiptap_quill_models.dart'
-    show taskDescriptionDividerEmbedType;
+    show
+        taskDescriptionDividerEmbedType,
+        tipTapBlockEmbedType,
+        tipTapInlineEmbedType;
 
 /// TipTap node types that sit inside a text block.
 const Set<String> _inlineNodeTypes = {
@@ -22,6 +25,35 @@ const Set<String> _inlineNodeTypes = {
 /// so one value serves each call.
 bool _dividerEmbeds = false;
 bool _themeColorKeys = false;
+bool _opaqueNodes = false;
+
+/// Block types the Quill model represents. In opaque mode every other block
+/// becomes a [tipTapBlockEmbedType] embed.
+const Set<String> _editableBlockTypes = {
+  'paragraph',
+  'heading',
+  'blockquote',
+  'codeBlock',
+  'table',
+  'bulletList',
+  'orderedList',
+  'taskList',
+  'image',
+  'imageResize',
+  'video',
+  'horizontalRule',
+};
+
+/// Inline types the Quill model represents. In opaque mode every other
+/// inline node becomes a [tipTapInlineEmbedType] embed.
+const Set<String> _editableInlineTypes = {
+  'text',
+  'hardBreak',
+  'image',
+  'imageResize',
+  'mention',
+  'video',
+};
 
 /// A TipTap description as an editable Quill document.
 ///
@@ -33,17 +65,64 @@ bool _themeColorKeys = false;
 /// values; only surfaces that resolve them through
 /// `taskDescriptionThemePalette` in `DefaultStyles.palette` may pass it.
 /// Otherwise they render as the light theme's colours.
+///
+/// [opaqueNodes] keeps blocks and inline nodes Quill cannot model (toggles,
+/// citations, YouTube frames, unknown nodes) as JSON embeds that convert
+/// back verbatim; only surfaces with embed builders for
+/// [tipTapBlockEmbedType] and [tipTapInlineEmbedType] may pass it.
 Document tipTapJsonToQuillDocument(
   String? rawDescription, {
   bool dividerEmbeds = false,
   bool themeColorKeys = false,
+  bool opaqueNodes = false,
 }) => Document.fromDelta(
   tipTapJsonToQuillDelta(
     rawDescription,
     dividerEmbeds: dividerEmbeds,
     themeColorKeys: themeColorKeys,
+    opaqueNodes: opaqueNodes,
   ),
 );
+
+/// One top-level TipTap [node] as Quill ops, possibly none. Used to map a
+/// document's blocks to the lines they produce. See
+/// [tipTapJsonToQuillDocument] for the options.
+Delta tipTapBlockToQuillDelta(
+  Map<String, dynamic> node, {
+  bool dividerEmbeds = false,
+  bool themeColorKeys = false,
+  bool opaqueNodes = false,
+}) => _withOptions(
+  dividerEmbeds: dividerEmbeds,
+  themeColorKeys: themeColorKeys,
+  opaqueNodes: opaqueNodes,
+  run: () {
+    final delta = Delta();
+    _appendBlockNodeToDelta(node, delta);
+    return delta;
+  },
+);
+
+T _withOptions<T>({
+  required bool dividerEmbeds,
+  required bool themeColorKeys,
+  required bool opaqueNodes,
+  required T Function() run,
+}) {
+  final previousDividerEmbeds = _dividerEmbeds;
+  final previousThemeColorKeys = _themeColorKeys;
+  final previousOpaqueNodes = _opaqueNodes;
+  _dividerEmbeds = dividerEmbeds;
+  _themeColorKeys = themeColorKeys;
+  _opaqueNodes = opaqueNodes;
+  try {
+    return run();
+  } finally {
+    _dividerEmbeds = previousDividerEmbeds;
+    _themeColorKeys = previousThemeColorKeys;
+    _opaqueNodes = previousOpaqueNodes;
+  }
+}
 
 /// A TipTap description as a Quill delta: TipTap JSON when it parses,
 /// otherwise the raw text. Always ends with a newline, as Quill requires.
@@ -52,6 +131,7 @@ Delta tipTapJsonToQuillDelta(
   String? rawDescription, {
   bool dividerEmbeds = false,
   bool themeColorKeys = false,
+  bool opaqueNodes = false,
 }) {
   final decoded = decodeTipTapDescription(rawDescription);
   if (decoded.isEmpty) {
@@ -63,16 +143,12 @@ Delta tipTapJsonToQuillDelta(
     return Delta()..insert('${decoded.trimmed}\n');
   }
 
-  final previousDividerEmbeds = _dividerEmbeds;
-  final previousThemeColorKeys = _themeColorKeys;
-  _dividerEmbeds = dividerEmbeds;
-  _themeColorKeys = themeColorKeys;
-  try {
-    return _tipTapDocToDelta(doc);
-  } finally {
-    _dividerEmbeds = previousDividerEmbeds;
-    _themeColorKeys = previousThemeColorKeys;
-  }
+  return _withOptions(
+    dividerEmbeds: dividerEmbeds,
+    themeColorKeys: themeColorKeys,
+    opaqueNodes: opaqueNodes,
+    run: () => _tipTapDocToDelta(doc),
+  );
 }
 
 Delta _tipTapDocToDelta(Map<String, dynamic> doc) {
@@ -97,6 +173,13 @@ void _appendBlockNodeToDelta(Object? node, Delta delta, {int indent = 0}) {
 
   final type = node['type'];
   final attrs = _objectMap(node['attrs']);
+
+  if (_opaqueNodes && !_editableBlockTypes.contains(type)) {
+    delta
+      ..insert({tipTapBlockEmbedType: jsonEncode(node)})
+      ..insert('\n');
+    return;
+  }
 
   if (type == 'paragraph') {
     _appendInlineContentToDelta(node['content'], delta);
@@ -327,6 +410,11 @@ void _appendInlineContentToDelta(
     }
 
     final type = child['type'];
+    if (_opaqueNodes && !_editableInlineTypes.contains(type)) {
+      delta.insert({tipTapInlineEmbedType: jsonEncode(child)});
+      continue;
+    }
+
     if (type == 'text') {
       final text = _stringOrNull(child['text']);
       if (text == null || text.isEmpty) {

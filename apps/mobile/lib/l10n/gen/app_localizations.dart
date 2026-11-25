@@ -6427,6 +6427,36 @@ abstract class AppLocalizations {
   /// **'{seconds, plural, one{Changes in 1 second} other{Changes in {seconds} seconds}}'**
   String deviceMfaCodeChangesIn(int seconds);
 
+  /// No description provided for @documentsBlockBibliography.
+  ///
+  /// In en, this message translates to:
+  /// **'Bibliography'**
+  String get documentsBlockBibliography;
+
+  /// No description provided for @documentsBlockEditOnWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit on the web'**
+  String get documentsBlockEditOnWeb;
+
+  /// No description provided for @documentsBlockToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle'**
+  String get documentsBlockToggle;
+
+  /// No description provided for @documentsBlockUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Web-only block'**
+  String get documentsBlockUnsupported;
+
+  /// No description provided for @documentsBlockVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'YouTube video'**
+  String get documentsBlockVideo;
+
   /// No description provided for @documentsContentHint.
   ///
   /// In en, this message translates to:
@@ -6552,6 +6582,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Numbered list'**
   String get documentsFormatNumbers;
+
+  /// No description provided for @documentsInlineCitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Citation'**
+  String get documentsInlineCitation;
+
+  /// No description provided for @documentsInlineUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Web-only item'**
+  String get documentsInlineUnsupported;
 
   /// No description provided for @documentsLinkPlaceholder.
   ///

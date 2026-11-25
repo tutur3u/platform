@@ -2661,6 +2661,11 @@
       }
     }
   },
+  "documentsBlockBibliography": "Bibliography",
+  "documentsBlockEditOnWeb": "Edit on the web",
+  "documentsBlockToggle": "Toggle",
+  "documentsBlockUnsupported": "Web-only block",
+  "documentsBlockVideo": "YouTube video",
   "documentsContentHint": "Start writing...",
   "documentsCreated": "Document created.",
   "documentsDelete": "Delete document",
@@ -2682,6 +2687,8 @@
   "documentsFormatItalic": "Italic",
   "documentsFormatLink": "Link",
   "documentsFormatNumbers": "Numbered list",
+  "documentsInlineCitation": "Citation",
+  "documentsInlineUnsupported": "Web-only item",
   "documentsLinkPlaceholder": "https://",
   "documentsLinkTitle": "Link",
   "documentsNewDocument": "New document",

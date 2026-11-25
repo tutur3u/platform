@@ -13,11 +13,33 @@ String? quillDocumentToTipTapJson(Document document) {
   return jsonEncode(doc);
 }
 
+/// The TipTap top-level nodes for Quill [ops], even when they hold no
+/// text, so an empty paragraph the user added still saves.
+List<Map<String, dynamic>> quillOpsToTipTapNodes(List<dynamic> ops) =>
+    (_quillOpsToTipTapDoc(ops)['content'] as List).cast<Map<String, dynamic>>();
+
 Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
   final lines = <QuillLine>[];
   var current = const QuillLine();
 
+  // Set after a verbatim block embed: its own line is already pushed, so
+  // the newline that ends it adds nothing.
+  var afterOpaqueBlock = false;
+  // Text typed before a verbatim block on the same line; it takes the
+  // attributes of the newline that ends that line.
+  int? textBeforeOpaque;
+
   void pushCurrentLine(Map<String, dynamic> attrs) {
+    if (afterOpaqueBlock && current.segments.isEmpty) {
+      afterOpaqueBlock = false;
+      if (textBeforeOpaque case final index?) {
+        lines[index] = lines[index].copyWith(lineAttrs: attrs);
+      }
+      textBeforeOpaque = null;
+      return;
+    }
+    afterOpaqueBlock = false;
+    textBeforeOpaque = null;
     lines.add(current.copyWith(lineAttrs: attrs));
     current = const QuillLine();
   }
@@ -96,10 +118,43 @@ Map<String, dynamic> _quillOpsToTipTapDoc(List<dynamic> ops) {
         continue;
       }
 
-      if (insert.containsKey(taskDescriptionDividerEmbedType)) {
-        current = current.copyWith(
-          segments: [...current.segments, const QuillSegment.divider()],
+      final block = insert[tipTapBlockEmbedType];
+      if (block is String && block.trim().isNotEmpty) {
+        // A verbatim block always stands on its own line, even when text
+        // was typed beside it, so neither side is lost.
+        if (current.segments.isNotEmpty) {
+          pushCurrentLine(const {});
+          textBeforeOpaque = lines.length - 1;
+        }
+        lines.add(
+          QuillLine(
+            segments: [QuillSegment.opaque(data: block, inline: false)],
+          ),
         );
+        afterOpaqueBlock = true;
+        continue;
+      }
+
+      final inlineNode = insert[tipTapInlineEmbedType];
+      if (inlineNode is String && inlineNode.trim().isNotEmpty) {
+        current = current.copyWith(
+          segments: [
+            ...current.segments,
+            QuillSegment.opaque(data: inlineNode, inline: true),
+          ],
+        );
+        continue;
+      }
+
+      if (insert.containsKey(taskDescriptionDividerEmbedType)) {
+        // A rule stands on its own line, like a verbatim block, so text
+        // typed beside it is kept and the rule is not lost.
+        if (current.segments.isNotEmpty) {
+          pushCurrentLine(const {});
+          textBeforeOpaque = lines.length - 1;
+        }
+        lines.add(const QuillLine(segments: [QuillSegment.divider()]));
+        afterOpaqueBlock = true;
         continue;
       }
     }
@@ -225,6 +280,12 @@ Map<String, dynamic>? _lineToTipTapNode(QuillLine line) {
 
   if (inlineNodes.isEmpty &&
       line.segments.length == 1 &&
+      line.segments.first.kind == QuillSegmentKind.opaqueBlock) {
+    return _decodeOpaqueNode(line.segments.first.src);
+  }
+
+  if (inlineNodes.isEmpty &&
+      line.segments.length == 1 &&
       line.segments.first.kind == QuillSegmentKind.table) {
     final data = line.segments.first.src ?? '';
     if (data.isNotEmpty) {
@@ -265,6 +326,12 @@ List<Map<String, dynamic>> _lineSegmentsToTipTapInlineNodes(
         node['marks'] = marks;
       }
       nodes.add(node);
+      continue;
+    }
+
+    if (segment.kind == QuillSegmentKind.opaqueInline) {
+      final node = _decodeOpaqueNode(segment.src);
+      if (node != null) nodes.add(node);
       continue;
     }
 
@@ -489,6 +556,20 @@ Map<String, dynamic>? _imageResizeAttrsFromEmbed(String? rawValue) {
     'containerStyle': '',
     'wrapperStyle': '',
   };
+}
+
+/// A TipTap node carried verbatim through a Quill embed.
+Map<String, dynamic>? _decodeOpaqueNode(String? data) {
+  if (data == null || data.isEmpty) return null;
+  try {
+    final decoded = jsonDecode(data);
+    if (decoded is Map<String, dynamic> && decoded['type'] is String) {
+      return decoded;
+    }
+  } on FormatException {
+    // Malformed embed data has nothing to write back.
+  }
+  return null;
 }
 
 String? _nonEmptyString(Object? value) {

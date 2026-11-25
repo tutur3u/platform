@@ -2370,6 +2370,11 @@
       }
     }
   },
+  "documentsBlockBibliography": "Tài liệu tham khảo",
+  "documentsBlockEditOnWeb": "Chỉnh sửa trên web",
+  "documentsBlockToggle": "Khối thu gọn",
+  "documentsBlockUnsupported": "Khối chỉ có trên web",
+  "documentsBlockVideo": "Video YouTube",
   "documentsContentHint": "Bắt đầu viết...",
   "documentsCreated": "Đã tạo tài liệu.",
   "documentsDelete": "Xóa tài liệu",
@@ -2391,6 +2396,8 @@
   "documentsFormatItalic": "Nghiêng",
   "documentsFormatLink": "Liên kết",
   "documentsFormatNumbers": "Danh sách số",
+  "documentsInlineCitation": "Trích dẫn",
+  "documentsInlineUnsupported": "Mục chỉ có trên web",
   "documentsLinkPlaceholder": "https://",
   "documentsLinkTitle": "Liên kết",
   "documentsNewDocument": "Tài liệu mới",

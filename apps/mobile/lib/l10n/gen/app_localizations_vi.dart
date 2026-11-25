@@ -3328,6 +3328,21 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get documentsBlockBibliography => 'Tài liệu tham khảo';
+
+  @override
+  String get documentsBlockEditOnWeb => 'Chỉnh sửa trên web';
+
+  @override
+  String get documentsBlockToggle => 'Khối thu gọn';
+
+  @override
+  String get documentsBlockUnsupported => 'Khối chỉ có trên web';
+
+  @override
+  String get documentsBlockVideo => 'Video YouTube';
+
+  @override
   String get documentsContentHint => 'Bắt đầu viết...';
 
   @override
@@ -3389,6 +3404,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get documentsFormatNumbers => 'Danh sách số';
+
+  @override
+  String get documentsInlineCitation => 'Trích dẫn';
+
+  @override
+  String get documentsInlineUnsupported => 'Mục chỉ có trên web';
 
   @override
   String get documentsLinkPlaceholder => 'https://';

@@ -3344,6 +3344,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get documentsBlockBibliography => 'Bibliography';
+
+  @override
+  String get documentsBlockEditOnWeb => 'Edit on the web';
+
+  @override
+  String get documentsBlockToggle => 'Toggle';
+
+  @override
+  String get documentsBlockUnsupported => 'Web-only block';
+
+  @override
+  String get documentsBlockVideo => 'YouTube video';
+
+  @override
   String get documentsContentHint => 'Start writing...';
 
   @override
@@ -3405,6 +3420,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get documentsFormatNumbers => 'Numbered list';
+
+  @override
+  String get documentsInlineCitation => 'Citation';
+
+  @override
+  String get documentsInlineUnsupported => 'Web-only item';
 
   @override
   String get documentsLinkPlaceholder => 'https://';

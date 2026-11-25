@@ -51,6 +51,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   final ScrollController _editorScroll = ScrollController();
 
   WorkspaceDocument? _document;
+  DocumentContentSnapshot? _snapshot;
   bool _isLoading = true;
   bool _isPublic = false;
   bool _hydrating = false;
@@ -126,7 +127,9 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       if (!mounted || requestToken != _requestToken || _closed) return;
       _hydrating = true;
       _title.text = document.name;
-      _editor.document = documentQuillFromContent(document.content);
+      final snapshot = DocumentContentSnapshot.parse(document.content);
+      _snapshot = snapshot;
+      _editor.document = snapshot.toQuill();
       _watchDocument();
       _hydrating = false;
       _dirty = false;
@@ -163,7 +166,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     _dirty = false;
     _saveTimer?.cancel();
     final name = _title.text;
-    final content = documentContentPayload(_editor.document);
+    final content = documentContentPayload(_editor.document, _snapshot);
     final onSaved = widget.onSaved;
     final documentId = widget.documentId;
     if (mounted && !_closed) {
