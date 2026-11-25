@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
+import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/router/router_location.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/account_overlay_scope.dart';
@@ -115,7 +116,9 @@ class _PaletteHostState extends State<PaletteHost> {
         : ModalRoute.of(focusedContext);
     final chrome = context.read<ShellChromeActionsCubit>().state;
     if (focusedRoute is PopupRoute<dynamic> ||
-        (shortcut.navigates && _isPushedFullPage(focusedRoute)) ||
+        (shortcut.navigates &&
+            (DraftRouteGuard.instance.hasBlockingRoute ||
+                _isPushedFullPage(focusedRoute))) ||
         chrome.topmostModalOwner != null ||
         _launchingAction) {
       return;
@@ -211,6 +214,12 @@ class _PaletteHostState extends State<PaletteHost> {
   Future<void> _runEntry(PaletteEntry entry, _Scope scope) async {
     final navigatorContext = _navigatorContext;
     if (navigatorContext == null || _scope != scope) return;
+    // A draft opened while the palette was showing still blocks a destination
+    // or a new item; the palette's own popup route is never counted.
+    if (DraftRouteGuard.instance.hasBlockingRoute &&
+        (entry.route != null || _createsItem(entry))) {
+      return;
+    }
     if (entry.route case final route?) {
       if (AppRegistry.moduleById(entry.appId) case final module?) {
         unawaited(context.read<AppTabCubit>().select(module));
@@ -238,6 +247,10 @@ class _PaletteHostState extends State<PaletteHost> {
         await _showHelp(navigatorContext);
     }
   }
+
+  static bool _createsItem(PaletteEntry entry) =>
+      entry.action == PaletteAction.newChat ||
+      entry.action == PaletteAction.newTask;
 
   Future<void> _create({required bool chat, required _Scope scope}) async {
     final onBoard = Routes.isTaskBoardDetailLocation(_location);

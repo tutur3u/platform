@@ -7,6 +7,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
+import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -104,6 +105,8 @@ class _MailNavigator extends StatefulWidget {
 
 class _MailNavigatorState extends State<_MailNavigator> {
   final _navigator = GlobalKey<NavigatorState>();
+  final NavigatorObserver _draftObserver = DraftRouteGuard.instance
+      .toObserver();
   @override
   Widget build(BuildContext context) => MediaQuery.removePadding(
     context: context,
@@ -116,6 +119,7 @@ class _MailNavigatorState extends State<_MailNavigator> {
         },
         child: Navigator(
           key: _navigator,
+          observers: [_draftObserver],
           onGenerateRoute: (_) => MaterialPageRoute<void>(
             builder: (_) => MailWorkspace(
               workspaceId: widget.workspaceId,

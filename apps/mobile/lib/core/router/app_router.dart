@@ -8,6 +8,7 @@ import 'package:mobile/core/router/app_router_onboarding.dart';
 import 'package:mobile/core/router/app_router_refresh.dart';
 import 'package:mobile/core/router/app_router_telemetry_consent.dart';
 import 'package:mobile/core/router/app_settings_routes.dart';
+import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/router/finance_routes.dart';
 import 'package:mobile/core/router/inventory_catalog_routes.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -200,6 +201,7 @@ GoRouter createAppRouter(
   };
   return GoRouter(
     navigatorKey: navigatorKey,
+    observers: [DraftRouteGuard.instance.toObserver()],
     debugLogDiagnostics: true,
     initialLocation: initialLocation ?? Routes.home,
     overridePlatformDefaultLocation: true,

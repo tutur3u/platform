@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
@@ -130,6 +131,7 @@ Future<PaletteHarness> pumpPaletteApp(
   Widget page(String label) => Scaffold(body: Text(label));
   final router = GoRouter(
     initialLocation: initialLocation ?? Routes.home,
+    observers: [DraftRouteGuard.instance.toObserver()],
     routes: [
       GoRoute(
         path: Routes.home,
