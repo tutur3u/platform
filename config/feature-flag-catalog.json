@@ -1293,6 +1293,39 @@
         "envFallback": "MEET_FORMS_EXTENDED_ENABLED",
         "clientExposed": true
       }
+    },
+    {
+      "key": "TASKS_INSTANT_BOARD_SYNC",
+      "family": "runtime",
+      "kind": "release",
+      "scope": "global",
+      "description": "Tasks board reads and writes through TanStack DB live queries and optimistic transactions (pilot).",
+      "owner": "tasks",
+      "createdAt": "2026-11-25",
+      "apps": ["tasks"],
+      "appsComplete": true,
+      "sources": ["apps/tasks/src/lib/instant-board-sync/access.ts"],
+      "defaults": {
+        "development": false,
+        "staging": false,
+        "production": false
+      },
+      "verifiedOnProdAt": null,
+      "legacy": false,
+      "rollout": {
+        "stage": "internal",
+        "owner": "tasks",
+        "removeBy": "2027-03-31"
+      },
+      "runtime": {
+        "type": "boolean",
+        "scopes": ["platform"],
+        "controllers": {
+          "platform": "platform-admin"
+        },
+        "envFallback": null,
+        "clientExposed": true
+      }
     }
   ]
 }

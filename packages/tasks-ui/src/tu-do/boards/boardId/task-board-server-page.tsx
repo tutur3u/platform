@@ -25,7 +25,10 @@ interface Props {
   /** Verified actor supplied by satellite apps that do not use Web's Supabase session. */
   sessionUser?: { id: string };
   /** App-owned pilot flag lookup for instant board sync (default off). */
-  resolveInstantSync?: (workspaceId: string) => Promise<boolean>;
+  resolveInstantSync?: (context: {
+    userId: string;
+    workspaceId: string;
+  }) => Promise<boolean>;
 }
 
 async function getAuthorizedBoard(
@@ -86,7 +89,10 @@ export default async function TaskBoardServerPage({
       ? { ...model.workspace, joined: false }
       : model.workspace;
   const instantSyncEnabled =
-    (await resolveInstantSync?.(workspace.id)) ?? false;
+    (await resolveInstantSync?.({
+      userId: user.id,
+      workspaceId: workspace.id,
+    })) ?? false;
 
   return (
     <BoardClient

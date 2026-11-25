@@ -2138,6 +2138,7 @@
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/cloudflare": "workspace:*",
+        "@tuturuuu/feature-flags": "workspace:*",
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",

@@ -22,7 +22,7 @@ Do **not** adopt ElectricSQL. Do **not** build a bespoke Durable Object sync
 protocol until the board data moves to Cloudflare storage (stage 3 below).
 
 The first surface is the Tasks board in `apps/tasks`. It runs behind the
-default-off workspace secret `ENABLE_INSTANT_BOARD_SYNC`.
+default-off runtime flag `TASKS_INSTANT_BOARD_SYNC`.
 
 ## What exists today
 
@@ -104,9 +104,14 @@ internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── r
 - Realtime topics are authorized per board by the channels route. A client
   cannot subscribe to a board it cannot read. Remote events only patch the cache
   and never bypass server authorization.
-- The flag is a workspace secret checked server-side in `apps/tasks`
-  (`src/lib/instant-board-sync/access.ts`). A lookup failure keeps the
-  established path.
+- The flag is the runtime flag `TASKS_INSTANT_BOARD_SYNC` in
+  `config/feature-flag-catalog.json`, evaluated server-side in `apps/tasks`
+  (`src/lib/instant-board-sync/access.ts`) with the verified actor and the
+  authorized board's workspace. It declares only the platform scope, so a board
+  load reads the per-isolate cached platform snapshot and makes no per-request
+  rule query. It has no environment fallback, and an evaluation failure keeps
+  the established path. Staff mode does not apply: the satellite evaluates with
+  `isStaff: false`.
 
 ## Rollback, conflicts and offline
 
@@ -184,24 +189,43 @@ internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── r
 
 ## Pilot plan
 
-1. Enable `ENABLE_INSTANT_BOARD_SYNC=true` on an internal workspace in
-   `apps/tasks` only. Web's shared board route does not pass the flag.
+1. Allow-list internal pilot workspaces with a platform rollout rule:
+   `ttr flags set TASKS_INSTANT_BOARD_SYNC --mode rollout --percent 0
+   --allow-workspaces <ids> --reason "<text>"`. Only `apps/tasks` evaluates
+   the flag; Web's shared board route never enables it.
 2. Covered interactions: drag-and-drop move/reorder, the card edit dialog
    (update), and the task dialog create path. Other menus keep their cache-level
-   optimistic code and stay live through the mirror.
-   **Kanban only.** Search, list and timeline views read
-   `['tasks-full', boardId, ...]` directly. They show collection-only optimistic
-   rows (dialog create, edit-dialog update, moves without a drag preview) only
-   once the server confirms. Move them to the live query before widening the
-   pilot.
+   optimistic code and stay live through the mirror. See the pilot limits
+   below; move the `tasks-full` views to the live query before widening.
 3. Watch rollback toasts, console reorder failures, duplicate/ghost cards after
    create, and memory on large boards. Compare perceived latency with the flag
    on and off for the same workspace.
 4. Expand only when stage 2 sequencing is designed and the bundle budget is
-   accepted. Roll back by deleting the secret; no data migration is involved.
+   accepted. Roll back with `ttr flags set TASKS_INSTANT_BOARD_SYNC --mode off`
+   (applies within the 60-second snapshot refresh); no data migration is
+   involved.
+
+## Pilot limits
+
+- **Kanban only.** The live view feeds the kanban. Search, list and timeline
+  read `['tasks-full', boardId, ...]` and show collection-only optimistic rows
+  only after the server confirms.
+- **Release-candidate library.** `@tanstack/db` and `@tanstack/react-db` are
+  pinned at `1.0.0-rc.1.5`. Its observed semantics (no rollback cascade into an
+  already-persisting write, `useLiveQuery` without a dependency list) are
+  pinned by tests and must be rechecked on every upgrade.
+- **No offline queue.** Writes made offline fail, roll back and show the
+  reverted toast; there is no durable outbox.
+- **Sort-key repair.** The drag-and-drop sort-key repair path keeps its own
+  whole-snapshot rollback.
+- **Server rendering unverified.** Server rendering and hydration of the
+  `React.lazy` renderer and `useLiveQuery` have no browser check yet. Verify
+  them on a production build before widening the allow-list.
 
 Regression coverage:
 `packages/tasks-ui/src/tu-do/instant-sync/__tests__/board-task-actions.test.ts`
 (mirror, create swap, rollback isolation, remote-wins conflicts, drag-preview
 revert, concurrent writes) and `use-board-reorder-task.test.tsx` (flag-off
-passthrough, success callbacks, failure toast and settle).
+passthrough, success callbacks, failure toast and settle), and
+`apps/tasks/src/lib/instant-board-sync/access.test.ts` (default off, platform
+allow-list, one cached snapshot read and no subject query per board load).
