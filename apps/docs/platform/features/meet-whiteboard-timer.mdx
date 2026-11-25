@@ -122,13 +122,16 @@ a rough line or arrow to about 5,000; a longer stroke is refused, so very long
 strokes need to be drawn in parts. The editor holds back a new line or arrow
 until it has its second point, so starting one never reports a refused edit;
 deletions, and lines the board already has, always go out. An arrow from
-someone outside the workspace keeps a text label only when that text element
-exists on the board, or arrives in the same edit, and names the arrow as its
-container; any other label entry is dropped before the arrow is stored or
-relayed.
+someone outside the workspace never carries a text label: every label entry is
+dropped before the arrow is stored or relayed. Members' arrow labels are kept.
 
-Drawing is budgeted so no board can freeze the people viewing it or run them
-out of memory. Every element has one render cost, roughly the lines and
+Drawing from people outside the workspace is budgeted to limit the work and
+memory each viewer spends on the board. The budgets assume 100% zoom at a
+device pixel ratio of two. Excalidraw scales each cached canvas with the
+viewer's zoom, so a viewer who zooms in holds more than the budget counts.
+Drawing by people outside the workspace therefore stays off until the editor
+bounds cached canvases itself. Every
+element has one render cost, roughly the lines and
 points a viewer draws for it: one, plus its fill, its stroke points, its
 dashes and its text lines.
 
@@ -150,9 +153,11 @@ dashes and its text lines.
 Every viewer also caches each element on its own canvas of up to 16.7 million
 pixels (64 MiB). The board measures that canvas at a device pixel ratio of
 two: twice the element's box (the bounds of its points for a line, arrow or
-freehand stroke) plus Excalidraw's padding on each side, which is half the
-font size for text, twelve stroke widths for a freehand stroke and 20 px
-otherwise, up to that cap. An arrow that lists a text label also gets a square
+freehand stroke, grown by a quarter on each axis plus four units per
+roughness for a rounded line or arrow, which draws a curve past its points)
+plus Excalidraw's padding on each side, which is half the font size for text,
+twelve stroke widths for a freehand stroke and 20 px otherwise, up to that
+cap. An arrow that lists a text label also gets a square
 label canvas, twice its longest side plus ten paddings, which Excalidraw never
 caps; it counts whether or not the label exists.
 
@@ -288,7 +293,8 @@ Under `packages/meet-core/src/features/call`:
 - `whiteboard/board-room.test.tsx`: the board status note without saving
   wording.
 - `whiteboard/socket-transport.test.ts`: a new line or arrow is held back
-  until its second point; deletions and known lines always go out.
+  until its second point; deletions and known lines always go out, and a
+  closed socket forgets what it sent.
 - `stage-layout/whiteboard-policy.test.ts`: which board guests and hosts get
   with the guest switch on and off.
 - `components/call-account-gates.test.tsx`: the guest board pane and the
@@ -325,7 +331,7 @@ selection cap, presence batching and fanout, role changes on refresh),
 coalescing, dropped and gone relays, refill timing, fairness and clock rollback),
 `apps/meet-realtime/src/whiteboard-room-do-guest-budget.test.ts` (a costly
 guest batch, the churn bucket across an eviction, the board's shared bucket,
-an unbacked arrow label),
+a guest arrow's dropped labels),
 `apps/meet-realtime/src/room-service-board-access.test.ts` (only an open
 socket counts, only server tokens may ask), `packages/realtime/src/meet` tests
 `room-board-access.test.ts` (who the room answers, the grace period),
@@ -334,8 +340,8 @@ pressure, field types, sizes and ranges, text lines, open windows, actor ids),
 `board-sync-cost.test.ts` (the render cost for concave shapes, outline scans,
 solid fills, stroke points, dashes, text and extreme values, and the element,
 scene, churn and shared churn budgets), `board-sync-canvas.test.ts` (canvas
-area with padding and arrow labels, the scene area, area in churn, and arrow
-label checks) and `board-sync-core-bounds.test.ts` (the reload window across an
+area with padding, curves and arrow labels, the scene area, area in churn,
+dropped guest labels and kept member labels) and `board-sync-core-bounds.test.ts` (the reload window across an
 eviction), and
 `apps/meet/src/runtime/page-model.server.test.ts` (the switch reaches the
 room, off by default).
