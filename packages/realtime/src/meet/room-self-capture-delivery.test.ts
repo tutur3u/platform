@@ -235,7 +235,8 @@ describe('outbox delivery bounds', () => {
   it('sends at most the daily cap per room, whatever the cycles allow', async () => {
     const base = pendingRoom();
     const [first] = base.selfCapture!.outbox;
-    const outbox = Array.from({ length: 2000 }, (_, i) => ({
+    // A few more entries than the cap, so only the cap can stop delivery.
+    const outbox = Array.from({ length: SELF_OUTBOX_DAILY_DELIVERIES + 20 }, (_, i) => ({
       ...first!,
       seq: 100 + i,
     }));
@@ -251,13 +252,21 @@ describe('outbox delivery bounds', () => {
       return Response.json({ acked: body.entries.slice(0, 1) });
     });
     const day = 86_400_000;
-    for (let now = T; now < day; now += 10_000) await h.run(now);
+    const env = { MEET_AI_SELF_OUTBOX: { fetch: h.fetch } };
+    // Wake exactly when the alarm would, so the cycles run as fast as they
+    // allow without simulating every idle tick of the day.
+    let now = T;
+    for (let wakes = 0; wakes < SELF_OUTBOX_DAILY_DELIVERIES * 4; wakes++) {
+      await h.run(now);
+      const next = selfOutboxDeadline(h.read(), env);
+      if (next === undefined || next >= day) break;
+      now = Math.max(next, now + 1);
+    }
     expect(h.fetch).toHaveBeenCalledTimes(SELF_OUTBOX_DAILY_DELIVERIES);
     expect(h.read().selfCapture?.deliveryDay).toEqual({
       day: 0,
       count: SELF_OUTBOX_DAILY_DELIVERIES,
     });
-    const env = { MEET_AI_SELF_OUTBOX: { fetch: h.fetch } };
     expect(selfOutboxDeadline(h.read(), env)).toBe(day);
     await h.run(day);
     expect(h.fetch).toHaveBeenCalledTimes(SELF_OUTBOX_DAILY_DELIVERIES + 1);
