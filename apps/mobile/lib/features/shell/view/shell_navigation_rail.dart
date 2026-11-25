@@ -357,6 +357,7 @@ class ShellSidebarScaffold extends StatelessWidget {
         extended: extended,
         matchedLocation: location,
         includeWorkspacePicker: includeWorkspacePicker,
+        onNavigate: dismiss,
         onProfileSelected: () {
           dismiss();
           onProfileSelected();

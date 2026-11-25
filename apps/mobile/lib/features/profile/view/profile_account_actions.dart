@@ -25,8 +25,14 @@ Future<void> showProfileAccountSwitcher(
     return;
   }
 
+  await startAddAccountFlow(context, email: selected.email);
+}
+
+/// Starts signing in another account on this device, optionally for a saved
+/// account's [email], and opens the sign-in screen.
+Future<void> startAddAccountFlow(BuildContext context, {String? email}) async {
   final authCubit = context.read<AuthCubit>();
-  final started = await authCubit.beginAddAccountFlow(email: selected.email);
+  final started = await authCubit.beginAddAccountFlow(email: email);
   if (!context.mounted) return;
   if (started) {
     context.go(Routes.addAccount);
