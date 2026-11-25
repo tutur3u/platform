@@ -41,7 +41,11 @@ void main() {
             home: Builder(
               builder: (context) => ColoredBox(
                 color: Theme.of(context).scaffoldBackgroundColor,
-                child: const AssistantEmptyHero(assistantName: 'Mira'),
+                // A fixed clock keeps the time-of-day line stable.
+                child: AssistantEmptyHero(
+                  assistantName: 'Mira',
+                  now: DateTime(2030, 4, 3, 9),
+                ),
               ),
             ),
           ),

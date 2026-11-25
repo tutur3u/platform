@@ -121,8 +121,11 @@ void main() {
               final stripRect = tester.getRect(
                 find.byKey(const ValueKey('assistant-starter-prompts')),
               );
-              expect(stripRect.center.dx, closeTo(panelRect.center.dx, 0.01));
-              expect(stripRect.width, closeTo(panelRect.width, 0.01));
+              // The prompts sit inside the composer card, above the field.
+              expect(stripRect.left, closeTo(cardRect.left, 0.01));
+              expect(stripRect.right, closeTo(cardRect.right, 0.01));
+              expect(stripRect.top, greaterThanOrEqualTo(cardRect.top));
+              expect(stripRect.bottom, lessThan(cardRect.bottom));
             }
             expect(measuredHeight, closeTo(panelRect.height, 0.01));
             expect(

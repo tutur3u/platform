@@ -213,19 +213,22 @@ void main() {
       onPromptSelected: (prompt) => selectedPrompt = prompt,
     );
     final strip = find.byKey(const ValueKey('assistant-starter-prompts'));
-    expect(tester.getRect(strip).left, 0);
-    expect(tester.getRect(strip).right, 320);
+    // The prompts share the composer's surface, edge to edge inside it.
+    final card = tester.getRect(find.byType(AppCard));
+    expect(tester.getRect(strip).left, card.left);
+    expect(tester.getRect(strip).right, card.right);
+    expect(tester.getRect(strip).bottom, lessThan(card.bottom));
     final first = find
         .descendant(of: strip, matching: find.byType(AppChip))
         .first;
     final last = find
         .descendant(of: strip, matching: find.byType(AppChip))
         .last;
-    expect(tester.getRect(first).left, AppSpacing.lg);
+    expect(tester.getRect(first).left, card.left + AppSpacing.sm);
     final edge = tester.getTopRight(strip) + const Offset(-4, 24);
     await tester.dragFrom(edge, const Offset(-120, 0));
     await tester.pumpAndSettle();
-    expect(tester.getRect(first).left, lessThan(AppSpacing.lg));
+    expect(tester.getRect(first).left, lessThan(card.left + AppSpacing.sm));
     final scrollable = find.descendant(
       of: strip,
       matching: find.byType(Scrollable),
@@ -233,7 +236,10 @@ void main() {
     final position = tester.state<ScrollableState>(scrollable).position;
     position.jumpTo(position.maxScrollExtent);
     await tester.pumpAndSettle();
-    expect(tester.getRect(last).right, closeTo(320 - AppSpacing.lg, 0.5));
+    expect(
+      tester.getRect(last).right,
+      closeTo(card.right - AppSpacing.sm, 0.5),
+    );
     await tester.tap(last);
     expect(
       selectedPrompt,
