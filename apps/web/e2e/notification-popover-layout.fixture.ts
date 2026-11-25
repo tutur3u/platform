@@ -38,10 +38,16 @@ function measure(page: Page, anchor: 'sidebar' | 'navbar') {
       errors.push('popover scrolls horizontally');
 
     if (anchor === 'sidebar' && innerWidth >= 768) {
-      const rail = document
-        .querySelector('[data-fixture-rail]')!
-        .getBoundingClientRect();
-      if (box.left < rail.right - 1) errors.push('popover covers the rail');
+      // The rail's padding and border are empty gutter; only its icons must
+      // stay uncovered.
+      const railEl = document.querySelector('[data-fixture-rail]')!;
+      const railStyle = getComputedStyle(railEl);
+      const railContentRight =
+        railEl.getBoundingClientRect().right -
+        parseFloat(railStyle.paddingRight) -
+        parseFloat(railStyle.borderRightWidth);
+      if (box.left < railContentRight - 1)
+        errors.push('popover covers the rail icons');
     } else if (anchor === 'sidebar') {
       if (box.bottom > bell.top + 1) errors.push('popover covers the bell');
     } else if (box.top < bell.bottom - 1) {
