@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -44,8 +45,9 @@ class ShellSidebarAccount extends StatelessWidget {
               avatarUrl: profile?.avatarUrl,
             ),
     );
-    final workspace = context
-        .select((WorkspaceCubit? cubit) => cubit?.state.currentWorkspace);
+    final workspace = context.select<WorkspaceCubit?, Workspace?>(
+      (cubit) => cubit?.state.currentWorkspace,
+    );
     final l10n = context.l10n;
     final subtitle =
         identity?.email ??
@@ -119,7 +121,10 @@ class ShellSidebarAccount extends StatelessWidget {
                 LucideIcons.settings,
                 () => unawaited(context.push<void>(Routes.settings)),
               ),
-              for (final action in _homeAccountActions(context, matchedLocation))
+              for (final action in _homeAccountActions(
+                context,
+                matchedLocation,
+              ))
                 _menuItem(
                   action.tooltip ?? action.id,
                   action.icon,
@@ -196,7 +201,9 @@ Iterable<ShellActionSpec> _homeAccountActions(
 ) {
   if (location != Routes.home) return const [];
   final chrome = context.read<ShellChromeActionsCubit?>();
-  return chrome?.state.resolveForLocation(location).where(isShellSidebarAction) ??
+  return chrome?.state
+          .resolveForLocation(location)
+          .where(isShellSidebarAction) ??
       const [];
 }
 
@@ -222,7 +229,9 @@ PopupMenuItem<VoidCallback> _menuItem(
     spacing: AppSpacing.md,
     children: [
       Icon(icon, size: 18, color: color),
-      Flexible(child: Text(label, style: TextStyle(color: color))),
+      Flexible(
+        child: Text(label, style: TextStyle(color: color)),
+      ),
     ],
   );
   return PopupMenuItem(

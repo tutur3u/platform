@@ -65,12 +65,10 @@ class AppInterfaceTokens extends ThemeExtension<AppInterfaceTokens> {
   BorderRadius borderRadius(double base) => BorderRadius.circular(radius(base));
 
   /// Minimum height of a grouped row; never below [minTouchTarget].
-  double get rowMinHeight => spacing(
-    switch (density) {
-      AppDensity.comfortable => AppLayout.rowMinHeight,
-      AppDensity.compact => AppLayout.rowCompactMinHeight,
-    },
-  );
+  double get rowMinHeight => spacing(switch (density) {
+    AppDensity.comfortable => AppLayout.rowMinHeight,
+    AppDensity.compact => AppLayout.rowCompactMinHeight,
+  });
 
   /// Scroll physics for the style, or null to keep the platform default.
   ScrollPhysics? get scrollPhysics => switch (style) {

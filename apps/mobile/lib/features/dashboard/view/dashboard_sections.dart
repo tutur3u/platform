@@ -16,7 +16,7 @@ class _HomeSection extends StatelessWidget {
   final List<Widget> children;
   final double dividerInset;
 
-  static const captionHeight = _HomeOpenLink.minHeight + AppSpacing.xs;
+  static const double captionHeight = _HomeOpenLink.minHeight + AppSpacing.xs;
 
   @override
   Widget build(BuildContext context) => Column(

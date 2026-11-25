@@ -78,11 +78,7 @@ Future<RailShell> pumpRailShell(
   final auth = _Auth();
   final workspace = _Workspace();
   final profile = _Profile();
-  whenListen(
-    auth,
-    const Stream<AuthState>.empty(),
-    initialState: authState,
-  );
+  whenListen(auth, const Stream<AuthState>.empty(), initialState: authState);
   whenListen(
     workspace,
     const Stream<WorkspaceState>.empty(),

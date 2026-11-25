@@ -625,7 +625,10 @@ extension _ShellPageLayout on _ShellPageState {
               ),
             ],
       child: searchAction != null
-          ? ShellSearchField(key: ValueKey(searchAction.id), action: searchAction)
+          ? ShellSearchField(
+              key: ValueKey(searchAction.id),
+              action: searchAction,
+            )
           : SizedBox(
               width: double.infinity,
               child: RepaintBoundary(

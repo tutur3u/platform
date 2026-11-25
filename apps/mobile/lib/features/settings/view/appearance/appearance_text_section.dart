@@ -74,12 +74,10 @@ class AppearanceTextSection extends StatelessWidget {
     void step(int delta) {
       final next = ((scale * 100).round() + delta) / 100;
       onScaleChanged(
-        next
-            .clamp(
-              AppearanceSettings.minTextScale,
-              AppearanceSettings.maxTextScale,
-            )
-            .toDouble(),
+        next.clamp(
+          AppearanceSettings.minTextScale,
+          AppearanceSettings.maxTextScale,
+        ),
       );
     }
 

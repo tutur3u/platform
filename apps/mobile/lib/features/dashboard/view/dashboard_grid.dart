@@ -14,40 +14,40 @@ class _HomeScale {
     this.desktop = false,
   });
 
-  factory _HomeScale.forWidth(double width, {bool desktop = false}) =>
-      switch ((desktop, width)) {
-        (true, _) => _HomeScale._(
-          greetingSize: 36,
-          dateSize: 16,
-          metricSize: 40,
-          gap:
-              AppLayout.sectionGap *
-              AppLayout.spacingScale(DeviceClass.expanded),
-          strip: true,
-          desktop: true,
-        ),
-        (_, >= 1000) => const _HomeScale._(
-          greetingSize: 34,
-          dateSize: 15,
-          metricSize: 36,
-          gap: AppSpacing.xxl + AppSpacing.xs,
-          strip: true,
-        ),
-        (_, >= 560) => const _HomeScale._(
-          greetingSize: 30,
-          dateSize: 15,
-          metricSize: 32,
-          gap: AppLayout.sectionGap,
-          strip: true,
-        ),
-        _ => const _HomeScale._(
-          greetingSize: 24,
-          dateSize: 14,
-          metricSize: 30,
-          gap: AppLayout.sectionGap,
-          strip: false,
-        ),
-      };
+  factory _HomeScale.forWidth(double width, {bool desktop = false}) => switch ((
+    desktop,
+    width,
+  )) {
+    (true, _) => _HomeScale._(
+      greetingSize: 36,
+      dateSize: 16,
+      metricSize: 40,
+      gap: AppLayout.sectionGap * AppLayout.spacingScale(DeviceClass.expanded),
+      strip: true,
+      desktop: true,
+    ),
+    (_, >= 1000) => const _HomeScale._(
+      greetingSize: 34,
+      dateSize: 15,
+      metricSize: 36,
+      gap: AppSpacing.xxl + AppSpacing.xs,
+      strip: true,
+    ),
+    (_, >= 560) => const _HomeScale._(
+      greetingSize: 30,
+      dateSize: 15,
+      metricSize: 32,
+      gap: AppLayout.sectionGap,
+      strip: true,
+    ),
+    _ => const _HomeScale._(
+      greetingSize: 24,
+      dateSize: 14,
+      metricSize: 30,
+      gap: AppLayout.sectionGap,
+      strip: false,
+    ),
+  };
 
   final double greetingSize;
   final double dateSize;
@@ -91,7 +91,8 @@ class _HomeScaleScope extends InheritedWidget {
       _HomeScale.forWidth(0);
 
   static double cardHeightOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<_HomeScaleScope>()
+      context
+          .dependOnInheritedWidgetOfExactType<_HomeScaleScope>()
           ?.minCardHeight ??
       0;
 
@@ -182,7 +183,7 @@ class _DesktopHomeGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = MediaQuery.textScalerOf(context);
-    final minTileWidth = math.max(260.0, text.scale(14) * 16);
+    final minTileWidth = math.max<double>(260, text.scale(14) * 16);
     return SliverMainAxisGroup(
       slivers: [
         SliverToBoxAdapter(child: leading),
@@ -194,7 +195,6 @@ class _DesktopHomeGrid extends StatelessWidget {
                 constraints.crossAxisExtent,
                 minTileWidth: minTileWidth,
                 spacing: scale.gap,
-                maxColumns: _HomeScale.maxColumns,
               );
               // Fit the first two rows into the initial viewport. Natural
               // content height can stretch a card and continue scrolling.
@@ -205,15 +205,13 @@ class _DesktopHomeGrid extends StatelessWidget {
                   bottomInset -
                   scale.gap * (rows - 1);
               final cardHeight = (remaining / rows - _HomeSection.captionHeight)
-                  .clamp(0.0, 720.0)
-                  .toDouble();
+                  .clamp(0.0, 720.0);
               return SliverToBoxAdapter(
                 child: _HomeScaleScope(
                   scale: scale,
                   minCardHeight: cardHeight,
                   child: AppAdaptiveGrid(
                     minTileWidth: minTileWidth,
-                    maxColumns: _HomeScale.maxColumns,
                     spacing: scale.gap,
                     runSpacing: scale.gap,
                     children: sections,
