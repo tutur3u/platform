@@ -15,10 +15,12 @@ export type RefreshApp = Pick<
 >;
 
 /**
- * `revoked` is a positive determination that the grant ended; `unavailable`
- * means a lookup failed and nothing about the grant is known.
+ * `revoked` is a positive determination that the grant ended; `not_a_member`
+ * is the same, proven by a successful membership lookup that found no direct
+ * MEMBER row (none, or GUEST). `unavailable` means a lookup failed and nothing
+ * about the grant is known.
  */
-export type RefreshGrant = 'live' | 'revoked' | 'unavailable';
+export type RefreshGrant = 'live' | 'not_a_member' | 'revoked' | 'unavailable';
 
 function assertRead(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -123,7 +125,7 @@ export async function checkRefreshGrant(
       wsId: workspaceId,
     });
     if (membership.error === 'membership_lookup_failed') return 'unavailable';
-    if (!membership.ok) return 'revoked';
+    if (!membership.ok) return 'not_a_member';
     if (app.allowedWorkspaceIds.includes(workspaceId.toLowerCase())) {
       return 'live';
     }

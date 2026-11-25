@@ -209,12 +209,25 @@ describe('external app refresh grant', () => {
       'a member demoted to guest',
       { workspace_members: { data: { type: 'GUEST' }, error: null } },
     ],
-  ])('refuses %s and revokes the family', async (_label, results) => {
-    const { admin, queries } = adminWith(results);
+  ])(
+    'refuses %s as not_a_member and revokes the family',
+    async (_label, results) => {
+      const { admin, queries } = adminWith(results);
 
-    expect(await refresh(refreshToken(), admin)).toBeNull();
-    expect(queries).toEqual(['workspace_members']);
-    expectFamilyRevoked();
+      expect(await refresh(refreshToken(), admin)).toBe('not_a_member');
+      expect(queries).toEqual(['workspace_members']);
+      expectFamilyRevoked();
+    }
+  );
+
+  it('reports a later use of a family revoked for membership as a plain refusal', async () => {
+    const results = { workspace_members: { data: null, error: null } };
+    const token = refreshToken();
+    expect(await refresh(token, adminWith(results).admin)).toBe('not_a_member');
+
+    // The family fence is now set; the next attempt never reaches the grant.
+    mocks.get.mockResolvedValue(String(Math.floor(Date.now() / 1000)));
+    expect(await refresh(token, adminWith(results).admin)).toBeNull();
   });
 
   it('refuses a workspace unlinked from the app and revokes the family', async () => {
@@ -395,6 +408,8 @@ describe('external app refresh grant', () => {
 
     expect(await refresh(refreshToken(), admin)).not.toBeNull();
     // The grant check still runs and still refuses a removed member.
-    expect(await refresh(refreshToken(), adminWith().admin)).toBeNull();
+    expect(await refresh(refreshToken(), adminWith().admin)).toBe(
+      'not_a_member'
+    );
   });
 });

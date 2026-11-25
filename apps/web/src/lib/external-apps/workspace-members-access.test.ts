@@ -72,7 +72,10 @@ beforeEach(() => {
     id,
     secretIssuedAt: null,
   }));
-  mocks.verifyMembership.mockResolvedValue({ membershipType: 'MEMBER', ok: true });
+  mocks.verifyMembership.mockResolvedValue({
+    membershipType: 'MEMBER',
+    ok: true,
+  });
   mocks.getPermissions.mockResolvedValue({ containsPermission: () => false });
 });
 

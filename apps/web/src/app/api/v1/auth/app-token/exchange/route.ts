@@ -421,6 +421,14 @@ async function exchangeAppToken(request: NextRequest) {
         { status: 503, headers: { 'Retry-After': '30' } }
       );
     }
+    // A valid, unreplayed refresh whose user is proven not to be a direct
+    // MEMBER of its bound workspace (the family is revoked as before).
+    if (refreshResult === 'not_a_member') {
+      return NextResponse.json(
+        { code: 'NOT_A_MEMBER', error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
     if (!refreshResult)
       return failed('Invalid or expired refresh token', 'token');
 

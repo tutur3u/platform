@@ -593,7 +593,11 @@ exchange, a pending MEMBER invite to a non-member still wins
 (`PENDING_WORKSPACE_INVITE` on a fresh sign-in; a plain `403` on refresh), and a
 non-member whose invite check sees a concurrent join gets a plain `403`. A
 `GUEST` gets `NOT_A_MEMBER` (even with a pending upgrade invite) only if a second
-read still finds them a `GUEST`. Bad credentials, missing scopes,
+read still finds them a `GUEST`. On a silent refresh, the refresh-grant check
+runs first: a valid, unreplayed refresh token bound to a workspace where the
+user is no longer a direct `MEMBER` returns `403` `NOT_A_MEMBER` (instead of the
+earlier `401`) and still revokes its refresh family. Later uses of that family,
+expired or replayed tokens, and every other refusal stay `401`. Bad credentials, missing scopes,
 unlinked or mismatched workspaces and failed lookups keep their generic bodies
 without that code. An app may treat `NOT_A_MEMBER` as authoritative grounds to
 revoke its own grants. It must not treat any other `403` that way.
@@ -664,7 +668,8 @@ the body above. Optional `limit` is 1–500 (default 500); `cursor` is opaque.
 
 Coverage: `apps/web/src/lib/external-apps/workspace-member-list-v2.test.ts`,
 `apps/web/src/lib/external-apps/workspace-members-access.test.ts`,
-`apps/web/src/lib/app-coordination/workspace-session.test.ts`, the members
+`apps/web/src/lib/app-coordination/workspace-session.test.ts`,
+`apps/web/src/lib/auth/external-app-refresh-grant.test.ts`, the members
 `route-v2.test.ts`, and the exchange `route.test.ts`/`route-refresh.test.ts`.
 
 ### App-owned Drive attachments

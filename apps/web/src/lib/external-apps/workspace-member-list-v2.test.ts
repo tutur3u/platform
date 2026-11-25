@@ -36,14 +36,22 @@ function row(
   return { created_at, type, user_id };
 }
 
-function snapshot({
-  members = ['user-a', 'user-b', 'user-c'],
-  rows = members.map((id) => row(id)),
-  extraV1 = [] as string[],
-  invitations = [] as Array<{ createdAt: string | null; email: string | null }>,
-  exhaustive = true,
-  rowCount = 10 as number | null,
-} = {}) {
+type SnapshotOptions = {
+  exhaustive?: boolean;
+  extraV1?: string[];
+  invitations?: Array<{ createdAt: string | null; email: string | null }>;
+  members?: string[];
+  rowCount?: number | null;
+  rows?: MembershipRow[];
+};
+
+function snapshot(options: SnapshotOptions = {}) {
+  const members = options.members ?? ['user-a', 'user-b', 'user-c'];
+  const rows = options.rows ?? members.map((id) => row(id));
+  const extraV1 = options.extraV1 ?? [];
+  const invitations = options.invitations ?? [];
+  const exhaustive = options.exhaustive ?? true;
+  const rowCount = options.rowCount === undefined ? 10 : options.rowCount;
   return buildMemberListV2Snapshot({
     memberships: { exhaustive, rows },
     rowCount,
@@ -141,18 +149,14 @@ describe('member list v2 pagination', () => {
     );
     expect(second.complete).toBe(true);
     expect(second.nextCursor).toBeNull();
-    expect(second.members.map((m: { id: string }) => m.id)).toEqual([
-      'user-c',
-    ]);
+    expect(second.members.map((m: { id: string }) => m.id)).toEqual(['user-c']);
     expect(second.invitations).toEqual(invitations);
     expect(second.revision).toBe(first.revision);
     expect(second.total).toBe(4);
   });
 
   it('refuses a cursor from an older revision', async () => {
-    const first = await body(
-      paginateMemberListV2(snapshot(), v2('&limit=1'))
-    );
+    const first = await body(paginateMemberListV2(snapshot(), v2('&limit=1')));
     const changed = snapshot({ members: ['user-a', 'user-b'] });
     const response = paginateMemberListV2(
       changed,
@@ -221,7 +225,11 @@ describe('member list v2 pagination', () => {
     const page = await body(
       paginateMemberListV2(
         snapshot({
-          rows: [row('user-a'), row('user-b', undefined, 'GUEST'), row('user-c')],
+          rows: [
+            row('user-a'),
+            row('user-b', undefined, 'GUEST'),
+            row('user-c'),
+          ],
         }),
         v2()
       )
