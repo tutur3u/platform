@@ -13,6 +13,7 @@ import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
+import 'package:mobile/features/documents/view/document_format_toolbar.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
@@ -176,7 +177,7 @@ void main() {
         DocumentDetailPage(documentId: 'doc-1', repository: _repository()),
         const Size(390, 844),
       );
-      final toolbar = tester.getRect(find.byType(AppFormatToolbar));
+      final toolbar = tester.getRect(find.byType(DocumentFormatToolbar));
       expect(toolbar.left, 0);
       expect(toolbar.width, 390);
       expect(toolbar.bottom, closeTo(844 - _clearance, 0.5));
@@ -272,7 +273,7 @@ void main() {
         const Size(390, 844),
         keyboard: 300,
       );
-      final toolbar = tester.getRect(find.byType(AppFormatToolbar));
+      final toolbar = tester.getRect(find.byType(DocumentFormatToolbar));
       expect(toolbar.bottom, closeTo(844 - 300, 0.5));
     });
   });

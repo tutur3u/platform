@@ -16,6 +16,8 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/documents/documents_content.dart';
 import 'package:mobile/features/documents/documents_labels.dart';
 import 'package:mobile/features/documents/view/document_editor.dart';
+import 'package:mobile/features/documents/view/document_format_actions.dart';
+import 'package:mobile/features/documents/view/document_format_toolbar.dart';
 import 'package:mobile/features/documents/view/document_share_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -311,6 +313,15 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     }
   }
 
+  Future<void> _pickColor(DocumentColorChannel channel) async {
+    final hue = await showAppSheet<String>(
+      context: context,
+      builder: (context) => DocumentSwatchSheet(channel: channel),
+    );
+    if (hue == null || !mounted) return;
+    applyDocumentSwatch(_editor, channel, hue.isEmpty ? null : hue);
+  }
+
   Future<void> _openShare() {
     return showAppSheet<void>(
       context: context,
@@ -427,17 +438,19 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             status: _status,
                             owner: documentOwnerLabel(document, l10n),
                             lastEdited: edited,
+                            onLink: () => unawaited(_editLink()),
                           ),
                   ),
                 ),
                 if (ready)
                   Padding(
                     padding: EdgeInsets.only(bottom: lift),
-                    child: AppFormatToolbar(
-                      actions: documentFormatActions(
+                    child: DocumentFormatToolbar(
+                      groups: documentFormatGroups(
                         context: context,
                         editor: _editor,
                         onLink: () => unawaited(_editLink()),
+                        onColor: (channel) => unawaited(_pickColor(channel)),
                       ),
                     ),
                   ),

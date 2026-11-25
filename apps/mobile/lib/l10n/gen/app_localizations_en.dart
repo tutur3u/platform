@@ -3359,6 +3359,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsBlockVideo => 'YouTube video';
 
   @override
+  String get documentsColorNone => 'None';
+
+  @override
   String get documentsContentHint => 'Start writing...';
 
   @override
@@ -3395,6 +3398,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsFilterPublic => 'Public';
 
   @override
+  String get documentsFormatAlignCenter => 'Align center';
+
+  @override
+  String get documentsFormatAlignLeft => 'Align left';
+
+  @override
+  String get documentsFormatAlignRight => 'Align right';
+
+  @override
   String get documentsFormatBold => 'Bold';
 
   @override
@@ -3402,6 +3414,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get documentsFormatChecklist => 'Checklist';
+
+  @override
+  String get documentsFormatCode => 'Inline code';
+
+  @override
+  String get documentsFormatCodeBlock => 'Code block';
+
+  @override
+  String get documentsFormatDivider => 'Divider';
 
   @override
   String get documentsFormatHeading1 => 'Heading 1';
@@ -3413,6 +3434,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsFormatHeading3 => 'Heading 3';
 
   @override
+  String get documentsFormatHighlight => 'Highlight';
+
+  @override
+  String get documentsFormatIndent => 'Indent';
+
+  @override
   String get documentsFormatItalic => 'Italic';
 
   @override
@@ -3420,6 +3447,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get documentsFormatNumbers => 'Numbered list';
+
+  @override
+  String get documentsFormatOutdent => 'Outdent';
+
+  @override
+  String get documentsFormatQuote => 'Quote';
+
+  @override
+  String get documentsFormatRedo => 'Redo';
+
+  @override
+  String get documentsFormatStrike => 'Strikethrough';
+
+  @override
+  String get documentsFormatSubscript => 'Subscript';
+
+  @override
+  String get documentsFormatSuperscript => 'Superscript';
+
+  @override
+  String get documentsFormatTextColor => 'Text color';
+
+  @override
+  String get documentsFormatUnderline => 'Underline';
+
+  @override
+  String get documentsFormatUndo => 'Undo';
 
   @override
   String get documentsInlineCitation => 'Citation';

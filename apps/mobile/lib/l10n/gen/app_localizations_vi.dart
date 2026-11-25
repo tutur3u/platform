@@ -3343,6 +3343,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsBlockVideo => 'Video YouTube';
 
   @override
+  String get documentsColorNone => 'Không màu';
+
+  @override
   String get documentsContentHint => 'Bắt đầu viết...';
 
   @override
@@ -3379,6 +3382,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsFilterPublic => 'Công khai';
 
   @override
+  String get documentsFormatAlignCenter => 'Căn giữa';
+
+  @override
+  String get documentsFormatAlignLeft => 'Căn trái';
+
+  @override
+  String get documentsFormatAlignRight => 'Căn phải';
+
+  @override
   String get documentsFormatBold => 'Đậm';
 
   @override
@@ -3386,6 +3398,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get documentsFormatChecklist => 'Danh sách việc';
+
+  @override
+  String get documentsFormatCode => 'Mã nội dòng';
+
+  @override
+  String get documentsFormatCodeBlock => 'Khối mã';
+
+  @override
+  String get documentsFormatDivider => 'Đường kẻ';
 
   @override
   String get documentsFormatHeading1 => 'Tiêu đề 1';
@@ -3397,6 +3418,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsFormatHeading3 => 'Tiêu đề 3';
 
   @override
+  String get documentsFormatHighlight => 'Tô sáng';
+
+  @override
+  String get documentsFormatIndent => 'Thụt lề';
+
+  @override
   String get documentsFormatItalic => 'Nghiêng';
 
   @override
@@ -3404,6 +3431,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get documentsFormatNumbers => 'Danh sách số';
+
+  @override
+  String get documentsFormatOutdent => 'Giảm thụt lề';
+
+  @override
+  String get documentsFormatQuote => 'Khối trích dẫn';
+
+  @override
+  String get documentsFormatRedo => 'Làm lại';
+
+  @override
+  String get documentsFormatStrike => 'Gạch ngang';
+
+  @override
+  String get documentsFormatSubscript => 'Chỉ số dưới';
+
+  @override
+  String get documentsFormatSuperscript => 'Chỉ số trên';
+
+  @override
+  String get documentsFormatTextColor => 'Màu chữ';
+
+  @override
+  String get documentsFormatUnderline => 'Gạch chân';
+
+  @override
+  String get documentsFormatUndo => 'Hoàn tác';
 
   @override
   String get documentsInlineCitation => 'Trích dẫn';

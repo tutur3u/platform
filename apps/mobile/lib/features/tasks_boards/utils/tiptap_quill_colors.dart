@@ -178,7 +178,7 @@ List<Map<String, dynamic>> tipTapColorMarksFromQuillAttrs(
           'type': 'highlight',
           'attrs': {'color': background},
         },
-      if (quillColorOrNull(color) case final color?)
+      if (_storableColor(color) case final color?)
         {
           'type': 'textStyle',
           'attrs': {'color': color},
@@ -195,8 +195,8 @@ List<Map<String, dynamic>> tipTapColorMarksFromQuillAttrs(
       : background != null;
   final backgroundValue = backgroundKept
       ? carried.rawBackground
-      : quillColorOrNull(background);
-  final colorValue = colorKept ? carried.rawColor : quillColorOrNull(color);
+      : _storableColor(background);
+  final colorValue = colorKept ? carried.rawColor : _storableColor(color);
   if (hasBackground) {
     return [
       {
@@ -268,6 +268,11 @@ class _CarriedColorMarks {
   final String? rawBackground;
   final String? rawColor;
 }
+
+/// A display colour as the web stores it: a theme key (`var(--red)`)
+/// stays a theme variable, anything else becomes hex.
+String? _storableColor(Object? value) =>
+    taskDescriptionThemeColorKey(value) ?? quillColorOrNull(value);
 
 String? _nonEmpty(Object? value) =>
     value is String && value.trim().isNotEmpty ? value : null;

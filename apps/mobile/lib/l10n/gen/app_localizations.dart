@@ -6457,6 +6457,12 @@ abstract class AppLocalizations {
   /// **'YouTube video'**
   String get documentsBlockVideo;
 
+  /// No description provided for @documentsColorNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get documentsColorNone;
+
   /// No description provided for @documentsContentHint.
   ///
   /// In en, this message translates to:
@@ -6529,6 +6535,24 @@ abstract class AppLocalizations {
   /// **'Public'**
   String get documentsFilterPublic;
 
+  /// No description provided for @documentsFormatAlignCenter.
+  ///
+  /// In en, this message translates to:
+  /// **'Align center'**
+  String get documentsFormatAlignCenter;
+
+  /// No description provided for @documentsFormatAlignLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Align left'**
+  String get documentsFormatAlignLeft;
+
+  /// No description provided for @documentsFormatAlignRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Align right'**
+  String get documentsFormatAlignRight;
+
   /// No description provided for @documentsFormatBold.
   ///
   /// In en, this message translates to:
@@ -6546,6 +6570,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checklist'**
   String get documentsFormatChecklist;
+
+  /// No description provided for @documentsFormatCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Inline code'**
+  String get documentsFormatCode;
+
+  /// No description provided for @documentsFormatCodeBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Code block'**
+  String get documentsFormatCodeBlock;
+
+  /// No description provided for @documentsFormatDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'Divider'**
+  String get documentsFormatDivider;
 
   /// No description provided for @documentsFormatHeading1.
   ///
@@ -6565,6 +6607,18 @@ abstract class AppLocalizations {
   /// **'Heading 3'**
   String get documentsFormatHeading3;
 
+  /// No description provided for @documentsFormatHighlight.
+  ///
+  /// In en, this message translates to:
+  /// **'Highlight'**
+  String get documentsFormatHighlight;
+
+  /// No description provided for @documentsFormatIndent.
+  ///
+  /// In en, this message translates to:
+  /// **'Indent'**
+  String get documentsFormatIndent;
+
   /// No description provided for @documentsFormatItalic.
   ///
   /// In en, this message translates to:
@@ -6582,6 +6636,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Numbered list'**
   String get documentsFormatNumbers;
+
+  /// No description provided for @documentsFormatOutdent.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdent'**
+  String get documentsFormatOutdent;
+
+  /// No description provided for @documentsFormatQuote.
+  ///
+  /// In en, this message translates to:
+  /// **'Quote'**
+  String get documentsFormatQuote;
+
+  /// No description provided for @documentsFormatRedo.
+  ///
+  /// In en, this message translates to:
+  /// **'Redo'**
+  String get documentsFormatRedo;
+
+  /// No description provided for @documentsFormatStrike.
+  ///
+  /// In en, this message translates to:
+  /// **'Strikethrough'**
+  String get documentsFormatStrike;
+
+  /// No description provided for @documentsFormatSubscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscript'**
+  String get documentsFormatSubscript;
+
+  /// No description provided for @documentsFormatSuperscript.
+  ///
+  /// In en, this message translates to:
+  /// **'Superscript'**
+  String get documentsFormatSuperscript;
+
+  /// No description provided for @documentsFormatTextColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Text color'**
+  String get documentsFormatTextColor;
+
+  /// No description provided for @documentsFormatUnderline.
+  ///
+  /// In en, this message translates to:
+  /// **'Underline'**
+  String get documentsFormatUnderline;
+
+  /// No description provided for @documentsFormatUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get documentsFormatUndo;
 
   /// No description provided for @documentsInlineCitation.
   ///

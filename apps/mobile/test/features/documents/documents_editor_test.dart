@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -5,7 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/features/documents/documents_content.dart';
 import 'package:mobile/features/documents/documents_labels.dart';
-import 'package:mobile/features/documents/view/document_editor.dart';
+import 'package:mobile/features/documents/view/document_format_actions.dart';
 import 'package:mobile/features/documents/view/document_share_sheet.dart';
 
 import '../../helpers/helpers.dart';
@@ -93,6 +95,75 @@ void main() {
     );
     expect(find.byTooltip('Heading 1'), findsOneWidget);
     expect(find.byTooltip('Checklist'), findsOneWidget);
+  });
+
+  testWidgets('a selected mark toggles off', (tester) async {
+    final editor = QuillController.basic();
+    addTearDown(editor.dispose);
+    editor.document.insert(0, 'Plan');
+    editor.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 4),
+      ChangeSource.local,
+    );
+    editor.formatSelection(Attribute.underline);
+    await tester.pumpApp(_FormatHost(editor: editor));
+    await tester.tap(find.byTooltip('Underline'));
+    await tester.pump();
+    expect(
+      editor.getSelectionStyle().attributes.containsKey(
+        Attribute.underline.key,
+      ),
+      isFalse,
+    );
+  });
+
+  test('a highlight swatch stores the web highlight mark', () {
+    final editor = QuillController.basic();
+    addTearDown(editor.dispose);
+    editor.document.insert(0, 'Plan');
+    editor.updateSelection(
+      const TextSelection(baseOffset: 0, extentOffset: 4),
+      ChangeSource.local,
+    );
+    applyDocumentSwatch(editor, DocumentColorChannel.highlight, 'red');
+    final payload = jsonEncode(documentContentPayload(editor.document));
+    expect(
+      payload,
+      contains(
+        jsonEncode({
+          'type': 'highlight',
+          'attrs': {
+            'color': 'var(--calendar-bg-red)',
+            'textColor': 'var(--red)',
+          },
+        }),
+      ),
+    );
+
+    applyDocumentSwatch(editor, DocumentColorChannel.text, 'blue');
+    expect(
+      jsonEncode(documentContentPayload(editor.document)),
+      contains('"color":"var(--blue)"'),
+    );
+  });
+
+  test('a divider lands on its own line', () {
+    final editor = QuillController.basic();
+    addTearDown(editor.dispose);
+    editor.document.insert(0, 'Plan');
+    editor.updateSelection(
+      const TextSelection.collapsed(offset: 4),
+      ChangeSource.local,
+    );
+    insertDocumentDivider(editor);
+    final types = [
+      for (final node
+          in (documentContentPayload(editor.document) as Map)['content']
+              as List)
+        (node as Map)['type'],
+    ];
+    expect(types.take(2), ['paragraph', 'horizontalRule']);
+    expect(types.where((type) => type == 'horizontalRule'), hasLength(1));
   });
 }
 
