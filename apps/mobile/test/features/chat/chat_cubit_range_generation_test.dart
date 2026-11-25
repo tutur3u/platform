@@ -91,7 +91,9 @@ void main() {
         Future.error(StateError('bad cache state'));
     await harness.open();
     expect(cubitOf().state.messageStatus, ChatMessageStatus.error);
-    expect(cubitOf().state.error, contains('bad cache state'));
+    // Only API errors carry text to show; the screen uses its localized
+    // load-error copy for anything else.
+    expect(cubitOf().state.error, isNull);
 
     harness.repository.onListMessages = (conversationId, before) async =>
         fixtureRange(1, 3);

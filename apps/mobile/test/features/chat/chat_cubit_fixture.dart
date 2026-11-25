@@ -89,7 +89,14 @@ class CubitFixtureRepository extends ChatRepository {
     int limit = 40,
     int offset = 0,
     bool forceRefresh = false,
-  }) async => ChatConversationPage(conversations: conversations);
+  }) async {
+    final failure = conversationsFailure;
+    if (failure != null) throw failure;
+    return ChatConversationPage(conversations: conversations);
+  }
+
+  /// Fails `listConversations` with this error when set.
+  Error? conversationsFailure;
 
   /// Server row count of a page; defaults to every returned message.
   int Function(List<ChatMessage> messages) serverCountOf = _allRows;
@@ -104,35 +111,49 @@ class CubitFixtureRepository extends ChatRepository {
     bool forceRefresh = false,
   }) async {
     beforeCursors.add(before);
-    // Like the real repository: cache only the server rows and overlay the
-    // queued sends on every read, so a cached page reflects the queue now.
+    // Like the real repository: cache only the server rows, and on every
+    // newest-page read overlay the whole current queue of sends.
     final key = (conversationId, before);
     var cached = _cache[key];
-    if (forceRefresh || cached == null) {
+    // A forced read that hits a transport failure falls back to the cache.
+    final fromNetwork = cached == null || (forceRefresh && !fallBackToCache);
+    if (fromNetwork) {
       final messages = await onListMessages(conversationId, before);
-      final queued = messages.where((m) => isPendingChatMessage(wsId, m.id));
+      for (final message in messages) {
+        if (isPendingChatMessage(wsId, message.id)) {
+          queuedRows[message.id] = message;
+        }
+      }
       cached = (
         server: messages
             .where((m) => !isPendingChatMessage(wsId, m.id))
             .toList(growable: false),
-        overlay: queued.toList(growable: false),
         serverCount: serverCountOf(messages),
       );
       _cache[key] = cached;
     }
     final overlay = before != null
         ? const <ChatMessage>[]
-        : cached.overlay.where((m) => isPendingChatMessage(wsId, m.id));
+        : queuedRows.values.where(
+            (m) =>
+                m.conversationId == conversationId &&
+                isPendingChatMessage(wsId, m.id),
+          );
     return (
       messages: [...cached.server, ...overlay],
       serverCount: cached.serverCount,
+      fromNetwork: fromNetwork,
     );
   }
 
-  final Map<
-    (String, String?),
-    ({List<ChatMessage> server, List<ChatMessage> overlay, int serverCount})
-  >
+  /// Makes forced reads fall back to the cached page, as after a transport
+  /// failure.
+  bool fallBackToCache = false;
+
+  /// Rows of sends the test put in the offline queue, by id.
+  final Map<String, ChatMessage> queuedRows = {};
+
+  final Map<(String, String?), ({List<ChatMessage> server, int serverCount})>
   _cache = {};
 
   @override

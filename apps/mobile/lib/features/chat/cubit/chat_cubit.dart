@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
@@ -183,11 +184,23 @@ class ChatCubit extends Cubit<ChatState> {
       emit(state.copyWith(status: ChatStatus.error, error: error.message));
     } on Object catch (error) {
       if (!_scopeActive || token != _loadToken) return;
-      emit(state.copyWith(status: ChatStatus.error, error: error.toString()));
+      emit(
+        state.copyWith(
+          status: ChatStatus.error,
+          error: _displayError(error, 'workspace load'),
+        ),
+      );
     }
   }
 
-  Future<void> refresh({bool quietly = false, bool fresh = false}) async {
+  /// Reloads the list and the open thread. A quiet refresh keeps the screen
+  /// and merges history; with [reportFailure] a quiet failure still shows a
+  /// toast, as pull to refresh needs.
+  Future<void> refresh({
+    bool quietly = false,
+    bool fresh = false,
+    bool reportFailure = false,
+  }) async {
     final wsId = state.wsId;
     if (wsId == null) return;
     final token = quietly ? _loadToken : ++_loadToken;
@@ -237,13 +250,18 @@ class ChatCubit extends Cubit<ChatState> {
         _syncConversationRoom();
       }
     } on Object catch (error) {
-      if (!quietly && _scopeActive && token == _loadToken) {
+      if (!_scopeActive || token != _loadToken) return;
+      if (!quietly) {
         emit(
           state.copyWith(
             status: ChatStatus.error,
-            error: error is ApiException ? error.message : error.toString(),
+            error: _displayError(error, 'refresh'),
           ),
         );
+      } else if (reportFailure) {
+        emit(state.copyWith(error: _failureNote(error, 'refresh')));
+      } else {
+        _failureNote(error, 'quiet refresh');
       }
     }
   }
@@ -391,9 +409,11 @@ class ChatCubit extends Cubit<ChatState> {
         ),
       );
       _pruneUnsynced();
-      if (fresh) _freshFetchedAt[conversationId] = _now();
+      // Only a page that really came from the network starts the throttle;
+      // a cached page, or a fresh read that fell back to the cache, does not.
+      if (page.fromNetwork) _freshFetchedAt[conversationId] = _now();
       if (!quietly) {
-        if (!fresh) _revalidateThread(conversationId);
+        if (!page.fromNetwork) _revalidateThread(conversationId);
         _clearUnread(conversationId);
         unawaited(_repository.markRead(wsId, conversationId));
         unawaited(loadConversationPanels());
@@ -409,9 +429,11 @@ class ChatCubit extends Cubit<ChatState> {
         emit(
           state.copyWith(
             messageStatus: ChatMessageStatus.error,
-            error: error is ApiException ? error.message : error.toString(),
+            error: _displayError(error, 'thread load'),
           ),
         );
+      } else {
+        _failureNote(error, 'quiet thread load');
       }
     }
   }
@@ -421,18 +443,6 @@ class ChatCubit extends Cubit<ChatState> {
       if (!_scopeActive || state.wsId != wsId) return;
       _handleRealtimeEvent(event, room: false);
     });
-  }
-
-  Future<void> _refetchWhenRealtimeUnavailable() async {
-    if (!_scopeActive || _refreshingFallback || state.isSending) return;
-    _refreshingFallback = true;
-    try {
-      await refresh(fresh: true, quietly: true);
-    } on Object {
-      // A failed fallback refetch waits for the next tick or event.
-    } finally {
-      _refreshingFallback = false;
-    }
   }
 
   void _handleRealtimeEvent(ChatRealtimeEvent event, {required bool room}) {

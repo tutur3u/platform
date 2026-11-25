@@ -23,8 +23,13 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'chat_repository_panels.dart';
 
-/// A history page and how many rows the server itself returned.
-typedef ChatMessagePage = ({List<ChatMessage> messages, int serverCount});
+/// A history page, how many rows the server itself returned, and whether
+/// it came from the network rather than the cache.
+typedef ChatMessagePage = ({
+  List<ChatMessage> messages,
+  int serverCount,
+  bool fromNetwork,
+});
 
 class ChatRepository {
   ChatRepository({
@@ -274,12 +279,14 @@ class ChatRepository {
       },
     ).query;
     final path = '${_conversationPath(wsId, conversationId)}/messages';
-    final response = await _read(
-      wsId,
-      'messages',
-      '$path?$query',
+    final read = await readThroughJsonResult(
+      api: _apiClient,
       forceRefresh: forceRefresh,
+      namespace: 'chat.messages',
+      workspaceId: wsId,
+      path: '$path?$query',
     );
+    final response = read.data;
     final source = (response['messages'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
         .toList(growable: false);
@@ -301,6 +308,7 @@ class ChatRepository {
     return (
       messages: rows.map(ChatMessage.fromJson).toList(growable: false),
       serverCount: source.length,
+      fromNetwork: !read.fromCache,
     );
   }
 

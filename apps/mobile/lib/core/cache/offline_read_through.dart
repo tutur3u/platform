@@ -18,6 +18,31 @@ Future<Map<String, dynamic>> readThroughJson({
   bool allowAwaitedTransportFallback = true,
   CacheStore? cacheStore,
   String? Function()? cacheUserId,
+}) async => (await readThroughJsonResult(
+  api: api,
+  namespace: namespace,
+  workspaceId: workspaceId,
+  path: path,
+  policy: policy,
+  forceRefresh: forceRefresh,
+  allowAwaitedTransportFallback: allowAwaitedTransportFallback,
+  cacheStore: cacheStore,
+  cacheUserId: cacheUserId,
+)).data;
+
+/// [readThroughJson], also saying whether the payload came from the cache
+/// (a cached snapshot or a transport-failure fallback) rather than the
+/// network.
+Future<({Map<String, dynamic> data, bool fromCache})> readThroughJsonResult({
+  required ApiClient api,
+  required String namespace,
+  required String workspaceId,
+  required String path,
+  CachePolicy policy = CachePolicies.moduleData,
+  bool forceRefresh = false,
+  bool allowAwaitedTransportFallback = true,
+  CacheStore? cacheStore,
+  String? Function()? cacheUserId,
 }) async {
   final owner = cacheUserId ?? currentCacheUserId;
   final userId = owner();
@@ -35,7 +60,7 @@ Future<Map<String, dynamic>> readThroughJson({
   if (userId == null) {
     final payload = await api.getJson(path);
     checkScope();
-    return payload;
+    return (data: payload, fromCache: false);
   }
   final key = CacheKey(
     namespace: namespace,
@@ -82,7 +107,10 @@ Future<Map<String, dynamic>> readThroughJson({
     throw StateError('Response invalidated during refresh.');
   }
   checkScope();
-  return result.data ?? const {};
+  return (
+    data: result.data ?? const <String, dynamic>{},
+    fromCache: result.isFromCache,
+  );
 }
 
 Future<List<dynamic>> readThroughJsonList({

@@ -57,7 +57,10 @@ class _ConversationPane extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<ChatCubit>();
     return NovaRefreshIndicator(
-      onRefresh: cubit.refresh,
+      // Pull to refresh fetches from the server and merges, so loaded older
+      // history stays; a failure still shows a toast.
+      onRefresh: () =>
+          cubit.refresh(quietly: true, fresh: true, reportFailure: true),
       child: ChatConversationList(
         conversations: state.visibleConversations,
         selectedConversationId: state.selectedConversationId,

@@ -216,7 +216,11 @@ class ChatFixtureRepository extends ChatRepository {
     final messages = conversationId == 'design' && before == null
         ? ChatFixtures.designMessages()
         : const <ChatMessage>[];
-    return (messages: messages, serverCount: messages.length);
+    return (
+      messages: messages,
+      serverCount: messages.length,
+      fromNetwork: true,
+    );
   }
 
   @override

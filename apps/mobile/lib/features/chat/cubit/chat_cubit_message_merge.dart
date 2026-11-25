@@ -100,16 +100,17 @@ extension ChatCubitMessageMerge on ChatCubit {
         fetched != null &&
         (syncedPageIds.any(fetched.ids.contains) ||
             (fetchedEnd != null && !pageStart.isAfter(fetchedEnd)));
-    final newer = pageEnd == null
-        ? const <ChatMessage>[]
-        : synced
-              .where(
-                (message) =>
-                    !(fetched?.ids.contains(message.id) ?? false) &&
-                    !pageIds.contains(message.id) &&
-                    (message.createdAt?.isAfter(pageEnd) ?? false),
-              )
-              .toList(growable: false);
+    // Rows realtime or a live send appended. Against an empty (or undated)
+    // page every such row is kept; otherwise only those newer than it.
+    final newer = synced
+        .where(
+          (message) =>
+              !(fetched?.ids.contains(message.id) ?? false) &&
+              !pageIds.contains(message.id) &&
+              (pageEnd == null ||
+                  (message.createdAt?.isAfter(pageEnd) ?? false)),
+        )
+        .toList(growable: false);
     final older = overlaps
         ? synced
               .where(
@@ -166,10 +167,9 @@ extension ChatCubitMessageMerge on ChatCubit {
     }
   }
 
-  /// A plain selection may show a cached page; revalidate it in the
-  /// background through the overlap-or-replace merge. Skipped when the
-  /// thread was fetched from the server moments ago, so repeated taps do
-  /// not refetch.
+  /// A selection served from the cache is revalidated in the background
+  /// through the overlap-or-replace merge, unless the thread came from the
+  /// network moments ago, so repeated taps do not refetch.
   void _revalidateThread(String conversationId) {
     final last = _freshFetchedAt[conversationId];
     if (last != null && _now().difference(last) < ChatCubit.revalidateAfter) {
@@ -181,7 +181,7 @@ extension ChatCubitMessageMerge on ChatCubit {
         forceRefresh: true,
         fresh: true,
         quietly: true,
-      ).catchError((Object _) {}),
+      ).catchError((Object error) => _failureNote(error, 'revalidation')),
     );
   }
 

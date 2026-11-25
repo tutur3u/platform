@@ -65,6 +65,35 @@ extension ChatCubitSync on ChatCubit {
     );
   }
 
+  /// Logs a failure by type only (no message text, which may hold user
+  /// content) and returns a note for `state.error`. The page shows its own
+  /// localized text, never this note.
+  String _failureNote(Object error, String context) {
+    debugPrint('Chat $context failed: ${error.runtimeType}');
+    return error is ApiException ? error.message : '$context failed';
+  }
+
+  /// The server message for a full-page error, or null so the screen shows
+  /// its localized fallback instead of raw exception text.
+  String? _displayError(Object error, String context) {
+    final note = _failureNote(error, context);
+    return error is ApiException ? note : null;
+  }
+
+  /// Refetches quietly while realtime is unavailable.
+  Future<void> _refetchWhenRealtimeUnavailable() async {
+    if (!_scopeActive || _refreshingFallback || state.isSending) return;
+    _refreshingFallback = true;
+    try {
+      await refresh(fresh: true, quietly: true);
+    } on Object catch (error) {
+      // A failed fallback refetch waits for the next tick or event.
+      _failureNote(error, 'realtime fallback');
+    } finally {
+      _refreshingFallback = false;
+    }
+  }
+
   void _onQueueChanged() {
     final wsId = state.wsId;
     final selectedId = state.selectedConversationId;
@@ -84,7 +113,7 @@ extension ChatCubitSync on ChatCubit {
           forceRefresh: true,
           fresh: true,
           quietly: true,
-        ).catchError((Object _) {}),
+        ).catchError((Object error) => _failureNote(error, 'replay refetch')),
       );
     }
   }
