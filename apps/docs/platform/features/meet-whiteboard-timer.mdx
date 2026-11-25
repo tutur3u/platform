@@ -127,10 +127,11 @@ dropped before the arrow is stored or relayed. Members' arrow labels are kept.
 
 Drawing from people outside the workspace is budgeted to limit the work and
 memory each viewer spends on the board. The budgets assume 100% zoom at a
-device pixel ratio of two. Excalidraw scales each cached canvas with the
-viewer's zoom, so a viewer who zooms in holds more than the budget counts.
-Drawing by people outside the workspace therefore stays off until the editor
-bounds cached canvases itself. Every
+device pixel ratio of two. The board's editor never caches an element above
+its 100%-zoom size, so zooming in draws the cache upscaled instead of growing
+it, and it fits an arrow's label canvas within the per-element cap, for
+everyone on the board (see Excalidraw canvas cap in the development guide;
+regression test `packages/whiteboard/src/excalidraw-canvas-cap.test.ts`). Every
 element has one render cost, roughly the lines and
 points a viewer draws for it: one, plus its fill, its stroke points, its
 dashes and its text lines.
@@ -314,6 +315,11 @@ Under `packages/meet-core/src/features/call`:
   fallback.
 - `components/default-activity-setting-merged.test.tsx`: merged names in the
   default activity setting.
+
+Under `packages/whiteboard/src`:
+
+- `excalidraw-canvas-cap.test.ts`: the patched Excalidraw sizing at zoom 1 to
+  3 for the dev and prod builds.
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do-guest-draw.test.ts`
 (a guest edit ticket refused and closed while guest drawing is held or the

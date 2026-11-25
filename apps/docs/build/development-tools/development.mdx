@@ -59,6 +59,27 @@ supports both branches. Those signature limitations remain separate from this
 inheritance correction. The mocks exercise pure serialization, not browser
 credential acquisition or server verification.
 
+### Excalidraw canvas cap
+
+The repository pins a Bun patch for `@excalidraw/excalidraw@0.18.1`
+(`patches/@excalidraw%2Fexcalidraw@0.18.1.patch`). Excalidraw caches every
+element on its own canvas scaled by the viewer's zoom, and gives an arrow with
+a text label a square label canvas of its longest side that it never caps, so
+zooming in or one long labelled arrow could take gigabytes on every viewer.
+The patch changes `cappedElementCanvasSize` in both shipped builds
+(`dist/dev/chunk-4FTI6OG3.js` and the minified `dist/prod/chunk-K2UTITRG.js`):
+
+- the cache scale is at most 1, so a cached canvas never grows past its
+  100%-zoom size; zoomed in, Excalidraw draws it upscaled and slightly soft;
+- a labelled arrow's scale also keeps its label canvas within Excalidraw's own
+  limits of 16,777,216 px and 32,767 px a side.
+
+`packages/whiteboard/src/excalidraw-canvas-cap.test.ts` runs the sizing code
+of both builds at zoom 1 to 3 and a device pixel ratio of two; it fails
+against the unpatched package. Any `@excalidraw/excalidraw` upgrade must
+re-apply the patch with `bun patch` to the new build's chunks, update the
+test's chunk names and helper names, and pass that test before it lands.
+
 Step 1. Install [bun](https://bun.sh/docs/installation) on your machine (if you don't already have it yet), by running the following command:
 
 **macOS/Linux:**
