@@ -20,11 +20,13 @@ enum WorkspacePickerMode { current, defaultWorkspace }
 /// [mode] picks what a selection changes: the current workspace (switch) or
 /// the default one opened at launch. [hiddenOnly] lists hidden workspaces
 /// with restore actions instead. The sheet fits its rows and opens tall only
-/// when the filter field shows.
+/// when the filter field shows. [canSelect] is asked again when a workspace is
+/// chosen; a selection it refuses only closes the sheet.
 Future<void> showWorkspacePicker(
   BuildContext context, {
   WorkspacePickerMode mode = WorkspacePickerMode.current,
   bool hiddenOnly = false,
+  bool Function()? canSelect,
 }) {
   final cubit = context.read<WorkspaceCubit>();
   final state = cubit.state;
@@ -42,6 +44,7 @@ Future<void> showWorkspacePicker(
         parentContext: context,
         mode: mode,
         hiddenOnly: hiddenOnly,
+        canSelect: canSelect,
       ),
     ),
   );
@@ -73,6 +76,7 @@ class WorkspacePickerSheet extends StatefulWidget {
     required this.parentContext,
     this.mode = WorkspacePickerMode.current,
     this.hiddenOnly = false,
+    this.canSelect,
     super.key,
   });
 
@@ -80,6 +84,9 @@ class WorkspacePickerSheet extends StatefulWidget {
   final BuildContext parentContext;
   final WorkspacePickerMode mode;
   final bool hiddenOnly;
+
+  /// Whether a chosen workspace may be applied; null always allows it.
+  final bool Function()? canSelect;
 
   @override
   State<WorkspacePickerSheet> createState() => _WorkspacePickerSheetState();
@@ -112,6 +119,7 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
   Future<void> _select(Workspace workspace) async {
     final cubit = context.read<WorkspaceCubit>();
     await _close();
+    if (widget.canSelect?.call() == false) return;
     if (widget.mode == WorkspacePickerMode.defaultWorkspace) {
       await cubit.setDefaultWorkspace(workspace);
     } else {

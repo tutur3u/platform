@@ -214,10 +214,11 @@ class _PaletteHostState extends State<PaletteHost> {
   Future<void> _runEntry(PaletteEntry entry, _Scope scope) async {
     final navigatorContext = _navigatorContext;
     if (navigatorContext == null || _scope != scope) return;
-    // A draft opened while the palette was showing still blocks a destination
-    // or a new item; the palette's own popup route is never counted.
+    // A draft opened while the palette was showing still blocks a destination,
+    // a new item or a workspace switch; the palette's own popup route is never
+    // counted.
     if (DraftRouteGuard.instance.hasBlockingRoute &&
-        (entry.route != null || _createsItem(entry))) {
+        (entry.route != null || _leavesPage(entry))) {
       return;
     }
     if (entry.route case final route?) {
@@ -242,15 +243,20 @@ class _PaletteHostState extends State<PaletteHost> {
         );
         if (!saved && _scope == scope) _showUnavailable();
       case PaletteAction.switchWorkspace:
-        await showWorkspacePicker(navigatorContext);
+        await showWorkspacePicker(
+          navigatorContext,
+          canSelect: () =>
+              _scope == scope && !DraftRouteGuard.instance.hasBlockingRoute,
+        );
       case PaletteAction.shortcuts:
         await _showHelp(navigatorContext);
     }
   }
 
-  static bool _createsItem(PaletteEntry entry) =>
+  static bool _leavesPage(PaletteEntry entry) =>
       entry.action == PaletteAction.newChat ||
-      entry.action == PaletteAction.newTask;
+      entry.action == PaletteAction.newTask ||
+      entry.action == PaletteAction.switchWorkspace;
 
   Future<void> _create({required bool chat, required _Scope scope}) async {
     final onBoard = Routes.isTaskBoardDetailLocation(_location);

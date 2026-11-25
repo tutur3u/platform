@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/draft_route_guard.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/command_palette/palette_view.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 
 import 'palette_host_harness.dart';
 
@@ -123,5 +124,80 @@ void main() {
     expect(find.byType(CommandPaletteView), findsNothing);
     expect(harness.path, Routes.home);
     expect(find.byKey(const Key('draft')), findsOneWidget);
+  });
+
+  testWidgets(
+    'a draft opened while the palette shows blocks Switch workspace',
+    (tester) async {
+      final draft = _NestedDraft();
+      final harness = await _pump(tester, draft);
+
+      await _chord(tester, LogicalKeyboardKey.keyK);
+      expect(find.byType(CommandPaletteView), findsOneWidget);
+      draft.pushDraft();
+      await tester.pumpAndSettle();
+      final search = find.descendant(
+        of: find.byType(CommandPaletteView),
+        matching: find.byType(EditableText),
+      );
+      tester.widget<EditableText>(search).focusNode.requestFocus();
+      await tester.pump();
+      await tester.enterText(search, 'workspace');
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CommandPaletteView), findsNothing);
+      expect(find.byType(WorkspacePickerSheet), findsNothing);
+      expect(harness.path, Routes.home);
+      expect(find.byKey(const Key('draft')), findsOneWidget);
+    },
+  );
+
+  testWidgets('a route disposed without a pop is not retained', (tester) async {
+    final guard = DraftRouteGuard.instance;
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Navigator(
+          key: navigator,
+          observers: [guard.toObserver()],
+          onGenerateRoute: (_) =>
+              MaterialPageRoute<void>(builder: (_) => const Text('Inbox')),
+        ),
+      ),
+    );
+    navigator.currentState!.push<void>(
+      MaterialPageRoute<void>(builder: (_) => const Text('Draft')),
+    );
+    await tester.pumpAndSettle();
+    expect(guard.hasBlockingRoute, isTrue);
+    expect(guard.trackedCount, 1);
+
+    // The navigator goes away with its routes still on the stack.
+    await tester.pumpWidget(const SizedBox.shrink());
+
+    // Another navigator's next push is enough to release the retired route.
+    final other = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Navigator(
+          key: other,
+          observers: [guard.toObserver()],
+          onGenerateRoute: (_) =>
+              MaterialPageRoute<void>(builder: (_) => const Text('Other')),
+        ),
+      ),
+    );
+    other.currentState!.push<void>(
+      MaterialPageRoute<void>(builder: (_) => const Text('Next draft')),
+    );
+    await tester.pumpAndSettle();
+    expect(guard.trackedCount, 1);
+
+    other.currentState!.pop();
+    await tester.pumpAndSettle();
+    expect(guard.trackedCount, 0);
+    expect(guard.hasBlockingRoute, isFalse);
   });
 }
