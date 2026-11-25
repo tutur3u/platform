@@ -197,6 +197,23 @@ Template background keys must belong to the template's workspace under its
 apply the same rule before saving or signing a background. The helper regression
 cases live in `packages/utils/src/__tests__/template-background-path.test.ts`.
 
+## Public board links
+
+- **Scope:** a board's public link (`/<locale>/shared/task-boards/<code>`) is a
+  read-only view for anyone holding the link, including signed-out viewers, on
+  `tasks.tuturuuu.com` and on the `tuturuuu.com/tasks` mount.
+- **Default:** a link works only while it is enabled. The page reads the board
+  through `loadPublicTaskBoard` with a cookie-free admin client, and a disabled
+  or unknown code renders the unavailable page.
+- **Admission:** `apps/tasks/src/public-pages.ts` matches the exact path
+  (24 to 64 hex characters, no extra segments, no trailing slash) for both the
+  subdomain auth proxy (`isPublicPath`) and mounted auth
+  (`createMountedAppAuth` `isPublicPath`).
+- **Exceptions:** shared tasks (`/shared/task/<shareCode>`) and every other
+  `/shared/*` page still require a session.
+- **Regression coverage:** `apps/tasks/src/public-pages.test.ts` and
+  `packages/auth/src/proxy/mounted-app-auth-public.test.ts`.
+
 ## Board And List Name Uniqueness
 
 - Active and archived task board names are unique per workspace using `lower(btrim(name))`; only trashed boards with `deleted_at` set release the name.

@@ -98,3 +98,30 @@ describe('createMountedAppAuth public paths', () => {
     expect(await auth.auth(mounted('/en'))).toBe(sessionResponse);
   });
 });
+
+describe('createMountedAppAuth isPublicPath', () => {
+  const isPublicPath = vi.fn((path: string) =>
+    /^\/shared\/boards\/[0-9a-f]{4}$/u.test(path)
+  );
+  const auth = createMountedAppAuth(
+    { targetApp: 'learn', isPublicPath },
+    {
+      resolveMountedSharedSession: signedOut as never,
+      consumeMountedSharedSession: vi.fn() as never,
+    }
+  );
+
+  it('serves a matching dynamic page signed out, with the normalized path', async () => {
+    const response = await auth.auth(mounted('/en/shared/boards/abcd/'));
+    expect(response.status).toBe(200);
+    expect(isPublicPath).toHaveBeenCalledWith('/shared/boards/abcd');
+  });
+
+  it.each(['/en/shared/boards/abcde', '/shared/boards', '/en/shared/x/abcd'])(
+    'still sends %s to Web login when the predicate rejects it',
+    async (path) => {
+      const response = await auth.auth(mounted(path));
+      expect(response.status).toBe(307);
+    }
+  );
+});

@@ -45,6 +45,7 @@ import {
   isRootRedirectExcluded,
   resolveTasksRootEntry,
 } from './lib/tasks/root-entry';
+import { isPublicTasksPathname } from './public-pages';
 import { findSessionlessApiRoute } from './sessionless-api';
 
 const AUTH_PUBLIC_PATHS = [
@@ -61,6 +62,7 @@ const authProxy = createCentralizedAuthProxy({
   appSession: { sessionMode: 'supabase-first', targetApp: 'tasks' },
   webAppUrl: TTR_URL,
   publicPaths: AUTH_PUBLIC_PATHS,
+  isPublicPath: isPublicTasksPathname,
   skipApiRoutes: true,
   excludeRootPath: true,
   mfa: { enabled: false },

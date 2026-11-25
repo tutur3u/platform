@@ -53,14 +53,21 @@ type MountedAppAuthDependencies = {
 /**
  * Reads Web's shared session behind the app logout fence; Web owns refresh.
  * `publicPaths` lists exact app-relative paths (no locale prefix, no
- * trailing slash, e.g. `/` for the landing page) that are served signed out;
- * every other page requires the session.
+ * trailing slash, e.g. `/` for the landing page) that are served signed out.
+ * `isPublicPath` admits dynamic public pages; it receives the same
+ * normalized path and must match exactly (anchored, bounded segments), never
+ * by prefix. Every other page requires the session.
  */
 export function createMountedAppAuth(
   {
     targetApp,
     publicPaths = [],
-  }: { targetApp: AppName | string; publicPaths?: readonly string[] },
+    isPublicPath,
+  }: {
+    targetApp: AppName | string;
+    publicPaths?: readonly string[];
+    isPublicPath?: (path: string) => boolean;
+  },
   deps: MountedAppAuthDependencies = {
     resolveMountedSharedSession,
     consumeMountedSharedSession,
@@ -101,7 +108,8 @@ export function createMountedAppAuth(
         refresh: resolveSession,
       });
     }
-    const isPublic = publicPaths.includes(path);
+    const isPublic =
+      publicPaths.includes(path) || isPublicPath?.(path) === true;
     const loginUrl = () => {
       const login = new URL('/login', apex);
       const callback = new URL(

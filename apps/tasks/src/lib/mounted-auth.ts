@@ -3,11 +3,12 @@ import {
   consumeMountedSharedSession,
   resolveMountedSharedSession,
 } from '@tuturuuu/auth/proxy';
+import { isPublicTasksPage } from '../public-pages';
 
 export const TASKS_APEX_URL = 'https://tuturuuu.com/tasks';
 
 const mounted = createMountedAppAuth(
-  { targetApp: 'tasks' },
+  { targetApp: 'tasks', isPublicPath: isPublicTasksPage },
   {
     resolveMountedSharedSession: (...args) =>
       resolveMountedSharedSession(...args),
