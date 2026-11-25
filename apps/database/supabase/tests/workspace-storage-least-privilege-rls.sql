@@ -54,6 +54,11 @@ insert into public.ai_chats (id, creator_id) values
 -- Template backgrounds are readable only through a template the reader can
 -- read; the private one belongs to the owner (9705). The foreign workspace's
 -- template must not unlock a path in this workspace.
+-- 20261125085600 rejects pointers outside the own template-backgrounds folder on
+-- new rows. object_access must stay safe for legacy rows that predate it, so
+-- build the adversarial pointers below without the constraint (rolled back).
+alter table public.board_templates
+  drop constraint board_templates_background_path_workspace_check;
 insert into public.board_templates (ws_id, created_by, name, visibility, content, background_path) values
   ('5707a6e0-0000-4000-8000-000000009711', '5707a6e0-0000-4000-8000-000000009705', 'Public', 'public', '{}',
     '5707a6e0-0000-4000-8000-000000009711/template-backgrounds/public.png'),

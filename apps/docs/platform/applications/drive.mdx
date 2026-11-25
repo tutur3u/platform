@@ -448,7 +448,13 @@ commit; do not run `bun validate` or app builds on the shared machine.
   Names carry a random UUID and listing that folder goes through the same rule,
   so this needs a name the member already knows. A template pointing outside
   `template-backgrounds/` grants nothing; Drive and service-root rules still
-  apply to that path.
+  apply to that path. Since `20261125085600` the database also requires a
+  template's `background_path` to be `<ws_id>/template-backgrounds/<name>` of its
+  own workspace, with no empty, `.` or `..` segment, on every new or updated row
+  (the constraint is `NOT VALID` until a census shows no legacy violators; a
+  legacy row with a bad path becomes editable again once the path is repaired or
+  cleared). That keeps pointers out of other workspaces and roots; a pointer at
+  another member's name inside the same folder remains the accepted risk above.
 - **Affected surfaces:** Web, Rewise and Mind AI chat attachments now upload
   through `POST /api/ai/chat/upload-url`. It enforces chat ownership and issues
   a signed upload URL. Meeting recording, project update attachment and CMS
