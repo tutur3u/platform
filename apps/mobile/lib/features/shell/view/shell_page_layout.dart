@@ -368,6 +368,8 @@ extension _ShellPageLayout on _ShellPageState {
     final railMode =
         shellNavigationModeFor(windowSize) == ShellNavigationMode.rail;
     final sidebar = shellNavigationExtendedFor(windowSize);
+    final railVisible = railMode && showBottomNav;
+    final showsWorkspacePicker = _isRootTabLocation(widget.matchedLocation);
     final destinations = navChildren
         .where((item) => item.key != backKey)
         .toList();
@@ -386,16 +388,23 @@ extension _ShellPageLayout on _ShellPageState {
         railExtent: sidebar
             ? shellNavigationSidebarExtent
             : shellNavigationRailExtent,
-        rail: railMode && showBottomNav
-            ? destinations.isEmpty && dockBack == null
-                  ? const SizedBox.shrink()
-                  : ShellNavigationRail(
-                      leading: dockBack,
-                      items: destinations,
-                      selectedKey: selectedKey,
-                      onSelected: navContent.onSelected,
-                      extended: sidebar,
-                    )
+        rail: railVisible
+            ? ShellNavigationRail(
+                leading: dockBack,
+                items: destinations
+                    .where((item) => item.key != ShellRootTab.profile.key)
+                    .toList(),
+                selectedKey: selectedKey,
+                onSelected: navContent.onSelected,
+                extended: sidebar,
+                footer: ShellSidebarAccount(
+                  extended: sidebar,
+                  matchedLocation: widget.matchedLocation,
+                  includeWorkspacePicker: showsWorkspacePicker,
+                  onProfileSelected: () =>
+                      unawaited(_onItemTapped(Routes.profileRoot, context)),
+                ),
+              )
             : null,
         body: _buildBodyWithFloatingNav(
           body: globalBody,
@@ -405,6 +414,7 @@ extension _ShellPageLayout on _ShellPageState {
                   context,
                   activeModule: activeModule,
                   injectedMiniNavRegistration: injectedMiniNavRegistration,
+                  railVisible: railVisible,
                 ),
           navigationBar:
               showBottomNav &&
@@ -575,77 +585,66 @@ extension _ShellPageLayout on _ShellPageState {
 
   shad.AppBar _buildAppBar(
     BuildContext context, {
+    required bool railVisible,
     AppModule? activeModule,
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
+    final location = widget.matchedLocation;
     final searchAction = context
         .watch<ShellChromeActionsCubit?>()
         ?.state
-        .resolveForLocation(widget.matchedLocation)
+        .resolveForLocation(location)
         .where((action) => action.searchController != null)
         .firstOrNull;
-    if (searchAction != null) {
-      return shad.AppBar(
-        height: mobileSectionAppBarHeightFor(
-          context,
-          minimumContentHeight: assistantHeaderContentHeight(
-            context,
-            location: widget.matchedLocation,
-          ),
-        ),
-        padding: shellTopBarPaddingFor(MediaQuery.sizeOf(context).width),
-        backgroundColor: Colors.transparent,
-        trailingGap: 4,
-        trailing: [
-          if (_isRootTabLocation(widget.matchedLocation))
-            const ShellWorkspacePicker(),
-        ],
-        child: ShellSearchField(
-          key: ValueKey(searchAction.id),
-          action: searchAction,
-        ),
-      );
-    }
-    final selectedTitle = _selectedMiniNavTitle(
-      context,
-      activeModule: activeModule,
-      injectedMiniNavRegistration: injectedMiniNavRegistration,
-    );
+    final showsWorkspacePicker = !railVisible && _isRootTabLocation(location);
     return shad.AppBar(
       height: mobileSectionAppBarHeightFor(
         context,
         minimumContentHeight: assistantHeaderContentHeight(
           context,
-          location: widget.matchedLocation,
+          location: location,
         ),
       ),
       padding: shellTopBarPaddingFor(MediaQuery.sizeOf(context).width),
       backgroundColor: Colors.transparent,
       trailingGap: 4,
-      trailing: [
-        SizedBox(
-          height: mobileSectionAppBarHeight,
-          child: _ShellTrailingActions(
-            matchedLocation: widget.matchedLocation,
-            showsWorkspacePicker: _isRootTabLocation(widget.matchedLocation),
-          ),
-        ),
-      ],
-      child: SizedBox(
-        width: double.infinity,
-        child: RepaintBoundary(
-          child: ShellRouteFade(
-            kind: ShellRouteFadeKind.title,
-            alignment: AlignmentDirectional.centerStart,
-            // Each location's title is its own layer for the route fade.
-            child: ShellTopBarTitle(
-              key: ValueKey(widget.matchedLocation),
-              matchedLocation: widget.matchedLocation,
-              fallbackTitle: selectedTitle,
+      trailing: searchAction != null
+          ? [if (showsWorkspacePicker) const ShellWorkspacePicker()]
+          : [
+              SizedBox(
+                height: mobileSectionAppBarHeight,
+                child: railVisible
+                    ? ShellInjectedActionsHost(
+                        matchedLocation: location,
+                        includeSidebarActions: false,
+                      )
+                    : _ShellTrailingActions(
+                        matchedLocation: location,
+                        showsWorkspacePicker: showsWorkspacePicker,
+                      ),
+              ),
+            ],
+      child: searchAction != null
+          ? ShellSearchField(key: ValueKey(searchAction.id), action: searchAction)
+          : SizedBox(
+              width: double.infinity,
+              child: RepaintBoundary(
+                child: ShellRouteFade(
+                  kind: ShellRouteFadeKind.title,
+                  alignment: AlignmentDirectional.centerStart,
+                  // Each location's title has its own route fade layer.
+                  child: ShellTopBarTitle(
+                    key: ValueKey(location),
+                    matchedLocation: location,
+                    fallbackTitle: _selectedMiniNavTitle(
+                      context,
+                      activeModule: activeModule,
+                      injectedMiniNavRegistration: injectedMiniNavRegistration,
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
     );
   }
 

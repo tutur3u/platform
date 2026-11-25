@@ -8,7 +8,10 @@ import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_brand.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+export 'package:mobile/features/shell/view/shell_sidebar_account.dart';
 
 /// How the shell presents its primary navigation for the current width.
 enum ShellNavigationMode {
@@ -61,8 +64,8 @@ double shellNavigationExtentFor(Size size) =>
             : shellNavigationRailExtent,
     };
 
-/// Full-height leading navigation for wide layouts, with Back and the same
-/// destinations as the dock.
+/// Full-height leading navigation for wide layouts, with Back and a
+/// persistent brand header and account footer.
 ///
 /// The icon rail (landscape tablets) shows each destination's label as a
 /// tooltip; the [extended] sidebar (laptops and desktops) shows it beside
@@ -73,6 +76,7 @@ class ShellNavigationRail extends StatelessWidget {
     required this.items,
     required this.selectedKey,
     required this.onSelected,
+    this.footer,
     this.leading,
     this.extended = false,
     super.key,
@@ -81,6 +85,7 @@ class ShellNavigationRail extends StatelessWidget {
   final List<shad.NavigationItem> items;
   final Key? selectedKey;
   final ValueChanged<Key?> onSelected;
+  final Widget? footer;
   final Widget? leading;
   final bool extended;
 
@@ -114,26 +119,39 @@ class ShellNavigationRail extends StatelessWidget {
         child: SafeArea(
           right: rtl,
           left: !rtl,
-          child: SingleChildScrollView(
+          child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: extended ? AppSpacing.md : AppSpacing.sm,
               vertical: AppSpacing.md,
             ),
-            child: Column(
-              crossAxisAlignment: extended
-                  ? CrossAxisAlignment.stretch
-                  : CrossAxisAlignment.center,
-              spacing: AppSpacing.xs,
-              children: [
-                if (leading case final back?)
-                  Align(
-                    alignment: extended
-                        ? AlignmentDirectional.centerStart
-                        : Alignment.center,
-                    child: back,
+            child: FocusTraversalGroup(
+              child: Column(
+                spacing: AppSpacing.sm,
+                children: [
+                  ShellSidebarBrand(extended: extended),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: extended
+                            ? CrossAxisAlignment.stretch
+                            : CrossAxisAlignment.center,
+                        spacing: AppSpacing.xs,
+                        children: [
+                          if (leading case final back?)
+                            Align(
+                              alignment: extended
+                                  ? AlignmentDirectional.centerStart
+                                  : Alignment.center,
+                              child: back,
+                            ),
+                          ...destinations,
+                        ],
+                      ),
+                    ),
                   ),
-                ...destinations,
-              ],
+                  if (footer case final account?) account,
+                ],
+              ),
             ),
           ),
         ),

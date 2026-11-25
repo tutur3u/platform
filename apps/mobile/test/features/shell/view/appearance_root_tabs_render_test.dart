@@ -42,6 +42,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_workspace_picker.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';

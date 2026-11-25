@@ -165,8 +165,14 @@ void _homeRenderCases() {
           expect(tester.getRect(strip).left, today.left);
           expect(lefts.length, _homeColumns(size.key));
         }
+        final wide =
+            shellNavigationModeFor(size.value) == ShellNavigationMode.rail;
+        final workspacePicker = find.byType(ShellWorkspacePicker);
+        final account = find.byType(ShellSidebarAccount);
+        expect(workspacePicker, wide ? findsNothing : findsOneWidget);
+        expect(account, wide ? findsOneWidget : findsNothing);
         expect(
-          tester.getSize(find.byType(ShellWorkspacePicker)).height,
+          tester.getSize(wide ? account : workspacePicker).height,
           greaterThanOrEqualTo(44),
         );
         await _capture(tester, 'home-${size.key}-${look.key}');

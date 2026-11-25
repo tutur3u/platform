@@ -56,6 +56,7 @@ const railShellRoutes = <String>[
   Routes.assistant,
   Routes.profileRoot,
   Routes.notifications,
+  Routes.settingsAccounts,
   Routes.inventory,
   Routes.inventorySales,
   Routes.inventoryProducts,
@@ -68,7 +69,9 @@ Future<RailShell> pumpRailShell(
   WidgetTester tester,
   String location, {
   Widget Function(String route) page = railPlaceholderPage,
+  Widget Function(int replayToken)? homePage,
   Widget Function(int replayToken)? assistantPage,
+  AuthState authState = const AuthState.unauthenticated(),
   TextDirection? textDirection,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -78,7 +81,7 @@ Future<RailShell> pumpRailShell(
   whenListen(
     auth,
     const Stream<AuthState>.empty(),
-    initialState: const AuthState.unauthenticated(),
+    initialState: authState,
   );
   whenListen(
     workspace,
@@ -107,6 +110,7 @@ Future<RailShell> pumpRailShell(
         builder: (context, state, child) => ShellPage(
           matchedLocation: state.uri.path,
           enableDebugLogs: false,
+          homePageBuilder: homePage,
           assistantPageBuilder:
               assistantPage ?? (_) => railPlaceholderPage('assistant'),
           child: child,

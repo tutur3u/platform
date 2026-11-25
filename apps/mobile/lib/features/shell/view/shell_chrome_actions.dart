@@ -18,6 +18,11 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+/// Home's account activity and personalization shortcuts belong in the
+/// account menu when the shell has a sidebar.
+bool isShellSidebarAction(ShellActionSpec action) =>
+    const {'home-timeline', 'home-customize'}.contains(action.id);
+
 class ShellChromeActions extends StatefulWidget {
   const ShellChromeActions({
     required this.ownerId,
@@ -103,12 +108,14 @@ class ShellInjectedActionsHost extends StatefulWidget {
     required this.matchedLocation,
     this.includeNotifications = false,
     this.dockPageAction = true,
+    this.includeSidebarActions = true,
     super.key,
   });
 
   final String matchedLocation;
   final bool includeNotifications;
   final bool dockPageAction;
+  final bool includeSidebarActions;
 
   @override
   State<ShellInjectedActionsHost> createState() =>
@@ -225,7 +232,12 @@ class _ShellInjectedActionsHostState extends State<ShellInjectedActionsHost> {
             ? resolvedPlacement.where((action) => action.inDock).firstOrNull
             : null;
         final actions = resolvedPlacement
-            .where((action) => !identical(action, dockAction))
+            .where(
+              (action) =>
+                  !identical(action, dockAction) &&
+                  (widget.includeSidebarActions ||
+                      !isShellSidebarAction(action)),
+            )
             .toList();
         final showNotifications =
             widget.includeNotifications &&
