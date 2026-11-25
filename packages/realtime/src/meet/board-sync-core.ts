@@ -87,6 +87,8 @@ export function createBoardRoom(deps: BoardRoomDeps) {
   let sweepDueAt: number | null = null;
   let armedAt: number | null = null;
   let loaded = false;
+  /** When the platform last answered a load with the scene. */
+  let loadedAt: number | null = null;
   let flushing: Promise<void> | null = null;
   let loading: Promise<unknown> | null = null;
 
@@ -180,6 +182,7 @@ export function createBoardRoom(deps: BoardRoomDeps) {
         sceneChunks: meta.sceneChunks,
       };
       loaded = true;
+      loadedAt = deps.now();
       if (!fenced()) await persist();
       return 'loaded' as const;
     }
@@ -327,8 +330,9 @@ export function createBoardRoom(deps: BoardRoomDeps) {
     /**
      * Gets the room ready for a joiner. The first load comes from the database.
      * A room with nobody connected and nothing unflushed reloads, so edits made
-     * elsewhere in between are never overwritten; a closed room reloads and
-     * reopens if the board is available again.
+     * elsewhere in between are never overwritten, unless it loaded within the
+     * reload window: rapid reconnects then cost no database read. A closed
+     * room reloads and reopens if the board is available again.
      */
     async prepare() {
       if (!loaded) {
@@ -340,10 +344,12 @@ export function createBoardRoom(deps: BoardRoomDeps) {
         await loading;
         return;
       }
-      if (meta.closed || (deps.connections() === 0 && !needsFlush(meta)))
-        await adopt(
-          () => !!meta.closed || (deps.connections() === 0 && !needsFlush(meta))
-        );
+      const idle = () =>
+        deps.connections() === 0 &&
+        !needsFlush(meta) &&
+        (loadedAt === null ||
+          deps.now() - loadedAt >= BOARD_LIMITS.reloadAfterMs);
+      if (meta.closed || idle()) await adopt(() => !!meta.closed || idle());
     },
     get closed() {
       return !!meta.closed;

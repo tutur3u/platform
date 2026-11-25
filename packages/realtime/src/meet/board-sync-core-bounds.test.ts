@@ -143,6 +143,19 @@ describe('deletions made elsewhere stay deleted', () => {
     expect(h.room.elements().map((e) => e.id)).toContain('mine');
   });
 
+  it('skips the reload when the board loaded less than 30 s ago', async () => {
+    const h = harness({ connections: 0 });
+    await h.room.prepare();
+    for (let i = 0; i < 10; i++) {
+      h.tick(1000);
+      await h.room.prepare();
+    }
+    expect(h.ops.loads).toBe(1);
+    h.tick(BOARD_LIMITS.reloadAfterMs);
+    await h.room.prepare();
+    expect(h.ops.loads).toBe(2);
+  });
+
   it('keeps an element deleted on the web deleted after a concurrent-save merge', async () => {
     const h = harness({ connections: 0 });
     let calls = 0;

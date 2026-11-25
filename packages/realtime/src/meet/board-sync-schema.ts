@@ -39,6 +39,8 @@ export const BOARD_LIMITS = {
   idleFlushMs: 1000,
   /** Cadence of the ticket-expiry sweep while anyone is connected. */
   sweepMs: 60_000,
+  /** An empty room reloads the board only if its last load is this old. */
+  reloadAfterMs: 30_000,
 } as const;
 
 /**
@@ -51,6 +53,12 @@ export const BOARD_GUEST_LIMITS = {
   messageRate: 20,
   maxMessageBytes: 262_144,
   socketsPerUser: 3,
+  /** Socket opens per person per minute; each open sends the whole scene. */
+  opensPerMinute: 6,
+  /** Guest sockets one board holds, so members always find room. */
+  maxSockets: 30,
+  /** Guest join tickets; the call renews them at half their life. */
+  ticketTtlSeconds: 60,
 } as const;
 
 /** The socket budget for a join ticket's actor. */
@@ -61,6 +69,9 @@ export function boardSocketBudget(actorKind: 'member' | 'guest' | 'system') {
         messageRate: BOARD_LIMITS.messageRate,
         maxMessageBytes: BOARD_LIMITS.maxMessageBytes,
         socketsPerUser: BOARD_LIMITS.maxSockets,
+        opensPerMinute: Number.POSITIVE_INFINITY,
+        maxSockets: BOARD_LIMITS.maxSockets,
+        ticketTtlSeconds: BOARD_LIMITS.ticketTtlSeconds,
       };
 }
 

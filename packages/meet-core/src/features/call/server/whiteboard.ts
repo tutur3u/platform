@@ -3,12 +3,13 @@ import {
   boardRoleFor,
   checkBoardOpen,
 } from '@tuturuuu/realtime/meet/board-sync-access';
+import { boardActorId } from '@tuturuuu/realtime/meet/board-sync-actor';
 import {
-  BOARD_LIMITS,
   BOARD_TICKET_AUDIENCE,
   type BoardGuestAccess,
   type BoardTicket,
   boardGuestAccessSchema,
+  boardSocketBudget,
   boardTicketSchema,
 } from '@tuturuuu/realtime/meet/board-sync-schema';
 import { signRealtimePayload } from '@tuturuuu/realtime/core/token';
@@ -19,8 +20,10 @@ import {
 } from '@tuturuuu/utils/account-benefits-server';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
+import { checkMeetGuestWhiteboardLimit } from '../lib/guest-whiteboard-limit';
 import { channelEndpoint } from './documents';
 import { isMeetGuestWhiteboardEnabled } from './guest-whiteboard';
+import { meetGuestWhiteboardLimiter } from './guest-whiteboard-limiter';
 import { callRoomService, type MeetCallRouteAccess } from './room-service';
 
 type Access = MeetCallRouteAccess;
@@ -66,17 +69,29 @@ const proveAdmission = (access: Access) =>
   callRoomService(access, { action: 'programming.read' });
 
 /**
- * Board reads for an anonymous guest need the guest whiteboard switch and a
- * live connection to the room: the presence-scoped read (`mira: true`) refuses
- * a guest who left, was removed or was only remembered as approved. Tickets
- * last two minutes and are renewed through this check, so a guest who leaves
- * loses the board within that time.
+ * Board reads for an anonymous guest need the guest whiteboard switch, stay
+ * within the guest's per-meeting call budget, and need a live connection to
+ * the room: the room's `board.access` action refuses a guest who left, was
+ * removed, is still waiting or was only remembered as approved. Guest tickets
+ * last a minute and are renewed through this check, so a guest who leaves
+ * loses the board within that minute.
  */
 async function proveBoardAdmission(access: Access) {
   if (!isGuest(access)) return proveAdmission(access);
   if (!isMeetGuestWhiteboardEnabled())
     throw new MeetCallAccessError(403, 'Whiteboard access denied');
-  return callRoomService(access, { action: 'programming.read', mira: true });
+  const limit = await checkMeetGuestWhiteboardLimit(
+    { meetingId: access.meeting.id, guestId: access.user.id },
+    await meetGuestWhiteboardLimiter()
+  );
+  if (!limit.ok)
+    throw new MeetCallAccessError(
+      429,
+      'Too many whiteboard requests',
+      'MEET_GUEST_WHITEBOARD_RATE_LIMITED',
+      limit.retryAfterSeconds
+    );
+  return callRoomService(access, { action: 'board.access' });
 }
 
 function whiteboardEndpoint() {
@@ -195,25 +210,33 @@ export async function joinMeetingWhiteboard(access: Access, id: string) {
     throw new MeetCallAccessError(404, 'Whiteboard not found');
   const role = roleOf(access, open.guestAccess);
   if (!role) throw new MeetCallAccessError(403, 'Whiteboard access denied');
+  const actorKind =
+    !isGuest(access) && access.canReadWorkspace ? 'member' : 'guest';
+  const { ticketTtlSeconds } = boardSocketBudget(actorKind);
+  const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
   const ticket: BoardTicket = boardTicketSchema.parse({
     aud: BOARD_TICKET_AUDIENCE,
     kind: 'join',
     meetingId,
     wsId,
     boardId: id,
-    actorKind: !isGuest(access) && access.canReadWorkspace ? 'member' : 'guest',
+    actorKind,
     userId: access.user.id,
     displayName: access.displayName,
     role,
-    exp: Math.floor(Date.now() / 1000) + BOARD_LIMITS.ticketTtlSeconds,
+    exp: Math.floor(Date.now() / 1000) + ticketTtlSeconds,
   });
   return {
     endpoint: whiteboardEndpoint().toString(),
-    token: signRealtimePayload(ticket, process.env.MEET_REALTIME_TOKEN_SECRET),
+    token: signRealtimePayload(ticket, secret),
     role,
-    refreshSeconds: Math.floor(BOARD_LIMITS.ticketTtlSeconds / 2),
+    refreshSeconds: Math.floor(ticketTtlSeconds / 2),
     board: { id, title: board.title as string },
-    user: { id: access.user.id, displayName: access.displayName },
+    // The board names people by a per-board id, never their user id.
+    user: {
+      id: boardActorId(secret ?? '', id, access.user.id),
+      displayName: access.displayName,
+    },
   };
 }
 

@@ -7,6 +7,7 @@ import {
   isTerminalCheckpointStatus,
   sameBoardSession,
 } from '../../../packages/realtime/src/meet/board-sync-access';
+import { boardActorId } from '../../../packages/realtime/src/meet/board-sync-actor';
 import {
   BoardLoadError,
   type BoardRoom,
@@ -15,6 +16,12 @@ import {
 import { chunkElements } from '../../../packages/realtime/src/meet/board-sync-merge';
 import { boardFlushFenced } from '../../../packages/realtime/src/meet/board-sync-flush';
 import {
+  type BoardOpenWindows,
+  chargeBoardOpen,
+  sanitizeGuestChanges,
+} from '../../../packages/realtime/src/meet/board-sync-guest';
+import {
+  BOARD_GUEST_LIMITS,
   BOARD_LIMITS,
   BOARD_SOCKET_PROTOCOL,
   BOARD_SYNC_INTERVAL_MS,
@@ -43,6 +50,8 @@ export interface WhiteboardRoomEnv {
 type Attachment = {
   ticket: BoardTicket;
   connectionId: string;
+  /** The person's per-board id (`boardActorId`); others never see user ids. */
+  actorId?: string;
   windowAt: number;
   messages: number;
   /** When this socket last asked for the scene; resends are throttled. */
@@ -70,6 +79,8 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   private ready: Promise<void>;
   private alarmInFlight: Promise<void> | null = null;
   private identityStored = false;
+  /** Guest socket opens per person this minute; lost on eviction, by design. */
+  private opens: BoardOpenWindows = new Map();
 
   constructor(
     private state: DurableObjectState,
@@ -139,13 +150,18 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     }
   }
 
+  /** How others on the board name this socket's person. */
+  private actorOf(attachment: Attachment) {
+    return attachment.actorId ?? attachment.connectionId;
+  }
+
   private members(): BoardMember[] {
     return this.sockets().map((socket) => {
-      const { ticket } = this.attachment(socket);
+      const attachment = this.attachment(socket);
       return {
-        id: ticket.userId,
-        displayName: ticket.displayName,
-        role: ticket.role,
+        id: this.actorOf(attachment),
+        displayName: attachment.ticket.displayName,
+        role: attachment.ticket.role,
       };
     });
   }
@@ -215,13 +231,31 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       return new Response(null, { status: 403 });
     if (this.sockets().length >= BOARD_LIMITS.maxSockets)
       return new Response('Room full', { status: 429 });
-    const perUser = boardSocketBudget(ticket.data.actorKind).socketsPerUser;
+    const budget = boardSocketBudget(ticket.data.actorKind);
+    const held = this.sockets().map((socket) => this.attachment(socket).ticket);
     if (
-      this.sockets().filter(
-        (socket) => this.attachment(socket).ticket.userId === ticket.data.userId
-      ).length >= perUser
+      held.filter((other) => other.userId === ticket.data.userId).length >=
+      budget.socketsPerUser
     )
       return new Response('Too many connections', { status: 429 });
+    if (ticket.data.actorKind === 'guest') {
+      // Guests never take the last member seats, and each guest may reopen
+      // only a few times a minute: every open sends the whole scene.
+      if (
+        held.filter((other) => other.actorKind === 'guest').length >=
+        BOARD_GUEST_LIMITS.maxSockets
+      )
+        return new Response('Room full', { status: 429 });
+      if (
+        !chargeBoardOpen(
+          this.opens,
+          ticket.data.userId,
+          budget.opensPerMinute,
+          Date.now()
+        )
+      )
+        return new Response('Too many connections', { status: 429 });
+    }
     this.identity ??= { meetingId, wsId, boardId };
     // The fence keeps every storage write off; the identity is stored on the
     // first join after it lifts, which a flush after eviction needs.
@@ -248,6 +282,11 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     pair[1].serializeAttachment({
       ticket: ticket.data,
       connectionId: crypto.randomUUID(),
+      actorId: boardActorId(
+        this.env.MEET_REALTIME_TOKEN_SECRET,
+        boardId,
+        ticket.data.userId
+      ),
       windowAt: Date.now(),
       messages: 0,
       lastSyncAt: 0,
@@ -361,7 +400,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         return this.broadcast(
           {
             type: 'cursor',
-            senderId: ticket.userId,
+            senderId: this.actorOf(attachment),
             displayName: ticket.displayName,
             x: message.x,
             y: message.y,
@@ -373,7 +412,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         return this.broadcast(
           {
             type: 'selection',
-            senderId: ticket.userId,
+            senderId: this.actorOf(attachment),
             selectedElementIds: message.selectedElementIds,
             timestamp: Date.now(),
           },
@@ -382,7 +421,12 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       case 'elements': {
         if (ticket.role !== 'edit')
           return socket.close(1008, 'Read-only board');
-        const { applied, rejected } = await this.room.edit(message.changes);
+        // People outside the workspace store only known fields and safe links.
+        const changes =
+          ticket.actorKind === 'guest'
+            ? sanitizeGuestChanges(message.changes)
+            : message.changes;
+        const { applied, rejected } = await this.room.edit(changes);
         const refusal = rejected ?? (unsupported > 0 ? 'unsupported' : null);
         if (refusal)
           socket.send(
@@ -395,7 +439,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
           this.broadcast(
             {
               type: 'elements',
-              senderId: ticket.userId,
+              senderId: this.actorOf(attachment),
               changes: applied,
               timestamp: Date.now(),
             },

@@ -13,6 +13,9 @@ const fx = vi.hoisted(() => ({
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('./room-service', () => ({ callRoomService: fx.room }));
+vi.mock('./guest-whiteboard-limiter', () => ({
+  meetGuestWhiteboardLimiter: async () => null,
+}));
 vi.mock('./documents', () => ({
   channelEndpoint: () => new URL('wss://rt.example.invalid/channels'),
 }));
@@ -68,6 +71,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => {
 });
 
 const mod = await import('./whiteboard');
+const limits = await import('../lib/guest-whiteboard-limit');
 const meetingId = '11111111-2222-4333-8444-555555555555';
 const wsId = '22222222-3333-4444-8555-666666666666';
 const b1 = '33333333-4444-4555-8666-777777777777';
@@ -93,6 +97,7 @@ const guest = () =>
 beforeEach(() => {
   process.env.MEET_REALTIME_TOKEN_SECRET = 'disposable-test-secret';
   process.env.MEET_GUEST_WHITEBOARD = 'true';
+  limits.resetMeetGuestWhiteboardLimiter();
   fx.room.mockReset().mockResolvedValue({});
   fx.rpc.mockReset();
   fx.perm.mockReset().mockResolvedValue({ data: false, error: null });
@@ -210,24 +215,50 @@ describe('anonymous guests', () => {
     await mod.joinMeetingWhiteboard(guest(), b1);
     await mod.listMeetingWhiteboards(guest());
     expect(fx.room.mock.calls.map((call) => call[1])).toEqual([
-      { action: 'programming.read', mira: true },
-      { action: 'programming.read', mira: true },
+      { action: 'board.access' },
+      { action: 'board.access' },
     ]);
   });
 
   it('ends access when the guest leaves or is removed', async () => {
     const first = await mod.joinMeetingWhiteboard(guest(), b1);
-    expect(first.refreshSeconds).toBeLessThanOrEqual(60);
+    expect(first.refreshSeconds).toBe(30);
     const ticket = verifyRealtimePayload(
       first.token,
       'disposable-test-secret'
     ) as { exp: number };
-    expect(ticket.exp * 1000 - Date.now()).toBeLessThanOrEqual(120_000);
+    expect(ticket.exp * 1000 - Date.now()).toBeLessThanOrEqual(60_000);
     // The room refuses a guest who is no longer connected, so no renewal.
     fx.room.mockRejectedValue(Object.assign(new Error('no'), { status: 403 }));
     await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject({
       status: 403,
     });
+  });
+
+  it('limits a guest to 30 board calls a minute in one meeting', async () => {
+    for (let call = 0; call < 30; call++)
+      await mod.listMeetingWhiteboards(guest());
+    await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject({
+      status: 429,
+    });
+    expect(fx.room).toHaveBeenCalledTimes(30);
+    // Members are not charged.
+    await expect(mod.joinMeetingWhiteboard(member(), b1)).resolves.toBeTruthy();
+  });
+
+  it('names a guest on the board by a per-board id, never the user id', async () => {
+    const result = await mod.joinMeetingWhiteboard(guest(), b1);
+    expect(result.user.id).not.toBe('guest-1');
+    expect(result.user.id).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    expect((await mod.joinMeetingWhiteboard(guest(), b1)).user.id).toBe(
+      result.user.id
+    );
+    const ticket = verifyRealtimePayload(
+      result.token,
+      'disposable-test-secret'
+    ) as { userId: string };
+    // The signed ticket still carries the user id for the room to check.
+    expect(ticket.userId).toBe('guest-1');
   });
 
   it('ends access when the board leaves the meeting', async () => {

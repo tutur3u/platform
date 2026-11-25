@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, beforeEach, test } from 'bun:test';
 import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
+import { boardActorId } from '../../../packages/realtime/src/meet/board-sync-actor';
 import {
   BOARD_GUEST_LIMITS,
   BOARD_LIMITS,
@@ -446,4 +447,89 @@ test('closes a guest viewer that tries to draw', async () => {
     })
   );
   assert.equal(viewer.closed, 1008);
+});
+
+test('limits how often one guest may reopen a board socket', async () => {
+  const f = fixture();
+  const guest = { userId: 'g1', actorKind: 'guest' } as const;
+  for (let i = 0; i < BOARD_GUEST_LIMITS.opensPerMinute; i++) {
+    await open(f, guest);
+    f.sockets.splice(0);
+  }
+  assert.equal((await f.join(guest)).status, 429);
+  assert.equal(f.sockets.length, 0);
+  // Members reopen freely; the guest may again a minute later.
+  for (let i = 0; i < 10; i++) {
+    await open(f);
+    f.sockets.splice(0);
+  }
+  now += 60_000;
+  await open(f, guest);
+  assert.equal(f.sockets.length, 1);
+});
+
+test('keeps member seats free when guests crowd a board', async () => {
+  const f = fixture();
+  for (let i = 0; i < BOARD_GUEST_LIMITS.maxSockets; i++)
+    await open(f, { userId: `g${i}`, actorKind: 'guest' });
+  const refused = await f.join({ userId: 'late', actorKind: 'guest' });
+  assert.equal(refused.status, 429);
+  await open(f, { userId: 'member' });
+  assert.equal(f.sockets.length, BOARD_GUEST_LIMITS.maxSockets + 1);
+});
+
+test('names people by a per-board id, never their user id', async () => {
+  const f = fixture();
+  const member = await open(f, { userId: 'member-user-id' });
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  const actor = boardActorId(SECRET, ids.boardId, 'member-user-id');
+  const presence = guest.sent.findLast((m) => m.type === 'presence');
+  assert.deepEqual(
+    presence.members.map((m: any) => m.id),
+    [actor, boardActorId(SECRET, ids.boardId, 'g1')]
+  );
+  await f.the.webSocketMessage(
+    member as any,
+    JSON.stringify({ type: 'cursor', x: 1, y: 1 })
+  );
+  assert.equal(guest.sent.at(-1).senderId, actor);
+  assert.ok(!JSON.stringify(guest.sent).includes('member-user-id'));
+});
+
+test('stores only known fields and safe links from guests', async () => {
+  const f = fixture();
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  const peer = await open(f, { userId: 'u2' });
+  const element = (id: string, link: string) => ({
+    ...rect(id),
+    link,
+    customData: { tracker: true },
+    sneaky: 'x',
+  });
+  await f.the.webSocketMessage(
+    guest as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [
+        { type: 'insert', element: element('bad', 'javascript:alert(1)') },
+        { type: 'insert', element: element('ok', 'https://example.com/a') },
+      ],
+    })
+  );
+  const [bad, ok] = peer.sent.at(-1).changes.map((c: any) => c.element);
+  assert.equal(bad.link, null);
+  assert.equal(ok.link, 'https://example.com/a');
+  for (const stored of [bad, ok]) {
+    assert.equal('customData' in stored, false);
+    assert.equal('sneaky' in stored, false);
+  }
+  // A member's fields pass through as before.
+  await f.the.webSocketMessage(
+    peer as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [{ type: 'insert', element: element('m', 'https://x.test') }],
+    })
+  );
+  assert.equal(guest.sent.at(-1).changes[0].element.sneaky, 'x');
 });

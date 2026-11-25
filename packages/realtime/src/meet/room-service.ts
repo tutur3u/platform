@@ -32,6 +32,7 @@ import {
   type RoomLiveUsage,
   summarizeLiveUsage,
 } from './room-live-usage';
+import { applyRoomBoardAccess } from './room-board-access';
 import { applyRoomProgramming } from './room-programming';
 import {
   applyRoomPolls,
@@ -179,6 +180,8 @@ export function roomService(
       body: isGuestRemovalBlocked(snapshot, guestId, Date.now()),
     };
   }
+  const boardAccess = applyRoomBoardAccess(snapshot, token, input);
+  if (boardAccess) return boardAccess;
   const forms = applyRoomForms(snapshot, token, input, formsEnv);
   if (forms) return forms;
   const privateMira = applyPrivateMira(snapshot, token, input);
