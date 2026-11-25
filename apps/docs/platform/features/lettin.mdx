@@ -165,6 +165,19 @@ All content APIs live in `apps/lettin/src/app/api/v1`. Shared client access uses
 platform API fallbacks. The public health route
 `/api/v1/lettin/health` checks D1 schema and R2 access and reports the Worker version.
 
+The Worker entry `apps/lettin/cloudflare/worker.ts` wraps the OpenNext Worker
+with `withSettledResponse` from `@tuturuuu/utils/worker-settled-fetch`. Paths no
+Lettin route can match answer an uncached (`no-store`) 404 before the Node
+bridge: any dotted path outside `/_next/` (no route segment contains a dot;
+`src/request-gate.ts`), invalid percent-encoding, decoded control characters
+and non-HTTP-standard methods. A fetch that throws answers 500, and response
+headers that never arrive answer 504 after 60 seconds. Workspace import,
+Exocorpse import, export and media upload routes have no header backstop so
+long legitimate work is never cut off. Response bodies pass through untouched.
+Logs carry `[worker-settle]` with the outcome, method and safe error fields
+only. Regression coverage: `packages/utils/src/worker-settled-fetch.test.ts`
+and `apps/lettin/src/request-gate.test.ts`.
+
 D1 schema migrations live in `apps/lettin/migrations`. Writes use parameterized
 statements with revision and role predicates; invitation acceptance uses an atomic
 D1 batch. Request-scoped D1 sessions start on the primary so access decisions see
