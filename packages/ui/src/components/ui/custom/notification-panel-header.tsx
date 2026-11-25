@@ -5,6 +5,12 @@ import { Button } from '@tuturuuu/ui/button';
 import type { NotificationFilter } from '@tuturuuu/ui/hooks/use-notifications';
 import { cn } from '@tuturuuu/utils/format';
 import type { NotificationLabels } from './notification-labels';
+import {
+  NOTIFICATION_TAB_CLASS,
+  NOTIFICATION_TAB_ROW_CLASS,
+  NOTIFICATION_TITLE_CLASS,
+  NOTIFICATION_TITLE_ROW_CLASS,
+} from './notification-panel-frame';
 
 /** Fixed header: title, Mark all read, Unread/All tabs and the scope toggle. */
 export function NotificationPanelHeader({
@@ -36,16 +42,18 @@ export function NotificationPanelHeader({
       aria-selected={filter === value}
       onClick={() => onFilter(value)}
       className={cn(
-        'inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm pointer-coarse:min-h-11',
+        NOTIFICATION_TAB_CLASS,
         filter === value
           ? 'bg-accent font-medium text-foreground'
           : 'text-muted-foreground hover:text-foreground'
       )}
     >
       {text}
-      {!!count && (
-        <span className="text-xs tabular-nums">
-          {count > 99 ? '99+' : count}
+      {count !== undefined && (
+        // Always rendered so the tabs after it keep their position whether or
+        // not there is anything unread.
+        <span className="inline-block min-w-[3ch] text-center text-xs tabular-nums">
+          {count > 0 ? (count > 99 ? '99+' : count) : ''}
         </span>
       )}
     </button>
@@ -53,8 +61,8 @@ export function NotificationPanelHeader({
 
   return (
     <>
-      <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2">
-        <h2 id={titleId} className="font-semibold text-[15px]">
+      <div className={NOTIFICATION_TITLE_ROW_CLASS}>
+        <h2 id={titleId} className={NOTIFICATION_TITLE_CLASS}>
           {labels.notifications}
         </h2>
         {unreadCount > 0 && (
@@ -74,7 +82,7 @@ export function NotificationPanelHeader({
           </Button>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1 border-b px-3 pb-2">
+      <div className={NOTIFICATION_TAB_ROW_CLASS}>
         <div
           role="tablist"
           aria-label={labels.notifications}

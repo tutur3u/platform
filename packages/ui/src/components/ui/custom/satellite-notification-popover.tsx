@@ -8,7 +8,6 @@ import {
 } from '@tuturuuu/ui/hooks/use-notifications';
 import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
 import { Popover, PopoverAnchor, PopoverContent } from '@tuturuuu/ui/popover';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   lazy,
   Suspense,
@@ -34,6 +33,7 @@ import {
   type NotificationSide,
   resolveNotificationPlacement,
 } from './notification-placement';
+import { NotificationPanelFrameFallback } from './notification-panel-frame';
 import { NotificationPopoverTriggerButton } from './notification-popover-trigger';
 import { useNotificationRuntime } from './notification-runtime';
 import {
@@ -232,20 +232,10 @@ export default function SatelliteNotificationPopover({
       >
         <Suspense
           fallback={
-            <div className="flex h-full flex-col" aria-busy>
-              <Skeleton className="m-4 h-8 w-32 shrink-0" />
-              <div className="min-h-0 flex-1 space-y-1 p-2">
-                {[0, 1, 2, 3].map((row) => (
-                  <div key={row} className="flex gap-2.5 px-2 py-2.5">
-                    <Skeleton className="size-8 shrink-0 rounded-full" />
-                    <div className="flex-1 space-y-1.5 pt-1">
-                      <Skeleton className="h-3 w-11/12" />
-                      <Skeleton className="h-2.5 w-2/5" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <NotificationPanelFrameFallback
+              title={labels.notifications}
+              titleId={titleId}
+            />
           }
         >
           <NotificationPanel
