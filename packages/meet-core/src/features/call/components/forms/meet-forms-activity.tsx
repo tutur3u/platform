@@ -17,14 +17,8 @@ import {
 } from '@tuturuuu/ui/select';
 import { MAX_DISPLAY_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useLocale } from 'next-intl';
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivitySelect } from '../../stage-layout/activity-select';
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
 import { FormsResultsPanel } from '../forms-results/forms-results-panel';
 import { ResizableCallPanel } from '../resizable-call-panel';
 import {

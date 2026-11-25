@@ -48,7 +48,7 @@ function resultsPath(
   return `${formsPath(meetingId)}/results?${new URLSearchParams({ launchId, ...params })}`;
 }
 
-function post<Result>(url: string, data: object) {
+function post<Result>(url: string, data: object): Promise<Result> {
   return getInternalApiClient().json<Result>(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -56,14 +56,20 @@ function post<Result>(url: string, data: object) {
   });
 }
 
-export function readMeetForms(meetingId: string, signal: AbortSignal) {
+export function readMeetForms(
+  meetingId: string,
+  signal: AbortSignal
+): Promise<{ launches: MeetFormLaunch[] }> {
   return getInternalApiClient().json<{ launches: MeetFormLaunch[] }>(
     formsPath(meetingId),
     { signal }
   );
 }
 
-export function readMeetFormCatalog(meetingId: string, signal: AbortSignal) {
+export function readMeetFormCatalog(
+  meetingId: string,
+  signal: AbortSignal
+): Promise<{ items: MeetFormCatalogItem[] }> {
   return getInternalApiClient().json<{ items: MeetFormCatalogItem[] }>(
     `${formsPath(meetingId)}/catalog`,
     { signal }
