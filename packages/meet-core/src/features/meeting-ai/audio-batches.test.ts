@@ -1,4 +1,7 @@
-import { MEET_AUDIO_BATCH_INTERVAL_MS } from '@tuturuuu/ai/meetings/audio-contract';
+import {
+  MEET_AUDIO_BATCH_INTERVAL_MS,
+  MEET_AUDIO_CLIP_MAX_BYTES,
+} from '@tuturuuu/ai/meetings/audio-contract';
 import { afterEach, expect, it, vi } from 'vitest';
 import { MeetAudioBatcher } from './audio-batches';
 
@@ -49,17 +52,20 @@ it('flushes final source clips once and stops its timer', async () => {
     kind: 'shared_audio',
   });
 });
-it('bounds audio memory and drops disposed buffers without uploading', () => {
-  const send = vi.fn(),
-    overflow = vi.fn();
-  const batcher = new MeetAudioBatcher(send, overflow);
-  batcher.add({
-    audio: new Blob([new Uint8Array(12_000_001)]),
-    startSeconds: 0,
-    kind: 'microphone',
-  });
-  expect(overflow).toHaveBeenCalledOnce();
-  batcher.dispose();
-  batcher.flush();
-  expect(send).not.toHaveBeenCalled();
-});
+it.each([MEET_AUDIO_CLIP_MAX_BYTES + 1, 12_000_001])(
+  'rejects an oversized %i-byte clip without uploading',
+  (size) => {
+    const send = vi.fn(),
+      overflow = vi.fn();
+    const batcher = new MeetAudioBatcher(send, overflow);
+    batcher.add({
+      audio: new Blob([new Uint8Array(size)]),
+      startSeconds: 0,
+      kind: 'microphone',
+    });
+    expect(overflow).toHaveBeenCalledOnce();
+    batcher.dispose();
+    batcher.flush();
+    expect(send).not.toHaveBeenCalled();
+  }
+);
