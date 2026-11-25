@@ -17,6 +17,7 @@ import {
   BUILD_OUTPUT_PREFIX,
   buildOutputObservability,
   discoverCfBuildOutputEsmModules,
+  sealedModuleCount,
 } from './cf-build-output-publisher.mjs';
 import { verify } from './wave1-native-artifact.mjs';
 
@@ -115,6 +116,10 @@ function buildInput(appRoot, app, environment, sha) {
     bundleRoot,
     config,
     mainModule
+  );
+  // Unimported files stay out; every imported module is already asserted in.
+  console.log(
+    `[wave1-cf-output] ${app}: ${Object.keys(modules).length} of ${sealedModuleCount(bundleRoot)} sealed modules emitted`
   );
   const assetsDir = resolve(configDir, config.assets.directory);
   const assetFiles = inventory(assetsDir);

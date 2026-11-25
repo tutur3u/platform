@@ -1,0 +1,40 @@
+---
+title: "cf Build Output module discovery"
+description: "How wave-1 cf Build Output emits choose Worker modules, and why Vite RSC graphs need import-following."
+---
+
+`discoverCfBuildOutputEsmModules` (in `scripts/ci/cf-build-output-publisher.mjs`)
+starts from the `dist/server/.vite/manifest.json` graph. That manifest belongs to
+the ssr environment only. A Vite RSC Worker reaches its second environment with
+`import.meta.viteRsc.loadModule`, which compiles to
+`` import(`./rsc/bridge-api.js`) ``. The `rsc/` graph and
+`__vite_rsc_assets_manifest.js` are absent from that manifest. A manifest-only
+emit therefore uploads a Worker that starts cleanly, then rejects that import on
+every request that reaches it. Finance `831c6aae6f` shipped 222 of 470 modules this
+way, and every route returned 500 from the outer response-policy catch.
+`wrangler --no-bundle` uploads every module that matches its rules, so it was
+unaffected.
+
+The publisher now follows relative static and dynamic specifiers from every
+included module, including constant template literals, to files that exist. The
+walk is transitive, bounded, stays inside the bundle root and skips dot
+directories. Comments inside `import(` are allowed. Non-constant templates such
+as `` import(`./rsc/${name}.js`) `` are not followed, so they would need the
+manifest or a rules-glob emit. Unimported files stay excluded. `assertModuleClosure` fails emission
+when an included module imports an existing module that is outside the upload
+set; on the Vite path the walk already adds those, so the assertion is the
+backstop for the rules-glob path. `wave1-cf-output` logs the emitted count
+against the sealed count. `assertUploadedModuleSet` compares a published
+version's module names with the emitted manifest; no publish path calls it yet,
+because wiring it needs a names-only read of the published version that stays
+within the 1 MiB control-plane response cap. Regression coverage is in
+`scripts/ci/cf-build-output-publisher.test.mjs` (RSC layout, a manifest-only
+negative control, and the root and dot-directory bounds).
+
+Two cautions apply when you audit a hosted version:
+
+- `GET /workers/scripts/<name>/content/v2` ignores `?version=` and returns the
+  latest upload. Do not use it to compare versions.
+- `GET /workers/workers/<name>/versions/<id>?include=modules` returns that
+  version's module names and bytes, so you can check import closure against the
+  version that actually serves traffic.

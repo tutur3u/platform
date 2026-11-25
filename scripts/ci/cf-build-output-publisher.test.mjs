@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { lstatSync } from 'node:fs';
 import {
+  assertModuleClosure,
+  assertUploadedModuleSet,
   assertUploadNameParity,
   BUILD_OUTPUT_PREFIX,
   buildOutputObservability,
@@ -150,4 +152,100 @@ test('discoverCfBuildOutputEsmModules skips directories under broad globs', (t) 
       `${name} must be a file`
     );
   }
+});
+
+/** A Vite RSC Worker: the ssr manifest omits the `rsc` environment's graph. */
+function rscLayout() {
+  const root = mkdtempSync(join(tmpdir(), 'cf-build-output-rsc-'));
+  for (const dir of ['.vite', 'assets', 'rsc/assets'])
+    mkdirSync(join(root, dir), { recursive: true });
+  writeFileSync(
+    join(root, 'index.mjs'),
+    'import{a}from"./assets/a.mjs";var DT=import(`./rsc/bridge-api.js`);import(/* @vite-ignore */ "./assets/lazy.js");export default{fetch:async()=>(await DT).h(a)};\n'
+  );
+  writeFileSync(join(root, 'assets/a.mjs'), 'export const a=1;\n');
+  writeFileSync(join(root, 'assets/lazy.js'), 'export {};\n');
+  writeFileSync(
+    join(root, 'rsc/bridge-api.js'),
+    'import"./assets/route.js";import m from"../__vite_rsc_assets_manifest.js";export const h=()=>m;\n'
+  );
+  writeFileSync(join(root, 'rsc/assets/route.js'), 'export {};\n');
+  writeFileSync(
+    join(root, '__vite_rsc_assets_manifest.js'),
+    'export default {};\n'
+  );
+  writeFileSync(join(root, 'assets/orphan.js'), 'export const o=1;\n');
+  writeFileSync(
+    join(root, '.vite/manifest.json'),
+    JSON.stringify({
+      entry: { file: 'index.mjs', isEntry: true, imports: ['a'] },
+      a: { file: 'assets/a.mjs' },
+    })
+  );
+  return root;
+}
+
+test('discoverCfBuildOutputEsmModules keeps the Vite RSC graph the ssr manifest omits', () => {
+  const root = rscLayout();
+  const modules = discoverCfBuildOutputEsmModules(
+    root,
+    { rules: [{ globs: ['**/*.js', '**/*.mjs'] }] },
+    'index.mjs'
+  );
+  assert.deepEqual(Object.keys(modules).sort(), [
+    '__vite_rsc_assets_manifest.js',
+    'assets/a.mjs',
+    'assets/lazy.js',
+    'index.mjs',
+    'rsc/assets/route.js',
+    'rsc/bridge-api.js',
+  ]);
+});
+
+test('assertModuleClosure rejects a manifest-only set that drops the RSC graph', () => {
+  const root = rscLayout();
+  assert.throws(
+    () =>
+      assertModuleClosure(root, {
+        'index.mjs': { type: 'esm' },
+        'assets/a.mjs': { type: 'esm' },
+      }),
+    /drops imported modules: index\.mjs -> rsc\/bridge-api\.js/
+  );
+});
+
+test('relative import walk never leaves the bundle root or enters dot directories', () => {
+  const root = mkdtempSync(join(tmpdir(), 'cf-build-output-escape-'));
+  mkdirSync(join(root, '.vite'), { recursive: true });
+  mkdirSync(join(root, '.hidden'), { recursive: true });
+  writeFileSync(
+    join(root, 'index.mjs'),
+    'import("../outside.js");import("./.hidden/x.js");import("./missing.js");export default {};\n'
+  );
+  writeFileSync(join(root, '.hidden/x.js'), 'export {};\n');
+  writeFileSync(
+    join(root, '.vite/manifest.json'),
+    JSON.stringify({ entry: { file: 'index.mjs', isEntry: true } })
+  );
+  const modules = discoverCfBuildOutputEsmModules(
+    root,
+    { rules: [{ globs: ['**/*'] }] },
+    'index.mjs'
+  );
+  assert.deepEqual(Object.keys(modules), ['index.mjs']);
+});
+
+test('assertUploadedModuleSet compares a published version with the emitted manifest', () => {
+  const expected = {
+    'index.mjs': { type: 'esm' },
+    'rsc/bridge-api.js': { type: 'esm' },
+  };
+  assertUploadedModuleSet(
+    ['./index.mjs', './rsc/bridge-api.js', './_headers'],
+    expected
+  );
+  assert.throws(
+    () => assertUploadedModuleSet(['./index.mjs'], expected),
+    /uploaded modules differ from the emitted manifest \(1 uploaded, 2 expected\)/
+  );
 });
