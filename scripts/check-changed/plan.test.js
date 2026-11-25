@@ -13,6 +13,7 @@ const {
 } = require('./plan.js');
 
 const ROOT = path.resolve(__dirname, '../..');
+const MEET_CI_TEST = 'apps/meet-realtime/src/room-do-recovery.test.ts';
 
 function context(existing = [], overrides = {}) {
   const files = new Set(existing);
@@ -22,6 +23,8 @@ function context(existing = [], overrides = {}) {
     branch: 'chore/gate',
     exists: (file) => files.has(file),
     hasVitest: (workspace) => workspace !== 'apps/no-vitest',
+    root: ROOT,
+    readMeetDurableRoomTests: () => [MEET_CI_TEST],
     ...overrides,
   };
 }
@@ -29,21 +32,19 @@ function context(existing = [], overrides = {}) {
 const ids = (plan) =>
   plan.steps.map((step) => step.id).filter((id) => id !== 'staging-hosts');
 const changed = (...files) => files.map((file) => ({ status: 'M', file }));
-const MEET_CI_TEST = 'apps/meet-realtime/src/room-do-recovery.test.ts';
 
-test('Meet durable room tests follow Worker, realtime Meet and workflow changes', () => {
-  const planFor = (changes) =>
-    planChecks(
-      changes,
-      context([MEET_CI_TEST], {
-        root: ROOT,
-        readMeetDurableRoomTests: () => [MEET_CI_TEST],
-      })
-    );
+test('Meet durable room tests follow Worker, dependency and workflow changes', () => {
+  const planFor = (changes) => planChecks(changes, context([MEET_CI_TEST]));
   for (const changes of [
     changed('apps/meet-realtime/src/room-do.ts'),
     [{ status: 'D', file: 'packages/realtime/src/meet/room-lifecycle.ts' }],
+    changed('packages/realtime/src/core/token.ts'),
+    changed('packages/realtime/src/collaboration/server.ts'),
+    changed('packages/realtime/package.json'),
+    changed('packages/utils/src/playground-schema.ts'),
     changed('.github/workflows/meet-cloudflare.yaml'),
+    changed('bun.lock'),
+    changed('package.json'),
   ]) {
     const step = planFor(changes).steps.find(
       (entry) => entry.id === 'meet-durable-room-tests'
@@ -56,7 +57,8 @@ test('Meet durable room tests follow Worker, realtime Meet and workflow changes'
   for (const file of [
     'apps/meet/src/worker.ts',
     'apps/meet-realtime-example/src/worker.ts',
-    'packages/realtime/src/meeting.ts',
+    'packages/realtime/README.md',
+    'packages/utils/src/playground-schema.test.ts',
     'packages/meet-core/src/routes/og/route.tsx',
   ]) {
     assert.equal(
@@ -201,8 +203,6 @@ test('bun:test suites run with bun test from their workspace, never Vitest or no
     ),
     context(Object.keys(source), {
       readSource: (file) => source[file] ?? '',
-      root: ROOT,
-      readMeetDurableRoomTests: () => [MEET_CI_TEST],
       workspaces: [{ workspace: 'apps/meet-realtime', testScript: '' }],
     })
   );

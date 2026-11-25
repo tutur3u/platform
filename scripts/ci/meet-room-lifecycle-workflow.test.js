@@ -104,15 +104,57 @@ test('check:changed runs the actual lifecycle CI test list through resource admi
   }
 });
 
-test('the lifecycle command parser rejects an empty list or extra shell commands', () => {
-  for (const run of [
-    'cd "$RUNNER_TEMP"\nbun test',
-    `${lifecycle.run.trimEnd()}\ntrue`,
+test('the lifecycle command parser rejects malformed workflow steps', () => {
+  const file = 'apps/meet-realtime/src/example.test.ts';
+  const argument = `$GITHUB_WORKSPACE/${file}`;
+  const command = 'cd "$RUNNER_TEMP"\nbun test';
+  const run = `${command} "${argument}"`;
+  const step = { name: STEP_NAME, shell: 'bash', run };
+  const withRun = (run) => [{ ...step, run }];
+  const withSteps = (steps) => ({ jobs: { validate: { steps } } });
+  assert.deepEqual(parseMeetDurableRoomTests(withSteps([step])), [file]);
+
+  for (const [label, steps] of [
+    ['missing step', []],
+    ['renamed step', [{ ...step, name: 'Durable room tests' }]],
+    ['duplicate step name', [step, step]],
+    ['non-Bash shell', [{ ...step, shell: 'sh' }]],
+    ['empty test list', withRun(command)],
+    ['extra shell command', withRun(`${run}\ntrue`)],
+    ['unquoted path', withRun(`${command} ${argument}`)],
+    [
+      'path outside apps/meet-realtime',
+      withRun(`${command} "$GITHUB_WORKSPACE/apps/meet/src/example.test.ts"`),
+    ],
+    ['duplicate file', withRun(`${run} "${argument}"`)],
   ]) {
-    const changed = { jobs: { validate: { steps: [{ ...lifecycle, run }] } } };
     assert.throws(
-      () => parseMeetDurableRoomTests(changed),
-      /expected "Test durable room lifecycle and recovery"/
+      () => parseMeetDurableRoomTests(withSteps(steps)),
+      /expected "Test durable room lifecycle and recovery"/,
+      label
     );
   }
+});
+
+test('the lifecycle workflow loader rejects a listed file that is missing', (t) => {
+  const root = mkdtempSync(path.join(tmpdir(), 'meet-lifecycle-missing-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const workflowPath = path.join(root, WORKFLOW);
+  const file = 'apps/meet-realtime/src/missing.test.ts';
+  mkdirSync(path.dirname(workflowPath), { recursive: true });
+  writeFileSync(
+    workflowPath,
+    `jobs:
+  validate:
+    steps:
+      - name: ${STEP_NAME}
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP"
+          bun test "$GITHUB_WORKSPACE/${file}"
+`
+  );
+  assert.throws(() => readMeetDurableRoomTests(root), {
+    message: `${WORKFLOW}: durable room test file is missing: ${file}`,
+  });
 });

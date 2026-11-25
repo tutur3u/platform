@@ -1,3 +1,6 @@
+// The workflow contract accepts test paths under apps/meet-realtime only.
+// If CI adds a test elsewhere, extend TEST_ARGUMENT in the same change so
+// check:changed can accept the new path.
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');

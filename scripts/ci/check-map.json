@@ -99,7 +99,7 @@
   },
   "localChecks": {
     "docs-audit": "^apps/docs/",
-    "meet-durable-room-tests": "^(apps/meet-realtime/|packages/realtime/src/meet/|\\.github/workflows/meet-cloudflare\\.yaml$)",
+    "meet-durable-room-tests": "^(apps/meet-realtime/|packages/realtime/(src/|package\\.json$)|packages/utils/src/playground-schema\\.ts$|\\.github/workflows/meet-cloudflare\\.yaml$|bun\\.lock$|package\\.json$)",
     "sdk-portable": "^packages/(internal-api|sdk|utils|types)/",
     "package-release-dependencies": "^packages/[^/]+/package\\.json$|^\\.github/workflows/release-.+-package\\.ya?ml$|^scripts/ci/package-release-(dependency-guard|readiness)\\.js$",
     "i18n": "^apps/[^/]+/messages/.*\\.json$",
