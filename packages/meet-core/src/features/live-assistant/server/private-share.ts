@@ -11,6 +11,7 @@ import {
   type SignedInMeetCallAccess,
 } from '../../call/server/room-service';
 import {
+  readMiraConfirmedAt,
   requireMiraAccountConfirmation,
   usesMiraAccountConfirmation,
 } from './account-confirmation';
@@ -27,6 +28,7 @@ export const privateMiraShareCommand = z.strictObject({
 const shareView = z.object({
   enabled: z.boolean(),
   revision: z.number().int().nonnegative(),
+  sharedAt: z.number().optional(),
 });
 const revokeView = shareView.extend({
   sessions: z.array(z.uuid()).max(2).default([]),
@@ -35,6 +37,30 @@ const off: PrivateMiraShare = { enabled: false, revision: 0 };
 
 function isGuest(access: Access) {
   return 'guest' in access && access.guest === true;
+}
+
+/**
+ * A share turned on before the owner's latest Mira confirmation does not
+ * count, so withdrawing and confirming again needs a fresh opt-in. A share
+ * without a known start, or an account without a confirmation, fails closed.
+ */
+export async function sharePredatesConfirmation(
+  access: Access,
+  sharedAt: number | undefined
+) {
+  if (sharedAt === undefined) return true;
+  const confirmedAt = await readMiraConfirmedAt(access.user.id);
+  return confirmedAt === null || sharedAt < confirmedAt;
+}
+
+/** Turns off a share that no longer counts; best effort. */
+async function dropStaleShare(access: Access) {
+  await callRoomService(access, {
+    action: 'mira.share.set',
+    enabled: false,
+  }).catch(() => {
+    console.warn('Stale Private Mira share could not be revoked');
+  });
 }
 
 /** The caller's own share, or off whenever it cannot be confirmed. */
@@ -48,7 +74,13 @@ export async function readPrivateMiraShare(
       () => null
     )
   );
-  return result.success ? result.data : off;
+  if (!result.success) return off;
+  const { enabled, revision, sharedAt } = result.data;
+  if (enabled && (await sharePredatesConfirmation(access, sharedAt))) {
+    await dropStaleShare(access);
+    return { enabled: false, revision };
+  }
+  return { enabled, revision };
 }
 
 /**
@@ -67,10 +99,10 @@ export async function revokePrivateMiraShare(
   );
   if (!result.success)
     throw new MeetCallAccessError(503, 'Private Mira sharing is unavailable');
-  const { sessions, ...share } = result.data;
-  if (share.revision > 0 || options.always)
+  const { sessions, enabled, revision } = result.data;
+  if (revision > 0 || options.always)
     await stopPrivateMiraSessions(access, sessions, live);
-  return share;
+  return { enabled, revision };
 }
 
 /**
@@ -94,16 +126,18 @@ export async function setPrivateMiraShare(
   );
   if (!result.success)
     throw new MeetCallAccessError(503, 'Private Mira sharing is unavailable');
-  return result.data;
+  return { enabled: result.data.enabled, revision: result.data.revision };
 }
 
 /**
  * Hands the owner's latest tutor chat to their room share. The room accepts
- * it only while the owner's grant is on, so this is a no-op otherwise.
+ * it only while the owner's grant is on, so this is a no-op otherwise. A
+ * share older than the owner's latest confirmation is revoked instead.
  */
 export async function forwardSharedTutorChat(
   access: Access,
-  turns: readonly { body: string; assistant: boolean }[]
+  turns: readonly { body: string; assistant: boolean }[],
+  sharedAt: number | undefined
 ) {
   if (!usesMiraAccountConfirmation() || isGuest(access)) return;
   const tutor = turns
@@ -123,6 +157,10 @@ export async function forwardSharedTutorChat(
     tutor.shift();
   try {
     await requireMiraAccountConfirmation(access);
+    if (await sharePredatesConfirmation(access, sharedAt)) {
+      await dropStaleShare(access);
+      return;
+    }
     await callRoomService(access, { action: 'mira.share.context', tutor });
   } catch {
     // Not shared, revoked, or unconfirmed: nothing leaves the tutor chat.

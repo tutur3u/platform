@@ -26,10 +26,10 @@ const workspaceId = '00000000-0000-4000-8000-000000000002';
 const meetingId = '00000000-0000-4000-8000-000000000003';
 const sessionId = '00000000-0000-4000-8000-000000000004';
 const tutor = [{ assistant: true, body: 'Plants turn light into sugar.' }];
-const saved = (mode: 'personal' | 'room' = 'personal') =>
+const saved = (mode: 'personal' | 'room' = 'personal', owner = ownerId) =>
   ({
     claims: {
-      ownerId,
+      ownerId: owner,
       meetingId,
       sessionId,
       app: 'meet',
@@ -56,11 +56,11 @@ const consent = {
 const sendToolResponse = vi.fn();
 const run = (
   name: string,
-  options: { mode?: 'personal' | 'room'; uxV2?: boolean } = {}
+  options: { mode?: 'personal' | 'room'; uxV2?: boolean; owner?: string } = {}
 ) =>
   executeLiveTool(
     {
-      saved: saved(options.mode),
+      saved: saved(options.mode, options.owner),
       env: {
         MEET_UX_V2: options.uxV2 === false ? 'false' : 'true',
         MEET_AI_DISABLED: 'false',
@@ -83,15 +83,18 @@ const shareReads = () =>
   f.room.mock.calls.filter(
     ([, , , command]) => command.action === 'mira.share.private.read'
   );
-const confirmed = (marker: unknown) => ({
-  id: ownerId,
+const confirmed = (marker: unknown, id = ownerId) => ({
+  id,
   app_metadata: { [MIRA_ACCOUNT_CONFIRMATION_KEY]: marker },
 });
+const sharedAt = 1_800_000_000_000;
 
 beforeEach(() => {
   vi.resetAllMocks();
-  f.room.mockImplementation((_env, _claims, _identity, command) =>
-    command.action === 'mira.private.read' ? consent : { tutor }
+  f.room.mockImplementation((_env, claims, _identity, command) =>
+    command.action === 'mira.private.read'
+      ? { choice: { ...consent.choice, accountId: claims.ownerId } }
+      : { tutor, sharedAt }
   );
 });
 
@@ -148,3 +151,28 @@ it('keeps Mira from launching polls under the redesign', async () => {
     {}
   );
 });
+
+it('revokes a share turned on before the owner’s latest confirmation', async () => {
+  // Another owner, so no earlier test has cached this confirmation.
+  const owner = '00000000-0000-4000-8000-000000000009';
+  f.auth.mockResolvedValue(
+    confirmed(
+      {
+        version: MIRA_ACCOUNT_CONFIRMATION_VERSION,
+        confirmedAt: new Date(sharedAt + 1000).toISOString(),
+        locale: 'en',
+        textHash: 'a'.repeat(64),
+      },
+      owner
+    )
+  );
+  await run('read_shared_notes', { owner });
+  expect(response()).toHaveProperty('error');
+  expect(f.room).toHaveBeenLastCalledWith(
+    expect.anything(),
+    expect.objectContaining({ ownerId: owner }),
+    expect.anything(),
+    { action: 'mira.share.set', enabled: false }
+  );
+});
+

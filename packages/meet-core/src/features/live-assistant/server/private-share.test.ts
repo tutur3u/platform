@@ -4,12 +4,14 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const f = vi.hoisted(() => ({
   room: vi.fn(),
   confirm: vi.fn(),
+  confirmedAt: vi.fn(),
   stop: vi.fn(),
   enabled: true,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('../../call/server/room-service', () => ({ callRoomService: f.room }));
 vi.mock('./account-confirmation', () => ({
+  readMiraConfirmedAt: f.confirmedAt,
   requireMiraAccountConfirmation: f.confirm,
   usesMiraAccountConfirmation: () => f.enabled,
 }));
@@ -31,21 +33,26 @@ const turns = Array.from({ length: 15 }, (_, index) => ({
   assistant: index % 2 === 1,
 }));
 
+// Confirmed before the share was turned on.
+const confirmedAt = 1_800_000_000_000;
+const sharedAt = confirmedAt + 60_000;
+
 beforeEach(() => {
   vi.resetAllMocks();
   f.enabled = true;
+  f.confirmedAt.mockResolvedValue(confirmedAt);
 });
 
 it('sends nothing while the redesign flag is off', async () => {
   f.enabled = false;
-  await forwardSharedTutorChat(access as Access, turns);
+  await forwardSharedTutorChat(access as Access, turns, sharedAt);
   expect(f.room).not.toHaveBeenCalled();
   expect(await readPrivateMiraShare(access as Access)).toBeUndefined();
 });
 
 it('sends nothing for an unconfirmed or under-18 account', async () => {
   f.confirm.mockRejectedValue(new Error('Confirm your account'));
-  await forwardSharedTutorChat(access as Access, turns);
+  await forwardSharedTutorChat(access as Access, turns, sharedAt);
   expect(f.room).not.toHaveBeenCalled();
 });
 
@@ -56,14 +63,14 @@ it('hands only the latest bounded tutor turns to the room and ignores a refusal'
     body: index === 14 ? ' ' : `turn ${index}`,
   }));
   await expect(
-    forwardSharedTutorChat(access as Access, short)
+    forwardSharedTutorChat(access as Access, short, sharedAt)
   ).resolves.toBeUndefined();
   const [, command] = f.room.mock.calls[0]!;
   expect(command.action).toBe('mira.share.context');
   expect(command.tutor).toHaveLength(12);
   expect(command.tutor[0].body).toBe('turn 2');
 
-  await forwardSharedTutorChat(access as Access, turns);
+  await forwardSharedTutorChat(access as Access, turns, sharedAt);
   const [, large] = f.room.mock.calls[1]!;
   const bodies = large.tutor.map(({ body }: { body: string }) => body);
   expect(bodies.at(-1)).toMatch(/^turn 13 /);
@@ -135,5 +142,45 @@ it('stops the sessions even without a share when asked to, as on withdrawal', as
   });
   await revokePrivateMiraShare(access as Access, live, { always: true });
   expect(f.stop).toHaveBeenCalledWith(access, [session], live);
+});
+
+it('revokes a share turned on before the latest confirmation instead of using it', async () => {
+  // Withdrawn, then confirmed again after the share was turned on.
+  f.confirmedAt.mockResolvedValue(sharedAt + 1);
+  await forwardSharedTutorChat(access as Access, turns, sharedAt);
+  expect(f.room).toHaveBeenCalledExactlyOnceWith(access, {
+    action: 'mira.share.set',
+    enabled: false,
+  });
+
+  f.room.mockReset();
+  f.room.mockResolvedValue({ enabled: true, revision: 4, sharedAt });
+  expect(await readPrivateMiraShare(access as Access)).toEqual({
+    enabled: false,
+    revision: 4,
+  });
+  expect(f.room).toHaveBeenLastCalledWith(access, {
+    action: 'mira.share.set',
+    enabled: false,
+  });
+});
+
+it('keeps a share turned on after the latest confirmation, and fails closed', async () => {
+  f.room.mockResolvedValue({ enabled: true, revision: 4, sharedAt });
+  expect(await readPrivateMiraShare(access as Access)).toEqual({
+    enabled: true,
+    revision: 4,
+  });
+  expect(f.room).toHaveBeenCalledOnce();
+  // An unknown start or a missing confirmation never counts as current.
+  f.room.mockResolvedValue({ enabled: true, revision: 4 });
+  expect(await readPrivateMiraShare(access as Access)).toMatchObject({
+    enabled: false,
+  });
+  f.confirmedAt.mockResolvedValue(null);
+  f.room.mockResolvedValue({ enabled: true, revision: 4, sharedAt });
+  expect(await readPrivateMiraShare(access as Access)).toMatchObject({
+    enabled: false,
+  });
 });
 

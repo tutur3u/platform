@@ -7,6 +7,7 @@ import type { MeetCallRouteAccess } from '../../call/server/room-service';
 import { isMeetUxV2Enabled } from '../../call/server/ux-v2';
 import {
   isMiraAccountConfirmed,
+  miraConfirmedAt,
   MIRA_ACCOUNT_CONFIRMATION_KEY as KEY,
   MIRA_ACCOUNT_CONFIRMATION_VERSION as VERSION,
   type MiraConfirmationLocale,
@@ -17,6 +18,7 @@ import { MiraTtlCache } from '../mira-ttl-cache';
 type ConfirmationStatus = 'confirmed' | 'required' | 'unavailable';
 type AccountActor = { user: { id: string }; guest?: boolean };
 const confirmations = new MiraTtlCache<ConfirmationStatus>();
+const confirmedTimes = new MiraTtlCache<number | null>();
 const isGuest = (access: MeetCallRouteAccess) =>
   'guest' in access && access.guest === true;
 const unavailable = () =>
@@ -37,6 +39,24 @@ async function readConfirmation(userId: string): Promise<ConfirmationStatus> {
   } catch {
     return 'unavailable';
   }
+}
+
+/** When the account last confirmed Mira (0 for an undated marker), or null. */
+export async function readMiraConfirmedAt(userId: string) {
+  return confirmedTimes.read(
+    userId,
+    async () => {
+      try {
+        const db = await createAdminClient({ noCookie: true });
+        const { data, error } = await db.auth.admin.getUserById(userId);
+        if (error || data.user?.id !== userId) return null;
+        return miraConfirmedAt(data.user.app_metadata[KEY]);
+      } catch {
+        return null;
+      }
+    },
+    (value) => value !== null
+  );
 }
 
 export async function readMiraAccountConfirmation(access: MeetCallRouteAccess) {
@@ -103,6 +123,7 @@ export async function withdrawMiraAccount(
 ) {
   const userId = requireMiraAccountActor(access, expectedActorId);
   confirmations.delete(userId);
+  confirmedTimes.delete(userId);
   try {
     const db = await createAdminClient({ noCookie: true });
     // Auth merges app metadata and treats a null value as deletion.
@@ -113,5 +134,6 @@ export async function withdrawMiraAccount(
       throw unavailable();
   } finally {
     confirmations.delete(userId);
+    confirmedTimes.delete(userId);
   }
 }

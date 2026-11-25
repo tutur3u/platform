@@ -85,10 +85,11 @@ export async function POST(
       );
 
     // Read with every consent check, so the latest one decides the forward.
-    const tutorShare = { on: false };
+    const tutorShare: { on: boolean; at?: number } = { on: false };
     async function checkConsent() {
       const current = await requirePrivateMiraChoiceState(access);
       tutorShare.on = current.shared;
+      tutorShare.at = current.sharedAt;
       if (current.choice.revision !== consent.revision)
         throw new MeetCallAccessError(
           403,
@@ -107,11 +108,15 @@ export async function POST(
     // Only while the owner shares their tutor chat, and never on the answer's
     // path: the room keeps it only while the share still holds.
     if (tutorShare.on) {
-      const forward = forwardSharedTutorChat(access, [
-        ...payload.data.history,
-        { body: payload.data.question, assistant: false },
-        { body: answer.text, assistant: true },
-      ]);
+      const forward = forwardSharedTutorChat(
+        access,
+        [
+          ...payload.data.history,
+          { body: payload.data.question, assistant: false },
+          { body: answer.text, assistant: true },
+        ],
+        tutorShare.at
+      );
       cloudflare?.ctx?.waitUntil(forward);
     }
     return answer;

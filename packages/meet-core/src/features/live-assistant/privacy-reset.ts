@@ -17,13 +17,21 @@ export async function withdrawPrivateLiveSessions(ownerId: string) {
     const objects = (env as unknown as { MEET_LIVE?: DurableObjectNamespace })
       .MEET_LIVE;
     if (!objects) return;
-    const response = await objects
-      .get(objects.idFromName(`owner:${ownerId}`))
-      .fetch('https://live.internal/registry/withdraw', {
-        method: 'POST',
-        body: JSON.stringify({ ownerId }),
-        signal: AbortSignal.timeout(10_000),
-      });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const response = await Promise.race([
+      objects
+        .get(objects.idFromName(`owner:${ownerId}`))
+        .fetch('https://live.internal/registry/withdraw', {
+          method: 'POST',
+          body: JSON.stringify({ ownerId }),
+        }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('Deadline exceeded')),
+          10_000
+        );
+      }),
+    ]).finally(() => clearTimeout(timer));
     if (!response.ok) throw new Error(`registry_${response.status}`);
   } catch {
     console.warn('Private Mira sessions could not be ended on withdrawal');

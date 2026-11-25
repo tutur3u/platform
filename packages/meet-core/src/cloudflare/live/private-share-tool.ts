@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { requireCurrentPrivateGrant } from './private-grant';
+import {
+  readLiveMiraConfirmedAt,
+  requireCurrentPrivateGrant,
+} from './private-grant';
 import { liveRoomCommand } from './room';
 import type { SavedSession } from './session-state';
 import type { LiveEnvironment } from './storage';
@@ -14,6 +17,7 @@ const sharedNotes = z.strictObject({
       })
     )
     .max(12),
+  sharedAt: z.number(),
 });
 
 /** Polls stay drafts under the redesign; only a host or co-host launches. */
@@ -56,6 +60,19 @@ export async function readSharedPrivateNotes(
         sessionId: saved.claims.sessionId,
       })
     );
+    // A share turned on before the owner's latest Mira confirmation needs a
+    // fresh opt-in, so it is revoked instead of read.
+    const confirmedAt = await readLiveMiraConfirmedAt(
+      env,
+      saved.claims.ownerId
+    );
+    if (confirmedAt === null || shared.sharedAt < confirmedAt) {
+      await liveRoomCommand(env, saved.claims, saved.identity, {
+        action: 'mira.share.set',
+        enabled: false,
+      }).catch(() => undefined);
+      return unavailable;
+    }
     return { tutor: shared.tutor };
   } catch {
     return unavailable;

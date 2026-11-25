@@ -27,6 +27,18 @@ const identitySchema = z.object({
   command: memoryCommandSchema.optional(),
 });
 
+/** Each withdrawal step settles in time, so one stall cannot use it all. */
+const WITHDRAW_STEP_MS = 4000;
+function withinDeadline<T>(promise: Promise<T>, ms = WITHDRAW_STEP_MS) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error('Deadline exceeded')), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
 /** Runs under the owner's serial request queue. Pending writes survive process replacement. */
 export async function liveRegistry(
   request: Request,
@@ -82,30 +94,47 @@ export async function liveRegistry(
   if (path === '/registry/withdraw') {
     // A withdrawn Mira confirmation ends every Private Mira session of the
     // owner and revokes the tutor chat each one could read, in every meeting.
-    // The owner's own Private Mira may revoke a share, never turn one on.
-    for (const entry of entries.filter((entry) => entry.mode !== 'room')) {
-      if (entry.workspaceId)
-        await liveRoomCommand(
-          env,
-          {
-            ownerId: entry.ownerId,
-            meetingId: entry.meetingId,
-            mode: 'personal',
-          },
-          {
-            workspaceId: entry.workspaceId,
-            isHost: false,
-            displayName: 'Mira',
-          },
-          { action: 'mira.share.set', enabled: false }
-        ).catch(() => {
-          console.warn('Private Mira share revoke on withdrawal failed');
-        });
-      await stopEntry(entry);
-    }
-    entries = entries.filter((entry) => entry.mode === 'room');
+    // Each session stops before its share is revoked, all sessions run in
+    // parallel, and each step has its own deadline. The owner's own Private
+    // Mira may revoke a share, never turn one on. Entries that could not be
+    // stopped stay listed for a retry.
+    const personal = entries.filter((entry) => entry.mode !== 'room');
+    const results = await Promise.allSettled(
+      personal.map(async (entry) => {
+        const stopped = await withinDeadline(stopEntry(entry)).then(
+          () => true,
+          () => false
+        );
+        if (entry.workspaceId)
+          await withinDeadline(
+            liveRoomCommand(
+              env,
+              {
+                ownerId: entry.ownerId,
+                meetingId: entry.meetingId,
+                mode: 'personal',
+              },
+              {
+                workspaceId: entry.workspaceId,
+                isHost: false,
+                displayName: 'Mira',
+              },
+              { action: 'mira.share.set', enabled: false }
+            )
+          ).catch(() => {
+            console.warn('Private Mira share revoke on withdrawal failed');
+          });
+        if (!stopped) throw new Error('Private Mira session did not stop');
+      })
+    );
+    const failed = personal.filter(
+      (_, index) => results[index]?.status === 'rejected'
+    );
+    entries = [...entries.filter((entry) => entry.mode === 'room'), ...failed];
     await storage.put('active', entries);
-    return Response.json({ ok: true });
+    return failed.length
+      ? new Response('Retry the withdrawal', { status: 503 })
+      : Response.json({ ok: true });
   }
   if (path === '/registry/memory' && input.command) {
     const operation = { ownerId: input.ownerId, command: input.command };

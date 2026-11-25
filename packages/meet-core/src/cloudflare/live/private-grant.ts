@@ -2,7 +2,7 @@ import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-sess
 import { z } from 'zod';
 import {
   MIRA_ACCOUNT_CONFIRMATION_KEY,
-  isMiraAccountConfirmed,
+  miraConfirmedAt,
 } from '../../features/live-assistant/account-confirmation';
 import {
   miraAttestationFromRow,
@@ -21,7 +21,30 @@ import type { SavedSession } from './session-state';
 import { liveAuthUser, liveDatabase, type LiveEnvironment } from './storage';
 import { liveWorkspaceAllowed } from './workspace-gate';
 
-const confirmations = new MiraTtlCache<boolean>();
+const confirmations = new MiraTtlCache<number | null>();
+
+/**
+ * When the owner last confirmed Mira (0 for an undated marker), or null when
+ * the account is not confirmed. Confirmed times are cached per isolate for up
+ * to a minute.
+ */
+export async function readLiveMiraConfirmedAt(
+  env: LiveEnvironment,
+  ownerId: string
+) {
+  return confirmations
+    .read(
+      ownerId,
+      async () => {
+        const actor = authResult.parse(await liveAuthUser(env, ownerId));
+        return actor.id === ownerId
+          ? miraConfirmedAt(actor.app_metadata?.[MIRA_ACCOUNT_CONFIRMATION_KEY])
+          : null;
+      },
+      (value) => value !== null
+    )
+    .catch(() => null);
+}
 
 export async function requireCurrentPrivateGrant(
   env: LiveEnvironment,
@@ -49,23 +72,11 @@ export async function requireCurrentPrivateGrant(
     throw new Error('Private Mira choice is unavailable');
 
   if (env.MEET_UX_V2 === 'true' && saved.claims.app !== 'parley') {
-    const ownerId = saved.claims.ownerId;
-    const confirmed = await confirmations
-      .read(
-        ownerId,
-        async () => {
-          const actor = authResult.parse(await liveAuthUser(env, ownerId));
-          return (
-            actor.id === ownerId &&
-            isMiraAccountConfirmed(
-              actor.app_metadata?.[MIRA_ACCOUNT_CONFIRMATION_KEY]
-            )
-          );
-        },
-        (value) => value
-      )
-      .catch(() => false);
-    if (!confirmed)
+    const confirmedAt = await readLiveMiraConfirmedAt(
+      env,
+      saved.claims.ownerId
+    );
+    if (confirmedAt === null)
       throw new Error('Private Mira account confirmation is unavailable');
   }
 

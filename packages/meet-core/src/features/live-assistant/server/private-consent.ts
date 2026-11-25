@@ -28,8 +28,10 @@ const snapshot = z.object({
     })
     .nullable(),
   sessions: z.array(z.uuid()).max(2),
-  /** Whether the caller currently shares notes with their Private Mira. */
+  /** Whether the caller currently shares tutor chat with Private Mira. */
   shared: z.boolean().optional(),
+  /** When that share was turned on. */
+  sharedAt: z.number().optional(),
 });
 
 export async function readPrivateMiraChoice(access: Access) {
@@ -95,7 +97,11 @@ export async function requirePrivateMiraChoiceState(access: Access) {
       'Choose Continue with Mira before starting',
       'MIRA_CONSENT_REQUIRED'
     );
-  return { choice: current.choice, shared: current.shared === true };
+  return {
+    choice: current.choice,
+    shared: current.shared === true,
+    sharedAt: current.sharedAt,
+  };
 }
 
 export async function requirePrivateMiraChoice(access: Access) {

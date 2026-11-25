@@ -46,7 +46,7 @@ export async function maintainLiveRegistry(
     throw new LiveRegistryError(409);
   if (now - last < 12 * 60 * 60_000) return;
   try {
-    await refreshLiveRegistry(env, saved.claims, saved.identity.workspaceId);
+    await refreshLiveRegistry(env, saved.claims, saved.identity?.workspaceId);
     saved.registryUpdatedAt = Date.now();
   } catch (error) {
     // Stop before the 24-hour registry lease expires: memory revocations must

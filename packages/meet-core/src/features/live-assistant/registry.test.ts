@@ -166,3 +166,65 @@ it('on withdrawal revokes each meeting share and stops every Private Mira', asyn
     expect.objectContaining({ mode: 'room' }),
   ]);
 });
+
+it('stops each session before revoking its share and keeps failures for a retry', async () => {
+  const f = fixture();
+  const workspaceId = '00000000-0000-4000-8000-000000000009';
+  const other = '00000000-0000-4000-8000-000000000008';
+  const entry = (id: string) => ({
+    ownerId,
+    meetingId,
+    sessionId: id,
+    mode: 'personal',
+    workspaceId,
+    expiresAt: Date.now() + 60000,
+  });
+  f.values.set('active', [entry(sessionId), entry(other)]);
+  const order: string[] = [];
+  f.stop.mockImplementation(async (_url: string, init: RequestInit) => {
+    const { sessionId: id } = JSON.parse(String(init.body));
+    order.push(`stop:${id}`);
+    if (id === other) throw new Error('Live session unreachable');
+    return new Response(null, { status: 200 });
+  });
+  mocks.room.mockImplementation(async () => {
+    order.push('revoke');
+    return { ok: true };
+  });
+  const response = await f.call('withdraw', {});
+  expect(response.status).toBe(503);
+  // Every session stops before its share is revoked; a throwing stop does
+  // not abort the others, and its share is still revoked.
+  expect(order.indexOf(`stop:${sessionId}`)).toBeLessThan(
+    order.lastIndexOf('revoke')
+  );
+  expect(order.filter((step) => step === 'revoke')).toHaveLength(2);
+  expect(f.values.get('active')).toEqual([
+    expect.objectContaining({ sessionId: other }),
+  ]);
+});
+
+it('bounds a withdrawal when a session never answers', async () => {
+  vi.useFakeTimers();
+  try {
+    const f = fixture();
+    f.values.set('active', [
+      {
+        ownerId,
+        meetingId,
+        sessionId,
+        mode: 'personal',
+        expiresAt: Date.now() + 60000,
+      },
+    ]);
+    f.stop.mockReturnValue(new Promise(() => undefined));
+    const pending = f.call('withdraw', {});
+    await vi.advanceTimersByTimeAsync(5000);
+    expect((await pending).status).toBe(503);
+    expect(f.values.get('active')).toEqual([
+      expect.objectContaining({ sessionId }),
+    ]);
+  } finally {
+    vi.useRealTimers();
+  }
+});

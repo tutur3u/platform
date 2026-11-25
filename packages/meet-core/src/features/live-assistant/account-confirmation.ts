@@ -12,6 +12,13 @@ export const miraConfirmationMarker = z.object({
   textHash: z.string().regex(/^[0-9a-f]{64}$/),
 });
 
+/** When the account confirmed Mira: 0 for an undated marker, else null. */
+export function miraConfirmedAt(marker: unknown): number | null {
+  if (marker === MIRA_ACCOUNT_CONFIRMATION_VERSION) return 0;
+  const parsed = miraConfirmationMarker.safeParse(marker);
+  return parsed.success ? Date.parse(parsed.data.confirmedAt) : null;
+}
+
 export function isMiraAccountConfirmed(marker: unknown) {
   return (
     marker === MIRA_ACCOUNT_CONFIRMATION_VERSION ||

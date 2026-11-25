@@ -8,6 +8,7 @@ const fixture = vi.hoisted(() => ({
   forward: vi.fn(),
   waitUntil: vi.fn(),
   shared: false,
+  sharedAt: undefined as number | undefined,
 }));
 
 vi.mock('server-only', () => ({}));
@@ -58,6 +59,7 @@ vi.mock(
     requirePrivateMiraChoiceState: async (access: unknown) => ({
       choice: await fixture.choice(access),
       shared: fixture.shared,
+      sharedAt: fixture.sharedAt,
     }),
   })
 );
@@ -75,6 +77,7 @@ import { POST } from './route';
 beforeEach(() => {
   vi.resetAllMocks();
   fixture.shared = false;
+  fixture.sharedAt = undefined;
   fixture.context.mockResolvedValue({
     env: { MEET_AI_DISABLED: 'false', GOOGLE_GENERATIVE_AI_API_KEY: 'test' },
     ctx: { waitUntil: fixture.waitUntil },
@@ -144,15 +147,20 @@ it('skips the tutor share entirely while sharing is off', async () => {
 
 it('forwards a shared tutor chat without holding the answer', async () => {
   fixture.shared = true;
+  fixture.sharedAt = 1_800_000_000_000;
   fixture.privateRequest.mockResolvedValue({ text: 'A private reply' });
   // The forward never settles; the answer must still return.
   fixture.forward.mockReturnValue(new Promise(() => undefined));
   const response = await ask();
   expect(await response.json()).toEqual({ text: 'A private reply' });
-  expect(fixture.forward).toHaveBeenCalledWith(expect.anything(), [
-    { body: 'Hello', assistant: false },
-    { body: 'A private reply', assistant: true },
-  ]);
+  expect(fixture.forward).toHaveBeenCalledWith(
+    expect.anything(),
+    [
+      { body: 'Hello', assistant: false },
+      { body: 'A private reply', assistant: true },
+    ],
+    1_800_000_000_000
+  );
   expect(fixture.waitUntil).toHaveBeenCalledWith(
     fixture.forward.mock.results[0]?.value
   );
