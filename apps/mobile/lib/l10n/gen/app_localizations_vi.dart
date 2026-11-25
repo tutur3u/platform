@@ -17414,6 +17414,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailUnknownSender => 'Người gửi không xác định';
 
   @override
+  String get mailBlocked => 'Đã chặn';
+
+  @override
+  String get mailNoCustomLabels => 'Chưa có nhãn tùy chỉnh';
+
+  @override
   String get fleetStatusNeedsUser => 'Cần bạn';
 
   @override

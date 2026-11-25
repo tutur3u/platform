@@ -37,11 +37,16 @@ extension _ShellPageNavigation on _ShellPageState {
     required String semanticLabel,
     Widget? image,
     bool dropdown = false,
+    ShellMiniNavItemSpec? spec,
   }) => ShellDockNavIcon(
     icon: icon,
     label: semanticLabel,
     image: image,
     dropdown: dropdown,
+    heading: spec?.heading ?? false,
+    expanded: spec?.expanded ?? true,
+    count: spec?.count,
+    dotColor: spec?.dotColor,
   );
 
   List<shad.NavigationItem> _buildMiniAppNavItems(
@@ -123,6 +128,7 @@ extension _ShellPageNavigation on _ShellPageState {
               icon: item.icon,
               dropdown: item.dropdown,
               semanticLabel: item.label,
+              spec: item,
             ),
           );
         })

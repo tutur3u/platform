@@ -8527,6 +8527,8 @@
     }
   },
   "mailUnknownSender": "Unknown sender",
+  "mailBlocked": "Blocked",
+  "mailNoCustomLabels": "No custom labels",
   "fleetStatusNeedsUser": "Needs you",
   "fleetStatusRunning": "Running",
   "fleetStatusWaitingReview": "In review",

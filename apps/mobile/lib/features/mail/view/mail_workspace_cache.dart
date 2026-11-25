@@ -56,6 +56,7 @@ extension _MailWorkspaceCache on _MailWorkspaceState {
             'starred',
             'archive',
             'spam',
+            'blocked',
             'trash',
           }.contains(folder)) {
         return;

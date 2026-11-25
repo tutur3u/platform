@@ -32455,6 +32455,18 @@ abstract class AppLocalizations {
   /// **'Unknown sender'**
   String get mailUnknownSender;
 
+  /// No description provided for @mailBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get mailBlocked;
+
+  /// No description provided for @mailNoCustomLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'No custom labels'**
+  String get mailNoCustomLabels;
+
   /// No description provided for @fleetStatusNeedsUser.
   ///
   /// In en, this message translates to:

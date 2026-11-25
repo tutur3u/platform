@@ -13,6 +13,10 @@ class ShellMiniNavItemSpec extends Equatable {
     this.selected = false,
     this.enabled = true,
     this.dropdown = false,
+    this.heading = false,
+    this.expanded = true,
+    this.count,
+    this.dotColor,
   });
 
   final String id;
@@ -29,6 +33,17 @@ class ShellMiniNavItemSpec extends Equatable {
   final bool enabled;
   final bool dropdown;
 
+  /// A collapsible section heading in the sidebar; [onPressed] toggles it
+  /// and [expanded] reports whether its items follow.
+  final bool heading;
+  final bool expanded;
+
+  /// A count the sidebar shows after the label, such as unread mail.
+  final int? count;
+
+  /// A colour dot shown in place of the icon, such as a label's colour.
+  final Color? dotColor;
+
   @override
   List<Object?> get props => [
     id,
@@ -43,6 +58,10 @@ class ShellMiniNavItemSpec extends Equatable {
     dropdown,
     selected,
     enabled,
+    heading,
+    expanded,
+    count,
+    dotColor,
   ];
 }
 

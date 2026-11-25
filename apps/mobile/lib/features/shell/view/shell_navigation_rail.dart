@@ -10,6 +10,7 @@ import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
+import 'package:mobile/features/shell/view/shell_rail_sections.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_account.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_brand.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_dock_layout.dart';
@@ -154,6 +155,20 @@ class _RailDestination extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final enabled = item.enabled ?? true;
     final label = shellNavigationItemLabel(item);
+    final icon = switch (item.child) {
+      final ShellDockNavIcon glyph => glyph,
+      _ => null,
+    };
+    if (icon != null && icon.heading) {
+      return ShellRailSectionHeading(
+        label: icon.label,
+        expanded: icon.expanded,
+        count: icon.count,
+        extended: extended,
+        onTap: enabled ? onTap : null,
+      );
+    }
+    final count = icon?.count;
     final radius = BorderRadius.circular(
       extended ? style.rowRadius + AppSpacing.xxs : shellNavigationRailSlot / 2,
     );
@@ -167,7 +182,15 @@ class _RailDestination extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Row(
               children: [
-                SizedBox.square(dimension: 28, child: Center(child: glyph)),
+                // A dropdown glyph carries its chevron beside the icon.
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: 28,
+                    minHeight: 28,
+                    maxHeight: 28,
+                  ),
+                  child: Center(widthFactor: 1, child: glyph),
+                ),
                 const SizedBox(width: AppSpacing.md),
                 if (label != null)
                   Expanded(
@@ -191,6 +214,7 @@ class _RailDestination extends StatelessWidget {
                       ),
                     ),
                   ),
+                if (count != null && count > 0) ShellRailCount(count: count),
               ],
             ),
           )

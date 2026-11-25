@@ -7709,6 +7709,8 @@
     }
   },
   "mailUnknownSender": "Người gửi không xác định",
+  "mailBlocked": "Đã chặn",
+  "mailNoCustomLabels": "Chưa có nhãn tùy chỉnh",
   "fleetStatusNeedsUser": "Cần bạn",
   "fleetStatusRunning": "Đang chạy",
   "fleetStatusWaitingReview": "Chờ duyệt",

@@ -34,6 +34,7 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
                   'drafts' => Icons.drafts_outlined,
                   'starred' => Icons.star_outline,
                   'spam' => Icons.report_outlined,
+                  'blocked' => Icons.block_outlined,
                   '' => Icons.all_inbox_outlined,
                   _ when option.key.startsWith('label:') => Icons.label_outline,
                   _ when option.key.startsWith('folder:') =>
@@ -105,15 +106,19 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
           : '',
     );
     if (!mounted || value == null) return;
-    final nextLabelId = value.startsWith('label:') ? value.substring(6) : null;
-    final nextFolderId = value.startsWith('folder:')
-        ? value.substring(7)
-        : null;
-    if (nextLabelId == _labelId && nextFolderId == _folderId) return;
+    _applyMailFilter(
+      labelId: value.startsWith('label:') ? value.substring(6) : null,
+      folderId: value.startsWith('folder:') ? value.substring(7) : null,
+    );
+  }
+
+  /// Filters the current folder by a label or shows a custom folder.
+  void _applyMailFilter({String? labelId, String? folderId}) {
+    if (_mutating || (labelId == _labelId && folderId == _folderId)) return;
     _dismissSwipeFeedback();
     _updateState(() {
-      _labelId = nextLabelId;
-      _folderId = nextFolderId;
+      _labelId = labelId;
+      _folderId = folderId;
       _selected.clear();
     });
     unawaited(_load(forceRefresh: false));

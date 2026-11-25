@@ -11,6 +11,10 @@ class ShellDockNavIcon extends StatelessWidget {
     required this.label,
     this.image,
     this.dropdown = false,
+    this.heading = false,
+    this.expanded = true,
+    this.count,
+    this.dotColor,
     super.key,
   });
 
@@ -21,10 +25,23 @@ class ShellDockNavIcon extends StatelessWidget {
   final Widget? image;
   final bool dropdown;
 
+  /// A collapsible sidebar section heading rather than a destination.
+  final bool heading;
+
+  /// Whether a [heading]'s section is open.
+  final bool expanded;
+
+  /// A count the sidebar shows after the label.
+  final int? count;
+
+  /// A colour dot drawn in place of [icon].
+  final Color? dotColor;
+
   @override
   Widget build(BuildContext context) => Semantics(
     label: label,
     button: true,
+    expanded: heading ? expanded : null,
     child: ExcludeSemantics(
       child: SizedBox(
         width: dropdown
@@ -42,7 +59,20 @@ class ShellDockNavIcon extends StatelessWidget {
                   ),
                 ],
               )
-            : image ?? Icon(icon, size: ShellDockMetrics.glyphSize),
+            : image ??
+                  (dotColor == null
+                      ? Icon(icon, size: ShellDockMetrics.glyphSize)
+                      : Center(
+                          child: SizedBox.square(
+                            dimension: 10,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: dotColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        )),
       ),
     ),
   );

@@ -12,7 +12,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/ui.dart' show AppButton;
+import 'package:mobile/core/ui/ui.dart' show AppButton, AppTokens, LucideIcons;
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -36,7 +36,9 @@ import 'package:mobile/features/mail/view/mail_quick_filter.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/mail/view/mail_reading_preferences.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
+import 'package:mobile/features/mail/view/mail_row_parts.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
+import 'package:mobile/features/mail/view/mail_sidebar_sections.dart';
 import 'package:mobile/features/mail/view/mail_skeletons.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
 import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
@@ -248,6 +250,11 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   String? _currentUserId() => widget.currentUserId();
   String? _labelId;
   String? _folderId;
+
+  /// Whether the sidebar's Folders and Labels sections are open; Labels
+  /// starts closed, as on web.
+  bool _foldersExpanded = true;
+  bool _labelsExpanded = false;
   MailQuickFilter _quickFilter = MailQuickFilter.all;
 
   /// The list query: typed search plus the quick filter's operator. Drafts

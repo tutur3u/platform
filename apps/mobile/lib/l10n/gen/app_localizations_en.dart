@@ -17626,6 +17626,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailUnknownSender => 'Unknown sender';
 
   @override
+  String get mailBlocked => 'Blocked';
+
+  @override
+  String get mailNoCustomLabels => 'No custom labels';
+
+  @override
   String get fleetStatusNeedsUser => 'Needs you';
 
   @override

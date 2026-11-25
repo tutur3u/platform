@@ -117,6 +117,7 @@ extension _MailReaderChrome on _MailReaderState {
       'sent' => l10n.mailSent,
       'starred' => l10n.mailStarred,
       'spam' => l10n.mailSpam,
+      'blocked' => l10n.mailBlocked,
       _ => l10n.mailInbox,
     };
   }
