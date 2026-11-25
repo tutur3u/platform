@@ -23,13 +23,14 @@ board's host controls (link, create, guest access, remove) are unchanged; see
 
 | Order | Older entry | Stage id | Who has it |
 | --- | --- | --- | --- |
-| 1 | Saved whiteboard | `board` | People who may use the room's tools and have an account |
+| 1 | Saved whiteboard | `board` | People who may use the room's tools; anonymous guests only while `MEET_GUEST_WHITEBOARD` is on |
 | 2 | Pen whiteboard | `tool:pen-whiteboard` | People who browse the tools, including activity runners in host-only rooms and guests where tools are open to everyone |
 | 3 | Classroom whiteboard | `whiteboard` | Rooms with classroom tools |
 
-Guests without an account are not offered the Tuturuuu Whiteboard (it would only
-ask them to sign in), so where they browse tools their Whiteboard is the pen
-board.
+While `MEET_GUEST_WHITEBOARD` is off, a room with an anonymous guest in it puts
+the pen board first for everyone, so the whole room draws on a board the guest
+can open. The Tuturuuu Whiteboard stays last in that order, so it still opens
+where no pen board is offered.
 
 **Older ids.** Every older id still routes to its own pane, so a saved layout,
 a host's default activity, a Follow or a Summon from a client without the flag
@@ -39,9 +40,49 @@ panes is titled **Whiteboard** with the pen icon.
 **Exceptions.**
 
 - Summon has no room view for the Tuturuuu Whiteboard, so it is shared through
-  Follow (layout mirroring) only, as before. The pen board keeps Summon.
+  Follow (layout mirroring) only. This is a known limit; the pen board keeps
+  Summon.
+- Opening the Whiteboard shows the boards linked to the meeting. The host links
+  an existing workspace whiteboard or creates one from that picker; nothing is
+  created automatically.
 - Pen board strokes and classroom whiteboard drawings still end with the room;
   only the Tuturuuu Whiteboard stays after the call.
+
+## Guests on the Tuturuuu Whiteboard
+
+**Switch.** `MEET_GUEST_WHITEBOARD` on the Meet Worker, read by the server like
+`MEET_UX_V2`. It is on only for the exact string `true`; the default is off.
+It stays off until the security review approves the guest path. If that review
+has not approved it by 30 November 2026 18:00 ICT, EduFest runs with it off,
+on the pen board.
+
+**On.** An anonymous guest opens the Tuturuuu Whiteboard from the Whiteboard
+entry, or follows a leader onto it, and views or draws as the link's guest
+access allows (**No access**, **Can view**, **Can draw**, set by the host).
+Co-Programming and the live document still ask a guest to sign in.
+
+**Off.** The whiteboard API refuses every anonymous guest (HTTP 403) before it
+reads any board, guests keep the sign-in state on a board pane, and the
+Whiteboard falls back to the pen board as described above.
+
+**What a guest can reach.** Only boards linked to the current meeting whose
+guest access is view or draw, in the meeting's workspace, never archived. A
+guest never sees the workspace board list, link settings or management
+actions, and the board accepts no images or files.
+
+**Revocation.** Board tickets last two minutes and the call renews them every
+minute through the Meet API, which checks again that the guest is connected to
+the room, the switch is on and the board is still linked with guest access. A
+guest who leaves, is removed, or whose board is unlinked, archived or set to no
+access loses the board within two minutes.
+
+**Limits.** People outside the workspace get 20 board messages a second (members
+40), messages up to 256 KiB (members 1 MB) and at most three open board
+connections each. A socket over its rate or size is closed; the client
+reconnects with a fresh ticket.
+
+**Exceptions.** Rules for under-18 and unconfirmed participants and every host
+control are unchanged.
 
 ## Timer
 
@@ -66,14 +107,18 @@ a host-only room) still gets the Timer as a page in the Activities dialog
 (`class-timer`), with the same switch. The older ids keep routing; a `tool:timers`
 pane is titled **Timer**.
 
+**Default activity setting.** With `MEET_UX_V2` on, the host's **Open for
+everyone who joins** setting names the pen board **Whiteboard** and the
+private timer **Timer**. The stored values (`tool:pen-whiteboard`,
+`tool:timers`) are unchanged, so a room that already has one keeps it.
+
 ## EduFest classes
 
 The EduFest run (guest join, Upskii presenter, Follow, classroom quizzes, Q&A,
-transcripts) does not use either activity, so its flow is unchanged. With the
-flag on, a teacher's Whiteboard is the Tuturuuu Whiteboard, which guests without
-an account cannot open, and the menu no longer offers the teacher the pen board.
-Guests who browse the tools still open the pen board as their Whiteboard, and a
-pen board opened by a client without the flag still reaches them.
+transcripts) does not use either activity. With `MEET_UX_V2` on and
+`MEET_GUEST_WHITEBOARD` off, a class with guests in it gets the pen board as
+its Whiteboard. With both on, guests draw on the Tuturuuu Whiteboard when the
+host sets the board's guest access to **Can draw**.
 
 ## Regression coverage
 
@@ -90,3 +135,18 @@ Under `packages/meet-core/src/features/call`:
   class timer command, Just me without room writes, and the disabled reason.
 - `whiteboard/board-room.test.tsx`: the board status note without saving
   wording.
+- `stage-layout/whiteboard-policy.test.ts`: which board guests and hosts get
+  with the guest switch on and off.
+- `components/call-account-gates.test.tsx`: the guest board pane and the
+  sign-in state.
+- `stage-layout/use-stage-navigation.test.tsx`: guests follow onto the board
+  only with the switch on.
+- `server/whiteboard.test.ts`: the switch, presence, unlink, other meetings and
+  workspaces for guests.
+- `components/default-activity-setting-merged.test.tsx`: merged names in the
+  default activity setting.
+
+Elsewhere: `apps/meet-realtime/src/whiteboard-room-do.test.ts` (guest message
+rate, size and connection caps, guest viewers) and
+`apps/meet/src/runtime/page-model.server.test.ts` (the switch reaches the
+room, off by default).
