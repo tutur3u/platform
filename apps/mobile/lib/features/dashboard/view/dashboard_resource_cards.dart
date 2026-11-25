@@ -99,7 +99,9 @@ class _DashboardFinanceCardState extends State<_DashboardFinanceCard> {
           emptyTitle: context.l10n.financeWallets,
         ) ??
         [
-          for (final wallet in _wallets.take(2))
+          for (final wallet in _wallets.take(
+            _HomeScaleScope.of(context).desktop ? 6 : 2,
+          ))
             AppGroupedRow(
               leading: const AppIconTile(
                 icon: LucideIcons.wallet,
@@ -197,7 +199,9 @@ class _DashboardNotesCardState extends State<_DashboardNotesCard> {
           emptyTitle: context.l10n.notesEmpty,
         ) ??
         [
-          for (final note in _notes.take(2))
+          for (final note in _notes.take(
+            _HomeScaleScope.of(context).desktop ? 6 : 2,
+          ))
             AppGroupedRow(
               leading: const AppIconTile(icon: LucideIcons.notebookPen),
               title: Text(

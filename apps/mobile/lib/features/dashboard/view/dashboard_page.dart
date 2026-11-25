@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,9 +9,11 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/app_adaptive_grid.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -282,11 +285,21 @@ class _DashboardViewState extends State<_DashboardView> {
                 builder: (context, taskState) {
                   return BlocBuilder<CalendarCubit, CalendarState>(
                     builder: (context, calendarState) {
-                      final homeTasks = _homeTasks(taskState);
+                      final window = MediaQuery.sizeOf(context);
+                      final desktop =
+                          window.width >= Breakpoints.expandedMin &&
+                          window.width >= window.height &&
+                          window.shortestSide >= Breakpoints.mediumMin;
+                      final rowLimit = desktop ? 6 : 3;
+                      final homeTasks = _homeTasks(taskState, rowLimit);
                       final upcomingEvents = _upcomingEvents(
                         calendarState.events,
                         HomeWallClock.of(context),
+                        rowLimit,
                       );
+                      final bottomInset =
+                          AppPageInsets.contentBottomClearance(context) +
+                          AppLayout.scrollEndGap;
                       // Built here, not in the layout builder below: the
                       // entries watch cubits, which needs a build method.
                       final entries = _dashboardEntries(
@@ -322,9 +335,11 @@ class _DashboardViewState extends State<_DashboardView> {
                                           _homeGrid(
                                             _HomeScale.forWidth(
                                               constraints.crossAxisExtent,
+                                              desktop: desktop,
                                             ),
                                             workspace,
                                             entries,
+                                            bottomInset: bottomInset,
                                           ),
                                     ),
                                   ],
@@ -418,24 +433,26 @@ class _DashboardViewState extends State<_DashboardView> {
     );
   }
 
-  /// Up to three tasks each for Today (overdue first, then due today) and
-  /// Up next (later due dates), without repeats.
+  /// Tasks for Today (overdue first, then due today) and Up next (later due
+  /// dates), without repeats. Each preview applies the available row budget.
   ({List<UserTask> today, List<UserTask> upNext}) _homeTasks(
     TaskListState state,
+    int rowLimit,
   ) {
     final seen = <String>{};
-    List<UserTask> take(List<List<UserTask>> buckets) => [
+    List<UserTask> unique(List<List<UserTask>> buckets) => [
       for (final bucket in buckets)
         for (final task in bucket)
           if (seen.add(task.id)) task,
-    ].take(3).toList(growable: false);
-    final today = take([state.overdueTasks, state.todayTasks]);
-    return (today: today, upNext: take([state.upcomingTasks]));
+    ].take(rowLimit).toList(growable: false);
+    final today = unique([state.overdueTasks, state.todayTasks]);
+    return (today: today, upNext: unique([state.upcomingTasks]));
   }
 
   List<CalendarEvent> _upcomingEvents(
     List<CalendarEvent> events,
     DateTime now,
+    int rowLimit,
   ) {
     final end = now.add(const Duration(days: 7));
 
@@ -451,6 +468,6 @@ class _DashboardViewState extends State<_DashboardView> {
             .toList()
           ..sort((a, b) => a.startAt!.compareTo(b.startAt!));
 
-    return result.take(3).toList(growable: false);
+    return result.take(rowLimit).toList(growable: false);
   }
 }

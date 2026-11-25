@@ -5,11 +5,22 @@ import FlutterMacOS
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
-    let windowFrame = self.frame
+    let visibleFrame = (self.screen ?? NSScreen.main)?.visibleFrame
+    var windowFrame = self.frame
+    windowFrame.size = NSSize(
+      width: min(1280, visibleFrame?.width ?? 1280),
+      height: min(820, visibleFrame?.height ?? 820)
+    )
+    if let visibleFrame = visibleFrame {
+      windowFrame.origin = NSPoint(
+        x: visibleFrame.midX - windowFrame.width / 2,
+        y: visibleFrame.midY - windowFrame.height / 2
+      )
+    }
     self.contentViewController = flutterViewController
+    self.minSize = NSSize(width: 960, height: 640)
     self.setFrame(windowFrame, display: true)
     self.title = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Tuturuuu"
-    self.minSize = NSSize(width: 480, height: 600)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
     NativeIntegrityChannel.install(messenger: flutterViewController.engine.binaryMessenger)

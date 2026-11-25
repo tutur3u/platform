@@ -11,7 +11,7 @@ TaskListInfo _list(String board, String list) => TaskListInfo(
 );
 
 /// Home sizes: the shared phone, portrait tablet and laptop, plus a
-/// landscape iPad (icon rail) and a wide desktop (sidebar, 1600dp canvas).
+/// landscape iPad (icon rail) and a wide desktop (sidebar, capped canvas).
 final _homeRenderSizes = <String, Size>{
   ...renderSizes,
   'tablet-landscape': const Size(1180, 820),
@@ -49,6 +49,84 @@ void _homeRenderCases() {
     await settleShell(tester);
     expect(find.byType(AppSheetScaffold), findsOneWidget);
   });
+
+  for (final (size, columns) in [
+    (const Size(1440, 900), 4),
+    (const Size(390, 844), 1),
+  ]) {
+    testWidgets('Home uses $columns section columns at $size', (tester) async {
+      final tasks = _Tasks();
+      final calendar = _Calendar();
+      final due = DateTime.now().add(const Duration(days: 2));
+      whenListen(
+        tasks,
+        const Stream<TaskListState>.empty(),
+        initialState: TaskListState(
+          status: TaskListStatus.loaded,
+          hasLoadedOnce: true,
+          upcomingTasks: [
+            for (var index = 1; index <= 6; index++)
+              UserTask(
+                id: 't$index',
+                name: 'Upcoming task $index',
+                endDate: due,
+              ),
+          ],
+        ),
+      );
+      whenListen(
+        calendar,
+        const Stream<CalendarState>.empty(),
+        initialState: const CalendarState(
+          status: CalendarStatus.loaded,
+          hasLoadedOnce: true,
+        ),
+      );
+      addTearDown(() async {
+        await tasks.close();
+        await calendar.close();
+      });
+      await pumpShellRender(
+        tester,
+        location: Routes.home,
+        size: size,
+        appearance: const AppearanceSettings(),
+        themeMode: shad.ThemeMode.light,
+        preferences: const {
+          'home-widgets-hidden': ['mail', 'meet', 'notes'],
+        },
+        homePageBuilder: (token) => HomePage(
+          replayToken: token,
+          taskListCubit: tasks,
+          calendarCubit: calendar,
+        ),
+      );
+
+      Rect section(String id) =>
+          tester.getRect(find.byKey(ValueKey('home-widget-$id')));
+      final today = section('tasks');
+      final upNext = section('tasks-up-next');
+      final calendarCard = section('calendar');
+      final finance = section('finance');
+      final summary = section('summary');
+      final sections = [today, upNext, calendarCard, finance];
+      expect({for (final rect in sections) rect.left}, hasLength(columns));
+      if (columns == 4) {
+        expect({for (final rect in sections) rect.top}, hasLength(1));
+        expect(calendarCard.bottom, greaterThan(size.height - 64));
+        expect(summary.bottom, lessThan(today.top));
+        expect(find.text('Upcoming task 6'), findsOneWidget);
+      } else {
+        expect(today.left, 16);
+        expect(today.right, size.width - 16);
+        expect(upNext.top, greaterThan(today.bottom));
+        expect(summary.top, greaterThan(finance.bottom));
+        expect(find.text('Upcoming task 3'), findsOneWidget);
+        expect(find.text('Upcoming task 4'), findsNothing);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   for (final size in _homeRenderSizes.entries) {
     for (final look in renderAppearances.entries) {

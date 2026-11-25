@@ -11,38 +11,48 @@ class _HomeScale {
     required this.metricSize,
     required this.gap,
     required this.strip,
+    this.desktop = false,
   });
 
-  factory _HomeScale.forWidth(double width) => switch (width) {
-    // Laptops and desktops: three or four columns.
-    >= 1000 => const _HomeScale._(
-      greetingSize: 34,
-      dateSize: 15,
-      metricSize: 36,
-      gap: AppSpacing.xxl + AppSpacing.xs,
-      strip: true,
-    ),
-    // Landscape and portrait tablets: two or three columns.
-    >= 560 => const _HomeScale._(
-      greetingSize: 30,
-      dateSize: 15,
-      metricSize: 32,
-      gap: AppLayout.sectionGap,
-      strip: true,
-    ),
-    // Phones: one column, the summary stays a card in the user's order.
-    _ => const _HomeScale._(
-      greetingSize: 24,
-      dateSize: 14,
-      metricSize: 30,
-      gap: AppLayout.sectionGap,
-      strip: false,
-    ),
-  };
+  factory _HomeScale.forWidth(double width, {bool desktop = false}) =>
+      switch ((desktop, width)) {
+        (true, _) => _HomeScale._(
+          greetingSize: 36,
+          dateSize: 16,
+          metricSize: 40,
+          gap:
+              AppLayout.sectionGap *
+              AppLayout.spacingScale(DeviceClass.expanded),
+          strip: true,
+          desktop: true,
+        ),
+        (_, >= 1000) => const _HomeScale._(
+          greetingSize: 34,
+          dateSize: 15,
+          metricSize: 36,
+          gap: AppSpacing.xxl + AppSpacing.xs,
+          strip: true,
+        ),
+        (_, >= 560) => const _HomeScale._(
+          greetingSize: 30,
+          dateSize: 15,
+          metricSize: 32,
+          gap: AppLayout.sectionGap,
+          strip: true,
+        ),
+        _ => const _HomeScale._(
+          greetingSize: 24,
+          dateSize: 14,
+          metricSize: 30,
+          gap: AppLayout.sectionGap,
+          strip: false,
+        ),
+      };
 
   final double greetingSize;
   final double dateSize;
   final double metricSize;
+  final bool desktop;
 
   /// Gap between grid columns and between cards in a column.
   final double gap;
@@ -51,27 +61,43 @@ class _HomeScale {
   /// greeting.
   final bool strip;
 
-  /// Narrowest grid column; a 13-inch laptop and a landscape iPad fit three.
+  /// Minimum column width for the content-sized phone and tablet layout.
   static const double minColumnWidth = 320;
 
-  /// Widest grid: four columns on wide desktops (root pages cap at 1600dp).
+  /// Widest grid: four columns on large laptop and desktop windows.
   static const int maxColumns = 4;
+
+  double spacing(double base) =>
+      base *
+      AppLayout.spacingScale(
+        desktop ? DeviceClass.expanded : DeviceClass.compact,
+      );
 }
 
 /// Hands the [_HomeScale] the grid resolved to the header and the summary,
 /// which are built before the width is known.
 class _HomeScaleScope extends InheritedWidget {
-  const _HomeScaleScope({required this.scale, required super.child});
+  const _HomeScaleScope({
+    required this.scale,
+    required super.child,
+    this.minCardHeight = 0,
+  });
 
   final _HomeScale scale;
+  final double minCardHeight;
 
   static _HomeScale of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<_HomeScaleScope>()?.scale ??
       _HomeScale.forWidth(0);
 
+  static double cardHeightOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_HomeScaleScope>()
+          ?.minCardHeight ??
+      0;
+
   @override
   bool updateShouldNotify(_HomeScaleScope oldWidget) =>
-      scale != oldWidget.scale;
+      scale != oldWidget.scale || minCardHeight != oldWidget.minCardHeight;
 }
 
 extension _DashboardGrid on _DashboardViewState {
@@ -80,42 +106,48 @@ extension _DashboardGrid on _DashboardViewState {
   Widget _homeGrid(
     _HomeScale scale,
     Workspace workspace,
-    List<({String id, Widget child})> entries,
-  ) {
+    List<({String id, Widget child})> entries, {
+    required double bottomInset,
+  }) {
     final summary = scale.strip
         ? entries.where((entry) => entry.id == 'summary').firstOrNull
         : null;
+    final leading = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        StaggeredEntrance(
+          replayKey: widget.replayToken,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _HomeHeader(),
+              HomeLastSynced(wsId: workspace.id),
+            ],
+          ),
+        ),
+        if (summary != null) ...[SizedBox(height: scale.gap), summary.child],
+      ],
+    );
+    final sections = [
+      for (final entry in entries)
+        if (entry.id != summary?.id) entry.child,
+    ];
     return _HomeScaleScope(
       scale: scale,
-      child: SliverResponsiveCards(
-        minColumnWidth: _HomeScale.minColumnWidth,
-        maxColumns: _HomeScale.maxColumns,
-        spacing: scale.gap,
-        leading: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            StaggeredEntrance(
-              replayKey: widget.replayToken,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _HomeHeader(),
-                  HomeLastSynced(wsId: workspace.id),
-                ],
-              ),
+      child: scale.desktop
+          ? _DesktopHomeGrid(
+              scale: scale,
+              leading: leading,
+              sections: sections,
+              bottomInset: bottomInset,
+            )
+          : SliverResponsiveCards(
+              minColumnWidth: _HomeScale.minColumnWidth,
+              maxColumns: _HomeScale.maxColumns,
+              spacing: scale.gap,
+              leading: leading,
+              children: sections,
             ),
-            if (summary != null) ...[
-              SizedBox(height: scale.gap),
-              summary.child,
-            ],
-          ],
-        ),
-        children: [
-          for (final entry in entries)
-            // Records have no identity; the strip moved the summary by id.
-            if (summary == null || entry.id != summary.id) entry.child,
-        ],
-      ),
     );
   }
 
@@ -132,4 +164,66 @@ extension _DashboardGrid on _DashboardViewState {
         workspace.id,
         forceRefresh: true,
       );
+}
+
+class _DesktopHomeGrid extends StatelessWidget {
+  const _DesktopHomeGrid({
+    required this.scale,
+    required this.leading,
+    required this.sections,
+    required this.bottomInset,
+  });
+
+  final _HomeScale scale;
+  final Widget leading;
+  final List<Widget> sections;
+  final double bottomInset;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = MediaQuery.textScalerOf(context);
+    final minTileWidth = math.max(260.0, text.scale(14) * 16);
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(child: leading),
+        if (sections.isNotEmpty) ...[
+          SliverToBoxAdapter(child: SizedBox(height: scale.gap)),
+          SliverLayoutBuilder(
+            builder: (context, constraints) {
+              final columns = AppAdaptiveGrid.columnsFor(
+                constraints.crossAxisExtent,
+                minTileWidth: minTileWidth,
+                spacing: scale.gap,
+                maxColumns: _HomeScale.maxColumns,
+              );
+              // Fit the first two rows into the initial viewport. Natural
+              // content height can stretch a card and continue scrolling.
+              final rows = (sections.length / columns).ceil().clamp(1, 2);
+              final remaining =
+                  constraints.viewportMainAxisExtent -
+                  constraints.precedingScrollExtent -
+                  bottomInset -
+                  scale.gap * (rows - 1);
+              final cardHeight = (remaining / rows - _HomeSection.captionHeight)
+                  .clamp(0.0, 720.0)
+                  .toDouble();
+              return SliverToBoxAdapter(
+                child: _HomeScaleScope(
+                  scale: scale,
+                  minCardHeight: cardHeight,
+                  child: AppAdaptiveGrid(
+                    minTileWidth: minTileWidth,
+                    maxColumns: _HomeScale.maxColumns,
+                    spacing: scale.gap,
+                    runSpacing: scale.gap,
+                    children: sections,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
 }

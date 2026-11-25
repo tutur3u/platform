@@ -16,6 +16,8 @@ class _HomeSection extends StatelessWidget {
   final List<Widget> children;
   final double dividerInset;
 
+  static const captionHeight = _HomeOpenLink.minHeight + AppSpacing.xs;
+
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -30,7 +32,12 @@ class _HomeSection extends StatelessWidget {
         ),
       ),
       const SizedBox(height: AppSpacing.xs),
-      AppGroupedCard(dividerInset: dividerInset, children: children),
+      ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: _HomeScaleScope.cardHeightOf(context),
+        ),
+        child: AppGroupedCard(dividerInset: dividerInset, children: children),
+      ),
     ],
   );
 }
@@ -45,6 +52,8 @@ class _HomeOpenLink extends StatelessWidget {
   final String label;
   final String semanticLabel;
   final VoidCallback onTap;
+
+  static const double minHeight = 44;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +71,7 @@ class _HomeOpenLink extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          constraints: const BoxConstraints(minHeight: minHeight, minWidth: 44),
           child: Padding(
             padding: const EdgeInsetsDirectional.only(start: AppSpacing.sm),
             child: Row(

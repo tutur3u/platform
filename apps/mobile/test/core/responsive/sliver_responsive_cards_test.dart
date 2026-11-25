@@ -8,7 +8,7 @@ void main() {
   test('root destinations share tablet and desktop width limits', () {
     expect(ResponsivePadding.rootContentWidth(DeviceClass.compact), isNull);
     expect(ResponsivePadding.rootContentWidth(DeviceClass.medium), 1120);
-    expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1600);
+    expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1680);
   });
 
   for (final (width, expectedColumns) in [

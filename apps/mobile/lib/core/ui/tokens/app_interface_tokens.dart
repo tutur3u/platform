@@ -17,7 +17,7 @@ enum AppInterfaceStyle {
   material,
 }
 
-/// Minimum height of grouped rows. Gaps and padding do not change.
+/// Preference for the base minimum height of grouped rows.
 enum AppDensity { comfortable, compact }
 
 /// Corner treatment for cards, sheets and grouped surfaces. Pills stay round.
@@ -32,6 +32,7 @@ class AppInterfaceTokens extends ThemeExtension<AppInterfaceTokens> {
     this.style = AppInterfaceStyle.tuturuuu,
     this.density = AppDensity.comfortable,
     this.corners = AppCornerStyle.rounded,
+    this.spacingScale = 1,
   });
 
   static const standard = AppInterfaceTokens();
@@ -46,6 +47,9 @@ class AppInterfaceTokens extends ThemeExtension<AppInterfaceTokens> {
   final AppInterfaceStyle style;
   final AppDensity density;
   final AppCornerStyle corners;
+  final double spacingScale;
+
+  double spacing(double base) => base * spacingScale;
 
   /// [base] radius under the chosen corner style. Pill radii are kept, and
   /// square corners stay slightly softened so edges do not alias.
@@ -61,10 +65,12 @@ class AppInterfaceTokens extends ThemeExtension<AppInterfaceTokens> {
   BorderRadius borderRadius(double base) => BorderRadius.circular(radius(base));
 
   /// Minimum height of a grouped row; never below [minTouchTarget].
-  double get rowMinHeight => switch (density) {
-    AppDensity.comfortable => AppLayout.rowMinHeight,
-    AppDensity.compact => AppLayout.rowCompactMinHeight,
-  };
+  double get rowMinHeight => spacing(
+    switch (density) {
+      AppDensity.comfortable => AppLayout.rowMinHeight,
+      AppDensity.compact => AppLayout.rowCompactMinHeight,
+    },
+  );
 
   /// Scroll physics for the style, or null to keep the platform default.
   ScrollPhysics? get scrollPhysics => switch (style) {
@@ -78,10 +84,12 @@ class AppInterfaceTokens extends ThemeExtension<AppInterfaceTokens> {
     AppInterfaceStyle? style,
     AppDensity? density,
     AppCornerStyle? corners,
+    double? spacingScale,
   }) => AppInterfaceTokens(
     style: style ?? this.style,
     density: density ?? this.density,
     corners: corners ?? this.corners,
+    spacingScale: spacingScale ?? this.spacingScale,
   );
 
   // Discrete choices do not interpolate; the theme switches at the midpoint.
@@ -94,8 +102,9 @@ class AppInterfaceTokens extends ThemeExtension<AppInterfaceTokens> {
       other is AppInterfaceTokens &&
       other.style == style &&
       other.density == density &&
-      other.corners == corners;
+      other.corners == corners &&
+      other.spacingScale == spacingScale;
 
   @override
-  int get hashCode => Object.hash(style, density, corners);
+  int get hashCode => Object.hash(style, density, corners, spacingScale);
 }

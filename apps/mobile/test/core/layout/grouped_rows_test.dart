@@ -95,4 +95,20 @@ void main() {
     }
     expect(retries, 2);
   });
+
+  testWidgets('the desktop row height grows with the window', (tester) async {
+    tester.view
+      ..devicePixelRatio = 1
+      ..physicalSize = const Size(390, 844);
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      _host(const AppGroupedRow(title: Text('Synthetic row'))),
+    );
+
+    final row = find.byType(AppGroupedRow);
+    expect(tester.getSize(row).height, 56);
+    tester.view.physicalSize = const Size(1440, 900);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(row).height, 63);
+  });
 }

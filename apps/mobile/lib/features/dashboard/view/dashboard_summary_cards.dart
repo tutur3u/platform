@@ -100,8 +100,8 @@ class _TodaySummaryCard extends StatelessWidget {
               VerticalDivider(
                 width: 1,
                 thickness: 0.5,
-                indent: AppSpacing.lg,
-                endIndent: AppSpacing.lg,
+                indent: scale.spacing(AppSpacing.lg),
+                endIndent: scale.spacing(AppSpacing.lg),
                 color: c.border,
               ),
               _Metric(
@@ -115,8 +115,8 @@ class _TodaySummaryCard extends StatelessWidget {
               VerticalDivider(
                 width: 1,
                 thickness: 0.5,
-                indent: AppSpacing.lg,
-                endIndent: AppSpacing.lg,
+                indent: scale.spacing(AppSpacing.lg),
+                endIndent: scale.spacing(AppSpacing.lg),
                 color: c.border,
               ),
               _Metric(
@@ -174,6 +174,7 @@ class _Metric extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
+    final scale = _HomeScaleScope.of(context);
     return Expanded(
       child: Semantics(
         container: true,
@@ -184,9 +185,11 @@ class _Metric extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.lg,
+            padding: EdgeInsets.symmetric(
+              horizontal: scale.spacing(AppSpacing.md),
+              vertical: scale.spacing(
+                scale.desktop ? AppSpacing.xl : AppSpacing.lg,
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -207,6 +210,7 @@ class _Metric extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: tokens.typography.xSmall.copyWith(
+                    fontSize: scale.desktop ? 14 : null,
                     color: c.mutedForeground,
                     fontWeight: FontWeight.w500,
                     height: 1.3,

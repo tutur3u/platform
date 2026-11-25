@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
@@ -68,8 +69,13 @@ class AppTokens {
     final colors =
         theme.extension<AppColorTokens>() ??
         AppColorTokens.fallback(theme.brightness);
-    final interface =
+    final interfaceTheme =
         theme.extension<AppInterfaceTokens>() ?? AppInterfaceTokens.standard;
+    final width = MediaQuery.maybeSizeOf(context)?.width ?? 0;
+    final spacingScale = AppLayout.spacingScale(Breakpoints.fromWidth(width));
+    final interface = spacingScale == 1
+        ? interfaceTheme
+        : interfaceTheme.copyWith(spacingScale: spacingScale);
     final sorbet = theme.extension<SorbetTokens>();
     final typography =
         theme.extension<AppTypographyTheme>()?.typography ??

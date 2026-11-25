@@ -9,7 +9,7 @@ void main() {
     test('gutters grow with the device class', () {
       expect(AppLayout.gutter(DeviceClass.compact), 16);
       expect(AppLayout.gutter(DeviceClass.medium), 24);
-      expect(AppLayout.gutter(DeviceClass.expanded), 32);
+      expect(AppLayout.gutter(DeviceClass.expanded), 36);
     });
 
     test('compact pages never constrain width', () {
@@ -35,6 +35,15 @@ void main() {
         expect(reading, lessThan(root));
         expect(detail, lessThan(root));
       }
+    });
+
+    test('desktop max widths allow laptop layouts and cap wide canvases', () {
+      double? maxWidth(AppPageKind kind) =>
+          AppLayout.maxContentWidth(kind, DeviceClass.expanded);
+      expect(maxWidth(AppPageKind.root), 1680);
+      expect(maxWidth(AppPageKind.detail), 1120);
+      expect(maxWidth(AppPageKind.form), 552);
+      expect(maxWidth(AppPageKind.reading), 792);
     });
 
     test('row divider inset aligns with the row text', () {
@@ -75,17 +84,14 @@ void main() {
       });
     }
 
-    test('legacy values are preserved', () {
+    test('medium page caps and compact form behavior are preserved', () {
       expect(ResponsivePadding.maxContentWidth(DeviceClass.medium), 600);
-      expect(ResponsivePadding.maxContentWidth(DeviceClass.expanded), 720);
       expect(ResponsivePadding.rootContentWidth(DeviceClass.medium), 1120);
-      // Root canvases cap at 1600 so wide desktops fit four Home columns.
-      expect(ResponsivePadding.rootContentWidth(DeviceClass.expanded), 1600);
       expect(
         ResponsivePadding.maxFormWidth(DeviceClass.compact),
         double.infinity,
       );
-      expect(ResponsivePadding.maxFormWidth(DeviceClass.expanded), 480);
+      expect(ResponsivePadding.maxFormWidth(DeviceClass.medium), 480);
     });
   });
 
@@ -104,17 +110,30 @@ void main() {
       expect(700 - insets.horizontal, 600 - 48);
     });
 
-    test('expanded root pages keep gutters until 1600dp', () {
+    test('expanded root pages keep gutters until 1680dp', () {
       expect(
         AppPageInsets.resolve(width: 1200, kind: AppPageKind.root).left,
-        32,
+        36,
       );
       expect(
-        AppPageInsets.resolve(width: 1600, kind: AppPageKind.root).left,
-        32,
+        AppPageInsets.resolve(width: 1680, kind: AppPageKind.root).left,
+        36,
       );
       final wide = AppPageInsets.resolve(width: 1800, kind: AppPageKind.root);
-      expect(wide.left, 32 + 100);
+      expect(wide.left, 36 + 60);
+    });
+
+    test('expanded forms and reading surfaces center the intended width', () {
+      const width = 1440.0;
+      final form = AppPageInsets.resolve(width: width, kind: AppPageKind.form);
+      final reading = AppPageInsets.resolve(
+        width: width,
+        kind: AppPageKind.reading,
+      );
+      expect(form.left, form.right);
+      expect(width - form.horizontal, 480);
+      expect(reading.left, reading.right);
+      expect(width - reading.horizontal, 720);
     });
 
     test('safe areas apply inside the gutter without double counting', () {
@@ -126,9 +145,9 @@ void main() {
       expect(notch.right, 16);
       final centred = AppPageInsets.resolve(
         width: 1200,
-        safeArea: const EdgeInsets.only(left: 44),
+        safeArea: const EdgeInsets.only(left: 24),
       );
-      expect(centred.left, 32 + 240);
+      expect(centred.left, 36 + 40);
     });
 
     test('full-bleed drops gutters but keeps safe areas and bottom', () {

@@ -46,12 +46,20 @@ enum AppPageKind {
 
 /// Page-level layout tokens. `ResponsivePadding` derives from these values.
 abstract final class AppLayout {
+  /// Expanded windows use 12.5% more space for adaptive insets and rows.
+  /// Compact and medium windows retain the base spacing scale.
+  static double spacingScale(DeviceClass deviceClass) =>
+      deviceClass == DeviceClass.expanded ? 1.125 : 1;
+
   /// Horizontal page gutter per device class.
-  static double gutter(DeviceClass deviceClass) => switch (deviceClass) {
-    DeviceClass.compact => AppSpacing.lg,
-    DeviceClass.medium => AppSpacing.xxl,
-    DeviceClass.expanded => AppSpacing.xxxl,
-  };
+  static double gutter(DeviceClass deviceClass) {
+    final base = switch (deviceClass) {
+      DeviceClass.compact => AppSpacing.lg,
+      DeviceClass.medium => AppSpacing.xxl,
+      DeviceClass.expanded => AppSpacing.xxxl,
+    };
+    return base * spacingScale(deviceClass);
+  }
 
   /// Maximum width of the content box (gutters included) for [kind].
   ///
@@ -60,13 +68,14 @@ abstract final class AppLayout {
       switch ((kind, deviceClass)) {
         (_, DeviceClass.compact) => null,
         (AppPageKind.root, DeviceClass.medium) => 1120,
-        // Wide desktops fit four Home columns; laptops fill their body.
-        (AppPageKind.root, DeviceClass.expanded) => 1600,
+        (AppPageKind.root, DeviceClass.expanded) => 1680,
         (AppPageKind.detail, DeviceClass.medium) => 600,
-        (AppPageKind.detail, DeviceClass.expanded) => 720,
-        (AppPageKind.form, _) => 480,
+        (AppPageKind.detail, DeviceClass.expanded) => 1120,
+        (AppPageKind.form, DeviceClass.medium) => 480,
+        (AppPageKind.form, DeviceClass.expanded) => 552,
         (AppPageKind.reading, DeviceClass.medium) => 640,
-        (AppPageKind.reading, DeviceClass.expanded) => 680,
+        // 720dp of reading space inside two 36dp gutters.
+        (AppPageKind.reading, DeviceClass.expanded) => 792,
       };
 
   /// Gap between the shell header (or page top) and the first content.

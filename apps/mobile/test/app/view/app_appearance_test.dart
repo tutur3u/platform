@@ -42,13 +42,17 @@ void main() {
     testWidgets('applies text appearance inside the $design app builder', (
       tester,
     ) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 844);
+      addTearDown(tester.view.reset);
       const defaults = AppearanceSettings();
       await tester.pumpWidget(_app(defaults, sorbet));
       await tester.pumpAndSettle();
       final probe = find.text('Text probe');
       final initial = tester.element(probe);
       final initialFamily = sorbet == null ? 'NotoSans' : 'Nunito';
-      expect(MediaQuery.textScalerOf(initial), isA<_PlatformTextScaler>());
+      expect(MediaQuery.textScalerOf(initial).scale(16), 24);
       expect(AppTokens.of(initial).typography.fontFamily, initialFamily);
       expect(shad.Theme.of(initial).typography.base.fontFamily, initialFamily);
       final defaultSize = Theme.of(initial).textTheme.bodyMedium?.fontSize;
@@ -70,12 +74,21 @@ void main() {
       expect(AppTokens.of(context).typography.fontFamily, 'JetBrainsMono');
       expect(shad.Theme.of(context).typography.base.fontFamily, 'JetBrainsMono');
 
+      tester.view.physicalSize = const Size(1440, 900);
+      await tester.pumpAndSettle();
+      final desktop = tester.element(probe);
+      expect(desktop, same(initial));
+      expect(MediaQuery.textScalerOf(desktop).scale(16), 32);
+      expect(MediaQuery.textScalerOf(desktop).scale(24), closeTo(40.32, 0.001));
+      expect(AppTokens.of(desktop).typography.fontFamily, 'JetBrainsMono');
+
+      tester.view.physicalSize = const Size(390, 844);
       await tester.pumpWidget(
         _app(defaults.copyWith(textFont: AppTextFont.system), sorbet),
       );
       await tester.pumpAndSettle();
       final systemContext = tester.element(probe);
-      expect(MediaQuery.textScalerOf(systemContext), isA<_PlatformTextScaler>());
+      expect(MediaQuery.textScalerOf(systemContext).scale(16), 24);
       expect(AppTokens.of(systemContext).typography.fontFamily, isNull);
       expect(shad.Theme.of(systemContext).typography.base.fontFamily, isNull);
       expect(

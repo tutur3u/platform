@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
+import 'package:mobile/core/ui/tokens/app_window_scale.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/settings/cubit/sorbet_cubit.dart';
 import 'package:mobile/features/settings/cubit/theme_cubit.dart';
@@ -43,7 +44,7 @@ class AppAppearance {
   }
 }
 
-/// Applies the user's text size above the navigator and its overlays.
+/// Composes the window and user text sizes above the navigator and overlays.
 class AppAppearanceHost extends StatelessWidget {
   const AppAppearanceHost({
     required this.appearance,
@@ -59,11 +60,14 @@ class AppAppearanceHost extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
-    final scale = appearance.textScale;
     return MediaQuery(
-      data: scale == AppearanceSettings.defaultTextScale
-          ? media
-          : media.copyWith(textScaler: _AppTextScaler(media.textScaler, scale)),
+      data: media.copyWith(
+        textScaler: AppWindowScale.textScaler(
+          width: media.size.width,
+          userFactor: appearance.textScale,
+          platform: media.textScaler,
+        ),
+      ),
       child: SorbetAppearanceHost(
         appearance: appearance,
         sorbet: sorbet,
@@ -71,26 +75,4 @@ class AppAppearanceHost extends StatelessWidget {
       ),
     );
   }
-}
-
-class _AppTextScaler extends TextScaler {
-  const _AppTextScaler(this.platform, this.factor);
-
-  final TextScaler platform;
-  final double factor;
-
-  @override
-  double scale(double fontSize) => platform.scale(fontSize) * factor;
-
-  @override
-  double get textScaleFactor => scale(1);
-
-  @override
-  bool operator ==(Object other) =>
-      other is _AppTextScaler &&
-      other.platform == platform &&
-      other.factor == factor;
-
-  @override
-  int get hashCode => Object.hash(platform, factor);
 }
