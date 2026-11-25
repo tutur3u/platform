@@ -4,13 +4,11 @@ import {
   getSidebarCategoryRank,
   getSidebarItemRank,
   SIDEBAR_CATEGORIES,
-} from '../sidebar-categories';
+} from './sidebar-categories';
 
 describe('sidebar categories', () => {
   it('assigns every app to exactly one category', () => {
-    const ids = SIDEBAR_CATEGORIES.flatMap((category) => [
-      ...category.itemIds,
-    ]);
+    const ids = SIDEBAR_CATEGORIES.flatMap((category) => [...category.itemIds]);
 
     expect(new Set(ids).size).toBe(ids.length);
   });

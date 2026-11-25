@@ -314,6 +314,14 @@
       "types": "./src/components/ui/custom/sidebar-behavior.ts",
       "import": "./src/components/ui/custom/sidebar-behavior.ts"
     },
+    "./custom/sidebar-categories": {
+      "types": "./src/components/ui/custom/sidebar-categories.ts",
+      "import": "./src/components/ui/custom/sidebar-categories.ts"
+    },
+    "./custom/sidebar-category-layout": {
+      "types": "./src/components/ui/custom/sidebar-category-layout.ts",
+      "import": "./src/components/ui/custom/sidebar-category-layout.ts"
+    },
     "./custom/sidebar-context": {
       "types": "./src/components/ui/custom/sidebar-context.tsx",
       "import": "./src/components/ui/custom/sidebar-context.tsx"

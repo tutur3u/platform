@@ -28,7 +28,7 @@ import {
 import {
   getSidebarCategory,
   type SidebarCategoryId,
-} from '../../app/[locale]/(dashboard)/[wsId]/sidebar-categories';
+} from '@tuturuuu/ui/custom/sidebar-categories';
 import type { NavigationItemDefinition } from './sidebar-navigation-layout-settings.types';
 
 type SidebarLayoutItemKey =

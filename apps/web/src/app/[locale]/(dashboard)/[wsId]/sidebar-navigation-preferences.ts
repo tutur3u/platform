@@ -1,11 +1,10 @@
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import {
-  getSidebarCategory,
-  getSidebarCategoryDefinition,
-  getSidebarCategoryRank,
-  getSidebarItemRank,
-  type SidebarCategoryId,
-} from './sidebar-categories';
+  groupNavLinksByCategory,
+  type SidebarCategoryLabels,
+} from '@tuturuuu/ui/custom/sidebar-category-layout';
+
+export { appendArchivedNavigationLink } from '@tuturuuu/ui/custom/sidebar-category-layout';
 
 export const SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID = 'SIDEBAR_NAVIGATION_LAYOUT';
 export const SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID =
@@ -44,7 +43,7 @@ export interface SidebarNavigationPreferenceResult {
 
 export interface SidebarNavigationPreferenceOptions {
   /** Translated category headers, keyed by category id. */
-  categoryLabels?: Partial<Record<SidebarCategoryId, string>>;
+  categoryLabels?: SidebarCategoryLabels;
   pathname?: string;
 }
 
@@ -351,61 +350,6 @@ function buildPlacementOrder(args: {
   return result;
 }
 
-/**
- * Lays visible items out as one flat list grouped by category. Within a
- * category, items the user explicitly ordered come first (in their order),
- * followed by the remaining items in registry order.
- */
-function groupItemsByCategory(
-  items: NavLink[],
-  explicitOrder: string[],
-  categoryLabels: SidebarNavigationPreferenceOptions['categoryLabels']
-): NavLink[] {
-  const explicitIndex = new Map(explicitOrder.map((id, index) => [id, index]));
-  const byCategory = new Map<SidebarCategoryId, NavLink[]>();
-
-  for (const item of items) {
-    const category = getSidebarCategory(item.id);
-    byCategory.set(category, [...(byCategory.get(category) ?? []), item]);
-  }
-
-  const orderedCategories = [...byCategory.keys()].sort(
-    (left, right) =>
-      getSidebarCategoryRank(left) - getSidebarCategoryRank(right)
-  );
-
-  return orderedCategories.flatMap((categoryId) => {
-    const definition = getSidebarCategoryDefinition(categoryId);
-    const label = definition.showLabel
-      ? (categoryLabels?.[categoryId] ?? categoryId)
-      : undefined;
-
-    return (byCategory.get(categoryId) ?? [])
-      .map((item, position) => ({ item, position }))
-      .sort((left, right) => {
-        const leftExplicit = explicitIndex.get(left.item.id!);
-        const rightExplicit = explicitIndex.get(right.item.id!);
-
-        if (leftExplicit !== undefined && rightExplicit !== undefined) {
-          return leftExplicit - rightExplicit;
-        }
-        if (leftExplicit !== undefined) return -1;
-        if (rightExplicit !== undefined) return 1;
-
-        return (
-          getSidebarItemRank(left.item.id) -
-            getSidebarItemRank(right.item.id) || left.position - right.position
-        );
-      })
-      .map(({ item }) => ({
-        ...item,
-        sectionCollapsible: definition.collapsible,
-        sectionId: categoryId,
-        sectionLabel: label,
-      }));
-  });
-}
-
 export function applySidebarNavigationPreferences(
   links: (NavLink | null)[],
   rawConfig: unknown,
@@ -471,7 +415,7 @@ export function applySidebarNavigationPreferences(
     itemById,
     pathname: options?.pathname,
   });
-  const sectionedItems = groupItemsByCategory(
+  const sectionedItems = groupNavLinksByCategory(
     [...lockedRootItems, ...rootItemsWithoutSettings, ...moreItems],
     [...rootConfigIds, ...moreConfigIds],
     options?.categoryLabels
@@ -690,27 +634,4 @@ export function createSidebarNavigationLayoutConfigForPlacement(
         ? uniqueIds(insertRootNavigationId(rootWithoutTarget, id))
         : uniqueIds(rootWithoutTarget),
   };
-}
-
-/**
- * Archived items live in a single "Archived" entry just above the Settings
- * footer, so the sidebar stays one flat list.
- */
-export function appendArchivedNavigationLink(
-  links: (NavLink | null)[],
-  archivedLink: NavLink
-): (NavLink | null)[] {
-  const settingsIndex = links.findIndex(
-    (link) => link?.id === SETTINGS_NAVIGATION_ID
-  );
-
-  if (settingsIndex < 0) {
-    return cleanSeparators([...links, null, archivedLink]);
-  }
-
-  return cleanSeparators([
-    ...links.slice(0, settingsIndex),
-    archivedLink,
-    ...links.slice(settingsIndex),
-  ]);
 }
