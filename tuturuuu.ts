@@ -27,7 +27,12 @@ export type WorkflowDecisionInput = {
   lockfileWorkspaces?: readonly string[] | null;
   workflowName: string;
   workspaceManifests?: readonly WorkspaceManifest[];
+  // scripts/ci/affected-apps.extra-edges.json: changed path prefix -> the
+  // workspace dirs that import it without declaring a dependency.
+  extraEdges?: ExtraWorkspaceEdges | null;
 };
+
+export type ExtraWorkspaceEdges = Readonly<Record<string, readonly string[]>>;
 
 export type VercelWorkflowTarget = {
   app: string;
@@ -451,10 +456,26 @@ function getLockfileClosure(
   return closure;
 }
 
+// Workspace dirs that import a changed path by relative import without a
+// declared dependency, from affected-apps.extra-edges.json.
+function getExtraEdgeDependents(
+  filePath: string,
+  extraEdges: ExtraWorkspaceEdges | null | undefined
+): string[] {
+  if (!extraEdges) return [];
+  return Object.entries(extraEdges).flatMap(([prefix, dependents]) =>
+    filePath.startsWith(prefix) ||
+    (prefix.endsWith('/') && filePath === prefix.slice(0, -1))
+      ? dependents
+      : []
+  );
+}
+
 export function getWorkflowDecision({
   changedFiles,
   ciConfig = ci,
   eventName,
+  extraEdges = null,
   lockfileWorkspaces = null,
   workflowName,
   workspaceManifests = [],
@@ -606,9 +627,19 @@ export function getWorkflowDecision({
       workspaceManifests
     );
 
-    return changedWorkspaceName
-      ? dependencyClosure.has(changedWorkspaceName)
-      : false;
+    if (changedWorkspaceName && dependencyClosure.has(changedWorkspaceName)) {
+      return true;
+    }
+
+    // A path imported without a declared dependency reaches the target
+    // through the importing workspace and everything that consumes it.
+    return getExtraEdgeDependents(filePath, extraEdges).some((dependent) => {
+      if (dependent === target.appPath) return true;
+      const name = workspaceManifests.find(
+        (manifest) => manifest.path === dependent
+      )?.name;
+      return name ? dependencyClosure.has(name) : false;
+    });
   });
 
   if (matchedPaths.length > 0) {

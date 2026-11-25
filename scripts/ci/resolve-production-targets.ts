@@ -1,6 +1,7 @@
 import { appendFileSync } from 'node:fs';
 import {
   cloudflareProductionTargets,
+  type ExtraWorkspaceEdges,
   getWorkflowDecision,
   type WorkspaceManifest,
 } from '../../tuturuuu.ts';
@@ -9,7 +10,10 @@ import {
   type ChangedFilesResult,
   resolveChangedFiles,
 } from './resolve-changed-files-core.ts';
-import { readWorkspaceManifests } from './workflow-config-core.ts';
+import {
+  readExtraWorkspaceEdges,
+  readWorkspaceManifests,
+} from './workflow-config-core.ts';
 
 const cloudflareProductionWorkflows = new Set<string>(
   cloudflareProductionTargets.map(
@@ -38,6 +42,7 @@ type ResolveProductionTargetsInput = {
   rootDir: string;
   targets?: readonly { productionWorkflow: string }[];
   workspaceManifests?: WorkspaceManifest[];
+  extraEdges?: ExtraWorkspaceEdges | null;
 };
 
 function appendGithubOutput(output: Record<string, string>) {
@@ -90,6 +95,7 @@ export async function resolveProductionTargets({
   rootDir,
   targets = cloudflareProductionTargets,
   workspaceManifests = readWorkspaceManifests(rootDir),
+  extraEdges = readExtraWorkspaceEdges(rootDir),
 }: ResolveProductionTargetsInput): Promise<ProductionTargetDecision[]> {
   // Only exact-production package recovery keeps commit-driven selection.
   // Ordinary operator dispatch still intentionally selects every enabled app.
@@ -172,6 +178,7 @@ export async function resolveProductionTargets({
       const decision = getWorkflowDecision({
         changedFiles: changeResult.available ? changeResult.files : null,
         eventName: selectionEvent,
+        extraEdges,
         workflowName: productionWorkflow,
         workspaceManifests,
       });

@@ -60,6 +60,7 @@ jobs:
             bun.lock
             package.json
             packages/*/package.json
+            scripts/ci/affected-apps.extra-edges.json
             scripts/ci/check-workflow-config.ts
             scripts/ci/github-deployment-markers.ts
             scripts/ci/lockfile-workspace-delta.ts

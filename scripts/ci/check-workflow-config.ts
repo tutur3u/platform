@@ -5,6 +5,7 @@ import { lockfileWorkspaceDelta } from './lockfile-workspace-delta.ts';
 import { getMailCalendarTasksAffected } from './mail-calendar-tasks-affected.ts';
 import { getMobileTestsAffected } from './mobile-build-selection.ts';
 import {
+  readExtraWorkspaceEdges,
   readWorkspaceManifests,
   splitChangedFiles,
 } from './workflow-config-core.ts';
@@ -146,6 +147,7 @@ function main(args = process.argv.slice(2)) {
   const decision = getWorkflowDecision({
     changedFiles,
     eventName: parsedArgs.eventName ?? process.env.GITHUB_EVENT_NAME,
+    extraEdges: readExtraWorkspaceEdges(parsedArgs.rootDir),
     lockfileWorkspaces: readLockfileWorkspaces(
       changedFiles,
       parsedArgs.rootDir
