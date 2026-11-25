@@ -27,7 +27,7 @@ function moduleGlobs(config) {
 }
 
 /**
- * Wrangler-style rule globs matched against the bundle-relative path:
+ * Deploy-config rule globs matched against the bundle-relative path:
  * `**\/` spans zero or more directories, `*` and `?` stay within one path
  * segment, and `{a,b}` alternates (nesting allowed). Every other character
  * is literal; backslashes are path separators (see `moduleGlobs`), so there
@@ -211,8 +211,8 @@ export function relativeModuleReferences(bundleRoot, rel) {
 }
 
 /**
- * Every `.js`/`.mjs` module under the bundle root that the Wrangler rules
- * match, as `wrangler deploy --no-bundle` uploads them. Dot directories and
+ * Every `.js`/`.mjs` module under the bundle root that the deploy config's
+ * rules match, as a `--no-bundle` deploy uploads them. Dot directories and
  * source maps are skipped; symlinks (files or directories) are refused.
  */
 export function sealedModules(bundleRoot, config, mainModule) {
@@ -332,7 +332,7 @@ export function assertUploadedModuleSet(uploadedNames, expectedModules) {
 
 /**
  * The Worker module set for a cf Build Output emit: every sealed module the
- * rules match (Wrangler `--no-bundle` parity), minus an explicit
+ * rules match (`--no-bundle` deploy parity), minus an explicit
  * `excludedOrphans` list. The ssr Vite graph and relative-import closure are
  * independent checks, so a graph the manifest omits (Vite RSC) or a module
  * loaded through a computed path can never be dropped silently.

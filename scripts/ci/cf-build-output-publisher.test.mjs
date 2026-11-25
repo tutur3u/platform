@@ -340,7 +340,7 @@ test('assertUploadedModuleSet compares a published version with the emitted mani
   );
 });
 
-test('globToRegExp matches Wrangler rule globs against the relative path', () => {
+test('globToRegExp matches deploy rule globs against the relative path', () => {
   const cases = [
     ['**/*.js', 'a/b.js', true],
     ['**/*.js', 'b.js', true],
