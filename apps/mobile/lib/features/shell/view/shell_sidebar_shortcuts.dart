@@ -72,5 +72,14 @@ class _SidebarBehaviorAction extends CallbackAction<_SidebarBehaviorIntent> {
     : super(onInvoke: callback);
 
   @override
-  bool isEnabled(_SidebarBehaviorIntent intent) => !isTextEditingFocused();
+  bool isEnabled(_SidebarBehaviorIntent intent) =>
+      !isTextEditingFocused() && !(intent.minimal && _isWindowsAltGr());
+
+  /// Windows reports AltGr as Control plus the right Alt key, so the Ctrl+Alt
+  /// binding would otherwise fire for layouts that type characters with AltGr.
+  static bool _isWindowsAltGr() =>
+      defaultTargetPlatform == TargetPlatform.windows &&
+      HardwareKeyboard.instance.logicalKeysPressed.contains(
+        LogicalKeyboardKey.altRight,
+      );
 }

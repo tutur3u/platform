@@ -129,6 +129,22 @@ void main() {
     });
   }
 
+  testWidgets('Windows AltGr does not hide the sidebar', (tester) async {
+    final selected = await _pump(tester, platform: TargetPlatform.windows);
+
+    await _chord(tester, [
+      LogicalKeyboardKey.controlLeft,
+      LogicalKeyboardKey.altRight,
+    ]);
+    expect(selected, isEmpty);
+
+    await _chord(tester, [
+      LogicalKeyboardKey.controlLeft,
+      LogicalKeyboardKey.altLeft,
+    ]);
+    expect(selected, [SidebarBehavior.minimal]);
+  });
+
   testWidgets('a collapsed sidebar expands', (tester) async {
     final selected = await _pump(
       tester,
