@@ -13,7 +13,10 @@ import {
   uploadedBuildTestNotes,
 } from './build-test-notes.mjs';
 
-import { storeApiErrorDiagnostic } from './store-api-diagnostic.mjs';
+import {
+  playDiagnosticPath,
+  storeApiErrorDiagnostic,
+} from './store-api-diagnostic.mjs';
 
 export { storeApiErrorDiagnostic };
 
@@ -40,14 +43,11 @@ export async function json(url, options = {}) {
   });
   if (!response.ok) {
     // Store error payloads may contain account data. Keep diagnostics bounded.
-    const pathname = new URL(url).pathname;
-    const diagnosticPath = pathname.replace(
-      /^(\/androidpublisher\/v3\/applications\/)[^/]+(\/edits)(\/[^/:]+)?/u,
-      (_, prefix, edits, editId) =>
-        `${prefix}[redacted]${edits}${editId ? '/[redacted]' : ''}`
-    );
+    const { origin, pathname } = new URL(url);
+    const play = origin === GOOGLE_ORIGIN;
+    const diagnosticPath = play ? playDiagnosticPath(pathname) : pathname;
     const payload = await response.json().catch(() => null);
-    const diagnostic = storeApiErrorDiagnostic(payload);
+    const diagnostic = storeApiErrorDiagnostic(payload, { play });
     const error = new Error(
       `Store API request failed (${response.status}, ${diagnosticPath}${diagnostic ? `; ${diagnostic}` : ''})`
     );

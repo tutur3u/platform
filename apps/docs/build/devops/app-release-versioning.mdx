@@ -223,7 +223,9 @@ the Apple guard), `scripts/app-version/beta-status.test.mjs`,
 ### Google Play testing promotion errors
 
 A rejected Play edit reports the HTTP status, recognized Google statuses,
-numeric error codes, and allow-listed reasons and field paths. The job prints
+numeric error codes, and allow-listed reasons and field paths, including
+Google's structured field violations. Play request diagnostics log the operation
+while masking package, edit, and track identifiers. The job prints
 message text only when the normalized text matches a known Play publishing
 phrase. Normalization decodes percent escapes up to twice, applies Unicode NFKC,
 removes control and format characters, and collapses whitespace.

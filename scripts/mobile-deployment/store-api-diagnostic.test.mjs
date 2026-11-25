@@ -30,6 +30,7 @@ test('verify-store keeps exporting the diagnostic', () => {
 for (const phrase of [
   'Changes cannot be sent for review automatically.',
   reviewHint,
+  `${reviewHint} Once committed, you can manually send the changes for review in the Google Play Console.`,
   'Changes cannot be set to not be sent for review.',
   'Managed publishing is enabled.',
   'Version code has already been used.',
@@ -216,5 +217,61 @@ test('App Store Connect diagnostics retain their code and pointer output', () =>
       ],
     }),
     'ENTITY_ERROR at /data/attributes/build, ENTITY_ERROR.ATTRIBUTE.REQUIRED'
+  );
+});
+
+test('Google BadRequest field violations emit known pointers without descriptions', () => {
+  const fieldViolations = [
+    { field: 'releases[0].releaseNotes[0].text', description: 'private' },
+    { field: 'releases[0].shortSecret' },
+    ...Array.from({ length: 6 }, () => ({})),
+    { field: 'track' },
+  ];
+  assert.equal(
+    storeApiErrorDiagnostic({
+      error: {
+        code: 400,
+        status: 'INVALID_ARGUMENT',
+        details: [{ fieldViolations }],
+      },
+    }),
+    'INVALID_ARGUMENT, 400, releases[0].releaseNotes[0].text'
+  );
+});
+
+test('Play request errors omit identifiers and reject Apple-shaped bodies', async (t) => {
+  t.mock.method(
+    globalThis,
+    'fetch',
+    async () =>
+      new Response(
+        JSON.stringify({
+          errors: [
+            {
+              code: 'abc123',
+              source: { pointer: '/data/attributes/privateId' },
+            },
+          ],
+        }),
+        { status: 400 }
+      )
+  );
+  const base =
+    'https://androidpublisher.googleapis.com/androidpublisher/v3/applications/com.example.private';
+  for (const [suffix, expected] of [
+    ['/edits/opaque-edit/tracks/private-track', '/edits/[redacted]/tracks'],
+    ['/tracks/private-track/releases', '/tracks/[redacted]/releases'],
+    ['/unknown/private-id', '/[redacted]'],
+  ]) {
+    await assert.rejects(json(base + suffix), {
+      message: `Store API request failed (400, /androidpublisher/v3/applications/[redacted]${expected})`,
+    });
+  }
+  await assert.rejects(
+    json('https://api.appstoreconnect.apple.com/v1/builds'),
+    {
+      message:
+        'Store API request failed (400, /v1/builds; abc123 at /data/attributes/privateId)',
+    }
   );
 });

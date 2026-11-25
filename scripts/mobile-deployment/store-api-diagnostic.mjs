@@ -33,6 +33,8 @@ const PLAY_MESSAGES = new Set([
   'Changes cannot be sent for review automatically.',
   // Play's API hint for deferring review.
   'Changes cannot be sent for review automatically. Please set the query parameter changesNotSentForReview to true.',
+  // The review deferral hint can include the next step in Play Console.
+  'Changes cannot be sent for review automatically. Please set the query parameter changesNotSentForReview to true. Once committed, you can manually send the changes for review in the Google Play Console.',
   // Play's API hint when review must happen immediately.
   'Changes cannot be set to not be sent for review.',
   // This update conflicts with managed publishing.
@@ -96,14 +98,16 @@ function googleApiErrorDiagnostic(error) {
     .map((entry) => entry?.reason)
     .filter((reason) => GOOGLE_REASONS.has(reason));
   const fields = details.flatMap((entry) =>
-    Array.isArray(entry?.violations)
-      ? entry.violations
-          .slice(0, 8)
-          .map((violation) => violation?.field)
-          .filter(
-            (field) => typeof field === 'string' && GOOGLE_FIELD.test(field)
-          )
-      : []
+    [entry?.fieldViolations, entry?.violations].flatMap((violations) =>
+      Array.isArray(violations)
+        ? violations
+            .slice(0, 8)
+            .map((violation) => violation?.field)
+            .filter(
+              (field) => typeof field === 'string' && GOOGLE_FIELD.test(field)
+            )
+        : []
+    )
   );
   return [
     GOOGLE_STATUSES.has(error.status) ? error.status : '',
@@ -118,9 +122,30 @@ function googleApiErrorDiagnostic(error) {
     .join(', ');
 }
 
-export function storeApiErrorDiagnostic(payload) {
+export function playDiagnosticPath(pathname) {
+  const match = /^\/androidpublisher\/v3\/applications\/[^/]+(.*)$/u.exec(
+    pathname
+  );
+  const base = '/androidpublisher/v3/applications/[redacted]';
+  if (!match) return '/androidpublisher/[redacted]';
+  const [, suffix] = match;
+  if (suffix === '/edits') return `${base}/edits`;
+  if (/^\/edits\/[^/]+:commit$/u.test(suffix))
+    return `${base}/edits/[redacted]:commit`;
+  if (/^\/edits\/[^/]+\/tracks(?:\/[^/]+)?$/u.test(suffix))
+    return `${base}/edits/[redacted]/tracks`;
+  if (/^\/edits\/[^/]+\/listings$/u.test(suffix))
+    return `${base}/edits/[redacted]/listings`;
+  if (/^\/edits\/[^/]+$/u.test(suffix)) return `${base}/edits/[redacted]`;
+  if (/^\/tracks\/[^/]+\/releases$/u.test(suffix))
+    return `${base}/tracks/[redacted]/releases`;
+  return `${base}/[redacted]`;
+}
+
+export function storeApiErrorDiagnostic(payload, { play = false } = {}) {
   if (payload?.error && typeof payload.error === 'object')
     return googleApiErrorDiagnostic(payload.error);
+  if (play) return '';
   if (!Array.isArray(payload?.errors)) return '';
   return payload.errors
     .slice(0, 3)
