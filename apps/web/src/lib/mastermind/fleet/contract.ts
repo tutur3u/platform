@@ -1,3 +1,4 @@
+import { fleetRecoverySchema } from './recovery-contract';
 import { z } from 'zod';
 import { fleetLoginSchema } from './login';
 import { fleetReviewSchema } from './review';
@@ -243,6 +244,7 @@ export const fleetStateSchema = z.object({
     label: requiredText(24),
     state: z.enum(['running', 'waiting', 'idle', 'offline']),
     lastActiveAt: isoTime.optional(),
+    delegated: z.strictObject({ running: count, waiting: count }).optional(),
   }),
   /**
    * `failed` counts only terminal failures nobody picked up again. The
@@ -275,6 +277,7 @@ export const fleetStateSchema = z.object({
     ),
   resolved: z.array(fleetResolvedDecisionSchema).max(20).optional(),
   release: fleetReleaseSchema.optional(),
+  recovery: fleetRecoverySchema.optional(),
 });
 
 export type FleetLane = z.infer<typeof fleetLaneSchema>;

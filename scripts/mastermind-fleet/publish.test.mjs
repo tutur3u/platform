@@ -4,7 +4,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { fakePeers, fixtureDatabase, threadLister } from './fixture.mjs';
+import {
+  fakePeers,
+  fixtureDatabase,
+  recoveryInput,
+  threadLister,
+} from './fixture.mjs';
 import { readPokes } from './poke.mjs';
 import {
   acquirePublishLock,
@@ -385,10 +390,11 @@ test('skips a FIFO decision file without blocking', async () => {
 
 test('a refused addition falls back to the v1 core and still picks up answers', async () => {
   const paths = sandbox();
-  paths.releaseFile = path.join(paths.root, 'release.json');
+  paths.recoveryFile = path.join(paths.root, 'recovery.json');
   fs.writeFileSync(
-    paths.releaseFile,
-    JSON.stringify({ main: { state: 'frozen', reason: '*****' } })
+    paths.recoveryFile,
+    JSON.stringify({ ...recoveryInput, generatedAt: NOW.toISOString() }),
+    { mode: 0o600 }
   );
   fs.writeFileSync(
     path.join(paths.openDir, 'ship.json'),
@@ -423,8 +429,8 @@ test('a refused addition falls back to the v1 core and still picks up answers', 
   });
   assert.equal(result.degraded, true);
   assert.equal(bodies.length, 2);
-  assert.ok(bodies[0].release);
-  assert.equal(bodies[1].release, undefined);
+  assert.equal(bodies[0].recovery.total, 1);
+  assert.equal(bodies[1].recovery, undefined);
   assert.equal(bodies[1].decisions[0].why, undefined);
   assert.equal(bodies[1].decisions[0].id, 'ship');
 });

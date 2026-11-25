@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Each launchd tick publishes changed snapshots or heartbeats, pulls and
 // acknowledges answers, and refreshes firing SLO alerts within the tick budget.
-// Runbook: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
+import { readRecoverySummary } from './recovery-summary.mjs';
 import { createHmac, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -79,6 +79,7 @@ export function defaultPaths(home = os.homedir()) {
     openDir: path.join(root, 'decisions/open'),
     answersDir: path.join(root, 'decisions/answers'),
     resolvedDir: path.join(root, 'decisions/resolved'),
+    recoveryFile: path.join(root, 'recovery/summary.json'),
     releaseFile: path.join(root, 'release.json'),
     alertsFile: path.join(root, 'alerts.json'),
     stampFile: path.join(root, 'last-publish.json'),
@@ -240,8 +241,7 @@ export function fitToBudget(state, budget = BODY_BUDGET_BYTES) {
   const size = (value) => Buffer.byteLength(JSON.stringify(value), 'utf8');
   let fitted = state;
   let bytes = size(fitted);
-  // Resolved history and release status go before anything v1 carries.
-  for (const key of ['resolved', 'release']) {
+  for (const key of ['resolved', 'release', 'recovery']) {
     if (bytes <= budget || !(key in fitted)) continue;
     const { [key]: _dropped, ...rest } = fitted;
     fitted = rest;
@@ -448,7 +448,7 @@ export async function runOnce({
   let rows;
   let todayOutcomes;
   try {
-    rows = readFleetRows(db, now);
+    rows = readFleetRows(db, now, config.orchestratorThreadId);
     try {
       todayOutcomes = readTodayOutcomes(db, now);
     } catch {
@@ -519,13 +519,17 @@ export async function runOnce({
     now,
     decisions,
     localMachine,
-    ...(config.orchestratorTitlePattern
+    orchestratorThreadId: config.orchestratorThreadId,
+    ...(config.orchestratorThreadId === undefined &&
+    config.orchestratorTitlePattern
       ? {
           orchestratorPattern: new RegExp(config.orchestratorTitlePattern, 'i'),
         }
       : {}),
   });
+  const recovery = readRecoverySummary(paths.recoveryFile, now);
   const { state, droppedLanes } = fitToBudget({
+    ...(recovery ? { recovery } : {}),
     ...built,
     ...(resolved.length ? { resolved } : {}),
     ...(release ? { release } : {}),
@@ -543,9 +547,6 @@ export async function runOnce({
     try {
       await callWeb(web, 'PUT', STATE_PATH, JSON.stringify(state));
     } catch (error) {
-      // An addition Web refuses (edge guard, size, schema) must not stop
-      // lanes and asks: publish the v1 core once more without the additions.
-      // The full snapshot is retried at the next heartbeat or change.
       const base = baseFleetState(state);
       const message = String(error?.message);
       let limited = isRateLimited(error);
@@ -564,7 +565,6 @@ export async function runOnce({
         }
       }
       if (limited) {
-        // The stamp stays, so the snapshot is due again at the next run.
         published = false;
         rateLimited.push('state');
       }

@@ -90,7 +90,7 @@ function parsePayload(json) {
 }
 
 /** Reads the rows the snapshot needs from an open read-only database. */
-export function readFleetRows(db, now = new Date()) {
+export function readFleetRows(db, now = new Date(), orchestratorThreadId) {
   const since = new Date(now.getTime() - DAY_MS).toISOString();
   const active = db
     .prepare(
@@ -115,6 +115,7 @@ export function readFleetRows(db, now = new Date()) {
     )
     .all(since, since);
   const ids = [...new Set([...active, ...recent].map((row) => row.thread_id))];
+  if (typeof orchestratorThreadId === 'string') ids.push(orchestratorThreadId);
   const threads = new Map();
   const lookup = db.prepare(
     `SELECT t.thread_id, t.title, t.updated_at, t.archived_at, t.deleted_at,
@@ -125,7 +126,11 @@ export function readFleetRows(db, now = new Date()) {
   );
   for (const id of ids) {
     const row = lookup.get(id);
-    if (row) threads.set(id, row);
+    if (row) {
+      threads.set(id, row);
+      const parent = parsePayload(row.payload_json)?.lineage?.parentThreadId;
+      if (typeof parent === 'string' && !ids.includes(parent)) ids.push(parent);
+    }
   }
   const peers = db
     .prepare(
@@ -165,7 +170,8 @@ export function buildFleetState(
   {
     now = new Date(),
     localMachine = { id: 'local', label: 'This Mac' },
-    orchestratorPattern = /^\[Iris\]/i,
+    orchestratorPattern = /^\[Iris\] Orchestrator$/i,
+    orchestratorThreadId,
     orchestratorLabel = 'Iris',
     decisions = [],
   } = {}
@@ -271,6 +277,25 @@ export function buildFleetState(
     );
   }
 
+  // A configured local identity can be idle beyond the recent run window.
+  // Keep that identity available without adding it to fleet lane totals.
+  const identity = rows.threads.get(orchestratorThreadId);
+  const identityUpdated = isoTime(identity?.updated_at);
+  const idleIdentity =
+    identity &&
+    !identity.archived_at &&
+    !identity.deleted_at &&
+    !parsePayload(identity.payload_json)?.lineage?.sideChat &&
+    identityUpdated
+      ? {
+          lane: {
+            id: opaqueId('lane', orchestratorThreadId),
+            state: 'idle',
+            updatedAt: identityUpdated,
+          },
+        }
+      : undefined;
+
   // Threads on linked environments carry their own machine's id. Machines past
   // the cap are left out with their lanes; a thread listed twice keeps the
   // local row, then a live listing over a cached one.
@@ -334,9 +359,38 @@ export function buildFleetState(
       if (fleetCountStates.has(state) && Number.isInteger(extra) && extra > 0)
         counts[state] += extra;
 
-  const orchestratorEntry = lanes
-    .filter((entry) => orchestratorPattern.test(entry.title))
-    .sort((a, b) => compareLanes(a.lane, b.lane))[0];
+  const orchestratorEntry =
+    lanes
+      .filter((entry) =>
+        orchestratorThreadId === undefined
+          ? orchestratorPattern.test(entry.title)
+          : entry.threadId === orchestratorThreadId
+      )
+      .sort((a, b) => compareLanes(a.lane, b.lane))[0] ?? idleIdentity;
+  const delegated = { running: 0, waiting: 0 };
+  if (orchestratorEntry) {
+    const parents = new Map(lanes.map(({ lane }) => [lane.id, lane.parentId]));
+    for (const [id, thread] of rows.threads) {
+      const parent = parsePayload(thread.payload_json)?.lineage?.parentThreadId;
+      if (parent) parents.set(opaqueId('lane', id), opaqueId('lane', parent));
+    }
+    const root = orchestratorEntry.lane.id;
+    for (const { lane } of lanes) {
+      const state = lane.state === 'queued' ? 'waiting' : lane.state;
+      if (lane.id === root || (state !== 'running' && state !== 'waiting'))
+        continue;
+      const visited = new Set([lane.id]);
+      let parent = lane.parentId;
+      while (parent && !visited.has(parent)) {
+        if (parent === root) {
+          delegated[state]++;
+          break;
+        }
+        visited.add(parent);
+        parent = parents.get(parent);
+      }
+    }
+  }
   const orchestrator = {
     label: orchestratorLabel,
     state: !orchestratorEntry
@@ -348,7 +402,7 @@ export function buildFleetState(
           ? 'waiting'
           : 'idle',
     ...(orchestratorEntry
-      ? { lastActiveAt: orchestratorEntry.lane.updatedAt }
+      ? { lastActiveAt: orchestratorEntry.lane.updatedAt, delegated }
       : {}),
   };
 

@@ -480,3 +480,38 @@ test('orders attempts by when their runs ended, and rollbacks never recover', ()
     'cancelled',
   ]);
 });
+
+test('uses the orchestrator identity and counts only its delegated activity', () => {
+  const rows = readFleetRows(fixtureDatabase(), NOW);
+  const iris = rows.threads.get('t-iris');
+  rows.threads.set('automation', { ...iris, title: '[Iris] Automations' });
+  rows.active = rows.active.map((run) =>
+    run.thread_id === 't-iris' ? { ...run, thread_id: 'automation' } : run
+  );
+  rows.recent = rows.recent.filter((run) => run.thread_id !== 't-iris');
+  const pinned = buildFleetState(rows, {
+    now: NOW,
+    orchestratorThreadId: 't-iris',
+  });
+  assert.equal(pinned.orchestrator.state, 'idle');
+  assert.deepEqual(pinned.orchestrator.delegated, { running: 1, waiting: 0 });
+  assert.equal(
+    buildFleetState(rows, { now: NOW }).orchestrator.state,
+    'offline'
+  );
+  assert.equal(
+    buildFleetState(rows, {
+      now: NOW,
+      orchestratorThreadId: 'automation',
+    }).orchestrator.state,
+    'running'
+  );
+  assert.equal(
+    buildFleetState(rows, {
+      now: NOW,
+      orchestratorThreadId: 'missing',
+      orchestratorPattern: /^\[Iris\]/,
+    }).orchestrator.state,
+    'offline'
+  );
+});

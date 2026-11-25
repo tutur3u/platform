@@ -328,6 +328,8 @@ export function readRelease(file, readText = readUtf8) {
  */
 export function baseFleetState(state) {
   const hasExtras =
+    state.recovery ||
+    state.orchestrator?.delegated ||
     state.resolved ||
     state.release ||
     state.machines?.some((machine) => machine.todayOutcomes) ||
@@ -344,7 +346,16 @@ export function baseFleetState(state) {
         d.requester
     );
   if (!hasExtras) return state;
-  const { resolved: _resolved, release: _release, ...rest } = state;
+  const {
+    resolved: _resolved,
+    release: _release,
+    recovery: _recovery,
+    ...rest
+  } = state;
+  if (rest.orchestrator?.delegated) {
+    const { delegated: _delegated, ...orchestrator } = rest.orchestrator;
+    rest.orchestrator = orchestrator;
+  }
   return {
     ...rest,
     ...(state.machines

@@ -230,3 +230,20 @@ export function threadLister(threads) {
     };
   };
 }
+
+export const recoveryInput = {
+  schema: 'fleet-recovery-summary/v1',
+  sanitized: true,
+  generatedAt: '2026-11-25T05:00:00Z',
+  coverage: { hosts_read: ['m4'], hosts_without_unsettled: [], partial: false },
+  total_unsettled_failed_or_interrupted: 1,
+  by_host: { m4: 1 },
+  by_status: { failed: 1 },
+  by_reason: { failed_no_recovery_armed: 1 },
+  by_owner_class: { parent_lead: 1 },
+  by_retry_eligibility: { held_by_owner: 1 },
+  by_next_action: { owner_resumes_after_freeze_or_decides: 1 },
+  by_provider_family: { codex: 1 },
+  actions_executed: {},
+  holds_preserved: ['unknown_write_lanes'],
+};

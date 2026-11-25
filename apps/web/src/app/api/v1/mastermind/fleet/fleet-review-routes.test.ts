@@ -145,6 +145,34 @@ describe('Mastermind fleet design reviews', () => {
 
   afterEach(() => vi.unstubAllEnvs());
 
+  it.each([false, true])(
+    'validates recovery count keys (unknown key: %s)',
+    async (unknownKey) => {
+      const generatedAt = '2026-11-20T00:00:00.000Z';
+      const recovery = {
+        generatedAt,
+        stale: false,
+        coverage: {
+          hostsRead: 1,
+          hostsExpected: 1,
+          partial: false,
+          hosts: [{ id: 'host-1', readAt: generatedAt, ok: true }],
+        },
+        total: 0,
+        byStatus: unknownKey ? { unexpected: 0 } : {},
+        byReason: {},
+        byOwnerClass: {},
+        byRetryEligibility: {},
+        byNextAction: {},
+        byProviderFamily: {},
+        actionsExecuted: {},
+        holdsPreserved: [],
+      };
+      const response = await publish(sampleFleetState({ recovery }));
+      expect(response.status).toBe(unknownKey ? 422 : 200);
+    }
+  );
+
   it('stores a signed upload and serves it to the owner as an inert image', async () => {
     expect(
       (await uploadAsset(signed('PUT', ASSET_PATH, uploadBody))).status

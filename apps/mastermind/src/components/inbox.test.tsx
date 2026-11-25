@@ -17,6 +17,7 @@ import { I18nProvider } from '../i18n';
 import { Inbox } from './inbox';
 import { LaneOutcomes } from './lane-outcomes';
 import { FreshnessBanner } from './page-states';
+import { RecoverySummary } from './recovery-summary';
 
 // The Projects link needs a router; a plain anchor stands in for it.
 vi.mock('@tanstack/react-router', () => ({
@@ -185,4 +186,41 @@ test('links to every thread from the Inbox header', () => {
   expect(
     screen.getByRole('link', { name: 'All threads' }).getAttribute('href')
   ).toBe('/{-$locale}/projects');
+});
+
+test('shows unknown recovery coverage without a zero count', () => {
+  render(wrap(<RecoverySummary state={snapshot().state} now={now} />));
+  expect(screen.getByText('Recovery coverage unavailable')).toBeTruthy();
+  expect(screen.queryByText(/unsettled failed or interrupted/)).toBeNull();
+});
+
+test('shows stale partial coverage and reports holds without a retry button', () => {
+  const state = snapshot().state;
+  state.recovery = {
+    generatedAt: '2026-11-21T00:00:00.000Z',
+    stale: false,
+    coverage: {
+      hostsRead: 1,
+      hostsExpected: 2,
+      partial: true,
+      hosts: [
+        { id: 'host-1', readAt: '2026-11-21T00:00:00.000Z', ok: true },
+        { id: 'host-2', readAt: null, ok: false },
+      ],
+    },
+    total: 1,
+    byStatus: { interrupted: 1 },
+    byReason: { owner_paused_or_interrupted: 1 },
+    byOwnerClass: { parent_lead: 1 },
+    byRetryEligibility: { held_by_owner: 1 },
+    byNextAction: { owner_resumes_after_freeze_or_decides: 1 },
+    byProviderFamily: { codex: 1 },
+    actionsExecuted: {},
+    holdsPreserved: [],
+  };
+  render(wrap(<RecoverySummary state={state} now={now} />));
+  expect(screen.getByText('Stale')).toBeTruthy();
+  expect(screen.getByText(/Partial coverage/)).toBeTruthy();
+  expect(screen.getByText('Held by owner')).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
 });

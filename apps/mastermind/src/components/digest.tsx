@@ -6,6 +6,7 @@ import { digest } from '../fleet/model';
 import { useSnoozes } from '../fleet/snooze';
 import { formatTime, type Translate, useI18n } from '../i18n';
 import { LaneOutcomes } from './lane-outcomes';
+import { RecoverySummary } from './recovery-summary';
 
 function summary(
   t: Translate,
@@ -87,6 +88,7 @@ export function Digest({
   // The same count as the Inbox badge: asks, reviews and open sign-ins.
   const needYou = inboxLanes(snapshot, snoozes, now).needs.length;
   const failed = snapshot.state.counts.failed;
+  const { orchestrator } = snapshot.state;
   return (
     <section id="overview" className="scroll-mt-20 space-y-4">
       <Card>
@@ -104,6 +106,14 @@ export function Digest({
           </span>
         </CardHeader>
         <CardContent className="space-y-6 px-4 pb-4 md:px-6 md:pb-6">
+          <div className="text-sm">
+            <p>
+              {orchestrator.label} · {t(`recovery.turn.${orchestrator.state}`)}
+            </p>
+            {orchestrator.delegated && (
+              <p>{t('recovery.delegated', orchestrator.delegated)}</p>
+            )}
+          </div>
           <p className="max-w-3xl text-sm">{summary(t, snapshot, d)}</p>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Kpi label={t('kpi.running')} value={d.running} />
@@ -113,6 +123,7 @@ export function Digest({
           </div>
         </CardContent>
       </Card>
+      <RecoverySummary state={snapshot.state} now={now} />
       <LaneOutcomes state={snapshot.state} />
     </section>
   );

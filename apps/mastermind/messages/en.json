@@ -9,6 +9,47 @@
     "move": "{label}, position {position} of {total}."
   },
   "command": {
+    "recovery": {
+      "action": "Next action",
+      "delegated": "Delegated activity · {running} running, {waiting} waiting",
+      "eligibility": "Retry eligibility",
+      "labels": {
+        "blocked_claude_freeze": "Blocked by Claude freeze",
+        "blocked_seat_exhausted": "Blocked by exhausted quota",
+        "delegating_lead_other_host": "Delegating lead on another host",
+        "eligible_codex_code_only": "Codex eligible for code only",
+        "failed": "Failed",
+        "failed_no_recovery_armed": "Failure without scheduled recovery",
+        "held_by_owner": "Held by owner",
+        "interrupted": "Interrupted",
+        "limit_reset_passed_still_failed": "Reset passed, failure persists",
+        "limit_waiting_auto_resume_armed": "Waiting for quota with auto-resume enabled",
+        "limit_waiting_no_auto_resume": "Waiting for quota without auto-resume",
+        "owner_moves_to_admitted_seat_or_waits_for_reset": "Owner moves to an admitted seat or waits for reset",
+        "owner_paused_or_interrupted": "Owner paused or interrupted",
+        "owner_resumes_after_freeze_or_decides": "Owner decides or resumes after freeze",
+        "owner_resumes_on_codex_if_code_only": "Owner resumes code-only work on Codex",
+        "parent_lead": "Parent lead",
+        "parent_settled_orphan": "Parent settled",
+        "settle_after_owner_confirms": "Close after owner confirmation",
+        "settle_candidate": "Eligible for closure review",
+        "wait_for_weekly_reset_or_topup": "Wait for weekly reset or top-up"
+      },
+      "owner": "Owner class",
+      "partial": "Partial coverage · {read} of {expected} hosts read",
+      "reason": "Reason",
+      "stale": "Stale",
+      "status": "Status",
+      "title": "Recovery",
+      "total": "{count} unsettled failed or interrupted threads",
+      "turn": {
+        "idle": "Turn idle",
+        "offline": "Turn offline",
+        "running": "Turn running",
+        "waiting": "Turn waiting"
+      },
+      "unavailable": "Recovery coverage unavailable"
+    },
     "title": "Command center",
     "subtitle": "Owner view of the agent fleet",
     "nav": {

@@ -9,6 +9,47 @@
     "move": "{label}, vị trí {position} trên {total}."
   },
   "command": {
+    "recovery": {
+      "action": "Bước tiếp theo",
+      "delegated": "Hoạt động được giao · {running} đang chạy, {waiting} đang chờ",
+      "eligibility": "Điều kiện thử lại",
+      "labels": {
+        "blocked_claude_freeze": "Bị chặn do tạm ngưng Claude",
+        "blocked_seat_exhausted": "Bị chặn do hết hạn mức",
+        "delegating_lead_other_host": "Người giao việc ở máy khác",
+        "eligible_codex_code_only": "Có thể dùng Codex cho tác vụ mã nguồn",
+        "failed": "Lỗi",
+        "failed_no_recovery_armed": "Lỗi chưa lên lịch khôi phục",
+        "held_by_owner": "Người phụ trách đang giữ",
+        "interrupted": "Gián đoạn",
+        "limit_reset_passed_still_failed": "Đã qua lúc đặt lại, vẫn lỗi",
+        "limit_waiting_auto_resume_armed": "Chờ hạn mức, đã bật tự tiếp tục",
+        "limit_waiting_no_auto_resume": "Chờ hạn mức, chưa bật tự tiếp tục",
+        "owner_moves_to_admitted_seat_or_waits_for_reset": "Người phụ trách chuyển sang tài khoản được cấp phép hoặc chờ đặt lại",
+        "owner_paused_or_interrupted": "Người phụ trách đã tạm dừng hoặc ngắt",
+        "owner_resumes_after_freeze_or_decides": "Người phụ trách quyết định hoặc tiếp tục sau khi bỏ tạm ngưng",
+        "owner_resumes_on_codex_if_code_only": "Người phụ trách tiếp tục tác vụ mã nguồn bằng Codex",
+        "parent_lead": "Phụ trách luồng cha",
+        "parent_settled_orphan": "Luồng cha đã kết thúc",
+        "settle_after_owner_confirms": "Kết thúc sau khi người phụ trách xác nhận",
+        "settle_candidate": "Có thể xem xét kết thúc",
+        "wait_for_weekly_reset_or_topup": "Chờ đặt lại hạn mức hằng tuần hoặc nạp thêm"
+      },
+      "owner": "Nhóm phụ trách",
+      "partial": "Phạm vi chưa đầy đủ · Đã đọc {read}/{expected} máy",
+      "reason": "Lý do",
+      "stale": "Dữ liệu cũ",
+      "status": "Trạng thái",
+      "title": "Khôi phục",
+      "total": "{count} luồng lỗi hoặc gián đoạn chưa xử lý",
+      "turn": {
+        "idle": "Lượt đang rảnh",
+        "offline": "Lượt ngoại tuyến",
+        "running": "Lượt đang chạy",
+        "waiting": "Lượt đang chờ"
+      },
+      "unavailable": "Chưa có dữ liệu về phạm vi khôi phục"
+    },
     "title": "Trung tâm điều khiển",
     "subtitle": "Góc nhìn của chủ sở hữu về đội agent",
     "nav": {
