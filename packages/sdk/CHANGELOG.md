@@ -1,5 +1,68 @@
 # Changelog
 
+## [0.31.0](https://github.com/tutur3u/platform/compare/sdk-v0.30.0...sdk-v0.31.0) (2026-11-25)
+
+
+### Features
+
+* **accounts:** add HTTPS client and live authorization interface ([2caf60f](https://github.com/tutur3u/platform/commit/2caf60f77591b2c5a25eefbdebc1c4e28f2a520b))
+* **accounts:** add staff and fleet account management ([8d50445](https://github.com/tutur3u/platform/commit/8d5044535607e9c103dd0660e4699ea538e10c4a))
+* **auth:** registered app logos on sign-in screens ([2776430](https://github.com/tutur3u/platform/commit/27764304cf230167c32bb4dbb7732830b54f90fa))
+* **cli:** add ttr employees create and workspace role commands ([28c69b1](https://github.com/tutur3u/platform/commit/28c69b144c765f0a14fa5fd9a6728d288de98b2e))
+* **cms:** multi-tenant renderer Worker, published-snapshot delivery and scoped purge ([#8015](https://github.com/tutur3u/platform/issues/8015)) ([9fc01e0](https://github.com/tutur3u/platform/commit/9fc01e08a68b154b55f681e5755dd66bdf338d35))
+* **internal-api:** retry limited requests that carry Retry-After ([c9ba4c6](https://github.com/tutur3u/platform/commit/c9ba4c65c5649371dd238c0d0eaa5ca25bc79c61))
+* **qa:** provision disposable QA test users with ttr qa users ([28df458](https://github.com/tutur3u/platform/commit/28df458da56618e110842067daef4dd997bb5f2d))
+* **sdk:** add Fleet Board CLI commands ([50c4609](https://github.com/tutur3u/platform/commit/50c46095f97a6322577d62e7ba7607390555f1c0))
+* **sdk:** add opt-in git guard deny rules for MCP pull-request tools ([b78b8ac](https://github.com/tutur3u/platform/commit/b78b8ac7dafdc31a7288fa48282b749eecfa0c38))
+* **sdk:** add read-only fleet inventory ([eb1282c](https://github.com/tutur3u/platform/commit/eb1282c41b22db68b22f48d39cbe7ad7ffae592c))
+* **sdk:** add ttr domains commands ([c42f0a0](https://github.com/tutur3u/platform/commit/c42f0a06713956a3d9b619e574e1d564a05a27e0))
+* **sdk:** add ttr flags for platform feature flag rules ([e9d46f7](https://github.com/tutur3u/platform/commit/e9d46f70d8a8c3ae8bcfdd37dbefc48fe832d040))
+* **sdk:** add ttr git guard to refuse new remote branches and PRs ([2d2d19d](https://github.com/tutur3u/platform/commit/2d2d19dac0b5fb72e54ace9cc681c850ba258202))
+* **sdk:** add ttr people commands for the people registry ([1668c8c](https://github.com/tutur3u/platform/commit/1668c8c4d25a5227cfafe0262e33ae2b7787c2b4))
+* **sdk:** add ttr tasks comment, link, timeline, status and GitHub import ([68b56bf](https://github.com/tutur3u/platform/commit/68b56bfc12ff42ae917fe3143348da452b33aefd))
+* **sdk:** set Turbo concurrency with ttr resources setup --turbo ([b49c390](https://github.com/tutur3u/platform/commit/b49c3902e5443ec3ae6fff984955bb6949290bae))
+* **sdk:** show and set board keys in ttr boards key ([b066c32](https://github.com/tutur3u/platform/commit/b066c328f32a7a387fa03f44a7346304108e1391))
+* **tasks:** expose read-only description history in the CLI ([a9c7045](https://github.com/tutur3u/platform/commit/a9c7045d954f0371c34cc59867bc35b682427a8a))
+* **tasks:** keep human edits to imported tasks on re-runs ([17a40db](https://github.com/tutur3u/platform/commit/17a40db6648722bae55abf79514f66f0a2fac483))
+* **tasks:** retain workspace-unique board keys ([e8087b5](https://github.com/tutur3u/platform/commit/e8087b5c7532a7a5a3aea7ee5dd9c5aae1c09d05))
+* **tasks:** support first-class Fleet fields in the CLI ([13dad5b](https://github.com/tutur3u/platform/commit/13dad5b02245d372f72b9c06b41832e0bc86fc56))
+* **whiteboards:** add the dedicated Whiteboards app ([600e795](https://github.com/tutur3u/platform/commit/600e795ff07404637de9bed87a44b954062f2144))
+* **workspace-domains:** read the SaaS zone, apex and fallback origin from config ([8a38689](https://github.com/tutur3u/platform/commit/8a386894505308f1e4ceb3a826caa80ade76f40f))
+
+
+### Bug Fixes
+
+* **accounts:** narrow sanitized errors without built declarations ([23992cd](https://github.com/tutur3u/platform/commit/23992cda01475774d10cc2a49ed398ac21501847))
+* **contacts:** require verified consent for account link repair ([dde408a](https://github.com/tutur3u/platform/commit/dde408aea63a4d56cbea32a6c11feb4f1ad9b754))
+* **deps:** resolve scheduled high security advisories ([7326743](https://github.com/tutur3u/platform/commit/73267435ef7a19862abed3bd9a960699acf54e8c))
+* **meet:** answer the abuse challenge on the first-use name form ([51fc6d8](https://github.com/tutur3u/platform/commit/51fc6d87c683e8ec940ed0893f879079f2e142a8))
+* **playground:** cover the exported guest log flag and log runner refusals ([a6b4623](https://github.com/tutur3u/platform/commit/a6b462324bc1c7bf390200e6a800ba4af33521c0))
+* **playground:** preserve exports alongside large binaries ([4267045](https://github.com/tutur3u/platform/commit/42670455ad154f8d399bcc96165d16528e401698))
+* **playground:** satisfy type checks, sort messages and format run fixes ([bd9b609](https://github.com/tutur3u/platform/commit/bd9b6095a241d361e871bca7026659ad1e371e86))
+* **qa:** report the error code of a failed QA account step ([c85c20f](https://github.com/tutur3u/platform/commit/c85c20f32564aefb55365d87679b189d534b6bc0))
+* **qa:** run QA test user expiry cleanup in the Cron Control Worker ([adccaa4](https://github.com/tutur3u/platform/commit/adccaa4f56d02f5f32208902a3304495338c8ff0))
+* **qa:** surface the failed step and run when every QA account fails ([9ac9d19](https://github.com/tutur3u/platform/commit/9ac9d19b68a5f1cfecf031c89cc9535d13288c1d))
+* **runtime:** preserve global fetch receivers across Worker clients ([c163138](https://github.com/tutur3u/platform/commit/c163138c41b8f3a6fc032d18874ab90496d78be6))
+* **sdk:** harden ttr people hidden input and masked output ([aa38676](https://github.com/tutur3u/platform/commit/aa38676c2a8baa90ef0f833b08c2c24a2208d326))
+* **sdk:** isolate Vitest subprocess fixtures from host shims ([66eb4b6](https://github.com/tutur3u/platform/commit/66eb4b6168bd8698012e7b2c66cc0bda9a7135ba))
+* **sdk:** judge resource shims by their own runtime ([9135576](https://github.com/tutur3u/platform/commit/91355761fe1ff4e8f95e3a3c2658ac4be6fc76c4))
+* **sdk:** keep the GitHub import cache private ([1924cb5](https://github.com/tutur3u/platform/commit/1924cb5dcc66eb1c57635b704a4b14979321c491))
+* **sdk:** package fleet effect orchestration ([c1aa0ed](https://github.com/tutur3u/platform/commit/c1aa0ed34eb9713e03f832475e024dacadda0daa))
+* **sdk:** recover dead resource slots before launcher setup ([ccf9350](https://github.com/tutur3u/platform/commit/ccf9350199d86d1cf0bc400b8a2b8b1b56cabc3a))
+* **sdk:** require the Java launcher for playground readiness ([17f3d48](https://github.com/tutur3u/platform/commit/17f3d4827ad075cafaed18bd9787b01a730c82cf))
+* **sdk:** skip binary files before validating playground export paths ([43ebc73](https://github.com/tutur3u/platform/commit/43ebc737123470ed32ab5c6afd13a4c33b511df6))
+* **sdk:** widen task update payload type ([6e43f9f](https://github.com/tutur3u/platform/commit/6e43f9fada6c3e9b1b5a59c3d7897f05639fdcce))
+* **security:** validate credentialed web API origins ([a10294d](https://github.com/tutur3u/platform/commit/a10294dcafc5fce603bc57b74147a17fd00d4741))
+* **tasks:** bind imported URLs to GitHub and keep re-imports inside the workspace ([90a3921](https://github.com/tutur3u/platform/commit/90a3921452a88f20d27640f7ca61a81fd5f21e54))
+* **tasks:** keep imported links inside the declared repository ([ea69720](https://github.com/tutur3u/platform/commit/ea69720c610df3d1fb5c18f16fbe172189109965))
+* **tasks:** reject fleet fields over the database limits with a 400 ([69231b8](https://github.com/tutur3u/platform/commit/69231b8163018a171977bf169fb42320faa9930b))
+
+
+### Performance Improvements
+
+* **check:** select pre-push packages from a dry Turbo graph ([c5eab5c](https://github.com/tutur3u/platform/commit/c5eab5c220a6eaeca8bebd9823b02362d8734ae2))
+* **cms:** revalidate public delivery with ETag and key renderer HTML on delivery version ([06b0444](https://github.com/tutur3u/platform/commit/06b0444a5a09468ea26013ef4e15e269dc1d7e04))
+
 ## [0.30.0](https://github.com/tutur3u/platform/compare/sdk-v0.29.0...sdk-v0.30.0) (2026-11-08)
 
 
