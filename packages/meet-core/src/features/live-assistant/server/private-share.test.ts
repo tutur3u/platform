@@ -172,15 +172,70 @@ it('keeps a share turned on after the latest confirmation, and fails closed', as
     revision: 4,
   });
   expect(f.room).toHaveBeenCalledOnce();
-  // An unknown start or a missing confirmation never counts as current.
+  // An unknown start counts as off, without revoking anything.
+  f.room.mockClear();
   f.room.mockResolvedValue({ enabled: true, revision: 4 });
   expect(await readPrivateMiraShare(access as Access)).toMatchObject({
     enabled: false,
   });
+  expect(f.room).toHaveBeenCalledOnce();
+  // No confirmation at all is stale: the share is revoked.
   f.confirmedAt.mockResolvedValue(null);
   f.room.mockResolvedValue({ enabled: true, revision: 4, sharedAt });
   expect(await readPrivateMiraShare(access as Access)).toMatchObject({
     enabled: false,
   });
+});
+
+const revokeCall = [access, { action: 'mira.share.set', enabled: false }];
+
+it('treats a failed confirmation lookup as off for now, without revoking', async () => {
+  f.confirmedAt.mockRejectedValue(new Error('Admin API unavailable'));
+  f.room.mockResolvedValue({ enabled: true, revision: 4, sharedAt });
+  expect(await readPrivateMiraShare(access as Access)).toEqual({
+    enabled: false,
+    revision: 4,
+  });
+  await forwardSharedTutorChat(access as Access, turns, sharedAt);
+  // One share read; no revoke and no forwarded chat.
+  expect(f.room).toHaveBeenCalledOnce();
+  expect(f.room).not.toHaveBeenCalledWith(...revokeCall);
+
+  // A missing confirmation is a withdrawal, so that share is revoked.
+  f.confirmedAt.mockResolvedValue(null);
+  await forwardSharedTutorChat(access as Access, turns, sharedAt);
+  expect(f.room).toHaveBeenLastCalledWith(...revokeCall);
+});
+
+const enable = { ...revoke, enabled: true };
+
+it('replaces a grant older than the latest confirmation on a fresh opt-in', async () => {
+  f.confirmedAt.mockResolvedValue(sharedAt + 1);
+  f.room
+    .mockResolvedValueOnce({ enabled: true, revision: 4, sharedAt })
+    .mockResolvedValueOnce({ enabled: false, revision: 5 })
+    .mockResolvedValueOnce({
+      enabled: true,
+      revision: 6,
+      sharedAt: sharedAt + 5000,
+    });
+  expect(await setPrivateMiraShare(access as Access, enable, live)).toEqual({
+    enabled: true,
+    revision: 6,
+  });
+  expect(f.room.mock.calls.map(([, command]) => command)).toEqual([
+    { action: 'mira.share.set', enabled: true },
+    { action: 'mira.share.set', enabled: false },
+    { action: 'mira.share.set', enabled: true },
+  ]);
+});
+
+it('refuses an opt-in it cannot check against the confirmation', async () => {
+  f.confirmedAt.mockRejectedValue(new Error('Admin API unavailable'));
+  f.room.mockResolvedValue({ enabled: true, revision: 4, sharedAt });
+  await expect(
+    setPrivateMiraShare(access as Access, enable, live)
+  ).rejects.toMatchObject({ status: 503 });
+  expect(f.room).not.toHaveBeenCalledWith(...revokeCall);
 });
 

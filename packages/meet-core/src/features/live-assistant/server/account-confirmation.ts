@@ -41,19 +41,20 @@ async function readConfirmation(userId: string): Promise<ConfirmationStatus> {
   }
 }
 
-/** When the account last confirmed Mira (0 for an undated marker), or null. */
+/**
+ * When the account last confirmed Mira (0 for an undated marker), or null
+ * when it has no confirmation. A failed lookup throws instead, so callers
+ * never mistake an outage for a withdrawn confirmation.
+ */
 export async function readMiraConfirmedAt(userId: string) {
   return confirmedTimes.read(
     userId,
     async () => {
-      try {
-        const db = await createAdminClient({ noCookie: true });
-        const { data, error } = await db.auth.admin.getUserById(userId);
-        if (error || data.user?.id !== userId) return null;
-        return miraConfirmedAt(data.user.app_metadata[KEY]);
-      } catch {
-        return null;
-      }
+      const db = await createAdminClient({ noCookie: true });
+      const { data, error } = await db.auth.admin.getUserById(userId);
+      if (error) throw unavailable();
+      if (data.user?.id !== userId) return null;
+      return miraConfirmedAt(data.user.app_metadata[KEY]);
     },
     (value) => value !== null
   );

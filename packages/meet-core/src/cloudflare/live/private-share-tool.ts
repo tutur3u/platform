@@ -62,10 +62,12 @@ export async function readSharedPrivateNotes(
     );
     // A share turned on before the owner's latest Mira confirmation needs a
     // fresh opt-in, so it is revoked instead of read.
+    // A failed lookup refuses this read without revoking anything.
     const confirmedAt = await readLiveMiraConfirmedAt(
       env,
       saved.claims.ownerId
-    );
+    ).catch(() => undefined);
+    if (confirmedAt === undefined) return unavailable;
     if (confirmedAt === null || shared.sharedAt < confirmedAt) {
       await liveRoomCommand(env, saved.claims, saved.identity, {
         action: 'mira.share.set',

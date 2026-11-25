@@ -25,8 +25,8 @@ const confirmations = new MiraTtlCache<number | null>();
 
 /**
  * When the owner last confirmed Mira (0 for an undated marker), or null when
- * the account is not confirmed. Confirmed times are cached per isolate for up
- * to a minute.
+ * the account is not confirmed. A failed lookup throws, so it is never taken
+ * for a withdrawal. Confirmed times are cached per isolate for up to a minute.
  */
 export async function readLiveMiraConfirmedAt(
   env: LiveEnvironment,
@@ -42,8 +42,7 @@ export async function readLiveMiraConfirmedAt(
           : null;
       },
       (value) => value !== null
-    )
-    .catch(() => null);
+    );
 }
 
 export async function requireCurrentPrivateGrant(

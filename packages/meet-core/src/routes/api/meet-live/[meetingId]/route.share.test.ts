@@ -54,8 +54,10 @@ beforeEach(() => {
       ? {
           enabled: input.enabled === true,
           revision: 1,
-          // The room returns the owner's registered sessions with a revoke.
+          // The room returns the owner's registered sessions with a revoke,
+          // and when a grant it turns on started.
           ...(input.enabled === false ? { sessions: [...f.sessions] } : {}),
+          ...(input.enabled === true ? { sharedAt: Date.now() } : {}),
         }
       : room(access, input)
   );
