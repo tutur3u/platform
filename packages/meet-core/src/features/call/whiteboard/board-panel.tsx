@@ -85,6 +85,8 @@ export function BoardPanel({
       </p>
     );
   const { links, canManage, available } = list.data;
+  // Only a server that says guest drawing is held labels `draw` that way.
+  const drawHeld = list.data.guestDraw === false;
   return (
     <section className="flex h-full min-h-0 flex-col gap-4 overflow-auto bg-background p-3 sm:p-4">
       <h2 className="font-semibold text-sm">{t('board_list_title')}</h2>
@@ -92,6 +94,7 @@ export function BoardPanel({
         links={links}
         canManage={canManage}
         pending={change.isPending}
+        drawHeld={drawHeld}
         onOpen={setActiveId}
         onGuestAccess={(boardId, guestAccess) =>
           change.mutate({ action: 'guest-access', boardId, guestAccess })
@@ -102,6 +105,7 @@ export function BoardPanel({
         <BoardManage
           available={available}
           pending={change.isPending}
+          drawHeld={drawHeld}
           onLink={(boardId, guestAccess: MeetWhiteboardGuestAccess) =>
             change.mutate({ action: 'link', boardId, guestAccess })
           }

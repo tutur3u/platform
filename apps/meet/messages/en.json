@@ -5920,6 +5920,7 @@
       "ask_mira": "Ask Mira",
       "board": "Saved whiteboard",
       "board_access_draw": "Can draw",
+      "board_access_draw_held": "Can draw (view only for now)",
       "board_access_none": "No access",
       "board_access_view": "Can view",
       "board_action_failed": "That whiteboard change did not go through.",

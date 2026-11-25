@@ -93,6 +93,34 @@ describe('BoardPanel', () => {
     );
   });
 
+  it('tells a manager that draw access is view-only while drawing is held', async () => {
+    const links = [
+      { boardId, title: 'Plan', role: 'edit', guestAccess: 'draw' },
+    ];
+    api.list.mockResolvedValue({
+      canManage: true,
+      links,
+      available: [],
+      guestDraw: false,
+    });
+    mount();
+    await screen.findByText('Plan');
+    expect(
+      (await screen.findAllByText('Can draw (view only for now)')).length
+    ).toBeGreaterThan(0);
+    cleanup();
+    api.list.mockResolvedValue({
+      canManage: true,
+      links,
+      available: [],
+      guestDraw: true,
+    });
+    mount();
+    await screen.findByText('Plan');
+    expect((await screen.findAllByText('Can draw')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Can draw (view only for now)')).toBeNull();
+  });
+
   it('opens a board as read-only for a view role and goes back', async () => {
     api.list.mockResolvedValue({
       canManage: false,

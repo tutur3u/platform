@@ -19,11 +19,14 @@ import { GuestAccessSelect } from './board-picker';
 export function BoardManage({
   available,
   pending,
+  drawHeld = false,
   onLink,
   onCreate,
 }: {
   available: readonly { id: string; title: string }[];
   pending: boolean;
+  /** Guest drawing is held, so `draw` boards are view-only for guests. */
+  drawHeld?: boolean;
   onLink: (boardId: string, access: MeetWhiteboardGuestAccess) => void;
   onCreate: (title: string, access: MeetWhiteboardGuestAccess) => void;
 }) {
@@ -86,6 +89,7 @@ export function BoardManage({
         <GuestAccessSelect
           value={access}
           label={t('board_guests')}
+          drawHeld={drawHeld}
           onChange={setAccess}
         />
       </div>

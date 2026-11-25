@@ -5920,6 +5920,7 @@
       "ask_mira": "Hỏi Mira",
       "board": "Bảng trắng đã lưu",
       "board_access_draw": "Được vẽ",
+      "board_access_draw_held": "Được vẽ (tạm thời chỉ xem)",
       "board_access_none": "Không có quyền",
       "board_access_view": "Được xem",
       "board_action_failed": "Thay đổi bảng trắng chưa được thực hiện.",

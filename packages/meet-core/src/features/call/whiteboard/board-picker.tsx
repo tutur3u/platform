@@ -18,16 +18,22 @@ import { ActivitySelect } from '../stage-layout/activity-select';
 
 const ACCESS = ['none', 'view', 'draw'] as const;
 
+/**
+ * A board's guest access. While guest drawing is held (`drawHeld`), `draw`
+ * says guests view for now: the server mints them view tickets regardless.
+ */
 export function GuestAccessSelect({
   value,
   label,
   onChange,
   disabled,
+  drawHeld = false,
 }: {
   value: MeetWhiteboardGuestAccess;
   label: string;
   onChange: (value: MeetWhiteboardGuestAccess) => void;
   disabled?: boolean;
+  drawHeld?: boolean;
 }) {
   const t = useTranslations('meet.collaboration');
   return (
@@ -42,7 +48,11 @@ export function GuestAccessSelect({
       <SelectContent>
         {ACCESS.map((level) => (
           <SelectItem key={level} value={level}>
-            {t(`board_access_${level}`)}
+            {t(
+              level === 'draw' && drawHeld
+                ? 'board_access_draw_held'
+                : `board_access_${level}`
+            )}
           </SelectItem>
         ))}
       </SelectContent>
@@ -55,6 +65,7 @@ export function BoardPicker({
   links,
   canManage,
   pending,
+  drawHeld = false,
   onOpen,
   onGuestAccess,
   onUnlink,
@@ -62,6 +73,8 @@ export function BoardPicker({
   links: readonly MeetWhiteboardLink[];
   canManage: boolean;
   pending: boolean;
+  /** Guest drawing is held, so `draw` boards are view-only for guests. */
+  drawHeld?: boolean;
   onOpen: (boardId: string) => void;
   onGuestAccess: (boardId: string, value: MeetWhiteboardGuestAccess) => void;
   onUnlink: (boardId: string) => void;
@@ -92,6 +105,7 @@ export function BoardPicker({
               value={link.guestAccess}
               label={t('board_guests')}
               disabled={pending}
+              drawHeld={drawHeld}
               onChange={(value) => onGuestAccess(link.boardId, value)}
             />
           )}
