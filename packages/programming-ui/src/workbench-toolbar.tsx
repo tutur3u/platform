@@ -19,14 +19,14 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import type { WorkbenchAction } from './workbench-layout';
+import type { FormatSupport } from './format/formatters';
+import { WorkbenchDropdown } from './workbench-dropdown';
+import { WorkbenchFormatButton } from './workbench-format-button';
 import {
   LANGUAGE_LABELS,
   WorkbenchLanguagePicker,
 } from './workbench-language-picker';
-import type { FormatSupport } from './format/formatters';
-import { WorkbenchDropdown } from './workbench-dropdown';
-import { WorkbenchFormatButton } from './workbench-format-button';
+import type { WorkbenchAction } from './workbench-layout';
 import type { RunnerRefusal } from './workbench-meeting';
 import { WorkbenchRunButton } from './workbench-run-button';
 

@@ -5,7 +5,6 @@ import type { MeetWhiteboardGuestAccess } from '@tuturuuu/internal-api/meet-whit
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -13,6 +12,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useState } from 'react';
+import { ActivitySelect } from '../stage-layout/activity-select';
 import { GuestAccessSelect } from './board-picker';
 
 /** Link an existing workspace whiteboard or create one; hosts and admins only. */
@@ -40,7 +40,7 @@ export function BoardManage({
   return (
     <div className="space-y-3 rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Select value={boardId} onValueChange={setBoardId}>
+        <ActivitySelect value={boardId} onValueChange={setBoardId}>
           <SelectTrigger
             aria-label={t('board_pick')}
             className="h-9 min-w-48 flex-1"
@@ -54,7 +54,7 @@ export function BoardManage({
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </ActivitySelect>
         <Button
           size="sm"
           disabled={!boardId || pending}

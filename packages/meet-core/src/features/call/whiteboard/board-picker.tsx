@@ -8,13 +8,13 @@ import type {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
+import { ActivitySelect } from '../stage-layout/activity-select';
 
 const ACCESS = ['none', 'view', 'draw'] as const;
 
@@ -31,7 +31,7 @@ export function GuestAccessSelect({
 }) {
   const t = useTranslations('meet.collaboration');
   return (
-    <Select
+    <ActivitySelect
       value={value}
       disabled={disabled}
       onValueChange={(next) => onChange(next as MeetWhiteboardGuestAccess)}
@@ -46,7 +46,7 @@ export function GuestAccessSelect({
           </SelectItem>
         ))}
       </SelectContent>
-    </Select>
+    </ActivitySelect>
   );
 }
 

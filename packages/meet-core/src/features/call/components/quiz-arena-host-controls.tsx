@@ -5,7 +5,6 @@ import type { QuizArenaFullView } from '@tuturuuu/realtime/meet/room-quiz-arena'
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -15,6 +14,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import type { QuizArenaAction } from '../server/quiz-arena';
+import { ActivitySelect } from '../stage-layout/activity-select';
 
 export function QuizArenaHostControls({
   view,
@@ -94,7 +94,7 @@ export function QuizArenaHostControls({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <b className="text-sm">{t('adjust_points')}</b>
-            <Select value={selected.value} onValueChange={setTarget}>
+            <ActivitySelect value={selected.value} onValueChange={setTarget}>
               <SelectTrigger
                 aria-label={t('adjust_target')}
                 className="ml-auto h-8 max-w-44"
@@ -108,7 +108,7 @@ export function QuizArenaHostControls({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </ActivitySelect>
           </div>
           <div className="flex flex-wrap gap-1.5">
             <Button

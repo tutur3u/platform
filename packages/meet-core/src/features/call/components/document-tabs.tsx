@@ -15,7 +15,6 @@ import type {
 } from '@tuturuuu/internal-api/meet-call';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -24,6 +23,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { type KeyboardEvent, useState } from 'react';
+import { ActivityDropdownMenu } from '../stage-layout/activity-dropdown-menu';
 import { MiraTabDot } from './document-mira-presence';
 
 export const DOCUMENT_KIND_ICONS = {
@@ -137,7 +137,7 @@ export function DocumentTabs({
                 {miraTabId === tab.id && <MiraTabDot />}
               </button>
               {selected && (
-                <DropdownMenu>
+                <ActivityDropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
@@ -166,13 +166,13 @@ export function DocumentTabs({
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
-                </DropdownMenu>
+                </ActivityDropdownMenu>
               )}
             </div>
           );
         })}
       </div>
-      <DropdownMenu>
+      <ActivityDropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
@@ -196,7 +196,7 @@ export function DocumentTabs({
             );
           })}
         </DropdownMenuContent>
-      </DropdownMenu>
+      </ActivityDropdownMenu>
     </div>
   );
 }

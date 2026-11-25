@@ -12,8 +12,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useLocale, useTranslations } from 'next-intl';
-import { ActivitySelect } from '../stage-layout/activity-select';
 import { readMeetingProjects } from '../lib/programming-catalog';
+import { ActivitySelect } from '../stage-layout/activity-select';
 
 /** Select value for "start a new playground"; the panel keeps an empty id for it. */
 const NEW_PLAYGROUND = '__new__';
