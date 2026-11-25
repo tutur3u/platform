@@ -192,9 +192,9 @@ describe('anonymous guests', () => {
     for (const value of [undefined, 'false', '1', 'TRUE']) {
       if (value === undefined) delete process.env.MEET_GUEST_WHITEBOARD;
       else process.env.MEET_GUEST_WHITEBOARD = value;
-      await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject(
-        { status: 403 }
-      );
+      await expect(
+        mod.joinMeetingWhiteboard(guest(), b1)
+      ).rejects.toMatchObject({ status: 403 });
       await expect(mod.listMeetingWhiteboards(guest())).rejects.toMatchObject({
         status: 403,
       });

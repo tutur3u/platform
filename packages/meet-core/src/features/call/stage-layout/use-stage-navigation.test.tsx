@@ -7,10 +7,7 @@ import {
 } from '../components/room-navigation-policy';
 import { useRoomNavigation } from '../hooks/use-room-navigation';
 import { paneOfActivity } from './layout-model';
-import {
-  canMirrorActivity,
-  useStageNavigation,
-} from './use-stage-navigation';
+import { canMirrorActivity, useStageNavigation } from './use-stage-navigation';
 import { useStageLayout } from './use-stage-layout';
 
 vi.mock('../hooks/use-room-navigation', () => ({

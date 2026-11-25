@@ -20,7 +20,11 @@ describe('whiteboardPolicy', () => {
             requiresAccount,
             guestsPresent: true,
           })
-        ).toEqual({ offerBoard: true, guestBoard: false, penBoardFirst: false });
+        ).toEqual({
+          offerBoard: true,
+          guestBoard: false,
+          penBoardFirst: false,
+        });
   });
 
   it('keeps guests on the pen board while the switch is off', () => {

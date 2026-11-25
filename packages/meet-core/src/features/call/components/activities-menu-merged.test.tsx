@@ -90,8 +90,7 @@ function renderMenu(withBoard = true, penBoardFirst = false) {
   return { board, classroom, onTool };
 }
 
-const sidebar = () =>
-  within(screen.getByRole('navigation', { name: a.title }));
+const sidebar = () => within(screen.getByRole('navigation', { name: a.title }));
 
 it('lists one Whiteboard and one Timer with Meet UX v2', () => {
   const { board, onTool } = renderMenu();

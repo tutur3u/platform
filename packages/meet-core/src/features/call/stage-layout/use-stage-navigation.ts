@@ -31,9 +31,7 @@ export function canMirrorActivity(
   guestBoard = false
 ) {
   const board = id === BOARD_ACTIVITY;
-  const view = board
-    ? ({ surface: 'document' } as const)
-    : viewOfActivity(id);
+  const view = board ? ({ surface: 'document' } as const) : viewOfActivity(id);
   const allowed = board && guestBoard ? { ...access, account: true } : access;
   return !view || canOpenRoomView(view, allowed, forced);
 }
