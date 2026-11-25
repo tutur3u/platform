@@ -142,8 +142,7 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
       );
   return {
     openFollow: (origin) => openDialog({ kind: 'follow' }, origin),
-    openSummon: (view, origin) =>
-      openDialog({ kind: 'summon', view }, origin),
+    openSummon: (view, origin) => openDialog({ kind: 'summon', view }, origin),
     menu: (
       <>
         <ControlMenuLabel>{t('navigation.guide')}</ControlMenuLabel>

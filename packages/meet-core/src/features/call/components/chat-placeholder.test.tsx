@@ -62,7 +62,7 @@ it('asks only for a message, and the Ask Mira button teaches the rest', () => {
 
 it('points questions to the Q&A while it is open', () => {
   show('en', true);
-  expect(placeholder()).toBe('Message everyone · questions go to Q&A');
+  expect(placeholder()).toBe(enMessages.meet.call.chat_placeholder_qa);
 });
 
 it('has the same placeholders in Vietnamese', () => {

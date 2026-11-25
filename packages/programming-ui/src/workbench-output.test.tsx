@@ -240,9 +240,9 @@ it.each(['tests', 'console', 'preview'] as const)(
     localStorage.clear();
     mountMeetingOutput(tab);
     expect(
-      screen.getByRole('button', { name: t.outputPanes }).getAttribute(
-        'aria-expanded'
-      )
+      screen
+        .getByRole('button', { name: t.outputPanes })
+        .getAttribute('aria-expanded')
     ).toBe('false');
     expect(screen.queryByRole('tabpanel')).toBeNull();
     expect(screen.queryByText('Program output')).toBeNull();
@@ -275,9 +275,11 @@ it('opens and closes the output disclosure when browser storage throws', () => {
   const read = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
     throw new DOMException('Storage is blocked', 'SecurityError');
   });
-  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-    throw new DOMException('Storage is blocked', 'SecurityError');
-  });
+  const write = vi
+    .spyOn(Storage.prototype, 'setItem')
+    .mockImplementation(() => {
+      throw new DOMException('Storage is blocked', 'SecurityError');
+    });
   try {
     mountMeetingOutput('console');
     const toggle = screen.getByRole('button', { name: t.outputPanes });

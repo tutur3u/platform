@@ -15,10 +15,10 @@ import {
   PROGRAMMING_ACTIVITY,
   toolActivityId,
 } from '../stage-layout/activity-ids';
-import type { ActivityNavigation } from './activity-launch-control';
-import type { MeetToolDefinition } from '../tools/registry';
 import { useActivitiesRequest } from '../stage-layout/activities-request';
+import type { MeetToolDefinition } from '../tools/registry';
 import { ActivitiesDialog } from './activities-dialog';
+import type { ActivityNavigation } from './activity-launch-control';
 import {
   ActivitiesNavigationContext,
   type ActivityTile,
@@ -221,7 +221,8 @@ export function ActivitiesMenu({
             navigation: navigation && {
               ...navigation,
               openFollow: () => navigation.openFollow(trigger.current),
-              openSummon: (view) => navigation.openSummon(view, trigger.current),
+              openSummon: (view) =>
+                navigation.openSummon(view, trigger.current),
             },
           }}
         >

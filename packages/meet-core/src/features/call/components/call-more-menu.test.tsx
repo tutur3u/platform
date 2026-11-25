@@ -191,7 +191,9 @@ it('moves keyboard focus into Follow and back to the Activities trigger', async 
   fireEvent.keyDown(options, { key: 'Enter' });
   fireEvent.click(screen.getByRole('menuitem', { name: call.follow.button }));
 
-  const follow = await screen.findByRole('dialog', { name: call.follow.button });
+  const follow = await screen.findByRole('dialog', {
+    name: call.follow.button,
+  });
   expect(follow.contains(document.activeElement)).toBe(true);
   fireEvent.keyDown(follow, { key: 'Escape' });
   await waitFor(() => expect(document.activeElement).toBe(trigger));
