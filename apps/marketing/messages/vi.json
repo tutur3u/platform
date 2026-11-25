@@ -1692,7 +1692,8 @@
       "tasks": "Lập kế hoạch dự án, giao việc và theo dõi tiến độ.",
       "teach": "Lập kế hoạch khóa học, quản lý lớp và hỗ trợ học viên.",
       "tools": "Mở các tiện ích chuyên biệt cho mã QR và tác vụ nhanh.",
-      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao."
+      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao.",
+      "whiteboards": "Phác thảo, vẽ sơ đồ và động não cùng nhau trên bảng trắng thời gian thực."
     },
     "app_names": {
       "ai": "AI Studio",
@@ -1724,7 +1725,8 @@
       "tasks": "Công việc",
       "teach": "Giảng dạy",
       "tools": "Công cụ",
-      "track": "Theo dõi"
+      "track": "Theo dõi",
+      "whiteboards": "Bảng trắng"
     },
     "error_workspaces": "Không thể tải workspace"
   },
@@ -1955,6 +1957,7 @@
       "track_3": "Quản lý thời gian nhóm",
       "vaultWitness": "Dịch vụ chứng thực kho bí mật",
       "voiceAssistant": "Trợ lý giọng nói",
+      "whiteboards_0": "Bảng trắng thời gian thực",
       "workforce": "Quản trị nhân sự",
       "workspace-domains_0": "Tên miền tùy chỉnh cho không gian làm việc (edge)",
       "workspaces": "Không gian tạo trên mỗi tài khoản",

@@ -26,6 +26,10 @@ const scopedCallers = {
   },
   'web-start-candidate.yaml': { app: 'web', jobs: ['candidate'] },
   'contacts-cloudflare.yaml': { app: 'contacts', jobs: ['native'] },
+  'whiteboards-cloudflare.yaml': {
+    app: 'whiteboards',
+    jobs: ['whiteboards-cutover-artifact', 'native'],
+  },
   'contacts-start-candidate.yaml': { app: 'contacts', jobs: ['candidate'] },
 };
 

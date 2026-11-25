@@ -66,6 +66,7 @@
               "platform/applications/cms",
               "platform/applications/drive",
               "platform/applications/git",
+              "platform/applications/whiteboards",
               "platform/applications/finance",
               "platform/applications/inventory",
               "platform/applications/reports",
@@ -273,6 +274,7 @@
                   "build/devops/infrastructure-start-void",
                   "build/devops/mind-start-void",
                   "build/devops/git-start-void",
+                  "build/devops/whiteboards-start-void",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
                   "build/devops/d74-cutover-runbooks",
@@ -685,6 +687,7 @@
                   "reference/repository/routes/web-3",
                   "reference/repository/routes/web-4",
                   "reference/repository/routes/web-5",
+                  "reference/repository/routes/whiteboards",
                   "reference/repository/routes/workspace",
                   "reference/repository/routes/workspace-domains",
                   "reference/repository/routes/workspace-secrets"

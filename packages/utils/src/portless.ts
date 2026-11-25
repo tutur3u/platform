@@ -42,6 +42,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   tasks: `https://tasks.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   teach: `https://teach.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   track: `https://track.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  whiteboards: `https://whiteboards.${TUTURUUU_PORTLESS_ROOT_HOST}`,
 } as const;
 
 export type TuturuuuPortlessAppName =

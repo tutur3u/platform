@@ -54,6 +54,7 @@ export const ONE_ORIGIN_APP_BASE_PATHS = {
   teach: '/teach',
   tools: '/tools',
   track: '/track',
+  whiteboards: '/whiteboards',
   workspace: '/workspace',
 } as const;
 

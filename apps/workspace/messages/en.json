@@ -4640,7 +4640,8 @@
       "tasks": "Plan projects, assign work, and track progress.",
       "teach": "Plan courses, manage classes, and support learners.",
       "tools": "Open focused utilities for QR codes and quick tasks.",
-      "track": "Record time and understand where work goes."
+      "track": "Record time and understand where work goes.",
+      "whiteboards": "Sketch, diagram and brainstorm together on real-time whiteboards."
     },
     "app_names": {
       "ai": "AI Studio",
@@ -4673,7 +4674,8 @@
       "tasks": "Tasks",
       "teach": "Teach",
       "tools": "Tools",
-      "track": "Track"
+      "track": "Track",
+      "whiteboards": "Whiteboards"
     },
     "apps": "Apps",
     "apps_count": "{count, plural, one {# app} other {# apps}}",
@@ -5076,6 +5078,7 @@
       "track_3": "Team time management",
       "vaultWitness": "Vault witness service",
       "voiceAssistant": "Voice assistant",
+      "whiteboards_0": "Real-time whiteboards",
       "workforce": "Workforce administration",
       "workspace-domains_0": "Workspace custom domains edge",
       "workspaces": "Workspaces created per account"

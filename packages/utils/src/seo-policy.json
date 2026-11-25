@@ -215,6 +215,12 @@
     "publicPaths": [],
     "publicPatterns": []
   },
+  "whiteboards": {
+    "origin": "https://whiteboards.tuturuuu.com",
+    "localePrefix": "never",
+    "publicPaths": [],
+    "publicPatterns": []
+  },
   "workspace": {
     "origin": "https://workspace.tuturuuu.com",
     "localePrefix": "as-needed",

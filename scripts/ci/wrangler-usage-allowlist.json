@@ -504,6 +504,16 @@
       },
       "digest": "fd80840e0ca9aeb24af8ad5857f1f12fe9748dd81423e412cc05154218cb2241"
     },
+    ".github/workflows/whiteboards-cloudflare.yaml": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7996",
+        "reason": "Same cutover workflow shape as the admitted Chat entry (REV-7996), now with the same two lines: it sets WRANGLER_SEND_METRICS false and names the emitted Wrangler config. It does not invoke wrangler. The void-wave1 publication gap and its removal condition remain. A reviewer must confirm this one-to-one match."
+      },
+      "digest": "1beb88e2772be3324b55b9f33dcfe4b0c818fa7898de666878c61b1d0080214f"
+    },
     ".github/workflows/workspace-cloudflare.yaml": {
       "lines": 2,
       "uses": 2,
@@ -2191,6 +2201,46 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "1e59666371951ffd119241c49b99fde3d56ab48e3cb2c22f3810b9f0acb3c931"
+    },
+    "apps/whiteboards/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7962",
+        "reason": "Whiteboards native candidate adds the same pinned Wrangler adapter lines the admitted Chat candidate records (#7962): ignored .void-wrangler.jsonc, built-worker harness or dependency pin. Nothing is published with Wrangler; publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven. A reviewer must confirm this one-to-one match."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/whiteboards/cloudflare/auth-redirect.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/55c5329e60741971410d5b738597bf633f0c3ee3",
+        "reason": "Same local emitted-Worker fixture as the admitted Git and Learn entries (identical digest): one `const sdk = require('wrangler')` line starts the built Worker with synthetic bindings and an isolated registry. There is no abuse-guard service here, no provider access and no publish call. The void-emitted-runtime gap is unchanged. A reviewer must confirm this one-to-one match."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/whiteboards/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7996",
+        "reason": "Whiteboards native candidate adds the same pinned Wrangler adapter lines the admitted Chat candidate records (#7996): ignored .void-wrangler.jsonc, built-worker harness or dependency pin. Nothing is published with Wrangler; publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven. A reviewer must confirm this one-to-one match."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/whiteboards/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7962",
+        "reason": "Whiteboards native candidate adds the same pinned Wrangler adapter lines the admitted Chat candidate records (#7962): ignored .void-wrangler.jsonc, built-worker harness or dependency pin. Nothing is published with Wrangler; publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven. A reviewer must confirm this one-to-one match."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/workspace-domains/wrangler.jsonc": {
       "lines": 1,

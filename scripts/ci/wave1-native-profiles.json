@@ -967,6 +967,79 @@
           "admittedSourceServices": []
         }
       }
+    },
+    "whiteboards": {
+      "productionOnly": true,
+      "productionWorker": "tuturuuu-whiteboards",
+      "canonicalHost": "whiteboards.tuturuuu.com",
+      "secrets": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY"
+      ],
+      "optionalSecretNames": [
+        "TUTURUUU_APP_COORDINATION_SECRET",
+        "APP_COORDINATION_TOKEN_SECRET"
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "whiteboards",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://whiteboards.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+          "SUPABASE_SECRET_KEY"
+        ],
+        "allowedVars": {
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/whiteboards/void.config.ts",
+          "script": "build:cloudflare",
+          "command": "vp build --configLoader runner"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 307,
+              "redirectOrigin": "https://tuturuuu.com",
+              "noStore": true
+            },
+            {
+              "path": "/api/build-info",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-whiteboards",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-whiteboards",
+          "productionOnly": true,
+          "doctorExpectations": {
+            "expectRedirect": true
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "0"
+          },
+          "stagingPublicationVars": {},
+          "admittedSourceServices": []
+        }
+      }
     }
   },
   "stagingAdmission": {

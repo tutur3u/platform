@@ -11,6 +11,10 @@ import {
   getValidatedInternalWebApiOrigin,
   resolveConfiguredOrigin,
 } from './origin-policy';
+import {
+  KNOWN_NON_PLATFORM_LOCALHOST_PORTS,
+  KNOWN_NON_PLATFORM_TUTURUUU_HOSTS,
+} from './known-app-hosts';
 import { mergeHeaders } from './request-headers';
 import { type RetryAfterInit, withRetryAfter } from './retry-after';
 
@@ -41,60 +45,6 @@ type HeaderAccessor = Pick<Headers, 'get'>;
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const KNOWN_CUSTOM_SATELLITE_HOSTS = new Set(['nova.ai.vn']);
-const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
-  'apps.tuturuuu.com',
-  'cms.tuturuuu.com',
-  'calendar.tuturuuu.com',
-  'chat.tuturuuu.com',
-  'drive.tuturuuu.com',
-  'mail.tuturuuu.com',
-  'meet.tuturuuu.com',
-  'qr.tuturuuu.com',
-  'mira.tuturuuu.com',
-  'tasks.tuturuuu.com',
-  'finance.tuturuuu.com',
-  'inventory.tuturuuu.com',
-  'storefront.tuturuuu.com',
-  'tanstack.tuturuuu.com',
-  'track.tuturuuu.com',
-  'learn.tuturuuu.com',
-  'teach.tuturuuu.com',
-  'pay.tuturuuu.com',
-  'contacts.tuturuuu.com',
-  'forms.tuturuuu.com',
-  'lettin.tuturuuu.com',
-  'git.tuturuuu.com',
-  'hive.tuturuuu.com',
-  'mind.tuturuuu.com',
-]);
-const KNOWN_NON_PLATFORM_LOCALHOST_PORTS = new Set([
-  '7804',
-  '7805',
-  '7806',
-  '7807',
-  '7808',
-  '7809',
-  '7810',
-  '7811',
-  '7812',
-  '7813',
-  '7814',
-  '7815',
-  '7816',
-  '7817',
-  '7818',
-  '7819',
-  '7820',
-  '7821',
-  '7822',
-  '7824',
-  '7826',
-  '7827',
-  '7828',
-  '7830',
-  '7833',
-]);
-
 export { getValidatedInternalWebApiOrigin } from './origin-policy';
 export { InternalApiError } from './internal-api-error';
 export {

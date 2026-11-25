@@ -33,6 +33,7 @@ const RESERVED_MANAGED_PROJECT_HOSTNAMES = Object.freeze([
     'tools',
     'pay',
     'infrastructure',
+    'whiteboards',
   ].map((app) => `${app}.tutur3u.com`),
   'nova.ai.vn',
   // Released domains: reserved so no customer project can claim them, and

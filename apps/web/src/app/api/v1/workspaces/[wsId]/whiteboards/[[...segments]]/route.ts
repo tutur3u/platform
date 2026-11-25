@@ -12,5 +12,5 @@ export const { GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS } =
       ['[boardId]'],
       { GET: route1.GET, PATCH: route1.PATCH, DELETE: route1.DELETE },
     ],
-    [[], { POST: route2.POST }],
+    [[], { GET: route2.GET, POST: route2.POST }],
   ]);

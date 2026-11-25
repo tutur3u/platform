@@ -80,6 +80,7 @@ const SATELLITE_WORKSPACE_SETTINGS_APPS = new Set([
   'apps/tasks',
   'apps/track',
   'apps/web',
+  'apps/whiteboards',
 ]);
 
 const BARE_ROOT_KEY_APP_SCOPES = new Map([

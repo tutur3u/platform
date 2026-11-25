@@ -25,6 +25,8 @@ const protectedSurfaces = {
   apps: ['frontend'],
   workspace: ['frontend'],
   git: ['frontend'],
+  // Held until a reviewed Start + Void cutover admits it.
+  whiteboards: ['frontend'],
   // Wave 2: held until a reviewed Start + Void cutover admits it.
   shortener: ['frontend'],
   contacts: ['frontend'],

@@ -28,6 +28,7 @@ const APPS = [
   { name: 'apps/parley', dir: 'apps/parley' },
   { name: 'apps/mind', dir: 'apps/mind' },
   { name: 'apps/track', dir: 'apps/track' },
+  { name: 'apps/whiteboards', dir: 'apps/whiteboards' },
   { name: 'apps/nova', dir: 'apps/nova' },
   { name: 'apps/rewise', dir: 'apps/rewise' },
   { name: 'apps/storefront', dir: 'apps/storefront' },

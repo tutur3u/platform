@@ -183,6 +183,7 @@
   "web-cloudflare-production.yaml": ["always"],
   "web-opennext.yaml": ["path-filters"],
   "web-start-candidate.yaml": ["path-filters", "planner-affected-gate"],
+  "whiteboards-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "workspace-cloudflare.yaml": ["path-filters"],
   "workspace-permission-scope-contract.yaml": ["path-filters"]
 }

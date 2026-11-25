@@ -134,6 +134,13 @@
       "loginRoute": "/login",
       "paths": ["/", "/login", "/files", "/robots.txt", "/manifest.json"]
     },
+    "whiteboards": {
+      "name": "whiteboards",
+      "description": "Real-time collaborative whiteboards",
+      "entryRoute": "/",
+      "loginRoute": "/login",
+      "paths": ["/", "/login", "/api/build-info", "/robots.txt"]
+    },
     "external": {
       "name": "external",
       "description": "External integration bridge",

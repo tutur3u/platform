@@ -541,6 +541,11 @@
       "import": "./dist/meet-whiteboard.js",
       "require": "./dist/meet-whiteboard.js"
     },
+    "./whiteboards": {
+      "types": "./dist/whiteboards.d.ts",
+      "import": "./dist/whiteboards.js",
+      "require": "./dist/whiteboards.js"
+    },
     "./playgrounds": {
       "types": "./dist/playgrounds.d.ts",
       "import": "./dist/playgrounds.js",

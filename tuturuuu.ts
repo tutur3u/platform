@@ -252,6 +252,12 @@ export const cloudflareProductionTargets = [
     productionWorkflow: 'git-cloudflare.yaml',
   },
   {
+    app: 'whiteboards',
+    appPath: 'apps/whiteboards',
+    packageName: '@tuturuuu/whiteboards',
+    productionWorkflow: 'whiteboards-cloudflare.yaml',
+  },
+  {
     app: 'external',
     appPath: 'apps/external',
     packageName: '@tuturuuu/external',

@@ -517,6 +517,41 @@ describe('Finance mount', () => {
   });
 });
 
+describe('Whiteboards mount', () => {
+  const fetch = vi.fn(async (request: Request) => new Response(request.url));
+  const env = {
+    ...ENV,
+    GATEWAY_MOUNTED_PATHS: '/whiteboards,/whiteboards/*',
+    MOUNT_WHITEBOARDS: { fetch },
+  };
+
+  it.each([
+    '/whiteboards',
+    '/whiteboards/personal',
+    '/whiteboards/vi/personal/11111111-1111-4111-8111-111111111111',
+    '/whiteboards/assets/app.js',
+  ])('dispatches %s to Whiteboards with its original URL', async (path) => {
+    const { handle } = handler();
+    const url = `https://tuturuuu.com${path}?ref=a&ref=b`;
+    const response = await handle(new Request(url), env);
+    expect(response.headers.get('x-gateway-cache')).toBe('MOUNT');
+    expect(await response.text()).toBe(url);
+  });
+
+  it('does not take a sibling path that only starts with the segment', async () => {
+    const { handle } = handler();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('web'))
+    );
+    const response = await handle(
+      new Request('https://tuturuuu.com/whiteboards-archive'),
+      env
+    );
+    expect(await response.text()).toBe('web');
+  });
+});
+
 describe('Meet mount', () => {
   it.each([
     '/meet',

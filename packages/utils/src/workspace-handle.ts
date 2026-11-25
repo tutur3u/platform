@@ -66,6 +66,7 @@ export const RESERVED_WORKSPACE_HANDLES: readonly string[] = [
   'teach',
   'tools',
   'track',
+  'whiteboards',
   'workspace',
 ];
 

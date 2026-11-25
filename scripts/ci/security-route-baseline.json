@@ -7798,7 +7798,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/route.ts",
-    "digest": "7c6b22b7c9ac86368cc2921d798816f24f06cc173f465ef77be5db1a82e914d6"
+    "digest": "1a2e67ab1468972e376311e2ede74eb670989932371f89e5283253e6c22331bc"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/limits/route.ts",
@@ -7871,5 +7871,37 @@
   {
     "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/users/indicators/migrate/route.ts",
     "digest": "13e8d3e43360863a7667c7e8778e0f030430dae4270a53a76d1e2b843bdd7256"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/auth/logout/route.ts",
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/auth/refresh-app-session/route.ts",
+    "digest": "ab2626ed87592d86b0438080a53297c506a91669f1b9532624fd980c38097166"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/auth/verify-app-token/route.ts",
+    "digest": "3545d98d8ce82668fefd66f8f0b6abfdbee958fee1f9ff61e4307b99f5579d31"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/build-info/route.ts",
+    "digest": "74a9dcc4b99d5c156dad6385d276fea8ebe65afe1374075a951e2eb19153a03c"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts",
+    "digest": "de4c96f7eb90a67d018bc6d90638d3e34705c1cfb6c2ffba38f0f92f0339b6b6"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/v1/workspaces/[wsId]/avatar/route.ts",
+    "digest": "107dc6b1065743b2a1ce7b02d90136aadd5eaea709d5413bd93a3c737952d984"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
+    "digest": "b64da5f46fa6d60b369a5add32227bfff4c4d9740813d3e6182389988607a7d6"
+  },
+  {
+    "file": "apps/whiteboards/src/app/api/workspaces/[wsId]/route.ts",
+    "digest": "df65378b757d02e27bc7b466c05dd679b90e0e5acdf547107cbfec1d6cfdeb2b"
   }
 ]

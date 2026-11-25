@@ -1,0 +1,44 @@
+---
+title: Whiteboards
+description: Real-time collaborative whiteboards as a dedicated Tuturuuu app at tuturuuu.com/whiteboards.
+updatedAt: "2026-11-25"
+audience: users
+---
+
+Whiteboards is the dedicated app for sketching, diagramming and brainstorming
+with a workspace. It is served at `https://tuturuuu.com/whiteboards` (the
+canonical entry) and answers on its own host `whiteboards.tuturuuu.com`, which
+redirects to the apex once the mount is live. The editor is the shared
+`@tuturuuu/whiteboard` package; the app adds the workspace shell, the board list
+and the board page.
+
+## Routes
+
+| Path | What it shows |
+| --- | --- |
+| `/whiteboards/<workspace>` | Board list: search, sort, grid or list view, active and archived tabs, create, edit, archive and delete |
+| `/whiteboards/<workspace>/<boardId>` | The editor with the board title, save state, live connection state and collaborator avatars |
+
+`<workspace>` is a workspace id, `personal` or `internal`. Once the app is live,
+Web's old `/<workspace>/whiteboards[/<boardId>]` routes redirect to the same
+paths in the app; until then Web serves boards itself (see
+[Whiteboards on Start + Void](/build/devops/whiteboards-start-void)).
+
+## Product decisions
+
+| Decision | Scope and default | Exceptions |
+| --- | --- | --- |
+| Access | Any workspace member can list, open, create, edit, archive and delete boards. There is no separate permission. | Non-members and signed-out visitors get the sign-in redirect or a not-found page. |
+| Workspace tier | The tier gate stays in Web's sidebar entry (`requiredWorkspaceTier` for `whiteboards`, always shown). The app does not add a second gate. | None. |
+| Live collaboration | On in every workspace except a personal one, for every tier: shared canvas, cursors, presence avatars. | A personal workspace is edited alone, so no channel is opened. |
+| Data and API ownership | Boards, snapshots and images stay behind Web's `/api/v1/workspaces/<id>/whiteboards` routes and Web's realtime checkpoint route. The app reaches them through `@tuturuuu/internal-api/whiteboards`. | None. |
+| Creator names | The list shows the creator's display name; a nameless co-member is shown by email only when the workspace allows it (`HIDE_MEMBER_EMAIL`, same-workspace membership). | Guests and non-members never receive an email. |
+| Indexing | The app is private: every page is `noindex`. | None. |
+
+## Regression coverage
+
+- Client contract: `packages/internal-api/src/whiteboards.test.ts`.
+- List endpoint: `apps/web/src/__tests__/whiteboards-list-route.test.ts`.
+- Persistence and image adapters: `apps/whiteboards/src/lib/whiteboards/workspace-adapters.test.ts`.
+- Pages and not-found handling: `apps/whiteboards/src/features/whiteboards/pages.test.tsx`.
+- Web redirects (with the held Web change): `apps/web/src/lib/workspace-satellite-redirect.test.ts`.

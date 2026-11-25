@@ -19,6 +19,7 @@ const DEFAULT_TRANSLATION_DIRS = [
   'apps/tasks/messages',
   'apps/meet/messages',
   'apps/track/messages',
+  'apps/whiteboards/messages',
 ];
 
 const UNSAFE_KEY_PARTS = new Set(['__proto__', 'constructor', 'prototype']);

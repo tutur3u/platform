@@ -29,6 +29,7 @@ const apps = [
   'apps',
   'workspace',
   'git',
+  'whiteboards',
   'shortener',
   'mastermind',
   'contacts',

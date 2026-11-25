@@ -77,7 +77,7 @@ const originalRoutes = {
   wallets: ['GET', 'POST'],
   'whiteboards/[boardId]/image-url': ['GET', 'POST'],
   'whiteboards/[boardId]': ['GET', 'PATCH', 'DELETE'],
-  whiteboards: ['POST'],
+  whiteboards: ['GET', 'POST'],
 } as const;
 
 const routeGroups = {

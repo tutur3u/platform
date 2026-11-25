@@ -100,6 +100,10 @@
       "name": "git.tuturuuu",
       "script": "dev:app"
     },
+    "apps/whiteboards": {
+      "name": "whiteboards.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/playground": {
       "name": "playground.tuturuuu",
       "script": "dev:app"

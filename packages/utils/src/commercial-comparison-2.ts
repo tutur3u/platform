@@ -329,4 +329,11 @@ export const features2: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
     detail: 'standard',
   },
+  {
+    id: 'whiteboards_0',
+    app: 'whiteboards',
+    category: 'work',
+    values: ['included', 'included', 'included', 'included'],
+    detail: 'standard',
+  },
 ];

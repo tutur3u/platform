@@ -32,6 +32,7 @@ export const STAGING_APP_LABELS = [
   'teach',
   'tools',
   'track',
+  'whiteboards',
   'colab',
 ] as const;
 const hosts = new Set<string>(

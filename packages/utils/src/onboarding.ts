@@ -146,6 +146,12 @@ const MISSIONS = [
     ['build', 'preview', 'share'],
   ],
   ['track', 'focus', 'reversible', ['timer', 'session', 'insights']],
+  [
+    'whiteboards',
+    'collaborate',
+    'confirmation_required',
+    ['board', 'draw', 'share'],
+  ],
 ] as const satisfies readonly (readonly [
   OnboardingAppSlug,
   OnboardingGoal,

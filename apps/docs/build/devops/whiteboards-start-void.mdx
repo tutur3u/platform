@@ -1,0 +1,137 @@
+---
+title: "Whiteboards on Start + Void"
+description: "The dedicated Whiteboards Worker: profiles, build, the held cutover steps, smoke checks and rollback."
+updatedAt: "2026-11-25"
+audience: developers
+---
+
+`apps/whiteboards` is the dedicated Whiteboards app. It is a Next App Router
+source that runs on TanStack Start, Vite+ and Void behind
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge), generated with the
+[conversion codemod](/build/devops/start-bridge-codemod). There is no legacy
+Vercel project and no legacy subdomain Worker: this app was carved out of Web's
+`/[wsId]/whiteboards` routes, so Web keeps serving boards until the mount is
+live.
+
+## What moved and what stayed
+
+| Piece | Owner |
+| --- | --- |
+| Board list and board pages, create/edit dialogs, editor shell | `apps/whiteboards` |
+| Editor, snapshot format, realtime transport | `packages/whiteboard` (unchanged) |
+| Client for the board API | `packages/internal-api/src/whiteboards.ts` |
+| Board API (`GET/POST /whiteboards`, `GET/PATCH/DELETE /whiteboards/<id>`, `image-url`) | `apps/web` (the list `GET` is new) |
+| Realtime checkpoint (`/api/v1/realtime/whiteboard/checkpoint`) | `apps/web` (unchanged) |
+
+The app owns only the satellite shell routes (`/api/auth/*`, `/api/build-info`,
+avatar and AI-credit routes, `/api/workspaces/<id>`). Every other `/api/*`
+request is forwarded to the central Web API, so no catch-all page exists under
+`[locale]/[wsId]`. The actor is `getSatelliteAppSessionUser('whiteboards')`.
+
+## Worker profiles
+
+| Profile | Selected by | Worker | Hosts |
+| --- | --- | --- | --- |
+| Staging (default) | no variable | the staging name in `cloudflare/deployment-profile.mjs` | the root host only, `TUTURUUU_NOINDEX=1` |
+| Production | `VITE_WHITEBOARDS_NATIVE_PROFILE=production` | `tuturuuu-whiteboards` | the root host plus `tuturuuu.com/whiteboards` and `/whiteboards/*` |
+
+`cloudflare/deployment-profile.mjs` holds the names and variables for
+`void.config.ts`. `scripts/ci/whiteboards-native-artifact.py`, the runtime test
+and `scripts/ci/wave1-native-profiles.json` repeat them, and
+`scripts/ci/whiteboards-native-artifact.test.py` pins the artifact script to the
+profile. Change them together.
+Neither profile declares routes, custom domains, `workers_dev` or `preview_urls`.
+
+- Entry: `cloudflare/worker.ts` (generated); app-owned options in
+  `start-bridge.config.ts` (nonce CSP, report-only Trusted Types, the shared
+  response policy).
+- Binding: `ASSETS` (static output, `run_worker_first`).
+- Variable (name): `TUTURUUU_NOINDEX`; optional `INTERNAL_WEB_API_ORIGIN`
+  (default `https://tuturuuu.com`).
+- Secrets (names only, set in the Worker): `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
+  `TUTURUUU_APP_COORDINATION_SECRET`.
+- Data: no database writes and no migrations.
+
+The editor needs no new response-policy exceptions. Trusted Types stays in
+report mode (`TTR_TRUSTED_TYPES_WHITEBOARDS` unset or `report`) until a
+signed-in crawl of the editor shows no violations; moving it to `enforce` is a
+separate reviewed change.
+
+## Build and qualification
+
+`whiteboards-cloudflare.yaml` runs the reusable native workflow (build, routes,
+types, unit tests, emitted-Worker runtime, sealed restore) and a
+`whiteboards-cutover-artifact` job that builds the production profile, seals the
+route-free archive and repeats `test:runtime` from a clean restore. Do not run
+`build:cloudflare` on a shared development machine; use the workflow.
+
+```bash
+node scripts/start-bridge-codemod/cli.mjs whiteboards          # dry run, never --apply again
+python3 scripts/ci/whiteboards-native-artifact.test.py
+CI=true bun run --cwd apps/whiteboards test:runtime              # CI only, after the build
+```
+
+`scripts/ci/wave1-native-profiles.json` carries the production recipe
+(`productionOnly`, secrets, smoke cases) used by `wave1-native-production.yaml`.
+Do not re-run the codemod with `--apply`: `void.config.ts`,
+`start-bridge.config.ts` and the workflow carry the profile selection by hand.
+
+## Cutover order
+
+The Web redirect and the gateway mount are held commits, separate from the app,
+so the product keeps working until the app is live. Each step is verified before the next, and each has a reverse.
+
+1. **Land the app** (source, registries, docs, and the migration
+   `20261125130000_whiteboards_cross_app_token_audience.sql`, which adds
+   `whiteboards` to `private.cross_app_internal_app_names()` so Web can mint and
+   verify cross-app tokens for it; production applies it through the gated
+   workflow after the production sync, and sign-in through the app's own host
+   waits for that apply). Web's pages are unchanged and
+   no gateway route exists. The launcher and the Apps catalog list Whiteboards at
+   `whiteboards.tuturuuu.com`, so do step 2 straight after this lands.
+2. **Publish the sealed production artifact** from the exact release SHA:
+   provision the four Worker secrets first, upload the route-free
+   `tuturuuu-whiteboards` build, then attach `whiteboards.tuturuuu.com` to it so
+   the launcher link works. Record the Worker version.
+3. **Signed-in crawl** of the board list and one editor session through a
+   `Cloudflare-Workers-Version-Overrides` staged version; check realtime
+   (two members on one board), image upload and the Trusted Types report log.
+4. **Mount.** Land the held gateway commit (`/whiteboards`, `/whiteboards/*` in
+   `GATEWAY_MOUNTED_PATHS`, the `MOUNT_WHITEBOARDS` service binding,
+   `/whiteboards` in `PENDING_WEB_MOUNTS` and the redirect Worker's
+   `APP_WHITEBOARDS` binding) in the same window as the gateway write. Its
+   Wrangler digests in `scripts/ci/wrangler-usage-allowlist.json` need a fresh
+   admission with it. Then run `node scripts/active-app-mounts.mjs --live <version.json>`.
+5. **Web redirect.** Land the held Web commit: `/[wsId]/whiteboards[/...]`
+   redirects to the app, Web's sidebar entry links to it, and Web's copies of
+   the pages, adapters and hook are deleted. Landing this before step 4 would
+   send members to a path that is not live.
+6. **Active mount.** Remove `/whiteboards` from `PENDING_WEB_MOUNTS` in a
+   separate change after signed-in acceptance, so Web's logins use the mount.
+7. **Subdomain.** Move `whiteboards.tuturuuu.com` from the app Worker to the
+   redirect Worker and add `whiteboards` to `SUBDOMAIN_REDIRECT_APPS` so it
+   answers 301 to `tuturuuu.com/whiteboards`. Without that list entry the
+   `APP_WHITEBOARDS` binding is a pass-through to the app Worker.
+
+## Smoke checks after the mount is live
+
+```bash
+curl -sI https://tuturuuu.com/whiteboards/api/build-info       # 200, JSON, no-store
+curl -sI https://tuturuuu.com/whiteboards/personal              # 307 to the sign-in page when signed out
+curl -sI https://tuturuuu.com/personal/whiteboards              # redirect to /whiteboards/personal
+curl -sI https://whiteboards.tuturuuu.com/api/build-info        # 200 until step 7, then 301
+```
+
+No smoke request may return `5xx`.
+
+## Rollback
+
+1. Revert the Web commit: boards are served from Web again.
+2. Remove the `/whiteboards` entries and the `MOUNT_WHITEBOARDS` binding from the
+   gateway (the one-step mount rollback) and re-run the live-mount check.
+3. Move `whiteboards.tuturuuu.com` back to the app Worker if step 7 ran. The
+   Worker and its versions can stay; nothing else depends on them.
+
+Boards, snapshots and images live in the same tables and bucket as before, so a
+rollback touches no data.

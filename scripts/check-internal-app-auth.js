@@ -29,6 +29,7 @@ const REGISTERED_APPS = [
   'tasks',
   'teach',
   'track',
+  'whiteboards',
 ];
 const REGISTERED_APP_TARGETS = {
   ai: 'ai',
@@ -55,6 +56,7 @@ const REGISTERED_APP_TARGETS = {
   tasks: 'tasks',
   teach: 'teach',
   track: 'track',
+  whiteboards: 'whiteboards',
 };
 const COMPATIBLE_SESSION_FALLBACK_FILES = new Set([
   'apps/calendar/src/lib/api-auth.ts',
@@ -435,6 +437,7 @@ const registeredProxyPaths = [
   'apps/tasks/src/proxy.ts',
   'apps/teach/src/proxy.ts',
   'apps/track/src/proxy.ts',
+  'apps/whiteboards/src/proxy.ts',
 ];
 
 for (const proxyPath of registeredProxyPaths) {
@@ -474,6 +477,10 @@ const registeredAppConstantPaths = [
   ['apps/tasks/src/constants/common.ts', REGISTERED_APP_TARGETS.tasks],
   ['apps/teach/src/constants/common.ts', REGISTERED_APP_TARGETS.teach],
   ['apps/track/src/constants/common.ts', REGISTERED_APP_TARGETS.track],
+  [
+    'apps/whiteboards/src/constants/common.ts',
+    REGISTERED_APP_TARGETS.whiteboards,
+  ],
 ];
 
 for (const [constantPath, appName] of registeredAppConstantPaths) {
@@ -507,10 +514,14 @@ for (const [constantPath, appName] of registeredAppConstantPaths) {
   }
 }
 
-const internalDomainsSource = fs.readFileSync(
-  path.join(ROOT, 'packages/utils/src/internal-domains.ts'),
-  'utf8'
-);
+// The registered origins live in `internal-domain-entries.ts`; the resolver in
+// `internal-domains.ts` re-exports them.
+const internalDomainsSource = [
+  'packages/utils/src/internal-domains.ts',
+  'packages/utils/src/internal-domain-entries.ts',
+]
+  .map((file) => fs.readFileSync(path.join(ROOT, file), 'utf8'))
+  .join('\n');
 
 if (
   !/name:\s*['"]calendar['"],\s*url:\s*['"]http:\/\/localhost:7806['"]/su.test(
@@ -518,7 +529,7 @@ if (
   )
 ) {
   failures.push(
-    'packages/utils/src/internal-domains.ts: Calendar dev auth return URLs must use the app dev port 7806.'
+    'packages/utils/src/internal-domain-entries.ts: Calendar dev auth return URLs must use the app dev port 7806.'
   );
 }
 

@@ -17,6 +17,7 @@ import {
   Mail,
   MessageSquare,
   Package,
+  PencilRuler,
   Presentation,
   QrCodeIcon,
   Sparkles,
@@ -57,6 +58,7 @@ export const APP_ICONS: Partial<Record<LaunchableAppSlug, LucideIcon>> = {
   teach: Presentation,
   tools: QrCodeIcon,
   track: Timer,
+  whiteboards: PencilRuler,
 };
 
 export const CATEGORY_TONES: Record<

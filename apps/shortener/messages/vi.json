@@ -162,7 +162,8 @@
       "tasks": "Lập kế hoạch dự án, giao việc và theo dõi tiến độ.",
       "teach": "Lập kế hoạch khóa học, quản lý lớp và hỗ trợ học viên.",
       "tools": "Mở các tiện ích chuyên biệt cho mã QR và tác vụ nhanh.",
-      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao."
+      "track": "Ghi nhận thời gian và hiểu thời gian làm việc được sử dụng ra sao.",
+      "whiteboards": "Phác thảo, vẽ sơ đồ và động não cùng nhau trên bảng trắng thời gian thực."
     },
     "app_names": {
       "ai": "AI Studio",
@@ -195,7 +196,8 @@
       "tasks": "Công việc",
       "teach": "Giảng dạy",
       "tools": "Công cụ",
-      "track": "Theo dõi"
+      "track": "Theo dõi",
+      "whiteboards": "Bảng trắng"
     },
     "apps": "Ứng dụng",
     "apps_count": "{count, plural, one {# ứng dụng} other {# ứng dụng}}",

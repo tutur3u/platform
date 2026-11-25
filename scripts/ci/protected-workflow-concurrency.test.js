@@ -697,7 +697,7 @@ test('Cloudflare Source isolates main pushes and docs coalesces them', () => {
     .sort();
   assert.ok(files.includes('finance-cloudflare.yaml'));
   assert.ok(files.includes('nova-cloudflare.yaml'));
-  assert.equal(files.length, 24);
+  assert.equal(files.length, 25);
   files.push('docs-seo-check.yaml');
   for (const file of files) {
     const coalesces = file === 'docs-seo-check.yaml';

@@ -27,6 +27,7 @@ const portableFiles = new Set([
   'internal-api/hidden-workspaces.ts',
   'internal-api/internal-api-error.ts',
   'internal-api/internal-api-url.ts',
+  'internal-api/known-app-hosts.ts',
   'internal-api/origin-policy.ts',
   'internal-api/people-registry.ts',
   'internal-api/product-feedback.ts',

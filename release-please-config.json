@@ -167,6 +167,10 @@
       "component": "track",
       "package-name": "@tuturuuu/track"
     },
+    "apps/whiteboards": {
+      "component": "whiteboards",
+      "package-name": "@tuturuuu/whiteboards"
+    },
     "apps/workspace": {
       "component": "workspace",
       "package-name": "@tuturuuu/workspace"

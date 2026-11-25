@@ -47,6 +47,7 @@ const satelliteAppApiRoots = [
   // apps/inventory now owns its migrated inventory API routes; it is no longer a
   // thin proxy-only satellite, so it is excluded from the local-API allowlist.
   'apps/drive/src/app/api',
+  'apps/whiteboards/src/app/api',
   'apps/meet/src/app/api',
   // apps/mail now owns its migrated mail API routes; it is no longer a thin
   // proxy-only satellite, so it is excluded from the local-API allowlist.
@@ -67,6 +68,7 @@ const registeredSatelliteApps = [
   'mind',
   'hive',
   'drive',
+  'whiteboards',
   'finance',
   'cms',
   'rewise',
@@ -99,6 +101,7 @@ const allowedSatelliteLocalApiRoutes = new Set([
   // commit that was merged but never built.
   'apps/chat/src/app/api/build-info/route.ts',
   'apps/drive/src/app/api/build-info/route.ts',
+  'apps/whiteboards/src/app/api/build-info/route.ts',
   'apps/meet/src/app/api/build-info/route.ts',
   // Meet transcription executes on its Cloudflare Worker. These handlers use
   // the independently tested Meet app-session and workspace/creator guard.
@@ -202,12 +205,19 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/inventory/src/app/api/auth/refresh-app-session/route.ts',
   'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
   'apps/drive/src/app/api/auth/logout/route.ts',
+  'apps/whiteboards/src/app/api/auth/logout/route.ts',
   'apps/drive/src/app/api/auth/refresh-app-session/route.ts',
+  'apps/whiteboards/src/app/api/auth/refresh-app-session/route.ts',
   'apps/drive/src/app/api/auth/verify-app-token/route.ts',
+  'apps/whiteboards/src/app/api/auth/verify-app-token/route.ts',
   'apps/drive/src/app/api/workspaces/[wsId]/route.ts',
+  'apps/whiteboards/src/app/api/workspaces/[wsId]/route.ts',
   'apps/drive/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts',
+  'apps/whiteboards/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts',
   'apps/drive/src/app/api/v1/workspaces/[wsId]/avatar/route.ts',
+  'apps/whiteboards/src/app/api/v1/workspaces/[wsId]/avatar/route.ts',
   'apps/drive/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts',
+  'apps/whiteboards/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts',
   'apps/mail/src/app/api/auth/logout/route.ts',
   'apps/mail/src/app/api/auth/refresh-app-session/route.ts',
   'apps/mail/src/app/api/auth/verify-app-token/route.ts',

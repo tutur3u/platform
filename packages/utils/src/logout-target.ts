@@ -27,6 +27,7 @@ const LOGOUT_APPS = new Set([
   'tasks',
   'teach',
   'track',
+  'whiteboards',
 ]);
 
 export interface LogoutTarget {

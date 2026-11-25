@@ -126,6 +126,7 @@ const PROTECTED_TRIGGERS = {
   'marketing-cloudflare.yaml': '975602b8f7271cbc',
   'mind-cloudflare.yaml': '72e9629135c6a13c',
   'teach-cloudflare.yaml': 'b37341dc49021b0b',
+  'whiteboards-cloudflare.yaml': 'f3ba815e26c0262d',
   'workspace-cloudflare.yaml': '9708b26510aea8f6',
 };
 

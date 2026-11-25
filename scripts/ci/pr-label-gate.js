@@ -116,6 +116,7 @@ const HEAVY_PR_WORKFLOWS = [
   'tutoring-teacher-hours-contract.yaml',
   'type-check.yaml',
   'web-start-candidate.yaml',
+  'whiteboards-cloudflare.yaml',
   'workspace-cloudflare.yaml',
   'workspace-permission-scope-contract.yaml',
 ];

@@ -75,6 +75,37 @@ describe('handleSubdomainRedirect', () => {
     expect(fetch.mock.calls[0]?.[0].url).toBe(callback);
   });
 
+  it('301s a Whiteboards board link and keeps its callback and API on the subdomain', async () => {
+    const { fetch } = setup();
+    const env = {
+      SUBDOMAIN_REDIRECT_APPS: 'apps,whiteboards',
+      APP_WHITEBOARDS: { fetch },
+    };
+    const response = await handleSubdomainRedirect(
+      new Request(
+        'https://whiteboards.tuturuuu.com/vi/personal/11111111-1111-4111-8111-111111111111?ref=a',
+        { headers: navigation }
+      ),
+      env
+    );
+    expect(response.status).toBe(301);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/whiteboards/vi/personal/11111111-1111-4111-8111-111111111111?ref=a'
+    );
+    expect(fetch).not.toHaveBeenCalled();
+
+    for (const passthrough of [
+      'https://whiteboards.tuturuuu.com/verify-token?nextUrl=%2Fpersonal',
+      'https://whiteboards.tuturuuu.com/api/build-info',
+    ]) {
+      await handleSubdomainRedirect(
+        new Request(passthrough, { headers: navigation }),
+        env
+      );
+      expect(fetch.mock.calls.at(-1)?.[0].url).toBe(passthrough);
+    }
+  });
+
   it('301s a Drive folder link and keeps its storage API and callback on the subdomain', async () => {
     const { fetch } = setup();
     const env = { SUBDOMAIN_REDIRECT_APPS: 'apps,drive', APP_DRIVE: { fetch } };

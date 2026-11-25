@@ -130,6 +130,7 @@ export const ci = {
   'marketing-cloudflare.yaml': true,
   'workspace-cloudflare.yaml': true,
   'contacts-cloudflare.yaml': true,
+  'whiteboards-cloudflare.yaml': true,
 };
 
 // Production planner deny-list, keyed by app id. A listed app resolves
@@ -268,4 +269,7 @@ export const productionPublicationPolicy = {
   // The hostname moves off tuturuuu-drive first, then the native Worker
   // publishes; admission is a reviewed wave-1 cutover change.
   drive: { state: 'held', reason: 'held for wave-1 cutover' },
+  // New app with no legacy host: a reviewed cutover change admits the first
+  // route-free upload of the sealed artifact.
+  whiteboards: { state: 'held', reason: 'held for wave-1 cutover' },
 } satisfies ProductionPublicationPolicy;
