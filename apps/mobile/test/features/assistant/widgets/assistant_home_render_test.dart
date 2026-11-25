@@ -10,6 +10,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.da
 import 'package:mobile/features/assistant/widgets/assistant_composer_panel.dart';
 import 'package:mobile/features/assistant/widgets/assistant_history_sidebar.dart';
 import 'package:mobile/features/assistant/widgets/assistant_home_view.dart';
+import 'package:mobile/features/assistant/widgets/assistant_quick_actions.dart';
 import 'package:mobile/features/assistant/widgets/assistant_recent_conversations.dart';
 
 import '../../../helpers/design_render_harness.dart';
@@ -163,9 +164,8 @@ void main() {
           wide ? findsNothing : findsOneWidget,
         );
 
-        Rect tile(String id) => tester.getRect(
-          find.byKey(ValueKey('assistant-quick-action-$id')),
-        );
+        Rect tile(String id) =>
+            tester.getRect(find.byKey(ValueKey('assistant-quick-action-$id')));
         expect(tile('tasks').top, tile('calendar').top);
         if (device == 'desktop') {
           expect(tile('finance').top, tile('calendar').top);
@@ -282,5 +282,38 @@ void main() {
       );
       expect(find.text('Not available offline'), findsOneWidget);
     });
+  });
+
+  testWidgets('quick actions tolerate a slot narrower than their gaps', (
+    tester,
+  ) async {
+    DesignRender.setSize(tester, _sizes['phone']!);
+    await _pump(
+      tester,
+      Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: 2,
+          child: AssistantQuickActionGrid(onSelected: (_) {}),
+        ),
+      ),
+      Brightness.light,
+    );
+    expect(
+      tester.getSize(find.byKey(const ValueKey('assistant-quick-actions'))),
+      isNotNull,
+    );
+    // Narrow tiles may clip their content; only the layout must hold.
+    final errors = <Object>[];
+    Object? error;
+    while ((error = tester.takeException()) != null) {
+      errors.add(error!);
+    }
+    expect(
+      errors.whereType<FlutterError>().where(
+        (e) => e.toString().contains('negative'),
+      ),
+      isEmpty,
+    );
   });
 }

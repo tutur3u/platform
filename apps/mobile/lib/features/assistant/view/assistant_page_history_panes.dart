@@ -3,19 +3,6 @@ part of 'assistant_page.dart';
 /// History surfaces inside the Mira page: the wide-screen sidebar beside the
 /// thread and the recent conversations on the new-chat screen.
 extension _AssistantPageHistoryPanes on _AssistantPageState {
-  /// Width of the history sidebar, or 0 when it is hidden. Records whether
-  /// the window is wide enough for it, so the history action toggles the
-  /// sidebar there instead of opening the Conversations page.
-  double _historySidebarWidthFor(BuildContext context, {required bool hidden}) {
-    final size = MediaQuery.sizeOf(context);
-    final body = size.width - shellNavigationExtentFor(size);
-    _historySidebarAvailable =
-        !hidden && body >= assistantHistorySidebarMinWidth;
-    return _historySidebarAvailable && !_historySidebarCollapsed
-        ? assistantHistorySidebarWidth(body)
-        : 0;
-  }
-
   /// The listed conversation matching the open chat, including a Live chat
   /// stored under its conversation id.
   String? _activeHistoryChatId(AssistantChatState state) {
@@ -76,15 +63,29 @@ extension _AssistantPageHistoryPanes on _AssistantPageState {
     );
   }
 
+  /// The thread beside the history sidebar when the page's own width
+  /// fits both. Sized from the page constraints rather than the window, so
+  /// the split holds wherever the shell places the page. Records whether the
+  /// sidebar fits, so the history action toggles it there instead of opening
+  /// the Conversations page.
   Widget _historySplit({
-    required double sidebarWidth,
+    required bool hidden,
     required Widget Function() sidebar,
-    required Widget page,
-  }) => Row(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      SizedBox(width: sidebarWidth, child: sidebarWidth > 0 ? sidebar() : null),
-      Expanded(child: page),
-    ],
+    required Widget Function(bool sidebarShown) page,
+  }) => LayoutBuilder(
+    builder: (context, constraints) {
+      final width = constraints.maxWidth;
+      _historySidebarAvailable =
+          !hidden && width >= assistantHistorySidebarMinWidth;
+      final shown = _historySidebarAvailable && !_historySidebarCollapsed;
+      final sidebarWidth = shown ? assistantHistorySidebarWidth(width) : 0.0;
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(width: sidebarWidth, child: shown ? sidebar() : null),
+          Expanded(child: page(shown)),
+        ],
+      );
+    },
   );
 }

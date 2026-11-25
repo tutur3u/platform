@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -68,7 +70,10 @@ class AssistantQuickActionGrid extends StatelessWidget {
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= _rowWidth ? 4 : 2;
         const gap = AppSpacing.sm;
-        final available = constraints.maxWidth - gap * (columns - 1);
+        final available = math.max(
+          0,
+          constraints.maxWidth - gap * (columns - 1),
+        );
         // Floored so rounding never pushes the last tile onto a new run.
         final width = (available / columns).floorToDouble();
         return Wrap(

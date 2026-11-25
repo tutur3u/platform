@@ -257,189 +257,180 @@ extension _AssistantPageLayout on _AssistantPageState {
                           hasTranscript: hasTranscript,
                           showLiveStrip: showLiveStrip || isLiveMode,
                         );
-                        final sidebarWidth = _historySidebarWidthFor(
-                          context,
-                          hidden: isLiveMode || localLane,
-                        );
-                        final recent = localLane || sidebarWidth > 0
-                            ? null
-                            : _recentConversations(
-                                currentWorkspace.id,
-                                remoteChatState,
-                              );
-                        final page = AppScaffold(
-                          child: SafeArea(
-                            top: false,
-                            bottom: false,
-                            // The thread is a full-width scrollable; its
-                            // content is centred by the root page insets.
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.translucent,
-                              onTap: _dismissKeyboard,
-                              child: Stack(
-                                children: [
-                                  if (isLiveMode)
-                                    _buildLiveModeView(
-                                      currentWorkspace.id,
-                                      chatState,
-                                      liveState,
-                                      liveUiState,
-                                      shellState,
-                                      liveCameraController,
-                                    )
-                                  else ...[
-                                    Stack(
-                                      children: [
-                                        NotificationListener<Notification>(
-                                          onNotification:
-                                              onTranscriptNotification,
-                                          // A resting finger pauses follow.
-                                          child: Listener(
-                                            onPointerDown: (_) =>
-                                                _transcriptFollower
-                                                    .pointerDown(),
-                                            onPointerUp: (_) =>
-                                                _transcriptFollower.pointerUp(),
-                                            onPointerCancel: (_) =>
-                                                _transcriptFollower.pointerUp(),
-                                            child: CustomScrollView(
-                                              controller: _scrollController,
-                                              keyboardDismissBehavior:
-                                                  scrollDismissBehavior,
-                                              physics: _AssistantPageState
-                                                  ._assistantScrollPhysics,
-                                              slivers: [
-                                                _threadPage(
-                                                  headerHeight: headerHeight,
-                                                  wsId: currentWorkspace.id,
-                                                  chatState: chatState,
-                                                  liveState: liveState,
-                                                  shellState: shellState,
-                                                  camera: liveCameraController,
-                                                  showLiveStrip: showLiveStrip,
-                                                  showTranscript:
-                                                      showTranscript,
-                                                  recent: recent,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                        if (!localLane &&
-                                            _showCreationBanner(
-                                              remoteChatState,
-                                              currentWorkspace.id,
-                                            ))
-                                          Positioned(
-                                            top:
-                                                floatingShellHeaderInset(
-                                                  context,
-                                                  minimumContentHeight:
-                                                      headerHeight,
-                                                ) +
-                                                8,
-                                            left: 16,
-                                            right: 16,
-                                            child: AssistantCreationHoldBanner(
-                                              onCheckHistory: () => unawaited(
-                                                _openConversations(
-                                                  context,
-                                                  currentWorkspace.id,
-                                                ),
-                                              ),
-                                              onStartNewChat: () => unawaited(
-                                                _startNewFromCreationBanner(
-                                                  currentWorkspace.id,
-                                                ),
-                                              ),
-                                              onDismiss: () =>
-                                                  _dismissCreationBanner(
-                                                    currentWorkspace.id,
+                        Widget page(bool sidebarShown) {
+                          final recent = localLane || sidebarShown
+                              ? null
+                              : _recentConversations(
+                                  currentWorkspace.id,
+                                  remoteChatState,
+                                );
+                          return AppScaffold(
+                            child: SafeArea(
+                              top: false,
+                              bottom: false,
+                              // The thread is a full-width scrollable; its
+                              // content is centred by the root page insets.
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onTap: _dismissKeyboard,
+                                child: Stack(
+                                  children: [
+                                    if (isLiveMode)
+                                      _buildLiveModeView(
+                                        currentWorkspace.id,
+                                        chatState,
+                                        liveState,
+                                        liveUiState,
+                                        shellState,
+                                        liveCameraController,
+                                      )
+                                    else ...[
+                                      Stack(
+                                        children: [
+                                          NotificationListener<Notification>(
+                                            onNotification:
+                                                onTranscriptNotification,
+                                            // A resting finger pauses follow.
+                                            child: Listener(
+                                              onPointerDown: (_) =>
+                                                  _transcriptFollower
+                                                      .pointerDown(),
+                                              onPointerUp: (_) =>
+                                                  _transcriptFollower
+                                                      .pointerUp(),
+                                              onPointerCancel: (_) =>
+                                                  _transcriptFollower
+                                                      .pointerUp(),
+                                              child: CustomScrollView(
+                                                controller: _scrollController,
+                                                keyboardDismissBehavior:
+                                                    scrollDismissBehavior,
+                                                physics: _AssistantPageState
+                                                    ._assistantScrollPhysics,
+                                                slivers: [
+                                                  _threadPage(
+                                                    headerHeight: headerHeight,
+                                                    wsId: currentWorkspace.id,
+                                                    chatState: chatState,
+                                                    liveState: liveState,
+                                                    shellState: shellState,
+                                                    camera:
+                                                        liveCameraController,
+                                                    showLiveStrip:
+                                                        showLiveStrip,
+                                                    showTranscript:
+                                                        showTranscript,
+                                                    recent: recent,
                                                   ),
+                                                ],
+                                              ),
                                             ),
                                           ),
-                                        if (chatState.status ==
-                                            AssistantChatStatus.restoring)
-                                          Positioned(
-                                            top:
-                                                floatingShellHeaderInset(
-                                                  context,
-                                                  minimumContentHeight:
-                                                      headerHeight,
-                                                ) +
-                                                12,
-                                            left: 0,
-                                            right: 0,
-                                            child: const NovaLoadingIndicator(
-                                              size: 20,
+                                          if (!localLane &&
+                                              _showCreationBanner(
+                                                remoteChatState,
+                                                currentWorkspace.id,
+                                              ))
+                                            Positioned(
+                                              top:
+                                                  floatingShellHeaderInset(
+                                                    context,
+                                                    minimumContentHeight:
+                                                        headerHeight,
+                                                  ) +
+                                                  8,
+                                              left: 16,
+                                              right: 16,
+                                              child: _creationBanner(
+                                                context,
+                                                currentWorkspace.id,
+                                              ),
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                    if (hasTranscript)
-                                      AssistantScrollToBottomOverlay(
-                                        bottomClearance: _composerReservedSpace(
-                                          context,
-                                        ),
-                                        composerVisible: true,
-                                        composerHeight: _composerHeight,
-                                        isFullscreen: isFullscreen,
-                                        navigationExpanded:
-                                            chrome.navigationExpanded,
-                                        visible: _showScrollToBottomFab,
-                                        onPressed: _handleScrollToBottomPressed,
+                                          if (chatState.status ==
+                                              AssistantChatStatus.restoring)
+                                            Positioned(
+                                              top:
+                                                  floatingShellHeaderInset(
+                                                    context,
+                                                    minimumContentHeight:
+                                                        headerHeight,
+                                                  ) +
+                                                  12,
+                                              left: 0,
+                                              right: 0,
+                                              child: const NovaLoadingIndicator(
+                                                size: 20,
+                                              ),
+                                            ),
+                                        ],
                                       ),
+                                      if (hasTranscript)
+                                        AssistantScrollToBottomOverlay(
+                                          bottomClearance:
+                                              _composerReservedSpace(context),
+                                          composerVisible: true,
+                                          composerHeight: _composerHeight,
+                                          isFullscreen: isFullscreen,
+                                          navigationExpanded:
+                                              chrome.navigationExpanded,
+                                          visible: _showScrollToBottomFab,
+                                          onPressed:
+                                              _handleScrollToBottomPressed,
+                                        ),
+                                    ],
+                                    if (isLiveMode)
+                                      _buildLiveDock(
+                                        wsId: currentWorkspace.id,
+                                        chatState: chatState,
+                                        liveState: liveState,
+                                        chrome: chrome,
+                                      )
+                                    else
+                                      _buildComposer(
+                                        context: context,
+                                        wsId: currentWorkspace.id,
+                                        chatState: chatState,
+                                        liveState: liveState,
+                                        liveUiState: liveUiState,
+                                        shellState: shellState,
+                                        local: local,
+                                        isPersonalWorkspace:
+                                            isPersonalWorkspace,
+                                        localLane: localLane,
+                                        chrome: chrome,
+                                        messageActionsCurrent:
+                                            messageActionsCurrent,
+                                        removeComposerAttachment:
+                                            removeComposerAttachment,
+                                        retryComposerAttachment:
+                                            retryComposerAttachment,
+                                        showSuggestions:
+                                            !keyboardVisible && !showTranscript,
+                                        showControls:
+                                            keyboardVisible || !showTranscript,
+                                      ),
+                                    _localHeader(shellState, local),
+                                    ShellChromeActions(
+                                      ownerId: 'assistant-root',
+                                      locations: const {Routes.assistant},
+                                      actions: _buildChromeActions(
+                                        context,
+                                        wsId: currentWorkspace.id,
+                                        shellState: shellState,
+                                        chatState: chatState,
+                                        liveState: liveState,
+                                        isLiveMode: isLiveMode,
+                                      ),
+                                    ),
                                   ],
-                                  if (isLiveMode)
-                                    _buildLiveDock(
-                                      wsId: currentWorkspace.id,
-                                      chatState: chatState,
-                                      liveState: liveState,
-                                      chrome: chrome,
-                                    )
-                                  else
-                                    _buildComposer(
-                                      context: context,
-                                      wsId: currentWorkspace.id,
-                                      chatState: chatState,
-                                      liveState: liveState,
-                                      liveUiState: liveUiState,
-                                      shellState: shellState,
-                                      local: local,
-                                      isPersonalWorkspace: isPersonalWorkspace,
-                                      localLane: localLane,
-                                      chrome: chrome,
-                                      messageActionsCurrent:
-                                          messageActionsCurrent,
-                                      removeComposerAttachment:
-                                          removeComposerAttachment,
-                                      retryComposerAttachment:
-                                          retryComposerAttachment,
-                                      showSuggestions:
-                                          !keyboardVisible && !showTranscript,
-                                      showControls:
-                                          keyboardVisible || !showTranscript,
-                                    ),
-                                  _localHeader(shellState, local),
-                                  ShellChromeActions(
-                                    ownerId: 'assistant-root',
-                                    locations: const {Routes.assistant},
-                                    actions: _buildChromeActions(
-                                      context,
-                                      wsId: currentWorkspace.id,
-                                      shellState: shellState,
-                                      chatState: chatState,
-                                      liveState: liveState,
-                                      isLiveMode: isLiveMode,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
+                          );
+                        }
+
                         return _historySplit(
-                          sidebarWidth: sidebarWidth,
+                          hidden: isLiveMode || localLane,
                           sidebar: () => _buildHistorySidebar(
                             wsId: currentWorkspace.id,
                             chatState: remoteChatState,
@@ -458,6 +449,13 @@ extension _AssistantPageLayout on _AssistantPageState {
       ),
     );
   }
+
+  Widget _creationBanner(BuildContext context, String wsId) =>
+      AssistantCreationHoldBanner(
+        onCheckHistory: () => unawaited(_openConversations(context, wsId)),
+        onStartNewChat: () => unawaited(_startNewFromCreationBanner(wsId)),
+        onDismiss: () => _dismissCreationBanner(wsId),
+      );
 
   /// Root page gutters and centring for the full-width thread scrollable;
   /// the bottom reserves the composer instead of the plain dock clearance.
