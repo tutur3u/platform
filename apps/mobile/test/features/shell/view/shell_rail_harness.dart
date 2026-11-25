@@ -17,6 +17,8 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/settings/cubit/locale_cubit.dart';
+import 'package:mobile/features/settings/cubit/theme_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -28,6 +30,7 @@ import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,10 +43,11 @@ class _Profile extends MockCubit<ShellProfileState>
 
 /// Shared ShellPage harness for the rail/dock layout tests.
 class RailShell {
-  RailShell(this.router, this.actions);
+  RailShell(this.router, this.actions, this.auth);
 
   final GoRouter router;
   final ShellChromeActionsCubit actions;
+  final AuthCubit auth;
 
   String get path => router.routeInformationProvider.value.uri.path;
 }
@@ -57,6 +61,7 @@ const railShellRoutes = <String>[
   Routes.assistant,
   Routes.profileRoot,
   Routes.notifications,
+  Routes.settings,
   Routes.settingsAccounts,
   Routes.settingsAppearance,
   Routes.inventory,
@@ -76,6 +81,13 @@ Future<RailShell> pumpRailShell(
   AuthState authState = const AuthState.unauthenticated(),
   TextDirection? textDirection,
   String? sidebarBehavior,
+  WorkspaceState workspaceState = const WorkspaceState(
+    status: WorkspaceStatus.loaded,
+    currentWorkspace: Workspace(id: 'ws', personal: true),
+  ),
+  ThemeCubit? theme,
+  LocaleCubit? locale,
+  shad.ThemeData? appTheme,
 }) async {
   SharedPreferences.setMockInitialValues({
     if (sidebarBehavior != null) 'sidebar-behavior:device': sidebarBehavior,
@@ -87,11 +99,11 @@ Future<RailShell> pumpRailShell(
   whenListen(
     workspace,
     const Stream<WorkspaceState>.empty(),
-    initialState: const WorkspaceState(
-      status: WorkspaceStatus.loaded,
-      currentWorkspace: Workspace(id: 'ws', personal: true),
-    ),
+    initialState: workspaceState,
   );
+  when(() => workspace.hasAuthenticatedActor).thenReturn(false);
+  when(workspace.loadWorkspaces).thenAnswer((_) async {});
+  when(workspace.refreshHiddenWorkspaces).thenAnswer((_) async {});
   whenListen(
     profile,
     const Stream<ShellProfileState>.empty(),
@@ -137,20 +149,27 @@ Future<RailShell> pumpRailShell(
           BlocProvider(create: (_) => AssistantChromeCubit()),
           BlocProvider(create: (_) => ShellMiniNavCubit()),
           BlocProvider(create: (_) => ShellTitleOverrideCubit()),
+          if (theme != null) BlocProvider<ThemeCubit>.value(value: theme),
+          if (locale != null) BlocProvider<LocaleCubit>.value(value: locale),
         ],
         child: shad.ShadcnApp.router(
           debugShowCheckedModeBanner: false,
-          theme: MobileShadTheme.light,
+          theme: appTheme ?? MobileShadTheme.light,
           localizationsDelegates: const [
             ...AppLocalizations.localizationsDelegates,
             shad.ShadcnLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) {
-            final app = ShadcnMaterialBridge.appBuilder(context, child);
-            return textDirection == null
-                ? app
-                : Directionality(textDirection: textDirection, child: app);
+            Widget app = ColoredBox(
+              // Captures include the page colour behind transparent chrome.
+              color: shad.Theme.of(context).colorScheme.background,
+              child: ShadcnMaterialBridge.appBuilder(context, child),
+            );
+            if (textDirection != null) {
+              app = Directionality(textDirection: textDirection, child: app);
+            }
+            return app;
           },
           routerConfig: router,
         ),
@@ -158,7 +177,7 @@ Future<RailShell> pumpRailShell(
     ),
   );
   await settleShell(tester);
-  return RailShell(router, actions);
+  return RailShell(router, actions, auth);
 }
 
 Future<void> settleShell(WidgetTester tester) async {

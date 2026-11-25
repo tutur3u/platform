@@ -62,6 +62,7 @@ Future<_Workspaces> _open(
   bool authenticated = false,
   Size size = const Size(390, 844),
   bool settle = true,
+  bool searchable = false,
 }) async {
   tester.view
     ..physicalSize = size
@@ -81,7 +82,11 @@ Future<_Workspaces> _open(
         builder: (context) => Scaffold(
           body: Center(
             child: TextButton(
-              onPressed: () => showWorkspacePickerSheet(context, mode: mode),
+              onPressed: () => showWorkspacePickerSheet(
+                context,
+                mode: mode,
+                searchable: searchable,
+              ),
               child: const Text('Open picker'),
             ),
           ),
@@ -202,6 +207,29 @@ void main() {
     );
     expect(find.byKey(workspacePickerFilterKey), findsNothing);
     expect(find.byType(EditableText), findsNothing);
+  });
+
+  testWidgets('the sidebar switcher searches a short list by name', (
+    tester,
+  ) async {
+    await _open(tester, _loaded, searchable: true);
+
+    final filter = find.byKey(workspacePickerFilterKey);
+    expect(filter, findsOneWidget);
+    for (final id in ['ws_1', 'ws_2', 'ws_3', 'personal_ws']) {
+      expect(_row(id), findsOneWidget);
+    }
+
+    await tester.enterText(
+      find.descendant(of: filter, matching: find.byType(EditableText)),
+      'des',
+    );
+    await tester.pumpAndSettle();
+    expect(_row('ws_2'), findsOneWidget);
+    for (final id in ['ws_1', 'ws_3', 'personal_ws']) {
+      expect(_row(id), findsNothing);
+    }
+    expect(find.byKey(_create), findsOneWidget);
   });
 
   testWidgets('above eight, the filter narrows rows and can be cleared', (

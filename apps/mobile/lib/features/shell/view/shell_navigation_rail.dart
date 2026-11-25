@@ -14,8 +14,10 @@ import 'package:mobile/features/shell/view/shell_rail_sections.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_account.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_brand.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_dock_layout.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_drawer.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_frame.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_workspace_switcher.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -23,6 +25,7 @@ export 'package:mobile/features/shell/view/shell_sidebar_account.dart';
 export 'package:mobile/features/shell/view/shell_sidebar_body.dart';
 export 'package:mobile/features/shell/view/shell_sidebar_destination_title.dart';
 export 'package:mobile/features/shell/view/shell_sidebar_dock_layout.dart';
+export 'package:mobile/features/shell/view/shell_sidebar_drawer.dart';
 export 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 
 /// Full-height leading navigation for wide layouts, with Back and a
@@ -41,6 +44,7 @@ class ShellNavigationRail extends StatelessWidget {
     this.leading,
     this.modeMenu,
     this.onBrandTap,
+    this.workspaceSwitcher,
     this.extended = false,
     super.key,
   });
@@ -52,6 +56,9 @@ class ShellNavigationRail extends StatelessWidget {
   final Widget? leading;
   final Widget? modeMenu;
   final VoidCallback? onBrandTap;
+
+  /// The current workspace and its switcher, below the brand as on web.
+  final Widget? workspaceSwitcher;
   final bool extended;
 
   @override
@@ -103,6 +110,7 @@ class ShellNavigationRail extends StatelessWidget {
                     )
                   else
                     ShellSidebarBrand(extended: extended),
+                  ?workspaceSwitcher,
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
@@ -299,10 +307,16 @@ class ShellSidebarScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) => shad.Scaffold(
     footers: [if (compactFooter case final footer?) footer],
-    child: ShellSidebarFrame(
-      location: location,
-      railBuilder: showSidebar ? _buildRail : null,
-      body: body,
+    child: ShellSidebarDrawerScope(
+      // Phones open the same sidebar as a drawer from the top bar.
+      buildDrawer: showSidebar
+          ? null
+          : (dismiss) => _buildRail(true, const SizedBox.shrink(), dismiss),
+      child: ShellSidebarFrame(
+        location: location,
+        railBuilder: showSidebar ? _buildRail : null,
+        body: body,
+      ),
     ),
   );
 
@@ -312,8 +326,11 @@ class ShellSidebarScaffold extends StatelessWidget {
     VoidCallback dismiss, {
     VoidCallback? onBrandTap,
   }) {
-    final back = this.back;
+    final back = showSidebar ? this.back : null;
     return ShellNavigationRail(
+      workspaceSwitcher: includeWorkspacePicker
+          ? ShellSidebarWorkspaceSwitcher(extended: extended)
+          : null,
       leading: back == null
           ? null
           : ShellDockBackZone(
@@ -327,7 +344,7 @@ class ShellSidebarScaffold extends StatelessWidget {
                 back.onLongPress?.call();
               },
             ),
-      modeMenu: modeMenu,
+      modeMenu: showSidebar ? modeMenu : null,
       onBrandTap: onBrandTap,
       items: items,
       selectedKey: selectedKey,

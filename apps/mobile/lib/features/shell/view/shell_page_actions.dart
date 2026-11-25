@@ -15,7 +15,10 @@ class _ShellTrailingActions extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       ShellInjectedActionsHost(matchedLocation: matchedLocation),
-      if (showsWorkspacePicker) const ShellWorkspacePicker(),
+      if (showsWorkspacePicker) ...[
+        ShellSidebarDrawerButton(matchedLocation: matchedLocation),
+        const ShellWorkspacePicker(),
+      ],
     ],
   );
 }
