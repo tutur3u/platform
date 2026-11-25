@@ -1,3 +1,6 @@
+set lock_timeout = '5s';
+set statement_timeout = '60s';
+
 create or replace function private.feature_flag_mutate_rule(
   p_actor uuid, p_operation_id uuid, p_flag_key text, p_environment text,
   p_scope text, p_subject_id uuid, p_mode text, p_percentage integer,

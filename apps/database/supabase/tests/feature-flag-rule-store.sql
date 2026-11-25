@@ -583,9 +583,12 @@ select is(pg_temp.try_rule('5ff00000-0000-4000-8000-000000000002', gen_random_uu
   'workspace', '5ff00000-0000-4000-8000-0000000000a2', 'on', null, null, null, 0, 'Root beyond quota', 'admin-ui'),
   'applied', 'the actor quota does not apply to platform-admin controlled rules');
 
-select has_index('private', 'feature_flag_rules', 'feature_flag_rules_keyset_idx');
-select has_index('private', 'feature_flag_audit', 'feature_flag_audit_actor_idx');
-select has_index('private', 'feature_flag_audit', 'feature_flag_audit_subject_idx');
+select has_index('private', 'feature_flag_rules', 'feature_flag_rules_keyset_idx',
+  'rules have an index for the keyset order');
+select has_index('private', 'feature_flag_audit', 'feature_flag_audit_actor_idx',
+  'audit has an actor lookup index');
+select has_index('private', 'feature_flag_audit', 'feature_flag_audit_subject_idx',
+  'audit has a subject lookup index');
 
 select * from finish();
 rollback;

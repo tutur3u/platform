@@ -8,7 +8,7 @@ import {
 } from './rule-validation';
 import type { RuntimeEnvironment } from './runtime-environment';
 import { evaluateRuntimeFlag, type RuntimeDecision } from './runtime-evaluate';
-import type { PrivateRpc } from './runtime-rpc';
+import type { PrivateRpcResult } from './runtime-rpc';
 import {
   createRuntimeSnapshotCache,
   parseRuntimeSnapshot,
@@ -23,8 +23,17 @@ export interface RuntimeReaderContext {
   readonly isStaff?: boolean;
 }
 
+const DEFAULT_RPC_TIMEOUT_MS = 2_000;
+
+type RuntimeReadRpc = (
+  name: string,
+  args: Record<string, unknown>,
+  signal: AbortSignal
+) => Promise<PrivateRpcResult>;
+
 export interface RuntimeReaderOptions {
-  readonly rpc: PrivateRpc;
+  readonly rpc: RuntimeReadRpc;
+  readonly rpcTimeoutMs?: number;
   readonly now?: () => number;
   readonly readEnv?: (name: string) => string | undefined;
   readonly flags?: readonly CatalogFlag[];
@@ -34,14 +43,40 @@ export function denyRuntimeFlag(reason: string): RuntimeDecision {
   return { enabled: false, source: 'invalid-rules', trace: [reason] };
 }
 
+async function callRuntimeRpc(
+  rpc: RuntimeReadRpc,
+  name: string,
+  args: Record<string, unknown>,
+  timeoutMs: number
+): Promise<PrivateRpcResult> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      const reason = new Error('Feature flag RPC timed out');
+      reject(reason);
+      controller.abort(reason);
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([rpc(name, args, controller.signal), deadline]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function readRuntimePlatformSnapshot(
-  rpc: PrivateRpc,
-  environment: RuleEnvironment
+  rpc: RuntimeReadRpc,
+  environment: RuleEnvironment,
+  rpcTimeoutMs = DEFAULT_RPC_TIMEOUT_MS
 ): Promise<RuntimeSnapshotRead> {
   try {
-    const result = await rpc('feature_flag_read_snapshot', {
-      p_environment: environment,
-    });
+    const result = await callRuntimeRpc(
+      rpc,
+      'feature_flag_read_snapshot',
+      { p_environment: environment },
+      rpcTimeoutMs
+    );
     if (result.error) return { status: 'unavailable' };
     return parseRuntimeSnapshot(result.data, environment);
   } catch {
@@ -51,6 +86,7 @@ export async function readRuntimePlatformSnapshot(
 
 export function createRuntimeReader({
   rpc,
+  rpcTimeoutMs = DEFAULT_RPC_TIMEOUT_MS,
   readEnv,
   flags = featureFlagCatalog.flags,
   now = Date.now,
@@ -60,7 +96,7 @@ export function createRuntimeReader({
     RULE_ENVIRONMENTS.map((environment) => [
       environment,
       createRuntimeSnapshotCache(
-        () => readRuntimePlatformSnapshot(rpc, environment),
+        () => readRuntimePlatformSnapshot(rpc, environment, rpcTimeoutMs),
         now
       ),
     ])
@@ -116,11 +152,12 @@ export function createRuntimeReader({
       )
         return null;
       try {
-        const { data, error } = await rpc('feature_flag_read_subject_rules', {
-          p_environment: environment,
-          p_workspace_id,
-          p_user_id,
-        });
+        const { data, error } = await callRuntimeRpc(
+          rpc,
+          'feature_flag_read_subject_rules',
+          { p_environment: environment, p_workspace_id, p_user_id },
+          rpcTimeoutMs
+        );
         return error
           ? null
           : parseRuntimeSubjectRules(

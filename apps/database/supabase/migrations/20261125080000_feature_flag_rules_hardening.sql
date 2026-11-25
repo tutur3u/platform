@@ -1,16 +1,15 @@
+set lock_timeout = '5s';
+set statement_timeout = '60s';
+
 alter table private.feature_flag_rules add column enabled_by uuid;
 comment on column private.feature_flag_rules.enabled_by is
   'Actor who started the current enabling period. Null for restrictive or unset rules and after account erasure.';
 
-do $backfill$
-begin
-  perform pg_catalog.set_config('feature_flags.entrypoint', 'mutate_rule', true);
-  update private.feature_flag_rules
-    set enabled_by = updated_by
-    where mode <> 'off' and updated_by is not null;
-  perform pg_catalog.set_config('feature_flags.entrypoint', '', true);
-end;
-$backfill$;
+set feature_flags.entrypoint = 'mutate_rule';
+update private.feature_flag_rules
+  set enabled_by = updated_by
+  where mode <> 'off' and updated_by is not null;
+reset feature_flags.entrypoint;
 
 create index feature_flag_rules_keyset_idx on private.feature_flag_rules
   (environment, flag_key, scope, coalesce(subject_id, '00000000-0000-0000-0000-000000000000'::uuid));

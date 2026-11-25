@@ -20,10 +20,16 @@ function setup() {
     version: '0123456789abcdef0123456789abcdef',
     rules: [platformRule],
   };
-  const rpc = vi.fn(async (_name: string, _args: Record<string, unknown>) => ({
-    data: snapshot as unknown,
-    error: null as { message: string } | null,
-  }));
+  const rpc = vi.fn(
+    async (
+      _name: string,
+      _args: Record<string, unknown>,
+      _signal: AbortSignal
+    ) => ({
+      data: snapshot as unknown,
+      error: null as { message: string } | null,
+    })
+  );
   const reader = createRuntimeReader({
     rpc,
     now: () => time,
@@ -46,15 +52,57 @@ describe('runtime reader', () => {
       Array.from({ length: 24 }, () => reader.evaluateFlag(key, production))
     );
     expect(decisions.every(({ enabled }) => enabled)).toBe(true);
-    expect(rpc).toHaveBeenCalledExactlyOnceWith('feature_flag_read_snapshot', {
-      p_environment: 'production',
-    });
+    expect(rpc).toHaveBeenCalledExactlyOnceWith(
+      'feature_flag_read_snapshot',
+      {
+        p_environment: 'production',
+      },
+      expect.any(AbortSignal)
+    );
     advance(59_999);
     await reader.evaluateFlag(key, production);
     expect(rpc).toHaveBeenCalledTimes(1);
     advance(1);
     await reader.evaluateFlag(key, production);
     expect(rpc).toHaveBeenCalledTimes(2);
+  });
+
+  it('times out a shared refresh, serves stale rules and admits the next refresh', async () => {
+    vi.useFakeTimers();
+    try {
+      const { rpc, snapshot } = setup();
+      const reader = createRuntimeReader({ rpc, rpcTimeoutMs: 25 });
+      expect(await reader.evaluateFlag(key, production)).toMatchObject({
+        enabled: true,
+      });
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      rpc.mockImplementationOnce(() => new Promise(() => {}));
+      const pending = Promise.all([
+        reader.evaluateFlag(key, production),
+        reader.evaluateFlag(key, production),
+      ]);
+      await vi.advanceTimersByTimeAsync(25);
+      expect(await pending).toEqual([
+        expect.objectContaining({ enabled: true, source: 'platform' }),
+        expect.objectContaining({ enabled: true, source: 'platform' }),
+      ]);
+      expect(rpc).toHaveBeenCalledTimes(2);
+      expect(rpc.mock.calls[1]?.[2].aborted).toBe(true);
+
+      rpc.mockResolvedValue({
+        data: { ...snapshot, rules: [{ ...platformRule, mode: 'off' }] },
+        error: null,
+      });
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(await reader.evaluateFlag(key, production)).toMatchObject({
+        enabled: false,
+        source: 'platform',
+      });
+      expect(rpc).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('serves stale rules on errors and suppresses legacy fallback at expiry for known stored rules', async () => {
@@ -126,11 +174,15 @@ describe('runtime reader', () => {
       source: 'user',
     });
     expect(rpc).toHaveBeenCalledTimes(2);
-    expect(rpc).toHaveBeenLastCalledWith('feature_flag_read_subject_rules', {
-      p_environment: 'production',
-      p_workspace_id: workspaceId,
-      p_user_id: userId,
-    });
+    expect(rpc).toHaveBeenLastCalledWith(
+      'feature_flag_read_subject_rules',
+      {
+        p_environment: 'production',
+        p_workspace_id: workspaceId,
+        p_user_id: userId,
+      },
+      expect.any(AbortSignal)
+    );
 
     rpc.mockResolvedValue({
       data: null,

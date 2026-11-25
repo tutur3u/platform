@@ -98,7 +98,7 @@ describe('feature flags page access', () => {
     expect(mocks.authorize.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.buildModel.mock.invocationCallOrder[0]!
     );
-    expect(mocks.snapshot).toHaveBeenCalledWith('admin');
+    expect(mocks.snapshot).toHaveBeenCalledWith('admin', false);
     expect(
       screen.getByText('controls.storage_unavailable')
     ).toBeInTheDocument();

@@ -872,6 +872,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/feature-flags/snapshot"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/fleet/access"
     },
     {

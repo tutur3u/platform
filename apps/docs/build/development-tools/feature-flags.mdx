@@ -168,7 +168,8 @@ Migration `20261125030000_feature_flag_rules.sql` keeps runtime rules in the
 `private` schema with the rule write RPC, and
 `20261125030100_manage_feature_flags_permission.sql` adds the
 `manage_feature_flags` root permission with the definition sync, read and
-erasure RPCs. Clients have no table access.
+erasure RPCs. Migration `20261125080000_feature_flag_rules_hardening.sql`
+preserves quota attribution across edits and indexes paging and audit lookups. Clients have no table access.
 
 | Object | Purpose |
 | --- | --- |
@@ -186,11 +187,17 @@ that name another role or no role; only a session with no request claims (a
 direct database caller) is trusted without one.
 
 **Definitions.** The admin app's server calls
-`feature_flag_sync_definitions(p_definitions, p_acknowledge_widening)` at deploy
-time with `runtimeDefinitionRows(featureFlagCatalog.flags)`, and a `ttr`
-command runs the same sync by hand for the fleet. The call is idempotent: an
-unchanged definition writes nothing, and each change appends a definition
-audit row. It refuses malformed or duplicate definitions, a scope removal that
+`feature_flag_sync_definitions(p_definitions, p_acknowledge_widening)` with
+`runtimeDefinitionRows(featureFlagCatalog.flags)`. The first
+feature-flags dashboard or API read by a root flag manager starts one background
+sync per admin process.
+That sync uses `false` for widening and logs failures without blocking the read.
+Root members with `manage_feature_flags` can trigger a sync or retry at
+`POST /api/v1/infrastructure/feature-flags/sync`. The optional JSON field
+`acknowledgeWidening` accepts a boolean and defaults to `false`. Cookie requests
+need the feature-flags mutation header and same-origin intent. An unacknowledged
+widening returns HTTP 409. An unchanged definition writes nothing, and each
+change appends a definition audit row. It refuses malformed or duplicate definitions, a scope removal that
 would orphan a live rule (`feature_flag_definition_orphans_rules`; unset those
 rules first), and, unless `p_acknowledge_widening` is `true`, a change that
 widens control over live rules (`feature_flag_definition_widens_control`):
@@ -213,8 +220,9 @@ has never existed), and writes the rule and its audit row in one transaction:
   identity; otherwise the call fails with `feature_flag_operation_conflict`.
 - Workspace and user rules that can enable a flag (any mode but `off`) are
   capped per flag and environment: 50000 in all (`feature_flag_rule_limit`)
-  and, for a `workspace-admin` or `self` scope, 200 last written by one actor
-  (`feature_flag_actor_rule_limit`). An `off` rule only narrows and is never
+  and, for a `workspace-admin` or `self` scope, 200 attributed to one actor
+  (`feature_flag_actor_rule_limit`). Attribution goes to the actor who enables
+  the rule and survives enabling-to-enabling edits. An `off` rule only narrows and is never
   capped, so self opt-outs and workspace kills keep working when a cap is
   full, and one tenant creating many workspaces cannot exhaust the shared
   cap. Platform-admin writes count toward the total but not the actor quota.
@@ -222,9 +230,7 @@ has never existed), and writes the rule and its audit row in one transaction:
 - Every write holds the erasure lock in shared mode, and subject erasure holds
   it exclusively, so an erasure waits for in-flight writes and blocks new ones
   until it commits. A write committed after the erasure that still names the
-  erased id (for example from a stale admin form) re-adds it; account deletion
-  therefore erases after the account is gone, so pickers can no longer resolve
-  it, and a repeated erasure removes any such entry.
+  erased id (for example from a stale admin form) re-adds it. A repeated erasure removes any entry written later.
 - The server sets `p_client` for its own surface; it never comes from a request
   body.
 
@@ -247,14 +253,14 @@ the `p_after_*` arguments until it is null, and
 root `view_infrastructure` or `manage_feature_flags`; the audit pages newest
 first on the `(occurredAt, id)` cursor of the last row.
 
-**Retention and erasure.** Rules and audit rows hold user ids (user-rule
-subjects, allow-lists, authors and actors). Account erasure calls
-`feature_flag_erase_subject('user', <id>)` and a workspace purge calls
-`feature_flag_erase_subject('workspace', <id>)`; see the
+Account/workspace erasure wiring is pending. Until it ships, flag rules and allow-list entries that reference deleted users or workspaces remain stored but are inert at evaluation; the upcoming deferred erasure drain (intent row on delete + bounded Cloudflare job) cleans them.
+
+See the
 [data protection standard](/platform/data-protection-standard#runtime-feature-flag-rules).
 
-**Rollback.** The `manage_feature_flags` enum value cannot be removed; its
-rollback drops only the definition sync, read and erasure RPCs. The rule store rollback drops
+**Rollback.** Roll back the hardening migration first to remove its indexes
+and quota attribution. The `manage_feature_flags` enum value
+cannot be removed. Its rollback drops the definition sync, read and erasure RPCs. The rule store rollback drops
 every rule and audit row, so export `private.feature_flag_audit` and
 `private.feature_flag_definition_audit` first.
 
@@ -298,6 +304,59 @@ Platform state is one row per flag key and environment. Resetting to the declare
 default keeps the revision and stores an empty override. Audit is append-only.
 Merging this documentation does not apply the database migration or expose the
 private functions; that deployment is separate.
+
+### Server and Worker readers
+
+In framework-free server code, create a module-level `createRuntimeReader` with
+an injected private service-role RPC function and a server environment reader
+(`readEnv`). Call `evaluateFlag(key, context)` for one decision or
+`evaluateFlags(keys, context)` for a map of decisions. Pass the deployment
+environment, verified `userId`, verified `workspaceId` and verified `isStaff`.
+A batch makes one subject RPC for its request. Subject results stay in that
+evaluation. In Web, use
+`isFeatureEnabled(key, { request, workspaceId })` from
+`@/lib/feature-flags/server`; omit `request` in a server component to use the web
+session. Web resolves the actor and verifies membership in the supplied workspace
+before fetching rules. Feature evaluation supplements the feature's existing
+permission checks.
+
+The platform snapshot is single-flight per store environment and refreshed on
+demand after 60 seconds. Each server RPC has a two-second deadline. Transport failures can reuse the last validated
+snapshot until it reaches 10 minutes old. A malformed response fails closed.
+After expiry, a known stored platform rule stays off even if a legacy env var
+still says `true`. An uncached or absent platform rule can use only the
+catalog's declared fallback. Staging has no store. Requests that need subject
+rules fail closed when those rules cannot be read.
+
+The Worker snapshot endpoint is
+`GET /api/v1/feature-flags/snapshot?environment=production|development`.
+Set `FEATURE_FLAGS_SNAPSHOT_TOKEN` in Web and in the calling Worker's server
+bindings and send it as a bearer credential. Use a randomly generated opaque
+credential with an `ff_snapshot_` prefix so provider auth middleware classifies
+it as a service credential. The response contains only platform rule data
+(including any rollout allow-lists), is private and non-cacheable in intermediaries,
+and carries a strong ETag. The endpoint validates the current store response before
+returning 304.
+
+Create one module-level `createRemoteRuntimeReader({ environment, env })` per
+Worker isolate. Set `FEATURE_FLAGS_SNAPSHOT_URL` to the full endpoint URL and
+pass the Worker bindings as `env`. The Worker uses HTTPS outside loopback,
+does not follow redirects, and sends `If-None-Match` for the last validated ETag.
+A 304 renews the age of that snapshot. Worker evaluation uses platform rules
+for context where only the platform rule can apply. If the supplied workspace
+or user would need a subject rule, the Worker returns off. Use the server
+reader for those decisions.
+
+Each isolate makes at most one subrequest per rolling 60 seconds, shared by
+concurrent evaluations. The request and response body have a combined two-second
+deadline. A subsequent demand can retry in the next 60-second slot. There are
+no background retries or timers between requests. A fresh isolate starts with
+one eligible read. Set `FEATURE_FLAGS_REMOTE=off` in the Worker bindings to
+stop subrequests even after a restart. Missing URL or token also disables
+transport. These configurations use the catalog fallback for eligible flags.
+The shared stale bound is 10 minutes after the last validated snapshot.
+`runtime-remote.test.ts` covers request counts under bursts, 304 reuse, deadlines,
+stale expiry, cold starts, scoped denial and the stop switch.
 
 ## Mobile endpoint
 

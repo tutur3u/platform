@@ -33,6 +33,8 @@ export async function GET(request: Request) {
   const read = await readPlatformFeatureFlagAudit({
     actorId: access.user.id,
     admin: asPrivateRpcAdmin(access.sbAdmin),
+    canSyncDefinitions:
+      access.permissions?.containsPermission('manage_feature_flags') ?? false,
     before,
     limit,
     operationId,

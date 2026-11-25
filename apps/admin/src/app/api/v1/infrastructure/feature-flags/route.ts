@@ -23,6 +23,8 @@ export async function GET(request: Request) {
   const read = await readPlatformFeatureFlagState({
     actorId: access.user.id,
     admin: asPrivateRpcAdmin(access.sbAdmin),
+    canSyncDefinitions:
+      access.permissions?.containsPermission('manage_feature_flags') ?? false,
   });
   if (read.status === 'denied') {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });

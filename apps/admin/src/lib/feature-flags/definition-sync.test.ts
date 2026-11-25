@@ -12,14 +12,21 @@ it('starts one non-blocking sync on read and logs a rejected sync', async () => 
   const rpc = vi.fn((name: string) =>
     name === 'feature_flag_sync_definitions'
       ? background
-      : Promise.resolve({ data: [], error: null })
+      : Promise.resolve({ data: { overrides: [] }, error: null })
   );
   const input = { actorId: 'test-actor', admin: { schema: () => ({ rpc }) } };
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   try {
+    expect(await readPlatformFeatureFlagState(input)).toEqual({
+      status: 'ready',
+      overrides: [],
+    });
+    expect(rpc).toHaveBeenCalledTimes(1);
+
+    const manager = { ...input, canSyncDefinitions: true };
     const reads = await Promise.all([
-      readPlatformFeatureFlagState(input),
-      readPlatformFeatureFlagState(input),
+      readPlatformFeatureFlagState(manager),
+      readPlatformFeatureFlagState(manager),
     ]);
     expect(reads).toEqual([
       { status: 'ready', overrides: [] },

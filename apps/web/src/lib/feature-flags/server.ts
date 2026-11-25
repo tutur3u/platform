@@ -17,8 +17,17 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { connection } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
-async function rpc(name: string, args: Record<string, unknown>) {
-  const admin = asPrivateRpcAdmin(await createAdminClient({ noCookie: true }));
+async function rpc(
+  name: string,
+  args: Record<string, unknown>,
+  signal: AbortSignal
+) {
+  const admin = asPrivateRpcAdmin(
+    await createAdminClient({
+      noCookie: true,
+      fetch: (input, init) => fetch(input, { ...init, signal }),
+    })
+  );
   return admin.schema('private').rpc(name, args);
 }
 

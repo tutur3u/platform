@@ -33,8 +33,9 @@ export async function commitPlatformFeatureFlag(input: {
 export async function readPlatformFeatureFlagState(input: {
   actorId: string;
   admin: PrivateRpcAdmin;
+  canSyncDefinitions?: boolean;
 }) {
-  startFeatureFlagDefinitionSync(input.admin);
+  if (input.canSyncDefinitions) startFeatureFlagDefinitionSync(input.admin);
   try {
     return interpretAdminStateRead(
       await input.admin
@@ -51,11 +52,12 @@ export async function readPlatformFeatureFlagState(input: {
 export async function readPlatformFeatureFlagAudit(input: {
   actorId: string;
   admin: PrivateRpcAdmin;
+  canSyncDefinitions?: boolean;
   before?: string | null;
   limit: number;
   operationId?: string | null;
 }) {
-  startFeatureFlagDefinitionSync(input.admin);
+  if (input.canSyncDefinitions) startFeatureFlagDefinitionSync(input.admin);
   try {
     return interpretAdminAuditRead(
       await input.admin

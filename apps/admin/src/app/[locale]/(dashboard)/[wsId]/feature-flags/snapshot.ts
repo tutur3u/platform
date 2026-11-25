@@ -11,10 +11,15 @@ import type {
 } from './read-model';
 
 export async function loadFeatureFlagDashboardSnapshot(
-  actorId: string
+  actorId: string,
+  canSyncDefinitions: boolean
 ): Promise<FeatureFlagStorageSnapshot> {
   const admin = asPrivateRpcAdmin(await createAdminClient({ noCookie: true }));
-  const read = await readPlatformFeatureFlagState({ actorId, admin });
+  const read = await readPlatformFeatureFlagState({
+    actorId,
+    admin,
+    canSyncDefinitions,
+  });
   if (read.status !== 'ready') return { status: 'unavailable' };
   const overrides: FeatureFlagStoredOverride[] = read.overrides.map((row) => ({
     environment: row.environment,

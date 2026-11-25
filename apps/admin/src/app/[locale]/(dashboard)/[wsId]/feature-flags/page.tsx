@@ -51,7 +51,10 @@ export default async function InfrastructureFeatureFlagsPage({
   if (!access.ok) notFound();
 
   const [storage, audit] = await Promise.all([
-    loadFeatureFlagDashboardSnapshot(access.user.id),
+    loadFeatureFlagDashboardSnapshot(
+      access.user.id,
+      access.permissions?.containsPermission('manage_feature_flags') ?? false
+    ),
     loadFeatureFlagAudit(access.user.id),
   ]);
   const mutate = await authorizeInfrastructureAdminRequest(

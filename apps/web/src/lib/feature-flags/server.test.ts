@@ -68,7 +68,10 @@ describe('web runtime feature flags', () => {
     expect(
       await isFeatureEnabled(key, { workspaceId: workspaceId.toUpperCase() })
     ).toBe(true);
-    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({
+      noCookie: true,
+      fetch: expect.any(Function),
+    });
     expect(mocks.membership).toHaveBeenCalledWith({
       supabase,
       userId: user.id,
