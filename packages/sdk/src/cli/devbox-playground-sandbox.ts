@@ -502,7 +502,7 @@ async function executePlayground(
     );
     if (exported.code !== 0 || exported.exceeded || exported.timedOut) {
       const fileError = exported.stderr.match(
-        /ValueError: ((?:Unsupported Drive file path|File exceeds Drive save limit|File grew beyond limit): [^\r\n]{1,240})/u
+        /ValueError: ((?:Unsupported Drive file path|File exceeds Drive save limit): [^\r\n]{1,240})/u
       )?.[1];
       throw new Error(fileError ?? 'Could not export project files');
     }

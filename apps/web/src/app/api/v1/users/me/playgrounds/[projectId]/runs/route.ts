@@ -1,4 +1,5 @@
 import { executePlayground } from '@tuturuuu/storage-core/playground-service';
+import { PLAYGROUND_STDIN_MAX_LENGTH } from '@tuturuuu/types/primitives/playgrounds';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
@@ -12,7 +13,7 @@ const schema = z
   .object({
     operation: z.enum(['run', 'stop']),
     requestId: z.guid(),
-    stdin: z.string().max(65536).optional(),
+    stdin: z.string().max(PLAYGROUND_STDIN_MAX_LENGTH).optional(),
   })
   .strict();
 export const POST = withSessionAuth<{ projectId: string }>(

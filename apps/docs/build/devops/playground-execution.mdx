@@ -345,13 +345,13 @@ An empty array is a complete inventory and can record file deletions.
 ## Logs and first-Run telemetry
 
 The Worker has Worker logs on and per-invocation request logs off, so the
-volume stays bounded. Two events carry only identifiers, an outcome and
-timings. No user, project, file, command, input or output value is ever logged.
+volume stays bounded. Two events carry only identifiers, an outcome,
+timings and one boolean. No user, project, file, command, input or output value is ever logged.
 
 | Event | Where | Fields |
 | --- | --- | --- |
 | `playground.run.accepted` | `/run`, on admission | `runId`, `colo` |
-| `playground.run.guest` | the slot, once per guest attempt | `runId`, `slot`, `guestMs`, `outcome`, `firstInIsolate` |
+| `playground.run.guest` | the slot, once per guest attempt | `runId`, `slot`, `guestMs`, `outcome`, `firstInIsolate`, `exported` |
 
 - `colo` is the Cloudflare data centre that took the `/run` request. `/run` is
   a server-to-server call from Web or Meet, so this is the data centre nearest

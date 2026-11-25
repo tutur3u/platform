@@ -177,6 +177,7 @@ test('a Run logs its guest timing and whether the isolate was cold', async (t) =
   const [first] = await guestLogs(t, 'run-first');
   assert.deepEqual(Object.keys(first).sort(), [
     'event',
+    'exported',
     'firstInIsolate',
     'guestMs',
     'outcome',
@@ -188,6 +189,7 @@ test('a Run logs its guest timing and whether the isolate was cold', async (t) =
   assert.equal(first.slot, 0);
   assert.equal(first.outcome, 'exited');
   assert.equal(first.firstInIsolate, true);
+  assert.equal(first.exported, true);
   assert.equal(Number.isInteger(first.guestMs) && first.guestMs >= 0, true);
   // Nothing from the project, command, input or output is logged.
   assert.equal(JSON.stringify(first).includes('private stdin'), false);
@@ -273,9 +275,20 @@ test('a successful Run without an export completes without Drive writeback', asy
   const fx = setup(t, {
     guest: containerFixture({ output: 'hi', files: null }),
   });
+  const lines = [];
+  const original = console.info;
+  console.info = (line) => lines.push(JSON.parse(line));
+  t.after(() => {
+    console.info = original;
+  });
   const slot = fx.slot();
   await slot.assign(claim(), identity, 3, ...tickets, undefined);
   await slot.alarm();
+  console.info = original;
+  assert.equal(
+    lines.find((line) => line.event === 'playground.run.guest')?.exported,
+    false
+  );
 
   assert.deepEqual(fx.fetches, [
     '/api/v1/internal/playground-execution/source',

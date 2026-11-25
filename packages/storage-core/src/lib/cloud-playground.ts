@@ -185,8 +185,10 @@ async function callCloudPlayground(
     url.password ||
     !secret ||
     secret.length < 32
-  )
+  ) {
+    console.error('Playground runner is not configured');
     throw new CloudPlaygroundRefusal('not_configured');
+  }
   let response: Response;
   try {
     response = await fetch(url, {
@@ -209,6 +211,7 @@ async function callCloudPlayground(
     });
   if (response.status === 401) {
     await response.body?.cancel().catch(() => undefined);
+    console.error('Playground runner credentials rejected');
     throw new CloudPlaygroundRefusal('not_configured');
   }
   const parsed = z
