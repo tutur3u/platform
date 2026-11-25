@@ -9,7 +9,8 @@ const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
 const { cliUsageRatchetSteps } = require('./cli-usage-ratchet.js');
 const { i18nUsageSteps } = require('./i18n-usage.js');
 const {
-  BUILD_ARGS: MEET_BUILD_ARGS,
+  BUILD_COMMAND: MEET_BUILD_COMMAND,
+  REQUIRED_DIST_FILES: MEET_DIST_FILES,
   WORKFLOW: MEET_WORKFLOW,
 } = require('./meet-durable-room.js');
 const { routeRegistrySteps } = require('./route-registries.js');
@@ -448,19 +449,11 @@ function planChecks(changes, context) {
         ),
       ],
       temporaryCwd: true,
-      prerequisite: {
-        id: 'meet-durable-room-dependencies',
-        label: 'Meet durable room dependency build',
-        command: 'bun',
-        args: MEET_BUILD_ARGS,
-        heavy: true,
-        requiresAdmission: true,
-      },
+      requiredFiles: MEET_DIST_FILES,
+      missingFilesHint: `build workspace deps first: ${MEET_BUILD_COMMAND}`,
       inputDirectories: [
         'apps/meet-realtime',
         'packages/realtime',
-        'packages/supabase',
-        'packages/types',
         'packages/utils',
       ],
       heavy: true,
