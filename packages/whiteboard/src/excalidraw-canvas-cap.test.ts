@@ -143,11 +143,10 @@ function load({ file, sizing, cache, names }: Build) {
       };
     },
   };
-  const size = runInNewContext(`(${slice(file, ...sizing)})`, context) as (
-    element: Shape,
-    map: unknown,
-    zoom: { value: number }
-  ) => Size;
+  const size = runInNewContext(
+    `(${slice(file, sizing[0], sizing[1], sizing[2])})`,
+    context
+  ) as (element: Shape, map: unknown, zoom: { value: number }) => Size;
   // The patch's appended helpers, which the cache check calls.
   const text = readFileSync(join(packageRoot, file), 'utf8');
   if (text.includes('/* tuturuuu-lod:start */'))
@@ -160,7 +159,10 @@ function load({ file, sizing, cache, names }: Build) {
     sizings++;
     return size(...args);
   };
-  const cached = runInNewContext(`(${slice(file, ...cache)})`, context) as (
+  const cached = runInNewContext(
+    `(${slice(file, cache[0], cache[1], cache[2])})`,
+    context
+  ) as (
     element: Shape,
     map: unknown,
     renderConfig: unknown,
@@ -232,12 +234,10 @@ function rotated(
   const cy = (coords[1] + coords[3]) / 2;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  const turned = points.map(
-    ([x, y]): Point => [
-      cx + (x - cx) * cos - (y - cy) * sin,
-      cy + (x - cx) * sin + (y - cy) * cos,
-    ]
-  );
+  const turned = points.map(([x, y]): Point => [
+    cx + (x - cx) * cos - (y - cy) * sin,
+    cy + (x - cx) * sin + (y - cy) * cos,
+  ]);
   return { coords, bounds: boxOf(turned), angle, padding };
 }
 
@@ -361,12 +361,7 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     const stack = (count: number, item: Item): Item[] =>
       Array.from({ length: count }, () => ({ ...item }));
     /** `shown` is the topmost run of `items` and draws within the budget. */
-    const bounded = (
-      items: Item[],
-      shown: Item[],
-      at: View,
-      dpr: number
-    ) => {
+    const bounded = (items: Item[], shown: Item[], at: View, dpr: number) => {
       expect(shown).toEqual(items.slice(-shown.length));
       expect(shown.length).toBeLessThan(items.length);
       expect(viewports(shown, at, dpr)).toBeLessThanOrEqual(BUDGET);
@@ -493,10 +488,9 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     });
 
     it('draws the 64 topmost of 1,000 view-covering boxes at 3x', () => {
-      const items = Array.from(
-        { length: 1000 },
-        (_, i): Item => ({ coords: [-i, -i, 1000, 1000] })
-      );
+      const items = Array.from({ length: 1000 }, (_, i): Item => ({
+        coords: [-i, -i, 1000, 1000],
+      }));
       expect(drawn(items, view(3))).toEqual(items.slice(-BUDGET));
     });
 
@@ -510,15 +504,14 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     // padding) and zig-zag freehand strokes of width 2 (24 px padding).
     const board = view(2, 1024, 768, -60);
     const lines = (count: number) =>
-      Array.from(
-        { length: count },
-        (_, i): Item => ({ coords: [i * 8, 0, i * 8 + 400, 400] })
-      );
+      Array.from({ length: count }, (_, i): Item => ({
+        coords: [i * 8, 0, i * 8 + 400, 400],
+      }));
     const strokes = (count: number) =>
-      Array.from(
-        { length: count },
-        (_, i): Item => ({ coords: [0, i * 2, 400, 400 + i * 2], padding: 24 })
-      );
+      Array.from({ length: count }, (_, i): Item => ({
+        coords: [0, i * 2, 400, 400 + i * 2],
+        padding: 24,
+      }));
 
     it('draws 80-line and 80-stroke boards completely at 2x', () => {
       for (const items of [lines(80), strokes(80)]) {
