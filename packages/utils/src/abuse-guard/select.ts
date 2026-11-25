@@ -225,8 +225,8 @@ function failedFamilies(input: RuntimeInput | null) {
  * failure here must never become a 500 on every route. Families the input
  * assigns turn `off` (callers apply their own fail policy; never legacy, so a
  * consumed token cannot be replayed against a fresh store). Unassigned
- * families keep their legacy path. Reported once per isolate, without the
- * message or binding details.
+ * families keep their legacy path. Reported once per failure episode,
+ * without the message or binding details.
  */
 function failRuntimeInputClosed(input: RuntimeInput | null, error: unknown) {
   const state = runtimeState();
@@ -240,14 +240,18 @@ function failRuntimeInputClosed(input: RuntimeInput | null, error: unknown) {
   state.override = families.size > 0 ? { families, usable: null } : null;
   if (!configureFailureReported) {
     configureFailureReported = true;
-    console.error(
-      `[ALERT][abuse-guard] SR-951 ${JSON.stringify({
-        alert: 'abuse-guard-configure-failed',
-        severity: 'critical',
-        families: [...families].sort(),
-        error: safeErrorFields(error),
-      })}`
-    );
+    try {
+      console.error(
+        `[ALERT][abuse-guard] SR-951 ${JSON.stringify({
+          alert: 'abuse-guard-configure-failed',
+          severity: 'critical',
+          families: [...families].sort(),
+          error: safeErrorFields(error),
+        })}`
+      );
+    } catch {
+      // Reporting must never turn a contained failure into a 500.
+    }
   }
 }
 
@@ -268,6 +272,8 @@ function installRuntimeInput(input: RuntimeInput | null) {
   // previous configuration (and its circuit breakers) intact.
   const override = input ? deriveOverride(input) : null;
   failedFamiliesKey = null;
+  // A recovered isolate reports its next, possibly different, failure.
+  configureFailureReported = false;
   state.input = input;
   state.generation += 1;
   // A new binding is a new connection; do not carry an open circuit over.
