@@ -294,9 +294,11 @@ function ParticipantTileImpl({
         </div>
       )}
       {playbackBlocked && !isSelf && !condensed && (
+        // Centred, so no corner overlay (such as the stage's join QR chip,
+        // which sits at the bottom-left) can cover it.
         <Button
           variant="secondary"
-          className="absolute bottom-16 left-3 z-20"
+          className="absolute top-1/2 left-1/2 z-20 -translate-x-1/2 -translate-y-1/2"
           onClick={resumePlayback}
         >
           {resumePlaybackLabel}

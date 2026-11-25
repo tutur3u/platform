@@ -49,7 +49,7 @@ function running(role: CallState['classRole']): CallState {
     classRole: role,
     classAttendanceEnabled: true,
     classTimerEnabled: true,
-    classTimerServerNow: NOW,
+    classTimerClockSkew: 0,
     role: role === 'host' ? 'host' : 'speaker',
     classTimer: {
       id: 'timer',

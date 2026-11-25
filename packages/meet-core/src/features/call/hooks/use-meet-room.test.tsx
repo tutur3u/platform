@@ -234,3 +234,21 @@ it('discards microphone permission that resolves after a switch to presence', as
   expect(mock.construct).not.toHaveBeenCalled();
   expect(mock.request).not.toHaveBeenCalled();
 });
+
+it('measures the room clock skew when the settings arrive', () => {
+  const roomNow = '2026-11-25T08:00:00.000Z';
+  const hook = mount();
+  // This device reads ten minutes ahead of the room when the message lands.
+  const now = vi
+    .spyOn(Date, 'now')
+    .mockReturnValue(Date.parse(roomNow) + 600_000);
+  receive({
+    type: 'room.settings',
+    settings: { shareNotes: false },
+    features: ['joinQr'],
+    serverNow: roomNow,
+  });
+  now.mockRestore();
+  expect(hook.result.current.state.settingsClockSkew).toBe(-600_000);
+  expect(hook.result.current.state.settingsFeatures).toEqual(['joinQr']);
+});

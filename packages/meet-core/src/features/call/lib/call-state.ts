@@ -116,7 +116,6 @@ export interface CallState {
   classAttendanceEnabled: boolean;
   classTimerEnabled: boolean;
   classTimer: ClassTimer | null;
-  classTimerServerNow: string | null;
   /** The room's clock skew, measured when the timer state arrived. */
   classTimerClockSkew?: number;
   selfUserId: string | null;
@@ -141,7 +140,6 @@ export const INITIAL_CALL_STATE: CallState = {
   classAttendanceEnabled: false,
   classTimerEnabled: false,
   classTimer: null,
-  classTimerServerNow: null,
   selfUserId: null,
   stage: {
     activeSpeakerIds: [],
@@ -247,8 +245,6 @@ export function reduceCallState(
         classTimerEnabled: message.classTimerEnabled === true,
         classTimer:
           message.admission === 'waiting' ? null : (message.classTimer ?? null),
-        classTimerServerNow:
-          message.admission === 'waiting' ? null : (message.serverNow ?? null),
         classTimerClockSkew:
           message.admission === 'waiting'
             ? undefined
@@ -441,7 +437,6 @@ export function reduceCallState(
       return {
         ...state,
         classTimer: message.timer,
-        classTimerServerNow: message.serverNow,
         classTimerClockSkew:
           clockSkew(message.serverNow, receivedAt) ??
           state.classTimerClockSkew,

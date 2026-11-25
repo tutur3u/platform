@@ -41,7 +41,7 @@ function running(role: CallState['classRole']): CallState {
     ...INITIAL_CALL_STATE,
     classRole: role,
     classTimerEnabled: true,
-    classTimerServerNow: NOW,
+    classTimerClockSkew: 0,
     classTimer: {
       id: 'timer',
       status: 'running',

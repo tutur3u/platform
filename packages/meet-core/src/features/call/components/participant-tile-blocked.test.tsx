@@ -18,6 +18,7 @@ vi.mock('../lib/media-playback', () => ({
 }));
 
 import { ParticipantTile } from './participant-tile';
+import { STAGE_JOIN_QR_ANCHOR } from './stage-join-qr';
 
 afterEach(cleanup);
 
@@ -93,4 +94,30 @@ it('reports nothing when no phone stage is listening', () => {
     </NextIntlClientProvider>
   );
   expect(view.container).toBeTruthy();
+});
+
+it('centres the resume-audio action clear of the join QR chip', () => {
+  const track = {
+    kind: 'audio',
+    addEventListener() {},
+    removeEventListener() {},
+    stop() {},
+  };
+  const view = render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ParticipantTile
+        participant={participant}
+        resumePlaybackLabel="Play meeting audio"
+        stream={new FakeStream([track]) as unknown as MediaStream}
+      />
+    </NextIntlClientProvider>
+  );
+  const resume = view.getByRole('button', { name: 'Play meeting audio' });
+  const position = resume.className.split(/\s+/);
+  expect(position).toEqual(
+    expect.arrayContaining(['top-1/2', 'left-1/2', '-translate-x-1/2'])
+  );
+  // The chip's anchor is a bottom-left offset; the action shares none of it.
+  for (const anchor of STAGE_JOIN_QR_ANCHOR.split(/\s+/))
+    expect(position).not.toContain(anchor);
 });

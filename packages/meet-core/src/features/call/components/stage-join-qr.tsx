@@ -13,6 +13,14 @@ import type { StageJoinQrState } from '../hooks/use-stage-join-qr';
 import { buildJoinUrl } from '../lib/room-code';
 import { JoinQrOptions, type JoinQrPatch } from './join-qr-controls';
 
+/**
+ * Where the chip sits on the stage: above a bottom-left tile's name and
+ * identity strip (about 3rem from the stage edge). Tile overlays keep clear
+ * of this spot; the card keeps to the corner (`lg:bottom-4`), where the
+ * stage's gutter holds the tiles beside it.
+ */
+export const STAGE_JOIN_QR_ANCHOR = 'bottom-16 left-3 sm:left-4';
+
 /** Scanners read dark modules on a light ground, so it stays black on white. */
 function JoinQrCode({ url, size }: { url: string; size: number }) {
   const t = useTranslations('meet.call');
@@ -76,10 +84,8 @@ export function StageJoinQr({
     <div
       data-testid="stage-join-qr"
       className={cn(
-        // The chip sits above a bottom-left tile's name and identity strip
-        // (about 3rem from the stage edge). The card keeps to the corner:
-        // the stage's gutter holds the tiles beside it.
-        'pointer-events-none absolute bottom-16 left-3 z-20 sm:left-4',
+        'pointer-events-none absolute z-20',
+        STAGE_JOIN_QR_ANCHOR,
         qr.card && 'lg:bottom-4'
       )}
     >

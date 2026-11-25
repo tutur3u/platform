@@ -157,13 +157,18 @@ describe('call state admission', () => {
       { ...READY, admission: 'waiting', classTimer: null },
     ]);
     expect(waiting.classTimer).toBeNull();
-    const ended = reduceCallState(admitted, {
-      type: 'classTimer',
-      timer: { ...admitted.classTimer!, status: 'ended', remainingMs: 0 },
-      serverNow: '2026-08-01T01:01:00.000Z',
-    });
+    // This device reads 30 seconds behind the room when the timer arrives.
+    const ended = reduceCallState(
+      admitted,
+      {
+        type: 'classTimer',
+        timer: { ...admitted.classTimer!, status: 'ended', remainingMs: 0 },
+        serverNow: '2026-08-01T01:01:00.000Z',
+      },
+      Date.parse('2026-08-01T01:00:30.000Z')
+    );
     expect(ended.classTimer?.status).toBe('ended');
-    expect(ended.classTimerServerNow).toBe('2026-08-01T01:01:00.000Z');
+    expect(ended.classTimerClockSkew).toBe(30_000);
   });
 
   it('holds in the waiting room until admitted', () => {

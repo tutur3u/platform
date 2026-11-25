@@ -11,7 +11,11 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import { useStageJoinQr } from '../hooks/use-stage-join-qr';
-import { type CallState, INITIAL_CALL_STATE } from '../lib/call-state';
+import {
+  type CallState,
+  INITIAL_CALL_STATE,
+  reduceCallState,
+} from '../lib/call-state';
 import { buildJoinUrl } from '../lib/room-code';
 import { JoinQrSwitch } from './join-qr-controls';
 import { StageJoinQr } from './stage-join-qr';
@@ -212,37 +216,43 @@ describe('JoinQrSwitch', () => {
       </NextIntlClientProvider>
     );
 
-  it('reads off when More opens after the QR auto-hid', () => {
-    vi.useFakeTimers();
-    const shownAt = '2026-11-25T08:00:00.000Z';
-    // The switch mounts with the More menu, seven minutes after a 5-minute
-    // auto-hide started, on a device whose clock matches the room.
-    vi.setSystemTime(Date.parse(shownAt) + 7 * 60_000);
-    const onChange = vi.fn();
-    renderSwitch(
-      { ...base, joinQrAutoHide: 5, joinQrShownAt: shownAt },
-      true,
-      onChange,
-      0
+  // The room shows the QR at SHOWN_AT with a 5-minute auto-hide. The
+  // settings reach a device ten minutes ahead of the room, and the switch
+  // mounts only when More opens, later than that.
+  const SHOWN_AT = '2026-11-25T08:00:00.000Z';
+  const arrived = (receivedAt: number) =>
+    reduceCallState(
+      INITIAL_CALL_STATE,
+      {
+        type: 'room.settings',
+        settings: { ...base, joinQrAutoHide: 5, joinQrShownAt: SHOWN_AT },
+        features: ['joinQr'],
+        serverNow: SHOWN_AT,
+      },
+      receivedAt
     );
+
+  it('reads off when More opens seven room minutes after the show', () => {
+    vi.useFakeTimers();
+    const receivedAt = Date.parse(SHOWN_AT) + 600_000;
+    const state = arrived(receivedAt);
+    // Seven minutes after arrival. Measuring the skew at mount instead would
+    // read the room clock as SHOWN_AT and show the switch on.
+    vi.setSystemTime(receivedAt + 7 * 60_000);
+    const onChange = vi.fn();
+    renderSwitch(state.settings, true, onChange, state.settingsClockSkew);
     const toggle = screen.getByRole('switch', { name: copy.switch });
     expect(toggle.getAttribute('aria-checked')).toBe('false');
     fireEvent.click(toggle);
     expect(onChange).toHaveBeenLastCalledWith({ joinQrHidden: false });
   });
 
-  it('keeps the arrival skew when More opens late on a fast device', () => {
+  it('reads on when More opens three room minutes after the show', () => {
     vi.useFakeTimers();
-    const shownAt = '2026-11-25T08:00:00.000Z';
-    // Ten minutes ahead of the room, opened three minutes into a 5-minute
-    // auto-hide: still shown on the room's clock.
-    vi.setSystemTime(Date.parse(shownAt) + 13 * 60_000);
-    renderSwitch(
-      { ...base, joinQrAutoHide: 5, joinQrShownAt: shownAt },
-      true,
-      vi.fn(),
-      -600_000
-    );
+    const receivedAt = Date.parse(SHOWN_AT) + 600_000;
+    const state = arrived(receivedAt);
+    vi.setSystemTime(receivedAt + 3 * 60_000);
+    renderSwitch(state.settings, true, vi.fn(), state.settingsClockSkew);
     expect(
       screen
         .getByRole('switch', { name: copy.switch })
