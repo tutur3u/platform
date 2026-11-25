@@ -101,11 +101,12 @@ void main() {
     final editor = QuillController.basic();
     addTearDown(editor.dispose);
     editor.document.insert(0, 'Plan');
-    editor.updateSelection(
-      const TextSelection(baseOffset: 0, extentOffset: 4),
-      ChangeSource.local,
-    );
-    editor.formatSelection(Attribute.underline);
+    editor
+      ..updateSelection(
+        const TextSelection(baseOffset: 0, extentOffset: 4),
+        ChangeSource.local,
+      )
+      ..formatSelection(Attribute.underline);
     await tester.pumpApp(_FormatHost(editor: editor));
     await tester.tap(find.byTooltip('Underline'));
     await tester.pump();

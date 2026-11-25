@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/document_repository.dart';

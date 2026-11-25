@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
@@ -18,6 +17,7 @@ import 'package:mobile/features/documents/documents_labels.dart';
 import 'package:mobile/features/documents/view/document_editor.dart';
 import 'package:mobile/features/documents/view/document_format_actions.dart';
 import 'package:mobile/features/documents/view/document_format_toolbar.dart';
+import 'package:mobile/features/documents/view/document_input_rules.dart';
 import 'package:mobile/features/documents/view/document_share_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -99,9 +99,20 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
 
   void _watchDocument() {
     unawaited(_changes?.cancel());
-    _changes = _editor.document.changes.listen((_) {
+    _changes = _editor.document.changes.listen((change) {
       if (_hydrating || _closed) return;
       _scheduleSave();
+      final typed = documentTypedCharacter(change);
+      if (typed == null) return;
+      // After the keystroke settles, as the web's input rules run.
+      scheduleMicrotask(() {
+        if (_closed || !mounted) return;
+        applyDocumentInputRules(
+          _editor,
+          offset: typed.offset,
+          typed: typed.typed,
+        );
+      });
     });
   }
 
@@ -439,6 +450,9 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             owner: documentOwnerLabel(document, l10n),
                             lastEdited: edited,
                             onLink: () => unawaited(_editLink()),
+                            onHighlight: () => unawaited(
+                              _pickColor(DocumentColorChannel.highlight),
+                            ),
                           ),
                   ),
                 ),

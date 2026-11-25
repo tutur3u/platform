@@ -35,13 +35,7 @@ SingleActivator _mod(
   LogicalKeyboardKey key, {
   bool shift = false,
   bool alt = false,
-}) => SingleActivator(
-  key,
-  meta: _mac,
-  control: !_mac,
-  shift: shift,
-  alt: alt,
-);
+}) => SingleActivator(key, meta: _mac, control: !_mac, shift: shift, alt: alt);
 
 /// The web editor's shortcuts that Quill binds differently or not at all.
 /// Quill's own Mod+B/I/U, Mod+Shift+S, Mod+Z and Mod+Y already match.

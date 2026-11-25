@@ -21,6 +21,7 @@ class DocumentEditor extends StatelessWidget {
     required this.status,
     required this.owner,
     required this.onLink,
+    required this.onHighlight,
     this.lastEdited,
     super.key,
   });
@@ -31,6 +32,7 @@ class DocumentEditor extends StatelessWidget {
   final DocumentSaveStatus status;
   final String owner;
   final VoidCallback onLink;
+  final VoidCallback onHighlight;
   final String? lastEdited;
 
   @override
@@ -86,6 +88,13 @@ class DocumentEditor extends StatelessWidget {
                   bottom: AppSpacing.lg,
                 ),
                 customStyles: editorStyles,
+                contextMenuBuilder: (context, state) => documentContextMenu(
+                  context,
+                  state,
+                  editor: editor,
+                  onLink: onLink,
+                  onHighlight: onHighlight,
+                ),
                 customShortcuts: documentShortcuts(),
                 customActions: documentShortcutActions(
                   editor: editor,
@@ -107,4 +116,53 @@ class DocumentEditor extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The platform selection menu plus the web bubble menu's most used marks,
+/// shown while text is selected.
+Widget documentContextMenu(
+  BuildContext context,
+  QuillRawEditorState state, {
+  required QuillController editor,
+  required VoidCallback onLink,
+  required VoidCallback onHighlight,
+}) {
+  final l10n = context.l10n;
+  final selection = editor.selection;
+  void run(VoidCallback action) {
+    state.hideToolbar();
+    action();
+  }
+
+  void toggle(Attribute<dynamic> attribute) {
+    final on = editor.getSelectionStyle().attributes.containsKey(attribute.key);
+    editor.formatSelection(on ? Attribute.clone(attribute, null) : attribute);
+  }
+
+  return TextFieldTapRegion(
+    child: AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: state.contextMenuAnchors,
+      buttonItems: [
+        ...state.contextMenuButtonItems,
+        if (!selection.isCollapsed) ...[
+          ContextMenuButtonItem(
+            label: l10n.documentsFormatBold,
+            onPressed: () => run(() => toggle(Attribute.bold)),
+          ),
+          ContextMenuButtonItem(
+            label: l10n.documentsFormatItalic,
+            onPressed: () => run(() => toggle(Attribute.italic)),
+          ),
+          ContextMenuButtonItem(
+            label: l10n.documentsFormatHighlight,
+            onPressed: () => run(onHighlight),
+          ),
+          ContextMenuButtonItem(
+            label: l10n.documentsFormatLink,
+            onPressed: () => run(onLink),
+          ),
+        ],
+      ],
+    ),
+  );
 }

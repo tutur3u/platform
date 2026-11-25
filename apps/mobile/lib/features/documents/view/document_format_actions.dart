@@ -66,17 +66,20 @@ List<List<AppFormatAction>> documentFormatGroups({
   // indent to store, so indenting applies to lists only.
   final inList = style.attributes.containsKey(Attribute.list.key);
   final align = style.attributes[Attribute.align.key]?.value;
-  AppFormatAction alignment(IconData icon, String tooltip, Attribute<String?> a) =>
-      AppFormatAction(
-        icon: icon,
-        tooltip: tooltip,
-        selected: a == Attribute.leftAlignment
-            ? align == null || align == 'left'
-            : align == a.value,
-        onPressed: () => editor.formatSelection(
-          a == Attribute.leftAlignment ? Attribute.clone(Attribute.align, null) : a,
-        ),
-      );
+  AppFormatAction alignment(
+    IconData icon,
+    String tooltip,
+    Attribute<String?> a,
+  ) => AppFormatAction(
+    icon: icon,
+    tooltip: tooltip,
+    selected: a == Attribute.leftAlignment
+        ? align == null || align == 'left'
+        : align == a.value,
+    onPressed: () => editor.formatSelection(
+      a == Attribute.leftAlignment ? Attribute.clone(Attribute.align, null) : a,
+    ),
+  );
 
   return [
     [
@@ -137,7 +140,11 @@ List<List<AppFormatAction>> documentFormatGroups({
     ],
     [
       action(LucideIcons.list, l10n.documentsFormatBullets, Attribute.ul),
-      action(LucideIcons.listOrdered, l10n.documentsFormatNumbers, Attribute.ol),
+      action(
+        LucideIcons.listOrdered,
+        l10n.documentsFormatNumbers,
+        Attribute.ol,
+      ),
       AppFormatAction(
         icon: LucideIcons.listChecks,
         tooltip: l10n.documentsFormatChecklist,
@@ -146,7 +153,11 @@ List<List<AppFormatAction>> documentFormatGroups({
           has(Attribute.checked) ? Attribute.checked : Attribute.unchecked,
         ),
       ),
-      action(LucideIcons.textQuote, l10n.documentsFormatQuote, Attribute.blockQuote),
+      action(
+        LucideIcons.textQuote,
+        l10n.documentsFormatQuote,
+        Attribute.blockQuote,
+      ),
       action(
         LucideIcons.squareCode,
         l10n.documentsFormatCodeBlock,
