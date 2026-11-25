@@ -29,6 +29,19 @@ export interface ApplyResult {
   back?: () => void;
 }
 
+interface NavigationSource {
+  id: string;
+  leader: string;
+  kind: 'summon' | 'follow';
+}
+
+interface ApplyOptions {
+  forced: boolean;
+  layout?: MeetStageLayoutSnapshot;
+  /** Absent when restoring the previous surface through Go back. */
+  source?: NavigationSource;
+}
+
 export interface NavigationPerson {
   userId: string;
   displayName: string;
@@ -82,7 +95,7 @@ export function useRoomNavigation({
    */
   apply: (
     next: CallSurfaceState,
-    options: { forced: boolean; layout?: MeetStageLayoutSnapshot }
+    options: ApplyOptions
   ) => ApplyResult | void;
   access: RoomViewAccess;
 }) {
@@ -151,10 +164,10 @@ export function useRoomNavigation({
   );
 
   const go = useCallback(
-    (next: MeetRoomView, forced: boolean, layout?: MeetStageLayoutSnapshot) => {
+    (next: MeetRoomView, options: ApplyOptions) => {
       const result = applyRef.current(
         surfaceFromView(next, surfaceRef.current.drawer),
-        { forced, layout }
+        options
       );
       return result?.back;
     },
@@ -165,14 +178,15 @@ export function useRoomNavigation({
     (
       leaderId: string,
       next: MeetRoomView | undefined,
-      forced: boolean,
-      layout?: MeetStageLayoutSnapshot
+      options: ApplyOptions
     ) => {
+      const { forced, layout } = options;
       setFollowing(leaderId);
       followingRef.current = leaderId;
       // An arrangement is mirrored even when its focused surface is one this
       // person may not open; the mirror leaves such activities out.
-      if (next && (layout || canOpen(next, forced))) go(next, forced, layout);
+      if (next && (layout || canOpen(next, forced)))
+        go(next, options);
     },
     [canOpen, go]
   );
@@ -192,12 +206,17 @@ export function useRoomNavigation({
         canOpen,
       });
       const name = nameOf(event.from);
+      const source: NavigationSource = {
+        id: event.id,
+        leader: name,
+        kind: event.mode === 'summon' ? 'summon' : 'follow',
+      };
       switch (decision.kind) {
         case 'navigate': {
           const previous = surfaceRef.current;
           setFollowing(null);
           followingRef.current = null;
-          const back = go(decision.view, true);
+          const back = go(decision.view, { forced: true, source });
           toast(t('summon.brought', { name, surface: label(decision.view) }), {
             action: {
               label: t('summon.go_back'),
@@ -223,7 +242,7 @@ export function useRoomNavigation({
                 // Joining someone else's surface leaves follow mode.
                 setFollowing(null);
                 followingRef.current = null;
-                go(decision.view, false);
+                go(decision.view, { forced: false, source });
               },
             },
             cancel: { label: t('navigation.not_now'), onClick: () => {} },
@@ -236,12 +255,11 @@ export function useRoomNavigation({
           });
           break;
         case 'follow-start':
-          startFollowing(
-            decision.leaderId,
-            decision.view,
-            true,
-            decision.layout
-          );
+          startFollowing(decision.leaderId, decision.view, {
+            forced: true,
+            layout: decision.layout,
+            source,
+          });
           toast(t('follow.started', { name }));
           break;
         case 'follow-invite': {
@@ -266,8 +284,11 @@ export function useRoomNavigation({
                 startFollowing(
                   leaderId,
                   latest?.view ?? decision.view,
-                  latest?.forced ?? false,
-                  latest ? latest.layout : decision.layout
+                  {
+                    forced: latest?.forced ?? false,
+                    layout: latest ? latest.layout : decision.layout,
+                    source,
+                  }
                 );
               },
             },
@@ -276,7 +297,11 @@ export function useRoomNavigation({
           break;
         }
         case 'follow-apply':
-          go(decision.view, event.forced, decision.layout);
+          go(decision.view, {
+            forced: event.forced,
+            layout: decision.layout,
+            source,
+          });
           break;
         case 'follow-end':
           setFollowing(null);

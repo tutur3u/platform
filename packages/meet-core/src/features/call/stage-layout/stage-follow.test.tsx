@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, render } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { useRef } from 'react';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -7,6 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { NavigationEvent } from '../components/room-navigation-policy';
 import type { MeetRoomController } from '../lib/room-controller';
+import { StageLayoutView } from './stage-layout-view';
 import { useActivityPresentation } from './use-activity-presentation';
 import { useStageLayout } from './use-stage-layout';
 import { useStageNavigation } from './use-stage-navigation';
@@ -59,7 +60,7 @@ function Harness() {
     onDrawer,
     onBroughtIn: () => {},
     onSummoned: (id) => summoned.push(id),
-    onNavigate: presenting.restoreAutoMinimized,
+    onNavigate: presenting.navigate,
     access: {
       browse: true,
       account: true,
@@ -67,7 +68,20 @@ function Harness() {
       toolIds: ['live-qa', 'polls'],
     },
   });
-  return null;
+  return (
+    <StageLayoutView
+      controller={stage}
+      peopleCount={2}
+      presentation={presenting}
+      stage={<p>People</p>}
+      activities={stage.openIds.map((id) => ({
+        id,
+        title: id === 'document' ? messages.meet.collaboration.document : id,
+        icon: () => null,
+        content: <p>{id} activity</p>,
+      }))}
+    />
+  );
 }
 
 const tree = () => (
@@ -92,6 +106,7 @@ beforeEach(() => {
   allowed = true;
   sharers = [];
   requestNavigation.mockClear();
+  vi.mocked(toast).mockClear();
   summoned = [];
   drawerNow = null;
   onDrawer.mockClear();
@@ -150,7 +165,7 @@ it('keeps the person where the leader is while following', () => {
   expect(nav.following).not.toBeNull();
 });
 
-const goBack = () => {
+const clickToastAction = () => {
   const options = vi.mocked(toast).mock.calls.at(-1)?.[1] as
     | { action?: { onClick: () => void } }
     | undefined;
@@ -165,7 +180,7 @@ it('goes back from a summon to the stage by closing what was brought in', () => 
   const view = mount();
   summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
   expect(stage.openIds).toEqual(['tool:live-qa']);
-  goBack();
+  clickToastAction();
   expect(stage.openIds).toEqual([]);
 });
 
@@ -174,7 +189,7 @@ it('goes back to a classroom board and closes the activity brought in', () => {
   act(() => stage.open('whiteboard'));
   summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
   expect(stage.focused).toBe('tool:live-qa');
-  goBack();
+  clickToastAction();
   expect(stage.openIds).toEqual(['whiteboard']);
   expect(stage.focused).toBe('whiteboard');
 });
@@ -187,7 +202,7 @@ it('goes back to the pane the person was in when the activity was already open',
   });
   summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
   expect(stage.focused).toBe('tool:live-qa');
-  goBack();
+  clickToastAction();
   // Nothing was newly opened, so nothing closes; focus returns.
   expect(stage.openIds).toEqual(['tool:live-qa', 'programming']);
   expect(stage.focused).toBe('programming');
@@ -198,7 +213,7 @@ it('does not reopen an activity the person closed after the summon', () => {
   act(() => stage.open('whiteboard'));
   summon({ surface: 'tool', toolId: 'live-qa' }, () => view.rerender(tree()));
   act(() => stage.close('whiteboard'));
-  goBack();
+  clickToastAction();
   expect(stage.openIds).toEqual([]);
 });
 
@@ -210,7 +225,7 @@ it('restores the side drawer the person had before the summon', () => {
   drawerNow = 'participants';
   view.rerender(tree());
   onDrawer.mockClear();
-  goBack();
+  clickToastAction();
   expect(onDrawer).toHaveBeenCalledWith('chat');
 });
 
@@ -222,7 +237,7 @@ it('only closes the brought-in activity once the person has moved on', () => {
   act(() => stage.open('tool:pen-whiteboard'));
   view.rerender(tree());
   onDrawer.mockClear();
-  goBack();
+  clickToastAction();
   expect(stage.openIds).toEqual(['whiteboard', 'tool:pen-whiteboard']);
   expect(stage.focused).toBe('tool:pen-whiteboard');
   expect(onDrawer).not.toHaveBeenCalled();
@@ -251,3 +266,54 @@ it.each(['summon', 'follow'] as const)(
     expect(presenting.minimized).toBe(false);
   }
 );
+
+it('keeps activities minimized when summoned to the people view or going back', () => {
+  const { rerender } = mount();
+  act(() => stage.open('document'));
+  sharers = ['leader'];
+  rerender(tree());
+  expect(presenting.autoMinimized).toBe(true);
+
+  deliver({ surface: 'stage' }, 'summon');
+  rerender(tree());
+  expect(presenting.autoMinimized).toBe(true);
+
+  clickToastAction();
+  expect(presenting.autoMinimized).toBe(true);
+  expect(stage.focused).toBe('document');
+});
+
+it('restores a manually minimized activity for a forced Summon and names the leader', () => {
+  const { rerender } = mount();
+  act(() => stage.open('programming'));
+  act(() => presenting.minimize());
+
+  deliver({ surface: 'document' }, 'summon');
+  rerender(tree());
+
+  expect(screen.queryByRole('button', { name: /^Reopen / })).toBeNull();
+  expect(screen.getByText('document activity')).toBeTruthy();
+  expect(screen.getByRole('status').textContent).toBe('Brought here by Lan');
+});
+
+it('pulses the minimized chip and announces an activity opened through Follow', () => {
+  const { rerender } = mount();
+  act(() => stage.open('programming'));
+  deliver({ surface: 'stage' }, 'follow', false);
+  rerender(tree());
+  // Accept the invitation without restoring the activities.
+  clickToastAction();
+  act(() => presenting.minimize());
+
+  deliver({ surface: 'document' }, 'follow.update', false);
+  rerender(tree());
+
+  expect(nav.following?.leaderId).toBe('leader');
+  const chip = screen.getByRole('button', {
+    name: `Reopen ${messages.meet.collaboration.document}`,
+  });
+  expect(chip.querySelector('[class*="animate-pulse"]')).toBeTruthy();
+  expect(screen.getByRole('status').textContent).toBe(
+    `Lan opened ${messages.meet.collaboration.document}`
+  );
+});

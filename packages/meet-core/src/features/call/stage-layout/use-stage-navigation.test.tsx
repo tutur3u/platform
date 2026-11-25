@@ -21,6 +21,8 @@ const navigation = () =>
 let stage: ReturnType<typeof useStageLayout>;
 const onDrawer = vi.fn();
 const onBroughtIn = vi.fn();
+const onNavigate = vi.fn();
+const source = { id: 'navigation', leader: 'Lan', kind: 'summon' } as const;
 
 function Harness() {
   stage = useStageLayout({
@@ -35,6 +37,7 @@ function Harness() {
     drawer: 'chat',
     onDrawer,
     onBroughtIn,
+    onNavigate,
     access: { browse: true, account: true, tools: true, toolIds: [] },
   });
   return null;
@@ -43,6 +46,7 @@ function Harness() {
 beforeEach(() => {
   onDrawer.mockClear();
   onBroughtIn.mockClear();
+  onNavigate.mockClear();
   render(<Harness />);
 });
 afterEach(() => {
@@ -74,11 +78,18 @@ it('opens a summoned activity beside what is open and keeps the chat drawer', ()
     stage.open('programming');
   });
   const next = surfaceFromView({ surface: 'tool', toolId: 'live-qa' }, 'chat');
-  act(() => navigation().apply(next, { forced: false }));
+  act(() => {
+    navigation().apply(next, { forced: false, source });
+  });
   expect(stage.openIds).toEqual(['programming', 'tool:live-qa']);
   expect(stage.focused).toBe('tool:live-qa');
   expect(onDrawer).toHaveBeenLastCalledWith('chat');
   expect(onBroughtIn).not.toHaveBeenCalled();
+  expect(onNavigate).toHaveBeenCalledWith({
+    id: source.id,
+    leader: source.leader,
+    kind: 'invited-summon',
+  });
 });
 
 it('focuses the pane that already has a summoned activity, even as a hidden tab', () => {
@@ -120,8 +131,34 @@ it('leaves open activities alone when brought to the stage', () => {
   act(() =>
     navigation().apply(surfaceFromView({ surface: 'stage' }, 'chat'), {
       forced: true,
+      source,
     })
   );
   expect(stage.openIds).toEqual(['programming']);
   expect(onDrawer).toHaveBeenLastCalledWith('chat');
+  expect(onNavigate).not.toHaveBeenCalled();
+});
+
+it('mirrors an empty people view without revealing activities', () => {
+  act(() => {
+    navigation().apply(surfaceFromView({ surface: 'stage' }, null), {
+      forced: false,
+      source: { ...source, kind: 'follow' },
+      layout: { root: null, focusedPaneId: null, maximizedPaneId: null },
+    });
+  });
+  expect(onNavigate).not.toHaveBeenCalled();
+});
+
+it('returns to the previous activity without notifying incoming navigation', () => {
+  act(() => stage.open('programming'));
+  const next = surfaceFromView({ surface: 'document' }, null);
+  let back: (() => void) | undefined;
+  act(() => {
+    back = navigation().apply(next, { forced: true, source })?.back;
+  });
+  expect(onNavigate).toHaveBeenCalledTimes(1);
+  act(() => back?.());
+  expect(stage.focused).toBe('programming');
+  expect(onNavigate).toHaveBeenCalledTimes(1);
 });

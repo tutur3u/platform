@@ -1784,9 +1784,14 @@ media, or tool access.
   Screen readers announce automatic minimization.
   Selecting the chip restores the layout and focuses the visible pane, even
   during a share. A new sharer can minimize it again during the same session.
-  Ending the last share or navigating through an incoming Summon or Follow
-  restores automatically minimized activities. Using **Minimize activities**
-  keeps them minimized until you reopen them.
+  Automatically minimized activities return after about 1.5 seconds without
+  a sharer, or when an incoming Summon or Follow opens an activity. A host
+  or co-host's **Bring everyone** or **Choose people…** also restores
+  manually minimized activities and announces who brought you there.
+  Follow keeps your manual minimize choice, pulses the chip, and announces
+  who opened the activity and its name. Navigation to the people view and
+  **Go back** leave the minimize choice alone.
+  [Follow and Summon tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-follow.test.tsx).
   [Stage layout tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-layout-view.test.tsx) ·
   [Presentation tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/use-activity-presentation.test.tsx).
 - **Adaptive content.** Each pane is a container for container queries, not

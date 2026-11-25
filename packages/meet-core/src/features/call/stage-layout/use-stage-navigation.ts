@@ -1,9 +1,6 @@
 'use client';
 
-import type {
-  MeetRoomView,
-  MeetStageLayoutSnapshot,
-} from '@tuturuuu/realtime/meet';
+import type { MeetStageLayoutSnapshot } from '@tuturuuu/realtime/meet';
 import { useLayoutEffect, useRef } from 'react';
 import {
   canOpenRoomView,
@@ -20,6 +17,15 @@ import {
 } from './activity-ids';
 import { openActivities } from './layout-model';
 import type { StageLayoutController } from './use-stage-layout';
+
+export type ActivityNavigation = {
+  id: string;
+  leader: string;
+} & (
+  | { kind: 'forced-summon' }
+  | { kind: 'invited-summon' }
+  | { kind: 'follow'; activityId: string }
+);
 
 /**
  * Follow and Summon over the stage. A leader shares the activity in their
@@ -57,7 +63,7 @@ export function useStageNavigation({
   onBroughtIn: () => void;
   /** A host or co-host opened this tool for the person; it is theirs this session. */
   onSummoned?: (activityId: string) => void;
-  onNavigate?: () => void;
+  onNavigate?: (navigation: ActivityNavigation) => void;
   access: Parameters<typeof useRoomNavigation>[0]['access'];
 }) {
   const latest = useRef(stage);
@@ -95,18 +101,29 @@ export function useStageNavigation({
         onBroughtIn();
       for (const id of ids) if (toolIdOf(id) && keep(id)) onSummoned?.(id);
     }
-    const focused = stage.mirror(layout, keep);
-    return viewOfActivity(focused) ?? ({ surface: 'stage' } as const);
+    return stage.mirror(layout, keep);
   };
   const navigation = useRoomNavigation({
     room,
     surface,
     layout: stage.snapshot,
-    apply: (next, { forced, layout }) => {
-      onNavigate?.();
+    apply: (next, { forced, layout, source }) => {
+      const notify = (activityId: string) => {
+        if (!source) return;
+        const { id, leader, kind } = source;
+        onNavigate?.(
+          kind === 'follow'
+            ? { id, leader, kind, activityId }
+            : { id, leader, kind: forced ? 'forced-summon' : 'invited-summon' }
+        );
+      };
       if (layout) {
         onDrawer(next.drawer);
-        return { reached: mirror(layout, forced) };
+        const focused = mirror(layout, forced);
+        const reached =
+          viewOfActivity(focused) ?? ({ surface: 'stage' } as const);
+        if (focused && reached.surface !== 'stage') notify(focused);
+        return { reached };
       }
       if (forced && (next.programming || next.document)) onBroughtIn();
       const target = next.programming
@@ -125,6 +142,7 @@ export function useStageNavigation({
         // Being brought somewhere is not the person's own edit, so it lands
         // even while follow mode still locks the stage.
         stage.bring(target);
+        notify(target);
         return {
           back: () => {
             const now = latest.current;

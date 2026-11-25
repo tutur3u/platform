@@ -5694,10 +5694,12 @@
       "solo_mode": "Solo mode",
       "stage_layout": {
         "auto_minimized": "Activities minimized for screen sharing.",
+        "brought_here": "Brought here by {leader}",
         "close": "Close {title}",
         "error": "Couldn't load {title}",
         "exit_fullscreen": "Exit full screen {title}",
         "fullscreen": "Full screen {title}",
+        "leader_opened": "{leader} opened {activity}",
         "loading": "Loading {title}",
         "maximize": "Maximize {title}",
         "minimize_activities": "Minimize activities",

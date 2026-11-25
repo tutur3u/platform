@@ -312,7 +312,7 @@ function CallShellContent({
     onDrawer: (next) => setDrawer(next as typeof drawer),
     onBroughtIn: () => setBroughtIn(true),
     onSummoned: availability.summon,
-    onNavigate: presentation?.restoreAutoMinimized,
+    onNavigate: presentation?.navigate,
     access: {
       browse: roomTools.canUse,
       account: !requiresAccount,

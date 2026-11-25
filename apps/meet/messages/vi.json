@@ -5694,10 +5694,12 @@
       "solo_mode": "Chế độ một mình",
       "stage_layout": {
         "auto_minimized": "Đã thu nhỏ hoạt động để nhường chỗ cho nội dung chia sẻ màn hình.",
+        "brought_here": "{leader} đã đưa bạn đến đây",
         "close": "Đóng {title}",
         "error": "Không tải được {title}",
         "exit_fullscreen": "Thoát toàn màn hình {title}",
         "fullscreen": "Toàn màn hình {title}",
+        "leader_opened": "{leader} đã mở {activity}",
         "loading": "Đang tải {title}",
         "maximize": "Phóng to {title}",
         "minimize_activities": "Thu gọn hoạt động",

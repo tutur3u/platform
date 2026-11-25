@@ -91,7 +91,9 @@ function Harness({
             ) : (
               <>
                 <Probe id={id} />
-                {id === 'assessment' && <NewAttemptAction onConfirm={() => {}} />}
+                {id === 'assessment' && (
+                  <NewAttemptAction onConfirm={() => {}} />
+                )}
               </>
             ),
         }))}
@@ -138,6 +140,7 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 it('renders open activities as panes with accessible separators that arrow keys resize', () => {
@@ -580,6 +583,7 @@ const presenting = (sharers: readonly string[] = []) => (
 );
 
 it('gives a new screen share the stage and restores the same mounted activity when it ends', () => {
+  vi.useFakeTimers();
   const { rerender } = render(presenting());
   open('document');
   const input = screen.getByRole('textbox', { name: 'document input' });
@@ -602,6 +606,9 @@ it('gives a new screen share the stage and restores the same mounted activity wh
   expect(media.closest('[data-activity-video-rail]')).toBeNull();
 
   rerender(presenting());
+  act(() => vi.advanceTimersByTime(1499));
+  expect(screen.getByRole('button', { name: 'Reopen document' })).toBe(chip);
+  act(() => vi.advanceTimersByTime(1));
   expect(screen.queryByRole('button', { name: 'Reopen document' })).toBeNull();
   expect(screen.getByRole('textbox', { name: 'document input' })).toBe(input);
   expect(document.activeElement).toBe(pane);
@@ -611,6 +618,7 @@ it('gives a new screen share the stage and restores the same mounted activity wh
 });
 
 it('keeps a manual minimize after sharing ends and reopens the activity with one click', () => {
+  vi.useFakeTimers();
   const { rerender } = render(presenting());
   open('document');
   rerender(presenting(['peer']));
@@ -619,6 +627,7 @@ it('keeps a manual minimize after sharing ends and reopens the activity with one
   expect(screen.getByRole('textbox', { name: 'document input' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Minimize activities' }));
   rerender(presenting());
+  act(() => vi.advanceTimersByTime(1500));
   expect(screen.queryByRole('textbox', { name: 'document input' })).toBeNull();
 
   fireEvent.click(screen.getByRole('button', { name: 'Reopen document' }));
@@ -637,11 +646,16 @@ it('keeps a fullscreen activity draft when screen shares overlap', () => {
   rerender(presenting(['peer', 'another-peer']));
   rerender(presenting(['another-peer']));
   expect(screen.queryByRole('dialog', { name: 'Q&A full screen' })).toBeNull();
-  expect(screen.getByRole('button', { name: 'Reopen fullscreen-qa' })).toBeTruthy();
+  const chip = screen.getByRole('button', { name: 'Reopen fullscreen-qa' });
+  expect(chip).toBeTruthy();
 
+  vi.useFakeTimers();
   rerender(presenting());
+  act(() => vi.advanceTimersByTime(1500));
   expect(screen.getByRole('dialog', { name: 'Q&A full screen' })).toBeTruthy();
-  expect(screen.getByRole('textbox', { name: 'fullscreen-qa input' })).toBe(input);
+  expect(screen.getByRole('textbox', { name: 'fullscreen-qa input' })).toBe(
+    input
+  );
   expect(input).toHaveProperty('value', 'Question draft');
 });
 
@@ -653,4 +667,16 @@ it('closes a portaled assessment confirmation when its pane is hidden', () => {
   expect(screen.getByRole('alertdialog', { name })).toBeTruthy();
   rerender(presenting(['peer']));
   expect(screen.queryByRole('alertdialog', { hidden: true })).toBeNull();
+});
+
+it('leaves focus alone if focus left the activity before minimizing', () => {
+  const { rerender } = render(presenting());
+  open('document');
+  const input = screen.getByRole('textbox', { name: 'document input' });
+  input.focus();
+  input.blur();
+
+  rerender(presenting(['peer']));
+  expect(screen.getByRole('button', { name: 'Reopen document' })).toBeTruthy();
+  expect(document.activeElement).toBe(document.body);
 });

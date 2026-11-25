@@ -103,7 +103,6 @@ export function StageLayoutView({
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLButtonElement>(null);
-  const paneHadFocus = useRef(false);
   const restoreFocus = useRef(false);
   const wasMinimized = useRef(false);
   const [peopleHidden, setPeopleHidden] = useState(false);
@@ -135,6 +134,7 @@ export function StageLayoutView({
   const paneCount = countPanes(layout);
   const maximizedId = layout.maximizedPaneId;
   const minimized = presentation?.minimized ?? false;
+  const notice = presentation?.notice;
   const activityRail = !!presentation && hasPanes && !minimized;
   const mode = presentation
     ? 'full'
@@ -170,8 +170,8 @@ export function StageLayoutView({
     if (minimized === wasMinimized.current) return;
     wasMinimized.current = minimized;
     if (minimized) {
-      if (paneHadFocus.current) chipRef.current?.focus();
-      paneHadFocus.current = false;
+      if (containerRef.current?.contains(document.activeElement))
+        chipRef.current?.focus();
     } else if (restoreFocus.current && restorePaneId) {
       containerRef.current
         ?.querySelector<HTMLElement>(`[data-pane-id="${restorePaneId}"]`)
@@ -244,16 +244,6 @@ export function StageLayoutView({
             'min-h-0 min-w-0',
             minimized ? 'invisible absolute inset-0' : 'relative flex-1'
           )}
-          onFocusCapture={() => {
-            paneHadFocus.current = true;
-          }}
-          onBlurCapture={(event) => {
-            if (
-              event.relatedTarget &&
-              !event.currentTarget.contains(event.relatedTarget)
-            )
-              paneHadFocus.current = false;
-          }}
           onKeyDownCapture={fullscreenKey}
           onKeyDown={cycleFocus}
         >
@@ -453,7 +443,18 @@ export function StageLayoutView({
       )}
       {presentation && (
         <div role="status" aria-live="polite" className="sr-only">
-          {presentation.autoMinimized ? t('auto_minimized') : ''}
+          {notice ? (
+            <span key={notice.id}>
+              {notice.kind === 'forced-summon'
+                ? t('brought_here', { leader: notice.leader })
+                : t('leader_opened', {
+                    leader: notice.leader,
+                    activity: meta(notice.activityId).title,
+                  })}
+            </span>
+          ) : (
+            presentation.autoMinimized && t('auto_minimized')
+          )}
         </div>
       )}
       {minimized && presentation && (
@@ -462,7 +463,7 @@ export function StageLayoutView({
             type="button"
             variant="outline"
             size="sm"
-            className="h-9 max-w-full rounded-full pointer-coarse:h-11"
+            className="relative h-9 max-w-full rounded-full pointer-coarse:h-11"
             ref={chipRef}
             aria-label={t('reopen', { title: dockActivity.title })}
             onFocus={() => {
@@ -476,6 +477,13 @@ export function StageLayoutView({
               presentation.restore();
             }}
           >
+            {notice?.kind === 'follow' && (
+              <span
+                key={notice.id}
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 rounded-full opacity-0 ring-2 ring-primary motion-safe:animate-pulse [animation-iteration-count:2]"
+              />
+            )}
             <dockActivity.icon aria-hidden="true" className="size-4" />
             <span className="truncate">{dockActivity.title}</span>
           </Button>
