@@ -1,4 +1,5 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
+import type { ProductionPublicationExemption } from './scripts/ci/production-publication-coverage.ts';
 import type { ProductionServingTopology } from './scripts/ci/production-serving-topology.ts';
 
 export const ci = {
@@ -290,3 +291,119 @@ export const productionServingTopology = {
     routes: [],
   },
 } satisfies ProductionServingTopology;
+
+// Every active production app publishes automatically on a production push
+// (through the planner or serving-workers-production.yaml) or is listed here.
+// production-publication-coverage.test.mjs fails when an app is excluded,
+// held or has no automatic publisher without a record, when a record outlives
+// its expiry, or when a record covers an app that already publishes. Renewal
+// needs the owner's approval and a new approvedOn date.
+export const productionPublicationExemptions = {
+  lettin: {
+    reason: 'Excluded until the R2 timeout fix is tested',
+    owner: 'vhpx',
+    approvedOn: '2026-11-16',
+    expires: '2026-12-31',
+    source: 'f09bf9045f',
+  },
+  parley: {
+    reason: 'Excluded until the R2 timeout fix is tested',
+    owner: 'vhpx',
+    approvedOn: '2026-11-16',
+    expires: '2026-12-31',
+    source: 'f09bf9045f',
+  },
+  colab: {
+    reason: 'Colab stays with its dedicated owner',
+    owner: 'vhpx',
+    approvedOn: '2026-11-16',
+    expires: '2026-12-31',
+    source: 'f09bf9045f',
+  },
+  track: {
+    reason:
+      'Track stays with its dedicated owner; it has no production publisher',
+    owner: 'vhpx',
+    approvedOn: '2026-11-16',
+    expires: '2026-12-31',
+    source: 'f09bf9045f',
+  },
+  mind: {
+    reason:
+      'Mind stays with its dedicated owner; it has no production publisher',
+    owner: 'vhpx',
+    approvedOn: '2026-11-16',
+    expires: '2026-12-31',
+    source: 'f09bf9045f',
+  },
+  contacts: {
+    reason: 'Held for the wave-2 Start + Void cutover',
+    owner: 'vhpx',
+    approvedOn: '2026-11-20',
+    expires: '2026-12-31',
+    source: '6eb6478982',
+  },
+  drive: {
+    reason:
+      'Held until the hostname moves off tuturuuu-drive; manual wave1-native-production.yaml dispatch only',
+    owner: 'vhpx',
+    approvedOn: '2026-11-23',
+    expires: '2026-12-31',
+    source: '5de7c0df7c',
+  },
+  // No reviewed decision exists for the records below: each app is admitted
+  // or selected but has no automatic production publisher. The short expiry
+  // forces an owner to wire one up or approve the exemption.
+  git: {
+    reason:
+      'Planner target without a planner job; git-cloudflare.yaml deploys the sealed artifact only by manual release',
+    owner: 'UNASSIGNED',
+    approvedOn: '2026-11-25',
+    expires: '2026-12-09',
+    source: 'none',
+  },
+  external: {
+    reason:
+      'Planner target without a planner job; external-cloudflare.yaml builds production only on a main dispatch',
+    owner: 'UNASSIGNED',
+    approvedOn: '2026-11-25',
+    expires: '2026-12-09',
+    source: 'none',
+  },
+  finance: {
+    reason:
+      'Admitted, but publishes only through a manual wave1-native-production.yaml dispatch',
+    owner: 'UNASSIGNED',
+    approvedOn: '2026-11-25',
+    expires: '2026-12-09',
+    source: 'none',
+  },
+  forms: {
+    reason: 'Admitted for a manual route-free upload; no automatic publisher',
+    owner: 'UNASSIGNED',
+    approvedOn: '2026-11-25',
+    expires: '2026-12-09',
+    source: 'none',
+  },
+  inventory: {
+    reason: 'Admitted for a manual route-free upload; no automatic publisher',
+    owner: 'UNASSIGNED',
+    approvedOn: '2026-11-25',
+    expires: '2026-12-09',
+    source: 'none',
+  },
+  workspace: {
+    reason: 'Admitted for a manual route-free upload; no automatic publisher',
+    owner: 'UNASSIGNED',
+    approvedOn: '2026-11-25',
+    expires: '2026-12-09',
+    source: 'none',
+  },
+  shortener: {
+    reason: 'Admitted for a manual route-free upload; no automatic publisher',
+    owner: 'UNASSIGNED',
+    approvedOn: '2026-11-25',
+    expires: '2026-12-09',
+    source: 'none',
+  },
+} satisfies Record<string, ProductionPublicationExemption>;
