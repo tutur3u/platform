@@ -9,7 +9,9 @@ import {
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { useId } from 'react';
+import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { toolActivityId } from '../stage-layout/activity-ids';
+import { mergedKindOf } from '../stage-layout/merged-activities';
 import { MeetSettingsCard, MeetSettingsHeading } from './meet-settings-card';
 
 const NONE = 'none';
@@ -17,6 +19,8 @@ const NONE = 'none';
 /**
  * Host setting: the activity that is already open for everyone who joins.
  * "None" clears it; people already in the call keep what they have open.
+ * With Meet UX v2 the pen board and the private timer carry the merged
+ * Whiteboard and Timer names; the stored ids stay what the room accepts.
  */
 export function DefaultActivitySetting({
   value,
@@ -31,11 +35,21 @@ export function DefaultActivitySetting({
 }) {
   const t = useTranslations('meet.call.activities_settings');
   const root = useTranslations();
+  const activitiesT = useTranslations('meet.call.activities');
+  const merged = useMeetCallUx();
   const id = useId();
-  const options = tools.map((tool) => ({
-    value: toolActivityId(tool.id),
-    label: root.has(tool.label) ? root(tool.label) : tool.label,
-  }));
+  const options = tools.map((tool) => {
+    const activityId = toolActivityId(tool.id);
+    const kind = merged ? mergedKindOf(activityId) : null;
+    return {
+      value: activityId,
+      label: kind
+        ? activitiesT(`merged.${kind}`)
+        : root.has(tool.label)
+          ? root(tool.label)
+          : tool.label,
+    };
+  });
   const current = options.some((option) => option.value === value)
     ? (value as string)
     : NONE;
