@@ -22,7 +22,10 @@ import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
 import { checkMeetGuestWhiteboardLimit } from '../lib/guest-whiteboard-limit';
 import { channelEndpoint } from './documents';
-import { isMeetGuestWhiteboardEnabled } from './guest-whiteboard';
+import {
+  isMeetGuestWhiteboardDrawEnabled,
+  isMeetGuestWhiteboardEnabled,
+} from './guest-whiteboard';
 import { meetGuestWhiteboardLimiter } from './guest-whiteboard-limiter';
 import { callRoomService, type MeetCallRouteAccess } from './room-service';
 
@@ -140,12 +143,17 @@ async function canManage(access: Access, db: Admin) {
   return data === true;
 }
 
+/**
+ * People outside the workspace stay view-only while guest drawing is held,
+ * even on a board whose guest access is `draw`.
+ */
 const roleOf = (access: Access, level: BoardGuestAccess) =>
   boardRoleFor(
     isGuest(access)
       ? { kind: 'guest' }
       : { kind: 'member', workspaceMember: access.canReadWorkspace },
-    level
+    level,
+    { guestDraw: isMeetGuestWhiteboardDrawEnabled() }
   );
 
 export async function listMeetingWhiteboards(access: Access) {
@@ -192,7 +200,13 @@ export async function listMeetingWhiteboards(access: Access) {
     const linked = new Set(links.map((link) => link.whiteboard_id));
     available = (data ?? []).filter((board) => !linked.has(board.id));
   }
-  return { canManage: manage, links: visible, available };
+  return {
+    canManage: manage,
+    links: visible,
+    available,
+    // Managers learn whether `draw` access lets guests draw yet.
+    ...(manage ? { guestDraw: isMeetGuestWhiteboardDrawEnabled() } : {}),
+  };
 }
 
 export async function joinMeetingWhiteboard(access: Access, id: string) {

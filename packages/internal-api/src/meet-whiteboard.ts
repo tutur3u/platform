@@ -18,6 +18,11 @@ export interface MeetWhiteboardList {
   links: MeetWhiteboardLink[];
   /** Workspace boards a manager can link; empty for everyone else. */
   available: { id: string; title: string }[];
+  /**
+   * Present only for managers: whether guests with `draw` access may draw
+   * yet. While false they open every board view-only.
+   */
+  guestDraw?: boolean;
 }
 export interface MeetWhiteboardJoin {
   endpoint: string;

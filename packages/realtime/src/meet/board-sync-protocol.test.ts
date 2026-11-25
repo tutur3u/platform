@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   boardRoleFor,
+  boardTicketRole,
   checkBoardOpen,
+  isGuestBoardDrawEnabled,
   isTerminalCheckpointStatus,
   sameBoardSession,
 } from './board-sync-access';
@@ -37,12 +39,46 @@ describe('access', () => {
     expect(
       boardRoleFor({ kind: 'member', workspaceMember: false }, 'view')
     ).toBe('view');
-    expect(boardRoleFor({ kind: 'guest' }, 'draw')).toBe('edit');
-    expect(boardRoleFor({ kind: 'guest' }, 'view')).toBe('view');
-    expect(boardRoleFor({ kind: 'guest' }, 'none')).toBeNull();
+    const draw = { guestDraw: true };
+    expect(boardRoleFor({ kind: 'guest' }, 'draw', draw)).toBe('edit');
+    expect(boardRoleFor({ kind: 'guest' }, 'view', draw)).toBe('view');
+    expect(boardRoleFor({ kind: 'guest' }, 'none', draw)).toBeNull();
     expect(
       boardRoleFor({ kind: 'member', workspaceMember: false }, 'none')
     ).toBeNull();
+  });
+
+  it('keeps everyone outside the workspace view-only while drawing is held', () => {
+    const outsiders = [
+      { kind: 'guest' } as const,
+      { kind: 'member', workspaceMember: false } as const,
+    ];
+    for (const actor of outsiders) {
+      // An omitted switch is the held one.
+      expect(boardRoleFor(actor, 'draw')).toBe('view');
+      expect(boardRoleFor(actor, 'draw', { guestDraw: false })).toBe('view');
+      expect(boardRoleFor(actor, 'draw', { guestDraw: true })).toBe('edit');
+      expect(boardRoleFor(actor, 'none')).toBeNull();
+    }
+    // Members are unaffected.
+    expect(
+      boardRoleFor({ kind: 'member', workspaceMember: true }, 'view')
+    ).toBe('edit');
+  });
+
+  it('reads the guest drawing switch only as the exact string true', () => {
+    expect(isGuestBoardDrawEnabled('true')).toBe(true);
+    for (const value of [undefined, null, '', 'false', '1', 'TRUE', ' true'])
+      expect(isGuestBoardDrawEnabled(value)).toBe(false);
+  });
+
+  it('caps a signed guest edit ticket at view while drawing is held', () => {
+    const guestEdit = { actorKind: 'guest', role: 'edit' } as const;
+    expect(boardTicketRole(guestEdit, false)).toBe('view');
+    expect(boardTicketRole(guestEdit, true)).toBe('edit');
+    expect(boardTicketRole({ ...guestEdit, role: 'view' }, true)).toBe('view');
+    for (const actorKind of ['member', 'system'] as const)
+      expect(boardTicketRole({ actorKind, role: 'edit' }, false)).toBe('edit');
   });
 
   it('refuses a missing link, missing or archived board and cross-workspace rows', () => {

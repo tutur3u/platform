@@ -66,6 +66,7 @@ test('actual lifecycle CI command runs only its explicit worker regressions outs
       'channel-retry-budget.test.ts',
       'whiteboard-room-do.test.ts',
       'whiteboard-room-do-guest-budget.test.ts',
+      'whiteboard-room-do-guest-draw.test.ts',
       'whiteboard-worker.test.ts',
       'room-state.test.ts',
       'channel-checkpoint-request.test.ts',

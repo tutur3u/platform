@@ -1,23 +1,52 @@
-import type { BoardGuestAccess, BoardRole } from './board-sync-schema';
+import type {
+  BoardGuestAccess,
+  BoardRole,
+  BoardTicket,
+} from './board-sync-schema';
 
 export type BoardActor =
   | { kind: 'member'; workspaceMember: boolean }
   | { kind: 'guest' };
 
 /**
+ * Whether people outside the workspace may draw on a linked board. Guest
+ * drawing is held until the Worker variable `MEET_GUEST_WHITEBOARD_DRAW` is
+ * the exact string `true`; a missing or any other value keeps guests view-only.
+ */
+export function isGuestBoardDrawEnabled(value: unknown) {
+  return value === 'true';
+}
+
+/**
  * The role an actor may hold on a linked board, or null for no access.
  * Members must hold a live workspace `MEMBER` membership. Everyone else in the
  * room (anonymous guests and signed-in non-members) is capped by the link's
- * `guest_access`.
+ * `guest_access`, and to view while guest drawing is held: `guestDraw`
+ * defaults to off, so a caller that does not say gets view-only guests.
  */
 export function boardRoleFor(
   actor: BoardActor,
-  guestAccess: BoardGuestAccess
+  guestAccess: BoardGuestAccess,
+  { guestDraw = false }: { guestDraw?: boolean } = {}
 ): BoardRole | null {
   if (actor.kind === 'member' && actor.workspaceMember) return 'edit';
-  if (guestAccess === 'draw') return 'edit';
+  if (guestAccess === 'draw') return guestDraw ? 'edit' : 'view';
   if (guestAccess === 'view') return 'view';
   return null;
+}
+
+/**
+ * The role the board room honours for a signed ticket. A guest ticket is
+ * capped at view while guest drawing is held, whatever role it carries, so a
+ * ticket minted before the hold, or by a server whose switch differs from the
+ * room's, cannot write.
+ */
+export function boardTicketRole(
+  ticket: Pick<BoardTicket, 'actorKind' | 'role'>,
+  guestDraw: boolean
+): BoardRole {
+  if (ticket.actorKind === 'guest' && !guestDraw) return 'view';
+  return ticket.role;
 }
 
 export type BoardOpenRefusal =

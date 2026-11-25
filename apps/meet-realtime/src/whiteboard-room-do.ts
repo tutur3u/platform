@@ -4,6 +4,8 @@ import {
   verifyRealtimePayload,
 } from '../../../packages/realtime/src/core/token';
 import {
+  boardTicketRole,
+  isGuestBoardDrawEnabled,
   isTerminalCheckpointStatus,
   sameBoardSession,
 } from '../../../packages/realtime/src/meet/board-sync-access';
@@ -48,6 +50,11 @@ export interface WhiteboardRoomEnv {
   PLATFORM_API_BASE_URL?: string;
   /** Stop fence: `true` or `1` halts storage writes and database flushes. */
   MEET_WHITEBOARD_FLUSH_DISABLED?: string;
+  /**
+   * Guest drawing: only the exact string `true` lets a guest ticket write.
+   * Missing or any other value keeps every guest view-only.
+   */
+  MEET_GUEST_WHITEBOARD_DRAW?: string;
 }
 
 type Attachment = {
@@ -164,6 +171,20 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     return socket.deserializeAttachment() as Attachment;
   }
 
+  /**
+   * The ticket as this room honours it: a guest's role is capped at view
+   * while guest drawing is held here, whatever the Meet API signed.
+   */
+  private honoured(ticket: BoardTicket): BoardTicket {
+    return {
+      ...ticket,
+      role: boardTicketRole(
+        ticket,
+        isGuestBoardDrawEnabled(this.env.MEET_GUEST_WHITEBOARD_DRAW)
+      ),
+    };
+  }
+
   private broadcast(message: BoardServerMessage, except?: WebSocket) {
     const payload = JSON.stringify(message);
     for (const socket of this.sockets()) {
@@ -192,7 +213,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       return {
         id: this.actorOf(attachment),
         displayName: attachment.ticket.displayName,
-        role: attachment.ticket.role,
+        role: this.honoured(attachment.ticket).role,
       };
     });
   }
@@ -249,6 +270,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     );
     if (!ticket.success || ticket.data.exp * 1000 <= Date.now())
       return new Response('Unauthorized', { status: 401 });
+    const joined = this.honoured(ticket.data);
     if (request.headers.get('Upgrade') !== 'websocket')
       return new Response(null, { status: 426 });
     const { meetingId, wsId, boardId } = ticket.data;
@@ -316,7 +338,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     if (this.room.closed) return new Response(null, { status: 410 });
     const pair = new WebSocketPair();
     pair[1].serializeAttachment({
-      ticket: ticket.data,
+      ticket: joined,
       connectionId: crypto.randomUUID(),
       actorId: boardActorId(
         this.env.MEET_REALTIME_TOKEN_SECRET,
@@ -328,7 +350,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       lastSyncAt: 0,
     } satisfies Attachment);
     this.state.acceptWebSocket(pair[1]);
-    this.sendScene(pair[1], ticket.data.role);
+    this.sendScene(pair[1], joined.role);
     this.broadcast({ type: 'presence', members: this.members() });
     await this.room.connectionsChanged();
     return new Response(null, {
@@ -417,10 +439,12 @@ export class WhiteboardRoomDurableObject implements DurableObject {
           !sameBoardSession(ticket, next.data)
         )
           return socket.close(1008, 'Invalid refresh');
-        attachment.ticket = next.data;
+        // A refresh is capped like a join, so no ticket upgrades a guest.
+        const renewed = this.honoured(next.data);
+        attachment.ticket = renewed;
         socket.serializeAttachment(attachment);
-        if (next.data.role !== ticket.role) {
-          socket.send(JSON.stringify({ type: 'role', role: next.data.role }));
+        if (renewed.role !== ticket.role) {
+          socket.send(JSON.stringify({ type: 'role', role: renewed.role }));
           this.broadcast({ type: 'presence', members: this.members() });
         }
         return;
@@ -430,7 +454,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         if (Date.now() - attachment.lastSyncAt < BOARD_SYNC_INTERVAL_MS) return;
         attachment.lastSyncAt = Date.now();
         socket.serializeAttachment(attachment);
-        return this.sendScene(socket, ticket.role);
+        return this.sendScene(socket, this.honoured(ticket).role);
       }
       case 'cursor':
         return this.broadcast(
@@ -455,7 +479,9 @@ export class WhiteboardRoomDurableObject implements DurableObject {
           socket
         );
       case 'elements': {
-        if (ticket.role !== 'edit')
+        // Rechecked at write time, so a socket accepted before guest drawing
+        // was held (its attachment survives hibernation) cannot write either.
+        if (this.honoured(ticket).role !== 'edit')
           return socket.close(1008, 'Read-only board');
         // People outside the workspace store only well-typed known fields and
         // safe links; an element that fails is refused like an image is.

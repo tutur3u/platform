@@ -58,7 +58,12 @@ function fakeSocket() {
   };
 }
 
-export function fixture(env: Record<string, string> = {}) {
+/**
+ * A room over fake storage and sockets. Guest drawing is on unless a test
+ * passes `MEET_GUEST_WHITEBOARD_DRAW` (or `undefined` for a missing switch),
+ * so the guest budget tests exercise the write path.
+ */
+export function fixture(env: Record<string, string | undefined> = {}) {
   const values = new Map<string, unknown>();
   const ops = { puts: 0, alarms: 0, fetches: 0 };
   const sockets: ReturnType<typeof fakeSocket>[] = [];
@@ -89,6 +94,7 @@ export function fixture(env: Record<string, string> = {}) {
     WHITEBOARD_ROOM: {} as DurableObjectNamespace,
     MEET_REALTIME_TOKEN_SECRET: SECRET,
     PLATFORM_API_BASE_URL: 'https://platform.example.invalid',
+    MEET_GUEST_WHITEBOARD_DRAW: 'true',
     ...env,
   };
   const the = new WhiteboardRoomDurableObject(state, config);

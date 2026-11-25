@@ -97,6 +97,7 @@ const guest = () =>
 beforeEach(() => {
   process.env.MEET_REALTIME_TOKEN_SECRET = 'disposable-test-secret';
   process.env.MEET_GUEST_WHITEBOARD = 'true';
+  delete process.env.MEET_GUEST_WHITEBOARD_DRAW;
   limits.resetMeetGuestWhiteboardLimiter();
   fx.room.mockReset().mockResolvedValue({});
   fx.rpc.mockReset();
@@ -131,6 +132,7 @@ describe('join', () => {
   });
 
   it('caps a guest at the link access and never trusts the body', async () => {
+    process.env.MEET_GUEST_WHITEBOARD_DRAW = 'true';
     const view = await mod.joinMeetingWhiteboard(guest(), b1);
     expect(view.role).toBe('view');
     fx.links[0]!.guest_access = 'draw';
@@ -299,6 +301,71 @@ describe('anonymous guests', () => {
     await expect(mod.joinMeetingWhiteboard(guest(), b1)).rejects.toMatchObject({
       status: 404,
     });
+  });
+});
+
+describe('guest drawing held', () => {
+  const ticketOf = (token: string) =>
+    verifyRealtimePayload(token, 'disposable-test-secret') as {
+      actorKind: string;
+      role: string;
+    };
+  const outsider = () => member({ canReadWorkspace: false, isHost: false });
+
+  it('mints view tickets for guests on a draw board while the switch is off', async () => {
+    fx.links[0]!.guest_access = 'draw';
+    for (const value of [undefined, 'false', '1', 'TRUE', ' true', 'yes']) {
+      if (value === undefined) delete process.env.MEET_GUEST_WHITEBOARD_DRAW;
+      else process.env.MEET_GUEST_WHITEBOARD_DRAW = value;
+      for (const access of [guest(), outsider()]) {
+        limits.resetMeetGuestWhiteboardLimiter();
+        const result = await mod.joinMeetingWhiteboard(access, b1);
+        expect(result.role).toBe('view');
+        expect(ticketOf(result.token)).toMatchObject({
+          actorKind: 'guest',
+          role: 'view',
+        });
+        expect((await mod.listMeetingWhiteboards(access)).links).toEqual([
+          { boardId: b1, title: 'Plan', role: 'view' },
+        ]);
+      }
+    }
+  });
+
+  it('mints edit tickets for guests on a draw board once the switch is on', async () => {
+    fx.links[0]!.guest_access = 'draw';
+    process.env.MEET_GUEST_WHITEBOARD_DRAW = 'true';
+    const result = await mod.joinMeetingWhiteboard(guest(), b1);
+    expect(result.role).toBe('edit');
+    expect(ticketOf(result.token)).toMatchObject({
+      actorKind: 'guest',
+      role: 'edit',
+    });
+    // A view board stays view.
+    fx.links[0]!.guest_access = 'view';
+    expect((await mod.joinMeetingWhiteboard(guest(), b1)).role).toBe('view');
+  });
+
+  it('leaves workspace members editing whatever the switch says', async () => {
+    for (const value of [undefined, 'true']) {
+      if (value === undefined) delete process.env.MEET_GUEST_WHITEBOARD_DRAW;
+      else process.env.MEET_GUEST_WHITEBOARD_DRAW = value;
+      const result = await mod.joinMeetingWhiteboard(member(), b1);
+      expect(result.role).toBe('edit');
+      expect(ticketOf(result.token)).toMatchObject({
+        actorKind: 'member',
+        role: 'edit',
+      });
+    }
+  });
+
+  it('tells managers whether draw access lets guests draw yet', async () => {
+    expect((await mod.listMeetingWhiteboards(member())).guestDraw).toBe(false);
+    process.env.MEET_GUEST_WHITEBOARD_DRAW = 'true';
+    expect((await mod.listMeetingWhiteboards(member())).guestDraw).toBe(true);
+    expect(await mod.listMeetingWhiteboards(guest())).not.toHaveProperty(
+      'guestDraw'
+    );
   });
 });
 
