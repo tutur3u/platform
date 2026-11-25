@@ -82,16 +82,23 @@ Approved access rules:
   sessions to stop. From account settings, the owner's session registry stops
   each live Private Mira session and then revokes its meeting's share; the
   sessions run in parallel, each step has its own deadline, and a session
-  that could not be stopped stays listed for a retry. Both paths are best
-  effort and bounded; every later read also needs a confirmed account, which
-  a live worker may have cached for up to a minute.
+  that could not be stopped stays listed in the registry. Nothing retries
+  that withdrawal automatically: a 503 is logged, and the next withdrawal or
+  privacy change picks the listed session up again. Both paths are best
+  effort and bounded. Safety rests on the per-read check instead: every later
+  read of shared chat needs a confirmed account, which a live worker or app
+  server may have cached for up to a minute.
 - A share counts only if it was turned on after the owner's latest Mira
   confirmation. Withdrawing and confirming again therefore needs a fresh
   opt-in, even for a share in a meeting that had no live Private Mira
   session. The room reports when each share was turned on; the server and
   the live worker compare that with the confirmation time, revoke an older
-  share, and treat it as off. A share without a known start, or an account
-  without a confirmation, fails closed.
+  share, and treat it as off; turning sharing on again replaces the older
+  grant with a new one. An account without a confirmation counts as
+  withdrawn, so its share is revoked. When the share start or the
+  confirmation cannot be read (for example an Auth outage), the share is off
+  for that request but is not revoked, and turning sharing on fails with a
+  retryable error.
 - Changing the Private Mira choice (Mute or Leave, then Continue again) ends
   the share and drops its shared tutor chat; the share does not come back on
   by itself.
@@ -146,7 +153,9 @@ on, and Private Mira's poll launch moves to the Polls panel for the host.
   the rest, and a stalled session is bounded and kept for a retry.
 - `packages/meet-core/src/features/live-assistant/server/private-share.test.ts`
   and `packages/meet-core/src/cloudflare/live/private-share-tool.test.ts`: a
-  share older than the latest confirmation is revoked and treated as off.
+  share older than the latest confirmation is revoked and treated as off, a
+  fresh opt-in replaces it, and a failed confirmation lookup turns the share
+  off for that request without revoking it.
 - `packages/meet-core/src/cloudflare/live/private-share-tool.test.ts`:
   unconfirmed accounts refused, Room Mira and flag-off refused, revoke refuses
   the next read, Mira cannot launch polls with the flag on.
