@@ -39,7 +39,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 
 ## Mandatory Guardrails
 
-1. Finite local setup, tests, and builds needed to validate authorized work may run without repeated confirmation. Start long-lived servers only when requested or needed for explicitly requested runtime verification. Deployment authorization remains separate.
+1. Finite local setup and tests needed to validate authorized work may run without repeated confirmation. Do not run development servers for verification: run browser and runtime checks against the exact CI-built artifact or a staged 0% Cloudflare Worker version (version-override header or preview URL), or, as a fallback, a local production build and server only on build-allowed validation hosts (never a low-disk workstation or a production host), stopped by exact PID right after. Dev servers run only when the owner explicitly asks or for local Cloudflare realtime/Durable Object verification with `wrangler dev`. Deployment authorization remains separate.
 2. **Supabase apply is user-only** – prepare migrations, but the user runs `bun sb:push` / `bun sb:linkpush`.
 3. Run formatters and checks required for files you changed, but keep auto-fixes scoped to your owned paths.
 4. Avoid committing noisy logs; add diagnostics only when they materially aid debugging.

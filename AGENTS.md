@@ -53,8 +53,15 @@ time.
 
 ## 2. Hard Prohibitions
 
-- Start long-lived development servers only when requested or needed for an
-  explicitly requested runtime verification. Finite local setup and tests needed
+- Do not run development servers (`bun dev*`, `next dev`, `vite dev`) for
+  verification. Run browser and runtime checks against production builds: prefer
+  the exact CI-built artifact or a staged 0% Cloudflare Worker version reached by
+  version-override header or preview URL; otherwise use a local production build
+  and server (`next build && next start`, or `wrangler dev` serving prebuilt
+  output) only on build-allowed validation hosts, never a low-disk workstation or
+  a production host, and stop it by exact PID right after.
+  Exceptions: the owner explicitly asks for a dev server, or the Cloudflare
+  realtime/Durable Object carve-out below. Finite local setup and tests needed
   to validate the authorized change may run without repeated confirmation.
   Do not run builds on this machine; use CI builds for the exact commit instead.
   This does not authorize deployments or production database writes.

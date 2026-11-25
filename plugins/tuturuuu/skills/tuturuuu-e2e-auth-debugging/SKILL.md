@@ -21,7 +21,7 @@ whether another coordination note owns the same E2E or auth files.
 - Use `apps/web/e2e/helpers/environment.ts` and `assertSafeE2EEnvironment()` for
   tests that touch local Supabase or app coordination secrets.
 - Use unique test emails and clean/reset only test-owned local state.
-- Finite builds may validate authorized changes; start long-lived servers only for requested runtime verification.
+- Finite builds may validate authorized changes; run browser/runtime checks against production builds, not dev servers (see root AGENTS.md).
 
 ## Native E2E First
 
