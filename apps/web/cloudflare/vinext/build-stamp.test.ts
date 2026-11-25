@@ -46,8 +46,10 @@ const vinext = {
   },
 };
 
-const serve = (path: string, commit: unknown = SHA) =>
-  withBuildStamp(vinext, commit).fetch(
+// A present `commit` key is taken as given, so `{ commit: undefined }` means
+// a build without a commit (no default-parameter substitution).
+const serve = (path: string, options: { commit?: unknown } = {}) =>
+  withBuildStamp(vinext, 'commit' in options ? options.commit : SHA).fetch(
     new Request(`https://tuturuuu.com${path}`, {
       headers: { [BUILD_STAMP_HEADER]: OTHER },
     }),
@@ -106,9 +108,9 @@ describe('withBuildStamp', () => {
   });
 
   it('omits the header when the build has no commit', async () => {
-    for (const commit of [undefined, '', 'dev', SHA.slice(0, 12)]) {
+    for (const commit of [undefined, null, '', 'dev', SHA.slice(0, 12)]) {
       for (const path of ['/vi/login', '/missing', '/spoof']) {
-        const response = await serve(path, commit);
+        const response = await serve(path, { commit });
         expect(response.headers.has(BUILD_STAMP_HEADER), path).toBe(false);
       }
     }
@@ -123,6 +125,15 @@ describe('withBuildStamp', () => {
     );
     expect(error.mock.calls[0]).not.toContain(THROWN);
     error.mockRestore();
+  });
+
+  it('treats an explicit undefined commit as no commit', async () => {
+    expect(buildCommit(undefined)).toBeNull();
+    const response = await serve('/vi/login', { commit: undefined });
+    expect(response.headers.has(BUILD_STAMP_HEADER)).toBe(false);
+    expect((await serve('/vi/login')).headers.get(BUILD_STAMP_HEADER)).toBe(
+      SHA
+    );
   });
 
   it('keeps the other handler members', () => {
