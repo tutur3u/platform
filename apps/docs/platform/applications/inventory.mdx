@@ -119,9 +119,10 @@ count when there is more than one, and the price. The stock badge sums
 quantities only when every tracked location uses the same unit, because unlike
 units cannot be added; otherwise it names the state. A null quantity means
 unlimited stock and never displays as zero or low. Low stock
-(`amount <= min_amount`) uses the warning tone ("31 Bag · Low"), all tracked
-locations at zero or less use the destructive "Out of stock", and fully stocked
-items use the success tone. An absent stock row reads "No stock configured" only
+(`amount <= min_amount`) uses the warning tone ("31 Bag · Low"). "Out of stock"
+(destructive) needs every location tracked and at zero or less; an unlimited
+location can still sell, so zero elsewhere reads as low. Fully stocked items use
+the success tone. An absent stock row reads "No stock configured" only
 when the actor may view stock; otherwise the row says "Stock hidden" and shows no
 price, because the products API omits stock without view-stock or create-sales
 permission. When locations have different prices the row shows "From" the lowest.
@@ -129,30 +130,75 @@ permission. When locations have different prices the row shows "From" the lowest
 Active, Archived and All pills map to the API `status` parameter. Category and
 sort (newest, oldest, name A-Z, name Z-A) are server parameters (`categoryId`,
 `sortBy`, `sortOrder`). The products API has no warehouse or stock-state filter,
-so Warehouse and Stock (in stock, low, out) filter the loaded rows; while too few
-loaded rows match, the list fetches up to four more pages and then continues with
-normal infinite scroll. Warehouse and Stock are hidden without stock access. A
-filtered empty list offers Clear filters.
+so Warehouse and Stock (in stock, low, out) filter the loaded rows. While fewer
+than twelve loaded rows match, the list loads up to four more pages one after
+another, shown as "Searching more products…"; every reload or filter change
+restarts that budget. When the budget runs out with pages left, the list says
+"No matches in the first N products" with Search more products, as an empty
+state or a footer, instead of claiming nothing matches; scrolling also keeps
+loading pages. Warehouse and Stock are hidden without stock access. A filtered
+list with every page loaded and no match offers Clear filters. Products created
+offline and still queued appear where the active sort puts them: on the first
+page, or on the last page when sorting oldest first.
 
 Every actor can open an item. Wide layouts (body width 720dp or more) show the
 item beside the list; the first Back closes the pane. Compact layouts open
 `/inventory/products/{id}`, whose navbar title is the item name; the same route
-on a wide layout shows the list with that item selected. The detail shows the
+on a wide layout shows the list with that item selected. Selecting another item
+on a wide layout keeps the list's location, because go_router builds each route
+as its own page and replacing the location would remount the list and drop its
+loaded pages, filters and scroll position. Returning from a compact detail
+reloads the list only after the detail saved, adjusted or deleted the item;
+otherwise loaded pages and scroll position stay. The detail shows the
 header (image, name, classification, stock badge), On hand, Locations and Price,
 stock per warehouse and unit with its price and minimum, the stock history from
 `GET products/{id}/inventory/history` (25 per page, Load more), and owner,
-manufacturer, Finance category, usage, created date and description. Stock
-figures and history need view-stock or create-sales permission. Catalog managers
-get Edit, Adjust stock and Delete in the header and Edit and Delete on long-press
-in the list; delete confirms in a dialog that keeps the server error on failure.
+manufacturer, Finance category, usage, created date and description.
+
+Detail permissions mirror the server. Stock figures follow the products list,
+which includes stock for view-stock or create-sales. The single product read and
+the stock history need the server's `canViewInventoryStock` (view stock, view
+stock quantity, adjust stock or update stock quantity); create-sales alone keeps
+the list row's stock in the detail and shows no history. Catalog managers get
+Edit and Delete in the header and on long-press in the list. Adjust stock needs
+`adjust_inventory_stock` or `update_stock_quantity`, the server's
+`canAdjustInventoryStock`. Delete confirms in a dialog that keeps the server
+error on failure.
+
+Edit changes the product's details and image and never sends stock rows, so the
+server keeps them as they are: a form opened before a sale cannot overwrite the
+sold quantity, and catalog managers without stock access are not refused. Edit
+still works offline through the outbox. Create includes stock rows only for
+actors who may adjust stock (the server refuses rows otherwise).
+
+Adjust stock edits only the stock rows and saves them with `PATCH
+products/{id}/inventory`, which records each change in stock history. It needs a
+connection: that endpoint takes the desired rows, so replaying a queued
+adjustment later could overwrite sales made in between. Offline, the form keeps
+the edit and says a connection is needed. Before writing, it re-reads the product
+and compares its rows with the rows the form opened with; if quantity, minimum
+or price changed on the server, it shows the latest rows and asks the actor to
+review and save again rather than overwriting them.
 
 The editor uploads a product image through `POST inventory/media/upload-url`
-(target `product-featured-image`), a `PUT` to the server-issued signed URL, and
-`POST inventory/media/read-url`, then saves the returned URL as `avatar_url`, the
-same flow as web. JPEG, PNG, WebP and GIF up to 8 MB are accepted. The upload runs
-online when the image is picked, so a queued offline save carries only a
-server-issued URL; Remove photo saves `avatar_url: null`. Product batches remain
-web-only: the batches API lists workspace batches and cannot filter by product.
+(target `product-featured-image`) and an HTTPS `PUT` to the server-issued signed
+URL, retried once without `Content-Type` as web does. `POST
+inventory/media/read-url` then has the server validate the finished upload. The
+product stores the stable sign-on-read share URL,
+`https://tuturuuu.com/api/v1/workspaces/{ws}/storage/share?path={path}` (the
+absolute form of `buildWorkspaceStorageShareUrl`), not the signed read URL,
+which expires after at most seven days. Mobile loads a share URL by asking the
+share route for a fresh signed URL with the session and downloading that without
+the token; a stored Supabase signed `workspaces` URL is read the same way and
+falls back to itself when the share route refuses. JPEG, PNG, WebP and GIF up
+to 8 MB are accepted. The upload runs online when the image is picked, so a
+queued offline save carries only a server-issued URL; Remove photo saves
+`avatar_url: null`. The share route requires `view_drive` (or finance or task
+media access), so readers without it see the placeholder; an inventory-scoped
+sign-on-read route would lift that. The web product dialog still stores the
+signed read URL. An image picked and then abandoned stays in storage because
+the inventory media API has no delete. Product batches remain web-only: the
+batches API lists workspace batches and cannot filter by product.
 
 Products have no barcode or SKU field. A scanned Tuturuuu product link
 (`https://tuturuuu.com/{ws}/inventory/products/{uuid}`) is fetched in the current
@@ -173,12 +219,15 @@ footer instead of retrying on every scroll.
 Native presentation does not change server permissions, mutation authorization,
 or canonical workspace membership. Existing pending-sync indicators remain
 attached to their owning rows. Regression evidence: `inventory_items_page_test.dart`,
-`inventory_items_states_test.dart`, `inventory_product_detail_test.dart`,
+`inventory_items_states_test.dart`, `inventory_items_fill_test.dart`,
+`inventory_product_detail_test.dart`, `inventory_product_editor_page_test.dart`,
+`inventory_catalog_data_test.dart`,
 `inventory_scan_test.dart`, `inventory_design_render_test.dart`, and the
 compact/fractional stock widget tests.
 
 Overview groups low-stock products by their location and shows the quantity next
-to its minimum. Catalog managers can open an adjustment from a low-stock row.
+to its minimum. Actors who may adjust stock can open Adjust stock from a
+low-stock row.
 The editor puts stock first and saves through the existing product workflow.
 The dashboard refreshes after a save in the same workspace. Fractional quantities
 remain visible at full precision.
@@ -207,8 +256,9 @@ search callbacks cannot replace the current query or update an unmounted owner.
 `inventory_search_submit_test.dart` covers mounted shell and standalone form
 submissions; the shared Apps search policy uses the same empty-query behavior.
 
-The product editor preserves unlimited stock when an unrelated field is edited.
-Leave quantity empty to represent unlimited stock; finite zero remains zero.
+Editing a product never sends its stock, so unlimited stock stays unlimited.
+In Adjust stock, leave quantity empty to represent unlimited stock; finite zero
+remains zero.
 Manage clears previous rows and add controls when the authenticated account or
 selected workspace changes. An open setup sheet cannot submit into a different
 account/workspace scope. These UI safeguards supplement server authorization.
