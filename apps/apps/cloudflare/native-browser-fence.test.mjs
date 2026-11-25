@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { withNativeBrowserFence } from './native-browser-fence.mjs';
+import { fixtureDestinationOrigins } from './native-browser-navigation.mjs';
 
 const origin = 'http://127.0.0.1:4001';
 const destination = 'http://127.0.0.1:4002';
@@ -653,3 +655,17 @@ test(
     assert.equal(f.session.listenerCount('Fetch.requestPaused'), 0);
   }
 );
+
+test('every real route fixture is an admissible fence destination', async () => {
+  const fixtures = JSON.parse(
+    readFileSync(new URL('./native-route-fixtures.json', import.meta.url))
+  );
+  assert.ok(fixtures.some((app) => new URL(app.origin).pathname !== '/'));
+  const f = fixture();
+  await withNativeBrowserFence(
+    f.browser,
+    origin,
+    fixtureDestinationOrigins(fixtures),
+    async () => {}
+  );
+});

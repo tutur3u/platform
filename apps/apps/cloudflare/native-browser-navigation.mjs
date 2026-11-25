@@ -23,11 +23,16 @@ export const nativeRedirectCases = [
   },
 ];
 
+// A fixture destination may carry a base path (apex-mounted apps); the browser
+// fence admits bare origins only.
+export const fixtureDestinationOrigins = (fixtures) =>
+  fixtures.map((app) => new URL(app.origin).origin);
+
 export async function verifyNativeBrowserNavigation(browser, origin, fixtures) {
   return withNativeBrowserFence(
     browser,
     origin,
-    fixtures.map((app) => app.origin),
+    fixtureDestinationOrigins(fixtures),
     async (page) => {
       for (const app of fixtures) {
         for (const query of nativeRedirectCases) {
