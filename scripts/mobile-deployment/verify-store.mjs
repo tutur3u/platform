@@ -39,15 +39,20 @@ export async function json(url, options = {}) {
     signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) {
-    // Store error payloads may contain account data. Log only bounded API codes
-    // and JSON pointers, never titles, details, or request bodies.
+    // Store error payloads may contain account data. Keep diagnostics bounded.
+    const pathname = new URL(url).pathname;
+    const diagnosticPath = pathname.replace(
+      /^(\/androidpublisher\/v3\/applications\/)[^/]+(\/edits)(\/[^/:]+)?/u,
+      (_, prefix, edits, editId) =>
+        `${prefix}[redacted]${edits}${editId ? '/[redacted]' : ''}`
+    );
     const payload = await response.json().catch(() => null);
     const diagnostic = storeApiErrorDiagnostic(payload);
     const error = new Error(
-      `Store API request failed (${response.status}, ${new URL(url).pathname}${diagnostic ? `; ${diagnostic}` : ''})`
+      `Store API request failed (${response.status}, ${diagnosticPath}${diagnostic ? `; ${diagnostic}` : ''})`
     );
     error.betaReviewQuotaReached = isBetaReviewSubmissionLimit(
-      new URL(url).pathname,
+      pathname,
       payload
     );
     throw error;

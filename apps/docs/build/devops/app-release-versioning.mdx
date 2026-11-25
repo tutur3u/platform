@@ -219,3 +219,11 @@ race, read-only reuse, strict annotations, classification, MSIX mapping and
 the Apple guard), `scripts/app-version/beta-status.test.mjs`,
 `scripts/desktop-deployment/release-topup.test.mjs`, and the ledger cases in
 `release-history.test.mjs` and `play-beta.test.mjs`.
+
+### Google Play testing promotion errors
+
+A rejected Play edit reports the HTTP status, available Google error codes,
+bounded reasons and recognized field paths, and up to 200 characters of the
+redacted error summary. For a failure after internal verification, check Play
+Console's Publishing overview for review status and the target testing track
+for release setup. The edit still uses `ERROR_IF_IN_REVIEW`.
