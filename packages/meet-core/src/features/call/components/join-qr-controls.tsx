@@ -98,17 +98,18 @@ export function JoinQrOptions({
  */
 export function JoinQrSwitch({
   settings,
-  serverNow,
+  clockSkew,
   supported,
   onChange,
 }: {
   settings: MeetRoomSettings;
-  serverNow?: string;
+  /** `CallState.settingsClockSkew`, measured when the settings arrived. */
+  clockSkew?: number;
   supported: boolean;
   onChange: (patch: JoinQrPatch) => void;
 }) {
   const t = useTranslations('meet.call');
-  const shown = useJoinQrShown(settings, serverNow);
+  const shown = useJoinQrShown(settings, clockSkew);
   return (
     <ControlSwitchRow
       icon={QrCode}

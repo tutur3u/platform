@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import type { useRoomRecording } from '../hooks/use-room-recording';
 import type { useSharedRoomAudio } from '../hooks/use-shared-room-audio';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
-import { roomKeepsJoinQr } from '../hooks/use-stage-join-qr';
+import { managesJoinQr, roomKeepsJoinQr } from '../hooks/use-stage-join-qr';
 import type { MeetRoomController } from '../lib/room-controller';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { type MeetToolDefinition, meetTools } from '../tools/registry';
@@ -124,7 +124,7 @@ export function CallControlDock({
   const presenceOnly = state.settings.transport === 'presence';
   // The redesigned room (MEET_UX_V2) moves people left and adds the join QR.
   const callUx = useMeetCallUx();
-  const managesJoinQr = callUx && (state.canManageParticipants ?? canManage);
+  const showsJoinQrSwitch = callUx && managesJoinQr(state);
   const [extrasDialog, setExtrasDialog] = useCallExtrasDialog();
   const navControls = useRoomNavigationControls(nav);
   const settingsDialog = useCallSettingsDialog();
@@ -237,10 +237,10 @@ export function CallControlDock({
                 closeOnChange
               />
             )}
-            {managesJoinQr && (
+            {showsJoinQrSwitch && (
               <JoinQrSwitch
                 settings={state.settings}
-                serverNow={state.settingsServerNow}
+                clockSkew={state.settingsClockSkew}
                 supported={roomKeepsJoinQr(state)}
                 onChange={room.updateSettings}
               />

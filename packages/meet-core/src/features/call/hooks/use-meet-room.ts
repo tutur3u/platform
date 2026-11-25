@@ -214,8 +214,10 @@ export function useMeetRoom({
           setMedia(next);
           syncForcedMediaRef.current(next, message.kinds.includes('audio'));
         }
+        // Read once per message, so a replayed updater sees the same time.
+        const receivedAt = Date.now();
         setState((current) => {
-          const next = reduceCallState(current, message);
+          const next = reduceCallState(current, message, receivedAt);
           stateRef.current = next;
           return next;
         });

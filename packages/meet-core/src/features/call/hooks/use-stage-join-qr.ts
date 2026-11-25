@@ -32,6 +32,27 @@ export function roomKeepsJoinQr(state: Pick<CallState, 'settingsFeatures'>) {
   return state.settingsFeatures?.includes('joinQr') ?? false;
 }
 
+/** Hosts and co-hosts: the same permission as Activities settings. */
+export function managesJoinQr(
+  state: Pick<CallState, 'canManageParticipants' | 'role'>
+) {
+  return state.canManageParticipants ?? state.role === 'host';
+}
+
+/**
+ * Whether the card offers its room options (auto-hide, hide for everyone):
+ * only to hosts and co-hosts, and only in a room that keeps the settings,
+ * so the options never silently do nothing on an older realtime Worker.
+ */
+export function offersJoinQrOptions(
+  state: Pick<
+    CallState,
+    'settingsFeatures' | 'canManageParticipants' | 'role'
+  >
+) {
+  return managesJoinQr(state) && roomKeepsJoinQr(state);
+}
+
 /**
  * The stage join QR for one call: whether it shows (MEET_UX_V2 only, on by
  * default), whether it is a card or a chip, and whether the stage keeps its
@@ -39,7 +60,7 @@ export function roomKeepsJoinQr(state: Pick<CallState, 'settingsFeatures'>) {
  */
 export function useStageJoinQr(state: CallState, activityOpen: boolean) {
   const enabled = useMeetCallUx();
-  const shown = useJoinQrShown(state.settings, state.settingsServerNow);
+  const shown = useJoinQrShown(state.settings, state.settingsClockSkew);
   const origin = useSyncExternalStore(noSubscribe, readOrigin, noOrigin);
   const [minimized, setMinimized] = useState(false);
   const [stageFilled, setStageFilled] = useState(false);
@@ -60,7 +81,6 @@ export function useStageJoinQr(state: CallState, activityOpen: boolean) {
     minimized,
     setMinimized,
     setStageFilled,
-    supported: roomKeepsJoinQr(state),
   };
 }
 

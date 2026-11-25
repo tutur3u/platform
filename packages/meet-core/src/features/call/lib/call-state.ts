@@ -86,8 +86,11 @@ export interface CallState {
   settings: MeetRoomSettings;
   /** Settings features the room announced; older rooms announce none. */
   settingsFeatures?: readonly string[];
-  /** The room's clock when it last sent settings. */
-  settingsServerNow?: string;
+  /**
+   * Milliseconds to add to this device's clock to read the room's clock,
+   * measured when the room's settings arrived.
+   */
+  settingsClockSkew?: number;
   approved: MeetApprovedParticipant[];
   reactions: Array<{
     reaction: MeetReaction;
@@ -114,6 +117,8 @@ export interface CallState {
   classTimerEnabled: boolean;
   classTimer: ClassTimer | null;
   classTimerServerNow: string | null;
+  /** The room's clock skew, measured when the timer state arrived. */
+  classTimerClockSkew?: number;
   selfUserId: string | null;
   stage: MeetRealtimeStageState;
   waiting: MeetRealtimeWaitingParticipant[];
@@ -156,9 +161,26 @@ export function remoteTrackKey(track: MeetRealtimeRoomTrack) {
  * room lifecycle can be exercised without a socket, a peer connection or a
  * browser.
  */
+/**
+ * Milliseconds between the room's `serverNow` and this device's clock at
+ * `receivedAt`, the moment the message arrived. Measuring at arrival (not
+ * when a consumer first renders) keeps late-mounted views on the same clock.
+ */
+function clockSkew(
+  serverNow: string | null | undefined,
+  receivedAt: number | undefined
+) {
+  const server = serverNow ? Date.parse(serverNow) : Number.NaN;
+  return receivedAt !== undefined && Number.isFinite(server)
+    ? server - receivedAt
+    : undefined;
+}
+
+/** `receivedAt` is this device's clock when the message arrived. */
 export function reduceCallState(
   state: CallState,
-  message: MeetRealtimeServerMessage
+  message: MeetRealtimeServerMessage,
+  receivedAt?: number
 ): CallState {
   switch (message.type) {
     case 'assistant.live':
@@ -184,7 +206,8 @@ export function reduceCallState(
         ...state,
         settings: message.settings,
         settingsFeatures: message.features ?? [],
-        settingsServerNow: message.serverNow ?? state.settingsServerNow,
+        settingsClockSkew:
+          clockSkew(message.serverNow, receivedAt) ?? state.settingsClockSkew,
       };
     case 'admission.approved':
       return { ...state, approved: message.participants };
@@ -226,6 +249,11 @@ export function reduceCallState(
           message.admission === 'waiting' ? null : (message.classTimer ?? null),
         classTimerServerNow:
           message.admission === 'waiting' ? null : (message.serverNow ?? null),
+        classTimerClockSkew:
+          message.admission === 'waiting'
+            ? undefined
+            : (clockSkew(message.serverNow, receivedAt) ??
+              state.classTimerClockSkew),
         canManageParticipants:
           message.canManageParticipants ?? message.role === 'host',
         roomId: message.roomId,
@@ -414,6 +442,9 @@ export function reduceCallState(
         ...state,
         classTimer: message.timer,
         classTimerServerNow: message.serverNow,
+        classTimerClockSkew:
+          clockSkew(message.serverNow, receivedAt) ??
+          state.classTimerClockSkew,
         error: null,
       };
     case 'error':

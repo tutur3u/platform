@@ -109,7 +109,7 @@ describe('StageJoinQr', () => {
       joinQrAutoHide: 2,
       joinQrShownAt: now,
     };
-    render(<Stage state={roomState({ settings, settingsServerNow: now })} />);
+    render(<Stage state={roomState({ settings, settingsClockSkew: 0 })} />);
     act(() => vi.advanceTimersByTime(119_000));
     expect(stageQr()).not.toBeNull();
     act(() => vi.advanceTimersByTime(1_000));
@@ -127,7 +127,7 @@ describe('StageJoinQr', () => {
       joinQrShownAt: roomNow,
     };
     render(
-      <Stage state={roomState({ settings, settingsServerNow: roomNow })} />
+      <Stage state={roomState({ settings, settingsClockSkew: -600_000 })} />
     );
     expect(stageQr()).not.toBeNull();
     act(() => vi.advanceTimersByTime(119_000));
@@ -141,6 +141,17 @@ describe('StageJoinQr', () => {
     expect(card()).toBeNull();
     const chip = screen.getByRole('button', { name: copy.show });
     expect(chip.className).not.toContain('lg:hidden');
+  });
+
+  it('lifts the chip above the bottom-left tile name strip', () => {
+    render(<Stage activityOpen />);
+    const chipForm = stageQr()!.className;
+    expect(chipForm).toContain('bottom-16');
+    expect(chipForm).not.toContain('lg:bottom-4');
+    cleanup();
+    // With room for the card, the card keeps to the corner from lg up.
+    render(<Stage />);
+    expect(stageQr()!.className).toContain('lg:bottom-4');
   });
 
   it('keeps to the chip in a presence-only room', () => {
@@ -187,17 +198,57 @@ describe('JoinQrSwitch', () => {
   const renderSwitch = (
     settings: MeetRoomSettings,
     supported: boolean,
-    onChange = vi.fn()
+    onChange = vi.fn(),
+    clockSkew?: number
   ) =>
     render(
       <NextIntlClientProvider locale="en" messages={messages}>
         <JoinQrSwitch
           settings={settings}
+          clockSkew={clockSkew}
           supported={supported}
           onChange={onChange}
         />
       </NextIntlClientProvider>
     );
+
+  it('reads off when More opens after the QR auto-hid', () => {
+    vi.useFakeTimers();
+    const shownAt = '2026-11-25T08:00:00.000Z';
+    // The switch mounts with the More menu, seven minutes after a 5-minute
+    // auto-hide started, on a device whose clock matches the room.
+    vi.setSystemTime(Date.parse(shownAt) + 7 * 60_000);
+    const onChange = vi.fn();
+    renderSwitch(
+      { ...base, joinQrAutoHide: 5, joinQrShownAt: shownAt },
+      true,
+      onChange,
+      0
+    );
+    const toggle = screen.getByRole('switch', { name: copy.switch });
+    expect(toggle.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(toggle);
+    expect(onChange).toHaveBeenLastCalledWith({ joinQrHidden: false });
+  });
+
+  it('keeps the arrival skew when More opens late on a fast device', () => {
+    vi.useFakeTimers();
+    const shownAt = '2026-11-25T08:00:00.000Z';
+    // Ten minutes ahead of the room, opened three minutes into a 5-minute
+    // auto-hide: still shown on the room's clock.
+    vi.setSystemTime(Date.parse(shownAt) + 13 * 60_000);
+    renderSwitch(
+      { ...base, joinQrAutoHide: 5, joinQrShownAt: shownAt },
+      true,
+      vi.fn(),
+      -600_000
+    );
+    expect(
+      screen
+        .getByRole('switch', { name: copy.switch })
+        .getAttribute('aria-checked')
+    ).toBe('true');
+  });
 
   it('shows and hides the QR in a room that keeps the setting', () => {
     const onChange = vi.fn();

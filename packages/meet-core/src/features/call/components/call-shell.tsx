@@ -53,7 +53,10 @@ import { CallHeaderControls } from './call-header-controls';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SidePanel } from './side-panel';
 import { StageJoinQr } from './stage-join-qr';
-import { useStageJoinQr } from '../hooks/use-stage-join-qr';
+import {
+  offersJoinQrOptions,
+  useStageJoinQr,
+} from '../hooks/use-stage-join-qr';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { findMeetTool, meetTools } from '../tools/registry';
 import { useMeetTools } from '../tools/use-meet-tools';
@@ -557,9 +560,7 @@ function CallShellContent({
             qr={joinQr}
             settings={state.settings}
             onSettings={
-              joinQr.supported && (state.canManageParticipants ?? canManage)
-                ? room.updateSettings
-                : undefined
+              offersJoinQrOptions(state) ? room.updateSettings : undefined
             }
           />
         </main>

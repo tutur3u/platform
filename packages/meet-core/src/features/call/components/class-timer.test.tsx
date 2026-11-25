@@ -11,8 +11,16 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import viMessages from '../../../../../../apps/meet/messages/vi.json';
-import { type CallState, INITIAL_CALL_STATE } from '../lib/call-state';
-import { canStartClassTimer, ClassTimerControls } from './class-timer';
+import {
+  type CallState,
+  INITIAL_CALL_STATE,
+  reduceCallState,
+} from '../lib/call-state';
+import {
+  ClassTimerChip,
+  canStartClassTimer,
+  ClassTimerControls,
+} from './class-timer';
 
 const command = vi.hoisted(() => vi.fn(async () => ({ ok: true as const })));
 vi.mock('@tuturuuu/internal-api/meet-call', () => ({
@@ -110,4 +118,30 @@ it('offers the timer only to hosts and co-hosts while the room enables it', () =
   expect(
     canStartClassTimer({ ...running('host'), classTimerEnabled: false })
   ).toBe(false);
+});
+
+it('keeps the arrival skew when the chip mounts late', () => {
+  vi.useFakeTimers();
+  // This device runs ten minutes ahead of the room when the timer arrives.
+  const receivedAt = Date.parse(NOW) + 600_000;
+  const state = reduceCallState(
+    INITIAL_CALL_STATE,
+    {
+      type: 'classTimer',
+      timer: running('host').classTimer,
+      serverNow: NOW,
+    },
+    receivedAt
+  );
+  // The chip first renders two minutes later, as a late-opened view does.
+  vi.setSystemTime(receivedAt + 120_000);
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <ClassTimerChip
+        timer={state.classTimer!}
+        clockSkew={state.classTimerClockSkew}
+      />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByTitle('03:00 left')).toBeTruthy();
 });

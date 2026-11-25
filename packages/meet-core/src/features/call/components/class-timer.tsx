@@ -12,14 +12,13 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
-import { useServerClockSkew } from '../hooks/use-server-clock-skew';
 import type { CallState } from '../lib/call-state';
 
 type TimerAction = 'start' | 'pause' | 'resume' | 'stop';
 type Timer = CallState['classTimer'];
 
-function useSyncedClock(serverNow: string | null, running: boolean) {
-  const skew = useServerClockSkew(serverNow);
+/** The room's clock: this device's clock plus the skew the room measured. */
+function useSyncedClock(skew: number, running: boolean) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!running) return;
@@ -30,8 +29,8 @@ function useSyncedClock(serverNow: string | null, running: boolean) {
 }
 
 /** Remaining time on the room's clock; null without a timer. */
-function useRemaining(timer: Timer, serverNow: string | null) {
-  const clock = useSyncedClock(serverNow, timer?.status === 'running');
+function useRemaining(timer: Timer, clockSkew: number) {
+  const clock = useSyncedClock(clockSkew, timer?.status === 'running');
   const remaining = !timer
     ? null
     : timer.status === 'paused'
@@ -57,12 +56,9 @@ type TimerPhase = 'none' | 'running' | 'paused' | 'ended';
  * latest change (started, paused, Time's up, stopped). The ticking time is
  * never announced, and a timer already running on join is not re-announced.
  */
-export function useClassTimerAnnouncement(
-  timer: Timer,
-  serverNow: string | null
-) {
+export function useClassTimerAnnouncement(timer: Timer, clockSkew = 0) {
   const t = useTranslations('meet.call');
-  const { ended } = useRemaining(timer, serverNow);
+  const { ended } = useRemaining(timer, clockSkew);
   const phase: TimerPhase = !timer
     ? 'none'
     : ended
@@ -96,13 +92,14 @@ export function useClassTimerAnnouncement(
  */
 export function ClassTimerChip({
   timer,
-  serverNow,
+  clockSkew = 0,
 }: {
   timer: NonNullable<Timer>;
-  serverNow: string | null;
+  /** `CallState.classTimerClockSkew`, measured when the timer arrived. */
+  clockSkew?: number;
 }) {
   const t = useTranslations('meet.call');
-  const { remaining, ended } = useRemaining(timer, serverNow);
+  const { remaining, ended } = useRemaining(timer, clockSkew);
   const label = ended
     ? t('class_timer_ended')
     : t('class_timer_remaining', { time: formatClassTimer(remaining ?? 0) });
@@ -155,7 +152,7 @@ export function ClassTimerControls({
   return (
     <div className="grid gap-4">
       {timer && (
-        <ClassTimerChip timer={timer} serverNow={state.classTimerServerNow} />
+        <ClassTimerChip timer={timer} clockSkew={state.classTimerClockSkew} />
       )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {CLASS_TIMER_PRESETS_MS.map((durationMs) => (

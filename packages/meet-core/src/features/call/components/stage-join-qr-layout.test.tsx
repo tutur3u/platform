@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import {
   joinQrUsesCard,
+  offersJoinQrOptions,
   roomKeepsJoinQr,
   useStageJoinQr,
 } from '../hooks/use-stage-join-qr';
@@ -86,7 +87,7 @@ it('keeps tile names and resume audio clear of the card', () => {
   expect(screen.getByRole('figure')).toBeTruthy();
   // Tiles, with their name strip and resume-audio button, lay out right of
   // the gutter the card sits in.
-  expect(stageRoot().className).toContain('lg:pl-40');
+  expect(stageRoot().className).toContain('lg:pl-44');
   expect(stageRoot().contains(screen.getByTestId('you:camera'))).toBe(true);
 });
 
@@ -94,13 +95,13 @@ it('uses the chip while a screen share fills the stage', () => {
   render(<Room sharing />);
   expect(screen.getByTestId('you:screen')).toBeTruthy();
   expect(screen.queryByRole('figure')).toBeNull();
-  expect(stageRoot().className).not.toContain('lg:pl-40');
+  expect(stageRoot().className).not.toContain('lg:pl-44');
 });
 
 it('uses the chip while a spotlight fills the stage', () => {
   render(<Room layout="spotlight" />);
   expect(screen.queryByRole('figure')).toBeNull();
-  expect(stageRoot().className).not.toContain('lg:pl-40');
+  expect(stageRoot().className).not.toContain('lg:pl-44');
 });
 
 it('chooses the card only when nothing fills the stage', () => {
@@ -115,4 +116,22 @@ it('needs the room to announce the joinQr feature', () => {
   expect(roomKeepsJoinQr({})).toBe(false);
   expect(roomKeepsJoinQr({ settingsFeatures: [] })).toBe(false);
   expect(roomKeepsJoinQr({ settingsFeatures: ['joinQr'] })).toBe(true);
+});
+
+it('offers the card options to managers only in a room that keeps them', () => {
+  const host = { role: 'host' as const, canManageParticipants: true };
+  const cohost = { role: 'speaker' as const, canManageParticipants: true };
+  const participant = { role: 'speaker' as const, canManageParticipants: false };
+  expect(offersJoinQrOptions({ ...host, settingsFeatures: ['joinQr'] })).toBe(
+    true
+  );
+  expect(
+    offersJoinQrOptions({ ...cohost, settingsFeatures: ['joinQr'] })
+  ).toBe(true);
+  // An older realtime Worker announces no features: no options for anyone.
+  expect(offersJoinQrOptions({ ...host, settingsFeatures: [] })).toBe(false);
+  expect(offersJoinQrOptions({ ...cohost })).toBe(false);
+  expect(
+    offersJoinQrOptions({ ...participant, settingsFeatures: ['joinQr'] })
+  ).toBe(false);
 });

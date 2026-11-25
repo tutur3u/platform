@@ -75,7 +75,13 @@ export function StageJoinQr({
   return (
     <div
       data-testid="stage-join-qr"
-      className="pointer-events-none absolute bottom-3 left-3 z-20 sm:bottom-4 sm:left-4"
+      className={cn(
+        // The chip sits above a bottom-left tile's name and identity strip
+        // (about 3rem from the stage edge). The card keeps to the corner:
+        // the stage's gutter holds the tiles beside it.
+        'pointer-events-none absolute bottom-16 left-3 z-20 sm:left-4',
+        qr.card && 'lg:bottom-4'
+      )}
     >
       {card && (
         <figure className="pointer-events-auto hidden w-36 gap-1.5 rounded-xl border bg-background/90 p-2 shadow-md backdrop-blur lg:grid">

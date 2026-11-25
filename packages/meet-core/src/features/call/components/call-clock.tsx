@@ -27,13 +27,13 @@ export function CallTimers({
   const timer = state.classTimerEnabled ? state.classTimer : null;
   const announcement = useClassTimerAnnouncement(
     timer,
-    state.classTimerServerNow
+    state.classTimerClockSkew
   );
   return (
     <div className={cn('flex min-w-0 shrink-0 items-center gap-1', className)}>
       <RoomCountdown expiresAt={state.roomExpiresAt} align={align} />
       {timer && (
-        <ClassTimerChip timer={timer} serverNow={state.classTimerServerNow} />
+        <ClassTimerChip timer={timer} clockSkew={state.classTimerClockSkew} />
       )}
       <span aria-live="polite" className="sr-only" role="status">
         {announcement}
