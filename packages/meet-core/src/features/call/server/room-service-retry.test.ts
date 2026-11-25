@@ -36,8 +36,8 @@ vi.mock('../lib/guest-session', () => ({ MEET_GUEST_COOKIE: 'guest' }));
 
 import {
   callRoomService,
-  logRoomFailuresAtRoute,
   parseRetryAfter,
+  wasFailureLogged,
 } from './room-service';
 
 const access = {
@@ -194,23 +194,36 @@ it('reads Retry-After as delay seconds or an HTTP date, within an hour', () => {
   expect(parseRetryAfter(null, now)).toBeUndefined();
 });
 
-it('stays quiet when the route logs room failures itself', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(status(503)));
+it('logs each room failure once and marks it as logged', async () => {
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
-  await expect(
+  const failure = (call: Promise<unknown>) =>
+    call.then(
+      () => {
+        throw new Error('expected a failure');
+      },
+      (error: unknown) => error
+    );
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(status(503)));
+  const failed = await failure(
     callRoomService(access, { action: 'personal.begin' })
-  ).rejects.toMatchObject({ status: 503 });
+  );
+  expect(failed).toMatchObject({ status: 503, action: 'personal.begin' });
+  expect(wasFailureLogged(failed)).toBe(true);
   expect(errors).toHaveBeenCalledTimes(1);
-  errors.mockClear();
-  const routed = { ...(access as object) } as never;
-  logRoomFailuresAtRoute(routed);
-  await expect(
-    callRoomService(routed, { action: 'personal.begin' })
-  ).rejects.toMatchObject({ status: 503, action: 'personal.begin' });
+  // A dropped request a caller may swallow is logged and marked too.
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('dropped')));
-  await expect(
-    callRoomService(routed, { action: 'personal.begin' })
-  ).rejects.toBeInstanceOf(TypeError);
-  expect(errors).not.toHaveBeenCalled();
+  const dropped = await failure(
+    callRoomService(access, { action: 'personal.finish' })
+  );
+  expect(dropped).toBeInstanceOf(TypeError);
+  expect(wasFailureLogged(dropped)).toBe(true);
+  expect(errors).toHaveBeenCalledTimes(2);
+  // A refusal is not a failure: neither logged nor marked.
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(status(429)));
+  const busy = await failure(
+    callRoomService(access, { action: 'personal.begin' })
+  );
+  expect(wasFailureLogged(busy)).toBe(false);
+  expect(errors).toHaveBeenCalledTimes(2);
   errors.mockRestore();
 });

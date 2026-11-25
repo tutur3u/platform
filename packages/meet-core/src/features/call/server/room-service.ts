@@ -77,25 +77,24 @@ export class MeetRoomServiceError extends MeetCallAccessError {
 }
 
 const ROOM_ACTION = Symbol.for('tuturuuu.meet.roomServiceAction');
-const ROUTE_LOGS = Symbol.for('tuturuuu.meet.roomServiceRouteLogs');
 const LOGGED = Symbol.for('tuturuuu.meet.failureLogged');
 
 /**
- * The route serving `access` logs room failures itself, once, so
- * `callRoomService` does not log them again for this request.
+ * Records that `error` was logged, so a route and `meetCallRoomRoute` do not
+ * log it again. `callRoomService` marks every failure it logs, so a failure
+ * a caller swallows is still logged once, by the room client.
  */
-export function logRoomFailuresAtRoute(access: object) {
-  Reflect.set(access, ROUTE_LOGS, true);
-}
-
-/** Records that `error` was logged, so `meetCallRoomRoute` skips it. */
 export function markFailureLogged<T>(error: T): T {
   if (error && typeof error === 'object') Reflect.set(error, LOGGED, true);
   return error;
 }
 
-const wasLogged = (error: unknown) =>
-  !!error && typeof error === 'object' && Reflect.get(error, LOGGED) === true;
+/** Whether `error` was already logged (`markFailureLogged`). */
+export function wasFailureLogged(error: unknown) {
+  return (
+    !!error && typeof error === 'object' && Reflect.get(error, LOGGED) === true
+  );
+}
 
 /**
  * A `Retry-After` header as whole seconds, at least 1 and at most an hour:
@@ -176,7 +175,6 @@ export async function callRoomService<T>(
   // generic 500.
   const attempts = options?.retryRead ? 2 : 1;
   const action = roomActionName(command);
-  const quiet = Reflect.get(access, ROUTE_LOGS) === true;
   let response: Response | undefined;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const last = attempt === attempts;
@@ -192,15 +190,19 @@ export async function callRoomService<T>(
         cache: 'no-store',
       });
     } catch (error) {
-      if ((!options?.retryRead || last) && !quiet)
+      if (!options?.retryRead || last)
         console.error('Meet room service unreachable', {
           action,
           name: error instanceof Error ? error.name : 'unknown',
         });
       // Only reads are reported as retryable; other callers keep their error,
       // tagged with the room action so a route can still type it.
-      if (!options?.retryRead) throw tagRoomServiceAction(error, action);
-      if (last) throw new MeetRoomServiceError(503, action, undefined, 1);
+      if (!options?.retryRead)
+        throw markFailureLogged(tagRoomServiceAction(error, action));
+      if (last)
+        throw markFailureLogged(
+          new MeetRoomServiceError(503, action, undefined, 1)
+        );
       await new Promise((resolve) => setTimeout(resolve, ROOM_READ_RETRY_MS));
       continue;
     }
@@ -223,19 +225,20 @@ export async function callRoomService<T>(
             .catch(() => undefined)
         : (await response?.body?.cancel().catch(() => undefined), undefined);
     const status = response?.status ?? 503;
-    if (status >= 500 && !quiet)
+    if (status >= 500)
       console.error('Meet room service failed', { action, status });
     // The room's own retry hint passes through when it is busy or down.
     const retryAfter =
       response && (status === 429 || status >= 500)
         ? parseRetryAfter(response.headers.get('Retry-After'))
         : undefined;
-    throw new MeetRoomServiceError(
+    const failure = new MeetRoomServiceError(
       status,
       action,
       code,
       retryAfter ?? (options?.retryRead && status >= 500 ? 1 : undefined)
     );
+    throw status >= 500 ? markFailureLogged(failure) : failure;
   }
   return response.json() as Promise<T>;
 }
@@ -286,7 +289,7 @@ export async function meetCallRoomRoute(
         : error instanceof z.ZodError || error instanceof SyntaxError
           ? 400
           : 500;
-    if (status >= 500 && !wasLogged(error))
+    if (status >= 500 && !wasFailureLogged(error))
       console.error('Meet room action failed', {
         name: error instanceof Error ? error.name : 'unknown',
         // The room action (never its body) when the room itself failed.

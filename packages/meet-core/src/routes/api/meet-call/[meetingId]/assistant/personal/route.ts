@@ -1,10 +1,10 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import {
-  logRoomFailuresAtRoute,
   markFailureLogged,
   roomRoute,
   roomServiceFailureAction,
+  wasFailureLogged,
   type SignedInMeetCallAccess,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { z } from 'zod';
@@ -46,12 +46,23 @@ function failureAction(error: unknown) {
   }
 }
 
+/** Whether the room client already logged this failure. */
+function alreadyLogged(error: unknown) {
+  try {
+    return wasFailureLogged(error);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Private Mira never answers a bare generic 500: a failed room action is a
  * retryable 503 (a busy room keeps its 429) carrying the room's Retry-After,
  * and any other server failure carries a stable code. Refusals keep their own
- * status and code. A failure is logged here and only here, with the stage,
- * the room action and the error class; never the question, history or answer.
+ * status and code. Each failure is logged once: by the room client when it
+ * came from a room action (it marks what it logs), otherwise here, with the
+ * stage, the room action and the error class; never the question, history or
+ * answer. The mapped error carries the mark, so the route wrapper skips it.
  */
 function privateMiraFailure(error: unknown, stage: Stage) {
   if (error instanceof z.ZodError || error instanceof SyntaxError) return error;
@@ -81,11 +92,12 @@ function privateMiraFailure(error: unknown, stage: Stage) {
       PRIVATE_MIRA_ROOM_UNAVAILABLE,
       retryAfterSeconds
     );
-  console.error('Private Mira answer failed', {
-    stage: stage.name,
-    action,
-    name: error instanceof Error ? error.name : 'unknown',
-  });
+  if (!alreadyLogged(error))
+    console.error('Private Mira answer failed', {
+      stage: stage.name,
+      action,
+      name: error instanceof Error ? error.name : 'unknown',
+    });
   if (action)
     return markFailureLogged(
       new MeetCallAccessError(
@@ -111,8 +123,6 @@ export async function POST(
 ) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
-    // This route logs each failure once, below; the room client stays quiet.
-    logRoomFailuresAtRoute(access);
     const stage: Stage = { name: 'request' };
     try {
       return await answerPrivateMira(request, meetingId, access, stage);

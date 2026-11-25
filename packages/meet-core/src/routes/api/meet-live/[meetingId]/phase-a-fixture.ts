@@ -40,7 +40,10 @@ export const phaseAModules = {
   }),
   roomService: () => ({
     callRoomService: mocks.callRoom,
+    markFailureLogged: (error: unknown) => error,
     personalWorkspace: async () => '00000000-0000-4000-8000-000000000003',
+    roomServiceFailureAction: () => undefined,
+    wasFailureLogged: () => false,
     roomRoute: async (
       _request: Request,
       id: string,

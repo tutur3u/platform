@@ -77,6 +77,9 @@ vi.mock('./room-service', () => ({
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   callRoomService: mocks.callRoom,
+  markFailureLogged: (error: unknown) => error,
+  roomServiceFailureAction: () => undefined,
+  wasFailureLogged: () => false,
   roomRoute: async (
     _request: Request,
     _id: string,

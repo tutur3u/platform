@@ -8,7 +8,7 @@ const fixture = vi.hoisted(() => ({
   forward: vi.fn(),
   waitUntil: vi.fn(),
   roomAction: vi.fn(),
-  routeLogs: vi.fn(),
+  logged: vi.fn(),
   shared: false,
   sharedAt: undefined as number | undefined,
 }));
@@ -31,8 +31,8 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   roomServiceFailureAction: fixture.roomAction,
-  logRoomFailuresAtRoute: fixture.routeLogs,
   markFailureLogged: (error: unknown) => error,
+  wasFailureLogged: fixture.logged,
   roomRoute: async (
     _request: Request,
     meetingId: string,
@@ -232,7 +232,7 @@ it.each([
   }
 );
 
-it('logs each failure once, at the route', async () => {
+it('logs a failure the room client did not log, once', async () => {
   const failure = new MeetCallAccessError(503, 'Room action is unavailable');
   fixture.privateRequest.mockRejectedValue(failure);
   fixture.roomAction.mockImplementation((error: unknown) =>
@@ -240,13 +240,29 @@ it('logs each failure once, at the route', async () => {
   );
   const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
   await ask();
-  expect(fixture.routeLogs).toHaveBeenCalledTimes(1);
   expect(errors).toHaveBeenCalledTimes(1);
   expect(errors).toHaveBeenCalledWith('Private Mira answer failed', {
     stage: 'answer',
     action: 'personal.finish',
     name: 'Error',
   });
+  errors.mockRestore();
+});
+
+it('does not log again a failure the room client logged', async () => {
+  const failure = new MeetCallAccessError(503, 'Room action is unavailable');
+  fixture.privateRequest.mockRejectedValue(failure);
+  fixture.roomAction.mockImplementation((error: unknown) =>
+    error === failure ? 'personal.begin' : undefined
+  );
+  fixture.logged.mockImplementation((error: unknown) => error === failure);
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const response = await ask();
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    code: 'MIRA_PRIVATE_ROOM_UNAVAILABLE',
+  });
+  expect(errors).not.toHaveBeenCalled();
   errors.mockRestore();
 });
 
