@@ -741,6 +741,26 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   run: resolve affected apps once in the planner, then call selected per-app
   workflows through static `workflow_call` jobs. Reserve `workflow_dispatch`
   for manual recovery so commit CI remains traceable by SHA.
+- Production selection must follow the workspace graph, including the
+  undeclared relative-import edges in `affected-apps.extra-edges.json`; pass
+  them to `getWorkflowDecision` wherever the full checkout is available and
+  keep the file in `ci-check.yml`'s sparse checkout. A shared package change
+  selects every consumer (`production-shared-package-selection.test.mjs`).
+- Every active production app publishes on a production push through the
+  planner or `serving-workers-production.yaml`, or carries a dated record in
+  `productionPublicationExemptions` (`reason`, `owner`, `approvedOn`,
+  `expires`, `source`; at most 90 days). `production-publication-coverage.test.mjs`
+  fails on a missing, expired, malformed or stale record. When adding a
+  production target, policy entry or exclusion, wire its publisher or add the
+  record in the same change; never extend an expiry without the owner. The
+  test reads source only: repository variables such as
+  `SERVING_WORKERS_PUBLICATION` can still leave a covered app inert.
+- A called production publisher that needs environment-scoped credentials
+  uses `secrets: inherit` only on a job that needs `production-policy` and
+  holds while `allowed` is not `true`; `production-publisher-secrets.test.js`
+  enforces it. Wave-1 Workers stay route-free unless
+  `productionServingTopology` records their exact Custom Domains and routes,
+  and the publisher compares that topology before and after the upload.
 - Check the queued automatic revision against the live `production` ref inside
   the planner's non-cancelling workflow lock, before checkout and target
   resolution. Only a proven descendant supersedes the candidate. Emit an empty

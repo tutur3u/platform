@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-11-20"
+updatedAt: "2026-11-25"
 audience: developers
 ---
 
@@ -169,6 +169,40 @@ No package version, dependency resolution or published changelog is rewritten.
   markers so skipped commits stay in the pending range.
 - The planner also verifies serving Web on Cloudflare for the production SHA.
   See [Web deployment proof](/build/devops/web-vinext-families#production-migration-deployment-proof).
+- Selection follows the workspace dependency graph. A change to a shared
+  package such as `packages/ui`, `packages/satellite` or `packages/utils`
+  selects every planner target whose dependency closure contains it. A path
+  listed in `scripts/ci/affected-apps.extra-edges.json` is imported by another
+  workspace without a declared dependency, so it also selects every consumer
+  of that importer: a change to `apps/calendar/messages/` reaches Mail and
+  Apps through `packages/ui`. Regression coverage:
+  `scripts/ci/production-shared-package-selection.test.mjs`.
+- Selected Mail, Calendar and Apps publish in the same planner run. Each app
+  workflow's `production-policy` job re-reads `productionPublicationPolicy` in
+  `tuturuuu.ci.ts`; only then does `native-publish-production` call
+  `wave1-native-production.yaml`. That workflow builds, restores and uploads
+  the sealed production bytes once, with the exact production SHA, a
+  read-only preflight, a rollback receipt naming the previous deployment, a
+  deploy credential only in the upload step, and the serving topology
+  unchanged before and after. A Worker that already serves through a Custom
+  Domain or zone route publishes only when `productionServingTopology` in
+  `tuturuuu.ci.ts` records exactly that topology; Calendar's
+  `calendar.tuturuuu.com` is the only record. Every other wave-1 Worker must
+  stay route-free. A manual dispatch of the same workflow from `production`
+  is the recovery path, and both kinds of run share one upload history.
+- The serving Workers (roadmap, learn, teach, nova, tools and lms) republish
+  through `serving-workers-production.yaml` whenever their live build is not
+  the production SHA. It is inert until its repository variable and
+  environment secret exist; see
+  [Serving Worker republication](/build/devops/serving-workers-publication).
+- Every active production app publishes through the planner or the serving
+  Workers, or has a dated record in `productionPublicationExemptions`
+  (`reason`, `owner`, `approvedOn`, `expires`, `source`; at most 90 days).
+  `scripts/ci/production-publication-coverage.test.mjs` runs in the Test
+  workflow and fails for an excluded, held or publisher-less app without a
+  record, an expired record, or a record for an app that already publishes.
+  Renew a record only with its owner's approval; prefer wiring the app into
+  a publisher.
 
 - The production planner serializes runs without cancelling active work. When
   an automatic push run reaches the front of the queue, the planner compares

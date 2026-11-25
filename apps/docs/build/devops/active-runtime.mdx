@@ -1,7 +1,7 @@
 ---
 title: "Active runtime and scheduler ownership"
 description: "The live Next.js path, retired Docker cron runner, inactive migration targets, and current scheduling evidence."
-updatedAt: '2026-10-25'
+updatedAt: '2026-11-25'
 audience: developers
 ---
 
@@ -52,21 +52,17 @@ explicit cutover PR. See
 - Post-deploy watch is 30–60 minutes with immediate rollback, not 5 minutes.
 
 
-## Wave-1 production publication hold
+## Wave-1 production publication
 
-Calendar frontend is admitted for route-free production preparation in
-`productionPublicationPolicy` in `tuturuuu.ci.ts`; Meet, Mail and Apps remain
-**held for wave-1 cutover**. The production planner reports
-**Held** with that reason and selects neither their native nor legacy publishers,
-including manual and package recovery selection. Native CI validation stays enabled.
-Meet's direct production job also checks the same policy before publication.
-
-A production sync therefore retains the currently deployed Meet frontend and realtime
-Worker versions and the existing Calendar/Mail/Apps Vercel deployments. Other apps
-and central API suppliers retain their normal production behavior; the hold is not
-an assertion of compatibility with newly published suppliers. Vercel Git deployment
-stays disabled; do not change framework, domains, bindings or scheduler ownership.
-See the wave-1 cutover runbook.
+Calendar, Mail and Apps are admitted in `productionPublicationPolicy` in
+`tuturuuu.ci.ts`. Each production push that selects one of them publishes it
+in the same planner run through `wave1-native-production.yaml`; see
+[Environments & Release Flow](/build/devops/environments-release-flow#production).
+Meet publishes through its own policy-gated production job. Drive and Contacts
+stay held, and each held or excluded app carries a dated exemption in
+`productionPublicationExemptions`. Native CI validation stays enabled for
+every app. Do not change framework, domains, bindings or scheduler ownership
+through these publishers. See the wave-1 cutover runbook.
 
 ## Runtime map
 

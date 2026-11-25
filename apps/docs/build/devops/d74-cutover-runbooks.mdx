@@ -67,7 +67,7 @@ Build these only as a production artifact. A plain `bun run build:cloudflare` pr
 3. `CI=true node scripts/ci/wave1-native-runtime.mjs <app> production <sha>`.
 4. `node scripts/ci/wave1-native-artifact.mjs verify <app> production <sha>`.
 
-Run it through `wave1-native-production.yaml` (input `app`, from the `production` ref) rather than by hand. The `build:cloudflare` steps in `apps-cloudflare.yaml` and `meet-cloudflare.yaml` build CI fixtures with placeholder Supabase values and are never a cutover artifact. Meet is not a wave-1 profile; its Worker is already live and is redeployed from `meet-cloudflare.yaml`.
+Run it through `wave1-native-production.yaml` rather than by hand: the production planner calls it for each selected Calendar, Mail or Apps push, and a dispatch (input `app`, from the `production` ref) is the recovery path. The `build:cloudflare` steps in `apps-cloudflare.yaml` and `meet-cloudflare.yaml` build CI fixtures with placeholder Supabase values and are never a cutover artifact. Meet is not a wave-1 profile; its Worker is already live and is redeployed from `meet-cloudflare.yaml`.
 
 ### Mail deployment profile and staging Access
 

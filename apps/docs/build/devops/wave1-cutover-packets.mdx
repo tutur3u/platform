@@ -1,7 +1,7 @@
 ---
 title: "Wave-1 cutover packets: Calendar, Mail, Apps, Finance, Drive, Meet, Roadmap"
 description: "Per-app Worker identity, routes, bindings, build commands, rollback and smoke checks for the wave-1 Cloudflare cutover."
-updatedAt: "2026-11-23"
+updatedAt: "2026-11-25"
 audience: developers
 ---
 
@@ -52,8 +52,11 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   recorded deployment and matching readback. It does not attach routes, promote,
   install a scheduler or activate provider execution.
 - Production publication is gated by `productionPublicationPolicy` in `tuturuuu.ci.ts`
-  and the `wave1-native-production.yaml` dispatch, which lists `calendar`, `mail`, `apps`
-  and `finance`. All four are admitted. Each run uses the protected GitHub environment
+  and runs through `wave1-native-production.yaml`. The production planner calls it
+  through `calendar-cloudflare.yaml`, `mail-cloudflare.yaml` and `apps-cloudflare.yaml`
+  on every production push that selects the app; its dispatch, which also lists
+  `finance` and `drive`, is the manual and recovery path. Calendar, Mail, Apps and
+  Finance are admitted. Each run uses the protected GitHub environment
   `wave1-<app>-production` (`publish` only succeeds when `PUBLICATION_ENVIRONMENT` equals that
   exact name) and must be dispatched from the `production` ref.
 - Environments the release owner creates (restrict each to the `production` branch and add a
@@ -111,7 +114,7 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 | Canonical host | `calendar.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `CRON_SECRET`; optional `TUTURUUU_APP_COORDINATION_SECRET` |
 | Bindings | `ASSETS` and `ABUSE_GUARD` (service `tuturuuu-abuse-guard`, entrypoint `AbuseGuardEntrypoint`); no database, KV, R2 or queue. Var `ABUSE_GUARD_FAMILIES=proxy`; Web sets `ABUSE_GUARD_KEY_PEPPER`, which is not deploy-required (without it `proxy` is `off` and fails open) |
-| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=calendar` from `production` (environment `wave1-calendar-production`) |
+| Publication | Admitted in `tuturuuu.ci.ts`; the production planner publishes it through `calendar-cloudflare.yaml` and `wave1-native-production.yaml` (environment `wave1-calendar-production`); the reviewed `productionServingTopology` record admits its `calendar.tuturuuu.com` Custom Domain. Recovery: dispatch `wave1-native-production.yaml` with `app=calendar` from `production` |
 | Rollback | Previous `tuturuuu-calendar` version verified on the canonical host |
 
 The production artifact uses `TTR_ONE_ORIGIN_CALENDAR=shadow` to serve both
@@ -132,7 +135,7 @@ subdomain.
 | Canonical host | `mail.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `MAIL_CONNECTED_ACCOUNTS_KEY`, `MAIL_R2_ACCOUNT_ID`, `MAIL_R2_ACCESS_KEY_ID`, `MAIL_R2_SECRET_ACCESS_KEY`, `MAIL_CLOUDFLARE_ACCOUNT_ID`, `MAIL_CLOUDFLARE_API_TOKEN`, `MAIL_CLOUDFLARE_INGEST_SECRET` |
 | Resources | Existing R2 bucket `tuturuuu-mail` (retained); the email-routing Worker (`wrangler.email-routing.jsonc`) is a separate deployment and is not touched by this cutover |
-| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=mail` from `production` (environment `wave1-mail-production`) |
+| Publication | Admitted in `tuturuuu.ci.ts`; the production planner publishes it through `mail-cloudflare.yaml` and `wave1-native-production.yaml` (environment `wave1-mail-production`); the Worker must stay route-free. Recovery: dispatch `wave1-native-production.yaml` with `app=mail` from `production` |
 | Rollback | Previous `tuturuuu-mail` version verified on the canonical host |
 
 Qualify each inbound webhook before moving its route to the Mail Worker.
@@ -149,7 +152,7 @@ in place while changing one route.
 | Admitted apex mount | `https://tuturuuu.com/apps` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Vars | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`; `/api/*` proxies to Web |
-| Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=apps` from `production` (environment `wave1-apps-production`) |
+| Publication | Admitted in `tuturuuu.ci.ts`; the production planner publishes it through `apps-cloudflare.yaml` and `wave1-native-production.yaml` (environment `wave1-apps-production`); the Worker must stay route-free. Recovery: dispatch `wave1-native-production.yaml` with `app=apps` from `production` |
 | Rollback | Previous verified `tuturuuu-apps` version. Revert a gateway-only regression on the gateway. |
 
 The sealed production profile is checked on the canonical host and at

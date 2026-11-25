@@ -1,7 +1,7 @@
 ---
 title: "Serving Worker republication"
 description: "How production promotion republishes the Workers that already serve roadmap, learn, teach, nova, tools and lms, and how to stop, retry or roll one back."
-updatedAt: '2026-11-21'
+updatedAt: '2026-11-25'
 audience: developers
 ---
 
@@ -87,6 +87,16 @@ has no known regression for an admitted app, for example by smoking each app's
 candidate from that SHA at 0%. While a pinned production SHA carries a known
 regression, keep the variable unset or move that app to `held` in
 `productionPublicationPolicy` until a fixed SHA is pinned.
+
+Publication needs both the repository variable `SERVING_WORKERS_PUBLICATION`
+set to `enabled` and the `SERVING_WORKERS_CLOUDFLARE_API_TOKEN` secret on the
+`cloudflare-release-production` environment. Setting either is a release-owner
+action. `scripts/ci/production-publication-coverage.test.mjs` counts these
+apps as publishing automatically because it reads source, not repository
+variables, so while either is missing they stay on their last version without
+a failing check. After a promotion, a skipped `plan` job means the variable
+is not `enabled`, and a `plan` notice means the token is missing; each app's
+`/api/build-info` shows the SHA it serves.
 
 ## Credentials
 
