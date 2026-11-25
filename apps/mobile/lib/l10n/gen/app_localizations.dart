@@ -13138,8 +13138,14 @@ abstract class AppLocalizations {
   /// No description provided for @mailEmpty.
   ///
   /// In en, this message translates to:
-  /// **'No messages here'**
+  /// **'No messages'**
   String get mailEmpty;
+
+  /// No description provided for @mailEmptyFolderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages for this folder will appear here.'**
+  String get mailEmptyFolderDescription;
 
   /// No description provided for @mailFolders.
   ///
@@ -13321,6 +13327,18 @@ abstract class AppLocalizations {
   /// **'Labels'**
   String get mailLabels;
 
+  /// No description provided for @mailLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail could not be loaded'**
+  String get mailLoadFailed;
+
+  /// No description provided for @mailLoadFailedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not retrieve your messages. Check your connection and try again.'**
+  String get mailLoadFailedDescription;
+
   /// No description provided for @mailLoadImages.
   ///
   /// In en, this message translates to:
@@ -13452,6 +13470,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select a conversation'**
   String get mailPreviewEmptyTitle;
+
+  /// No description provided for @mailReadTimeoutDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Mail took too long to respond. Wait a few seconds, then try again.'**
+  String get mailReadTimeoutDescription;
+
+  /// No description provided for @mailRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh. Showing saved mail.'**
+  String get mailRefreshFailed;
 
   /// No description provided for @mailRemoveAttachment.
   ///

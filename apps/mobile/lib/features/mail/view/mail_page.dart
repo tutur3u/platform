@@ -35,6 +35,8 @@ import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/mail/view/mail_skeletons.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
+import 'package:mobile/features/mail/view/mail_list_retry.dart';
+import 'package:mobile/features/mail/view/mail_list_states.dart';
 import 'package:mobile/features/mail/view/mail_swipe_tile.dart';
 import 'package:mobile/features/mail/view/mail_webview_warmup.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
@@ -262,6 +264,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   bool _accessDenied = false;
   bool _hasMore = false;
   bool _failed = false;
+  bool _failedTimeout = false;
   int _page = 1;
   int _generation = 0;
   int _bootstrapGeneration = 0;
@@ -472,9 +475,14 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         (_) => unawaited(MailWebViewWarmup.start()),
       );
     } on Object catch (error) {
-      if (mounted && generation == _generation) {
+      // A refresh cancelled by a concurrent write or a closed refresh gate,
+      // over rows already on screen, is not a failure: those rows still hold.
+      if (mounted &&
+          generation == _generation &&
+          !(isMailReadInterruption(error) && _listResolved)) {
         setState(() {
           _failed = true;
+          _failedTimeout = isMailReadTimeout(error);
           if (error is ApiException &&
               (error.statusCode == 401 || error.statusCode == 403)) {
             unawaited(_denyCachedAccess());

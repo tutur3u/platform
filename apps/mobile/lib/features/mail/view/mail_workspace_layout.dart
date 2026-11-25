@@ -251,10 +251,10 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                   ),
                   if (!wide && _selected.isNotEmpty) _buildMailBulkToolbar(),
                   if (_failed && _listResolved)
-                    TextButton.icon(
-                      onPressed: !_accessVerified ? _bootstrap : _load,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(l10n.commonSomethingWentWrong),
+                    MailRefreshNotice(
+                      onRetry: () => unawaited(
+                        !_accessVerified ? _bootstrap() : _load(),
+                      ),
                     ),
                 ],
               ),
@@ -272,36 +272,11 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
               includeTop: false,
               sliver: SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.xxl,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _failed && !_listResolved
-                              ? Icons.error_outline
-                              : Icons.inbox_outlined,
-                          size: 32,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _failed && !_listResolved
-                              ? l10n.commonSomethingWentWrong
-                              : l10n.mailEmpty,
-                          textAlign: TextAlign.center,
-                        ),
-                        if (_failed && !_listResolved)
-                          TextButton.icon(
-                            onPressed: !_accessVerified ? _bootstrap : _load,
-                            icon: const Icon(Icons.refresh),
-                            label: Text(l10n.commonRetry),
-                          ),
-                      ],
-                    ),
-                  ),
+                child: MailListEmptyState(
+                  failed: _failed && !_listResolved,
+                  timedOut: _failedTimeout,
+                  onRetry: () =>
+                      unawaited(!_accessVerified ? _bootstrap() : _load()),
                 ),
               ),
             )

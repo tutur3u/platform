@@ -6994,7 +6994,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailEmail => 'Email address';
 
   @override
-  String get mailEmpty => 'No messages here';
+  String get mailEmpty => 'No messages';
+
+  @override
+  String get mailEmptyFolderDescription => 'Messages for this folder will appear here.';
 
   @override
   String get mailFolders => 'Folders';
@@ -7091,6 +7094,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailLabels => 'Labels';
 
   @override
+  String get mailLoadFailed => 'Mail could not be loaded';
+
+  @override
+  String get mailLoadFailedDescription => 'We could not retrieve your messages. Check your connection and try again.';
+
+  @override
   String get mailLoadImages => 'Load remote images';
 
   @override
@@ -7155,6 +7164,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailPreviewEmptyTitle => 'Select a conversation';
+
+  @override
+  String get mailReadTimeoutDescription => 'Mail took too long to respond. Wait a few seconds, then try again.';
+
+  @override
+  String get mailRefreshFailed => 'Couldn\'t refresh. Showing saved mail.';
 
   @override
   String get mailRemoveAttachment => 'Remove attachment';

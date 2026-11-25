@@ -74,6 +74,10 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
       }
     } on Object catch (error) {
       if (!mounted || generation != _bootstrapGeneration) return;
+      if (isMailReadInterruption(error) && _listResolved) {
+        _updateState(() => _loading = false);
+        return;
+      }
       if (error is ApiException &&
           (error.statusCode == 401 || error.statusCode == 403)) {
         await _denyCachedAccess();
@@ -81,6 +85,7 @@ extension _MailWorkspaceRefresh on _MailWorkspaceState {
       if (mounted) {
         _updateState(() {
           _failed = true;
+          _failedTimeout = isMailReadTimeout(error);
           _loading = false;
         });
       }

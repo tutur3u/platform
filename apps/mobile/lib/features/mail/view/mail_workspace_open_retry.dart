@@ -1,6 +1,8 @@
 part of 'mail_page.dart';
 
 extension _MailWorkspaceOpenRetry on _MailWorkspaceState {
+  /// Reads one list page. Cancellations from concurrent writes or a closed
+  /// refresh gate re-read at once; a transient server failure retries once.
   Future<Map<String, dynamic>> _readInboxWithRetry(
     String workspaceId,
     String mailboxId, {
@@ -10,38 +12,22 @@ extension _MailWorkspaceOpenRetry on _MailWorkspaceState {
     required bool forceRefresh,
     String? label,
     String? folderId,
-  }) async {
+  }) {
     final generation = _generation;
-    for (var attempt = 0; ; attempt++) {
-      try {
-        return await _repository.list(
-          workspaceId,
-          mailboxId,
-          folder: folder,
-          query: query,
-          page: page,
-          label: label,
-          folderId: folderId,
-          forceRefresh: forceRefresh,
-        );
-      } on ApiException catch (error) {
-        final transient =
-            error.failureKind == ApiFailureKind.transport ||
-            error.statusCode == 408 ||
-            error.statusCode >= 500;
-        if (!transient ||
-            attempt >= 1 ||
-            !mounted ||
-            generation != _generation ||
-            mailboxId != _mailboxId) {
-          rethrow;
-        }
-        await Future<void>.delayed(const Duration(milliseconds: 350));
-        if (!mounted || generation != _generation || mailboxId != _mailboxId) {
-          rethrow;
-        }
-      }
-    }
+    return readMailListWithRetry(
+      () => _repository.list(
+        workspaceId,
+        mailboxId,
+        folder: folder,
+        query: query,
+        page: page,
+        label: label,
+        folderId: folderId,
+        forceRefresh: forceRefresh,
+      ),
+      isCurrent: () =>
+          mounted && generation == _generation && mailboxId == _mailboxId,
+    );
   }
 
   Future<Map<String, dynamic>> _readOpenDetailWithRetry(

@@ -95,7 +95,8 @@ void main() {
       Navigator.of(tester.element(find.byType(MailReader))).pop();
       await tester.pumpAndSettle();
       expect(find.text('Background arrival'), findsOneWidget);
-      expect(find.text('Something went wrong'), findsNothing);
+      expect(find.text("Couldn't refresh. Showing saved mail."), findsNothing);
+      expect(find.text('Mail could not be loaded'), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
@@ -141,7 +142,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(requests, 1);
     verify(() => repository.denyAccess('ws')).called(1);
-    expect(find.text('Something went wrong'), findsOneWidget);
+    expect(find.text('Mail could not be loaded'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
   testWidgets('rate limits are not automatically retried', (tester) async {

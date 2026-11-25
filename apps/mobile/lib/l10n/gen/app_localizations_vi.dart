@@ -6916,7 +6916,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailEmail => 'Địa chỉ email';
 
   @override
-  String get mailEmpty => 'Chưa có thư';
+  String get mailEmpty => 'Không có thư';
+
+  @override
+  String get mailEmptyFolderDescription => 'Thư trong thư mục này sẽ xuất hiện tại đây.';
 
   @override
   String get mailFolders => 'Thư mục';
@@ -7013,6 +7016,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailLabels => 'Nhãn';
 
   @override
+  String get mailLoadFailed => 'Không thể tải thư';
+
+  @override
+  String get mailLoadFailedDescription => 'Không thể truy xuất thư. Kiểm tra kết nối và thử lại.';
+
+  @override
   String get mailLoadImages => 'Hiển thị ảnh từ bên ngoài';
 
   @override
@@ -7077,6 +7086,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailPreviewEmptyTitle => 'Chọn một cuộc hội thoại';
+
+  @override
+  String get mailReadTimeoutDescription => 'Mail phản hồi quá chậm. Hãy đợi vài giây rồi thử lại.';
+
+  @override
+  String get mailRefreshFailed => 'Không thể làm mới. Đang hiển thị thư đã lưu.';
 
   @override
   String get mailRemoveAttachment => 'Xóa tệp đính kèm';
