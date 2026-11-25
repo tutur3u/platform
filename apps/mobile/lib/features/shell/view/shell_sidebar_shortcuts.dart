@@ -8,7 +8,6 @@ class ShellSidebarShortcuts extends StatelessWidget {
     required this.focusNode,
     required this.behavior,
     required this.onSelected,
-    required this.onDismiss,
     super.key,
   });
 
@@ -16,7 +15,6 @@ class ShellSidebarShortcuts extends StatelessWidget {
   final FocusNode focusNode;
   final SidebarBehavior behavior;
   final ValueChanged<SidebarBehavior>? onSelected;
-  final VoidCallback? onDismiss;
 
   @override
   Widget build(BuildContext context) => Shortcuts(
@@ -49,9 +47,6 @@ class ShellSidebarShortcuts extends StatelessWidget {
           minimal: true,
         ),
       },
-      if (onDismiss != null)
-        const SingleActivator(LogicalKeyboardKey.escape):
-            const _DismissSidebarIntent(),
     },
     child: Actions(
       actions: {
@@ -61,12 +56,6 @@ class ShellSidebarShortcuts extends StatelessWidget {
           );
           return null;
         }),
-        _DismissSidebarIntent: CallbackAction<_DismissSidebarIntent>(
-          onInvoke: (_) {
-            onDismiss?.call();
-            return null;
-          },
-        ),
       },
       child: Focus(
         focusNode: focusNode,
@@ -82,10 +71,6 @@ class _SidebarBehaviorIntent extends Intent {
   const _SidebarBehaviorIntent({this.minimal = false});
 
   final bool minimal;
-}
-
-class _DismissSidebarIntent extends Intent {
-  const _DismissSidebarIntent();
 }
 
 class _SidebarBehaviorAction extends CallbackAction<_SidebarBehaviorIntent> {

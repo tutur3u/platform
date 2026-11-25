@@ -404,10 +404,12 @@ class _MailReaderState extends State<MailReader> {
   Future<void> _openChild(Widget child) async {
     if (_childRouteOpen) return;
     setState(() => _childRouteOpen = true);
-    final route = MaterialPageRoute<void>(
-      fullscreenDialog: child is MailAttachmentPreview,
-      builder: (_) => child,
-    );
+    final route = child is MailComposer
+        ? MailComposerRoute(builder: (_) => child)
+        : MaterialPageRoute<void>(
+            fullscreenDialog: child is MailAttachmentPreview,
+            builder: (_) => child,
+          );
     try {
       if (child is MailAttachmentPreview) {
         await Navigator.of(context, rootNavigator: true).push<void>(route);

@@ -13,6 +13,8 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/command_palette/command_palette_host.dart';
 import 'package:mobile/features/command_palette/palette_view.dart';
+import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -31,6 +33,8 @@ class _AppLockCubit extends MockCubit<AppLockState> implements AppLockCubit {}
 
 class _TaskRepository extends Mock implements TaskRepository {}
 
+class _MailRepository extends Mock implements MailRepository {}
+
 Future<void> _chord(
   WidgetTester tester,
   LogicalKeyboardKey modifier,
@@ -46,6 +50,7 @@ Future<GoRouter> _pumpApp(
   WidgetTester tester, {
   required TargetPlatform platform,
   required Size size,
+  WidgetBuilder? home,
 }) async {
   debugDefaultTargetPlatformOverride = platform;
   addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -60,6 +65,14 @@ Future<GoRouter> _pumpApp(
   final lock = _AppLockCubit();
   final chrome = ShellChromeActionsCubit();
   addTearDown(chrome.close);
+  chrome.register(
+    registrationId: 'tasks',
+    ownerId: 'tasks',
+    locations: const {Routes.taskAssigned},
+    actions: [
+      ShellActionSpec(id: 'my-task-create', icon: Icons.add, onPressed: () {}),
+    ],
+  );
   whenListen(
     auth,
     const Stream<AuthState>.empty(),
@@ -89,13 +102,19 @@ Future<GoRouter> _pumpApp(
     routes: [
       GoRoute(
         path: Routes.home,
-        builder: (_, _) => const Scaffold(
-          body: AppTextField(placeholder: 'Page input', autofocus: true),
-        ),
+        builder: (context, _) =>
+            home?.call(context) ??
+            const Scaffold(
+              body: AppTextField(placeholder: 'Page input', autofocus: true),
+            ),
       ),
       GoRoute(
         path: Routes.apps,
         builder: (_, _) => const Scaffold(body: Text('Apps route')),
+      ),
+      GoRoute(
+        path: Routes.taskAssigned,
+        builder: (_, _) => const Scaffold(body: TextField(autofocus: true)),
       ),
     ],
   );
@@ -122,6 +141,64 @@ Future<GoRouter> _pumpApp(
 }
 
 void main() {
+  for (final (platform, modifier) in [
+    (TargetPlatform.linux, LogicalKeyboardKey.controlLeft),
+    (TargetPlatform.macOS, LogicalKeyboardKey.metaLeft),
+  ]) {
+    testWidgets(
+      'new-item chord stays out of Mail compose on ${platform.name}',
+      (tester) async {
+        final router = await _pumpApp(
+          tester,
+          platform: platform,
+          size: const Size(1200, 800),
+          home: (context) => Scaffold(
+            body: TextButton(
+              autofocus: true,
+              onPressed: () => Navigator.of(context).push<void>(
+                MailComposerRoute(
+                  builder: (_) => MailComposer(
+                    repository: _MailRepository(),
+                    workspaceId: 'workspace',
+                    mailboxId: 'mailbox',
+                    fromAddress: 'sender@example.test',
+                  ),
+                ),
+              ),
+              child: const Text('Open compose'),
+            ),
+          ),
+        );
+
+        await tester.tap(find.text('Open compose'));
+        await tester.pumpAndSettle();
+        await _chord(tester, modifier, LogicalKeyboardKey.keyN);
+        expect(find.byType(MailComposer), findsOneWidget);
+        expect(
+          router.routerDelegate.currentConfiguration.uri.path,
+          Routes.home,
+        );
+
+        await tester.enterText(find.byType(TextField).at(3), 'Draft subject');
+        await _chord(tester, modifier, LogicalKeyboardKey.keyN);
+        expect(find.byType(MailComposer), findsOneWidget);
+        expect(find.text('Draft subject'), findsOneWidget);
+        expect(
+          router.routerDelegate.currentConfiguration.uri.path,
+          Routes.home,
+        );
+
+        Navigator.of(tester.element(find.byType(MailComposer))).pop();
+        await tester.pumpAndSettle();
+        await _chord(tester, modifier, LogicalKeyboardKey.keyN);
+        expect(
+          router.routerDelegate.currentConfiguration.uri.path,
+          Routes.taskAssigned,
+        );
+      },
+    );
+  }
+
   testWidgets('Ctrl+K opens above routed content and arrows select a route', (
     tester,
   ) async {

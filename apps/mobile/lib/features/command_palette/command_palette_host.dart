@@ -22,6 +22,7 @@ import 'package:mobile/features/command_palette/palette_repository.dart';
 import 'package:mobile/features/command_palette/palette_shortcut_help.dart';
 import 'package:mobile/features/command_palette/palette_shortcuts.dart';
 import 'package:mobile/features/command_palette/palette_view.dart';
+import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/notes/notes_offline_preparation.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
@@ -104,9 +105,13 @@ class _PaletteHostState extends State<PaletteHost> {
       return;
     }
     final focusedContext = FocusManager.instance.primaryFocus?.context;
+    final focusedRoute = focusedContext == null
+        ? null
+        : ModalRoute.of(focusedContext);
     final chrome = context.read<ShellChromeActionsCubit>().state;
-    if ((focusedContext != null &&
-            ModalRoute.of(focusedContext) is PopupRoute<dynamic>) ||
+    if (focusedRoute is PopupRoute<dynamic> ||
+        (shortcut == PaletteShortcut.newItem &&
+            focusedRoute is MailComposerRoute) ||
         chrome.topmostModalOwner != null ||
         _launchingAction) {
       return;

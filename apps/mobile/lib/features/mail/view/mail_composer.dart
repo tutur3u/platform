@@ -9,6 +9,10 @@ import 'package:mobile/features/mail/view/mail_body_editor.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
+class MailComposerRoute extends MaterialPageRoute<void> {
+  MailComposerRoute({required super.builder});
+}
+
 class MailComposer extends StatefulWidget {
   const MailComposer({
     required this.repository,

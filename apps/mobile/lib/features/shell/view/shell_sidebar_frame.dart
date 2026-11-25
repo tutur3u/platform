@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -262,7 +263,6 @@ class _SidebarFrameState extends State<_SidebarFrame>
       focusNode: _shortcutFocus,
       behavior: behavior,
       onSelected: canSelect ? select : null,
-      onDismiss: overlay && _open ? _dismiss : null,
       child: AdaptiveShellFrame(
         railExtent: restExtent,
         railPaintExtent: showPanel ? shellNavigationSidebarExtent : null,
@@ -345,7 +345,17 @@ class _SidebarFrameState extends State<_SidebarFrame>
                       child: Material(
                         color: style.page,
                         elevation: 8,
-                        child: FocusScope(node: _panelFocus, child: rail(true)),
+                        child: CallbackShortcuts(
+                          bindings: {
+                            if (_open)
+                              const SingleActivator(LogicalKeyboardKey.escape):
+                                  _dismiss,
+                          },
+                          child: FocusScope(
+                            node: _panelFocus,
+                            child: rail(true),
+                          ),
+                        ),
                       ),
                     ),
                   ),

@@ -533,7 +533,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
 
   Future<void> _compose([Map<String, dynamic>? draft]) async {
     await _pushChild(
-      MaterialPageRoute(
+      MailComposerRoute(
         builder: (_) => MailComposer(
           repository: _repository,
           workspaceId: widget.workspaceId,
