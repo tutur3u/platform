@@ -213,6 +213,41 @@ describe('board socket transport', () => {
     expect(sentIds()).toEqual(['gone', 'dropped', 'mine', 'mine', 'theirs']);
   });
 
+  it('forgets lines it sent once the socket closes or refuses', async () => {
+    const { transport } = setup();
+    await tick();
+    const first = FakeSocket.all[0]!;
+    const line = (version: number, count: number) => ({
+      id: 'l',
+      type: 'line',
+      version,
+      versionNonce: 1,
+      points: Array.from({ length: count }, (_, i) => [i, i]),
+    });
+    const send = (element: object) =>
+      transport.sendElementChanges({
+        senderId: 'u',
+        changes: [{ type: 'update', element: element as never }],
+        timestamp: 1,
+      });
+    // Offline: the send is refused, so the line never becomes known.
+    await expect(send(line(1, 2))).rejects.toThrow('offline');
+    first.open();
+    await send(line(2, 1));
+    expect(first.sent).toHaveLength(0);
+    await send(line(3, 2));
+    expect(first.sent).toHaveLength(1);
+    // The room may never have received it; after a reconnect with no sync
+    // naming it, a one-point copy is a new line again.
+    first.drop();
+    await vi.advanceTimersByTimeAsync(100);
+    const second = FakeSocket.all.at(-1)!;
+    expect(second).not.toBe(first);
+    second.open();
+    await send(line(4, 1));
+    expect(second.sent).toHaveLength(0);
+  });
+
   it('refreshes its ticket on schedule', async () => {
     const join = vi.fn(async () => session('fresh'));
     setup(join);

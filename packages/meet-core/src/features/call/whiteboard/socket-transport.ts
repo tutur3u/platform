@@ -82,7 +82,11 @@ export function createBoardSocketTransport(
     options.createSocket ??
     ((url: string, protocols: string[]) => new WebSocket(url, protocols));
   const listeners = new Set<(members: BoardMember[]) => void>();
-  /** Element ids this transport has sent or received. */
+  /**
+   * Element ids this socket has received, or sent while open. A closed socket
+   * may have lost what it sent, so they are forgotten on close; the next
+   * scene sync names everything the room really holds.
+   */
   const known = new Set<string>();
   const remember = (elements: readonly unknown[]) => {
     for (const element of elements) {
@@ -102,6 +106,7 @@ export function createBoardSocketTransport(
 
   function stop() {
     generation++;
+    known.clear();
     if (refresh) clearInterval(refresh);
     if (retryTimer) clearTimeout(retryTimer);
     refresh = retryTimer = null;
@@ -227,6 +232,7 @@ export function createBoardSocketTransport(
       if (refresh) clearInterval(refresh);
       refresh = null;
       socket = null;
+      known.clear();
       status('disconnected');
       scheduleRetry(new Error('Whiteboard connection closed'));
     };
@@ -281,6 +287,7 @@ export function createBoardSocketTransport(
         (change) => !isUnsentNewLine(change, known)
       );
       if (changes.length === 0 && batch.changes.length > 0) return;
+      // `send` throws while the socket is not open, so only sent ids count.
       send({ type: 'elements', changes, timestamp: batch.timestamp });
       remember(changes.map((change) => change.element));
     },
