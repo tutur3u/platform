@@ -109,11 +109,11 @@ async function recordOff(
   access: MeetCallRouteAccess,
   input: RoomMiraChoiceInput
 ) {
-  let roomError: unknown;
+  let roomError: MeetCallAccessError | undefined;
   try {
     await roomChoice(access, input);
   } catch (error) {
-    roomError = error;
+    roomError = roomFailure(error);
   }
   try {
     await recordWithRetry(evidenceOf(access, input, false));
@@ -123,7 +123,7 @@ async function recordOff(
     });
     throw notSaved();
   }
-  if (roomError) throw roomFailure(roomError);
+  if (roomError) throw roomError;
 }
 
 /**

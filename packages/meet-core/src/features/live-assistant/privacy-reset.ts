@@ -3,6 +3,8 @@ import type { DurableObjectNamespace } from '@cloudflare/workers-types';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import type { MemoryCommand } from './memory-command';
 
+export { withdrawMiraAccount } from './server/account-confirmation';
+
 export async function mutatePrivateLiveMemory(
   ownerId: string,
   command: MemoryCommand

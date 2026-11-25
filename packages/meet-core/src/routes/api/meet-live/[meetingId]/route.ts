@@ -28,6 +28,7 @@ import { privateMiraBillingWorkspace } from '../../../../features/live-assistant
 import {
   readPrivateMiraChoice,
   requirePrivateMiraChoice,
+  stopPrivateMiraSessions,
 } from '../../../../features/live-assistant/server/private-consent';
 
 const schema = z.discriminatedUnion('action', [
@@ -92,31 +93,8 @@ export async function POST(
         if (!availability.allowed || !env.GOOGLE_GENERATIVE_AI_API_KEY)
           throw new MeetCallAccessError(403, 'Private Mira is unavailable');
       }
-      if (command.choice !== 'continue') {
-        for (const sessionId of current.sessions) {
-          if (!env.MEET_LIVE)
-            throw new MeetCallAccessError(
-              503,
-              'Private Mira stop is unavailable'
-            );
-          const response = await env.MEET_LIVE.get(
-            env.MEET_LIVE.idFromName(sessionId)
-          ).fetch('https://live.internal/control', {
-            method: 'POST',
-            body: JSON.stringify({
-              action: 'stop',
-              ownerId: access.user.id,
-              meetingId,
-            }),
-          });
-          if (!response.ok && response.status !== 410)
-            throw new MeetCallAccessError(503, 'Private Mira could not stop');
-          await callRoomService(access, {
-            action: 'mira.private.ended',
-            sessionId,
-          });
-        }
-      }
+      if (command.choice !== 'continue')
+        await stopPrivateMiraSessions(access, current.sessions, env.MEET_LIVE);
       return callRoomService(
         access,
         accountFlow && command.choice === 'continue'

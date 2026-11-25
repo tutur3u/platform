@@ -64,6 +64,7 @@ const api19 = () => import('../app/api/meet-call/[meetingId]/token/route');
 const api20 = () => import('../app/api/meet-live/[meetingId]/review/route');
 const api21 = () => import('../app/api/meet-live/[meetingId]/route');
 const api22 = () => import('../app/api/meet-live/memory/route');
+const apiMiraAccount = () => import('../app/api/meet-mira/account/route');
 
 type Handler = (
   request: NextRequest,
@@ -563,6 +564,10 @@ export const meetEndpoints: Endpoint[] = [
       GET: async () => (await api22()).GET(),
       POST: async (request) => (await api22()).POST(request),
     },
+  },
+  {
+    pattern: '/api/meet-mira/account',
+    methods: { POST: async (request) => (await apiMiraAccount()).POST(request) },
   },
   {
     pattern: '/og',

@@ -7,6 +7,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
+import { InternalApiError } from '@tuturuuu/internal-api';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { NextIntlClientProvider } from 'next-intl';
 import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
@@ -169,4 +170,27 @@ it('withdraws the signed-in participant’s confirmation from Mira settings', as
     'synthetic-account',
     'en'
   );
+});
+
+it('retries an incomplete withdrawal for the same account and meeting', async () => {
+  f.read.mockResolvedValue(off);
+  f.withdraw
+    .mockRejectedValueOnce(
+      new InternalApiError('Incomplete', 503, 'withdraw_incomplete')
+    )
+    .mockResolvedValueOnce({ available: false });
+  show({ device: { accountId: 'synthetic-account' } });
+  fireEvent.click(
+    await screen.findByRole('button', { name: copy.open_settings })
+  );
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: messages.meet.mira_consent.withdraw_account,
+    })
+  );
+  await screen.findByText(messages.meet.mira_consent.withdrawn_account);
+  expect(f.withdraw.mock.calls).toEqual([
+    ['synthetic-meeting', 'synthetic-account', 'en'],
+    ['synthetic-meeting', 'synthetic-account', 'en'],
+  ]);
 });

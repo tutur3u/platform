@@ -15,6 +15,7 @@ import { hashMiraNotice } from '../mira-notice-hash';
 import { MiraTtlCache } from '../mira-ttl-cache';
 
 type ConfirmationStatus = 'confirmed' | 'required' | 'unavailable';
+type AccountActor = { user: { id: string }; guest?: boolean };
 const confirmations = new MiraTtlCache<ConfirmationStatus>();
 const isGuest = (access: MeetCallRouteAccess) =>
   'guest' in access && access.guest === true;
@@ -61,11 +62,11 @@ export async function requireMiraAccountConfirmation(
   );
 }
 
-function requireExpectedActor(
-  access: MeetCallRouteAccess,
+function requireMiraAccountActor(
+  access: AccountActor,
   expectedActorId: string
 ) {
-  if (isGuest(access) || expectedActorId !== access.user.id)
+  if (access.guest || expectedActorId !== access.user.id)
     throw new MeetCallAccessError(403, 'Mira account changed');
   return access.user.id;
 }
@@ -75,7 +76,7 @@ export async function confirmMiraAccount(
   expectedActorId: string,
   locale: MiraConfirmationLocale
 ) {
-  const userId = requireExpectedActor(access, expectedActorId);
+  const userId = requireMiraAccountActor(access, expectedActorId);
   const status = await readConfirmation(userId);
   if (status === 'confirmed') return;
   if (status !== 'required') throw unavailable();
@@ -97,10 +98,10 @@ export async function confirmMiraAccount(
 }
 
 export async function withdrawMiraAccount(
-  access: MeetCallRouteAccess,
+  access: AccountActor,
   expectedActorId: string
 ) {
-  const userId = requireExpectedActor(access, expectedActorId);
+  const userId = requireMiraAccountActor(access, expectedActorId);
   confirmations.delete(userId);
   try {
     const db = await createAdminClient({ noCookie: true });

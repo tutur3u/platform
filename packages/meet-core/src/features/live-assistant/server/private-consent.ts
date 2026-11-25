@@ -1,4 +1,6 @@
 import 'server-only';
+import type { DurableObjectNamespace } from '@cloudflare/workers-types';
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MIRA_PRIVATE_NOTICE_VERSION } from '@tuturuuu/realtime/meet';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../../call/lib/call-access';
@@ -33,8 +35,47 @@ export async function readPrivateMiraChoice(access: Access) {
     await callRoomService(access, { action: 'mira.private.read' })
   );
   if (!result.success)
-    throw new MeetCallAccessError(403, 'Private Mira consent is unavailable');
+    throw new MeetCallAccessError(
+      403,
+      'Private Mira consent is unavailable',
+      'MIRA_PRIVATE_CONSENT_UNAVAILABLE'
+    );
   return result.data;
+}
+
+export async function stopPrivateMiraSessions(
+  access: Access,
+  sessions: readonly string[],
+  binding?: DurableObjectNamespace
+) {
+  if (sessions.length === 0) return;
+  const env = binding
+    ? undefined
+    : (await getCloudflareContext({ async: true })).env;
+  const live =
+    binding ??
+    (env as { MEET_LIVE?: DurableObjectNamespace } | undefined)?.MEET_LIVE;
+  if (!live)
+    throw new MeetCallAccessError(503, 'Private Mira stop is unavailable');
+
+  for (const sessionId of sessions) {
+    const response = await live
+      .get(live.idFromName(sessionId))
+      .fetch('https://live.internal/control', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'stop',
+          ownerId: access.user.id,
+          meetingId: access.meeting.id,
+        }),
+      });
+    if (!response.ok && response.status !== 410)
+      throw new MeetCallAccessError(503, 'Private Mira could not stop');
+    await callRoomService(access, {
+      action: 'mira.private.ended',
+      sessionId,
+    });
+  }
 }
 
 export async function requirePrivateMiraChoice(access: Access) {

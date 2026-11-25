@@ -7,19 +7,21 @@ import type { useRoomMira } from './use-room-mira';
 
 const notices = new Map<string, string>();
 
-function rememberedNotice(key: string) {
-  if (notices.has(key)) return notices.get(key);
+function rememberedNotice(meetingId: string) {
   try {
-    return sessionStorage.getItem(key) ?? undefined;
+    return sessionStorage.getItem(noticeKey(meetingId)) === '1';
   } catch {
-    return undefined;
+    return false;
   }
 }
 
-function rememberNotice(key: string, text: string) {
-  notices.set(key, text);
+function noticeKey(meetingId: string) {
+  return 'mira-auto-on:' + meetingId;
+}
+
+function rememberNotice(meetingId: string) {
   try {
-    sessionStorage.setItem(key, text);
+    sessionStorage.setItem(noticeKey(meetingId), '1');
   } catch {
     // The in-memory record still covers this tab.
   }
@@ -65,7 +67,8 @@ export function useMiraAutoOn({
       return;
 
     const text = t('indicator_on', { name: acceptance.acceptorName });
-    const shown = rememberedNotice(scope);
+    const shown = notices.get(scope);
+    if (shown === undefined && rememberedNotice(meetingId)) return;
     if (shown === undefined) {
       toast.message(text, {
         duration: 15_000,
@@ -81,7 +84,8 @@ export function useMiraAutoOn({
           },
         },
       });
-      rememberNotice(scope, text);
+      notices.set(scope, text);
+      rememberNotice(meetingId);
     }
     // A later revision can use the notice already shown only if its text
     // still matches. A different acceptor or locale needs an explicit choice.
@@ -112,6 +116,7 @@ export function useMiraAutoOn({
     data,
     dataUpdatedAt,
     deferred,
+    meetingId,
     noticeKnown,
     scope,
     t,

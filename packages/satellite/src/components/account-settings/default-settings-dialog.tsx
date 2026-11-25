@@ -6,6 +6,7 @@ import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-sett
 import {
   SettingsDialogShell,
   type SettingsNavGroup,
+  type SettingsNavItem,
 } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
@@ -19,17 +20,23 @@ export interface SatelliteSidebarSettingsTab {
   label: string;
 }
 
+export type SatelliteAccountSettingsTab = SettingsNavItem & {
+  content: ReactNode;
+};
+
 /**
  * Baseline settings dialog for satellites without an app-specific dialog:
  * the shared account tabs, appearance, and an optional sidebar tab.
  */
 export function SatelliteDefaultSettingsDialog({
+  accountTab,
   centralUrl,
   canManageVersionBadge,
   defaultTab = 'profile',
   sidebarTab,
   user,
 }: {
+  accountTab?: SatelliteAccountSettingsTab;
   centralUrl: string;
   canManageVersionBadge?: boolean;
   defaultTab?: string;
@@ -38,8 +45,9 @@ export function SatelliteDefaultSettingsDialog({
 }) {
   const t = useTranslations();
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const account = createAccountSettingsNavGroup(t);
   const navItems: SettingsNavGroup[] = [
-    createAccountSettingsNavGroup(t),
+    accountTab ? { ...account, items: [...account.items, accountTab] } : account,
     {
       label: t('satellite-account-settings.preferences'),
       items: [
@@ -85,6 +93,7 @@ export function SatelliteDefaultSettingsDialog({
         />
       )}
       {activeTab === 'sidebar' && sidebarTab?.content}
+      {accountTab && activeTab === accountTab.name && accountTab.content}
     </SettingsDialogShell>
   );
 }

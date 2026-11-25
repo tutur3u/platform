@@ -2715,23 +2715,33 @@ default applies to the original flow, including Parley.
   that Mira may listen and transcribe while it is on. The server stores the
   statement version, confirmation time, locale, and SHA-256 text hash in
   `auth.users.raw_app_meta_data.meet_mira_account_confirmation`.
-  **Call settings → Mira → Withdraw Mira confirmation** removes the account
-  record and turns Mira off for the caller in that meeting. Successful account
-  reads are cached for 60 seconds per instance or Worker isolate. Withdrawal
-  clears the local entry immediately. Other instances can rely on their cached
-  confirmation until it expires. The room view also caches its fallback lookup
-  of the caller's last ledger choice for 60 seconds per meeting and account,
-  and invalidates it after the caller chooses. Auto-on checks the durable
-  choice before applying.
+  In a call, **Call settings → Mira → Withdraw Mira confirmation** first turns
+  Room Mira off for the caller, then removes the account record and stops the
+  caller's active Private Mira sessions in that meeting. Meet retries once if
+  either of the last two steps fails. Use the same button if the withdrawal
+  still needs to finish. Outside a call,
+  **Meet Settings → Account → Mira** removes the account record without writing
+  any room choice or directly stopping a session. Successful account reads are
+  cached for up to 60 seconds. Withdrawal clears the serving isolate's entry
+  immediately. Other Meet isolates and the live Worker can use a cached
+  confirmation for up to 60 seconds after withdrawal. The live Worker refuses
+  a withdrawn confirmation on its next grant check once its cache expires.
+  The room view caches its fallback lookup of the caller's last ledger choice
+  for 60 seconds per meeting and account, and invalidates it after the caller
+  chooses. Auto-on checks the durable choice before applying.
 - During the first host activation in a meeting, and when a confirmed
   participant joins a meeting where Mira is on, Meet shows a non-blocking
   notice in the call with the name of the host or co-host who turned it on.
   Each participant sees the notice once per meeting in a browser session.
+  Session storage records only the meeting ID and whether the notice was shown.
   Each automatic activation uses the current acceptance and takes effect
   after the server writes an `auto_on` evidence row for the authenticated
-  participant with the meeting ID, locale, and SHA-256 hash of the shown text.
-  If the name or locale changes the notice text within that session, the
-  participant can turn Mira on explicitly.
+  participant with the meeting ID, locale, and client-attested SHA-256 notice
+  hash. The server verifies the notice text, authenticated actor, account
+  confirmation, current acceptance revision, and absence of a current opt-out.
+  The hash records the client's attestation. The server cannot verify that the
+  notice rendered on screen. If a reload discards the in-memory notice or its
+  text changes, the participant can turn Mira on explicitly.
 - People without a current 18+ confirmation stay outside auto-on.
   Unconfirmed signed-in participants can confirm after admission. Guests
   can join the call and report a minor. A report that someone is under 18
@@ -2752,16 +2762,18 @@ default applies to the original flow, including Parley.
   leaves each participant's private microphone under their own control.
 - Deploy the compatible Meet Realtime Worker and apply the evidence source
   migration before enabling the flag. An older Worker that fails to echo
-  the account fence is asked to end the acceptance and Meet returns
-  `realtime_outdated`. An acceptance made before the rollout retains its
-  existing participant evidence. The host must re-accept to enable auto-on
-  for that meeting. After rolling back the flag, the host must turn Mira off
-  and re-accept under the original flow. Until then the room refuses new
-  legacy opt-ins with `account_confirmation_required`.
+  the account fence is asked to end the acceptance, with one retry on failure.
+  Meet returns `realtime_outdated` if the end is acknowledged, or
+  `realtime_outdated_unended` if both attempts fail. While the flag is on, Meet
+  refuses new room opt-ins under an unmarked acceptance. Existing participant
+  evidence is retained. The host must re-accept to enable new opt-ins and
+  auto-on for that meeting. After rolling back the flag, the host must turn
+  Mira off and re-accept under the original flow. Until then the room refuses
+  new legacy opt-ins with `account_confirmation_required`.
 
 Regression coverage includes
 [the host-on and join-while-on notices, deferral and the opt-out action](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/room-mira-popover.test.tsx),
-[auto-on evidence and unconfirmed-account refusals](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/routes/api/meet-call/%5BmeetingId%5D/mira-room/route.test.ts),
+[auto-on evidence, withdrawal, and acceptance refusals](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/routes/api/meet-call/%5BmeetingId%5D/mira-room/route-account.test.ts),
 [the evidence source constraint](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/meet-mira-host-consent.sql),
 [room request and source exclusion](https://github.com/tutur3u/platform/blob/main/packages/realtime/src/meet/room-mira-consent.test.ts)
 and [transcript decline preservation](https://github.com/tutur3u/platform/blob/main/apps/meet-realtime/src/room-do-mira-pending.test.ts).

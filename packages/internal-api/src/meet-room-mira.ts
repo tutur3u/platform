@@ -128,6 +128,14 @@ export function withdrawMeetMiraAccount(
   });
 }
 
+export function withdrawMeetMiraAccountFromSettings(expectedActorId: string) {
+  return getInternalApiClient().json<{ ok: true }>('/api/meet-mira/account', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expectedActorId }),
+  });
+}
+
 /**
  * Turns room Mira on for the meeting as the host or a co-host, confirming the
  * audience is 18 or older. A later call with more capabilities is a new

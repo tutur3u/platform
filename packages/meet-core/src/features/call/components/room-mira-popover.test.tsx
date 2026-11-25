@@ -191,6 +191,9 @@ it.each(['host-on', 'join-while-on'] as const)(
       )
     );
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(sessionStorage.getItem('mira-auto-on:' + meetingId)).toBe('1');
+    expect(sessionStorage.getItem('mira-auto-on:' + meetingId + ':account'))
+      .toBeNull();
     await waitFor(() =>
       expect(api.choose).toHaveBeenCalledWith(
         meetingId,

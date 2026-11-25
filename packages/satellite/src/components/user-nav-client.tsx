@@ -34,6 +34,7 @@ import {
 } from 'react';
 import { SidebarContext } from '../context/sidebar-context';
 import {
+  type SatelliteAccountSettingsTab,
   SatelliteDefaultSettingsDialog,
   type SatelliteSidebarSettingsTab,
 } from './account-settings/default-settings-dialog';
@@ -75,12 +76,16 @@ const defaultCentralUrl =
     : `http://localhost:${process.env.CENTRAL_PORT || 7803}`;
 
 export function SatelliteSettingsDialogHost({
+  accountSettingsTab,
   canManageVersionBadge,
   centralUrl = defaultCentralUrl,
   settingsDialog,
   sidebarSettingsTab,
   user,
-}: SettingsDialogProps & { centralUrl?: string }) {
+}: SettingsDialogProps & {
+  accountSettingsTab?: SatelliteAccountSettingsTab;
+  centralUrl?: string;
+}) {
   const { closeSettings, open, openSettings, tab } =
     useSettingsDialogUrlState();
   const signedIn = Boolean(user);
@@ -130,6 +135,7 @@ export function SatelliteSettingsDialogHost({
 
   const content = settingsDialog ?? (
     <SatelliteDefaultSettingsDialog
+      accountTab={accountSettingsTab}
       canManageVersionBadge={canManageVersionBadge}
       centralUrl={centralUrl}
       sidebarTab={sidebarSettingsTab}

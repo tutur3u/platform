@@ -1,4 +1,4 @@
-import { Calendar, Video } from '@tuturuuu/icons';
+import { Calendar, Sparkles, Video } from '@tuturuuu/icons';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import UserNavClient, {
   SatelliteSettingsDialogHost,
@@ -8,6 +8,7 @@ import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-vi
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { Structure } from '../app/[locale]/[wsId]/structure';
+import { MiraSettings } from './mira-settings';
 import NotificationPopover from './notification-popover';
 import type { MeetPageModel } from './page-model.server';
 import { MeetSidebarSettings } from './sidebar-settings';
@@ -51,6 +52,13 @@ export function WorkspaceView({
         initialBehaviorUpdatedAt={workspace.behaviorUpdatedAt}
       >
         <SatelliteSettingsDialogHost
+          accountSettingsTab={{
+            content: <MiraSettings accountId={user.id} />,
+            description: t('meet.mira_consent.withdraw_account_description'),
+            icon: Sparkles,
+            label: t('meet.mira_adults.settings_tab'),
+            name: 'mira',
+          }}
           canManageVersionBadge={canManageVersionBadge}
           sidebarSettingsTab={sidebarSettingsTab}
           user={profile}

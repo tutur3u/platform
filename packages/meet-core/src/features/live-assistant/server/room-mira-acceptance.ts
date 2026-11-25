@@ -19,6 +19,7 @@ import { endMiraAcceptance, recordMiraAcceptance } from './room-mira-evidence';
 
 const isGuest = (access: MeetCallRouteAccess) =>
   'guest' in access && access.guest === true;
+const OUTDATED_END_RETRY_MS = 100;
 
 async function roomOptions(access: MeetCallRouteAccess) {
   if (isGuest(access)) return {};
@@ -120,12 +121,23 @@ export async function acceptRoomMira(
   if (accountFlow && result.accountConfirmationRequired !== true) {
     // Older Workers ignore the marker. End that live acceptance and reconcile
     // its evidence before telling the host to retry on a compatible Worker.
-    await endRoomMiraWithOptions(access, 'turned_off', options, revision).catch(
-      (error: unknown) =>
-        console.error('Room Mira incompatible acceptance could not end', {
-          name: error instanceof Error ? error.name : 'unknown',
-        })
-    );
+    const end = () =>
+      endRoomMiraWithOptions(access, 'turned_off', options, revision);
+    try {
+      await end().catch(async () => {
+        await new Promise((resolve) =>
+          setTimeout(resolve, OUTDATED_END_RETRY_MS)
+        );
+        await end();
+      });
+    } catch {
+      console.error('Room Mira incompatible acceptance could not end');
+      throw new MeetCallAccessError(
+        503,
+        'Realtime is outdated and Mira could not be turned off',
+        'realtime_outdated_unended'
+      );
+    }
     throw new MeetCallAccessError(
       503,
       'Realtime must be updated before turning on Mira',
@@ -167,10 +179,12 @@ async function endRoomMiraWithOptions(
   );
   // The room has already ended Mira; a failed evidence write is logged and
   // never reported as Mira still being on.
-  if (result.endedRevision)
+  // A retried fenced end may find the accepted revision already absent.
+  const endedRevision = result.endedRevision ?? expectedRevision;
+  if (endedRevision)
     await endMiraAcceptance({
       meetingId: access.meeting.id,
-      revision: result.endedRevision,
+      revision: endedRevision,
       userId: isGuest(access) ? null : access.user.id,
       reason,
     }).catch((error: unknown) =>

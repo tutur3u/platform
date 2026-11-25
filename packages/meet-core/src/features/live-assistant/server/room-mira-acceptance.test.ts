@@ -206,3 +206,60 @@ it('keeps the accepted revision when Realtime confirms the account fence', async
   expect(f.room).toHaveBeenCalledTimes(2);
   expect(f.end).not.toHaveBeenCalled();
 });
+
+it('retries an outdated acceptance end once and reports if it remains unended', async () => {
+  f.accountFlow = true;
+  f.room
+    .mockResolvedValueOnce({ canAccept: true })
+    .mockResolvedValueOnce({
+      revision: 4,
+      acceptorName: 'Host',
+      replacedRevision: null,
+    })
+    .mockRejectedValue(new Error('Room unavailable'));
+  const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    await expect(acceptRoomMira(host, ['chat'])).rejects.toMatchObject({
+      status: 503,
+      code: 'realtime_outdated_unended',
+    });
+    expect(f.room).toHaveBeenCalledTimes(4);
+    const end = {
+      action: 'mira.room.end',
+      reason: 'turned_off',
+      expectedRevision: 4,
+    };
+    expect(f.room).toHaveBeenNthCalledWith(3, host, end, {});
+    expect(f.room).toHaveBeenNthCalledWith(4, host, end, {});
+    expect(f.end).not.toHaveBeenCalled();
+    expect(errorLog).toHaveBeenCalledExactlyOnceWith(
+      'Room Mira incompatible acceptance could not end'
+    );
+  } finally {
+    errorLog.mockRestore();
+  }
+});
+
+it('reconciles the evidence when a retried end finds the revision gone', async () => {
+  f.accountFlow = true;
+  f.room
+    .mockResolvedValueOnce({ canAccept: true })
+    .mockResolvedValueOnce({
+      revision: 4,
+      acceptorName: 'Host',
+      replacedRevision: null,
+    })
+    .mockRejectedValueOnce(new Error('End response lost'))
+    .mockResolvedValueOnce({ endedRevision: null });
+  await expect(acceptRoomMira(host, ['chat'])).rejects.toMatchObject({
+    status: 503,
+    code: 'realtime_outdated',
+  });
+  expect(f.room).toHaveBeenCalledTimes(4);
+  expect(f.end).toHaveBeenCalledExactlyOnceWith({
+    meetingId: 'meeting',
+    revision: 4,
+    userId: 'host',
+    reason: 'turned_off',
+  });
+});
