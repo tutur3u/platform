@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/repositories/education_repository.dart';
@@ -404,11 +406,19 @@ void main() {
     expect(listPadding().right, 16);
     expect(listPadding().top, AppLayout.pageTop);
 
-    await tester.binding.setSurfaceSize(const Size(1200, 900));
+    const size = Size(1200, 900);
+    await tester.binding.setSurfaceSize(size);
     await tester.pumpAndSettle();
-    // Expanded detail pages centre a 720 box with a 32 gutter inside it.
-    expect(listPadding().left, (1200 - 720) / 2 + 32);
-    expect(listPadding().right, (1200 - 720) / 2 + 32);
+    final listPage = tester.widget<AppPageListView>(
+      find.byType(AppPageListView),
+    );
+    expect(listPage.kind, AppPageKind.detail);
+    final deviceClass = Breakpoints.fromWidth(size.width);
+    final cap = AppLayout.maxContentWidth(AppPageKind.detail, deviceClass)!;
+    final width = math.min(size.width, cap);
+    final inset = (size.width - width) / 2 + AppLayout.gutter(deviceClass);
+    expect(listPadding().left, inset);
+    expect(listPadding().right, inset);
   });
   testWidgets(
     'a missing learner route hides the meter and keeps the score on device',

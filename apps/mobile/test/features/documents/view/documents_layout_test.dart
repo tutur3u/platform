@@ -1,8 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
@@ -96,21 +100,28 @@ _Repository _repository() {
 
 void main() {
   group('Documents list uses the page primitive', () {
-    for (final (size, left) in [
-      (const Size(390, 844), 16.0),
-      (const Size(700, 1000), 24.0 + 50),
-      (const Size(1200, 800), 32.0 + 240),
+    for (final size in [
+      const Size(390, 844),
+      const Size(700, 1000),
+      const Size(1200, 800),
     ]) {
-      testWidgets('content starts at $left at ${size.width}', (tester) async {
+      testWidgets('centres detail content at ${size.width}', (tester) async {
         await _pump(tester, DocumentsPage(repository: _repository()), size);
-        expect(find.byType(AppPageListView), findsOneWidget);
+        final page = tester.widget<AppPageListView>(
+          find.byType(AppPageListView),
+        );
+        expect(page.kind, AppPageKind.detail);
+        final deviceClass = Breakpoints.fromWidth(size.width);
+        final cap = AppLayout.maxContentWidth(AppPageKind.detail, deviceClass);
+        final width = math.min(size.width, cap ?? size.width);
+        final inset = (size.width - width) / 2 + AppLayout.gutter(deviceClass);
         expect(find.text('Documents'), findsNothing);
         expect(find.text('Roadmap'), findsOneWidget);
         expect(find.text('You'), findsOneWidget);
         final list = tester.widget<ListView>(find.byType(ListView));
         final padding = list.padding!.resolve(TextDirection.ltr);
-        expect(padding.left, closeTo(left, 0.5));
-        expect(padding.right, closeTo(left, 0.5));
+        expect(padding.left, closeTo(inset, 0.5));
+        expect(padding.right, closeTo(inset, 0.5));
         expect(tester.getSize(find.byType(ListView)).width, size.width);
       });
     }
@@ -133,19 +144,29 @@ void main() {
 
   group('Document editor uses the reading page body', () {
     testWidgets('fields follow the gutter and reading width', (tester) async {
+      const size = Size(1200, 800);
       await _pump(
         tester,
         DocumentDetailPage(documentId: 'doc-1', repository: _repository()),
-        const Size(1200, 800),
+        size,
       );
       final body = find.byType(AppPageBody);
       expect(body, findsOneWidget);
       expect(tester.widget<AppPageBody>(body).kind, AppPageKind.reading);
       expect(find.text('Document name'), findsNothing);
-      final title = tester.getRect(find.byType(TextField).first);
-      // Expanded reading width 680, centred in 1200 with a 32dp gutter.
-      expect(title.left, closeTo(32 + 260, 0.5));
-      expect(title.width, closeTo(680 - 64, 0.5));
+      final deviceClass = Breakpoints.fromWidth(size.width);
+      final gutter = AppLayout.gutter(deviceClass);
+      final cap = AppLayout.maxContentWidth(AppPageKind.reading, deviceClass)!;
+      final width = math.min(size.width, cap);
+      final inset = (size.width - width) / 2 + gutter;
+      for (final field in [
+        find.byType(TextField).first,
+        find.byType(QuillEditor),
+      ]) {
+        final rect = tester.getRect(field);
+        expect(rect.left, closeTo(inset, 0.5));
+        expect(rect.width, closeTo(width - 2 * gutter, 0.5));
+      }
       final nav = tester.widget<ShellMiniNav>(find.byType(ShellMiniNav));
       expect(nav.items, isEmpty);
       expect(nav.deepLinkBackRoute, Routes.documents);

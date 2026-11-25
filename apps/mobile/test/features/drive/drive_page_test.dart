@@ -1,8 +1,13 @@
 import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart'
+    show AppPageKind, AppPageListView;
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -425,17 +430,32 @@ void main() {
     Finder named(String type) => find.byWidgetPredicate(
       (widget) => widget.runtimeType.toString() == type,
     );
-    await mount(tester, size: const Size(1194, 834));
-    // Expanded `detail` box: 720dp including the 32dp gutters.
-    expect(tester.getSize(named('_DriveEntryTile').first).width, 720 - 2 * 32);
+    const size = Size(1194, 834);
+    await mount(tester, size: size);
+    final page = find.byType(AppPageListView);
+    final deviceClass = Breakpoints.fromWidth(size.width);
+    final gutter = AppLayout.gutter(deviceClass);
+    final detailCap = AppLayout.maxContentWidth(
+      AppPageKind.detail,
+      deviceClass,
+    )!;
+    final detailWidth = math.min(size.width, detailCap);
+    final tile = tester.getRect(named('_DriveEntryTile').first);
+    expect(tester.widget<AppPageListView>(page).kind, AppPageKind.detail);
+    expect(tile.left, (size.width - detailWidth) / 2 + gutter);
+    expect(tile.width, detailWidth - 2 * gutter);
 
     actions.state
         .resolveForLocation(Routes.drive)
         .firstWhere((action) => action.id == 'drive-view')
         .onPressed!();
     await pump(tester);
-    // The grid lays its cards across the wider `root` box.
-    expect(tester.getSize(named('_DriveGrid').first).width, 1194 - 2 * 32);
+    expect(tester.widget<AppPageListView>(page).kind, AppPageKind.root);
+    final rootCap = AppLayout.maxContentWidth(AppPageKind.root, deviceClass)!;
+    expect(
+      tester.getSize(named('_DriveGrid').first).width,
+      math.min(size.width, rootCap) - 2 * gutter,
+    );
     expect(tester.takeException(), isNull);
   });
   testWidgets('search is registered with the shared dock and closes cleanly', (
