@@ -23,7 +23,7 @@ board's host controls (link, create, guest access, remove) are unchanged; see
 
 | Order | Older entry | Stage id | Who has it |
 | --- | --- | --- | --- |
-| 1 | Saved whiteboard | `board` | People who may use the room's tools; anonymous guests only while `MEET_GUEST_WHITEBOARD` is on |
+| 1 | Saved whiteboard | `board` | People who may use the room's tools; anonymous guests only while `MEET_GUEST_WHITEBOARD` is on, view-only until `MEET_GUEST_WHITEBOARD_DRAW` is approved |
 | 2 | Pen whiteboard | `tool:pen-whiteboard` | People who browse the tools, including activity runners in host-only rooms and guests where tools are open to everyone |
 | 3 | Classroom whiteboard | `whiteboard` | Rooms with classroom tools |
 
@@ -61,9 +61,36 @@ and signed-in people who are not workspace members. Workspace members and the
 host are not affected by the switch.
 
 **On.** A person outside the workspace opens the Tuturuuu Whiteboard from the
-Whiteboard entry, or follows a leader onto it, and views or draws as the
-link's guest access allows (**No access**, **Can view**, **Can draw**, set by
-the host). Co-Programming and the live document still ask a guest to sign in.
+Whiteboard entry, or follows a leader onto it, and views it as the link's
+guest access allows (**No access**, **Can view**, **Can draw**, set by the
+host). They draw only on a **Can draw** board while guest drawing (below) is
+also on. Co-Programming and the live document still ask a guest to sign in.
+
+**Guest drawing.** A second switch, `MEET_GUEST_WHITEBOARD_DRAW`, read the
+same way: on only for the exact string `true`; missing, empty or any other
+value is off, and off is the default. It stays off until guest drawing
+hardening is separately approved, so with `MEET_GUEST_WHITEBOARD` on, people
+outside the workspace are view-only on the Tuturuuu Whiteboard and draw on
+the pen board in class instead. While it is off:
+
+- The whiteboard API mints view tickets for everyone outside the workspace,
+  whatever the board's guest access says, and lists their boards as view-only.
+  Their editor opens in Excalidraw's view mode with the **View only** badge,
+  so it shows no drawing tools.
+- The board room, on the Meet Realtime Worker, reads its own copy of the
+  switch and honours a guest ticket only as view, even one signed with edit.
+  A guest's drawing message is refused and the connection closed (code 1008),
+  like any viewer who draws. The cap is rechecked on every write, so a
+  connection opened before the switch went off cannot write either, and a
+  ticket refresh cannot raise a guest to edit. Cursors and selections, which
+  change nothing on the board, still relay.
+- Hosts see **Can draw** as **Can draw (view only for now)** ("Được vẽ (tạm
+  thời chỉ xem)"). The stored guest access is unchanged, so turning the switch
+  on later lets those boards' guests draw without relinking.
+
+Guests draw only when the switch is `true` on both the Meet Worker and the
+Meet Realtime Worker; either one off keeps them view-only. Workspace members
+and the host are not affected.
 
 **Off.** The whiteboard API refuses everyone outside the workspace (HTTP 403)
 before it reads any board, anonymous guests keep the sign-in state on a board
@@ -208,8 +235,11 @@ private timer **Timer**. The stored values (`tool:pen-whiteboard`,
 The EduFest run (guest join, Upskii presenter, Follow, classroom quizzes, Q&A,
 transcripts) does not use either activity. With `MEET_UX_V2` on and
 `MEET_GUEST_WHITEBOARD` off, a class with guests in it gets the pen board as
-its Whiteboard. With both on, guests draw on the Tuturuuu Whiteboard when the
-host sets the board's guest access to **Can draw**.
+its Whiteboard. With both on, guests view the Tuturuuu Whiteboard and draw on
+the pen board in class, which the host summons when guests should draw. Guest
+drawing on the Tuturuuu Whiteboard waits for `MEET_GUEST_WHITEBOARD_DRAW` to
+be approved; once it is on, guests draw there when the host sets the board's
+guest access to **Can draw**.
 
 ## Regression coverage
 
@@ -236,7 +266,11 @@ Under `packages/meet-core/src/features/call`:
   only with the switch on.
 - `server/whiteboard.test.ts`: the switch, the room check, the call limit,
   per-board ids, ticket life, unlink, other meetings and workspaces for guests
-  and signed-in non-members.
+  and signed-in non-members; with guest drawing held (missing or any value
+  but `true`), view tickets on a **Can draw** board, edit tickets once it is
+  on, members unaffected, and the hold reported to managers.
+- `whiteboard/board-panel.test.tsx`: a view ticket opens the editor read-only,
+  and **Can draw (view only for now)** while guest drawing is held.
 - `stage-layout/whiteboard-policy.test.ts` also covers who counts as outside
   the workspace.
 - `lib/guest-whiteboard-limit.test.ts`: the guest call window and its local
@@ -244,7 +278,12 @@ Under `packages/meet-core/src/features/call`:
 - `components/default-activity-setting-merged.test.tsx`: merged names in the
   default activity setting.
 
-Elsewhere: `apps/meet-realtime/src/whiteboard-room-do.test.ts` (guest message
+Elsewhere: `apps/meet-realtime/src/whiteboard-room-do-guest-draw.test.ts`
+(a guest edit ticket refused and closed while guest drawing is held or the
+switch is missing, a refresh that cannot upgrade, the write-time recheck,
+guest drawing once on, members unaffected),
+`packages/realtime/src/meet/board-sync-protocol.test.ts` (the guest role cap
+and the exact `true` switch), `apps/meet-realtime/src/whiteboard-room-do.test.ts` (guest message
 rate, size, connection, reopen and seat caps across an eviction, guest viewers,
 per-board ids, guest field types and link stripping),
 `apps/meet-realtime/src/whiteboard-room-do-guest-budget.test.ts` (a costly
