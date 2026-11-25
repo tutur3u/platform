@@ -230,6 +230,12 @@ choice row and an alert) when the evidence cannot be stored.
 - Deploy the Meet Worker before or together with the realtime room, never
   after: a new room with an old Worker never receives a confirm, so a Mira on
   stays unconfirmed, expires after 20 seconds and the person stays off.
+- Together means the same `meet-cloudflare` workflow run. That run deploys
+  the realtime room (signaling) first and the Meet Worker right after, a gap
+  of seconds during which a Mira on stays off, which fails closed. A
+  realtime-only deploy at a two-phase commit, outside that run, is forbidden.
+  If the Worker job fails after the realtime job succeeded, roll the realtime
+  room back before anything else.
 - Remove the fence when the realtime room with two-phase on runs everywhere:
   delete `room-mira-legacy-on.ts`, the compensating off and its alert, and
   stop writing `system_fallback`. The value stays valid for historical rows.
