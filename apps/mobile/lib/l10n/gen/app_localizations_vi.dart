@@ -17296,6 +17296,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailAttachments => 'Tệp đính kèm';
 
   @override
+  String mailAttachmentsTab(int count) {
+    return 'Tệp đính kèm ($count)';
+  }
+
+  @override
+  String get mailConversation => 'Cuộc trò chuyện';
+
+  @override
+  String get mailThreadActions => 'Thao tác cuộc trò chuyện';
+
+  @override
   String get mailNoAttachments => 'Không có tệp đính kèm';
 
   @override

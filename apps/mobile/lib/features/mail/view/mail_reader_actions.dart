@@ -20,39 +20,6 @@ extension _MailReaderActions on _MailReaderState {
       for (final file in mailRows(message['attachments'])) (message, file),
   ];
 
-  Widget _attachmentList() {
-    final files = _attachments;
-    if (files.isEmpty) return Text(context.l10n.mailNoAttachments);
-    return Column(
-      children: [
-        for (var i = 0; i < files.length; i++)
-          MailAttachmentTile(
-            key: ValueKey('${files[i].$1['id']}:${files[i].$2['id']}'),
-            repository: widget.repository,
-            workspaceId: widget.workspaceId,
-            mailboxId: widget.mailboxId,
-            messageId: files[i].$1['id'] as String,
-            file: files[i].$2,
-            loadThumbnail: i < 4,
-            onPreview: _busy || !canPreviewMailAttachment(files[i].$2)
-                ? null
-                : () => _openChild(
-                    MailAttachmentPreview(
-                      repository: widget.repository,
-                      workspaceId: widget.workspaceId,
-                      mailboxId: widget.mailboxId,
-                      messageId: files[i].$1['id'] as String,
-                      file: files[i].$2,
-                    ),
-                  ),
-            onDownload: _busy
-                ? null
-                : () => _download(files[i].$1, files[i].$2),
-          ),
-      ],
-    );
-  }
-
   /// The open detail with [label] added to its header labels.
   Map<String, dynamic>? _withLabel(Map<String, dynamic> label) {
     final detail = _detail;
@@ -87,17 +54,22 @@ extension _MailReaderActions on _MailReaderState {
               return Text(context.l10n.mailActionFailed);
             }
             if (!snapshot.hasData) return const LinearProgressIndicator();
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final label in mailRows(snapshot.data!['labels']))
-                  ListTile(
-                    leading: const Icon(Icons.label_outline),
-                    title: Text(label['name'] as String),
-                    onTap: () =>
-                        Navigator.of(sheetContext).pop(label['id'] as String),
-                  ),
-              ],
+            // The sheet surface paints its own colour; rows need a Material
+            // of their own for ink.
+            return Material(
+              type: MaterialType.transparency,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final label in mailRows(snapshot.data!['labels']))
+                    ListTile(
+                      leading: const Icon(Icons.label_outline),
+                      title: Text(label['name'] as String),
+                      onTap: () =>
+                          Navigator.of(sheetContext).pop(label['id'] as String),
+                    ),
+                ],
+              ),
             );
           },
         ),

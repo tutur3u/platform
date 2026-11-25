@@ -4,9 +4,11 @@ import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_reader_identity.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// One compact row per message: avatar, sender, relative time, and below it
-/// either the recipients toggle ("to me ▾") or, for a folded earlier
-/// message, its one-line snippet. The message menu sits at the end.
+/// One row per message card: avatar, sender and below it either the
+/// recipients toggle ("to me ▾") or, for a folded message, a two-line
+/// snippet. Labels, the date, the message menu and the fold chevron follow.
+/// A wide card shows the full date in mono at the end; a narrow one keeps
+/// the relative time beside the sender.
 class MailMessageHeader extends StatelessWidget {
   const MailMessageHeader({
     required this.address,
@@ -15,6 +17,7 @@ class MailMessageHeader extends StatelessWidget {
     this.profile,
     this.date,
     this.snippet,
+    this.labels = const [],
     this.detailsOpen = false,
     this.onTap,
     this.onToggleDetails,
@@ -32,6 +35,9 @@ class MailMessageHeader extends StatelessWidget {
 
   /// Replaces the recipients line while the message is folded.
   final String? snippet;
+
+  /// Label names shown as badges before the date.
+  final List<String> labels;
   final bool detailsOpen;
 
   /// Folds or unfolds the message (threads with several messages).
@@ -41,9 +47,22 @@ class MailMessageHeader extends StatelessWidget {
   /// Reply, Reply all and Forward for this one message.
   final VoidCallback? onMore;
 
+  /// Card width from which the date moves to its own mono column.
+  static const double wideDateMinWidth = 480;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => _build(
+      context,
+      wide:
+          constraints.maxWidth >=
+          MediaQuery.textScalerOf(context).scale(wideDateMinWidth),
+    ),
+  );
+
+  Widget _build(BuildContext context, {required bool wide}) {
     final l10n = context.l10n;
+    final tokens = AppTokens.of(context);
     final theme = Theme.of(context);
     final muted = AppTokens.of(context).colorScheme.mutedForeground;
     final small = theme.textTheme.bodySmall?.copyWith(color: muted);
@@ -58,7 +77,8 @@ class MailMessageHeader extends StatelessWidget {
     final secondLine = snippet != null
         ? Text(
             snippet,
-            maxLines: 1,
+            key: const ValueKey('mail-message-snippet'),
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.bodyMedium?.copyWith(color: muted),
           )
@@ -129,7 +149,7 @@ class MailMessageHeader extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (date != null) ...[
+                  if (date != null && !wide) ...[
                     const SizedBox(width: AppSpacing.sm),
                     AppTooltip(
                       message: formatMailMessageDate(context, date),
@@ -148,12 +168,61 @@ class MailMessageHeader extends StatelessWidget {
             ],
           ),
         ),
+        if (labels.isNotEmpty) ...[
+          const SizedBox(width: AppSpacing.sm),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: wide ? 200 : 96),
+            child: Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              alignment: WrapAlignment.end,
+              children: [
+                for (final label in labels)
+                  AppBadge.outline(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        if (date != null && wide) ...[
+          const SizedBox(width: AppSpacing.sm),
+          AppTooltip(
+            message: formatMailMessageDate(context, date),
+            child: Text(
+              formatMailMessageDate(context, date),
+              key: const ValueKey('mail-sender-date'),
+              maxLines: 1,
+              softWrap: false,
+              style: small?.copyWith(
+                fontFamily: tokens.typography.monoFamily ?? 'monospace',
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
         if (onMore != null)
-          IconButton(
+          AppIconButton(
             tooltip: l10n.mailMessageActions,
-            visualDensity: VisualDensity.compact,
+            size: AppButtonSize.small,
             onPressed: onMore,
-            icon: const Icon(Icons.more_horiz, size: 20),
+            icon: const Icon(Icons.more_horiz),
+          ),
+        if (this.onTap != null)
+          ExcludeSemantics(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: AnimatedRotation(
+                key: const ValueKey('mail-message-chevron'),
+                turns: snippet == null ? 0.5 : 0,
+                duration: const Duration(milliseconds: 180),
+                child: Icon(Icons.expand_more, size: 20, color: muted),
+              ),
+            ),
           ),
       ],
     );

@@ -135,7 +135,8 @@ void main() {
         find.byTooltip(folder == 'archive' ? 'Move to inbox' : 'Archive'),
         findsOneWidget,
       );
-      expect(find.byTooltip('Delete'), findsNothing);
+      // Delete sits once, in the conversation header's action group.
+      expect(find.byTooltip('Delete'), findsOneWidget);
       await tester.tap(find.byTooltip('Show menu'));
       await tester.pumpAndSettle();
       final sheet = tester.widget<AppActionSheet<String>>(

@@ -116,7 +116,7 @@ void main() {
           tester,
           'reader-${brightness.name}-${scale}x',
         );
-        await tester.tap(find.byKey(const ValueKey('mail-attachments-toggle')));
+        await tester.tap(find.textContaining('Attachments ('));
         await tester.pumpAndSettle();
         expect(find.text('workspace-notes.pdf'), findsOneWidget);
         expect(tester.takeException(), isNull);

@@ -416,7 +416,7 @@ void main() {
             matching: find.byType(Scrollable),
           )
           .first,
-      const Offset(0, -150),
+      const Offset(0, -300),
     );
     await tester.pumpAndSettle();
     expect(titles.state.resolveForLocation(Routes.mail), 'First');

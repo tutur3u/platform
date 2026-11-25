@@ -84,17 +84,29 @@ the next Back leaves Mail. The pane header is a compact toolbar (the default
 action, Reply, More and Close); the shell navbar and dock keep the inbox title,
 filters and actions.
 
-The mobile reader is compact. The subject is the content's first heading and
-wraps instead of truncating, with the labels as small badges after it and the
-star beside it. A quiet row below shows the message count (conversations with
-more than one message), an attachments toggle that swaps the conversation for
-its attachment list, and a failed-lookup retry. Each message has one sender
-row: avatar, name, a relative time ("4h ago", then the date; the full date is
-its tooltip) and "to me" or "to Name +N" (the first To recipient, or the first
-Cc or Bcc recipient when there is no To, counting the rest as "+N"). Tapping
-that toggle expands the From, To, Cc and date inline. The row's menu offers
-Reply, Reply all and Forward for that message. On phones the navbar names the
-folder until the subject heading scrolls away, then shows the subject.
+The mobile reader follows web Mail's thread layout. The subject is the
+content's first, large semibold heading and wraps instead of truncating. Below
+it a pill shows the conversation's message count, followed by the labels as
+small badges and a failed-lookup retry. A rounded muted group of icon buttons
+holds Labels, the read state, Star, Archive (Restore in Archive and Trash) and
+Delete, each with a tooltip; it sits beside the subject when there is room and
+below it otherwise, and it leaves out whichever command is the default action
+so no command appears twice on screen. Conversations with attachments show
+Conversation and Attachments (N) tabs; the Attachments tab lays the files out
+in one, two or three columns as the reader widens. Each message is a rounded
+card with a token ring, and the open card is slightly raised. Only the newest
+message is open by default; a folded card shows a two-line snippet and opens
+on tap. The card header shows the avatar, name, "to me" or "to Name +N" (the
+first To recipient, or the first Cc or Bcc recipient when there is no To,
+counting the rest as "+N"), the message's labels and the date. A wide card
+shows the full date in mono at the end; a narrow one keeps the relative time
+("4h ago", then the date, with the full date as its tooltip) beside the name.
+Tapping the recipients toggle expands the From, To, Cc and date inline. The
+card's menu offers Reply, Reply all and Forward for that message. On phones the
+navbar names the folder until the subject heading scrolls away, then shows the
+subject. On tablets and desktops the bottom bar leads with Reply, Reply all and
+Forward, labelled pills from 600dp and icon-only below, then the default
+action, More and Close. Coverage: `mail_reader_parity_test.dart`.
 
 On phones the reader registers one action bar beside the shell's Back: Reply,
 Reply all and Forward. A mailbox that cannot send shows its read-state and
@@ -140,8 +152,7 @@ selection action or Mark all as read after its wait.
 Coverage: `mail_deferred_writes_test.dart`. Standalone and
 split-pane readers show the default action beside an overflow menu that lists
 the same entries. Quarantined messages offer neither Archive, Move nor Delete.
-Earlier messages in a conversation fold to one line (sender, time and snippet),
-and the newest is expanded. HTML mail follows the app's dark theme unless the
+HTML mail follows the app's dark theme unless the
 user picked Original or Light. Profile lookups never block reading: a failed
 lookup retries once after two seconds, and only a second failure shows an inline
 retry caption. Report spam is not offered because the Mail state API has no

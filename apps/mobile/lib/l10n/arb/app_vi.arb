@@ -7628,6 +7628,16 @@
   "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời.",
   "notificationsUnreadLabel": "Chưa đọc",
   "mailAttachments": "Tệp đính kèm",
+  "mailAttachmentsTab": "Tệp đính kèm ({count})",
+  "@mailAttachmentsTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailConversation": "Cuộc trò chuyện",
+  "mailThreadActions": "Thao tác cuộc trò chuyện",
   "mailNoAttachments": "Không có tệp đính kèm",
   "mailMember": "Thành viên",
   "mailReceived": "Đã nhận",

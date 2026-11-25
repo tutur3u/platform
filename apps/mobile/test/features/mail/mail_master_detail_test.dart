@@ -90,10 +90,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     // The pane toolbar holds the only Reply beside the default action;
-    // Delete lives in More.
+    // Delete sits once, in the conversation header's action group.
     expect(find.byTooltip('Reply'), findsOneWidget);
     expect(find.byTooltip('Archive'), findsOneWidget);
-    expect(find.byTooltip('Delete'), findsNothing);
+    expect(find.byTooltip('Delete'), findsOneWidget);
+    expect(find.byKey(const ValueKey('mail-reader-trash')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

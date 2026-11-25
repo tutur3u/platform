@@ -38,110 +38,6 @@ extension _MailReaderBody on _MailReaderState {
     );
   }
 
-  /// The subject as the page's heading, with the labels as small badges
-  /// after it and the star beside it. Message count, attachments and a
-  /// failed name lookup share one quiet row below.
-  Widget _threadHeader(String subject) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final tokens = AppTokens.of(context);
-    final muted = theme.textTheme.bodySmall?.copyWith(
-      color: tokens.colorScheme.mutedForeground,
-    );
-    final labels = mailRows(
-      _messageStateMetadata?['labels'] ?? widget.summary?['labels'],
-    );
-    final attachments = _attachments.length;
-    final meta = <Widget>[
-      if (widget.thread && _messages.length > 1)
-        Text(
-          l10n.mailThreadMessageCount(_messages.length),
-          key: const ValueKey('mail-thread-count'),
-          style: muted,
-        ),
-      if (attachments > 0)
-        AppChip(
-          key: const ValueKey('mail-attachments-toggle'),
-          selected: _attachmentsTab,
-          avatar: _attachmentsTab ? null : const Icon(Icons.attach_file),
-          label: Text(l10n.mailAttachmentCount(attachments)),
-          onSelected: (value) => _updateState(() => _attachmentsTab = value),
-        ),
-      if (_peopleFailed)
-        TextButton.icon(
-          key: const ValueKey('mail-people-retry'),
-          style: TextButton.styleFrom(
-            visualDensity: VisualDensity.compact,
-            foregroundColor: tokens.colorScheme.mutedForeground,
-            textStyle: muted,
-          ),
-          onPressed: _peopleLoading ? null : _resolvePeople,
-          icon: const Icon(Icons.refresh, size: 16),
-          label: Text(l10n.mailProfilesRetry),
-        ),
-    ];
-    return Padding(
-      key: _headingKey,
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.xs,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        subject,
-                        key: const ValueKey('mail-reader-subject'),
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontSize: 20,
-                          height: 1.3,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    for (final label in labels)
-                      if (label['name'] case final String name)
-                        AppBadge.outline(child: Text(name)),
-                  ],
-                ),
-              ),
-              if (_detail != null)
-                IconButton(
-                  key: const ValueKey('mail-reader-star'),
-                  tooltip: _starred ? l10n.mailUnstar : l10n.mailStar,
-                  visualDensity: VisualDensity.compact,
-                  isSelected: _starred,
-                  onPressed: _busy ? null : _toggleStar,
-                  icon: const Icon(Icons.star_border_rounded),
-                  selectedIcon: Icon(
-                    Icons.star_rounded,
-                    color: tokens.colorScheme.warning,
-                  ),
-                ),
-            ],
-          ),
-          if (meta.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: meta,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   /// The opening frame while the body hydrates: the inbox row's sender and
   /// snippet when known, then placeholders in the shape of the message.
   Widget _summaryPreview() {
@@ -244,7 +140,7 @@ extension _MailReaderBody on _MailReaderState {
     return rows.length > 1 ? '$base +${rows.length - 1}' : base;
   }
 
-  /// A folded earlier message shows one line of its text.
+  /// A folded message shows up to two lines of its text.
   String? _collapsedSnippet(Map<String, dynamic> message) {
     final raw =
         (message['snippet'] as String?) ??
@@ -295,21 +191,33 @@ extension _MailReaderBody on _MailReaderState {
     final tokens = AppTokens.of(context);
     final id = message['id'] as String;
     final expanded = _messageExpanded(message);
-    final last = id == _messages.last['id'];
     final detailsOpen = expanded && _detailsOpen.contains(id);
     final foldable = widget.thread && _messages.length > 1;
     final canReply = widget.canSend && expanded && !_busy;
-    return DecoratedBox(
+    final colors = tokens.colorScheme;
+    final labels = [
+      for (final label in mailRows(message['labels']))
+        if (label['name'] case final String name) name,
+    ];
+    // Rounded cards with a token ring, as web Mail's accordion; the open one
+    // is raised slightly above its folded neighbours.
+    return AnimatedContainer(
       key: ValueKey('mail-message-$id'),
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOutCubic,
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       decoration: BoxDecoration(
-        border: last
-            ? null
-            : Border(bottom: BorderSide(color: tokens.colorScheme.border)),
+        color: colors.card,
+        borderRadius: BorderRadius.circular(tokens.radiusXl + 4),
+        border: Border.all(color: colors.border.withValues(alpha: 0.6)),
+        boxShadow: expanded ? tokens.depth.raised : AppElevation.none,
       ),
       child: Padding(
-        padding: EdgeInsets.only(
-          top: AppSpacing.sm,
-          bottom: expanded ? AppSpacing.md : AppSpacing.sm,
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          expanded ? AppSpacing.md : AppSpacing.sm,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -321,6 +229,7 @@ extension _MailReaderBody on _MailReaderState {
               date: mailMessageDate(message),
               recipients: _recipientLabel(message),
               snippet: expanded ? null : _collapsedSnippet(message) ?? '',
+              labels: labels,
               detailsOpen: detailsOpen,
               onTap: foldable
                   ? () => _updateState(() => _expandedMessages[id] = !expanded)

@@ -8453,6 +8453,16 @@
   "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
   "notificationsUnreadLabel": "Unread",
   "mailAttachments": "Attachments",
+  "mailAttachmentsTab": "Attachments ({count})",
+  "@mailAttachmentsTab": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mailConversation": "Conversation",
+  "mailThreadActions": "Conversation actions",
   "mailNoAttachments": "No attachments",
   "mailMember": "Member",
   "mailReceived": "Received",

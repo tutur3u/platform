@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_people_resolver.dart';
@@ -44,6 +45,7 @@ part 'mail_reader_chrome.dart';
 part 'mail_reader_loading.dart';
 part 'mail_reader_mutations.dart';
 part 'mail_reader_pane_header.dart';
+part 'mail_reader_thread_header.dart';
 
 class MailReader extends StatefulWidget {
   const MailReader({
@@ -488,7 +490,7 @@ class _MailReaderState extends State<MailReader> {
                             itemBuilder: (context, index) {
                               if (index == 0) return _threadHeader(title);
                               if (_detail == null) return _summaryPreview();
-                              if (attachments) return _attachmentList();
+                              if (attachments) return _attachmentGrid();
                               return _messageCard(
                                 messages[index - 1],
                                 headerControls,

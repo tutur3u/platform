@@ -17506,6 +17506,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailAttachments => 'Attachments';
 
   @override
+  String mailAttachmentsTab(int count) {
+    return 'Attachments ($count)';
+  }
+
+  @override
+  String get mailConversation => 'Conversation';
+
+  @override
+  String get mailThreadActions => 'Conversation actions';
+
+  @override
   String get mailNoAttachments => 'No attachments';
 
   @override

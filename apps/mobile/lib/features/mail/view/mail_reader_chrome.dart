@@ -395,7 +395,10 @@ extension _MailReaderChrome on _MailReaderState {
 
   /// The More sheet for split panes and standalone readers, which have no
   /// shell dock: replies first, then the same entries as the dock's More.
-  Future<void> _chooseAction({bool includeReply = false}) async {
+  Future<void> _chooseAction({
+    bool includeReply = false,
+    bool includeReplies = true,
+  }) async {
     if (_busy || _detail == null) return;
     final l10n = context.l10n;
     final plan = _dockPlan();
@@ -409,7 +412,7 @@ extension _MailReaderChrome on _MailReaderState {
           destructive: false,
           run: _replyLast,
         ),
-      if (plan.replies.contains(MailDockReply.replyAll))
+      if (includeReplies && plan.replies.contains(MailDockReply.replyAll))
         (
           id: 'reply_all',
           icon: Icons.reply_all_outlined,
@@ -418,7 +421,7 @@ extension _MailReaderChrome on _MailReaderState {
           destructive: false,
           run: _replyAllLast,
         ),
-      if (plan.replies.contains(MailDockReply.forward))
+      if (includeReplies && plan.replies.contains(MailDockReply.forward))
         (
           id: 'forward',
           icon: Icons.forward_outlined,

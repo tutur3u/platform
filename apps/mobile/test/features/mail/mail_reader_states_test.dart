@@ -144,10 +144,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('3 messages'), findsOneWidget);
     expect(find.text('Finance'), findsOneWidget);
-    expect(find.text('1 attachment'), findsOneWidget);
-    // The body has no command toolbar or tab control.
+    // Attachments add Conversation and Attachments tabs; Snooze stays in
+    // More.
+    expect(find.text('Attachments (1)'), findsOneWidget);
+    expect(find.text('Conversation'), findsOneWidget);
     expect(find.byTooltip('Snooze'), findsNothing);
-    expect(find.text('Conversation'), findsNothing);
     // The subject is the page heading, with the labels beside it.
     expect(find.byKey(const ValueKey('mail-reader-subject')), findsOneWidget);
     expect(find.text('Quarterly plan'), findsOneWidget);
@@ -161,7 +162,7 @@ void main() {
     await tester.tap(find.text('Snippet of first'));
     await tester.pumpAndSettle();
     expect(find.text('Body of first'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('mail-attachments-toggle')));
+    await tester.tap(find.textContaining('Attachments ('));
     await tester.pumpAndSettle();
     expect(find.text('plan.pdf'), findsOneWidget);
     expect(tester.takeException(), isNull);

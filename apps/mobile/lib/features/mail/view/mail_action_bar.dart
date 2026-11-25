@@ -83,11 +83,16 @@ class MailActionBar extends StatelessWidget {
   }
 }
 
+/// Bar width from which reply commands show their labels.
+const double mailBarLabelMinWidth = 600;
+
 class MailBarButton extends StatelessWidget {
   const MailBarButton({
     required this.icon,
     required this.label,
     required this.onPressed,
+    this.showLabel = true,
+    this.emphasized = false,
     super.key,
   });
 
@@ -95,14 +100,36 @@ class MailBarButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
 
+  /// False renders an icon-only button named by [label].
+  final bool showLabel;
+
+  /// A secondary-filled pill for the bar's leading command.
+  final bool emphasized;
+
   @override
-  Widget build(BuildContext context) => AppTooltip(
-    message: label,
-    excludeFromSemantics: true,
-    child: AppButton.ghost(
-      onPressed: onPressed,
-      leading: Icon(icon, size: 18),
-      child: Text(label, maxLines: 1, softWrap: false),
-    ),
-  );
+  Widget build(BuildContext context) {
+    if (!showLabel) {
+      return AppIconButton(
+        tooltip: label,
+        variant: emphasized
+            ? AppButtonVariant.secondary
+            : AppButtonVariant.ghost,
+        shape: AppButtonShape.circle,
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+      );
+    }
+    return AppTooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: AppButton(
+        variant: emphasized
+            ? AppButtonVariant.secondary
+            : AppButtonVariant.ghost,
+        onPressed: onPressed,
+        leading: Icon(icon, size: 18),
+        child: Text(label, maxLines: 1, softWrap: false),
+      ),
+    );
+  }
 }

@@ -32263,6 +32263,24 @@ abstract class AppLocalizations {
   /// **'Attachments'**
   String get mailAttachments;
 
+  /// No description provided for @mailAttachmentsTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Attachments ({count})'**
+  String mailAttachmentsTab(int count);
+
+  /// No description provided for @mailConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get mailConversation;
+
+  /// No description provided for @mailThreadActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation actions'**
+  String get mailThreadActions;
+
   /// No description provided for @mailNoAttachments.
   ///
   /// In en, this message translates to:

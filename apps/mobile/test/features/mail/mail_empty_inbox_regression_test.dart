@@ -111,8 +111,8 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.byType(MailReader), findsOneWidget);
         expect(find.byTooltip('Archive'), findsOneWidget);
-        // Delete lives in More, not beside Archive.
-        expect(find.byTooltip('Delete'), findsNothing);
+        // Delete sits once, in the conversation header's action group.
+        expect(find.byTooltip('Delete'), findsOneWidget);
         await tester.tap(find.byTooltip('Archive'));
         // Bound the frame wait so the original infinite spinner fails quickly.
         await tester.pump();
