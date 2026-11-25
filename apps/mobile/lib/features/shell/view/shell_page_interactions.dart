@@ -155,11 +155,11 @@ extension _ShellPageInteractions on _ShellPageState {
 
   /// Long-press on the dock's Back: leaves every drill-down level at once,
   /// for the module's origin destination or Home.
-  Future<void> _returnToDestinationRoot() async {
+  void _returnToDestinationRoot() {
     final current = _normalizeRouteLocation(widget.matchedLocation);
     if (Routes.miniAppRootForLocation(current) != null ||
         AppRegistry.moduleFromLocation(current) != null) {
-      await _returnToAppOrigin();
+      _returnToAppOrigin();
       return;
     }
     if (!mounted || current == Routes.home) return;
@@ -168,19 +168,29 @@ extension _ShellPageInteractions on _ShellPageState {
     context.go(Routes.home);
   }
 
-  Future<void> _returnToAppOrigin() async {
+  void _returnToAppOrigin() {
+    if (!mounted) return;
     final current = _normalizeRouteLocation(widget.matchedLocation);
-    final tabs = context.read<AppTabCubit>();
-    final origin = tabs.state.appOrigin;
-    await tabs.clearSelection();
-    await tabs.setLastTabRoute(origin);
-    if (!mounted ||
-        _normalizeRouteLocation(widget.matchedLocation) != current) {
+    final origin = context.read<AppTabCubit>().state.appOrigin;
+    _pendingAppOriginReturn = (from: current, to: origin);
+    context.go(origin);
+  }
+
+  void _commitAppOriginReturn(String oldLocation) {
+    final pending = _pendingAppOriginReturn;
+    _pendingAppOriginReturn = null;
+    if (pending == null ||
+        pending.from != _normalizeRouteLocation(oldLocation) ||
+        pending.to != _normalizeRouteLocation(widget.matchedLocation)) {
       return;
     }
-    _routeHistory.removeWhere((route) => _isSameMiniAppFamily(route, current));
+    _routeHistory.removeWhere(
+      (route) => _isSameMiniAppFamily(route, pending.from),
+    );
     _isHandlingBackNavigation = true;
-    context.go(origin);
+    unawaited(
+      context.read<AppTabCubit>().clearSelection(resetLastTabRoute: false),
+    );
   }
 
   void _onItemTapped(String route, BuildContext context) {

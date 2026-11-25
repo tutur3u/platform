@@ -336,7 +336,7 @@ extension _ShellPageLayout on _ShellPageState {
       fixedFrame: true,
       ownsDockZones: false,
       backKey: backKey,
-      onBackLongPress: () => unawaited(_returnToDestinationRoot()),
+      onBackLongPress: _returnToDestinationRoot,
       onSelected: (key) => key == _ShellPageState._backToRootKey
           ? _runBackNavigation(context)
           : useInjectedMiniNav

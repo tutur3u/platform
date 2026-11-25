@@ -18,6 +18,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
+import 'package:mobile/features/shell/view/shell_dock_bar.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
@@ -210,6 +211,46 @@ void main() {
     expect(committedPath(), Routes.documents);
     await coldRestore(Routes.documents);
   });
+
+  testWidgets(
+    'long-press Back clears Notes state only after the exit commits',
+    (tester) async {
+      final settings = SettingsRepository();
+      String committedPath() =>
+          router.routerDelegate.currentConfiguration.uri.path;
+      List<String> routeHistory() =>
+          ((tester.state(find.byType(ShellPage)) as dynamic)
+                      .routeHistoryForTesting
+                  as List<Object?>)
+              .cast<String>();
+
+      await mount(tester);
+      await apps.select(AppRegistry.moduleById('documents')!);
+      router.go(Routes.notes);
+      await _pump(tester);
+      await apps.recordAppOrigin(Routes.home);
+      final before = routeHistory();
+      final back = find.byType(ShellDockBackZone);
+
+      allowNotesExit = false;
+      await tester.longPress(back);
+      await _pump(tester);
+      expect(committedPath(), Routes.notes);
+      expect(await settings.getLastTabRoute(), Routes.notes);
+      expect(await settings.getLastAppRoute(), Routes.documents);
+      expect(apps.state.selectedId, 'documents');
+      expect(routeHistory(), before);
+
+      allowNotesExit = true;
+      await tester.longPress(back);
+      await _pump(tester);
+      expect(committedPath(), Routes.home);
+      expect(await settings.getLastTabRoute(), Routes.home);
+      expect(await settings.getLastAppRoute(), isNull);
+      expect(apps.state.selectedId, isNull);
+      expect(routeHistory(), isNot(contains(Routes.notes)));
+    },
+  );
 
   testWidgets('Finance overview keeps its Finance destinations in the dock', (
     tester,

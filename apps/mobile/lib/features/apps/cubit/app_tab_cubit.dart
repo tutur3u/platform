@@ -44,14 +44,14 @@ class AppTabCubit extends Cubit<AppTabState> {
     }
   }
 
-  Future<void> clearSelection() async {
+  Future<void> clearSelection({bool resetLastTabRoute = true}) async {
     _bumpSelectionVersion();
     if (state.selectedId != null || state.shouldAutoFocus) {
       emit(state.copyWith(selectedId: () => null, shouldAutoFocus: false));
     }
     try {
       await _settings.clearLastAppRoute();
-      await _settings.setLastTabRoute(Routes.apps);
+      if (resetLastTabRoute) await _settings.setLastTabRoute(Routes.apps);
     } on Exception catch (e, st) {
       log('Failed to persist cleared app selection', error: e, stackTrace: st);
     }

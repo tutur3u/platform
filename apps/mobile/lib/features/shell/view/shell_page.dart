@@ -144,6 +144,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   bool _hasVisitedRoot = false;
   DateTime? _lastExitAttemptAt;
   bool _isHandlingBackNavigation = false;
+  ({String from, String to})? _pendingAppOriginReturn;
   bool _isProcessingBackNavigation = false;
   Timer? _suppressPointerTimer;
   bool _suppressPointerInput = false;
@@ -240,6 +241,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       FocusManager.instance.primaryFocus?.unfocus();
     }
     if (oldWidget.matchedLocation != widget.matchedLocation) {
+      _commitAppOriginReturn(oldWidget.matchedLocation);
       _trackRouteChange(oldWidget);
       _lastScrolledDockRoute = null;
       _resetReusedPageScroll(oldWidget.matchedLocation);
@@ -453,7 +455,7 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
               injectedDeepLinkBackRoute == null &&
               _isPrimaryMiniAppDestination(currentLocation))) {
         // Explicit app exits bypass inferred parents.
-        await _returnToAppOrigin();
+        _returnToAppOrigin();
         return;
       }
       final fallbackRoute =
@@ -469,13 +471,13 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
     if (currentLocation == Routes.settings ||
         currentLocation == Routes.settingsWorkspace) {
-      await _returnToAppOrigin();
+      _returnToAppOrigin();
       return;
     }
 
     if (Routes.isMiniAppRootLocation(currentLocation) &&
         currentLocation != Routes.profileRoot) {
-      await _returnToAppOrigin();
+      _returnToAppOrigin();
       return;
     }
 
