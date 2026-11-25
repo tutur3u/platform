@@ -5,6 +5,7 @@ import {
   APP_FAVORITES_PREFERENCE_KEY,
   APP_RECENT_PREFERENCE_KEY,
 } from './apps-launcher-favorites';
+import { APP_OPEN_MODE_PREFERENCE_KEY } from './apps-launcher-preference';
 import {
   renderAppsLauncherDialog as renderDialog,
   setupAppsLauncherTestEnvironment,
@@ -56,6 +57,38 @@ function sectionHeadings() {
 }
 
 describe('AppsLauncherDialog', () => {
+  it('keeps a hovered app link prefetchable and the open app excluded', async () => {
+    // Mirrors the shared Speculation Rules selector in @tuturuuu/start-bridge.
+    const prefetchable = 'a[data-app-slug]:not([target]):not([data-current])';
+    document.cookie = `${APP_OPEN_MODE_PREFERENCE_KEY}=current-tab; path=/`;
+    currentApp.slug = 'tasks';
+    renderDialog();
+
+    const links = () =>
+      Array.from(document.querySelectorAll<HTMLElement>('a[data-app-slug]'));
+    await waitFor(() => {
+      expect(links().every((link) => !link.hasAttribute('target'))).toBe(true);
+    });
+
+    const current = links().filter(
+      (link) => link.getAttribute('data-app-slug') === 'tasks'
+    );
+    expect(current.length).toBeGreaterThan(0);
+    for (const link of current) {
+      expect(link.hasAttribute('data-current')).toBe(true);
+      expect(link.matches(prefetchable)).toBe(false);
+    }
+
+    const hovered = links().find(
+      (link) =>
+        link.getAttribute('data-app-slug') !== 'tasks' &&
+        !link.hasAttribute('data-active')
+    ) as HTMLElement;
+    fireEvent.pointerMove(hovered);
+    expect(hovered.hasAttribute('data-active')).toBe(true);
+    expect(hovered.matches(prefetchable)).toBe(true);
+  });
+
   it('opens with Cmd/Ctrl+Shift+K without accepting extra modifiers', async () => {
     const { onOpenChange } = renderDialog({ open: false });
 

@@ -1,6 +1,7 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import {
   appBaseHeadScript,
+  speculationRulesHeadScripts,
   trustedTypesHeadScript,
   withAppBase,
 } from '@tuturuuu/start-bridge/start/base-path';
@@ -15,7 +16,11 @@ export const Route = createRootRoute({
   component: Outlet,
   errorComponent: TasksError,
   head: () => ({
-    scripts: [appBaseHeadScript(), trustedTypesHeadScript()],
+    scripts: [
+      appBaseHeadScript(),
+      trustedTypesHeadScript(),
+      ...speculationRulesHeadScripts(),
+    ],
     meta: [
       { charSet: 'utf-8' },
       {

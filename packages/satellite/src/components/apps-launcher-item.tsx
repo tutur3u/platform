@@ -16,6 +16,7 @@ type OptionLinkProps = ComponentPropsWithoutRef<'a'> & {
   'aria-selected': boolean;
   'data-active'?: boolean;
   'data-app-slug': string;
+  'data-current'?: boolean;
   'data-slot': string;
 };
 
@@ -37,6 +38,7 @@ function OptionLink({
   entry,
   href,
   isActive,
+  isCurrent,
   linkComponent,
   onActivate,
   onOpen,
@@ -54,6 +56,8 @@ function OptionLink({
     className,
     'data-active': isActive || undefined,
     'data-app-slug': entry.app.slug,
+    // Marks the app already open, which the shared Speculation Rules skip.
+    'data-current': isCurrent || undefined,
     'data-slot': slot,
     href,
     id: entry.id,

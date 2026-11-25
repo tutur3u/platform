@@ -6,6 +6,7 @@ import {
   trustedTypesBootstrap,
 } from '../core/csp';
 import { APP_BASE_GLOBAL } from '../core/app-url';
+import { SPECULATION_RULES_TEXT } from '../core/speculation-rules';
 import { appBaseHeadScript, trustedTypesHeadScript } from './base-path';
 import { createBridgeRootRoute } from './page-route';
 
@@ -86,12 +87,18 @@ describe('Trusted Types bootstrap', () => {
     );
   });
 
-  it('admits only the two head scripts the server renders', () => {
+  it('admits only the head scripts the server renders', () => {
     const rules = rulesOf(register());
     expect(rules.createScript(BASE_SCRIPT)).toBe(BASE_SCRIPT);
     expect(rules.createScript(TRUSTED_TYPES_BOOTSTRAP)).toBe(
       TRUSTED_TYPES_BOOTSTRAP
     );
+    expect(rules.createScript(SPECULATION_RULES_TEXT)).toBe(
+      SPECULATION_RULES_TEXT
+    );
+    expect(() =>
+      rules.createScript(SPECULATION_RULES_TEXT.replace('moderate', 'eager'))
+    ).toThrow(TypeError);
     // Text from markup carrying any nonce is refused.
     expect(() => rules.createScript('alert(1)')).toThrow(TypeError);
     expect(() =>

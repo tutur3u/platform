@@ -37,6 +37,7 @@ import {
   dispatchThroughProxy,
   type NextProxy,
 } from '../next/proxy-bridge';
+import { refuseSpeculativeRequest } from '../core/speculation-rules';
 import type { BridgeRequestContext } from '../server/request-context';
 import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
 import { prefixHtmlAssets } from './html-assets';
@@ -215,6 +216,8 @@ export function createBridgeHandler<
     env: Env,
     ctx: Ctx
   ): Promise<Response> {
+    const refusedSpeculation = refuseSpeculativeRequest(incoming, env);
+    if (refusedSpeculation) return refusedSpeculation;
     const url = new URL(incoming.url);
     let base = fixed;
     if (options.mounts) {

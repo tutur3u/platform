@@ -179,3 +179,54 @@ Regression coverage:
 
 A new app shell must use the preset and render the guard. Do not set
 `disableTransitionOnChange` as a substitute.
+
+## Cross-app prefetch (Speculation Rules)
+
+Native Start apps spread `speculationRulesHeadScripts()`
+(`@tuturuuu/start-bridge/start/base-path`) into the root route's head scripts,
+after the app-base and Trusted Types head scripts. Mail and Tasks use it.
+
+- **Scope.** The rule prefetches same-origin app-launcher links for another
+  app that open in the current tab
+  (`a[data-app-slug]:not([target]):not([data-current])`) with `moderate`
+  eagerness: on hover or pointer down. A prefetch only serves a navigation in
+  the same tab, so the launcher's default new-tab open mode
+  (`target="_blank"`) prefetches nothing; users who choose "This tab" get the
+  prefetch. The launcher marks the open app with
+  `data-current`; `data-active` only marks the highlighted option and must
+  stay out of the selector, because hovering a link highlights it. Chrome
+  retains at most two `moderate` prefetches, evicting the oldest. API routes,
+  server functions, login, logout, verify-token and auth callbacks are never
+  prefetched, and nothing is prerendered. On an app's own subdomain every
+  launcher link is cross-origin, so the rules match nothing there.
+- **CSP.** Apps with the bridge CSP (Tasks) render the script with the
+  request nonce, which `script-src 'nonce-…' 'strict-dynamic'` admits. Do
+  not add `'inline-speculation-rules'`. Apps without a bridge CSP (Mail)
+  render it without a nonce, so Mail's report-only policy records one
+  inline-script report per document load. The Trusted Types `default` policy
+  also admits the constant `SPECULATION_RULES_TEXT`.
+- **Cost.** Each prefetch is one billable Worker request on the target app,
+  issued only for a launcher link the pointer is on.
+- **Stop fence.** Set `TUTURUUU_SPECULATION_RULES=off` as a Worker
+  environment variable (in the deploy configuration's `vars`, so a redeploy
+  keeps it) on every app that renders the rules:
+  - That app stops rendering the rules on the next full document load. An
+    open tab keeps the decision it hydrated with until it reloads.
+  - Requests that still arrive at a bridge app whose own flag is `off` get
+    `503` and `Cache-Control: no-store` from `createBridgeHandler` before any
+    session or render work. The request is still billed, but runs no
+    session or render work. Web and other non-bridge targets have no such
+    layer.
+  - The satellite launcher's separate Tools rule
+    (`useAppsLauncherPrefetch`) does not read the flag.
+- **Coverage.** `packages/start-bridge/src/core/speculation-rules.test.ts`
+  covers the render gate, the browser decision and the refusal response;
+  `packages/satellite/src/components/apps-launcher.test.tsx` checks that a
+  hovered launcher link matches the selector and the open app does not.
+- **Zone.** Cloudflare does not block prefetch requests: a live
+  `Sec-Purpose: prefetch` request to `tuturuuu.com` receives the same
+  response as an ordinary navigation.
+- **Session cookies.** A prefetched document runs the same session refresh as
+  a navigation, so it can rotate the Supabase session cookie exactly as an
+  ordinary page load would; with at most two retained, this is the same
+  refresh race as two open tabs.

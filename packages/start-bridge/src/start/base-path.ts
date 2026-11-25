@@ -1,5 +1,10 @@
 import { APP_BASE_GLOBAL, runtimeAppBase, withAppBase } from '../core/app-url';
 import { requestNonce, trustedTypesBootstrap } from '../core/csp';
+import {
+  SPECULATION_RULES_TEXT,
+  SPECULATION_SCRIPT_ATTRIBUTE,
+  speculationRulesEnabled,
+} from '../core/speculation-rules';
 
 export {
   appPath,
@@ -31,6 +36,24 @@ export function appBaseHeadScript(
     children: `globalThis.${APP_BASE_GLOBAL}=${value};`,
     ...(nonce ? { nonce } : {}),
   };
+}
+
+/**
+ * Head scripts with the shared Speculation Rules: hovering an app-launcher
+ * link for another app prefetches that app's document. Spread it after the
+ * app-base (and Trusted Types) head scripts. Empty while the app's
+ * `TUTURUUU_SPECULATION_RULES` is `off`.
+ */
+export function speculationRulesHeadScripts(nonce = requestNonce()) {
+  if (!speculationRulesEnabled()) return [];
+  return [
+    {
+      type: 'speculationrules',
+      [SPECULATION_SCRIPT_ATTRIBUTE]: '',
+      children: SPECULATION_RULES_TEXT,
+      ...(nonce ? { nonce } : {}),
+    },
+  ];
 }
 
 /**

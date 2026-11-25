@@ -1,6 +1,7 @@
 import { createRootRoute } from '@tanstack/react-router';
 import {
   appBaseHeadScript,
+  speculationRulesHeadScripts,
   withAppBase,
 } from '@tuturuuu/start-bridge/start/base-path';
 import { Document, ErrorPage, NotFoundPage } from '../runtime/router-shell';
@@ -8,7 +9,7 @@ import { Document, ErrorPage, NotFoundPage } from '../runtime/router-shell';
 export const Route = createRootRoute({
   errorComponent: ErrorPage,
   head: () => ({
-    scripts: [appBaseHeadScript()],
+    scripts: [appBaseHeadScript(), ...speculationRulesHeadScripts()],
     meta: [
       { charSet: 'utf-8' },
       {
