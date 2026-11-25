@@ -20,10 +20,10 @@ import {
   Package,
   QrCode,
   Server,
-  Smartphone,
   Sparkles,
   SquareTerminal,
   Store,
+  Video,
   Wallet,
 } from '@tuturuuu/icons';
 import type { LaunchableApp } from '@tuturuuu/utils/launchable-apps';
@@ -45,7 +45,7 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   inventory: Package,
   learn: GraduationCap,
   mail: Mail,
-  meet: Smartphone,
+  meet: Video,
   mind: Brain,
   nova: Sparkles,
   pay: CreditCard,
