@@ -202,7 +202,8 @@ export async function meetCallRoomRoute(
       console.error('Meet room action failed', {
         name: error instanceof Error ? error.name : 'unknown',
       });
-    const accessError = error instanceof MeetCallAccessError ? error : undefined;
+    const accessError =
+      error instanceof MeetCallAccessError ? error : undefined;
     const retryAfterSeconds = accessError?.retryAfterSeconds;
     const refusal =
       status === 400

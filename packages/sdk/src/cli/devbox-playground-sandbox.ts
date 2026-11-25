@@ -341,13 +341,16 @@ export async function getPlaygroundReadiness() {
     await readJudgeDockerCapacity();
     const languages: PlaygroundLanguage[] = [];
     for (const [language, image] of Object.entries(images)) {
+      if (!image) continue;
       const name = `ttr-playground-smoke-${randomUUID()}`;
-      const requiredBinaries = [
-        'python3',
+      const languageBinary =
         language === 'shell'
           ? 'sh'
-          : judgeLanguageBinary(language as Exclude<PlaygroundLanguage, 'shell'>),
-      ];
+          : judgeLanguageBinary(
+              language as Exclude<PlaygroundLanguage, 'shell'>
+            );
+      const requiredBinaries = ['python3'];
+      if (languageBinary) requiredBinaries.push(languageBinary);
       if (language === 'java') requiredBinaries.push('java');
       const probe = requiredBinaries
         .map((binary) => `command -v ${binary} >/dev/null`)

@@ -291,9 +291,10 @@ it('wires matching room presence and host actions to the workbench', async () =>
 });
 
 it('keeps a runner refusal scoped to its language until a run starts again', async () => {
-  let current: NonNullable<Parameters<typeof meetingProgrammingApi.select>[1]> = {
-    ...selection,
-  };
+  let current: NonNullable<Parameters<typeof meetingProgrammingApi.select>[1]> =
+    {
+      ...selection,
+    };
   const client = api(true);
   const read = client.read as unknown as ReturnType<typeof vi.fn>;
   const room = await read('meeting');
@@ -332,7 +333,9 @@ it('keeps a runner refusal scoped to its language until a run starts again', asy
 
   act(() => meeting().onRuntime('python'));
   await waitFor(() =>
-    expect(workbench.calls.at(-1)?.roomKey).toBe('meeting:meeting:project:python')
+    expect(workbench.calls.at(-1)?.roomKey).toBe(
+      'meeting:meeting:project:python'
+    )
   );
   expect(meeting().runnerAvailability).toBe('not_configured');
   act(() => meeting().onRunnerAvailability('ready'));

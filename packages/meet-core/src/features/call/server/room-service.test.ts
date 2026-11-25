@@ -189,7 +189,9 @@ it.each([
       body: '{',
     }
   );
-  const response = await roomRoute(request, 'meeting', async () => run(request));
+  const response = await roomRoute(request, 'meeting', async () =>
+    run(request)
+  );
   expect(response.status).toBe(status);
   expect(await response.json()).toEqual({ code, error });
 });

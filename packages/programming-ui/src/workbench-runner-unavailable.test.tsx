@@ -320,7 +320,9 @@ it('disables runs only in meetings, only for a refused run, and reports it', () 
   expect(result.current.refusal).toBeUndefined();
   for (const code of ['room_unavailable', 'PLAYGROUND_RECEIPT_UNAVAILABLE']) {
     act(() =>
-      result.current.onRunError(Object.assign(new Error(), { status: 503, code }))
+      result.current.onRunError(
+        Object.assign(new Error(), { status: 503, code })
+      )
     );
     expect(result.current.refusal).toBeUndefined();
   }
@@ -344,7 +346,8 @@ it('disables runs only in meetings, only for a refused run, and reports it', () 
 
 it('follows the host app when it holds the state for the call', () => {
   const { result, rerender } = renderHook(
-    (props: { runnerAvailability: RunnerAvailability }) => useRunnerAvailability(props),
+    (props: { runnerAvailability: RunnerAvailability }) =>
+      useRunnerAvailability(props),
     { initialProps: { runnerAvailability: 'not_configured' } }
   );
   expect(result.current.refusal).toBeTruthy();

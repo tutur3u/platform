@@ -81,9 +81,7 @@ it('re-enables Run once a run starts, but a stop that succeeds does not', async 
   await waitFor(() => expect(result.current.run.isSuccess).toBe(true));
   expect(result.current.runner.refusal).toBeTruthy();
   act(() => result.current.runOperation('run'));
-  await waitFor(() =>
-    expect(result.current.runner.refusal).toBeUndefined()
-  );
+  await waitFor(() => expect(result.current.runner.refusal).toBeUndefined());
   expect(onRunnerAvailability).toHaveBeenLastCalledWith('ready');
 });
 

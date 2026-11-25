@@ -155,7 +155,9 @@ describe('cloud Playground refusals', () => {
       code: 'PLAYGROUND_NOT_CONFIGURED',
       message: 'The code runner is not configured',
     });
-    expect(error.retryAfterSeconds).toBeUndefined();
+    expect(
+      (error as { retryAfterSeconds?: number }).retryAfterSeconds
+    ).toBeUndefined();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

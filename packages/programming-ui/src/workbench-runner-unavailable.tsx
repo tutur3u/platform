@@ -100,9 +100,7 @@ export function WorkbenchRunnerUnavailable({
       />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="space-y-0.5">
-          <p className="font-semibold">
-            {t(runnerRefusalTitle(reason))}
-          </p>
+          <p className="font-semibold">{t(runnerRefusalTitle(reason))}</p>
           <p className="text-muted-foreground text-xs">
             {t(
               saveFailed ? 'runnerUnavailableUnsaved' : 'runnerUnavailableBody'

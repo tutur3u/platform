@@ -62,7 +62,9 @@ it('exports Java source alongside ignored binary class files', async () => {
     const exported = exportProject(directory);
     expect(exported.error).toBeUndefined();
     expect(exported.status).toBe(0);
-    expect(JSON.parse(exported.stdout)).toEqual([{ path: 'Main.java', content }]);
+    expect(JSON.parse(exported.stdout)).toEqual([
+      { path: 'Main.java', content },
+    ]);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
@@ -74,18 +76,15 @@ it.each([
   ['large file.log', 'x'.repeat(262146), 'Unsupported Drive file path'],
   ['large.log', 'x'.repeat(262146), 'File exceeds Drive save limit'],
   ['utf8.log', 'x'.repeat(262144) + 'é', 'File exceeds Drive save limit'],
-])(
-  'identifies unsupported export file %s',
-  async (name, content, error) => {
-    const directory = await mkdtemp(join(tmpdir(), 'ttr-playground-export-'));
-    try {
-      await writeFile(join(directory, name), content);
-      const exported = exportProject(directory);
-      expect(exported.status).not.toBe(0);
-      expect(exported.stderr).toContain(name);
-      expect(exported.stderr).toContain(error);
-    } finally {
-      await rm(directory, { recursive: true, force: true });
-    }
+])('identifies unsupported export file %s', async (name, content, error) => {
+  const directory = await mkdtemp(join(tmpdir(), 'ttr-playground-export-'));
+  try {
+    await writeFile(join(directory, name), content);
+    const exported = exportProject(directory);
+    expect(exported.status).not.toBe(0);
+    expect(exported.stderr).toContain(name);
+    expect(exported.stderr).toContain(error);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
   }
-);
+});

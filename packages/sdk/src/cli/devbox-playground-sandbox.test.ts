@@ -87,22 +87,25 @@ describe('playground readiness probe', () => {
     ['ruby', 'command -v ruby >/dev/null'],
     ['php', 'command -v php >/dev/null'],
     ['shell', 'command -v sh >/dev/null'],
-  ])('checks the required binaries for %s readiness', async (language, checks) => {
-    vi.stubEnv(
-      'TUTURUUU_PLAYGROUND_IMAGES',
-      JSON.stringify({ [language]: `fixture@sha256:${'a'.repeat(64)}` })
-    );
-    const { getPlaygroundReadiness } =
-      await import('./devbox-playground-sandbox');
+  ])(
+    'checks the required binaries for %s readiness',
+    async (language, checks) => {
+      vi.stubEnv(
+        'TUTURUUU_PLAYGROUND_IMAGES',
+        JSON.stringify({ [language]: `fixture@sha256:${'a'.repeat(64)}` })
+      );
+      const { getPlaygroundReadiness } =
+        await import('./devbox-playground-sandbox');
 
-    expect((await getPlaygroundReadiness()).languages).toEqual([language]);
-    const args = docker.mock.calls.find(([args]) => args[0] === 'run')?.[0];
-    expect(args?.slice(-3)).toEqual([
-      'sh',
-      '-c',
-      `command -v python3 >/dev/null && ${checks}`,
-    ]);
-  });
+      expect((await getPlaygroundReadiness()).languages).toEqual([language]);
+      const args = docker.mock.calls.find(([args]) => args[0] === 'run')?.[0];
+      expect(args?.slice(-3)).toEqual([
+        'sh',
+        '-c',
+        `command -v python3 >/dev/null && ${checks}`,
+      ]);
+    }
+  );
 });
 
 describe('managed playground removal ownership', () => {
