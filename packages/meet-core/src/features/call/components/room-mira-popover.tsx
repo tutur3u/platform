@@ -62,17 +62,18 @@ export function RoomMiraPopover({
   }, [acceptanceEventId, meetingId, queryClient]);
 
   const { mutate: choose } = mira.choose;
-  useMiraAutoOn({ meetingId, accountId, mira, deferred: dismissed || !!intent });
+  useMiraAutoOn({
+    meetingId,
+    accountId,
+    mira,
+    deferred: dismissed || !!intent,
+  });
 
   const confirm = useMutation({
     mutationFn: async () => {
       if (!accountId) throw new Error('Mira account is unavailable');
       if (status === 'required') {
-        const next = await confirmMeetMiraAccount(
-          meetingId,
-          accountId,
-          locale
-        );
+        const next = await confirmMeetMiraAccount(meetingId, accountId, locale);
         queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
       }
       if (intent === 'host') await mira.acceptance.mutateAsync('accept');

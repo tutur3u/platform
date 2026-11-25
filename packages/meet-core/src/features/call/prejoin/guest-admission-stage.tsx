@@ -40,7 +40,10 @@ export function GuestAdmissionStage({
       <section className="w-full max-w-sm space-y-4 rounded-2xl border bg-card p-5 sm:p-6">
         <h1 className="flex items-center gap-2 font-semibold text-lg">
           {phase !== 'confirm' && (
-            <Loader2 aria-hidden className="size-4 shrink-0 motion-safe:animate-spin" />
+            <Loader2
+              aria-hidden
+              className="size-4 shrink-0 motion-safe:animate-spin"
+            />
           )}
           <span role="status">{t(`guest_${phase}`)}</span>
         </h1>
@@ -73,12 +76,20 @@ export function GuestAdmissionStage({
         {phase === 'confirm' && (
           <>
             {media.map(({ kind, enabled, toggle }) => (
-              <label key={kind} className="flex min-h-8 items-center justify-between gap-3 text-sm">
+              <label
+                key={kind}
+                className="flex min-h-8 items-center justify-between gap-3 text-sm"
+              >
                 {t(`guest_${kind}`)}
                 <Switch checked={enabled} onCheckedChange={toggle} />
               </label>
             ))}
-            <Button type="button" className="w-full" disabled={joinDisabled} onClick={onJoin}>
+            <Button
+              type="button"
+              className="w-full"
+              disabled={joinDisabled}
+              onClick={onJoin}
+            >
               {t('guest_join')}
             </Button>
           </>

@@ -76,13 +76,23 @@ export type PrejoinMediaPreferences = Omit<PrejoinJoinMedia, 'previewStream'>;
 export function usePrejoinCapture(initial?: PrejoinMediaPreferences) {
   const t = useTranslations('meet.call');
   const { devices, refreshDevices } = useLobbyMediaDevices();
-  const [audioRequested, setAudioRequested] = useState(initial?.audioEnabled ?? true);
-  const [videoRequested, setVideoRequested] = useState(initial?.videoEnabled ?? false);
+  const [audioRequested, setAudioRequested] = useState(
+    initial?.audioEnabled ?? true
+  );
+  const [videoRequested, setVideoRequested] = useState(
+    initial?.videoEnabled ?? false
+  );
   const [limit, setLimit] = useState<PrejoinLimit>('none');
   const [handedOff, setHandedOff] = useState(false);
-  const [audioDeviceId, setAudioDeviceId] = useState(initial?.audioDeviceId ?? '');
-  const [videoDeviceId, setVideoDeviceId] = useState(initial?.videoDeviceId ?? '');
-  const [outputDeviceId, setOutputDeviceId] = useState(initial?.outputDeviceId ?? '');
+  const [audioDeviceId, setAudioDeviceId] = useState(
+    initial?.audioDeviceId ?? ''
+  );
+  const [videoDeviceId, setVideoDeviceId] = useState(
+    initial?.videoDeviceId ?? ''
+  );
+  const [outputDeviceId, setOutputDeviceId] = useState(
+    initial?.outputDeviceId ?? ''
+  );
   // Bumped to re-acquire the system default after its track ended.
   const [micAttempt, setMicAttempt] = useState(0);
   const [cameraAttempt, setCameraAttempt] = useState(0);
@@ -293,8 +303,10 @@ export function usePrejoinCapture(initial?: PrejoinMediaPreferences) {
     previewStream,
     previewError,
     micError,
-    audioPermissionPending: audioEnabled && !handedOff && !micStream && canCapture(),
-    videoPermissionPending: videoEnabled && !handedOff && !previewStream && canCapture(),
+    audioPermissionPending:
+      audioEnabled && !handedOff && !micStream && canCapture(),
+    videoPermissionPending:
+      videoEnabled && !handedOff && !previewStream && canCapture(),
     handedOff,
     limited: limit !== 'none',
     setLimit,

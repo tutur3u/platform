@@ -190,11 +190,7 @@ export function PersonalChat({
         );
       if (policy.accountConfirmation === 'required') {
         if (!confirm) return { ...scope, action, needsConfirmation: true };
-        const next = await confirmMeetMiraAccount(
-          meetingId,
-          accountId,
-          locale
-        );
+        const next = await confirmMeetMiraAccount(meetingId, accountId, locale);
         queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
       } else if (policy.accountConfirmation !== 'confirmed') {
         throw new Error('Mira confirmation is unavailable');
@@ -212,7 +208,8 @@ export function PersonalChat({
       if (
         result.accountId !== activeScope.current.accountId ||
         result.meetingId !== activeScope.current.meetingId
-      ) return;
+      )
+        return;
       if (result.needsConfirmation) {
         setConfirmationIntent(result.action);
         return;

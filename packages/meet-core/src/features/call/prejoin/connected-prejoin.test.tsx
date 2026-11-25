@@ -127,29 +127,37 @@ function show(
   const view = render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <Wrap>
-        <GuestVerificationProvider value={options.guestRequest ? {
-          meetingId: 'm-guest',
-          siteKey: 'site',
-          verified: options.verified ?? false,
-        } : null}>
-        <ConnectedPrejoin
-          canReadWorkspace={options.canReadWorkspace ?? true}
-          capture={cap}
-          defaultDisplayName={options.name ?? 'Linh Tran'}
-          joined={options.joined ?? false}
-          meetingName="Weekly sync"
-          miraMeetingId={options.guestRequest ? 'm-guest' : options.miraMeetingId}
-          guestRequest={options.guestRequest}
-          onJoined={onJoined}
-          onLeave={onLeave}
-          onOutputDeviceChange={vi.fn()}
-          onRetry={vi.fn()}
-          outputDeviceId=""
-          participants={[]}
-          prepareJoin={() => true}
-          room={controller}
-          runMediaAction={async (action) => action()}
-        />
+        <GuestVerificationProvider
+          value={
+            options.guestRequest
+              ? {
+                  meetingId: 'm-guest',
+                  siteKey: 'site',
+                  verified: options.verified ?? false,
+                }
+              : null
+          }
+        >
+          <ConnectedPrejoin
+            canReadWorkspace={options.canReadWorkspace ?? true}
+            capture={cap}
+            defaultDisplayName={options.name ?? 'Linh Tran'}
+            joined={options.joined ?? false}
+            meetingName="Weekly sync"
+            miraMeetingId={
+              options.guestRequest ? 'm-guest' : options.miraMeetingId
+            }
+            guestRequest={options.guestRequest}
+            onJoined={onJoined}
+            onLeave={onLeave}
+            onOutputDeviceChange={vi.fn()}
+            onRetry={vi.fn()}
+            outputDeviceId=""
+            participants={[]}
+            prepareJoin={() => true}
+            room={controller}
+            runMediaAction={async (action) => action()}
+          />
         </GuestVerificationProvider>
       </Wrap>
     </NextIntlClientProvider>
@@ -165,18 +173,31 @@ afterEach(() => {
 
 it('hands off devices after guest admission without another click', () => {
   const { cap, onJoined } = show({ guestRequest: true, verified: true });
-  expect(screen.getByRole('status').textContent).toBe(call.prejoin.guest_admitted);
-  expect(screen.queryByRole('button', { name: call.prejoin.guest_join })).toBeNull();
+  expect(screen.getByRole('status').textContent).toBe(
+    call.prejoin.guest_admitted
+  );
+  expect(
+    screen.queryByRole('button', { name: call.prejoin.guest_join })
+  ).toBeNull();
   expect(cap.handOff).toHaveBeenCalledOnce();
   expect(onJoined).toHaveBeenCalledOnce();
 });
 
 it('keeps a manually admitted guest on the single pending device choice', () => {
-  const { cap, onJoined } = show({ guestRequest: true, permissionPending: true });
-  expect(screen.getByRole('status').textContent).toBe(call.prejoin.guest_confirm);
+  const { cap, onJoined } = show({
+    guestRequest: true,
+    permissionPending: true,
+  });
+  expect(screen.getByRole('status').textContent).toBe(
+    call.prejoin.guest_confirm
+  );
   expect(screen.getAllByRole('switch')).toHaveLength(1);
-  expect(screen.getByRole('switch', { name: call.prejoin.guest_microphone })).toBeTruthy();
-  expect(screen.getByRole('button', { name: call.prejoin.guest_join })).toHaveProperty('disabled', true);
+  expect(
+    screen.getByRole('switch', { name: call.prejoin.guest_microphone })
+  ).toBeTruthy();
+  expect(
+    screen.getByRole('button', { name: call.prejoin.guest_join })
+  ).toHaveProperty('disabled', true);
   expect(screen.queryByRole('textbox')).toBeNull();
   expect(cap.handOff).not.toHaveBeenCalled();
   expect(onJoined).not.toHaveBeenCalled();
@@ -184,35 +205,54 @@ it('keeps a manually admitted guest on the single pending device choice', () => 
 
 it('summarizes the completed guest fields and opens them on Edit', () => {
   show({ guestRequest: true, permissionPending: true, verified: true });
-  expect(screen.getByText(`${call.prejoin.guest_summary.replace('{name}', 'Linh Tran')} · ${call.guest_join.verified}`)).toBeTruthy();
+  expect(
+    screen.getByText(
+      `${call.prejoin.guest_summary.replace('{name}', 'Linh Tran')} · ${call.guest_join.verified}`
+    )
+  ).toBeTruthy();
   expect(screen.queryByRole('textbox')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: call.prejoin.guest_edit }));
-  expect(screen.getByRole('textbox', { name: call.your_name })).toHaveProperty('value', 'Linh Tran');
+  fireEvent.click(
+    screen.getByRole('button', { name: call.prejoin.guest_edit })
+  );
+  expect(screen.getByRole('textbox', { name: call.your_name })).toHaveProperty(
+    'value',
+    'Linh Tran'
+  );
   expect(screen.getByText(call.guest_join.verified)).toBeTruthy();
 });
 
-it.each(['connecting', 'waiting'])('keeps joining gated during %s', (admission) => {
-  const { onJoined } = show({ guestRequest: true, admission });
-  const expected = admission === 'waiting' ? call.prejoin.guest_waiting : call.prejoin.guest_joining;
-  expect(screen.getByRole('status').textContent).toBe(expected);
-  expect(onJoined).not.toHaveBeenCalled();
-});
+it.each(['connecting', 'waiting'])(
+  'keeps joining gated during %s',
+  (admission) => {
+    const { onJoined } = show({ guestRequest: true, admission });
+    const expected =
+      admission === 'waiting'
+        ? call.prejoin.guest_waiting
+        : call.prejoin.guest_joining;
+    expect(screen.getByRole('status').textContent).toBe(expected);
+    expect(onJoined).not.toHaveBeenCalled();
+  }
+);
 
 it('shows the guest denial copy after the room refuses admission', () => {
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
-      <PrejoinProvider info={{
-        meetingId: 'm-guest',
-        meetingName: 'Weekly sync',
-        displayName: 'Linh Tran',
-        leaveHref: '/',
-        guest: true,
-      }}>
+      <PrejoinProvider
+        info={{
+          meetingId: 'm-guest',
+          meetingName: 'Weekly sync',
+          displayName: 'Linh Tran',
+          leaveHref: '/',
+          guest: true,
+        }}
+      >
         <JoinOutcome reason="denied" guestRequest />
       </PrejoinProvider>
     </NextIntlClientProvider>
   );
-  expect(screen.getByRole('heading', { name: call.prejoin.guest_denied })).toBeTruthy();
+  expect(
+    screen.getByRole('heading', { name: call.prejoin.guest_denied })
+  ).toBeTruthy();
   expect(screen.getByText(call.prejoin.guest_denied_hint)).toBeTruthy();
 });
 

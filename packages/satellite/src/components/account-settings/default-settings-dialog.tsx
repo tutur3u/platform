@@ -47,7 +47,9 @@ export function SatelliteDefaultSettingsDialog({
   const [activeTab, setActiveTab] = useState(defaultTab);
   const account = createAccountSettingsNavGroup(t);
   const navItems: SettingsNavGroup[] = [
-    accountTab ? { ...account, items: [...account.items, accountTab] } : account,
+    accountTab
+      ? { ...account, items: [...account.items, accountTab] }
+      : account,
     {
       label: t('satellite-account-settings.preferences'),
       items: [

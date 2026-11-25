@@ -22,9 +22,10 @@ vi.mock('server-only', () => ({}));
 vi.mock('next-intl/server', () => ({
   getTranslations: async ({ locale }: { locale: 'en' | 'vi' }) => {
     f.checkTranslation();
-    const { default: messages } = locale === 'vi'
-      ? await import('../../../../../../../../apps/meet/messages/vi.json')
-      : await import('../../../../../../../../apps/meet/messages/en.json');
+    const { default: messages } =
+      locale === 'vi'
+        ? await import('../../../../../../../../apps/meet/messages/vi.json')
+        : await import('../../../../../../../../apps/meet/messages/en.json');
     const strings = messages.meet.mira_consent;
     return (key: keyof typeof strings, values?: { name: string }) =>
       values ? strings[key].replace('{name}', values.name) : strings[key];
@@ -87,11 +88,14 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     _request: Request,
     _id: string,
     run: (access: unknown) => Promise<unknown>
-  ) => Response.json(await run({
-      ...guestAccess,
-      guest: f.access.guest,
-      user: { id: f.access.userId || guestAccess.user.id },
-    })),
+  ) =>
+    Response.json(
+      await run({
+        ...guestAccess,
+        guest: f.access.guest,
+        user: { id: f.access.userId || guestAccess.user.id },
+      })
+    ),
 }));
 
 import {
@@ -155,7 +159,8 @@ describe('account confirmation in the redesigned Meet flow', () => {
   const key = 'meet_mira_account_confirmation';
   const accountVersion = '2026-11-25-v1';
   const marker = { [key]: accountVersion };
-  const hash = (text: string) => createHash('sha256').update(text).digest('hex');
+  const hash = (text: string) =>
+    createHash('sha256').update(text).digest('hex');
   const reply = (app_metadata: Record<string, unknown>) => ({
     data: { user: { id: f.access.userId, app_metadata } },
   });
@@ -232,10 +237,14 @@ describe('account confirmation in the redesigned Meet flow', () => {
       ([, command]) => command.action === 'mira.room.confirm'
     );
     const confirmOrder = f.room.mock.invocationCallOrder[confirmIndex];
-    expect(f.record.mock.invocationCallOrder[0]).toBeLessThan(confirmOrder ?? -1);
+    expect(f.record.mock.invocationCallOrder[0]).toBeLessThan(
+      confirmOrder ?? -1
+    );
 
     f.record.mockClear();
-    await expect(post({ ...input, textHash: 'b'.repeat(64) })).rejects.toMatchObject({
+    await expect(
+      post({ ...input, textHash: 'b'.repeat(64) })
+    ).rejects.toMatchObject({
       status: 409,
       code: 'mira_notice_required',
     });
@@ -244,13 +253,19 @@ describe('account confirmation in the redesigned Meet flow', () => {
 
   it('writes one structured marker for the authenticated actor and evicts it on withdrawal', async () => {
     const actor = f.access.userId;
-    const action = { action: 'confirm_account', expectedActorId: actor, locale: 'vi' };
+    const action = {
+      action: 'confirm_account',
+      expectedActorId: actor,
+      locale: 'vi',
+    };
     f.updateUserById.mockImplementation(async (_id, { app_metadata }) => {
       const result = reply(app_metadata[key] === null ? {} : app_metadata);
       f.getUserById.mockResolvedValue(result);
       return result;
     });
-    await expect(post({ ...action, expectedActorId: PENDING })).rejects.toMatchObject({
+    await expect(
+      post({ ...action, expectedActorId: PENDING })
+    ).rejects.toMatchObject({
       status: 403,
     });
     expect(f.updateUserById).not.toHaveBeenCalled();
@@ -267,13 +282,16 @@ describe('account confirmation in the redesigned Meet flow', () => {
           version: accountVersion,
           confirmedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.+Z$/),
           locale: 'vi',
-          textHash: '3a43d3691dcc721785bff9132cec51e2ea5716931a1a32a3daea03489398d69a',
+          textHash:
+            '3a43d3691dcc721785bff9132cec51e2ea5716931a1a32a3daea03489398d69a',
         },
       },
     });
 
     const withdraw = { ...action, action: 'withdraw_account' };
-    await expect(post({ ...withdraw, expectedActorId: PENDING })).rejects.toMatchObject({
+    await expect(
+      post({ ...withdraw, expectedActorId: PENDING })
+    ).rejects.toMatchObject({
       status: 403,
     });
     expect(f.updateUserById).toHaveBeenCalledOnce();
@@ -331,7 +349,9 @@ describe('account confirmation in the redesigned Meet flow', () => {
   it('keeps the Auth marker when room off fails', async () => {
     f.getUserById.mockResolvedValue(reply(marker));
     f.room.mockRejectedValue(undefined);
-    await expect(post(withdrawAccount())).rejects.toMatchObject({ status: 503 });
+    await expect(post(withdrawAccount())).rejects.toMatchObject({
+      status: 503,
+    });
     expect(f.updateUserById).not.toHaveBeenCalled();
     expect(f.stopPrivate).not.toHaveBeenCalled();
   });
@@ -386,14 +406,17 @@ describe('account confirmation in the redesigned Meet flow', () => {
       accountConfirmation: 'required',
       choice: 'off',
     });
-    expect(f.stopPrivate).toHaveBeenCalledWith('https://live.internal/control', {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'stop',
-        ownerId: f.access.userId,
-        meetingId: 'room',
-      }),
-    });
+    expect(f.stopPrivate).toHaveBeenCalledWith(
+      'https://live.internal/control',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'stop',
+          ownerId: f.access.userId,
+          meetingId: 'room',
+        }),
+      }
+    );
     expect(f.room).toHaveBeenCalledWith(expect.anything(), {
       action: 'mira.private.ended',
       sessionId: PENDING,

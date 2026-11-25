@@ -377,7 +377,10 @@ export function CallSettings({
         {activeTab === MIRA_SETTINGS_TAB && miraWorkspaceId && (
           <MeetSettingsStack>
             {MEETING_APP === 'meet' && accountId && (
-              <MiraAccountSettings meetingId={meetingId} accountId={accountId} />
+              <MiraAccountSettings
+                meetingId={meetingId}
+                accountId={accountId}
+              />
             )}
             <MiraAudienceSettings wsId={miraWorkspaceId} />
           </MeetSettingsStack>

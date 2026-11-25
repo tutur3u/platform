@@ -89,6 +89,8 @@ it('returns undefined when the lookup fails, so the box is not guessed ticked', 
 
 it('excludes staged auto-on evidence when checking for an explicit opt-out', async () => {
   f.result.mockResolvedValue({ data: { choice: 'off' }, error: null });
-  expect(await readOwnMiraLastChoice({ ...account, explicitOnly: true })).toBe('off');
+  expect(await readOwnMiraLastChoice({ ...account, explicitOnly: true })).toBe(
+    'off'
+  );
   expect(f.calls).toContainEqual(['neq', 'source', 'auto_on']);
 });

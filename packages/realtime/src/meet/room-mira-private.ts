@@ -96,7 +96,10 @@ export function applyPrivateMira(
     message.action === 'mira.private.choice' ||
     message.action === 'mira.private.initialize'
   ) {
-    const choice = message.action === 'mira.private.initialize' ? 'continue' : message.choice;
+    const choice =
+      message.action === 'mira.private.initialize'
+        ? 'continue'
+        : message.choice;
     if (
       message.action === 'mira.private.initialize' &&
       ownChoice &&

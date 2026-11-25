@@ -178,11 +178,16 @@ export function applyMiraRoomConsent(
         next.selfCapture?.mode !== 'self' &&
         !next.transcriptConsent?.choices[accountId]
       ) {
-        const allowed = applyMeetTranscriptConsent(next, token, {
-          action: 'transcript.consent.choice',
-          choice: 'allow',
-          version: MEET_TRANSCRIPT_NOTICE_VERSION,
-        }, now);
+        const allowed = applyMeetTranscriptConsent(
+          next,
+          token,
+          {
+            action: 'transcript.consent.choice',
+            choice: 'allow',
+            version: MEET_TRANSCRIPT_NOTICE_VERSION,
+          },
+          now
+        );
         return reply(allowed?.state ?? next);
       }
       return reply(next);

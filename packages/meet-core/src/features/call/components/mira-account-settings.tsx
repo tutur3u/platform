@@ -43,8 +43,12 @@ export function MiraAccountSettings({
     },
     onSettled: (view) => {
       if (view) client.setQueryData(roomMiraConsentKey(meetingId), view);
-      void client.invalidateQueries({ queryKey: roomMiraConsentKey(meetingId) });
-      void client.invalidateQueries({ queryKey: transcriptConsentKey(meetingId) });
+      void client.invalidateQueries({
+        queryKey: roomMiraConsentKey(meetingId),
+      });
+      void client.invalidateQueries({
+        queryKey: transcriptConsentKey(meetingId),
+      });
     },
   });
 

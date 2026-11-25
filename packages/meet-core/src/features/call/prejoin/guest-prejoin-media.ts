@@ -1,6 +1,9 @@
 'use client';
 
-import type { PrejoinCapture, PrejoinMediaPreferences } from './use-prejoin-capture';
+import type {
+  PrejoinCapture,
+  PrejoinMediaPreferences,
+} from './use-prejoin-capture';
 
 type GuestMedia = {
   meetingId: string;

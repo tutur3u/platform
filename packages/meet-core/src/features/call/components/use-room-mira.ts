@@ -191,7 +191,8 @@ export function useRoomMira(meetingId: string, accountId?: string) {
         acceptanceRevision: data?.acceptance?.revision ?? 0,
         source: input.source,
         textHash:
-          input.textHash ?? (await hashMiraConsentText(input.noticeText ?? text)),
+          input.textHash ??
+          (await hashMiraConsentText(input.noticeText ?? text)),
         ...(accountFlow && accountId ? { expectedActorId: accountId } : {}),
         locale: input.locale ?? locale,
         ...(mode === 'self' ? { noticeMode: 'self' as const } : {}),
@@ -290,7 +291,12 @@ export function useRoomMira(meetingId: string, accountId?: string) {
   const noticeMode = notice.mode;
   const noticeKnown = notice.known;
   useEffect(() => {
-    if (accountFlow || !data?.acceptance || data.choice !== null || !pendingJoin)
+    if (
+      accountFlow ||
+      !data?.acceptance ||
+      data.choice !== null ||
+      !pendingJoin
+    )
       return;
     // The join screen showed the room-capture notice. A ticked box applies
     // only once the meeting's notice is known to be that one; a per-speaker

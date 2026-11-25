@@ -32,13 +32,13 @@ export function PrejoinProvider({
 }) {
   const capture = usePrejoinCapture(
     info.guest
-      ? guestMediaRequest(info.meetingId)?.preferences ?? {
+      ? (guestMediaRequest(info.meetingId)?.preferences ?? {
           audioEnabled: false,
           videoEnabled: false,
           audioDeviceId: '',
           videoDeviceId: '',
           outputDeviceId: '',
-        }
+        })
       : undefined
   );
   return (

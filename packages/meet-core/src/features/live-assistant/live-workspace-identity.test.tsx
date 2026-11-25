@@ -107,9 +107,17 @@ function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
 it('opens the private composer directly in the redesigned flow', async () => {
   f.v2 = true;
   showPanel(syntheticRoom());
-  expect(await screen.findByRole('textbox', { name: messages.meet.call.personal_chat })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: messages.meet.live.phase_continue })).toBeNull();
-  expect(screen.queryByRole('button', { name: messages.meet.live.phase_mute })).toBeNull();
+  expect(
+    await screen.findByRole('textbox', {
+      name: messages.meet.call.personal_chat,
+    })
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole('button', { name: messages.meet.live.phase_continue })
+  ).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: messages.meet.live.phase_mute })
+  ).toBeNull();
   expect(f.choice).not.toHaveBeenCalled();
 });
 it('offers private own-microphone start to the tab only after a confirmed choice for a distinct account/device', async () => {

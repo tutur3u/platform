@@ -73,7 +73,9 @@ export function MiraConfirmDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{t(host ? 'host_turn_on' : 'account_title')}</DialogTitle>
+          <DialogTitle>
+            {t(host ? 'host_turn_on' : 'account_title')}
+          </DialogTitle>
           <DialogDescription>
             {account ? t('account_statement') : t('host_adults')}
           </DialogDescription>

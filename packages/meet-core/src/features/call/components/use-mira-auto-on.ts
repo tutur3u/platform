@@ -41,7 +41,9 @@ export function useMiraAutoOn({
   const t = useTranslations('meet.mira_consent');
   const { data, dataUpdatedAt, noticeKnown, choosing, turningOn } = mira;
   const { mutate: choose } = mira.choose;
-  const scope = accountId ? `mira-auto-on:${meetingId}:${accountId}` : undefined;
+  const scope = accountId
+    ? `mira-auto-on:${meetingId}:${accountId}`
+    : undefined;
   const off = useRef({ scope, choose });
   off.current = { scope, choose };
   const lastAttempt = useRef<{

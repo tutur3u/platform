@@ -206,7 +206,8 @@ export async function POST(
       // Require live presence before recording a confirmation from this call.
       await callRoomService(access, { action: 'mira.room.read' });
       await confirmMiraAccount(access, data.expectedActorId, data.locale);
-      if (!(await readRoomMiraAvailability(access))) return { available: false };
+      if (!(await readRoomMiraAvailability(access)))
+        return { available: false };
       return readView(access);
     }
     if (data.action === 'withdraw_account') {
@@ -263,7 +264,8 @@ export async function POST(
           'withdraw_incomplete'
         );
       }
-      if (!(await readRoomMiraAvailability(access))) return { available: false };
+      if (!(await readRoomMiraAvailability(access)))
+        return { available: false };
       return readView(access);
     }
     if (data.action === 'accept') {

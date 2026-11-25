@@ -567,7 +567,9 @@ export const meetEndpoints: Endpoint[] = [
   },
   {
     pattern: '/api/meet-mira/account',
-    methods: { POST: async (request) => (await apiMiraAccount()).POST(request) },
+    methods: {
+      POST: async (request) => (await apiMiraAccount()).POST(request),
+    },
   },
   {
     pattern: '/og',

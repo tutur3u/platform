@@ -17,7 +17,10 @@ vi.mock('./storage', () => ({
   liveDatabase: f.database,
 }));
 
-import { readLivePaidAccount, requireCurrentPrivateGrant } from './private-grant';
+import {
+  readLivePaidAccount,
+  requireCurrentPrivateGrant,
+} from './private-grant';
 
 const owner = '00000000-0000-4000-8000-000000000001';
 const personal = '00000000-0000-4000-8000-000000000002';
@@ -70,7 +73,11 @@ it('fails closed for a missing Personal workspace or product tier', async () => 
 
 function grant(app: 'meet' | 'parley') {
   const version = '2026-11-13-private-v1';
-  const identity = { workspaceId: personal, isHost: false, displayName: 'Viewer' };
+  const identity = {
+    workspaceId: personal,
+    isHost: false,
+    displayName: 'Viewer',
+  };
   const saved = {
     claims: {
       audience: 'meet-live',
@@ -124,8 +131,12 @@ it('fails closed when the Worker cannot look up the authenticated account', asyn
 });
 
 it('keeps the existing grant for Parley and for Meet with the flag off', async () => {
-  await expect(requireCurrentPrivateGrant(uxV2, grant('parley'))).resolves.toBeUndefined();
-  await expect(requireCurrentPrivateGrant(enabled, grant('meet'))).resolves.toBeUndefined();
+  await expect(
+    requireCurrentPrivateGrant(uxV2, grant('parley'))
+  ).resolves.toBeUndefined();
+  await expect(
+    requireCurrentPrivateGrant(enabled, grant('meet'))
+  ).resolves.toBeUndefined();
   expect(f.authUser).not.toHaveBeenCalled();
 });
 
@@ -133,17 +144,19 @@ it('reuses a current confirmation for this account until its TTL expires', async
   vi.useFakeTimers();
   try {
     const saved = grant('meet');
-    f.authUser.mockResolvedValueOnce({
-      id: owner,
-      app_metadata: {
-        [MIRA_ACCOUNT_CONFIRMATION_KEY]: {
-          version: MIRA_ACCOUNT_CONFIRMATION_VERSION,
-          confirmedAt: '2026-11-25T12:00:00.000Z',
-          locale: 'en',
-          textHash: 'a'.repeat(64),
+    f.authUser
+      .mockResolvedValueOnce({
+        id: owner,
+        app_metadata: {
+          [MIRA_ACCOUNT_CONFIRMATION_KEY]: {
+            version: MIRA_ACCOUNT_CONFIRMATION_VERSION,
+            confirmedAt: '2026-11-25T12:00:00.000Z',
+            locale: 'en',
+            textHash: 'a'.repeat(64),
+          },
         },
-      },
-    }).mockResolvedValue({ id: owner, app_metadata: {} });
+      })
+      .mockResolvedValue({ id: owner, app_metadata: {} });
     await requireCurrentPrivateGrant(uxV2, saved);
     vi.advanceTimersByTime(59_999);
     await requireCurrentPrivateGrant(uxV2, saved);

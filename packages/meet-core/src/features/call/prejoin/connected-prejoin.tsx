@@ -60,11 +60,14 @@ export function ConnectedPrejoin({
   const verification = useGuestVerification();
   // Last name sent with presence.join, so a blur followed by join does not resend it.
   const sentDisplayName = useRef<string | null>(null);
-  const sendDisplayName = useCallback((name: string) => {
-    if (name === sentDisplayName.current) return;
-    sentDisplayName.current = name;
-    room.setDisplayName(name, room.media);
-  }, [room]);
+  const sendDisplayName = useCallback(
+    (name: string) => {
+      if (name === sentDisplayName.current) return;
+      sentDisplayName.current = name;
+      room.setDisplayName(name, room.media);
+    },
+    [room]
+  );
 
   const { error } = room.state;
   const { connectionStatus } = room;
@@ -97,8 +100,12 @@ export function ConnectedPrejoin({
     audio: boolean;
     video: boolean;
   } | null>(null);
-  const audioPending = !!guestRequestMedia?.audioPermissionPending && capture.audioPermissionPending;
-  const videoPending = !!guestRequestMedia?.videoPermissionPending && capture.videoPermissionPending;
+  const audioPending =
+    !!guestRequestMedia?.audioPermissionPending &&
+    capture.audioPermissionPending;
+  const videoPending =
+    !!guestRequestMedia?.videoPermissionPending &&
+    capture.videoPermissionPending;
   const started = useRef(false);
 
   const phase: PrejoinPhase = connectionError
@@ -119,7 +126,8 @@ export function ConnectedPrejoin({
       return;
     }
     if (!admitted || !canHandOff || !trimmed || started.current) return;
-    if (guestRequest && limit === 'none' && (audioPending || videoPending)) return;
+    if (guestRequest && limit === 'none' && (audioPending || videoPending))
+      return;
     started.current = true;
     if (guestRequest && meetingId) forgetGuestMedia(meetingId);
     const media = capture.handOff();
@@ -167,13 +175,27 @@ export function ConnectedPrejoin({
   ]);
 
   useEffect(() => {
-    if (!guestRequest || !admitted || joined || connectionError || !canHandOff) return;
+    if (!guestRequest || !admitted || joined || connectionError || !canHandOff)
+      return;
     if (limit === 'none' && (audioPending || videoPending)) {
-      setPermissionChoice((current) => current ?? { audio: audioPending, video: videoPending });
+      setPermissionChoice(
+        (current) => current ?? { audio: audioPending, video: videoPending }
+      );
       return;
     }
     if (!permissionChoice || limit === 'blocked') join();
-  }, [admitted, audioPending, canHandOff, connectionError, guestRequest, join, joined, limit, permissionChoice, videoPending]);
+  }, [
+    admitted,
+    audioPending,
+    canHandOff,
+    connectionError,
+    guestRequest,
+    join,
+    joined,
+    limit,
+    permissionChoice,
+    videoPending,
+  ]);
 
   const leave = () => {
     if (guestRequest && meetingId) forgetGuestMedia(meetingId);
@@ -198,21 +220,44 @@ export function ConnectedPrejoin({
   );
 
   if (guestRequest && !connectionError) {
-    const choosing = admitted && canHandOff && limit === 'none' &&
+    const choosing =
+      admitted &&
+      canHandOff &&
+      limit === 'none' &&
       (!!permissionChoice || audioPending || videoPending);
     return (
       <GuestAdmissionStage
-        phase={choosing ? 'confirm' : admitted ? 'admitted' : waiting ? 'waiting' : 'joining'}
+        phase={
+          choosing
+            ? 'confirm'
+            : admitted
+              ? 'admitted'
+              : waiting
+                ? 'waiting'
+                : 'joining'
+        }
         name={trimmed || defaultDisplayName}
         verified={verification?.verified === true}
         verification={<GuestLobbyUpgrade room={room} displayName={trimmed} />}
         fields={nameField}
         media={[
           ...(permissionChoice?.audio || audioPending
-            ? [{ kind: 'microphone' as const, enabled: capture.audioEnabled, toggle: capture.toggleAudio }]
+            ? [
+                {
+                  kind: 'microphone' as const,
+                  enabled: capture.audioEnabled,
+                  toggle: capture.toggleAudio,
+                },
+              ]
             : []),
           ...(permissionChoice?.video || videoPending
-            ? [{ kind: 'camera' as const, enabled: capture.videoEnabled, toggle: capture.toggleVideo }]
+            ? [
+                {
+                  kind: 'camera' as const,
+                  enabled: capture.videoEnabled,
+                  toggle: capture.toggleVideo,
+                },
+              ]
             : []),
         ]}
         joinDisabled={audioPending || videoPending || !trimmed}
@@ -227,7 +272,9 @@ export function ConnectedPrejoin({
       avatarUrl={defaultAvatarUrl}
       capture={capture}
       fields={
-        guest ? nameField : (
+        guest ? (
+          nameField
+        ) : (
           <p className="text-sm">
             <span className="text-muted-foreground">{t('joining_as')} </span>
             <span className="break-words font-medium">{displayName}</span>

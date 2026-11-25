@@ -35,7 +35,10 @@ beforeEach(() => vi.resetAllMocks());
 
 it('reports a guest without querying Auth', async () => {
   await expect(
-    readMiraAccountConfirmation({ ...access, guest: true } as MeetCallRouteAccess)
+    readMiraAccountConfirmation({
+      ...access,
+      guest: true,
+    } as MeetCallRouteAccess)
   ).resolves.toBe('guest');
   expect(f.getUserById).not.toHaveBeenCalled();
 });
@@ -48,7 +51,9 @@ it('fails closed on unavailable and mismatched Auth reads and caches only succes
     .mockResolvedValueOnce(reply(access.user.id));
 
   for (let attempt = 0; attempt < 3; attempt++) {
-    await expect(readMiraAccountConfirmation(access)).resolves.toBe('unavailable');
+    await expect(readMiraAccountConfirmation(access)).resolves.toBe(
+      'unavailable'
+    );
   }
   await expect(readMiraAccountConfirmation(access)).resolves.toBe('confirmed');
   await expect(readMiraAccountConfirmation(access)).resolves.toBe('confirmed');

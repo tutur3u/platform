@@ -31,8 +31,13 @@ export function LiveVoiceSelect({
         disabled={locked}
         onValueChange={(value) => setLiveVoice(liveVoiceSchema.parse(value))}
       >
-        <SelectTrigger id={id} className={compact ? 'h-8 pointer-coarse:h-11' : undefined}>
-          <SelectValue placeholder={t(compact ? 'voice_placeholder' : 'voice')} />
+        <SelectTrigger
+          id={id}
+          className={compact ? 'h-8 pointer-coarse:h-11' : undefined}
+        >
+          <SelectValue
+            placeholder={t(compact ? 'voice_placeholder' : 'voice')}
+          />
         </SelectTrigger>
         <SelectContent>
           {liveVoiceSchema.options.map((name) => (

@@ -104,38 +104,46 @@ beforeEach(() => {
 
 it('requires the server’s account proof, and automatic on never revives a withdrawal', () => {
   const acceptWithAccountProof = (revision: number) =>
-    act(host, {
-      action: 'mira.room.accept',
-      revision,
-      capabilities: ['chat'],
-      noticeVersion: version,
-      audienceAdultConfirmed: true,
-      accountConfirmationRequired: true,
-    }, 'host');
+    act(
+      host,
+      {
+        action: 'mira.room.accept',
+        revision,
+        capabilities: ['chat'],
+        noticeVersion: version,
+        audienceAdultConfirmed: true,
+        accountConfirmationRequired: true,
+      },
+      'host'
+    );
   acceptWithAccountProof(1);
   expect(choose(bob, 'on')).toMatchObject({
     status: 403,
     body: { code: 'account_confirmation_required' },
   });
   expect(view(bob)).toMatchObject({ choice: null, ready: false });
-  expect(act(bob, {
-    ...miraChoice(room, 'on'),
-    source: 'join',
-    accountConfirmed: true,
-  }).status).toBeUndefined();
+  expect(
+    act(bob, {
+      ...miraChoice(room, 'on'),
+      source: 'join',
+      accountConfirmed: true,
+    }).status
+  ).toBeUndefined();
   expect(view(bob)).toMatchObject({ choice: 'on', ready: true });
   choose(bob, 'off');
   acceptWithAccountProof(2);
-  expect(act(bob, {
-    ...miraChoice(room, 'on'),
-    source: 'join',
-    accountConfirmed: true,
-  })).toMatchObject({ status: 409, body: { code: 'MIRA_ROOM_JOIN_OVER_OFF' } });
+  expect(
+    act(bob, {
+      ...miraChoice(room, 'on'),
+      source: 'join',
+      accountConfirmed: true,
+    })
+  ).toMatchObject({ status: 409, body: { code: 'MIRA_ROOM_JOIN_OVER_OFF' } });
   expect(view(bob)).toMatchObject({ lastChoice: 'off', ready: false });
   expect(reserve(bob, 'bob-1')).toMatchObject(blocked);
-  expect(consentedMiraRoomChat(room, meetingId, room.chat ?? [])).not.toContainEqual(
-    expect.objectContaining({ id: 'bob-1' })
-  );
+  expect(
+    consentedMiraRoomChat(room, meetingId, room.chat ?? [])
+  ).not.toContainEqual(expect.objectContaining({ id: 'bob-1' }));
   expect(room.transcriptConsent?.choices[bob]?.choice).toBe('decline');
 });
 

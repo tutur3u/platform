@@ -8,7 +8,8 @@ import {
 } from './account-confirmation';
 
 it('binds the account confirmation version to the English and Vietnamese text', () => {
-  const hash = (text: string) => createHash('sha256').update(text).digest('hex');
+  const hash = (text: string) =>
+    createHash('sha256').update(text).digest('hex');
   expect({
     version: MIRA_ACCOUNT_CONFIRMATION_VERSION,
     en: hash(en.meet.mira_consent.account_statement),
@@ -29,6 +30,8 @@ it('accepts the legacy version and a complete current marker', () => {
   };
   expect(isMiraAccountConfirmed(MIRA_ACCOUNT_CONFIRMATION_VERSION)).toBe(true);
   expect(isMiraAccountConfirmed(marker)).toBe(true);
-  expect(isMiraAccountConfirmed({ ...marker, version: 'obsolete' })).toBe(false);
+  expect(isMiraAccountConfirmed({ ...marker, version: 'obsolete' })).toBe(
+    false
+  );
   expect(isMiraAccountConfirmed({ ...marker, confirmedAt: '' })).toBe(false);
 });

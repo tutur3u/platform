@@ -108,7 +108,9 @@ it('uses one confirmation and keeps the account confirmed on later host activati
   );
   expect(api.confirm).toHaveBeenCalledWith('room', 'account', 'en');
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-  fireEvent.click(screen.getByRole('button', { name: messages.meet.live.title }));
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.live.title })
+  );
   await waitFor(() =>
     expect(
       screen
@@ -138,11 +140,15 @@ it('shows one compact status row and reserves the host section for hosts', async
   fireEvent.click(
     await screen.findByRole('button', { name: messages.meet.live.title })
   );
-  expect(screen.getAllByText(m.status_by.replace('{name}', 'Lan'))).toHaveLength(1);
+  expect(
+    screen.getAllByText(m.status_by.replace('{name}', 'Lan'))
+  ).toHaveLength(1);
   expect(screen.queryByText(m.you_on)).toBeNull();
   expect(screen.queryByRole('region', { name: m.host_section })).toBeNull();
   update({ ...on, canAccept: true });
-  expect(await screen.findByRole('region', { name: m.host_section })).toBeTruthy();
+  expect(
+    await screen.findByRole('region', { name: m.host_section })
+  ).toBeTruthy();
   expect(screen.getByRole('button', { name: m.host_turn_off })).toBeTruthy();
 });
 
@@ -156,9 +162,13 @@ it('keeps a recorded opt-out and opens the one dialog when the person tries turn
   expect(api.choose).not.toHaveBeenCalled();
   expect(screen.queryByRole('dialog', { name: m.account_title })).toBeNull();
   update({ ...base, lastChoice: 'off' });
-  fireEvent.click(screen.getByRole('button', { name: messages.meet.live.title }));
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.live.title })
+  );
   fireEvent.click(screen.getByRole('switch', { name: m.personal_switch }));
-  expect(await screen.findByRole('dialog', { name: m.account_title })).toBeTruthy();
+  expect(
+    await screen.findByRole('dialog', { name: m.account_title })
+  ).toBeTruthy();
   expect(api.choose).not.toHaveBeenCalled();
 });
 
@@ -192,8 +202,9 @@ it.each(['host-on', 'join-while-on'] as const)(
     );
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(sessionStorage.getItem('mira-auto-on:' + meetingId)).toBe('1');
-    expect(sessionStorage.getItem('mira-auto-on:' + meetingId + ':account'))
-      .toBeNull();
+    expect(
+      sessionStorage.getItem('mira-auto-on:' + meetingId + ':account')
+    ).toBeNull();
     await waitFor(() =>
       expect(api.choose).toHaveBeenCalledWith(
         meetingId,

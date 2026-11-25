@@ -18,9 +18,10 @@ const f = vi.hoisted(() => ({
 vi.mock('server-only', () => ({}));
 vi.mock('next-intl/server', () => ({
   getTranslations: async ({ locale }: { locale: 'en' | 'vi' }) => {
-    const { default: messages } = locale === 'vi'
-      ? await import('../../../../../../../../apps/meet/messages/vi.json')
-      : await import('../../../../../../../../apps/meet/messages/en.json');
+    const { default: messages } =
+      locale === 'vi'
+        ? await import('../../../../../../../../apps/meet/messages/vi.json')
+        : await import('../../../../../../../../apps/meet/messages/en.json');
     const strings = messages.meet.mira_consent;
     return (key: keyof typeof strings, values?: { name: string }) =>
       values ? strings[key].replace('{name}', values.name) : strings[key];
@@ -83,11 +84,14 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     _request: Request,
     _id: string,
     run: (access: unknown) => Promise<unknown>
-  ) => Response.json(await run({
-      ...guestAccess,
-      guest: f.access.guest,
-      user: { id: f.access.userId || guestAccess.user.id },
-    })),
+  ) =>
+    Response.json(
+      await run({
+        ...guestAccess,
+        guest: f.access.guest,
+        user: { id: f.access.userId || guestAccess.user.id },
+      })
+    ),
 }));
 
 import { MIRA_ROOM_NOTICE_VERSION as version } from '@tuturuuu/realtime/meet';
