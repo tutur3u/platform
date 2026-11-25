@@ -38946,6 +38946,270 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open Tuturuuu'**
   String get onboardingOpenApp;
+
+  /// No description provided for @inventoryStockOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of stock'**
+  String get inventoryStockOut;
+
+  /// No description provided for @inventoryStockIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In stock'**
+  String get inventoryStockIn;
+
+  /// No description provided for @inventoryStockLowQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'{quantity} · Low'**
+  String inventoryStockLowQuantity(Object quantity);
+
+  /// No description provided for @inventoryItemLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 location} other{{count} locations}}'**
+  String inventoryItemLocations(num count);
+
+  /// No description provided for @inventoryPriceFrom.
+  ///
+  /// In en, this message translates to:
+  /// **'From {price}'**
+  String inventoryPriceFrom(Object price);
+
+  /// No description provided for @inventoryFilterCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get inventoryFilterCategory;
+
+  /// No description provided for @inventoryFilterWarehouse.
+  ///
+  /// In en, this message translates to:
+  /// **'Warehouse'**
+  String get inventoryFilterWarehouse;
+
+  /// No description provided for @inventoryFilterStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock'**
+  String get inventoryFilterStock;
+
+  /// No description provided for @inventoryFilterAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get inventoryFilterAllCategories;
+
+  /// No description provided for @inventoryFilterAllWarehouses.
+  ///
+  /// In en, this message translates to:
+  /// **'All warehouses'**
+  String get inventoryFilterAllWarehouses;
+
+  /// No description provided for @inventoryFilterAnyStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Any stock'**
+  String get inventoryFilterAnyStock;
+
+  /// No description provided for @inventoryFilterLowStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Low stock'**
+  String get inventoryFilterLowStock;
+
+  /// No description provided for @inventoryFiltersClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get inventoryFiltersClear;
+
+  /// No description provided for @inventoryFiltersNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match these filters'**
+  String get inventoryFiltersNoMatch;
+
+  /// No description provided for @inventoryFilterOptionsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load filter options'**
+  String get inventoryFilterOptionsFailed;
+
+  /// No description provided for @inventorySortTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get inventorySortTitle;
+
+  /// No description provided for @inventorySortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get inventorySortNewest;
+
+  /// No description provided for @inventorySortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get inventorySortOldest;
+
+  /// No description provided for @inventorySortNameAsc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name A–Z'**
+  String get inventorySortNameAsc;
+
+  /// No description provided for @inventorySortNameDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Name Z–A'**
+  String get inventorySortNameDesc;
+
+  /// No description provided for @inventoryDetailEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a product'**
+  String get inventoryDetailEmpty;
+
+  /// No description provided for @inventoryDetailStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock by location'**
+  String get inventoryDetailStock;
+
+  /// No description provided for @inventoryDetailHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock history'**
+  String get inventoryDetailHistory;
+
+  /// No description provided for @inventoryDetailHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock changes yet'**
+  String get inventoryDetailHistoryEmpty;
+
+  /// No description provided for @inventoryDetailHistoryFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load stock history'**
+  String get inventoryDetailHistoryFailed;
+
+  /// No description provided for @inventoryDetailLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get inventoryDetailLoadMore;
+
+  /// No description provided for @inventoryDetailInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get inventoryDetailInfo;
+
+  /// No description provided for @inventoryDetailNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This product is no longer available'**
+  String get inventoryDetailNotFound;
+
+  /// No description provided for @inventoryDetailLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this product'**
+  String get inventoryDetailLoadFailed;
+
+  /// No description provided for @inventoryDetailOnHand.
+  ///
+  /// In en, this message translates to:
+  /// **'On hand'**
+  String get inventoryDetailOnHand;
+
+  /// No description provided for @inventoryDetailLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'Locations'**
+  String get inventoryDetailLocations;
+
+  /// No description provided for @inventoryDetailPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get inventoryDetailPrice;
+
+  /// No description provided for @inventoryDetailCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get inventoryDetailCreated;
+
+  /// No description provided for @inventoryDetailMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'Min {amount}'**
+  String inventoryDetailMinimum(Object amount);
+
+  /// No description provided for @inventoryHistoryBy.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String inventoryHistoryBy(Object name);
+
+  /// No description provided for @inventoryHistoryFor.
+  ///
+  /// In en, this message translates to:
+  /// **'for {name}'**
+  String inventoryHistoryFor(Object name);
+
+  /// No description provided for @inventoryImageAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add photo'**
+  String get inventoryImageAdd;
+
+  /// No description provided for @inventoryImageReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace photo'**
+  String get inventoryImageReplace;
+
+  /// No description provided for @inventoryImageRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get inventoryImageRemove;
+
+  /// No description provided for @inventoryImageCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get inventoryImageCamera;
+
+  /// No description provided for @inventoryImageLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from library'**
+  String get inventoryImageLibrary;
+
+  /// No description provided for @inventoryImageUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading photo'**
+  String get inventoryImageUploading;
+
+  /// No description provided for @inventoryImageFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t upload the photo'**
+  String get inventoryImageFailed;
+
+  /// No description provided for @inventoryImageUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a JPEG, PNG, WebP or GIF under 8 MB'**
+  String get inventoryImageUnsupported;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -12,14 +12,17 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_movement.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/inventory_pending_overlay.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/inventory/inventory_stock_summary.dart';
+import 'package:mobile/features/inventory/view/inventory_product_detail_sections.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
-import 'package:mobile/features/inventory/widgets/inventory_item_row.dart';
+import 'package:mobile/features/inventory/widgets/inventory_product_row.dart';
 import 'package:mobile/features/inventory/widgets/inventory_sales_periods.dart';
 import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -44,6 +47,8 @@ class _Inventory extends InventoryRepository {
     int page = 1,
     int pageSize = 20,
     bool forceRefresh = false,
+    String? categoryId,
+    InventoryProductSort sort = InventoryProductSort.newest,
   }) async => (
     data: query == 'missing' ? <InventoryProduct>[] : [_product()],
     count: query == 'missing' ? 0 : 1,
@@ -146,51 +151,43 @@ void main() {
     final semantics = tester.ensureSemantics();
     try {
       final key = GlobalKey();
-      final product = _product();
       await tester.pumpApp(
         _scaled(
           shad.Scaffold(
             child: ListView(
               padding: const EdgeInsets.all(16),
-              children: [
-                InventoryItemRow(
-                  stockVisible: true,
-                  product: InventoryProduct(
-                    id: product.id,
-                    name: product.name,
-                    categoryId: product.categoryId,
-                    ownerId: product.ownerId,
-                    wsId: product.wsId,
-                    inventory: const [
-                      InventoryStockEntry(
-                        unitId: 'cup',
-                        warehouseId: 'one',
-                        amount: 12,
-                        minAmount: 5,
-                        price: 12.5,
-                        unitName: 'Cup',
-                        warehouseName: 'Booth 1',
-                      ),
-                      InventoryStockEntry(
-                        unitId: 'bag',
-                        warehouseId: 'two',
-                        amount: 1,
-                        minAmount: 5,
-                        price: 12.5,
-                        unitName: 'Bag',
-                        warehouseName: 'Booth 2',
-                      ),
-                      InventoryStockEntry(
-                        unitId: 'session',
-                        warehouseId: 'three',
-                        amount: null,
-                        minAmount: 5,
-                        price: 12.5,
-                        unitName: 'Session',
-                        warehouseName: 'Booth 3',
-                      ),
-                    ],
-                  ),
+              children: const [
+                InventoryDetailStock(
+                  currency: 'USD',
+                  rows: [
+                    InventoryStockEntry(
+                      unitId: 'cup',
+                      warehouseId: 'one',
+                      amount: 12,
+                      minAmount: 5,
+                      price: 12.5,
+                      unitName: 'Cup',
+                      warehouseName: 'Booth 1',
+                    ),
+                    InventoryStockEntry(
+                      unitId: 'bag',
+                      warehouseId: 'two',
+                      amount: 1,
+                      minAmount: 5,
+                      price: 12.5,
+                      unitName: 'Bag',
+                      warehouseName: 'Booth 2',
+                    ),
+                    InventoryStockEntry(
+                      unitId: 'session',
+                      warehouseId: 'three',
+                      amount: null,
+                      minAmount: 5,
+                      price: 12.5,
+                      unitName: 'Session',
+                      warehouseName: 'Booth 3',
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -200,7 +197,7 @@ void main() {
         ),
       );
       await tester.pump();
-      expect(find.byIcon(LucideIcons.triangleAlert), findsOneWidget);
+      expect(find.byIcon(LucideIcons.warehouse), findsNWidgets(3));
       expect(find.text('Low stock • Minimum amount: 5'), findsNothing);
       expect(
         find.bySemanticsLabel(
@@ -275,7 +272,10 @@ void main() {
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  InventoryItemRow(product: overlaid, stockVisible: true),
+                  InventoryDetailStock(
+                    rows: overlaid.inventory,
+                    currency: 'USD',
+                  ),
                 ],
               ),
             ),
@@ -284,11 +284,9 @@ void main() {
           ),
         );
         await tester.pump();
-        expect(find.text('Booth 1 · Cup'), findsOneWidget);
-        expect(
-          find.text('Warehouse new-warehouse · Unit new-unit'),
-          findsOneWidget,
-        );
+        expect(find.text('Booth 1'), findsOneWidget);
+        expect(find.text('Warehouse new-warehouse'), findsOneWidget);
+        expect(find.textContaining('Unit new-unit · '), findsOneWidget);
         expect(find.text('1.5'), findsOneWidget);
         expect(
           find.bySemanticsLabel(
@@ -325,8 +323,9 @@ void main() {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                InventoryItemRow(
+                InventoryProductRow(
                   product: _product(rows: 4),
+                  currency: 'USD',
                   stockVisible: true,
                 ),
                 const SizedBox(height: 12),
@@ -356,13 +355,11 @@ void main() {
       );
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(find.text('Coffee'), findsOneWidget);
-      expect(find.text('Synthetic owner • Coffee'), findsNothing);
-      expect(find.text('Unlimited'), findsNWidgets(3));
-      expect(find.text('1 more location'), findsOneWidget);
+      expect(find.text('Coffee · Synthetic owner'), findsOneWidget);
+      // Unlimited locations roll up to one state with their count.
+      expect(find.text('Unlimited'), findsOneWidget);
+      expect(find.text('4 locations'), findsOneWidget);
       expect(find.text('Low stock'), findsNothing);
-      expect(find.text('Booth 3 · Bag'), findsOneWidget);
-      expect(find.text('Booth 4 · Bag'), findsNothing);
       await tester.scrollUntilVisible(
         find.text('New period').hitTestable(),
         250,
@@ -431,8 +428,9 @@ void main() {
                   body: 'No low-stock products right now.',
                 ),
                 const SizedBox(height: 16),
-                InventoryItemRow(
+                InventoryProductRow(
                   product: _product(amount: 8),
+                  currency: 'USD',
                   stockVisible: true,
                 ),
               ],

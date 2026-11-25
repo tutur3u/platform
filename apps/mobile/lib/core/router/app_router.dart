@@ -39,6 +39,7 @@ import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/inventory/view/inventory_audit_logs_page.dart';
 import 'package:mobile/features/inventory/view/inventory_checkout_page.dart';
 import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
+import 'package:mobile/features/inventory/view/inventory_product_detail_view.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
@@ -537,9 +538,12 @@ GoRouter createAppRouter(
               if (productId == null || productId.isEmpty) {
                 return const InventoryProductsPage();
               }
-              return InventoryProductEditorPage(
+              return InventoryProductDetailPage(
                 productId: productId,
-                embedded: true,
+                splitBuilder: (_) => InventoryProductsPage(
+                  initialProductId: productId,
+                  location: Routes.inventoryProductDetailPath(productId),
+                ),
               );
             },
           ),

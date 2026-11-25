@@ -2,14 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_movement.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -17,9 +19,12 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/inventory_scan.dart';
+import 'package:mobile/features/inventory/inventory_stock_summary.dart';
+import 'package:mobile/features/inventory/view/inventory_product_detail_view.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
-import 'package:mobile/features/inventory/widgets/inventory_item_row.dart';
 import 'package:mobile/features/inventory/widgets/inventory_pending_deletions.dart';
+import 'package:mobile/features/inventory/widgets/inventory_product_filters.dart';
+import 'package:mobile/features/inventory/widgets/inventory_product_row.dart';
 import 'package:mobile/features/inventory/widgets/inventory_read_warning.dart';
 import 'package:mobile/features/inventory/widgets/inventory_scan_sheet.dart';
 import 'package:mobile/features/inventory/widgets/inventory_search_chrome.dart';
@@ -27,11 +32,11 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
+part 'inventory_products_actions.dart';
 part 'inventory_products_list.dart';
 
 /// Opens the camera and returns the scanned text, or null when cancelled.
@@ -41,15 +46,32 @@ typedef InventoryScanCode = Future<String?> Function(BuildContext context);
 typedef InventoryOpenEditor =
     Future<bool?> Function(BuildContext context, String? productId);
 
-/// Items list: scan and search first, then each item's stock by location.
+/// Opens an item's detail on compact layouts.
+typedef InventoryOpenDetail =
+    Future<void> Function(BuildContext context, InventoryProduct product);
+
+/// Items workspace: search, filters and the item list, with the selected
+/// item's detail beside it on wide layouts.
 class InventoryProductsPage extends StatefulWidget {
   const InventoryProductsPage({
     this.inventoryRepository,
     this.permissionsRepository,
     this.scanCode,
     this.openEditor,
+    this.openDetail,
+    this.initialProductId,
+    this.location = Routes.inventoryProducts,
     super.key,
   });
+
+  /// Overrides the compact detail route.
+  final InventoryOpenDetail? openDetail;
+
+  /// Selection shown in the detail pane when the layout splits.
+  final String? initialProductId;
+
+  /// Shell location the search and scan actions register for.
+  final String location;
 
   final InventoryRepository? inventoryRepository;
   final WorkspacePermissionsRepository? permissionsRepository;
@@ -78,6 +100,19 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
   Timer? _searchDebounce;
 
   List<InventoryProduct> _products = const [];
+  String? _categoryId;
+  String? _warehouseId;
+  InventoryStockFilter _stockFilter = InventoryStockFilter.any;
+  InventoryProductSort _sort = InventoryProductSort.newest;
+  List<InventoryLookupItem>? _categories;
+  List<InventoryLookupItem>? _warehouses;
+  String? _selectedId;
+  InventoryProduct? _selected;
+  bool _split = false;
+  String _currency = 'VND';
+
+  /// Extra pages fetched to fill a client-side filter; bounded per load.
+  int _fillPages = 0;
   final Map<String, String> _deletedNames = {};
   int _count = 0;
   bool _canManageCatalog = false;
@@ -92,9 +127,10 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
   int _page = 1;
   String _status = 'active';
 
-  /// The filter and query the visible rows belong to. Rows are reused only
-  /// for the same key, so a slow or failed load never shows another filter.
-  (String, String)? _loadedKey;
+  /// The server filter and query the visible rows belong to. Rows are reused
+  /// only for the same key, so a slow or failed load never shows another
+  /// filter.
+  (String, String, String?, InventoryProductSort)? _loadedKey;
 
   /// The query a scan filled in, shown in the body because the navbar search
   /// field stays closed.
@@ -121,6 +157,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
         ? null
         : _permissionsRepository.peekPermissions(workspaceId);
     if (cachedPermissions != null) _applyPermissions(cachedPermissions);
+    if (workspaceId != null) _currency = _peekCurrency(workspaceId);
+    _selectedId = widget.initialProductId;
     _loadedScope = _scope;
     _scrollController.addListener(_onScroll);
     unawaited(Future<void>.delayed(Duration.zero, _loadInitial));
@@ -154,6 +192,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
     setState(() => _applyPermissions(fresh));
   }
 
+  void _set(VoidCallback change) => setState(change);
+
   bool _isStale(int token) =>
       !mounted || token != _requestToken || _loadedScope != _scope;
 
@@ -167,6 +207,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
         _canManageCatalog = false;
         _canViewStock = null;
         _deletedNames.clear();
+        _selectedId = null;
+        _selected = null;
       });
       return;
     }
@@ -178,17 +220,27 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
       _deletedNames.clear();
       _canManageCatalog = false;
       _canViewStock = null;
+      _categories = null;
+      _warehouses = null;
+      _categoryId = null;
+      _warehouseId = null;
+      _selectedId = null;
+      _selected = null;
+      _currency = _peekCurrency(wsId);
     }
     unawaited(_refreshPermissions(scope, requestToken));
 
-    final key = (_status, _query);
+    final key = (_status, _query, _categoryId, _sort);
     final sameKey = sameScope && _loadedKey == key;
-    final cached = _inventoryRepository.peekProducts(
-      wsId,
-      query: _query,
-      status: _status,
-      pageSize: _pageSize,
-    );
+    final plain = _categoryId == null && _sort == InventoryProductSort.newest;
+    final cached = plain
+        ? _inventoryRepository.peekProducts(
+            wsId,
+            query: _query,
+            status: _status,
+            pageSize: _pageSize,
+          )
+        : null;
     setState(() {
       _products = cached?.data ?? (sameKey ? _products : const []);
       _count = cached?.count ?? (sameKey ? _count : 0);
@@ -198,6 +250,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
       _loadMoreFailed = false;
       _error = null;
       _page = 1;
+      _fillPages = 0;
     });
 
     try {
@@ -208,6 +261,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
           status: _status,
           pageSize: _pageSize,
           forceRefresh: forceRefresh,
+          categoryId: _categoryId,
+          sort: _sort,
         ),
       );
       if (_isStale(requestToken)) return;
@@ -216,7 +271,9 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
         _count = products.count;
         _hasMore = _products.length < _count;
         _error = null;
+        _syncSelection();
       });
+      _fillClientFilter();
     } on ApiException catch (error) {
       if (_isStale(requestToken)) return;
       setState(() {
@@ -257,6 +314,8 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
         status: _status,
         page: nextPage,
         pageSize: _pageSize,
+        categoryId: _categoryId,
+        sort: _sort,
       );
       if (_isStale(requestToken)) return;
       setState(() {
@@ -265,6 +324,7 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
         _page = nextPage;
         _hasMore = _products.length < _count;
       });
+      _fillClientFilter();
     } on Exception {
       if (_isStale(requestToken)) return;
       setState(() => _loadMoreFailed = true);
@@ -290,63 +350,6 @@ class _InventoryProductsPageState extends State<InventoryProductsPage>
       if (value != _scanQuery) _scanQuery = null;
     });
     _searchDebounce = Timer(const Duration(milliseconds: 300), _loadInitial);
-  }
-
-  void _selectStatus(String status) {
-    if (status == _status) return;
-    setState(() => _status = status);
-    unawaited(_loadInitial());
-  }
-
-  void _applyQuery(String? query, {String? status}) {
-    _searchDebounce?.cancel();
-    _searchController.text = query ?? '';
-    setState(() {
-      _scanQuery = query;
-      if (status != null) _status = status;
-    });
-    unawaited(_loadInitial());
-  }
-
-  Future<void> _openEditor({String? productId}) async {
-    final open = widget.openEditor;
-    final saved = open != null
-        ? await open(context, productId)
-        : await showInventoryProductEditorPage<bool>(
-            context,
-            productId: productId,
-          );
-    if (saved == true && mounted) {
-      await _loadInitial(forceRefresh: true);
-    }
-  }
-
-  Future<void> _deleteProduct(InventoryProduct product) async {
-    final wsId = _wsId;
-    if (wsId == null) return;
-    final scope = _scope;
-    final confirmed = await showAdaptiveSheet<bool>(
-      context: context,
-      maxDialogWidth: 420,
-      builder: (_) => AsyncDeleteConfirmationDialog(
-        toastContext: context,
-        title: context.l10n.commonDelete,
-        message: context.l10n.inventoryProductDeleteConfirm,
-        cancelLabel: context.l10n.commonCancel,
-        confirmLabel: context.l10n.commonDelete,
-        onConfirm: () async {
-          if (!mounted || _scope != scope || !_canManageCatalog) {
-            throw StateError(context.l10n.commonSomethingWentWrong);
-          }
-          _deletedNames[product.id] = product.name ?? product.id;
-          await _inventoryRepository.deleteProduct(
-            wsId: wsId,
-            productId: product.id,
-          );
-        },
-      ),
-    );
-    if (confirmed == true && mounted && _wsId == wsId) await _loadInitial();
   }
 
   @override

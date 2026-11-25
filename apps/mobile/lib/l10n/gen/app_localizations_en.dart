@@ -21331,4 +21331,154 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingOpenApp => 'Open Tuturuuu';
+
+  @override
+  String get inventoryStockOut => 'Out of stock';
+
+  @override
+  String get inventoryStockIn => 'In stock';
+
+  @override
+  String inventoryStockLowQuantity(Object quantity) {
+    return '$quantity · Low';
+  }
+
+  @override
+  String inventoryItemLocations(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count locations',
+      one: '1 location',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String inventoryPriceFrom(Object price) {
+    return 'From $price';
+  }
+
+  @override
+  String get inventoryFilterCategory => 'Category';
+
+  @override
+  String get inventoryFilterWarehouse => 'Warehouse';
+
+  @override
+  String get inventoryFilterStock => 'Stock';
+
+  @override
+  String get inventoryFilterAllCategories => 'All categories';
+
+  @override
+  String get inventoryFilterAllWarehouses => 'All warehouses';
+
+  @override
+  String get inventoryFilterAnyStock => 'Any stock';
+
+  @override
+  String get inventoryFilterLowStock => 'Low stock';
+
+  @override
+  String get inventoryFiltersClear => 'Clear filters';
+
+  @override
+  String get inventoryFiltersNoMatch => 'No products match these filters';
+
+  @override
+  String get inventoryFilterOptionsFailed => 'Couldn\'t load filter options';
+
+  @override
+  String get inventorySortTitle => 'Sort by';
+
+  @override
+  String get inventorySortNewest => 'Newest';
+
+  @override
+  String get inventorySortOldest => 'Oldest';
+
+  @override
+  String get inventorySortNameAsc => 'Name A–Z';
+
+  @override
+  String get inventorySortNameDesc => 'Name Z–A';
+
+  @override
+  String get inventoryDetailEmpty => 'Select a product';
+
+  @override
+  String get inventoryDetailStock => 'Stock by location';
+
+  @override
+  String get inventoryDetailHistory => 'Stock history';
+
+  @override
+  String get inventoryDetailHistoryEmpty => 'No stock changes yet';
+
+  @override
+  String get inventoryDetailHistoryFailed => 'Couldn\'t load stock history';
+
+  @override
+  String get inventoryDetailLoadMore => 'Load more';
+
+  @override
+  String get inventoryDetailInfo => 'Details';
+
+  @override
+  String get inventoryDetailNotFound => 'This product is no longer available';
+
+  @override
+  String get inventoryDetailLoadFailed => 'Couldn\'t load this product';
+
+  @override
+  String get inventoryDetailOnHand => 'On hand';
+
+  @override
+  String get inventoryDetailLocations => 'Locations';
+
+  @override
+  String get inventoryDetailPrice => 'Price';
+
+  @override
+  String get inventoryDetailCreated => 'Created';
+
+  @override
+  String inventoryDetailMinimum(Object amount) {
+    return 'Min $amount';
+  }
+
+  @override
+  String inventoryHistoryBy(Object name) {
+    return 'by $name';
+  }
+
+  @override
+  String inventoryHistoryFor(Object name) {
+    return 'for $name';
+  }
+
+  @override
+  String get inventoryImageAdd => 'Add photo';
+
+  @override
+  String get inventoryImageReplace => 'Replace photo';
+
+  @override
+  String get inventoryImageRemove => 'Remove photo';
+
+  @override
+  String get inventoryImageCamera => 'Take photo';
+
+  @override
+  String get inventoryImageLibrary => 'Choose from library';
+
+  @override
+  String get inventoryImageUploading => 'Uploading photo';
+
+  @override
+  String get inventoryImageFailed => 'Couldn\'t upload the photo';
+
+  @override
+  String get inventoryImageUnsupported => 'Choose a JPEG, PNG, WebP or GIF under 8 MB';
 }

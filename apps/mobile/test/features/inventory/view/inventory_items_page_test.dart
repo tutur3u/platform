@@ -8,32 +8,35 @@ import 'inventory_items_fixture.dart';
 void main() {
   setUpAll(DesignRender.loadFonts);
 
-  testWidgets('list leads with stock by location and drops count chips', (
+  testWidgets('rows roll stock up per item with category and locations', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
     await pumpItemsPage(tester);
     expect(find.text('House blend beans'), findsOneWidget);
-    expect(find.text('Main store · Bag'), findsOneWidget);
-    expect(find.text('24'), findsOneWidget);
-    expect(find.text('1 more location'), findsOneWidget);
-    expect(find.text('Van · Bag'), findsNothing);
-    expect(find.text('3.5'), findsOneWidget);
+    expect(find.text('Coffee · Hill Roasters'), findsOneWidget);
+    // One unit everywhere, so locations add up; a low row marks it low.
+    expect(find.text('31 Bag · Low'), findsOneWidget);
+    expect(find.text('4 locations'), findsOneWidget);
+    expect(find.text('3.5 Carton'), findsOneWidget);
     expect(find.text('Unlimited'), findsOneWidget);
     expect(find.text('No stock configured'), findsOneWidget);
     expect(find.text('Festival mugs'), findsNothing);
     expect(
-      find.bySemanticsLabel(
-        RegExp('Kiosk · Bag · 1 available · Low stock · Minimum amount: 2'),
-      ),
+      find.bySemanticsLabel(RegExp('Oat milk, Dairy-free, 3.5 Carton')),
       findsOneWidget,
     );
-    expect(find.text('Products'), findsNothing);
-    expect(find.text('Low stock in loaded products'), findsNothing);
     expect(find.byTooltip('Delete'), findsNothing);
     expect(tester.takeException(), isNull);
     await DesignRender.capture(tester, 'inventory-items-light');
     semantics.dispose();
+  });
+
+  testWidgets('a tap opens the item for viewers too', (tester) async {
+    await pumpItemsPage(tester);
+    await tester.tap(find.text('Oat milk'));
+    await tester.pumpAndSettle();
+    expect(openedDetails, [milkId]);
   });
 
   testWidgets('dark render', (tester) async {
@@ -74,7 +77,7 @@ void main() {
       permissions: const {'view_inventory_catalog', 'create_inventory_sales'},
     );
     expect(find.text('Stock hidden'), findsNothing);
-    expect(find.text('24'), findsOneWidget);
+    expect(find.text('31 Bag · Low'), findsOneWidget);
     expect(find.text('No stock configured'), findsOneWidget);
   });
 
@@ -116,5 +119,6 @@ void main() {
     await tester.longPress(find.text('Oat milk'));
     await tester.pumpAndSettle();
     expect(find.text('Edit'), findsNothing);
+    expect(find.text('Delete'), findsNothing);
   });
 }

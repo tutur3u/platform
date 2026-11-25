@@ -7,12 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_movement.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/inventory/view/inventory_product_detail_view.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -41,6 +43,9 @@ class FakeItemsRepository extends InventoryRepository {
   final List<InventoryProduct> catalog;
   final calls = <ItemsCall>[];
   final productRequests = <String>[];
+  final categoryCalls = <String?>[];
+  final sortCalls = <InventoryProductSort>[];
+  final historyRequests = <(String, int)>[];
 
   /// Requests matching this wait for [release] before answering.
   bool Function(ItemsCall call)? holdWhen;
@@ -58,9 +63,13 @@ class FakeItemsRepository extends InventoryRepository {
     int page = 1,
     int pageSize = 20,
     bool forceRefresh = false,
+    String? categoryId,
+    InventoryProductSort sort = InventoryProductSort.newest,
   }) async {
     final call = (query: query, status: status, page: page);
     calls.add(call);
+    categoryCalls.add(categoryId);
+    sortCalls.add(sort);
     if (holdWhen?.call(call) ?? false) await _held.future;
     if (failWhen?.call(call) ?? false) {
       throw const ApiException(message: '', statusCode: 500);
@@ -69,7 +78,11 @@ class FakeItemsRepository extends InventoryRepository {
     final rows = catalog
         .where((row) => status == 'all' || row.archived == (status != 'active'))
         .where((row) => (row.name ?? '').toLowerCase().contains(q))
+        .where((row) => categoryId == null || row.categoryId == categoryId)
         .toList();
+    if (sort == InventoryProductSort.nameAsc) {
+      rows.sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+    }
     return (
       data: rows.skip((page - 1) * pageSize).take(pageSize).toList(),
       count: rows.length,
@@ -85,7 +98,63 @@ class FakeItemsRepository extends InventoryRepository {
     productRequests.add(productId);
     return catalog.where((row) => row.id == productId).firstOrNull;
   }
+
+  @override
+  Future<InventoryStockHistoryPage> getProductStockHistory(
+    String wsId,
+    String productId, {
+    int offset = 0,
+  }) async {
+    historyRequests.add((productId, offset));
+    return InventoryStockHistoryPage(
+      movements: offset == 0 ? itemsHistory : const [],
+      hasMore: offset == 0,
+      offset: offset,
+    );
+  }
+
+  @override
+  Future<List<InventoryLookupItem>> getProductCategories(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async => const [
+    InventoryLookupItem(id: 'category-coffee', name: 'Coffee'),
+    InventoryLookupItem(id: 'category', name: 'Other'),
+  ];
+
+  @override
+  Future<List<InventoryLookupItem>> getProductWarehouses(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async => const [
+    InventoryLookupItem(id: 'warehouse-Kiosk', name: 'Kiosk'),
+    InventoryLookupItem(id: 'warehouse-Van', name: 'Van'),
+  ];
 }
+
+final itemsHistory = [
+  InventoryStockMovement(
+    id: 'm1',
+    delta: 12,
+    unitId: 'unit-Bag',
+    warehouseId: 'warehouse-Main store',
+    unitName: 'Bag',
+    warehouseName: 'Main store',
+    operatorName: 'Linh Tran',
+    timestamp: DateTime.utc(2026, 11, 20, 3, 30),
+    note: 'Roaster delivery',
+  ),
+  InventoryStockMovement(
+    id: 'm2',
+    delta: -2,
+    unitId: 'unit-Bag',
+    warehouseId: 'warehouse-Kiosk',
+    unitName: 'Bag',
+    warehouseName: 'Kiosk',
+    operatorName: 'Minh Pham',
+    timestamp: DateTime.utc(2026, 11, 19, 9),
+  ),
+];
 
 InventoryStockEntry itemStock(
   String warehouse,
@@ -106,13 +175,20 @@ InventoryProduct item(
   String id,
   String name, {
   String? category,
+  String categoryId = 'category',
+  String? manufacturer,
+  String? description,
   bool archived = false,
   List<InventoryStockEntry> stock = const [],
 }) => InventoryProduct(
   id: id,
   name: name,
   category: category,
-  categoryId: 'category',
+  manufacturer: manufacturer,
+  description: description,
+  createdAt: DateTime.utc(2026, 9, 14),
+  owner: const InventoryOwner(id: 'owner', name: 'Booth team'),
+  categoryId: categoryId,
   ownerId: 'owner',
   wsId: 'ws',
   archived: archived,
@@ -131,6 +207,9 @@ final List<InventoryProduct> itemsCatalog = [
     'beans',
     'House blend beans',
     category: 'Coffee',
+    categoryId: 'category-coffee',
+    manufacturer: 'Hill Roasters',
+    description: 'Medium roast for espresso and filter.',
     stock: [
       itemStock('Main store', 'Bag', 24),
       itemStock('Kiosk', 'Bag', 1),
@@ -156,6 +235,9 @@ final List<InventoryProduct> itemsCatalog = [
 
 const managerPermissions = {'view_inventory_stock', 'update_inventory'};
 
+/// Items the compact layout opened, in order.
+final openedDetails = <String>[];
+
 Future<({FakeItemsRepository inventory, ShellChromeActionsCubit shell})>
 pumpItemsPage(
   WidgetTester tester, {
@@ -164,10 +246,15 @@ pumpItemsPage(
   void Function(FakeItemsRepository inventory)? configure,
   InventoryScanCode? scanCode,
   InventoryOpenEditor? openEditor,
+  InventoryOpenDetail? openDetail,
+  String? initialProductId,
+  bool detailOnly = false,
   Brightness brightness = Brightness.light,
   bool shadApp = false,
+  Size? size,
 }) async {
-  DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+  DesignRender.setSize(tester, size ?? DesignRender.sizes['phone']!);
+  openedDetails.clear();
   final auth = _Auth();
   final workspace = _Workspace();
   final permissionRepo = _Permissions();
@@ -216,12 +303,22 @@ pumpItemsPage(
       BlocProvider<WorkspaceCubit>.value(value: workspace),
       BlocProvider<ShellChromeActionsCubit>.value(value: shell),
     ],
-    child: InventoryProductsPage(
-      inventoryRepository: inventory,
-      permissionsRepository: permissionRepo,
-      scanCode: scanCode,
-      openEditor: openEditor,
-    ),
+    child: detailOnly
+        ? InventoryProductDetailView(
+            productId: initialProductId!,
+            inventoryRepository: inventory,
+            permissionsRepository: permissionRepo,
+          )
+        : InventoryProductsPage(
+            inventoryRepository: inventory,
+            permissionsRepository: permissionRepo,
+            scanCode: scanCode,
+            openEditor: openEditor,
+            initialProductId: initialProductId,
+            openDetail:
+                openDetail ??
+                (_, product) async => openedDetails.add(product.id),
+          ),
   );
   // The create FAB is still a shadcn button, so manager cases use the shadcn
   // test app; read-only renders use the core/ui design render frame.

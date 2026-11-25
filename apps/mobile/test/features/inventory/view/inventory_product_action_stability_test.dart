@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/models/inventory/inventory_stock_movement.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -37,6 +38,8 @@ class _Inventory extends InventoryRepository {
     int page = 1,
     int pageSize = 20,
     bool forceRefresh = false,
+    String? categoryId,
+    InventoryProductSort sort = InventoryProductSort.newest,
   }) {
     final request = Completer<({List<InventoryProduct> data, int count})>();
     requests.add(request);

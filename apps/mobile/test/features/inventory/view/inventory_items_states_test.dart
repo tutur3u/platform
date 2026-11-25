@@ -121,40 +121,27 @@ void main() {
       expect(find.text('House blend beans'), findsOneWidget);
     });
 
-    testWidgets('a product link opens the editor for managers', (tester) async {
-      final opened = <String?>[];
-      final (:inventory, :shell) = await pumpItemsPage(
+    for (final manager in [true, false]) {
+      testWidgets('a product link opens its detail (manager: $manager)', (
         tester,
-        permissions: managerPermissions,
-        shadApp: true,
-        scanCode: (_) async => productLink(milkId),
-        openEditor: (_, productId) async {
-          opened.add(productId);
-          return false;
-        },
-      );
-      itemsAction(shell, 'scan').onPressed!();
-      await tester.pumpAndSettle();
-      expect(inventory.productRequests, [milkId]);
-      expect(opened, [milkId]);
-      expect(inventory.calls.last.query, '');
-    });
+      ) async {
+        final (:inventory, :shell) = await pumpItemsPage(
+          tester,
+          permissions: manager
+              ? managerPermissions
+              : const {'view_inventory_stock'},
+          shadApp: manager,
+          scanCode: (_) async => productLink(milkId),
+        );
+        itemsAction(shell, 'scan').onPressed!();
+        await tester.pumpAndSettle();
+        expect(inventory.productRequests, [milkId]);
+        expect(openedDetails, [milkId]);
+        expect(inventory.calls.last.query, '');
+      });
+    }
 
-    testWidgets('a product link finds the item by name for viewers', (
-      tester,
-    ) async {
-      final (:inventory, :shell) = await pumpItemsPage(
-        tester,
-        scanCode: (_) async => productLink(milkId),
-      );
-      itemsAction(shell, 'scan').onPressed!();
-      await tester.pumpAndSettle();
-      expect(inventory.productRequests, [milkId]);
-      expect(inventory.calls.last.query, 'Oat milk');
-      expect(find.text('House blend beans'), findsNothing);
-    });
-
-    testWidgets('an archived product link widens a viewer search to all', (
+    testWidgets('an archived product link opens its detail too', (
       tester,
     ) async {
       final (:inventory, :shell) = await pumpItemsPage(
@@ -163,12 +150,7 @@ void main() {
       );
       itemsAction(shell, 'scan').onPressed!();
       await tester.pumpAndSettle();
-      expect(inventory.calls.last, (
-        query: 'Festival mugs',
-        status: 'all',
-        page: 1,
-      ));
-      expect(find.text('Festival mugs'), findsOneWidget);
+      expect(openedDetails, [mugsId]);
     });
 
     testWidgets('an unknown product link shows the not-found toast', (

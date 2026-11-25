@@ -21079,4 +21079,148 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get onboardingOpenApp => 'Mở Tuturuuu';
+
+  @override
+  String get inventoryStockOut => 'Hết hàng';
+
+  @override
+  String get inventoryStockIn => 'Còn hàng';
+
+  @override
+  String inventoryStockLowQuantity(Object quantity) {
+    return '$quantity · Sắp hết';
+  }
+
+  @override
+  String inventoryItemLocations(num count) {
+    return '$count vị trí';
+  }
+
+  @override
+  String inventoryPriceFrom(Object price) {
+    return 'Từ $price';
+  }
+
+  @override
+  String get inventoryFilterCategory => 'Danh mục';
+
+  @override
+  String get inventoryFilterWarehouse => 'Kho';
+
+  @override
+  String get inventoryFilterStock => 'Tồn kho';
+
+  @override
+  String get inventoryFilterAllCategories => 'Tất cả danh mục';
+
+  @override
+  String get inventoryFilterAllWarehouses => 'Tất cả kho';
+
+  @override
+  String get inventoryFilterAnyStock => 'Mọi mức tồn';
+
+  @override
+  String get inventoryFilterLowStock => 'Sắp hết';
+
+  @override
+  String get inventoryFiltersClear => 'Xóa bộ lọc';
+
+  @override
+  String get inventoryFiltersNoMatch => 'Không có sản phẩm khớp bộ lọc';
+
+  @override
+  String get inventoryFilterOptionsFailed => 'Không thể tải tùy chọn lọc';
+
+  @override
+  String get inventorySortTitle => 'Sắp xếp theo';
+
+  @override
+  String get inventorySortNewest => 'Mới nhất';
+
+  @override
+  String get inventorySortOldest => 'Cũ nhất';
+
+  @override
+  String get inventorySortNameAsc => 'Tên A–Z';
+
+  @override
+  String get inventorySortNameDesc => 'Tên Z–A';
+
+  @override
+  String get inventoryDetailEmpty => 'Chọn một sản phẩm';
+
+  @override
+  String get inventoryDetailStock => 'Tồn kho theo vị trí';
+
+  @override
+  String get inventoryDetailHistory => 'Lịch sử tồn kho';
+
+  @override
+  String get inventoryDetailHistoryEmpty => 'Chưa có thay đổi tồn kho';
+
+  @override
+  String get inventoryDetailHistoryFailed => 'Không thể tải lịch sử tồn kho';
+
+  @override
+  String get inventoryDetailLoadMore => 'Tải thêm';
+
+  @override
+  String get inventoryDetailInfo => 'Chi tiết';
+
+  @override
+  String get inventoryDetailNotFound => 'Sản phẩm này không còn tồn tại';
+
+  @override
+  String get inventoryDetailLoadFailed => 'Không thể tải sản phẩm này';
+
+  @override
+  String get inventoryDetailOnHand => 'Hiện có';
+
+  @override
+  String get inventoryDetailLocations => 'Vị trí';
+
+  @override
+  String get inventoryDetailPrice => 'Giá';
+
+  @override
+  String get inventoryDetailCreated => 'Ngày tạo';
+
+  @override
+  String inventoryDetailMinimum(Object amount) {
+    return 'Tối thiểu $amount';
+  }
+
+  @override
+  String inventoryHistoryBy(Object name) {
+    return 'bởi $name';
+  }
+
+  @override
+  String inventoryHistoryFor(Object name) {
+    return 'cho $name';
+  }
+
+  @override
+  String get inventoryImageAdd => 'Thêm ảnh';
+
+  @override
+  String get inventoryImageReplace => 'Đổi ảnh';
+
+  @override
+  String get inventoryImageRemove => 'Xóa ảnh';
+
+  @override
+  String get inventoryImageCamera => 'Chụp ảnh';
+
+  @override
+  String get inventoryImageLibrary => 'Chọn từ thư viện';
+
+  @override
+  String get inventoryImageUploading => 'Đang tải ảnh lên';
+
+  @override
+  String get inventoryImageFailed => 'Không thể tải ảnh lên';
+
+  @override
+  String get inventoryImageUnsupported => 'Chọn ảnh JPEG, PNG, WebP hoặc GIF dưới 8 MB';
 }

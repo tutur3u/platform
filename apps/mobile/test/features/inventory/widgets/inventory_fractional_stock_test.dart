@@ -15,7 +15,7 @@ import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/inventory/view/inventory_page.dart';
-import 'package:mobile/features/inventory/widgets/inventory_item_row.dart';
+import 'package:mobile/features/inventory/view/inventory_product_detail_sections.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -388,9 +388,9 @@ void main() {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                InventoryItemRow(
-                  product: _product(amount: 0.04),
-                  stockVisible: true,
+                InventoryDetailStock(
+                  rows: _product(amount: 0.04).inventory,
+                  currency: 'USD',
                 ),
               ],
             ),

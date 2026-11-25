@@ -5,47 +5,85 @@ extension _InventoryProductsList on _InventoryProductsPageState {
 
   Widget _buildBody(BuildContext context) {
     final l10n = context.l10n;
+    final paneOpen = _split && _selectedId != null;
     return AppScaffold(
-      child: Stack(
-        children: [
-          InventorySearchChrome(
-            key: _searchKey,
-            location: Routes.inventoryProducts,
-            controller: _searchController,
-            onChanged: _onSearchChanged,
-            hint: l10n.inventorySearchProducts,
-            actions: [
-              if (_scanAvailable)
-                ShellActionSpec(
-                  id: '${Routes.inventoryProducts}-scan',
-                  icon: LucideIcons.scanLine,
-                  tooltip: l10n.inventoryScanAction,
-                  onPressed: () => unawaited(_scan()),
-                ),
-            ],
-          ),
-          NovaRefreshIndicator(
-            onRefresh: () => _loadInitial(forceRefresh: true),
-            child: _buildList(context),
-          ),
-          if (_canManageCatalog)
-            ExtendedFab(
-              icon: LucideIcons.plus,
-              label: l10n.inventoryCreateProduct,
-              includeBottomSafeArea: false,
-              onPressed: _openEditor,
+      child: PopScope(
+        // On split layouts the first Back closes the detail pane.
+        canPop: !paneOpen,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && paneOpen) _closeSelection();
+        },
+        child: Stack(
+          children: [
+            InventorySearchChrome(
+              key: _searchKey,
+              location: widget.location,
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              hint: l10n.inventorySearchProducts,
+              actions: [
+                if (_scanAvailable)
+                  ShellActionSpec(
+                    id: '${Routes.inventoryProducts}-scan',
+                    icon: LucideIcons.scanLine,
+                    tooltip: l10n.inventoryScanAction,
+                    onPressed: () => unawaited(_scan()),
+                  ),
+              ],
             ),
-        ],
+            AppMasterDetail(
+              master: NovaRefreshIndicator(
+                onRefresh: () => _loadInitial(forceRefresh: true),
+                child: _buildList(context),
+              ),
+              detailKey: _selectedId,
+              onSplitChanged: (split) {
+                if (mounted && split != _split) _set(() => _split = split);
+              },
+              onCloseDetail: _closeSelection,
+              emptyDetail: AppMasterDetailEmpty(
+                icon: LucideIcons.package,
+                title: l10n.inventoryDetailEmpty,
+              ),
+              detail: switch (_selectedId) {
+                final id? => InventoryProductDetailView(
+                  key: ValueKey(('inventory-detail', _wsId, id)),
+                  productId: id,
+                  initial: _selected,
+                  inventoryRepository: _inventoryRepository,
+                  permissionsRepository: _permissionsRepository,
+                  openEditor: widget.openEditor,
+                  onChanged: () => unawaited(_loadInitial(forceRefresh: true)),
+                  onDeleted: () {
+                    _closeSelection();
+                    unawaited(_loadInitial());
+                  },
+                ),
+                null => null,
+              },
+            ),
+            if (_canManageCatalog)
+              ExtendedFab(
+                icon: LucideIcons.plus,
+                label: l10n.inventoryCreateProduct,
+                includeBottomSafeArea: false,
+                onPressed: _openEditor,
+              ),
+          ],
+        ),
       ),
     );
   }
 
+  String? _lookupName(List<InventoryLookupItem>? rows, String? id) =>
+      id == null ? null : rows?.where((row) => row.id == id).firstOrNull?.name;
+
   Widget _buildList(BuildContext context) {
     final l10n = context.l10n;
-    final products = _products;
+    final products = _visibleProducts;
     final scanQuery = _scanQuery;
     final failedEmpty =
-        _error != null && products.isEmpty && !_isLoadingInitial;
+        _error != null && _products.isEmpty && !_isLoadingInitial;
     final header = <Widget>[
       // A retained snapshot stays visible behind a limited-data warning.
       if (_error != null && !failedEmpty)
@@ -57,14 +95,24 @@ extension _InventoryProductsList on _InventoryProductsPageState {
         workspaceId: _wsId,
         names: _deletedNames,
       ),
-      AppFilterBar<String>(
-        options: [
-          AppFilterOption(value: 'active', label: l10n.commonActive),
-          AppFilterOption(value: 'archived', label: l10n.commonArchived),
-          AppFilterOption(value: 'all', label: l10n.commonAll),
-        ],
-        selected: _status,
-        onSelected: _selectStatus,
+      InventoryProductFilters(
+        status: _status,
+        onStatus: _selectStatus,
+        sort: _sort,
+        onSort: () => unawaited(_pickSort()),
+        stock: _stockFilter,
+        onStock: () => unawaited(_pickStock()),
+        onCategory: () => unawaited(_pickLookup(warehouses: false)),
+        onWarehouse: () => unawaited(_pickLookup(warehouses: true)),
+        categoryLabel: _categoryId == null
+            ? null
+            : _lookupName(_categories, _categoryId) ??
+                  l10n.inventoryFilterCategory,
+        warehouseLabel: _warehouseId == null
+            ? null
+            : _lookupName(_warehouses, _warehouseId) ??
+                  l10n.inventoryFilterWarehouse,
+        showStock: _canViewStock ?? false,
       ),
       if (scanQuery != null)
         _ScanQueryLine(query: scanQuery, onClear: () => _applyQuery(null)),
@@ -75,15 +123,15 @@ extension _InventoryProductsList on _InventoryProductsPageState {
             padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
             child: AppLoadingIndicator(),
           )
-        : _loadMoreFailed && products.isNotEmpty
+        : _loadMoreFailed && _products.isNotEmpty
         ? _LoadMoreRetry(onRetry: () => unawaited(_loadMore()))
         : null;
     final Widget? placeholder = _isLoadingInitial && products.isEmpty
         ? const AppGroupedCard(
             children: [
               AppSkeletonRows(
-                count: 4,
-                leadingSize: InventoryItemRow.leadingSize,
+                count: 6,
+                leadingSize: InventoryProductRow.leadingSize,
               ),
             ],
           )
@@ -99,7 +147,7 @@ extension _InventoryProductsList on _InventoryProductsPageState {
               ),
             ],
           )
-        : products.isEmpty
+        : products.isEmpty && !(_clientFiltered && _hasMore && _isLoadingMore)
         ? AppGroupedCard(children: [_emptyState(context)])
         : null;
 
@@ -128,15 +176,17 @@ extension _InventoryProductsList on _InventoryProductsPageState {
     return AppGroupedSlice(
       key: ValueKey('inventory-item:${product.id}'),
       position: AppSlicePosition.of(index, count),
-      dividerInset: InventoryItemRow.dividerInset,
+      dividerInset: InventoryProductRow.dividerInset,
       child: PendingSyncFrame(
         workspaceId: _wsId ?? product.wsId,
         entityId: product.id,
         feature: 'inventory',
-        child: InventoryItemRow(
+        child: InventoryProductRow(
           product: product,
+          currency: _currency,
           stockVisible: _canViewStock,
-          onTap: manage ? () => _openEditor(productId: product.id) : null,
+          selected: _split && product.id == _selectedId,
+          onTap: () => unawaited(_openProduct(product)),
           onLongPress: manage ? () => _showItemActions(product) : null,
         ),
       ),
@@ -145,6 +195,14 @@ extension _InventoryProductsList on _InventoryProductsPageState {
 
   Widget _emptyState(BuildContext context) {
     final l10n = context.l10n;
+    if (_categoryId != null || _clientFiltered) {
+      return AppStateMessage.inline(
+        icon: LucideIcons.listFilter,
+        title: l10n.inventoryFiltersNoMatch,
+        actionLabel: l10n.inventoryFiltersClear,
+        onAction: _clearFilters,
+      );
+    }
     if (_query.trim().isNotEmpty) {
       return AppStateMessage.inline(
         icon: LucideIcons.searchX,
@@ -165,73 +223,6 @@ extension _InventoryProductsList on _InventoryProductsPageState {
       actionLabel: _canManageCatalog ? l10n.inventoryCreateProduct : null,
       onAction: _canManageCatalog ? _openEditor : null,
     );
-  }
-
-  Future<void> _showItemActions(InventoryProduct product) async {
-    final l10n = context.l10n;
-    final name = product.name?.trim() ?? '';
-    await showAppActionSheet<void>(
-      context: context,
-      title: name.isEmpty ? l10n.inventoryProductUntitled : name,
-      actions: [
-        AppSheetAction(
-          label: l10n.commonEdit,
-          icon: LucideIcons.pencil,
-          onPressed: () => _openEditor(productId: product.id),
-        ),
-        AppSheetAction(
-          label: l10n.commonDelete,
-          icon: LucideIcons.trash2,
-          destructive: true,
-          onPressed: () => _deleteProduct(product),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _scan() async {
-    final scanCode = widget.scanCode ?? showInventoryScanSheet;
-    final code = await scanCode(context);
-    if (!mounted || code == null) return;
-    if (code == inventoryScanSearchInsteadCode) {
-      _searchKey.currentState?.open();
-      return;
-    }
-    switch (resolveInventoryScan(code)) {
-      case null:
-        return;
-      case InventoryScanSearch(:final query):
-        _applyQuery(query);
-      case InventoryScanUnsupported():
-        showAppToast(context, message: context.l10n.inventoryScanNotProduct);
-      case InventoryScanProduct(:final productId):
-        await _openScannedProduct(productId);
-    }
-  }
-
-  Future<void> _openScannedProduct(String productId) async {
-    final wsId = _wsId;
-    if (wsId == null) return;
-    final scope = _scope;
-    InventoryProduct? product;
-    try {
-      product = await _inventoryRepository.getProduct(wsId, productId);
-    } on Exception {
-      product = null;
-    }
-    if (!mounted || _scope != scope) return;
-    if (product == null) {
-      showAppToast(context, message: context.l10n.inventoryScanNotFound);
-    } else if (_canManageCatalog) {
-      await _openEditor(productId: product.id);
-    } else {
-      // Viewers have no detail screen yet; find the item by name, including
-      // archived items when the scanned one is archived.
-      _applyQuery(
-        product.name?.trim() ?? '',
-        status: product.archived && _status == 'active' ? 'all' : null,
-      );
-    }
   }
 }
 
