@@ -53,6 +53,60 @@ test('the Vitest runner accepts ordinary logs from a passing changed test', () =
   );
 });
 
+test('a passing run that logs load or transform failure text is not a failure', () => {
+  for (const stdout of [
+    'stderr | src/a.test.ts > x\nFailed to load settings Error: boom\n\n Tests  3 passed (3)',
+    'stderr | src/a.test.ts > x\nError: Failed to transform fixture\n\n Tests  3 passed (3)',
+  ]) {
+    assert.equal(
+      runVitest({
+        report: finished([passing]),
+        explicitTests: [passing.id],
+        stdout,
+      }).status,
+      'pass'
+    );
+  }
+});
+
+test('a genuine Vitest load or transform failure is still reported', () => {
+  for (const stdout of [
+    'FAIL src/a.test.ts\nError: Failed to load url ./missing (resolved id: ./missing)',
+    'FAIL src/a.test.ts\nError: Failed to transform src/a.test.ts',
+  ]) {
+    assert.equal(
+      runVitest({
+        report: finished([{ ...passing, ok: false }]),
+        explicitTests: [passing.id],
+        stdout,
+      }).status,
+      'fail'
+    );
+  }
+});
+
+test('non-Vitest steps receive no reporter flags or result environment', () => {
+  const calls = [];
+  const result = runStep(
+    { id: 'oxlint', command: 'bun', args: ['x', 'oxlint'] },
+    {
+      root: process.cwd(),
+      env: { KEEP: '1' },
+      pinVitestTsconfig: (step) => ({ args: step.args, cleanup() {} }),
+      spawn(command, args, options) {
+        calls.push({ command, args, env: options.env });
+        return { status: 0, stdout: 'Failed to load settings' };
+      },
+    }
+  );
+  assert.equal(result.status, 'pass');
+  assert.equal(calls[0].env.CHECK_CHANGED_VITEST_RESULT, undefined);
+  assert.equal(
+    calls[0].args.some((arg) => /vitest-reporter|--reporter/.test(arg)),
+    false
+  );
+});
+
 test('a passing related suite cannot mask skipped, empty, or missing changed suites', () => {
   for (const modules of [[passing, changed], [passing]]) {
     assert.match(
