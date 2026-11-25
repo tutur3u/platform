@@ -8,6 +8,7 @@ import {
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import type { ReactElement, ReactNode } from 'react';
+import { useActivityModalOpen } from '../../stage-layout/activity-pane-context';
 import { useMeetFormsCopy } from './meet-forms-copy';
 import { MeetFormsPanel, type MeetFormsPanelProps } from './meet-forms-panel';
 
@@ -28,8 +29,9 @@ export function MeetFormsSheet({
   ...panel
 }: MeetFormsSheetProps) {
   const copy = useMeetFormsCopy();
+  const modalOpen = useActivityModalOpen(open);
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={modalOpen} onOpenChange={onOpenChange}>
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
       <SheetContent
         side="bottom"

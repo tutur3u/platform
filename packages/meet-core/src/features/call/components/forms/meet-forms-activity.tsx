@@ -10,7 +10,6 @@ import { X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -18,6 +17,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { MAX_DISPLAY_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { useLocale } from 'next-intl';
+import { ActivitySelect } from '../../stage-layout/activity-select';
 import {
   useEffect,
   useId,
@@ -290,7 +290,7 @@ export function MeetFormsActivity({
         </div>
       )}
       {choices.length > 1 && (
-        <Select value={launchId} onValueChange={choose}>
+        <ActivitySelect value={launchId} onValueChange={choose}>
           <SelectTrigger className="w-full" aria-label={copy.openForm}>
             <SelectValue placeholder={copy.chooseForm} />
           </SelectTrigger>
@@ -301,7 +301,7 @@ export function MeetFormsActivity({
               </SelectItem>
             ))}
           </SelectContent>
-        </Select>
+        </ActivitySelect>
       )}
       {canManage && launch && (
         <div className="flex gap-2">

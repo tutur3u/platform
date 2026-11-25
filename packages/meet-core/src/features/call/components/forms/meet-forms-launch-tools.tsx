@@ -4,7 +4,6 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -12,6 +11,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useId, useRef, useState } from 'react';
+import { ActivitySelect } from '../../stage-layout/activity-select';
 import {
   draftMeetForm,
   launchMeetForm,
@@ -91,7 +91,7 @@ export function MeetFormsLaunchTools({
         <div className="flex items-end gap-2">
           <label className="min-w-0 flex-1 space-y-1 text-sm">
             <span>{copy.existingForm}</span>
-            <Select value={formId} onValueChange={setFormId}>
+            <ActivitySelect value={formId} onValueChange={setFormId}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={copy.chooseForm} />
               </SelectTrigger>
@@ -102,7 +102,7 @@ export function MeetFormsLaunchTools({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </ActivitySelect>
           </label>
           <Button
             size="sm"

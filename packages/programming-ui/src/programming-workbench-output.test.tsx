@@ -15,7 +15,10 @@ import type { WorkbenchExecution } from './use-workbench-run';
 import type { WorkbenchMeeting } from './workbench-meeting';
 
 vi.mock('./use-programming-room', () => {
-  const client = { presence: vi.fn() };
+  const client = {
+    presence: vi.fn(),
+    onLocalEdit: vi.fn(() => () => undefined),
+  };
   return {
     useProgrammingRoom: () => ({
       client,
@@ -77,7 +80,9 @@ it.each(['run', 'test'] as const)(
       },
     };
     const problem =
-      action === 'test' ? { title: 'Demo Problem', prompt: 'Print 42.' } : undefined;
+      action === 'test'
+        ? { title: 'Demo Problem', prompt: 'Print 42.' }
+        : undefined;
     render(
       <QueryClientProvider client={new QueryClient()}>
         <NextIntlClientProvider locale="en" messages={messages}>
@@ -101,7 +106,9 @@ it.each(['run', 'test'] as const)(
     const current = action === 'run' ? t.console : t.tests;
     expect(await screen.findByRole('tabpanel', { name: current })).toBeTruthy();
     expect(disclosure.getAttribute('aria-expanded')).toBe('true');
-    expect(screen.getByRole('tab', { name: current, selected: true })).toBeTruthy();
+    expect(
+      screen.getByRole('tab', { name: current, selected: true })
+    ).toBeTruthy();
     if (action === 'run') {
       await waitFor(() =>
         expect(run).toHaveBeenCalledWith(
@@ -113,3 +120,24 @@ it.each(['run', 'test'] as const)(
     }
   }
 );
+
+it('closes the share dialog when the workbench is suspended', () => {
+  const client = new QueryClient();
+  const view = (suspended: boolean) => (
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ProgrammingWorkbench projectId="demo" suspended={suspended} />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+
+  const { rerender } = render(view(false));
+  fireEvent.keyDown(screen.getByRole('button', { name: t.more }), {
+    key: 'Enter',
+  });
+  fireEvent.click(screen.getByRole('menuitem', { name: t.share }));
+  expect(screen.getByRole('dialog', { name: t.share })).toBeTruthy();
+
+  rerender(view(true));
+  expect(screen.queryByRole('dialog', { hidden: true })).toBeNull();
+});

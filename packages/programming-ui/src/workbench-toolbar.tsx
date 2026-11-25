@@ -13,7 +13,6 @@ import {
 } from '@tuturuuu/types/primitives/playgrounds';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -26,6 +25,7 @@ import {
   WorkbenchLanguagePicker,
 } from './workbench-language-picker';
 import type { FormatSupport } from './format/formatters';
+import { WorkbenchDropdown } from './workbench-dropdown';
 import { WorkbenchFormatButton } from './workbench-format-button';
 import type { RunnerRefusal } from './workbench-meeting';
 import { WorkbenchRunButton } from './workbench-run-button';
@@ -63,7 +63,9 @@ export function WorkbenchToolbar({
   meeting,
   format,
   problem = false,
+  suspended,
 }: {
+  suspended?: boolean;
   title: string;
   language: PlaygroundLanguage;
   status: 'connecting' | 'open' | 'offline';
@@ -122,6 +124,7 @@ export function WorkbenchToolbar({
             languages={languages}
             onChange={meeting.onRuntime}
             pending={meeting.runtimePending}
+            suspended={suspended}
           />
         ) : (
           <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 font-mono text-[11px] text-muted-foreground">
@@ -185,7 +188,7 @@ export function WorkbenchToolbar({
           </>
         )}
         {actions.length > 0 && (
-          <DropdownMenu>
+          <WorkbenchDropdown suspended={suspended}>
             <DropdownMenuTrigger asChild>
               <Button
                 size="icon"
@@ -208,7 +211,7 @@ export function WorkbenchToolbar({
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </WorkbenchDropdown>
         )}
       </div>
     </header>

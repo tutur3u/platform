@@ -2,7 +2,6 @@
 import { Check, ChevronDown, Loader2 } from '@tuturuuu/icons';
 import type { PlaygroundLanguage } from '@tuturuuu/types/primitives/playgrounds';
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
@@ -10,6 +9,7 @@ import {
 import { useTranslations } from 'next-intl';
 import type { KeyboardEvent } from 'react';
 import { classNames as cn } from './class-names';
+import { WorkbenchDropdown } from './workbench-dropdown';
 import { LANGUAGE_LABELS } from './workbench-language';
 
 export { LANGUAGE_LABELS };
@@ -39,7 +39,9 @@ export function WorkbenchLanguagePicker({
   languages,
   onChange,
   pending = false,
+  suspended,
 }: {
+  suspended?: boolean;
   language: PlaygroundLanguage;
   languages: readonly PlaygroundLanguage[];
   onChange?: (language: PlaygroundLanguage) => void;
@@ -110,7 +112,7 @@ export function WorkbenchLanguagePicker({
           </button>
         ))}
         {others.length > 0 && (
-          <DropdownMenu>
+          <WorkbenchDropdown suspended={suspended}>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
@@ -145,7 +147,7 @@ export function WorkbenchLanguagePicker({
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
-          </DropdownMenu>
+          </WorkbenchDropdown>
         )}
       </div>
       {pending && (

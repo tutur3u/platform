@@ -6,7 +6,6 @@ import { RespondentRanking } from '@tuturuuu/ui/forms/respondent-ranking';
 import { Input } from '@tuturuuu/ui/input';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -14,6 +13,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useId } from 'react';
+import { ActivitySelect } from '../../stage-layout/activity-select';
 import type { MeetFormsCopy } from './meet-forms-copy';
 import { isContent, plainFormText } from './respondent-flow';
 import type {
@@ -420,7 +420,7 @@ function FormSelect({
   'aria-required'?: boolean;
 }) {
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
+    <ActivitySelect value={value} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger {...a11y}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
@@ -433,6 +433,6 @@ function FormSelect({
             </SelectItem>
           ))}
       </SelectContent>
-    </Select>
+    </ActivitySelect>
   );
 }

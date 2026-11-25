@@ -5,7 +5,6 @@ import type { ArenaConfigInput } from '@tuturuuu/realtime/meet/room-quiz-arena';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -25,6 +24,7 @@ import type {
   QuizArenaAction,
   QuizArenaActionResult,
 } from '../server/quiz-arena';
+import { ActivitySelect } from '../stage-layout/activity-select';
 
 type Courses = NonNullable<QuizArenaActionResult['courses']>;
 
@@ -169,7 +169,7 @@ export function QuizArenaBuilder({
       <h3 className="font-extrabold text-base">{t('setup_title')}</h3>
       <div className="grid grid-cols-2 gap-2">
         <Field label={t('subject')}>
-          <Select
+          <ActivitySelect
             value={subject}
             onValueChange={(value) => setSubject(value as ArenaSubject)}
           >
@@ -183,10 +183,10 @@ export function QuizArenaBuilder({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </ActivitySelect>
         </Field>
         <Field label={t('grade')}>
-          <Select
+          <ActivitySelect
             value={grade}
             onValueChange={(value) => setGrade(value as ArenaGrade)}
           >
@@ -200,10 +200,10 @@ export function QuizArenaBuilder({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </ActivitySelect>
         </Field>
         <Field label={t('categories_count')}>
-          <Select
+          <ActivitySelect
             value={String(categoriesCount)}
             onValueChange={(value) => setCategories(Number(value))}
           >
@@ -217,10 +217,10 @@ export function QuizArenaBuilder({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </ActivitySelect>
         </Field>
         <Field label={t('tiers_count')}>
-          <Select
+          <ActivitySelect
             value={String(tiersCount)}
             onValueChange={(value) => setTiers(Number(value))}
           >
@@ -234,7 +234,7 @@ export function QuizArenaBuilder({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </ActivitySelect>
         </Field>
       </div>
       <Field label={t('topic')}>
@@ -267,7 +267,7 @@ export function QuizArenaBuilder({
             ]}
           />
           {playMode === 'teams' && (
-            <Select
+            <ActivitySelect
               value={String(teamCount)}
               onValueChange={(value) => setTeamCount(Number(value))}
             >
@@ -286,7 +286,7 @@ export function QuizArenaBuilder({
                   )
                 )}
               </SelectContent>
-            </Select>
+            </ActivitySelect>
           )}
         </div>
         <Toggle
@@ -306,7 +306,7 @@ export function QuizArenaBuilder({
         />
         <div className="flex items-center justify-between gap-2">
           <span className="font-bold text-sm">{t('wrong_penalty')}</span>
-          <Select
+          <ActivitySelect
             value={penalty}
             onValueChange={(value) => setPenalty(value as typeof penalty)}
           >
@@ -321,7 +321,7 @@ export function QuizArenaBuilder({
               <SelectItem value="half">{t('penalty_half')}</SelectItem>
               <SelectItem value="full">{t('penalty_full')}</SelectItem>
             </SelectContent>
-          </Select>
+          </ActivitySelect>
         </div>
       </div>
 
@@ -384,7 +384,7 @@ export function QuizArenaBuilder({
             <p className="text-muted-foreground text-sm">{t('upskii_none')}</p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              <Select
+              <ActivitySelect
                 value={courseId}
                 onValueChange={(value) => {
                   setCourseId(value);
@@ -401,8 +401,8 @@ export function QuizArenaBuilder({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
-              <Select
+              </ActivitySelect>
+              <ActivitySelect
                 value={moduleId}
                 disabled={!course}
                 onValueChange={setModuleId}
@@ -418,7 +418,7 @@ export function QuizArenaBuilder({
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </ActivitySelect>
               <Button
                 variant="outline"
                 className="col-span-2"

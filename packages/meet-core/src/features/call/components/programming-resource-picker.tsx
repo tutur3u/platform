@@ -5,7 +5,6 @@ import { listProgrammingProblems } from '@tuturuuu/internal-api/programming';
 import type { PlaygroundLanguage } from '@tuturuuu/types/primitives/playgrounds';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectSeparator,
@@ -13,6 +12,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useLocale, useTranslations } from 'next-intl';
+import { ActivitySelect } from '../stage-layout/activity-select';
 import { readMeetingProjects } from '../lib/programming-catalog';
 
 /** Select value for "start a new playground"; the panel keeps an empty id for it. */
@@ -76,7 +76,7 @@ export function ProgrammingResourcePicker({
     kind === 'playground' && !id ? NEW_PLAYGROUND : (selected?.id ?? '');
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <Select
+      <ActivitySelect
         value={value}
         onValueChange={(next) =>
           next === NEW_PLAYGROUND
@@ -116,7 +116,7 @@ export function ProgrammingResourcePicker({
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </ActivitySelect>
       {kind === 'problem' && problems.hasNextPage && (
         <Button
           variant="ghost"

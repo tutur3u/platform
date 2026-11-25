@@ -68,6 +68,7 @@ export function ProgrammingWorkbench({
   onTest,
   meeting,
   actions = [],
+  suspended = false,
 }: {
   projectId: string;
   roomKey?: string;
@@ -82,6 +83,8 @@ export function ProgrammingWorkbench({
   meeting?: WorkbenchMeeting;
   /** Host-owned entries for the overflow menu, e.g. changing or closing the meeting resource. */
   actions?: WorkbenchAction[];
+  /** Pause portaled controls while the workbench is hidden. */
+  suspended?: boolean;
 }) {
   const t = useTranslations('programmingPlayground');
   const room = useProgrammingRoom(
@@ -287,6 +290,9 @@ export function ProgrammingWorkbench({
             meeting ? setOutputTab('console') : setPreview(false),
         }
       : undefined;
+  const showPreview = meeting
+    ? outputDisclosure.open && outputTab === 'preview'
+    : preview;
   const menu: WorkbenchAction[] = [
     ...(problem
       ? [
@@ -301,20 +307,9 @@ export function ProgrammingWorkbench({
       ? [
           {
             id: 'preview',
-            label: t(
-              (meeting
-                ? outputDisclosure.open && outputTab === 'preview'
-                : preview)
-                ? 'previewClose'
-                : 'preview'
-            ),
+            label: t(showPreview ? 'previewClose' : 'preview'),
             onSelect: () => {
-              if (meeting)
-                setOutputTab(
-                  outputDisclosure.open && outputTab === 'preview'
-                    ? 'console'
-                    : 'preview'
-                );
+              if (meeting) setOutputTab(showPreview ? 'console' : 'preview');
               else setPreview((value) => !value);
               outputDisclosure.reveal();
             },
@@ -380,6 +375,7 @@ export function ProgrammingWorkbench({
       )}
     >
       <WorkbenchToolbar
+        suspended={suspended}
         problem={!!problem}
         title={problem?.title ?? project.name}
         language={project.language}
@@ -468,6 +464,7 @@ export function ProgrammingWorkbench({
             trailing={
               mira && (active || filePresence) ? (
                 <MiraAskMenu
+                  suspended={suspended}
                   mira={mira}
                   editable={editable}
                   onAnalyze={analyze}
@@ -600,7 +597,7 @@ export function ProgrammingWorkbench({
       {owner && !execution && !problem && (
         <WorkbenchShareDialog
           projectId={projectId}
-          open={shareOpen}
+          open={shareOpen && !suspended}
           onOpenChange={setShareOpen}
         />
       )}

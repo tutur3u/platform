@@ -14,7 +14,6 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {
-  Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -23,6 +22,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { type ComponentType, useId } from 'react';
+import { ActivitySelect } from '../stage-layout/activity-select';
 import { PROGRAMMING_LANGUAGE_LABELS } from './programming-languages';
 import { ProgrammingResourcePicker } from './programming-resource-picker';
 
@@ -163,7 +163,7 @@ export function ProgrammingSetup({
           </div>
           <div className="grid min-w-0 content-start gap-2">
             <Label htmlFor={languageId}>{t('language')}</Label>
-            <Select
+            <ActivitySelect
               value={language}
               disabled={languageLocked}
               onValueChange={(value) => {
@@ -189,7 +189,7 @@ export function ProgrammingSetup({
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+            </ActivitySelect>
           </div>
         </div>
         <p className="-mt-2 text-muted-foreground text-xs">

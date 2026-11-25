@@ -95,7 +95,7 @@ export function ProgrammingPanel({
   const [language, setLanguage] = useState<ProgrammingLanguage>('python');
   // Hosts land in the open dialog when nothing is open yet.
   const [setupOpen, setSetupOpen] = useState(canManage && !selection);
-  const setupVisible = useActivityModalOpen(setupOpen);
+  const paneVisible = useActivityModalOpen(true);
   const [runnerAvailabilityByLanguage, setRunnerAvailabilityByLanguage] =
     useState<Partial<Record<ProgrammingLanguage, RunnerAvailability>>>({});
   const key = [
@@ -261,7 +261,7 @@ export function ProgrammingPanel({
     <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 wrap-anywhere">
       {canManage && (
         <ProgrammingSetup
-          open={setupVisible}
+          open={setupOpen && paneVisible}
           onOpenChange={setSetupOpen}
           wsId={wsId}
           accountId={accountId}
@@ -301,6 +301,7 @@ export function ProgrammingPanel({
           <Workbench
             key={`${accountId ?? 'native'}:${meetingId}:${active.selection.id}:${active.selection.language}`}
             projectId={active.project.id}
+            suspended={!paneVisible}
             sharedRunId={
               selection && selection.id === active.project.id
                 ? selection.runId

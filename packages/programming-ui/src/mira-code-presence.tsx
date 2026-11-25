@@ -5,13 +5,13 @@ import type { MeetProgrammingMiraAction } from '@tuturuuu/internal-api/meet-call
 import type { ProgrammingMiraPresence } from '@tuturuuu/realtime/meet';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { WorkbenchDropdown } from './workbench-dropdown';
 
 export type WorkbenchMira = {
   presence: ProgrammingMiraPresence | null;
@@ -148,7 +148,9 @@ export function MiraAskMenu({
   mira,
   onAnalyze,
   editable,
+  suspended,
 }: {
+  suspended?: boolean;
   mira: WorkbenchMira;
   onAnalyze: (source: 'chat' | 'live', intent: 'explain' | 'fix') => void;
   editable: boolean;
@@ -157,7 +159,7 @@ export function MiraAskMenu({
   const draft = mira.voiceDraft;
   if (!mira.manage) return null;
   return (
-    <DropdownMenu>
+    <WorkbenchDropdown suspended={suspended}>
       <DropdownMenuTrigger asChild>
         <Button
           className="h-7 shrink-0 rounded-full motion-reduce:transition-none"
@@ -188,7 +190,7 @@ export function MiraAskMenu({
           <AudioLines className="size-4" /> {t('miraFixLive')}
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
+    </WorkbenchDropdown>
   );
 }
 
