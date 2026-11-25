@@ -7,8 +7,9 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
     final generation = ++_loadGeneration;
     if (scope != _loadedScope) {
       _hasLoaded = false;
-      _loadedProduct = null;
       _categoryId = _ownerId = _manufacturerId = _financeCategoryId = null;
+      _avatarUrl = null;
+      _avatarChanged = false;
       _categories = _manufacturers = _units = _warehouses = const [];
       _owners = const [];
       _financeCategories = const [];
@@ -77,7 +78,6 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
       final warehouses = results[4] as List<InventoryLookupItem>;
       final financeCategories = results[5] as List<TransactionCategory>;
       final product = results[6] as InventoryProduct?;
-      _loadedProduct = product;
 
       if (!_hasLoaded && product != null) {
         _nameController.text = product.name ?? '';
@@ -87,6 +87,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
         _categoryId = product.categoryId;
         _ownerId = product.ownerId;
         _financeCategoryId = product.financeCategoryId;
+        _avatarUrl = product.avatarUrl;
         _rows = product.inventory
             .map(
               (row) => _InventoryRowDraft(
@@ -527,7 +528,13 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
   Future<void> _save() async {
     final wsId = _wsId;
     final scope = _scope;
-    if (wsId == null || _saving || _refreshing || scope != _loadedScope) return;
+    if (wsId == null ||
+        _saving ||
+        _refreshing ||
+        _uploadingImage ||
+        scope != _loadedScope) {
+      return;
+    }
     final entries = _validateForm();
     if (entries == null) {
       return;
@@ -550,6 +557,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
           description: description.isEmpty ? null : description,
           usage: usage.isEmpty ? null : usage,
           financeCategoryId: _financeCategoryId,
+          avatarUrl: _avatarUrl,
         );
       } else {
         await _inventoryRepository.updateProduct(
@@ -563,6 +571,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
           description: description.isEmpty ? null : description,
           usage: usage.isEmpty ? null : usage,
           financeCategoryId: _financeCategoryId,
+          avatarUrl: _avatarChanged ? (_avatarUrl ?? '') : null,
         );
       }
 

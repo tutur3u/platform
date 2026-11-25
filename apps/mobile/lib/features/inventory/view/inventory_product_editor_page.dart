@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/repositories/inventory_media_upload.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -24,6 +27,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'inventory_editor_fields.dart';
+part 'inventory_editor_image.dart';
 part 'inventory_editor_operations.dart';
 part 'inventory_editor_presentation.dart';
 part 'inventory_editor_selectors.dart';
@@ -75,7 +79,6 @@ class _InventoryProductEditorPageState
   late final TextEditingController _descriptionController;
   late final TextEditingController _usageController;
 
-  InventoryProduct? _loadedProduct;
   bool _loading = false;
   bool _refreshing = false;
   bool _hasLoaded = false;
@@ -89,6 +92,11 @@ class _InventoryProductEditorPageState
   String? _manufacturerId;
   String? _ownerId;
   String? _financeCategoryId;
+
+  /// Server-issued image URL; [_avatarChanged] marks an edit to send.
+  String? _avatarUrl;
+  bool _avatarChanged = false;
+  bool _uploadingImage = false;
 
   String? _formError;
   bool _hasUnavailableOptions = false;

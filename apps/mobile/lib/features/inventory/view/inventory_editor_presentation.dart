@@ -53,11 +53,8 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
               physics: const BouncingScrollPhysics(),
               children: [
-                if (_loadedProduct case final product?
-                    when product.avatarUrl?.isNotEmpty ?? false) ...[
-                  Center(
-                    child: InventoryProductImage(product: product, size: 160),
-                  ),
+                if (!widget.stockFirst) ...[
+                  _buildImageField(context),
                   const AppGap(AppSpacing.md),
                 ],
                 if (_refreshing)
