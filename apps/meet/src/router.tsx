@@ -6,7 +6,7 @@ import { routeTree } from './routeTree.gen';
 
 registerDefaultAppBaseResolver(
   (path) =>
-    /^\/api\/(?:meet-(?:ai|call|live|record)\/|build-info(?:[?#]|$))/u.test(
+    /^\/api\/(?:meet-(?:ai|call|live|mira|record)\/|build-info(?:[?#]|$))/u.test(
       path
     )
       ? appPath(path)
