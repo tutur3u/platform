@@ -289,8 +289,8 @@ it('wires matching room presence and host actions to the workbench', async () =>
   );
 });
 
-it('keeps a refused runner disabled for the call across workbench remounts', async () => {
-  let current: { kind: 'playground'; id: string; language: string } = {
+it('keeps a runner refusal scoped to its language until a run starts again', async () => {
+  let current: NonNullable<Parameters<typeof meetingProgrammingApi.select>[1]> = {
     ...selection,
   };
   const client = api(true);
@@ -301,6 +301,10 @@ it('keeps a refused runner disabled for the call across workbench remounts', asy
     selection: current,
     project: { ...room.project, id: current.id, language: current.language },
   }));
+  vi.mocked(client.select).mockImplementation(async (_meetingId, next) => {
+    if (next) current = next;
+    return { selection: next };
+  });
   mount({ canManage: true, active: true, client });
   await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
   const meeting = () =>
@@ -308,21 +312,28 @@ it('keeps a refused runner disabled for the call across workbench remounts', asy
       runnerUnavailable: boolean;
       onRunnerUnavailable: (value: boolean) => void;
       onRuntime: (language: string) => void;
+      runtimePending: boolean;
     };
-  const firstRoom = workbench.calls.at(-1)!.roomKey;
   expect(meeting().runnerUnavailable).toBe(false);
   act(() => meeting().onRunnerUnavailable(true));
   await waitFor(() => expect(meeting().runnerUnavailable).toBe(true));
   // The switch opens another playground, so the workbench remounts under a new key.
-  current = { kind: 'playground', id: 'created', language: 'typescript' };
   act(() => meeting().onRuntime('typescript'));
-  await waitFor(() =>
-    expect(workbench.calls.at(-1)!.roomKey).toBe(
+  await waitFor(() => {
+    expect(workbench.calls.at(-1)?.roomKey).toBe(
       'meeting:meeting:created:typescript'
-    )
+    );
+    expect(meeting().runtimePending).toBe(false);
+  });
+  expect(meeting().runnerUnavailable).toBe(false);
+
+  act(() => meeting().onRuntime('python'));
+  await waitFor(() =>
+    expect(workbench.calls.at(-1)?.roomKey).toBe('meeting:meeting:project:python')
   );
-  expect(firstRoom).toBe('meeting:meeting:project:python');
   expect(meeting().runnerUnavailable).toBe(true);
+  act(() => meeting().onRunnerUnavailable(false));
+  expect(meeting().runnerUnavailable).toBe(false);
 });
 
 it('binds compiler checks to this meeting and leaves them out without a checker', async () => {

@@ -8,7 +8,7 @@ export type RunnerAvailability = 'ready' | 'unavailable';
  * Meetings only: once the runner refuses a run, Run stays disabled behind an
  * explanation instead of failing the same way on every click. When the host
  * app passes `runnerUnavailable` the state is controlled there, so it survives
- * workbench remounts (a language switch) for the call; otherwise it is local.
+ * workbench remounts for that language; otherwise it is local.
  */
 export function useRunnerAvailability(
   meeting:

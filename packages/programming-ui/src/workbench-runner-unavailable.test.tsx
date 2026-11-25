@@ -140,6 +140,10 @@ it('explains the unavailable runner above every output tab with a retry', () => 
   fireEvent.click(screen.getByRole('button', { name: t.retry }));
   expect(onRetry).toHaveBeenCalledOnce();
 
+  rerender(output({ onRetry }, 'preview'));
+  fireEvent.click(screen.getByRole('button', { name: t.retry }));
+  expect(onRetry).toHaveBeenCalledTimes(2);
+
   rerender(output({ onRetry, retryDisabled: true }, 'preview'));
   expect(screen.getByText(t.runnerUnavailableTitle)).toBeTruthy();
   expect(

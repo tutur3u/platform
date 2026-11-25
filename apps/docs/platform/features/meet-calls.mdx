@@ -3194,8 +3194,9 @@ Learn uses the same workbench without the meeting-only controls.
   Learn retains its existing provider during the Meet rollout of Cloudflare
   execution. [Playground execution runbook](/build/devops/playground-execution)
 - **Runner unavailable.** In a meeting playground, once starting a run answers
-  502, 503 or 504, Run stays visible and focusable but `aria-disabled` while the
-  coding panel stays open, including after a language switch; its tooltip and
+  502, 503 or 504, Run stays visible, focusable and `aria-disabled` for that
+  language while the coding panel stays open. Switching to a language without
+  a refusal makes Run available. The disabled control's tooltip and
   `aria-describedby` point at a status card above the output tabs. The card says
   running code is not available yet and that the code is saved with the meeting
   (not while the last save failed), and offers Copy code, Download for the
