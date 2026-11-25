@@ -46,6 +46,7 @@ import {
   countRoomHttpRequest,
   restoreHttpCounter,
   retainRoomAttendance,
+  roomAlarmTime,
   scheduleRoomFollowUps,
   wakeAttendanceCopies,
 } from './room-maintenance';
@@ -267,8 +268,9 @@ export class MeetRoomDurableObject implements DurableObject {
       await this.scheduleEmptyRoom();
       if (!result.status) {
         if (this.snapshot.budget?.pendingPublications?.length)
+          // `nextCleanupAt: 0` marks cleanup as due now.
           await this.scheduleSweep(
-            this.snapshot.budget.nextCleanupAt ?? Date.now()
+            this.snapshot.budget.nextCleanupAt || Date.now()
           );
         this.broadcast(result.messages ?? []);
         if (
@@ -549,9 +551,12 @@ export class MeetRoomDurableObject implements DurableObject {
   }
 
   private async scheduleSweep(deadline = Date.now() + PRESENCE_SWEEP_MS) {
+    // `setAlarm` refuses times <= 0; a past or zero deadline runs next.
+    const at = roomAlarmTime(deadline, Date.now());
+    if (at === undefined) return;
     const existing = await this.state.storage.getAlarm();
-    if (existing === null || existing > deadline)
-      await this.state.storage.setAlarm(deadline);
+    if (existing === null || existing > at)
+      await this.state.storage.setAlarm(at);
   }
 
   async alarm() {

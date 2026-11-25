@@ -14,6 +14,18 @@ import {
 } from './attendance-directory-request';
 
 type AttendanceEnv = Parameters<typeof publishStoredAttendance>[0];
+
+/**
+ * The time to hand `setAlarm` for a sweep `deadline`, or undefined when there
+ * is nothing to schedule. `setAlarm` refuses any time <= 0, and a deadline can
+ * be past, zero (room cleanup marks itself due with `nextCleanupAt: 0`) or,
+ * from an older snapshot missing a field, NaN. A past or zero deadline runs at
+ * the next moment instead; a non-finite one schedules nothing.
+ */
+export function roomAlarmTime(deadline: number, now: number) {
+  if (!Number.isFinite(deadline)) return undefined;
+  return Math.max(deadline, now + 1);
+}
 type AttendanceStorage = Parameters<typeof publishStoredAttendance>[1];
 
 export function countRoomHttpRequest(
@@ -146,7 +158,8 @@ export async function scheduleRoomFollowUps(input: {
       input.snapshot.ended ? input.now : input.snapshot.liveAssistant.expiresAt
     );
   if (input.snapshot.budget?.pendingPublications?.length)
-    await input.scheduleSweep(input.snapshot.budget.nextCleanupAt ?? input.now);
+    // `nextCleanupAt: 0` marks cleanup as due now.
+    await input.scheduleSweep(input.snapshot.budget.nextCleanupAt || input.now);
   if (input.snapshot.budget && !input.snapshot.ended)
     await input.scheduleSweep(input.snapshot.budget.expiresAt);
   const attendanceAlarm = nextAttendanceAlarm(
