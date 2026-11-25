@@ -32,7 +32,9 @@ function input(overrides: Partial<SidebarAppsInput> = {}): SidebarAppsInput {
     personalOrWsId: 'personal',
     resolvedWorkspaceId: 'workspace-id',
     rootWorkspaceId: ROOT_WORKSPACE_ID,
-    titles: Object.fromEntries(slugs.map((slug) => [slug, `title-${slug}`])) as {
+    titles: Object.fromEntries(
+      slugs.map((slug) => [slug, `title-${slug}`])
+    ) as {
       [slug in (typeof slugs)[number]]: string;
     },
     documentsPageTitles: {
@@ -98,10 +100,78 @@ describe('sidebar app entries', () => {
     expect(find(links, 'tasks')?.href).toBe(
       'https://tuturuuu.com/tasks/personal/tasks'
     );
-    expect(find(links, 'mail')?.href).toBe('https://tuturuuu.com/mail/personal');
+    expect(find(links, 'mail')?.href).toBe(
+      'https://tuturuuu.com/mail/personal'
+    );
     expect(find(links, 'calendar')?.href).toBe(
       'https://calendar.tuturuuu.com/personal'
     );
+  });
+
+  describe('against the active Web mount list', () => {
+    const activeMounts =
+      'calendar,contacts,finance,infra,learn,mail,meet,nova,teach';
+
+    it('puts mounted apps on their apex path and the rest on their subdomain', () => {
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', activeMounts);
+      const links = createSidebarAppLinks(input());
+
+      expect(find(links, 'mail')?.href).toBe(
+        'https://tuturuuu.com/mail/personal'
+      );
+      expect(find(links, 'finance')?.href).toBe(
+        'https://tuturuuu.com/finance/personal'
+      );
+      expect(find(links, 'calendar')?.href).toBe(
+        'https://tuturuuu.com/calendar/personal'
+      );
+      expect(find(links, 'contacts')?.href).toBe(
+        'https://tuturuuu.com/contacts/personal'
+      );
+      expect(find(links, 'meet')?.href).toBe(
+        'https://tuturuuu.com/meet/workspace/personal'
+      );
+      expect(find(links, 'tasks')?.href).toBe(
+        'https://tasks.tuturuuu.com/personal/tasks'
+      );
+      expect(find(links, 'time_tracker')?.href).toBe(
+        'https://track.tuturuuu.com/personal'
+      );
+      expect(find(links, 'qr_generator')?.href).toBe(
+        'https://tools.tuturuuu.com/'
+      );
+    });
+
+    it('moves added names to their apex path at cutover without a sidebar change', () => {
+      vi.stubEnv(
+        'NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS',
+        `${activeMounts},tasks,track,tools,drive`
+      );
+      const links = createSidebarAppLinks(input());
+
+      expect(find(links, 'tasks')?.href).toBe(
+        'https://tuturuuu.com/tasks/personal/tasks'
+      );
+      expect(find(links, 'time_tracker')?.href).toBe(
+        'https://tuturuuu.com/track/personal'
+      );
+      expect(find(links, 'qr_generator')?.href).toBe(
+        'https://tuturuuu.com/tools'
+      );
+      expect(find(links, 'drive')?.href).toBe(
+        'https://tuturuuu.com/drive/personal'
+      );
+    });
+
+    it('keeps platform-hosted apps on platform paths whatever is mounted', () => {
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', activeMounts);
+      const links = createSidebarAppLinks(input());
+
+      expect(find(links, 'documents')?.href).toBe('/personal/documents');
+      expect(find(links, 'link_shortener')?.href).toBe(
+        '/personal/link-shortener'
+      );
+    });
   });
 
   it('resolves Portless hosts from the request origin in development', () => {
@@ -134,8 +204,10 @@ describe('sidebar app entries', () => {
       'Whiteboards',
     ]);
     expect(
-      find(createSidebarAppLinks(input({ isPersonal: false })), 'documents')
-        ?.children?.find((child) => child?.title === 'Personal journal')
+      find(
+        createSidebarAppLinks(input({ isPersonal: false })),
+        'documents'
+      )?.children?.find((child) => child?.title === 'Personal journal')
     ).toMatchObject({ disabled: true });
   });
 
