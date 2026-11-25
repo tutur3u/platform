@@ -1,3 +1,5 @@
+export const PLAYGROUND_STDIN_MAX_LENGTH = 65_536;
+
 export const PLAYGROUND_LANGUAGES = [
   'python',
   'javascript',

@@ -68,6 +68,7 @@ type Denial = z.infer<typeof errorCode>;
 
 export type CloudPlaygroundRefusalCode =
   | 'PLAYGROUND_UNAVAILABLE'
+  | 'PLAYGROUND_NOT_CONFIGURED'
   | 'PLAYGROUND_WARMING'
   | 'PLAYGROUND_BUSY'
   | 'PLAYGROUND_QUOTA'
@@ -85,7 +86,7 @@ type Refusal = {
 const UNAVAILABLE: Refusal = {
   status: 503,
   code: 'PLAYGROUND_UNAVAILABLE',
-  message: 'Running code is unavailable',
+  message: 'The code runner is temporarily unavailable',
   retry: 30,
 };
 const RUN_BUSY: Refusal = {
@@ -100,8 +101,13 @@ const QUOTA: Refusal = {
   message: 'Playground limit reached',
   retry: 'quota',
 };
-const REFUSALS: Record<Denial | 'unavailable', Refusal> = {
+const REFUSALS: Record<Denial | 'unavailable' | 'not_configured', Refusal> = {
   unavailable: UNAVAILABLE,
+  not_configured: {
+    status: 503,
+    code: 'PLAYGROUND_NOT_CONFIGURED',
+    message: 'The code runner is not configured',
+  },
   execution_paused: UNAVAILABLE,
   check_unavailable: UNAVAILABLE,
   global_capacity: RUN_BUSY,
@@ -135,7 +141,7 @@ export class CloudPlaygroundRefusal extends AccountServiceError {
   /** Whole seconds, at least 1; absent when retrying cannot help. */
   readonly retryAfterSeconds?: number;
 
-  constructor(cause: Denial | 'unavailable', retryAfterSeconds?: number) {
+  constructor(cause: keyof typeof REFUSALS, retryAfterSeconds?: number) {
     const refusal = REFUSALS[cause];
     super(refusal.status, refusal.message);
     this.code = refusal.code;
@@ -171,11 +177,16 @@ async function callCloudPlayground(
 ) {
   const origin = process.env.PLAYGROUND_EXECUTION_ORIGIN;
   const secret = process.env.PLAYGROUND_INGRESS_SECRET;
-  if (!origin || !secret || secret.length < 32)
-    throw new CloudPlaygroundRefusal('unavailable');
-  const url = new URL(path, origin);
-  if (url.protocol !== 'https:')
-    throw new CloudPlaygroundRefusal('unavailable');
+  const url = origin ? URL.parse(path, origin) : null;
+  if (
+    !url ||
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    !secret ||
+    secret.length < 32
+  )
+    throw new CloudPlaygroundRefusal('not_configured');
   let response: Response;
   try {
     response = await fetch(url, {
@@ -192,7 +203,14 @@ async function callCloudPlayground(
   } catch {
     throw new CloudPlaygroundRefusal('unavailable');
   }
-  if (response.ok) return response.json() as Promise<unknown>;
+  if (response.ok)
+    return response.json().catch(() => {
+      throw new CloudPlaygroundRefusal('unavailable');
+    });
+  if (response.status === 401) {
+    await response.body?.cancel().catch(() => undefined);
+    throw new CloudPlaygroundRefusal('not_configured');
+  }
   const parsed = z
     .object({
       code: errorCode,
@@ -220,7 +238,8 @@ export async function startCloudPlayground(
   roomMeetingId?: string
 ) {
   const secret = process.env.PLAYGROUND_SOURCE_TICKET_SECRET?.trim();
-  if (!secret || secret.length < 32) throw new AccountServiceError(503);
+  if (!secret || secret.length < 32)
+    throw new CloudPlaygroundRefusal('not_configured');
   const claims = {
     ...scope,
     runId: await cloudPlaygroundRunId({ ...scope, ...request }),
@@ -238,7 +257,7 @@ export async function startCloudPlayground(
       secret
     );
   }
-  return cloudRunReceipt.parse(
+  const receipt = cloudRunReceipt.safeParse(
     await callCloudPlayground('/run', {
       ...scope,
       ...request,
@@ -246,6 +265,8 @@ export async function startCloudPlayground(
       exportTicket: ticket('tuturuuu.meet.playground-export'),
     })
   );
+  if (!receipt.success) throw new CloudPlaygroundRefusal('unavailable');
+  return receipt.data;
 }
 
 export async function stopCloudPlayground(scope: Scope, runId?: string) {

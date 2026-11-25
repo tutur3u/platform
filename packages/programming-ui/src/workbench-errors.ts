@@ -1,3 +1,5 @@
+import type { RunnerRefusal } from './workbench-meeting';
+
 /** Which request failed, so the message names the step instead of "Request failed". */
 /** `start`: the run was accepted but the service could not start or sandbox it. */
 export type WorkbenchFailureStep = 'save' | 'run' | 'start' | 'result' | 'test';
@@ -16,6 +18,12 @@ export interface WorkbenchFailure {
   reason: WorkbenchFailureReason;
   /** From `Retry-After`: when a refused request may succeed again. */
   retryAfterSeconds?: number;
+}
+
+export function runnerRefusalTitle(reason: RunnerRefusal['reason']) {
+  return reason === 'not_configured'
+    ? 'runnerNotConfiguredTitle'
+    : 'runnerUnavailableTitle';
 }
 
 /** The refusal code of an API error, e.g. `PLAYGROUND_BUSY`. */
@@ -56,7 +64,16 @@ export class WorkbenchStepError extends Error {
 /** Maps an API error (status-bearing, e.g. InternalApiError) to a reason the UI can explain. */
 export function failureReason(error: unknown): WorkbenchFailureReason {
   if (error && typeof error === 'object' && 'code' in error) {
-    if (error.code === 'PLAYGROUND_UNAVAILABLE') return 'unavailable';
+    if (
+      error.code === 'room_unavailable' ||
+      error.code === 'PLAYGROUND_RECEIPT_UNAVAILABLE'
+    )
+      return 'unknown';
+    if (
+      error.code === 'PLAYGROUND_UNAVAILABLE' ||
+      error.code === 'PLAYGROUND_NOT_CONFIGURED'
+    )
+      return 'unavailable';
     if (error.code === 'PLAYGROUND_BUSY') return 'busy';
     if (error.code === 'PLAYGROUND_QUOTA') return 'capacity';
   }
@@ -106,10 +123,8 @@ export function workbenchFailure(errors: {
  * answered 502/503/504), not that saving the room first failed.
  */
 export function isRunnerUnavailable(error: unknown) {
-  if (error instanceof WorkbenchStepError)
-    return (
-      error.step === 'run' &&
-      failureReason(error.reasonSource) === 'unavailable'
-    );
-  return failureReason(error) === 'unavailable';
+  if (error instanceof WorkbenchStepError && error.step !== 'run') return false;
+  const source =
+    error instanceof WorkbenchStepError ? error.reasonSource : error;
+  return failureReason(source) === 'unavailable';
 }

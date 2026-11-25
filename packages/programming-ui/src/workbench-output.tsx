@@ -7,6 +7,7 @@ import {
   TerminalSquare,
   X,
 } from '@tuturuuu/icons';
+import { PLAYGROUND_STDIN_MAX_LENGTH } from '@tuturuuu/types/primitives/playgrounds';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
@@ -263,6 +264,7 @@ export function WorkbenchOutput({
               id={stdinId}
               aria-label={t('stdin')}
               placeholder={t('stdinPlaceholder')}
+              maxLength={PLAYGROUND_STDIN_MAX_LENGTH}
               value={run.stdin}
               onChange={(event) => run.onStdin(event.target.value)}
               className="h-16 min-h-16 rounded-[var(--radius-lg)] font-mono text-xs"

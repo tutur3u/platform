@@ -1,38 +1,40 @@
 import { useId, useState } from 'react';
-import { isRunnerUnavailable, type WorkbenchFailure } from './workbench-errors';
+import {
+  errorCode,
+  isRunnerUnavailable,
+  type WorkbenchFailure,
+} from './workbench-errors';
 import type { SaveState } from './workbench-layout';
-
-export type RunnerAvailability = 'ready' | 'unavailable';
+import type { RunnerAvailability, WorkbenchMeeting } from './workbench-meeting';
 
 /**
  * Meetings only: once the runner refuses a run, Run stays disabled behind an
  * explanation instead of failing the same way on every click. When the host
- * app passes `runnerUnavailable` the state is controlled there, so it survives
+ * app passes `runnerAvailability` the state is controlled there, so it survives
  * workbench remounts for that language; otherwise it is local.
  */
 export function useRunnerAvailability(
   meeting:
-    | {
-        runnerUnavailable?: boolean;
-        onRunnerUnavailable?: (unavailable: boolean) => void;
-      }
+    | Pick<WorkbenchMeeting, 'runnerAvailability' | 'onRunnerAvailability'>
     | undefined
 ) {
   const id = useId();
   const [local, setLocal] = useState<RunnerAvailability>('ready');
-  const controlled = meeting?.runnerUnavailable;
-  const state: RunnerAvailability =
-    controlled === undefined ? local : controlled ? 'unavailable' : 'ready';
+  const state = meeting?.runnerAvailability ?? local;
   const update = (next: RunnerAvailability) => {
     if (!meeting || next === state) return;
     setLocal(next);
-    meeting.onRunnerUnavailable?.(next === 'unavailable');
+    meeting.onRunnerAvailability?.(next);
   };
   return {
-    /** The explanation card's id while runs are unavailable, for aria-describedby. */
-    unavailable: meeting && state === 'unavailable' ? id : undefined,
+    refusal: meeting && state !== 'ready' ? { id, reason: state } : undefined,
     onRunError: (error: unknown) => {
-      if (isRunnerUnavailable(error)) update('unavailable');
+      if (isRunnerUnavailable(error))
+        update(
+          errorCode(error) === 'PLAYGROUND_NOT_CONFIGURED'
+            ? 'not_configured'
+            : 'unavailable'
+        );
     },
     onRunStarted: () => update('ready'),
   };

@@ -14,6 +14,7 @@ import messages from '../../../apps/meet/messages/en.json';
 import { runnerGate, useRunnerAvailability } from './use-runner-availability';
 import { WorkbenchEditorStatus } from './workbench-editor-status';
 import { WorkbenchStepError } from './workbench-errors';
+import type { RunnerAvailability } from './workbench-meeting';
 import { WorkbenchMeetingOutput } from './workbench-meeting-output';
 import type { WorkbenchRunner } from './workbench-runner-unavailable';
 import { WorkbenchToolbar } from './workbench-toolbar';
@@ -66,7 +67,9 @@ function toolbar(runnerUnavailable?: string, onRun = vi.fn()) {
             pending: false,
             onRun,
             onStop: vi.fn(),
-            unavailable: runnerUnavailable,
+            unavailable: runnerUnavailable
+              ? { id: runnerUnavailable, reason: 'unavailable' }
+              : undefined,
           }}
         />
         {runnerUnavailable && <p id={runnerUnavailable}>card</p>}
@@ -119,6 +122,7 @@ function output(
       canTest={false}
       runner={{
         id: 'runner-card',
+        reason: 'unavailable',
         file,
         onRetry: vi.fn(),
         retryDisabled: false,
@@ -151,6 +155,14 @@ it('explains the unavailable runner above every output tab with a retry', () => 
   ).toBe(true);
   rerender(output({ onRetry: undefined }));
   expect(screen.queryByRole('button', { name: t.retry })).toBeNull();
+});
+
+it('explains missing runner configuration in the card', () => {
+  render(output({ reason: 'not_configured' }));
+  expect(screen.getByRole('status').textContent).toContain(
+    t.runnerNotConfiguredTitle
+  );
+  expect(screen.queryByText(t.runnerUnavailableTitle)).toBeNull();
 });
 
 it('does not claim the code is saved while the last save failed', () => {
@@ -293,41 +305,57 @@ it('flags read-only in the editor footer without repeating the runtime', () => {
 });
 
 it('disables runs only in meetings, only for a refused run, and reports it', () => {
-  const onRunnerUnavailable = vi.fn();
+  const onRunnerAvailability = vi.fn();
   const { result } = renderHook(() =>
-    useRunnerAvailability({ onRunnerUnavailable })
+    useRunnerAvailability({ onRunnerAvailability })
   );
-  expect(result.current.unavailable).toBeUndefined();
+  expect(result.current.refusal).toBeUndefined();
   act(() =>
     result.current.onRunError(new WorkbenchStepError('save', unavailable))
   );
-  expect(result.current.unavailable).toBeUndefined();
+  expect(result.current.refusal).toBeUndefined();
   act(() =>
     result.current.onRunError(Object.assign(new Error(), { status: 500 }))
   );
-  expect(result.current.unavailable).toBeUndefined();
+  expect(result.current.refusal).toBeUndefined();
+  for (const code of ['room_unavailable', 'PLAYGROUND_RECEIPT_UNAVAILABLE']) {
+    act(() =>
+      result.current.onRunError(Object.assign(new Error(), { status: 503, code }))
+    );
+    expect(result.current.refusal).toBeUndefined();
+  }
   act(() => result.current.onRunError(unavailable));
-  expect(result.current.unavailable).toBeTruthy();
-  expect(onRunnerUnavailable).toHaveBeenLastCalledWith(true);
+  expect(result.current.refusal?.reason).toBe('unavailable');
+  expect(onRunnerAvailability).toHaveBeenLastCalledWith('unavailable');
+  act(() =>
+    result.current.onRunError(
+      Object.assign(new Error(), {
+        status: 503,
+        code: 'PLAYGROUND_NOT_CONFIGURED',
+      })
+    )
+  );
+  expect(result.current.refusal?.reason).toBe('not_configured');
+  expect(onRunnerAvailability).toHaveBeenLastCalledWith('not_configured');
   act(() => result.current.onRunStarted());
-  expect(result.current.unavailable).toBeUndefined();
-  expect(onRunnerUnavailable).toHaveBeenLastCalledWith(false);
+  expect(result.current.refusal).toBeUndefined();
+  expect(onRunnerAvailability).toHaveBeenLastCalledWith('ready');
 });
 
 it('follows the host app when it holds the state for the call', () => {
   const { result, rerender } = renderHook(
-    (props: { runnerUnavailable: boolean }) => useRunnerAvailability(props),
-    { initialProps: { runnerUnavailable: true } }
+    (props: { runnerAvailability: RunnerAvailability }) => useRunnerAvailability(props),
+    { initialProps: { runnerAvailability: 'not_configured' } }
   );
-  expect(result.current.unavailable).toBeTruthy();
-  rerender({ runnerUnavailable: false });
-  expect(result.current.unavailable).toBeUndefined();
-  rerender({ runnerUnavailable: true });
-  expect(result.current.unavailable).toBeTruthy();
+  expect(result.current.refusal).toBeTruthy();
+  rerender({ runnerAvailability: 'ready' });
+  expect(result.current.refusal).toBeUndefined();
+  rerender({ runnerAvailability: 'not_configured' });
+  expect(result.current.refusal).toBeTruthy();
 });
 
 it('never disables runs outside a meeting, so Learn keeps its retry notice', () => {
   const { result } = renderHook(() => useRunnerAvailability(undefined));
   act(() => result.current.onRunError(unavailable));
-  expect(result.current.unavailable).toBeUndefined();
+  expect(result.current.refusal).toBeUndefined();
 });

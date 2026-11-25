@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   cloudflare: vi.fn(),
   ticket: vi.fn(),
   startCloud: vi.fn(),
+  executeLegacy: vi.fn(),
   checkCloud: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
@@ -32,7 +33,7 @@ vi.mock('@tuturuuu/storage-core/playground-preview', () => ({
 }));
 vi.mock('@tuturuuu/storage-core/playground-service', () => ({
   createPlayground: mocks.create,
-  executePlayground: vi.fn(),
+  executePlayground: mocks.executeLegacy,
   getPlayground: vi.fn(),
   getPlaygroundMetadata: mocks.metadata,
   getPlaygroundRun: vi.fn(),
@@ -72,7 +73,7 @@ vi.mock('@tuturuuu/storage-core/cloud-playground', () => ({
     // refusal directly from its status, message, code and retry hint.
     constructor(
       cause: number | 'unavailable',
-      message = 'Running code is unavailable',
+      message = 'The code runner is temporarily unavailable',
       code = 'PLAYGROUND_UNAVAILABLE',
       retryAfterSeconds: number | undefined = 30
     ) {
@@ -108,6 +109,8 @@ vi.mock('./personal-chat-request', () => ({
 
 import { changeMeetingProgrammingMira } from './programming-mira';
 import { CloudPlaygroundRefusal } from '@tuturuuu/storage-core/cloud-playground';
+import { PLAYGROUND_STDIN_MAX_LENGTH } from '@tuturuuu/types/primitives/playgrounds';
+import { AccountServiceError } from '@tuturuuu/utils/account-benefits-server';
 import {
   checkMeetingProgramming,
   createMeetingPlayground,
@@ -372,7 +375,7 @@ describe('Mira coding routes', () => {
   });
 });
 
-describe('meeting cloud Run refusals', () => {
+describe('meeting playground Run', () => {
   const projectId = '00000000-0000-4000-8000-000000000010';
   const run = {
     operation: 'run',
@@ -391,6 +394,71 @@ describe('meeting cloud Run refusals', () => {
     });
   });
   afterEach(() => vi.unstubAllEnvs());
+
+  it('dispatches browser input with the authorized project revision', async () => {
+    const receipt = { runId: crypto.randomUUID(), startedAt: 123 };
+    mocks.startCloud.mockResolvedValue(receipt);
+    const stdin = 'x'.repeat(PLAYGROUND_STDIN_MAX_LENGTH);
+    await expect(
+      executeMeetingPlayground(access, { ...run, stdin })
+    ).resolves.toEqual(receipt);
+    expect(mocks.startCloud).toHaveBeenCalledWith(
+      { meetingId: 'meeting', ownerId: 'actor', projectId },
+      { requester: 'actor', requestId: run.requestId, revision: 3, stdin },
+      'meeting'
+    );
+  });
+
+  it.each([
+    { ...run, operation: 'preview' },
+    { ...run, requestId: 'bad-id' },
+    { ...run, stdin: 'x'.repeat(PLAYGROUND_STDIN_MAX_LENGTH + 1) },
+    { ...run, language: 'python' },
+    { ...run, revision: 99 },
+  ])('rejects invalid Run input before dispatch', async (body) => {
+    await expect(executeMeetingPlayground(access, body)).rejects.toMatchObject({
+      name: 'ZodError',
+    });
+    expect(mocks.startCloud).not.toHaveBeenCalled();
+    expect(mocks.executeLegacy).not.toHaveBeenCalled();
+  });
+
+  it('uses Devbox when the provider is unset and reports an unavailable runner', async () => {
+    vi.stubEnv('MEET_PLAYGROUND_EXECUTION_PROVIDER', undefined);
+    mocks.executeLegacy.mockRejectedValue(
+      new AccountServiceError(503, 'internal')
+    );
+    await expect(executeMeetingPlayground(access, run)).rejects.toMatchObject({
+      status: 503,
+      code: 'PLAYGROUND_UNAVAILABLE',
+      message: 'The code runner is temporarily unavailable',
+    });
+    expect(mocks.executeLegacy).toHaveBeenCalledWith(
+      'actor',
+      projectId,
+      'run',
+      run.requestId,
+      { stdin: undefined },
+      'meeting'
+    );
+    expect(mocks.startCloud).not.toHaveBeenCalled();
+  });
+
+  it('identifies a failed room announcement after the run was accepted', async () => {
+    mocks.startCloud.mockResolvedValue({
+      runId: crypto.randomUUID(),
+      startedAt: 123,
+    });
+    mocks.room
+      .mockResolvedValueOnce({
+        selection: { kind: 'playground', id: projectId, language: 'python' },
+      })
+      .mockRejectedValueOnce(new Error('internal'));
+    await expect(executeMeetingPlayground(access, run)).rejects.toMatchObject({
+      status: 503,
+      code: 'PLAYGROUND_RECEIPT_UNAVAILABLE',
+    });
+  });
 
   it('passes the refusal code and retry hint to the room response', async () => {
     mocks.startCloud.mockRejectedValue(

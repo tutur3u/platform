@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { PLAYGROUND_STDIN_MAX_LENGTH } from '@tuturuuu/types/primitives/playgrounds';
 import { cloudPlaygroundRunId } from '@tuturuuu/utils/playground-cloud-run-id';
 import { PlaygroundJob } from '@tuturuuu/utils/playground-schema';
 import { z } from 'zod';
@@ -14,7 +15,7 @@ export const RunSubmission = RunIdentity.extend({
   requester: z.uuid(),
   requestId: z.uuid(),
   revision: z.number().int().nonnegative(),
-  stdin: z.string().max(65536).optional(),
+  stdin: z.string().max(PLAYGROUND_STDIN_MAX_LENGTH).optional(),
   sourceTicket: z.string().min(60).max(2048),
   exportTicket: z.string().min(60).max(2048),
 });

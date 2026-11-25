@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import type { RunnerAvailability } from '@tuturuuu/programming-ui';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
@@ -309,14 +310,16 @@ it('keeps a runner refusal scoped to its language until a run starts again', asy
   await waitFor(() => expect(workbench.calls.length).toBeGreaterThan(0));
   const meeting = () =>
     workbench.calls.at(-1)!.meeting as {
-      runnerUnavailable: boolean;
-      onRunnerUnavailable: (value: boolean) => void;
+      runnerAvailability: RunnerAvailability;
+      onRunnerAvailability: (value: RunnerAvailability) => void;
       onRuntime: (language: string) => void;
       runtimePending: boolean;
     };
-  expect(meeting().runnerUnavailable).toBe(false);
-  act(() => meeting().onRunnerUnavailable(true));
-  await waitFor(() => expect(meeting().runnerUnavailable).toBe(true));
+  expect(meeting().runnerAvailability).toBe('ready');
+  act(() => meeting().onRunnerAvailability('not_configured'));
+  await waitFor(() =>
+    expect(meeting().runnerAvailability).toBe('not_configured')
+  );
   // The switch opens another playground, so the workbench remounts under a new key.
   act(() => meeting().onRuntime('typescript'));
   await waitFor(() => {
@@ -325,15 +328,15 @@ it('keeps a runner refusal scoped to its language until a run starts again', asy
     );
     expect(meeting().runtimePending).toBe(false);
   });
-  expect(meeting().runnerUnavailable).toBe(false);
+  expect(meeting().runnerAvailability).toBe('ready');
 
   act(() => meeting().onRuntime('python'));
   await waitFor(() =>
     expect(workbench.calls.at(-1)?.roomKey).toBe('meeting:meeting:project:python')
   );
-  expect(meeting().runnerUnavailable).toBe(true);
-  act(() => meeting().onRunnerUnavailable(false));
-  expect(meeting().runnerUnavailable).toBe(false);
+  expect(meeting().runnerAvailability).toBe('not_configured');
+  act(() => meeting().onRunnerAvailability('ready'));
+  expect(meeting().runnerAvailability).toBe('ready');
 });
 
 it('binds compiler checks to this meeting and leaves them out without a checker', async () => {

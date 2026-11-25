@@ -3,10 +3,10 @@ import { Check, CloudOff, Copy, Download, RotateCcw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
+import { runnerRefusalTitle } from './workbench-errors';
+import type { RunnerRefusal } from './workbench-meeting';
 
-export interface WorkbenchRunner {
-  /** Referenced by the Run button's aria-describedby. */
-  id: string;
+export interface WorkbenchRunner extends RunnerRefusal {
   file?: { path: string; content: string };
   /** Absent for people who cannot start runs. */
   onRetry?: () => void;
@@ -41,6 +41,7 @@ function download(file: { path: string; content: string }) {
  */
 export function WorkbenchRunnerUnavailable({
   id,
+  reason,
   file,
   onRetry,
   retryDisabled,
@@ -99,7 +100,9 @@ export function WorkbenchRunnerUnavailable({
       />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="space-y-0.5">
-          <p className="font-semibold">{t('runnerUnavailableTitle')}</p>
+          <p className="font-semibold">
+            {t(runnerRefusalTitle(reason))}
+          </p>
           <p className="text-muted-foreground text-xs">
             {t(
               saveFailed ? 'runnerUnavailableUnsaved' : 'runnerUnavailableBody'

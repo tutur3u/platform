@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { PLAYGROUND_STDIN_MAX_LENGTH } from '@tuturuuu/types/primitives/playgrounds';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../apps/meet/messages/en.json';
@@ -39,6 +40,14 @@ it('shows an explicit empty state instead of a blank or broken pane', () => {
   // The retired helper copy must not come back as literal text.
   expect(screen.queryByText(/save in the background/i)).toBeNull();
   expect(screen.queryByText(/Background saves write/i)).toBeNull();
+});
+
+it('limits stdin to the run request budget', () => {
+  mount();
+  fireEvent.click(screen.getByRole('button', { name: t.stdin }));
+  expect(
+    screen.getByRole('textbox', { name: t.stdin }).getAttribute('maxlength')
+  ).toBe(String(PLAYGROUND_STDIN_MAX_LENGTH));
 });
 
 it('shows real run output with its exit code and the save state', () => {

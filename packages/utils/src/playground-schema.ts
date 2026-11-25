@@ -1,4 +1,7 @@
-import { PLAYGROUND_LANGUAGES } from '@tuturuuu/types/primitives/playgrounds';
+import {
+  PLAYGROUND_LANGUAGES,
+  PLAYGROUND_STDIN_MAX_LENGTH,
+} from '@tuturuuu/types/primitives/playgrounds';
 import { z } from 'zod';
 
 function hasDirectoryConflict(paths: string[]) {
@@ -111,7 +114,7 @@ export const PlaygroundJob = z
     operation: z.enum(['run', 'stop', 'preview']),
     files: PlaygroundFiles.optional(),
     command: z.string().max(4096).optional(),
-    stdin: z.string().max(65536).optional(),
+    stdin: z.string().max(PLAYGROUND_STDIN_MAX_LENGTH).optional(),
     port: z.number().int().min(1024).max(65535).optional(),
     path: z.string().max(2048).optional(),
   })

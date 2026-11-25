@@ -6,6 +6,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useSyncExternalStore } from 'react';
 import { isApplePlatform, runShortcutKeys } from './run-shortcut';
+import { runnerRefusalTitle } from './workbench-errors';
+import type { RunnerRefusal } from './workbench-meeting';
 
 const subscribe = () => () => {};
 
@@ -25,7 +27,7 @@ export function WorkbenchRunButton({
    * Id of the card explaining that runs are unavailable. Run then stays
    * focusable with aria-disabled, so its tooltip can still say why.
    */
-  unavailable?: string;
+  unavailable?: RunnerRefusal;
 }) {
   const t = useTranslations('programmingPlayground');
   // The platform is only known in the browser; the server renders Ctrl.
@@ -40,7 +42,7 @@ export function WorkbenchRunButton({
           size="sm"
           disabled={disabled}
           aria-disabled={unavailable ? true : undefined}
-          aria-describedby={unavailable}
+          aria-describedby={unavailable?.id}
           aria-keyshortcuts={
             blocked ? undefined : apple ? 'Meta+Enter' : 'Control+Enter'
           }
@@ -74,7 +76,7 @@ export function WorkbenchRunButton({
       </TooltipTrigger>
       <TooltipContent>
         {unavailable
-          ? t('runnerUnavailableTitle')
+          ? t(runnerRefusalTitle(unavailable.reason))
           : t('runShortcut', { action: label, shortcut })}
       </TooltipContent>
     </Tooltip>

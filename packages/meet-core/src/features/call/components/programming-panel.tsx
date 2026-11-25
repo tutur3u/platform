@@ -16,6 +16,7 @@ import {
   testMeetProgramming,
   updateMeetProgrammingMira,
 } from '@tuturuuu/internal-api';
+import type { RunnerAvailability } from '@tuturuuu/programming-ui';
 import type { MeetingProgramming } from '@tuturuuu/realtime/meet';
 import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
 import dynamic from 'next/dynamic';
@@ -89,8 +90,8 @@ export function ProgrammingPanel({
   const [language, setLanguage] = useState<ProgrammingLanguage>('python');
   // Hosts land in the open dialog when nothing is open yet.
   const [setupOpen, setSetupOpen] = useState(canManage && !selection);
-  const [runnerUnavailableByLanguage, setRunnerUnavailableByLanguage] =
-    useState<Partial<Record<ProgrammingLanguage, boolean>>>({});
+  const [runnerAvailabilityByLanguage, setRunnerAvailabilityByLanguage] =
+    useState<Partial<Record<ProgrammingLanguage, RunnerAvailability>>>({});
   const key = [
     'meet-programming',
     meetingId,
@@ -346,12 +347,13 @@ export function ProgrammingPanel({
                   }
                 : undefined,
               runtimePending: switchRuntime.isPending,
-              runnerUnavailable:
-                runnerUnavailableByLanguage[active.selection.language] ?? false,
-              onRunnerUnavailable: (unavailable) => {
-                setRunnerUnavailableByLanguage((previous) => ({
+              runnerAvailability:
+                runnerAvailabilityByLanguage[active.selection.language] ??
+                'ready',
+              onRunnerAvailability: (availability) => {
+                setRunnerAvailabilityByLanguage((previous) => ({
                   ...previous,
-                  [active.selection.language]: unavailable,
+                  [active.selection.language]: availability,
                 }));
               },
               check: runCheck

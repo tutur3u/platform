@@ -237,7 +237,7 @@ export function ProgrammingWorkbench({
     runAgain: () => runOperation('run'),
   });
   const gate = runnerGate(
-    runner.unavailable,
+    runner.refusal?.id,
     !problem && canExecute,
     runFailure,
     selectedSave
@@ -402,7 +402,7 @@ export function ProgrammingWorkbench({
                   onRun: () => runOperation('run'),
                   onStop: () => runOperation('stop'),
                   onSave: canCheckpoint ? () => save.mutate() : undefined,
-                  unavailable: runnerDown,
+                  unavailable: runnerDown ? runner.refusal : undefined,
                 }
               : { kind: 'none' }
         }
@@ -556,11 +556,15 @@ export function ProgrammingWorkbench({
             }
             preview={previewSettings}
             runner={
-              runnerDown
+              runnerDown && runner.refusal
                 ? {
-                    id: runnerDown,
+                    ...runner.refusal,
                     file: active,
-                    onRetry: editable ? () => runOperation('run') : undefined,
+                    onRetry: editable
+                      ? runFailure?.step === 'run'
+                        ? retry
+                        : () => runOperation('run')
+                      : undefined,
                     retryDisabled:
                       !editable || busy || run.isPending || save.isPending,
                     saveFailed: gate.saveFailed,

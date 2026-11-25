@@ -44,7 +44,7 @@ function mount(
         problem: false,
         owner: true,
         stdin: '',
-        meeting: meeting ? { onRunnerUnavailable: vi.fn() } : undefined,
+        meeting: meeting ? { onRunnerAvailability: vi.fn() } : undefined,
         onStarted: vi.fn(),
       }),
     { wrapper }

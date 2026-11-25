@@ -133,22 +133,40 @@ describe('cloud Playground refusals', () => {
       unavailable
     );
     expect(await refusal(new TypeError('fetch failed'))).toEqual(unavailable);
-    vi.stubEnv('PLAYGROUND_EXECUTION_ORIGIN', '');
+    expect(await refusal(new Response('not JSON', { status: 200 }))).toEqual(
+      unavailable
+    );
+    expect(await refusal(Response.json({}))).toEqual(unavailable);
+  });
+
+  it.each([
+    ['PLAYGROUND_EXECUTION_ORIGIN', ''],
+    ['PLAYGROUND_EXECUTION_ORIGIN', 'invalid origin'],
+    ['PLAYGROUND_EXECUTION_ORIGIN', 'http://execution.example'],
+    ['PLAYGROUND_INGRESS_SECRET', 'short'],
+    ['PLAYGROUND_SOURCE_TICKET_SECRET', `${'s'.repeat(31)}\n`],
+  ])('reports missing or invalid %s before dispatch', async (name, value) => {
+    vi.stubEnv(name, value);
     const error = await startCloudPlayground(scope, request).catch(
       (caught: unknown) => caught
     );
-    expect(error).toMatchObject(unavailable);
-    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(error).toMatchObject({
+      status: 503,
+      code: 'PLAYGROUND_NOT_CONFIGURED',
+      message: 'The code runner is not configured',
+    });
+    expect(error.retryAfterSeconds).toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('applies the trimmed secret length the API proxy enforces', async () => {
-    // 31 characters plus a newline: the proxy trims it and refuses the ticket,
-    // so no Run is dispatched with a ticket that cannot reach Web.
-    vi.stubEnv('PLAYGROUND_SOURCE_TICKET_SECRET', `${'s'.repeat(31)}\n`);
-    await expect(startCloudPlayground(scope, request)).rejects.toMatchObject({
+  it('reports rejected Worker credentials without forwarding the response body', async () => {
+    expect(
+      await refusal(new Response('internal details', { status: 401 }))
+    ).toEqual({
       status: 503,
+      code: 'PLAYGROUND_NOT_CONFIGURED',
+      retryAfterSeconds: undefined,
     });
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

@@ -28,7 +28,11 @@ import {
 } from '@tuturuuu/storage-core/playground-service';
 import { programmingRoomTicket } from '@tuturuuu/storage-core/programming-collaboration';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { accountPrivateRpc } from '@tuturuuu/utils/account-benefits-server';
+import { PLAYGROUND_STDIN_MAX_LENGTH } from '@tuturuuu/types/primitives/playgrounds';
+import {
+  AccountServiceError,
+  accountPrivateRpc,
+} from '@tuturuuu/utils/account-benefits-server';
 import { PlaygroundCreate } from '@tuturuuu/utils/playground-schema';
 import { playgroundTemplates } from '@tuturuuu/utils/playground-templates';
 import { z } from 'zod';
@@ -379,7 +383,7 @@ export async function executeMeetingPlayground(
       operation: z.enum(['run', 'stop']),
       requestId: z.uuid(),
       runId: z.uuid().optional(),
-      stdin: z.string().max(65536).optional(),
+      stdin: z.string().max(PLAYGROUND_STDIN_MAX_LENGTH).optional(),
     })
     .strict()
     .parse(payload);
@@ -425,7 +429,8 @@ export async function executeMeetingPlayground(
           return;
         throw new MeetCallAccessError(
           503,
-          'Could not share the run receipt. Retry to recover it.'
+          'Could not share the run receipt. Retry to recover it.',
+          'PLAYGROUND_RECEIPT_UNAVAILABLE'
         );
       });
       return queued;
@@ -434,14 +439,24 @@ export async function executeMeetingPlayground(
       throw error;
     }
   }
-  return executePlayground(
-    project.ownerId,
-    project.projectId,
-    parsed.operation,
-    parsed.requestId,
-    { stdin: parsed.stdin },
-    project.meetingId
-  );
+  try {
+    return await executePlayground(
+      project.ownerId,
+      project.projectId,
+      parsed.operation,
+      parsed.requestId,
+      { stdin: parsed.stdin },
+      project.meetingId
+    );
+  } catch (error) {
+    if (error instanceof AccountServiceError && error.status === 503)
+      throw new MeetCallAccessError(
+        503,
+        'The code runner is temporarily unavailable',
+        'PLAYGROUND_UNAVAILABLE'
+      );
+    throw error;
+  }
 }
 const checkLanguages = ['c', 'cpp', 'java'] as const;
 const checkRequest = z

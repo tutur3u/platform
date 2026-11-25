@@ -27,6 +27,7 @@ import {
 } from './workbench-language-picker';
 import type { FormatSupport } from './format/formatters';
 import { WorkbenchFormatButton } from './workbench-format-button';
+import type { RunnerRefusal } from './workbench-meeting';
 import { WorkbenchRunButton } from './workbench-run-button';
 
 export type WorkbenchControls =
@@ -41,7 +42,7 @@ export type WorkbenchControls =
       /** The Run is only waiting for a free runner, so Stop cancels the wait. */
       cancellable?: boolean;
       /** Id of the card explaining that runs are unavailable; Run stays visible but disabled. */
-      unavailable?: string;
+      unavailable?: RunnerRefusal;
     }
   | {
       kind: 'problem';

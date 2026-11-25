@@ -134,7 +134,7 @@ it('keeps Run enabled on a quota refusal and says when to try again', async () =
   });
   act(() => result.current.runOperation('run'));
   await waitFor(() => expect(result.current.run.isError).toBe(true));
-  expect(result.current.runner.unavailable).toBeUndefined();
+  expect(result.current.runner.refusal).toBeUndefined();
   const failure = workbenchFailure({ run: result.current.run.error })!;
   expect(failure).toEqual({
     step: 'run',
@@ -269,7 +269,7 @@ it('cancels the wait for a free runner when Stop is pressed, without a failure o
   expect(result.current.phase).toBeUndefined();
   expect(result.current.run.isPending).toBe(false);
   expect(result.current.run.error).toBeNull();
-  expect(result.current.runner.unavailable).toBeUndefined();
+  expect(result.current.runner.refusal).toBeUndefined();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(30_000);
   });

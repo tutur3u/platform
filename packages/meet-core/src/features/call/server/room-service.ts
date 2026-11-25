@@ -202,17 +202,18 @@ export async function meetCallRoomRoute(
       console.error('Meet room action failed', {
         name: error instanceof Error ? error.name : 'unknown',
       });
-    const retryAfterSeconds =
-      error instanceof MeetCallAccessError
-        ? error.retryAfterSeconds
-        : undefined;
+    const accessError = error instanceof MeetCallAccessError ? error : undefined;
+    const retryAfterSeconds = accessError?.retryAfterSeconds;
+    const refusal =
+      status === 400
+        ? { code: 'invalid_request', message: 'Invalid room request' }
+        : status === 503
+          ? { code: 'room_unavailable', message: 'Room action is unavailable' }
+          : undefined;
     return Response.json(
       {
-        code: error instanceof MeetCallAccessError ? error.code : undefined,
-        error:
-          error instanceof MeetCallAccessError
-            ? error.message
-            : 'Room action failed',
+        code: accessError?.code ?? refusal?.code,
+        error: accessError?.message ?? refusal?.message ?? 'Room action failed',
         retryAfterSeconds,
       },
       {

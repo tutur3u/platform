@@ -23,7 +23,7 @@ function mount(
     payload: Payload
   ) => Promise<{ runId: string }>
 ) {
-  const onRunnerUnavailable = vi.fn();
+  const onRunnerAvailability = vi.fn();
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -46,45 +46,45 @@ function mount(
         problem: false,
         owner: true,
         stdin: '',
-        meeting: { onRunnerUnavailable },
+        meeting: { onRunnerAvailability },
         onStarted: vi.fn(),
       }),
     { wrapper }
   );
-  return { ...hook, onRunnerUnavailable };
+  return { ...hook, onRunnerAvailability };
 }
 
 it('marks the runner unavailable when a run is refused, not when a stop is', async () => {
-  const { result, onRunnerUnavailable } = mount(async () => {
+  const { result, onRunnerAvailability } = mount(async () => {
     throw refused();
   });
   act(() => result.current.runOperation('stop'));
   await waitFor(() => expect(result.current.run.isError).toBe(true));
-  expect(result.current.runner.unavailable).toBeUndefined();
-  expect(onRunnerUnavailable).not.toHaveBeenCalled();
+  expect(result.current.runner.refusal).toBeUndefined();
+  expect(onRunnerAvailability).not.toHaveBeenCalled();
 
   act(() => result.current.runOperation('run'));
-  await waitFor(() => expect(result.current.runner.unavailable).toBeTruthy());
-  expect(onRunnerUnavailable).toHaveBeenLastCalledWith(true);
+  await waitFor(() => expect(result.current.runner.refusal).toBeTruthy());
+  expect(onRunnerAvailability).toHaveBeenLastCalledWith('unavailable');
 });
 
 it('re-enables Run once a run starts, but a stop that succeeds does not', async () => {
   let refuse = true;
-  const { result, onRunnerUnavailable } = mount(async () => {
+  const { result, onRunnerAvailability } = mount(async () => {
     if (refuse) throw refused();
     return { runId: 'run' };
   });
   act(() => result.current.runOperation('run'));
-  await waitFor(() => expect(result.current.runner.unavailable).toBeTruthy());
+  await waitFor(() => expect(result.current.runner.refusal).toBeTruthy());
   refuse = false;
   act(() => result.current.runOperation('stop'));
   await waitFor(() => expect(result.current.run.isSuccess).toBe(true));
-  expect(result.current.runner.unavailable).toBeTruthy();
+  expect(result.current.runner.refusal).toBeTruthy();
   act(() => result.current.runOperation('run'));
   await waitFor(() =>
-    expect(result.current.runner.unavailable).toBeUndefined()
+    expect(result.current.runner.refusal).toBeUndefined()
   );
-  expect(onRunnerUnavailable).toHaveBeenLastCalledWith(false);
+  expect(onRunnerAvailability).toHaveBeenLastCalledWith('ready');
 });
 
 it('stops the current Run by id and reuses the request id only on retry', async () => {

@@ -1,4 +1,6 @@
+import { AccountServiceError } from '@tuturuuu/utils/account-benefits-server';
 import { beforeEach, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
 const mocks = vi.hoisted(() => {
   const single = vi.fn();
@@ -114,6 +116,8 @@ it('sends the Run refusal code, retry hint and Retry-After header', async () => 
     );
   const cases = [
     [503, 'PLAYGROUND_UNAVAILABLE', 30],
+    [503, 'PLAYGROUND_NOT_CONFIGURED', undefined],
+    [503, 'PLAYGROUND_RECEIPT_UNAVAILABLE', undefined],
     [429, 'PLAYGROUND_BUSY', 5],
     [429, 'PLAYGROUND_QUOTA', 420],
   ] as const;
@@ -122,11 +126,13 @@ it('sends the Run refusal code, retry hint and Retry-After header', async () => 
       new MeetCallAccessError(status, 'Refused', code, retryAfterSeconds)
     );
     expect(response.status).toBe(status);
-    expect(response.headers.get('Retry-After')).toBe(String(retryAfterSeconds));
+    expect(response.headers.get('Retry-After')).toBe(
+      retryAfterSeconds === undefined ? null : String(retryAfterSeconds)
+    );
     expect(await response.json()).toEqual({
       code,
       error: 'Refused',
-      retryAfterSeconds,
+      ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
     });
   }
   const conflict = await refuse(
@@ -138,4 +144,52 @@ it('sends the Run refusal code, retry hint and Retry-After header', async () => 
     code: 'PLAYGROUND_REQUEST_CONFLICT',
     error: 'Conflict',
   });
+});
+
+it.each([
+  {
+    name: 'malformed JSON',
+    run: (request: Request) => request.json(),
+    status: 400,
+    code: 'invalid_request',
+    error: 'Invalid room request',
+  },
+  {
+    name: 'schema failure',
+    run: () => z.uuid().parse('internal value'),
+    status: 400,
+    code: 'invalid_request',
+    error: 'Invalid room request',
+  },
+  {
+    name: 'account validation failure',
+    run: () => {
+      throw new AccountServiceError(400, 'internal');
+    },
+    status: 400,
+    code: 'invalid_request',
+    error: 'Invalid room request',
+  },
+  {
+    name: 'account service outage',
+    run: () => {
+      throw new AccountServiceError(503, 'internal');
+    },
+    status: 503,
+    code: 'room_unavailable',
+    error: 'Room action is unavailable',
+  },
+])('returns a safe refusal for $name', async ({ status, code, error, run }) => {
+  vi.mocked(getMeetCallAccess).mockResolvedValue({} as never);
+  const request = new Request(
+    'https://meet.tuturuuu.com/api/meet-call/meeting/programming?run',
+    {
+      method: 'POST',
+      headers: { Origin: 'https://meet.tuturuuu.com' },
+      body: '{',
+    }
+  );
+  const response = await roomRoute(request, 'meeting', async () => run(request));
+  expect(response.status).toBe(status);
+  expect(await response.json()).toEqual({ code, error });
 });
