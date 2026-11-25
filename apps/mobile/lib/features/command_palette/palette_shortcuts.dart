@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mobile/core/input/desktop_shortcut_platform.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -57,36 +58,58 @@ class _PaletteShortcutIntent extends Intent {
   final PaletteShortcut shortcut;
 }
 
-/// The routed app only binds modifier chords. Unmodified navigation keys are
-/// scoped to the open palette.
+/// The routed app only binds modifier chords, and only on desktop platforms.
+/// Unmodified navigation keys are scoped to the open palette.
+///
+/// While a text field has focus the chords belong to text editing and the input
+/// method, unless [allowWhileEditing] reports an open overlay that still needs
+/// its own toggle chord from its search field.
 class PaletteShortcuts extends StatelessWidget {
   const PaletteShortcuts({
     required this.onShortcut,
     required this.child,
+    this.allowWhileEditing,
     super.key,
   });
 
   final ValueChanged<PaletteShortcut> onShortcut;
+  final bool Function()? allowWhileEditing;
   final Widget child;
 
   @override
   Widget build(BuildContext context) => Shortcuts(
     shortcuts: {
-      for (final shortcut in PaletteShortcut.values)
-        shortcut.activator(defaultTargetPlatform): _PaletteShortcutIntent(
-          shortcut,
-        ),
+      if (supportsDesktopShortcuts())
+        for (final shortcut in PaletteShortcut.values)
+          shortcut.activator(defaultTargetPlatform): _PaletteShortcutIntent(
+            shortcut,
+          ),
     },
     child: Actions(
       actions: {
-        _PaletteShortcutIntent: CallbackAction<_PaletteShortcutIntent>(
-          onInvoke: (intent) {
-            onShortcut(intent.shortcut);
-            return null;
-          },
+        _PaletteShortcutIntent: _PaletteShortcutAction(
+          onShortcut,
+          allowWhileEditing,
         ),
       },
       child: child,
     ),
   );
+}
+
+class _PaletteShortcutAction extends Action<_PaletteShortcutIntent> {
+  _PaletteShortcutAction(this._onShortcut, this._allowWhileEditing);
+
+  final ValueChanged<PaletteShortcut> _onShortcut;
+  final bool Function()? _allowWhileEditing;
+
+  @override
+  bool isEnabled(_PaletteShortcutIntent intent) =>
+      !isTextEditingFocused() || (_allowWhileEditing?.call() ?? false);
+
+  @override
+  Object? invoke(_PaletteShortcutIntent intent) {
+    _onShortcut(intent.shortcut);
+    return null;
+  }
 }

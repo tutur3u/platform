@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:mobile/core/input/desktop_shortcut_platform.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior.dart';
 
 class ShellSidebarShortcuts extends StatelessWidget {
@@ -22,7 +23,7 @@ class ShellSidebarShortcuts extends StatelessWidget {
     final mac = defaultTargetPlatform == TargetPlatform.macOS;
     return Shortcuts(
       shortcuts: {
-        if (onSelected != null) ...{
+        if (onSelected != null && supportsDesktopShortcuts()) ...{
           SingleActivator(
             LogicalKeyboardKey.keyB,
             meta: mac,
@@ -71,10 +72,5 @@ class _SidebarBehaviorAction extends CallbackAction<_SidebarBehaviorIntent> {
     : super(onInvoke: callback);
 
   @override
-  bool isEnabled(_SidebarBehaviorIntent intent) {
-    final context = FocusManager.instance.primaryFocus?.context;
-    return context == null ||
-        (context.widget is! EditableText &&
-            context.findAncestorWidgetOfExactType<EditableText>() == null);
-  }
+  bool isEnabled(_SidebarBehaviorIntent intent) => !isTextEditingFocused();
 }

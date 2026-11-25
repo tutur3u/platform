@@ -172,6 +172,7 @@ void main() {
   });
 
   testWidgets('Escape closes the pane from the keyboard', (tester) async {
+    useMailKeyboardPlatform();
     await _mount(tester);
     await tester.tap(find.text('Synthetic subject 1'));
     await tester.pump();

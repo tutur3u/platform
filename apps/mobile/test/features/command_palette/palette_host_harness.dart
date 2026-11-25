@@ -8,7 +8,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -136,8 +135,12 @@ Future<PaletteHarness> pumpPaletteApp(
         path: Routes.home,
         builder: (context, _) =>
             home?.call(context) ??
-            const Scaffold(
-              body: AppTextField(placeholder: 'Page input', autofocus: true),
+            Scaffold(
+              body: TextButton(
+                autofocus: true,
+                onPressed: () {},
+                child: const Text('Page action'),
+              ),
             ),
       ),
       GoRoute(path: Routes.apps, builder: (_, _) => page('Apps route')),

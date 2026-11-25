@@ -11,7 +11,7 @@ extension _MailWorkspaceKeyboard on _MailWorkspaceState {
     skipTraversal: true,
     onKeyEvent: (_, event) {
       if (event is! KeyDownEvent ||
-          !usesMailActionBar(context) ||
+          !usesMailKeyboard(context) ||
           !MailReadingPreferences.instance.keyboardEnabled ||
           !(ModalRoute.isCurrentOf(context) ?? true) ||
           (_childRouteOpen && routeSelection == null) ||

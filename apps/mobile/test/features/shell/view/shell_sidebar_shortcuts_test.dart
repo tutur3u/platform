@@ -109,6 +109,26 @@ void main() {
     expect(selected, isEmpty);
   });
 
+  for (final platform in [
+    TargetPlatform.android,
+    TargetPlatform.iOS,
+    TargetPlatform.fuchsia,
+  ]) {
+    testWidgets('${platform.name} hardware keyboards leave the chord unbound', (
+      tester,
+    ) async {
+      final selected = await _pump(tester, platform: platform);
+
+      await _chord(tester, [LogicalKeyboardKey.controlLeft]);
+      await _chord(tester, [LogicalKeyboardKey.metaLeft]);
+      await _chord(tester, [
+        LogicalKeyboardKey.controlLeft,
+        LogicalKeyboardKey.altLeft,
+      ]);
+      expect(selected, isEmpty);
+    });
+  }
+
   testWidgets('a collapsed sidebar expands', (tester) async {
     final selected = await _pump(
       tester,

@@ -189,15 +189,6 @@ void main() {
         expect(find.text('unsaved'), findsOneWidget, reason: key.keyLabel);
       }
 
-      await paletteChord(
-        tester,
-        LogicalKeyboardKey.controlLeft,
-        LogicalKeyboardKey.keyK,
-      );
-      expect(find.byType(CommandPaletteView), findsOneWidget);
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-      await tester.pumpAndSettle();
-
       Navigator.of(tester.element(find.byKey(const Key('draft')))).pop();
       await tester.pumpAndSettle();
       await paletteChord(

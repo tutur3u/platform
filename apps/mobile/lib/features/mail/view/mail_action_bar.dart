@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/input/desktop_shortcut_platform.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
@@ -8,6 +9,11 @@ bool usesMailActionBar(BuildContext context) {
   return shellNavigationModeFor(size) == ShellNavigationMode.rail ||
       size.shortestSide >= Breakpoints.mediumMin;
 }
+
+/// Mail keyboard commands need the wide action bar and a desktop platform, so
+/// a hardware keyboard on a wide phone or tablet viewport stays unbound.
+bool usesMailKeyboard(BuildContext context) =>
+    usesMailActionBar(context) && supportsDesktopShortcuts();
 
 /// Mail owns the surface and measures it against the viewport that contains it.
 /// A horizontal scroll keeps translated labels intact on narrow reading panes.

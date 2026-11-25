@@ -105,6 +105,7 @@ void main() {
   testWidgets('Mail shortcuts honor the toggle and a focused search input', (
     tester,
   ) async {
+    useMailKeyboardPlatform();
     await mount(tester, const Size(1440, 900), leadingInset: 240);
     final preferences = MailReadingPreferences.instance;
     await preferences.setKeyboardEnabled(false);
@@ -142,4 +143,34 @@ void main() {
     expect(tester.takeException(), isNull);
     await drain(tester);
   });
+
+  for (final platform in [
+    TargetPlatform.android,
+    TargetPlatform.iOS,
+    TargetPlatform.fuchsia,
+  ]) {
+    testWidgets(
+      'a hardware keyboard on a wide ${platform.name} viewport leaves Mail '
+      'commands unbound',
+      (tester) async {
+        useMailKeyboardPlatform(platform);
+        await mount(tester, const Size(1440, 900), leadingInset: 240);
+        await MailReadingPreferences.instance.setKeyboardEnabled(true);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyJ);
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byWidgetPredicate(
+            (widget) => widget is MailMessageTile && widget.keyboardActive,
+          ),
+          findsNothing,
+        );
+        expect(readerText('Full body 0'), findsNothing);
+        expect(tester.takeException(), isNull);
+        await drain(tester);
+      },
+    );
+  }
 }

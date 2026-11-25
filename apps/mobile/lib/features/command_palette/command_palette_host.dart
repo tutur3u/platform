@@ -300,6 +300,10 @@ class _PaletteHostState extends State<PaletteHost> {
         listener: (_, _) => _closeOverlay(removing: true),
       ),
     ],
-    child: PaletteShortcuts(onShortcut: _invoke, child: widget.child),
+    child: PaletteShortcuts(
+      onShortcut: _invoke,
+      allowWhileEditing: () => _overlayKey != null,
+      child: widget.child,
+    ),
   );
 }

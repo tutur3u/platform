@@ -13,6 +13,7 @@ void main() {
   final f = MailDeferredFixture()..register();
 
   Future<void> mountDesktop(WidgetTester tester) async {
+    useMailKeyboardPlatform();
     setMailSurface(tester, const Size(1440, 900));
     await MailReadingPreferences.instance.setKeyboardEnabled(true);
     await f.mount(tester);

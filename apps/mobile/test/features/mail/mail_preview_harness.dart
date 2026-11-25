@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
@@ -148,6 +149,13 @@ Future<Duration> pumpUntilReadable(
     elapsed += step;
   }
   return elapsed;
+}
+
+/// Mail keyboard commands bind on desktop platforms only; widget tests default
+/// to Android.
+void useMailKeyboardPlatform([TargetPlatform platform = TargetPlatform.macOS]) {
+  debugDefaultTargetPlatformOverride = platform;
+  addTearDown(() => debugDefaultTargetPlatformOverride = null);
 }
 
 void setMailSurface(WidgetTester tester, Size size) {

@@ -1,5 +1,6 @@
 import 'dart:ui' show PointerDeviceKind;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -215,6 +216,8 @@ void main() {
   testWidgets('sidebar shortcuts toggle modes and defer to text editors', (
     tester,
   ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     useShellWindow(tester, _desktop);
     final editor = FocusNode();
     addTearDown(editor.dispose);
@@ -237,7 +240,7 @@ void main() {
     expect(_bodyRect(tester).left, shellNavigationSidebarExtent);
     await _shortcut(tester);
     expect(_bodyRect(tester).left, shellNavigationRailExtent);
-    // Cmd is the macOS modifier; this platform binds Ctrl only.
+    // Cmd is the macOS modifier; Linux binds Ctrl only.
     await _shortcut(tester, command: true);
     expect(_bodyRect(tester).left, shellNavigationRailExtent);
     await _shortcut(tester);
