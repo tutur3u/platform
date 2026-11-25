@@ -32,17 +32,16 @@ export async function readLiveMiraConfirmedAt(
   env: LiveEnvironment,
   ownerId: string
 ) {
-  return confirmations
-    .read(
-      ownerId,
-      async () => {
-        const actor = authResult.parse(await liveAuthUser(env, ownerId));
-        return actor.id === ownerId
-          ? miraConfirmedAt(actor.app_metadata?.[MIRA_ACCOUNT_CONFIRMATION_KEY])
-          : null;
-      },
-      (value) => value !== null
-    );
+  return confirmations.read(
+    ownerId,
+    async () => {
+      const actor = authResult.parse(await liveAuthUser(env, ownerId));
+      return actor.id === ownerId
+        ? miraConfirmedAt(actor.app_metadata?.[MIRA_ACCOUNT_CONFIRMATION_KEY])
+        : null;
+    },
+    (value) => value !== null
+  );
 }
 
 export async function requireCurrentPrivateGrant(

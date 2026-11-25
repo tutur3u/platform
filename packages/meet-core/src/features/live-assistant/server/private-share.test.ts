@@ -238,4 +238,3 @@ it('refuses an opt-in it cannot check against the confirmation', async () => {
   ).rejects.toMatchObject({ status: 503 });
   expect(f.room).not.toHaveBeenCalledWith(...revokeCall);
 });
-

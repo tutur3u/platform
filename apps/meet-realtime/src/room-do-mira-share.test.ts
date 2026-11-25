@@ -207,8 +207,10 @@ test('sweeps expired chat on the alarm with no further requests', async () => {
 
 test('deletes an evicted person’s stored chat when the room cap is reached', async () => {
   let initial = seed();
-  const others = Array.from({ length: 19 }, (_, index) =>
-    `00000000-0000-4000-8000-${String(100 + index).padStart(12, '0')}`
+  const others = Array.from(
+    { length: 19 },
+    (_, index) =>
+      `00000000-0000-4000-8000-${String(100 + index).padStart(12, '0')}`
   );
   const stored: Record<string, unknown> = {};
   others.forEach((id, index) => {

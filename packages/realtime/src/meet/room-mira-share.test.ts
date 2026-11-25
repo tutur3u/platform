@@ -388,8 +388,10 @@ it('keeps shared text out of the room snapshot metadata', () => {
 it('evicts the oldest shared chat once the room cap is reached', () => {
   // Nineteen other people already share 14 KB each; only the writer needs
   // to be in the room.
-  const others = Array.from({ length: 19 }, (_, index) =>
-    `00000000-0000-4000-8000-${String(100 + index).padStart(12, '0')}`
+  const others = Array.from(
+    { length: 19 },
+    (_, index) =>
+      `00000000-0000-4000-8000-${String(100 + index).padStart(12, '0')}`
   );
   let state = shared();
   const now = Date.now();
@@ -476,4 +478,3 @@ it('reports when the next shared chat expires so the room can sweep it', () => {
   const at = state.miraShares![owner]!.context!.updatedAt;
   expect(nextMiraShareExpiry(state)).toBe(at + MIRA_SHARE_CONTEXT_TTL_MS);
 });
-

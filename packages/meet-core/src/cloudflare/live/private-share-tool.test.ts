@@ -176,7 +176,6 @@ it('revokes a share turned on before the owner’s latest confirmation', async (
   );
 });
 
-
 it('refuses the read without revoking when the confirmation lookup fails', async () => {
   // Another owner, so no earlier test has cached this confirmation.
   const owner = '00000000-0000-4000-8000-00000000000a';

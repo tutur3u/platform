@@ -118,4 +118,3 @@ it('ends the owner’s Private Mira voice session when they revoke', async () =>
   // No admitted-only read: a person who left the call is stopped too.
   expect(f.order).not.toContain('mira.private.read');
 });
-
