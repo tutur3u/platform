@@ -128,3 +128,17 @@ it('does not admit a stale legal version, ended meeting, or newly joined actor b
     roomService(state, token, { action: 'mira.private.read' }).body
   ).toMatchObject({ choice: null, sessions: [] });
 });
+
+it('initializes a first choice without reviving a private withdrawal', () => {
+  const command = { action: 'mira.private.initialize', version };
+  const enabled = roomService(initial(), token, command);
+  expect(enabled.state.miraPrivate?.choices[account]?.choice).toBe('continue');
+  const withdrawn = roomService(enabled.state, token, {
+    action: 'mira.private.choice',
+    choice: 'mute',
+    version,
+  }).state;
+  const retried = roomService(withdrawn, token, command);
+  expect(retried.status).toBe(409);
+  expect(retried.state.miraPrivate?.choices[account]?.choice).toBe('mute');
+});

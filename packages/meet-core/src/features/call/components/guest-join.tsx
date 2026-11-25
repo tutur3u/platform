@@ -144,11 +144,11 @@ export function MeetGuestJoin({
       // Recorded for after admission; both join paths carry the final state.
       // It runs beside the join request and never rejects, so it cannot hold
       // the join back; the page refreshes only once it has been kept.
-      const remembered = rememberMira(
-        meetingId,
-        miraTicked,
-        miraAcceptanceRevision
-      ).catch(() => undefined);
+      const remembered = meetUxV2
+        ? undefined
+        : rememberMira(meetingId, miraTicked, miraAcceptanceRevision).catch(
+            () => undefined
+          );
       await joinMeetCallAsGuest(meetingId, {
         displayName: name.trim(),
         ...(!token
@@ -194,12 +194,10 @@ export function MeetGuestJoin({
       <GuestPrejoin
         canAskHost={canAskHost}
         meetingId={meetingId}
-        miraTicked={miraTicked}
         name={name}
         nameRef={nameInput}
         onAskHost={() => void join(null)}
         onHumanPass={onHumanPass}
-        onMiraChange={setMiraTicked}
         onNameChange={setName}
         onStalledChange={setStalled}
         onSubmit={() => {

@@ -1,5 +1,11 @@
 import { encodePathSegment, getInternalApiClient } from './client';
 
+export type MiraAccountConfirmation =
+  | 'confirmed'
+  | 'required'
+  | 'guest'
+  | 'unavailable';
+
 /** Room Mira state for the caller; counts only, never identities. */
 export type RoomMiraConsent =
   | {
@@ -44,6 +50,8 @@ export type RoomMiraConsent =
       status: { active: boolean; included: number; admitted: number };
       /** Workspace default for the consent tick box. */
       boxTickedByDefault: boolean;
+      accountConfirmation?: MiraAccountConfirmation;
+      autoJoinBlocked?: boolean;
       /** The notice an `on` must be given under now; absent on older rooms. */
       noticeMode?: 'room' | 'self';
       /** The caller's current `on` was given under the other notice. */
@@ -94,6 +102,16 @@ export function setRoomMiraChoice(
   return postRoomMira(meetingId, { action: 'choice', ...input });
 }
 
+export function confirmMeetMiraAccount(
+  meetingId: string,
+  expectedActorId: string
+) {
+  return postRoomMira(meetingId, {
+    action: 'confirm_account',
+    expectedActorId,
+  });
+}
+
 /**
  * Turns room Mira on for the meeting as the host or a co-host, confirming the
  * audience is 18 or older. A later call with more capabilities is a new
@@ -101,12 +119,14 @@ export function setRoomMiraChoice(
  */
 export function acceptRoomMira(
   meetingId: string,
-  capabilities: Array<'chat' | 'captions' | 'notes'>
+  capabilities: Array<'chat' | 'captions' | 'notes'>,
+  expectedActorId?: string
 ) {
   return postRoomMira(meetingId, {
     action: 'accept',
     capabilities,
     audienceAdultConfirmed: true,
+    expectedActorId,
   });
 }
 

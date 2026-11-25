@@ -29,6 +29,7 @@ export type ConnectedLobbyProps = {
   defaultAvatarUrl?: string;
   defaultDisplayName: string;
   canReadWorkspace: boolean;
+  guestRequest?: boolean;
   /** Join was pressed; the room owns the devices (lobby shown only if held). */
   joined: boolean;
   meetingName: string;

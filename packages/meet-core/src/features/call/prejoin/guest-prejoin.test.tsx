@@ -49,12 +49,6 @@ vi.mock('../components/guest-turnstile', () => ({
     </div>
   ),
 }));
-vi.mock('../../live-assistant/mira-join-box', () => ({
-  MiraJoinBox: ({ checked }: { checked: boolean }) => (
-    <div data-testid="mira-box">{String(checked)}</div>
-  ),
-}));
-
 import { GuestPrejoin, type GuestPrejoinState } from './guest-prejoin';
 
 const guest = messages.meet.call.guest_join;
@@ -70,12 +64,10 @@ function show(
       <GuestPrejoin
         canAskHost={extra.canAskHost ?? true}
         meetingId="m-1"
-        miraTicked
         name={extra.name ?? 'Minh'}
         nameRef={null}
         onAskHost={onAskHost}
         onHumanPass={vi.fn()}
-        onMiraChange={vi.fn()}
         onNameChange={vi.fn()}
         onStalledChange={vi.fn()}
         onSubmit={onSubmit}
@@ -96,11 +88,11 @@ function show(
 
 afterEach(cleanup);
 
-it('lays out the name, human check, unchanged Mira box and a held Ask to join', () => {
+it('lays out the name, human check and a held Ask to join', () => {
   show({ kind: 'verifying' });
   expect(screen.getByRole('textbox', { name: guest.name_label })).toBeTruthy();
   expect(screen.getByTestId('human-check')).toBeTruthy();
-  expect(screen.getByTestId('mira-box').textContent).toBe('true');
+  expect(screen.queryByRole('checkbox')).toBeNull();
   expect(
     screen.getByRole('button', { name: guest.ask_to_join })
   ).toHaveProperty('disabled', true);

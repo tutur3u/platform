@@ -98,6 +98,7 @@ export function ShareSnippetDialog({
           disabled={pending}
           className="min-h-48"
           aria-label={t('personal_share')}
+          placeholder={t('personal_share')}
         />
         {failed && (
           <p role="alert" className="text-destructive text-sm">

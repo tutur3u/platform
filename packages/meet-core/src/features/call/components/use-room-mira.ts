@@ -37,6 +37,7 @@ import {
 import { holdSelfCapture } from '../../meeting-ai/self-hold';
 import { readSelfRoom } from '../../meeting-ai/self-room';
 import { transcriptConsentKey } from '../../meeting-ai/use-transcript-consent';
+import { useMeetUxV2 } from '../prejoin/prejoin-context';
 import { roomMiraChoiceKey, roomMiraConsentKey } from './room-mira-key';
 import { useMiraNoticeMode } from './use-mira-notice-mode';
 
@@ -142,7 +143,7 @@ class SupersededMiraChoice extends Error {}
  * The Join state is never cleared before it is recorded, and every confirm
  * box starts unticked while the participant's own last state is off.
  */
-export function useRoomMira(meetingId: string) {
+export function useRoomMira(meetingId: string, accountId?: string) {
   const t = useTranslations('meet.mira_consent');
   const queryClient = useQueryClient();
   const query = useRoomMiraConsent(meetingId);
@@ -155,7 +156,9 @@ export function useRoomMira(meetingId: string) {
   const notice = data?.noticeMode
     ? { mode: data.noticeMode, known: true }
     : transcriptNotice;
-  const text = useMiraConsentText(notice.mode);
+  const legacyText = useMiraConsentText(notice.mode);
+  const accountFlow = useMeetUxV2() && data?.accountConfirmation !== undefined;
+  const text = accountFlow ? t('account_statement') : legacyText;
   const locale = useLocale();
   const save = (next: RoomMiraConsent) =>
     queryClient.setQueryData(roomMiraConsentKey(meetingId), next);
@@ -221,6 +224,7 @@ export function useRoomMira(meetingId: string) {
       // voice in the transcript notice.
       if (
         input.choice === 'on' &&
+        !accountFlow &&
         MIRA_BOX_RECORDS_TRANSCRIPT &&
         next.available &&
         next.choice === 'on' &&
@@ -254,7 +258,9 @@ export function useRoomMira(meetingId: string) {
   const acceptance = useMutation({
     mutationFn: (action: 'accept' | 'turn_off' | 'report') =>
       action === 'accept'
-        ? acceptRoomMira(meetingId, ['chat', 'captions', 'notes'])
+        ? accountFlow
+          ? acceptRoomMira(meetingId, ['chat', 'captions', 'notes'], accountId)
+          : acceptRoomMira(meetingId, ['chat', 'captions', 'notes'])
         : action === 'turn_off'
           ? turnOffRoomMira(meetingId)
           : reportRoomMiraMinor(meetingId),
@@ -279,7 +285,8 @@ export function useRoomMira(meetingId: string) {
   const noticeMode = notice.mode;
   const noticeKnown = notice.known;
   useEffect(() => {
-    if (!data?.acceptance || data.choice !== null || !pendingJoin) return;
+    if (accountFlow || !data?.acceptance || data.choice !== null || !pendingJoin)
+      return;
     // The join screen showed the room-capture notice. A ticked box applies
     // only once the meeting's notice is known to be that one; a per-speaker
     // meeting asks the person to confirm under its own notice instead. An
@@ -345,6 +352,7 @@ export function useRoomMira(meetingId: string) {
     dataUpdatedAt,
     noticeKnown,
     noticeMode,
+    accountFlow,
   ]);
 
   // An untick is recorded even when no acceptance is open: an explicit off
@@ -359,7 +367,7 @@ export function useRoomMira(meetingId: string) {
       ? peekMiraJoinChoice(meetingId)
       : null;
   useEffect(() => {
-    if (!data || data.acceptance || data.choice !== null) return;
+    if (accountFlow || !data || data.acceptance || data.choice !== null) return;
     if (data.lastChoice === 'off' || !untick || untick.ticked) return;
     const flight = `${meetingId}:none`;
     if (
@@ -383,9 +391,10 @@ export function useRoomMira(meetingId: string) {
         () => failedAt.set(flight, dataUpdatedAt)
       )
       .finally(() => applying.delete(flight));
-  }, [data, untick, meetingId, choose, dataUpdatedAt]);
+  }, [accountFlow, data, untick, meetingId, choose, dataUpdatedAt]);
 
   return {
+    dataUpdatedAt,
     /** The notice the box must show; the choice is hashed over it. */
     noticeMode,
     /** False until the meeting's notice is known; nothing turns Mira on. */

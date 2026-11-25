@@ -98,12 +98,11 @@ it('shows the host wait with the same layout and a disabled Join', () => {
   expect(screen.getByRole('heading', { name: 'Weekly sync' })).toBeTruthy();
 });
 
-it('keeps Join sticky on a phone and after the fields and consent box in the DOM order', () => {
+it('keeps Join sticky on a phone and after the fields in DOM order', () => {
   show(
     { kind: 'ready', label: call.join_now },
     {
       fields: <input aria-label="name field" />,
-      consent: <div data-testid="consent" />,
       notice: <p data-testid="notice">reserved</p>,
       secondary: <button type="button">leave</button>,
     }
@@ -117,7 +116,6 @@ it('keeps Join sticky on a phone and after the fields and consent box in the DOM
   const order = [
     screen.getByTestId('notice'),
     screen.getByLabelText('name field'),
-    screen.getByTestId('consent'),
     sticky,
   ];
   for (let index = 1; index < order.length; index += 1)

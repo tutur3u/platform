@@ -5,6 +5,7 @@ import {
   callRoomService,
   type MeetCallRouteAccess,
 } from '../../call/server/room-service';
+import { readMeetTranscriptionAvailability } from '../../meeting-ai/server/transcription-availability';
 import {
   type MiraChoiceEvidence,
   MiraChoiceRecordError,
@@ -80,7 +81,11 @@ function evidenceOf(
   };
 }
 
-const roomChoice = (access: MeetCallRouteAccess, input: RoomMiraChoiceInput) =>
+const roomChoice = (
+  access: MeetCallRouteAccess,
+  input: RoomMiraChoiceInput,
+  accountConfirmed = false
+) =>
   callRoomService<{ pendingId?: unknown }>(access, {
     action: 'mira.room.choice',
     choice: input.choice,
@@ -90,6 +95,7 @@ const roomChoice = (access: MeetCallRouteAccess, input: RoomMiraChoiceInput) =>
     source: input.source,
     // The room refuses an on under another mode's notice in the same turn.
     ...(input.noticeMode ? { noticeMode: input.noticeMode } : {}),
+    ...(accountConfirmed ? { accountConfirmed: true } : {}),
   });
 
 /**
@@ -150,12 +156,13 @@ const PENDING_ID =
 async function recordOn(
   access: MeetCallRouteAccess,
   input: RoomMiraChoiceInput,
-  requireNoticeMode: boolean
+  requireNoticeMode: boolean,
+  accountConfirmed: boolean
 ) {
   const offEvidence = evidenceOf(access, { ...input, choice: 'off' }, false);
   let reply: { pendingId?: unknown };
   try {
-    reply = await roomChoice(access, input);
+    reply = await roomChoice(access, input, accountConfirmed);
   } catch (error) {
     // Legacy rooms may have applied an on whose answer was lost; on a
     // two-phase room this off only drops the pending on.
@@ -182,7 +189,7 @@ async function recordOn(
   if (!pendingId) throw notSaved();
   // The evidence and confirm finish even if the client disconnects.
   await keepAlive(
-    confirmWithEvidence(access, input, requireNoticeMode, pendingId)
+    confirmWithEvidence(access, input, requireNoticeMode, pendingId, accountConfirmed)
   );
 }
 
@@ -211,7 +218,8 @@ async function confirmWithEvidence(
   access: MeetCallRouteAccess,
   input: RoomMiraChoiceInput,
   requireNoticeMode: boolean,
-  pendingId: string
+  pendingId: string,
+  accountConfirmed: boolean
 ) {
   try {
     await recordWithRetry(
@@ -223,12 +231,20 @@ async function confirmWithEvidence(
     });
     throw notSaved();
   }
+  const allowUndecidedTranscript =
+    accountConfirmed &&
+    input.source === 'join' &&
+    !requireNoticeMode &&
+    (await readMeetTranscriptionAvailability(access.meeting.ws_id)
+      .then((availability) => availability.available)
+      .catch(() => false));
   try {
     await callRoomService(access, {
       action: 'mira.room.confirm',
       pendingId,
       // The room binds the pending on to its room, account and notice mode.
       ...(input.noticeMode ? { noticeMode: input.noticeMode } : {}),
+      ...(allowUndecidedTranscript ? { allowUndecidedTranscript: true } : {}),
     });
   } catch {
     // Expired, superseded or unreachable: the pending on lapses by itself.
@@ -240,8 +256,9 @@ async function confirmWithEvidence(
 export async function applyRoomMiraChoice(
   access: MeetCallRouteAccess,
   input: RoomMiraChoiceInput,
-  requireNoticeMode: boolean
+  requireNoticeMode: boolean,
+  accountConfirmed = false
 ) {
   if (input.choice === 'off') return recordOff(access, input);
-  return recordOn(access, input, requireNoticeMode);
+  return recordOn(access, input, requireNoticeMode, accountConfirmed);
 }

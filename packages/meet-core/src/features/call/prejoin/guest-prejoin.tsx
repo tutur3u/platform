@@ -6,9 +6,9 @@ import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode, Ref } from 'react';
-import { MiraJoinBox } from '../../live-assistant/mira-join-box';
 import { GuestTurnstile } from '../components/guest-turnstile';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
+import { rememberGuestMedia } from './guest-prejoin-media';
 import { PrejoinNameField } from './prejoin-name-field';
 import { PrejoinStage, type PrejoinPhase } from './prejoin-stage';
 import { usePrejoinCapture } from './use-prejoin-capture';
@@ -22,7 +22,7 @@ export type GuestPrejoinState =
 
 /**
  * The pre-join stage for a person with no account: name, the human check with
- * its puzzle fallback, the Mira box and Ask to join, beside the camera preview.
+ * its puzzle fallback and Ask to join, beside the camera preview.
  * Guests are admitted by the host, so the primary action asks to join.
  */
 export function GuestPrejoin({
@@ -37,8 +37,6 @@ export function GuestPrejoin({
   canAskHost,
   stalled,
   widget,
-  miraTicked,
-  onMiraChange,
   onToken,
   onHumanPass,
   onTokenLost,
@@ -60,8 +58,6 @@ export function GuestPrejoin({
   stalled: boolean;
   /** A single-use Turnstile token needs a fresh widget after each attempt. */
   widget: number;
-  miraTicked: boolean;
-  onMiraChange: (checked: boolean) => void;
   onToken: (token: string) => void;
   onHumanPass: (token: string) => void;
   onTokenLost: () => void;
@@ -89,13 +85,6 @@ export function GuestPrejoin({
       {script}
       <PrejoinStage
         capture={capture}
-        consent={
-          <MiraJoinBox
-            checked={miraTicked}
-            disabled={busy}
-            onCheckedChange={onMiraChange}
-          />
-        }
         fields={
           <>
             <PrejoinNameField
@@ -143,7 +132,10 @@ export function GuestPrejoin({
           </>
         }
         name={name}
-        onSubmit={onSubmit}
+        onSubmit={() => {
+          rememberGuestMedia(meetingId, capture);
+          onSubmit();
+        }}
         phase={phase}
         secondary={
           <>
@@ -152,7 +144,10 @@ export function GuestPrejoin({
                 <Button
                   className="w-full"
                   disabled={!canAskHost}
-                  onClick={onAskHost}
+                  onClick={() => {
+                    rememberGuestMedia(meetingId, capture);
+                    onAskHost();
+                  }}
                   type="button"
                   variant={stalled ? 'secondary' : 'ghost'}
                 >

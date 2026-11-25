@@ -108,6 +108,20 @@ const confirm = (pendingId: unknown, extra: object = {}) => ({
 const isOn = (snapshot: RoomServiceState) =>
   isCurrentMiraRoomOn(snapshot, meetingId, alice);
 
+test('account-based room activation leaves a transcript decline intact', async () => {
+  const f = fixture(seed());
+  const declined = await f.call(alice, transcriptChoice('decline'));
+  assert.equal(declined.status, 200);
+  const staged = await f.call(alice, { ...choice('on'), accountConfirmed: true });
+  assert.equal(staged.status, 200);
+  const finished = await f.call(alice, confirm(staged.body.pendingId, {
+    allowUndecidedTranscript: true,
+  }));
+  assert.equal(finished.status, 200);
+  assert.equal(isOn(f.snapshot()), true);
+  assert.equal(f.snapshot().transcriptConsent?.choices[alice]?.choice, 'decline');
+});
+
 test('a staged on has no consent effect until the server confirms it', async () => {
   const f = fixture(seed());
   const staged = await f.call(alice, choice('on'));

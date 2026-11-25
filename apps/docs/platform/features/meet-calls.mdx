@@ -687,35 +687,30 @@ verification; this console repair alone does not prove an authenticated join wor
 
 ### Pre-join stage (`MEET_UX_V2`)
 
-The Meet Worker var `MEET_UX_V2` (default `false`, read like
-`MEET_FORMS_ENABLED`) replaces the loading screen, the separate display-name
-step and the guest card with one pre-join stage: camera preview with mic,
-camera and device controls on the left; meeting title, name, Mira box and the
-Join button on the right. With the flag off the original flow is unchanged.
-Parley mounts the same shell and keeps the flag off.
+The Meet Worker var `MEET_UX_V2` (default `false`) gives Meet a shared pre-join
+stage for device setup, profile names and guest requests. Signed-in participants
+see **Join now**. Anonymous guests enter a display name, complete the human
+check when they can, and select **Ask to join**. The fallback still sends an
+unverified request to the host.
 
-| State | What the stage shows |
+| Guest state | What Meet shows |
 | --- | --- |
-| Connecting | The same layout while the device session and call shell load. Join keeps its label, shows a spinner and is disabled. There is no separate loading page; device-choice and startup errors keep the recovery screen. |
-| Ready, profile has a name | No name field: the name is shown as text. Mira box above Join. |
-| No name on the profile | A name field; the name is saved to the profile before signaling opens, with the browser check when the save asks for one. |
-| Guest | Name, the human check with its puzzle fallback, the Mira box and **Ask to join**; asking the host without verification and signing in stay below. |
-| Waiting for the host | Disabled Join reading "Waiting for host approval", the approval notice and Cancel request and leave. |
-| Connection error | Join becomes Refresh with the error beside it. |
+| Connecting | “Joining…” with a spinner while the device session and signaling open. |
+| Waiting for admission | “Waiting for the host to let you in,” the name and completed checks in one line, and a way to cancel. Edit expands the name and check details. |
+| Admitted | “You’re in, joining…” while the existing Join action hands off the devices. A verified guest with automatic admission goes straight into the call. |
+| Device permission pending at admission | The relevant microphone or camera choice and one Join button. The guest can finish the browser permission request or join with that device off. The verified fields stay in the summary unless the guest opens Edit. |
+| Denied | “The host didn’t let you in.” |
 
-**Ask to join** appears only on the guest stage, because guests are always admitted
-by the host; signed-in participants see **Join now** and the waiting state when the
-room holds them. On a 390 px phone Join is sticky at the bottom, after the fields
-and the Mira box in document order, and the fields scroll clear of it. The Mira
-box component and its hashed consent text are unchanged, and a slot above the
-fields is reserved for the lobby consent notice. The preview stays local until
-Join; capture is skipped for viewers and presence-only rooms once the room reports
-them. After a guest request is accepted the page refreshes into the signed-in
-stage, so the preview restarts once at that step.
+The guest request carries the selected device preferences through the page
+refresh. A returning guest without saved preferences starts muted with the
+camera off. The browser waits for an admitted state from signaling before
+handing any media to the room. The same admission and device-session checks
+apply to guests admitted automatically and those admitted by the host.
 
-Regression coverage: `prejoin-stage.test.tsx`, `connected-prejoin.test.tsx`,
-`guest-prejoin.test.tsx`, `device-session-gate.test.tsx` and
-`apps/meet/src/runtime/room-view.test.tsx`.
+Regression coverage includes
+[guest admission and device handoff](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/prejoin/connected-prejoin.test.tsx),
+`guest-prejoin.test.tsx`, `prejoin-stage.test.tsx`, `device-session-gate.test.tsx`
+and `apps/meet/src/runtime/room-view.test.tsx`.
 
 ### Phone in-room layout (`MEET_UX_V2`)
 
@@ -2708,6 +2703,46 @@ form and poll drafts keep their own language instructions. Regression coverage:
 assistant `route.test.ts`.
 Requests are deduplicated by chat message ID. The internal server-service token
 scope is never included in browser join tokens.
+
+### One Mira confirmation per Meet account
+
+Meet uses this flow when `MEET_UX_V2` is on. Room Mira starts off. The workspace
+owner’s stored 18+ audience declaration and the host’s meeting-specific audience
+and AI terms confirmation are still required. The workspace's pre-join checkbox
+default applies to the original flow, including Parley.
+
+- Each signed-in Meet account confirms once that they are 18 or older and agree
+  that Mira may listen and transcribe while it is on. The server stores the
+  versioned confirmation in `auth.users.raw_app_meta_data.meet_mira_account_confirmation`.
+  Anonymous guests can join the call and report a minor, but have no account
+  confirmation and stay outside the new room Mira acceptance.
+- A new host acceptance activates Mira for confirmed participants as their
+  clients receive the room update. Activation still uses the room's current
+  acceptance revision and the participant's evidence before it takes effect.
+  An unconfirmed participant gets one **Confirm** or **Not now** dialog after
+  admission. Pre-join has no checkbox for Mira.
+- **Not now** in the room and the personal switch off record a meeting opt-out.
+  Later host activations and rejoins preserve it. Mira excludes that person’s
+  room content and refuses their room requests. The existing audio fence
+  still pauses shared room capture when someone declines. In per-speaker
+  mode, a separate voice Allow is required and the other speakers can continue.
+  Room activation can allow the shared transcript for a participant who has
+  no transcript choice. It preserves any recorded transcript decline.
+- **Open private assistant** opens the private chat directly. The first text or
+  voice request uses the same account confirmation if needed. Private Mira
+  still has its own meeting authorization and eligibility checks. A prior
+  private withdrawal stays in force. Host activation does not turn on
+  anyone’s private microphone.
+- An active room acceptance created before the rollout retains its existing
+  participant evidence. The account fence applies to new host acceptances,
+  new **on** choices and assistant requests in Meet with the flag enabled.
+  Deploy the compatible Meet Realtime worker before enabling the flag.
+
+Regression coverage includes
+[the one-confirm popover and host controls](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/room-mira-popover.test.tsx),
+[account and durable opt-out refusals](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/routes/api/meet-call/%5BmeetingId%5D/mira-room/route.test.ts),
+[room request and source exclusion](https://github.com/tutur3u/platform/blob/main/packages/realtime/src/meet/room-mira-consent.test.ts)
+and [transcript decline preservation](https://github.com/tutur3u/platform/blob/main/apps/meet-realtime/src/room-do-mira-pending.test.ts).
 
 ## Bandwidth and cost attribution
 

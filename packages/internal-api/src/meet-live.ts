@@ -86,6 +86,7 @@ export function reviewMeetLiveTool(
 
 export type PrivateMiraPolicy = {
   accountId?: string;
+  accountConfirmation?: import('./meet-room-mira').MiraAccountConfirmation;
   version: string;
   available: boolean;
   unavailableReason?:

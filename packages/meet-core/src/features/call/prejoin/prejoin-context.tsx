@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, type ReactNode, useContext } from 'react';
+import { guestMediaRequest } from './guest-prejoin-media';
 import { type PrejoinCapture, usePrejoinCapture } from './use-prejoin-capture';
 
 /** What the pre-join stage shows before the room has reported anything. */
@@ -10,6 +11,7 @@ export type PrejoinInfo = {
   displayName: string;
   avatarUrl?: string;
   leaveHref: string;
+  guest?: boolean;
 };
 
 type PrejoinValue = { capture: PrejoinCapture; info: PrejoinInfo };
@@ -28,7 +30,17 @@ export function PrejoinProvider({
   info: PrejoinInfo;
   children: ReactNode;
 }) {
-  const capture = usePrejoinCapture();
+  const capture = usePrejoinCapture(
+    info.guest
+      ? guestMediaRequest(info.meetingId)?.preferences ?? {
+          audioEnabled: false,
+          videoEnabled: false,
+          audioDeviceId: '',
+          videoDeviceId: '',
+          outputDeviceId: '',
+        }
+      : undefined
+  );
   return (
     <PrejoinContext.Provider value={{ capture, info }}>
       {children}

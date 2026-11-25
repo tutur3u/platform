@@ -28,6 +28,10 @@ const command = z.discriminatedUnion('action', [
     choice: z.enum(['continue', 'mute', 'leave']),
     version: z.literal(MIRA_PRIVATE_NOTICE_VERSION),
   }),
+  z.object({
+    action: z.literal('mira.private.initialize'),
+    version: z.literal(MIRA_PRIVATE_NOTICE_VERSION),
+  }),
   z.object({ action: z.literal('mira.private.register'), sessionId: z.uuid() }),
   z.object({ action: z.literal('mira.private.ended'), sessionId: z.uuid() }),
 ]);
@@ -88,11 +92,22 @@ export function applyPrivateMira(
         admitted: true,
       },
     };
-  if (message.action === 'mira.private.choice') {
-    if (message.choice !== 'continue' && sessions.length)
+  if (
+    message.action === 'mira.private.choice' ||
+    message.action === 'mira.private.initialize'
+  ) {
+    const choice = message.action === 'mira.private.initialize' ? 'continue' : message.choice;
+    if (
+      message.action === 'mira.private.initialize' &&
+      ownChoice &&
+      ownChoice.choice !== 'continue' &&
+      ownChoice.meetingId === token.meetingId
+    )
+      return fail('Private Mira is off in this meeting', 409);
+    if (choice !== 'continue' && sessions.length)
       return fail('Stop private Mira before changing the choice', 409);
     if (
-      ownChoice?.choice === message.choice &&
+      ownChoice?.choice === choice &&
       ownChoice.version === MIRA_PRIVATE_NOTICE_VERSION
     )
       return {
@@ -105,7 +120,7 @@ export function applyPrivateMira(
         },
       };
     const record = {
-      choice: message.choice,
+      choice,
       version: MIRA_PRIVATE_NOTICE_VERSION,
       meetingId: token.meetingId ?? '',
       accountId,

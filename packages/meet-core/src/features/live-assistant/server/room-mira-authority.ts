@@ -13,6 +13,10 @@ import {
 } from '../../meeting-ai/server/workspace-gate';
 import { miraBillingWorkspaceId } from '../mira-entitlement';
 import { hasMiraAdultAttestation } from '../participant-consent';
+import {
+  requireMiraAccountConfirmation,
+  usesMiraAccountConfirmation,
+} from './account-confirmation';
 import { readMiraDemoAuthority } from './demo-authority';
 import { readMiraAdultAttestation } from './mira-attestation';
 
@@ -95,6 +99,8 @@ export async function requireRoomMiraAuthority(access: SignedInMeetCallAccess) {
  * the room releases for the request.
  */
 export async function requireRoomMiraFence(access: SignedInMeetCallAccess) {
+  if (usesMiraAccountConfirmation())
+    await requireMiraAccountConfirmation(access);
   const read = await callRoomService<{ ready?: boolean }>(access, {
     action: 'mira.room.read',
   });

@@ -6,7 +6,6 @@ import {
   Lock,
   Pause,
   Power,
-  TriangleAlert,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -15,9 +14,13 @@ import { useTranslations } from 'next-intl';
 import { useId, useRef, useState } from 'react';
 import { useLiveSession } from '../../live-assistant/live-session-store';
 import { MiraConsentBox } from '../../live-assistant/mira-consent-box';
+import { MEETING_APP } from '../../../runtime';
+import { useMeetUxV2 } from '../prejoin/prejoin-context';
 import { MiraAbout } from './mira-about';
 import { MiraPrivateEntry } from './mira-private-entry';
+import { ReportMinor } from './mira-report-minor';
 import { RoomMiraChip, type RoomMiraChipState } from './room-mira-chip';
+import { RoomMiraPopover } from './room-mira-popover';
 import {
   type RoomMiraAvailable,
   roomMiraConsentKey,
@@ -34,17 +37,33 @@ export { roomMiraConsentKey };
  * using Mira privately, the host's turn-off and About Mira, which gathers
  * every notice.
  */
-export function RoomMiraNotice({
-  meetingId,
-  accountId,
-  privateUsers = [],
-}: {
+type RoomMiraNoticeProps = {
   meetingId: string;
   /** The signed-in account, so the control can open its Private Assistant. */
   accountId?: string;
+  acceptanceEventId?: string;
   /** People using Mira privately; it hears only their own microphone. */
   privateUsers?: readonly { userId: string; displayName: string }[];
-}) {
+};
+
+export function RoomMiraNotice(props: RoomMiraNoticeProps) {
+  const v2 = useMeetUxV2();
+  return v2 && MEETING_APP === 'meet' ? (
+    <RoomMiraPopover
+      meetingId={props.meetingId}
+      accountId={props.accountId}
+      acceptanceEventId={props.acceptanceEventId}
+    />
+  ) : (
+    <LegacyRoomMiraNotice {...props} />
+  );
+}
+
+function LegacyRoomMiraNotice({
+  meetingId,
+  accountId,
+  privateUsers = [],
+}: RoomMiraNoticeProps) {
   const t = useTranslations('meet.mira_consent');
   const tl = useTranslations('meet.live');
   const mira = useRoomMira(meetingId);
@@ -216,6 +235,40 @@ type Mira = ReturnType<typeof useRoomMira>;
  * transcript notice that need Mira on before they can offer anything else.
  */
 export function RoomMiraSelfChoice({ meetingId }: { meetingId: string }) {
+  const v2 = useMeetUxV2();
+  return v2 && MEETING_APP === 'meet' ? (
+    <RoomMiraTranscriptChoice meetingId={meetingId} />
+  ) : (
+    <LegacyRoomMiraSelfChoice meetingId={meetingId} />
+  );
+}
+
+function RoomMiraTranscriptChoice({ meetingId }: { meetingId: string }) {
+  const t = useTranslations('meet.mira_consent');
+  const mira = useRoomMira(meetingId);
+  if (
+    !mira.noticeStale ||
+    mira.data?.choice !== 'on' ||
+    mira.data.accountConfirmation !== 'confirmed'
+  ) return null;
+  return (
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs">
+        {t('mode_changed_reason', { mode: mira.noticeMode === 'self' ? 'per_speaker' : 'room' })}
+      </p>
+      <Button
+        type="button"
+        size="sm"
+        disabled={mira.choosing || !mira.noticeKnown}
+        onClick={() => mira.choose.mutate({ choice: 'on', source: 'join' })}
+      >
+        {t('confirm_transcript_mode')}
+      </Button>
+    </div>
+  );
+}
+
+function LegacyRoomMiraSelfChoice({ meetingId }: { meetingId: string }) {
   const mira = useRoomMira(meetingId);
   if (!mira.data?.acceptance) return null;
   return (
@@ -357,37 +410,6 @@ function HostAcceptance({ mira }: { mira: Mira }) {
           <Power aria-hidden className="size-4" />
         )}
         {t('host_confirm')}
-      </Button>
-    </div>
-  );
-}
-
-/** Anyone can report a minor; a second press confirms, never a dialog. */
-function ReportMinor({ mira }: { mira: Mira }) {
-  const t = useTranslations('meet.mira_consent');
-  const [confirming, setConfirming] = useState(false);
-  return (
-    <div className="space-y-1">
-      {confirming && (
-        <p role="status" className="text-muted-foreground text-xs">
-          {t('report_minor_hint')}
-        </p>
-      )}
-      <Button
-        type="button"
-        size="sm"
-        variant={confirming ? 'destructive' : 'ghost'}
-        disabled={mira.acceptance.isPending}
-        onClick={() =>
-          confirming
-            ? mira.acceptance.mutate('report', {
-                onSettled: () => setConfirming(false),
-              })
-            : setConfirming(true)
-        }
-      >
-        <TriangleAlert aria-hidden className="size-4" />
-        {confirming ? t('report_minor_confirm') : t('report_minor')}
       </Button>
     </div>
   );

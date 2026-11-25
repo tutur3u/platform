@@ -12,6 +12,12 @@ import {
 import { connection } from 'next/server';
 import { z } from 'zod';
 import {
+  confirmMiraAccount,
+  readMiraAccountConfirmation,
+  requireMiraAccountConfirmation,
+  usesMiraAccountConfirmation,
+} from '../../../../../features/live-assistant/server/account-confirmation';
+import {
   acceptRoomMira,
   endRoomMira,
 } from '../../../../../features/live-assistant/server/room-mira-acceptance';
@@ -51,22 +57,51 @@ const command = z.discriminatedUnion('action', [
         .min(1)
         .max(MIRA_ROOM_CAPABILITIES.length),
       audienceAdultConfirmed: z.literal(true),
+      expectedActorId: z.uuid().optional(),
     })
     .strict(),
   z.object({ action: z.literal('end') }).strict(),
   z.object({ action: z.literal('report_minor') }).strict(),
+  z
+    .object({
+      action: z.literal('confirm_account'),
+      expectedActorId: z.uuid(),
+    })
+    .strict(),
 ]);
 
 /** A storage check that cannot run counts as unable to store: fail closed. */
 const canStoreModeOrFalse = () => canStoreMiraNoticeMode().catch(() => false);
 
 async function readView(access: MeetCallRouteAccess) {
-  const [view, boxTickedByDefault] = await Promise.all([
+  const [view, boxTickedByDefault, accountConfirmation] = await Promise.all([
     callRoomService<MiraRoomView>(access, { action: 'mira.room.read' }),
     // A failed default lookup shows the box unticked, never fails the view.
     readMiraBoxTickedByDefault(access.meeting.ws_id).catch(() => false),
+    usesMiraAccountConfirmation()
+      ? readMiraAccountConfirmation(access)
+      : undefined,
   ]);
-  return { available: true as const, ...view, boxTickedByDefault };
+  // The evidence ledger can outlive the room snapshot. Never automatically
+  // include someone whose last durable choice was off.
+  if (!accountConfirmation)
+    return { available: true as const, ...view, boxTickedByDefault };
+  const lastChoice =
+    accountConfirmation !== 'guest' && view.lastChoice === null
+      ? await readOwnMiraLastChoice({
+          meetingId: access.meeting.id,
+          participantId: access.user.id,
+          guest: false,
+        })
+      : view.lastChoice;
+  return {
+    available: true as const,
+    ...view,
+    boxTickedByDefault,
+    accountConfirmation,
+    lastChoice: lastChoice ?? null,
+    ...(lastChoice === undefined ? { autoJoinBlocked: true } : {}),
+  };
 }
 
 /**
@@ -120,7 +155,19 @@ export async function POST(
     const input = command.safeParse(await request.json().catch(() => null));
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid request');
     const data = input.data;
+    const accountFlow = usesMiraAccountConfirmation();
+    if (data.action === 'confirm_account') {
+      if (!accountFlow)
+        throw new MeetCallAccessError(403, 'Mira confirmation is unavailable');
+      // Require live presence before recording a confirmation from this call.
+      await callRoomService(access, { action: 'mira.room.read' });
+      await confirmMiraAccount(access, data.expectedActorId);
+      if (!(await readRoomMiraAvailability(access))) return { available: false };
+      return readView(access);
+    }
     if (data.action === 'accept') {
+      if (accountFlow && data.expectedActorId !== access.user.id)
+        throw new MeetCallAccessError(403, 'Mira account changed');
       await acceptRoomMira(access, data.capabilities);
       return readView(access);
     }
@@ -139,6 +186,24 @@ export async function POST(
     // before the room changes so a refusal leaves the room untouched.
     let requireNoticeMode = false;
     if (data.choice === 'on') {
+      if (accountFlow) {
+        await requireMiraAccountConfirmation(access);
+        if (data.source === 'join') {
+          const previous = await readOwnMiraLastChoice({
+            meetingId,
+            participantId: access.user.id,
+            guest: false,
+          });
+          if (previous === undefined)
+            throw new MeetCallAccessError(503, 'Your choice could not be read');
+          if (previous === 'off')
+            throw new MeetCallAccessError(
+              409,
+              'Turn Mira back on in the call',
+              'MIRA_ROOM_JOIN_OVER_OFF'
+            );
+        }
+      }
       const current = await requireCurrentMiraNoticeMode(
         access,
         data.noticeMode
@@ -147,7 +212,7 @@ export async function POST(
       if (requireNoticeMode && !(await canStoreModeOrFalse()))
         throw new MeetCallAccessError(503, 'Your choice could not be saved');
     }
-    await applyRoomMiraChoice(access, data, requireNoticeMode);
+    await applyRoomMiraChoice(access, data, requireNoticeMode, accountFlow);
     return readView(access);
   });
 }

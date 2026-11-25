@@ -47,6 +47,7 @@ export function CallShell({
         displayName: props.defaultDisplayName,
         avatarUrl: props.defaultAvatarUrl,
         leaveHref: props.leaveHref,
+        guest: props.requiresAccount,
       }}
     >
       <DeviceSessionGate {...props} nameSetup={nameSetup} prejoin />

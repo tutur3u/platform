@@ -226,7 +226,7 @@ export function CallSettings({
                 label: miraT('settings_tab'),
                 description: pageT('mira'),
                 icon: Sparkles,
-                keywords: [miraT('toggle'), miraT('badge')],
+                keywords: [miraT('toggle')],
               },
             ]
           : []),

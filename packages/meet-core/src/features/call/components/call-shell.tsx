@@ -334,6 +334,7 @@ function CallShellContent({
     return (
       <JoinOutcome
         reason={state.admissionReason ?? 'denied'}
+        guestRequest={requiresAccount}
         meetingName={meetingName}
         leaveHref={backHref}
       />
@@ -360,6 +361,7 @@ function CallShellContent({
     return (
       <ConnectedLobby
         canReadWorkspace={canReadWorkspace}
+        guestRequest={requiresAccount}
         defaultAvatarUrl={defaultAvatarUrl}
         defaultDisplayName={defaultDisplayName}
         joined={joined}
@@ -402,6 +404,11 @@ function CallShellContent({
         connection={room.connectionStatus}
         onRetry={retryConnection}
         privateMiraUsers={privateMiraUsers(room.state.participants)}
+        miraAcceptanceEventId={
+          state.chat.findLast(({ notice }) =>
+            notice?.kind === 'mira.on' || notice?.kind === 'mira.off'
+          )?.id
+        }
         actions={
           <CallHeaderControls
             accountId={accountId}

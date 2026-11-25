@@ -18,6 +18,11 @@ import {
   MIRA_PRIVATE_NOTICE_VERSION,
   MIRA_ROOM_DENIED,
 } from '@tuturuuu/realtime/meet';
+import {
+  readMiraAccountConfirmation,
+  requireMiraAccountConfirmation,
+  usesMiraAccountConfirmation,
+} from '../../../../features/live-assistant/server/account-confirmation';
 import { readMiraDemoAuthority } from '../../../../features/live-assistant/server/demo-authority';
 import { privateMiraBillingWorkspace } from '../../../../features/live-assistant/server/mira-billing';
 import {
@@ -56,6 +61,7 @@ export async function POST(
     const input = schema.safeParse(body.data);
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid request');
     const command = input.data;
+    const accountFlow = usesMiraAccountConfirmation();
     if (command.action === 'start' && command.mode !== 'personal')
       throw new MeetCallAccessError(403, MIRA_ROOM_DENIED);
     const cloudflare = await getCloudflareContext({ async: true });
@@ -69,6 +75,11 @@ export async function POST(
       if (command.expectedActorId && command.expectedActorId !== access.user.id)
         throw new MeetCallAccessError(403, 'Private Mira account changed');
       const current = await readPrivateMiraChoice(access);
+      if (accountFlow && command.choice === 'continue') {
+        if (!command.expectedActorId)
+          throw new MeetCallAccessError(403, 'Private Mira account changed');
+        await requireMiraAccountConfirmation(access);
+      }
       if (command.expectedActorId && command.choice === 'continue') {
         const availability = await readMiraDemoAuthority({
           accountId: access.user.id,
@@ -106,11 +117,16 @@ export async function POST(
           });
         }
       }
-      return callRoomService(access, {
-        action: 'mira.private.choice',
-        choice: command.choice,
-        version: command.version,
-      });
+      return callRoomService(
+        access,
+        accountFlow && command.choice === 'continue'
+          ? { action: 'mira.private.initialize', version: command.version }
+          : {
+              action: 'mira.private.choice',
+              choice: command.choice,
+              version: command.version,
+            }
+      );
     }
     const currentChoice =
       command.action === 'stop'
@@ -142,6 +158,9 @@ export async function POST(
       return {
         ...currentChoice,
         accountId: access.user.id,
+        ...(accountFlow
+          ? { accountConfirmation: await readMiraAccountConfirmation(access) }
+          : {}),
         available: unavailableReason === undefined,
         unavailableReason,
       };

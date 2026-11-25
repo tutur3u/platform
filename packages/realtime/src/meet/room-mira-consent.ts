@@ -57,6 +57,7 @@ const command = z.discriminatedUnion('action', [
     // The transcript notice the participant saw: room capture or each
     // person's own device. Absent means the room notice.
     noticeMode: z.enum(['room', 'self']).optional(),
+    accountConfirmed: z.literal(true).optional(),
   }),
   // Brackets every provider request that carries room-derived content.
   z.object({
@@ -69,6 +70,7 @@ const command = z.discriminatedUnion('action', [
     action: z.literal('mira.room.confirm'),
     pendingId: z.uuid(),
     noticeMode: z.enum(['room', 'self']).optional(),
+    allowUndecidedTranscript: z.literal(true).optional(),
   }),
   z.object({
     action: z.literal('mira.room.release'),
@@ -160,8 +162,29 @@ export function applyMiraRoomConsent(
     body: miraRoomView(next, token, accountId, now),
   });
   // Refusals of a confirm are 409 with no state change.
-  if (parsed.data.action === 'mira.room.confirm')
-    return confirmMiraOn(settled, token, accountId, parsed.data, now, reply);
+  if (parsed.data.action === 'mira.room.confirm') {
+    const input = parsed.data;
+    return confirmMiraOn(settled, token, accountId, input, now, (next) => {
+      // Give the legacy room transcript an Allow in the same turn as the
+      // confirmed Mira choice. A separate request could overwrite a racing
+      // decline, or run after a different acceptance starts.
+      if (
+        input.allowUndecidedTranscript &&
+        next !== settled &&
+        !isMiraNoticeStale(settled, accountId) &&
+        next.selfCapture?.mode !== 'self' &&
+        !next.transcriptConsent?.choices[accountId]
+      ) {
+        const allowed = applyMeetTranscriptConsent(next, token, {
+          action: 'transcript.consent.choice',
+          choice: 'allow',
+          version: MEET_TRANSCRIPT_NOTICE_VERSION,
+        }, now);
+        return reply(allowed?.state ?? next);
+      }
+      return reply(next);
+    });
+  }
   const admitted = admittedMiraRoomAccounts(settled).includes(accountId);
   // Turning off always records, even while not admitted, so nobody needs to
   // be in the room to stop Mira reading them.
@@ -178,7 +201,8 @@ export function applyMiraRoomConsent(
     return miraRoomDispatch(settled, token, accountId, parsed.data, now);
   const { choice, acceptanceRevision, source } = parsed.data;
   const noticeMode = parsed.data.noticeMode ?? 'room';
-  const currentRevision = currentMiraRoomAcceptance(settled)?.revision ?? 0;
+  const currentAcceptance = currentMiraRoomAcceptance(settled);
+  const currentRevision = currentAcceptance?.revision ?? 0;
   // An on choice counts only under the notice of the room's current
   // transcript mode, checked in the same turn as any mode change. Off is
   // never refused.
@@ -203,6 +227,17 @@ export function applyMiraRoomConsent(
       status: 409,
     };
   if (choice === 'off') return reply(turnOff(settled, token, accountId, now));
+  if (
+    currentAcceptance?.accountConfirmationRequired &&
+    (!parsed.data.accountConfirmed ||
+      token.guest === true ||
+      token.participantKind === 'guest')
+  )
+    return {
+      state: settled,
+      body: { error: 'Confirm your account before using Mira' },
+      status: 403,
+    };
   const own = settled.miraRoom?.choices[accountId];
   const pending = settled.miraRoom?.pending?.[accountId];
   // Only an action in the call turns an earlier off, from any acceptance,

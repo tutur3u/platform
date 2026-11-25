@@ -6,6 +6,10 @@ import {
   callRoomService,
   type SignedInMeetCallAccess,
 } from '../../call/server/room-service';
+import {
+  requireMiraAccountConfirmation,
+  usesMiraAccountConfirmation,
+} from './account-confirmation';
 
 type Access = SignedInMeetCallAccess;
 const snapshot = z.object({
@@ -34,6 +38,8 @@ export async function readPrivateMiraChoice(access: Access) {
 }
 
 export async function requirePrivateMiraChoice(access: Access) {
+  if (usesMiraAccountConfirmation())
+    await requireMiraAccountConfirmation(access);
   const current = await readPrivateMiraChoice(access);
   if (
     current.choice?.choice !== 'continue' ||

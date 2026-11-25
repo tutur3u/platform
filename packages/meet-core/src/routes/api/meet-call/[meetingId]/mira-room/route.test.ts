@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   available: vi.fn(),
@@ -11,12 +11,20 @@ const f = vi.hoisted(() => ({
   openRevision: vi.fn(),
   canStore: vi.fn(),
   cf: vi.fn(),
+  access: { guest: true },
+  getUserById: vi.fn(),
+  updateUserById: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: async () => undefined }));
 vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: f.cf }));
-vi.mock('../../../../../features/meeting-ai/server/per-speaker-flag', () => ({
-  meetPerSpeakerEnabled: f.perSpeaker,
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    auth: { admin: {
+      getUserById: f.getUserById,
+      updateUserById: f.updateUserById,
+    } },
+  }),
 }));
 vi.mock(
   '../../../../../features/live-assistant/server/room-mira-authority',
@@ -63,7 +71,7 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     _request: Request,
     _id: string,
     run: (access: unknown) => Promise<unknown>
-  ) => Response.json(await run(guestAccess)),
+  ) => Response.json(await run({ ...guestAccess, guest: f.access.guest })),
 }));
 
 import { MIRA_ROOM_NOTICE_VERSION as version } from '@tuturuuu/realtime/meet';
@@ -101,12 +109,58 @@ const choice = (overrides: Record<string, unknown> = {}) => ({
 
 beforeEach(() => {
   vi.resetAllMocks();
+  f.access.guest = true;
   f.available.mockResolvedValue(true);
   f.room.mockImplementation(roomDefault);
   f.boxDefault.mockResolvedValue(true);
   f.lastChoice.mockResolvedValue(null);
   f.record.mockResolvedValue(undefined);
   f.canStore.mockResolvedValue(true);
+});
+afterEach(() => vi.unstubAllEnvs());
+
+describe('account confirmation in the redesigned Meet flow', () => {
+  const actor = guestAccess.user.id;
+  const marker = { meet_mira_account_confirmation: '2026-11-25-v1' };
+
+  beforeEach(() => {
+    vi.stubEnv('MEET_UX_V2', 'true');
+    f.access.guest = false;
+    f.getUserById.mockResolvedValue({
+      data: { user: { id: actor, app_metadata: {} } },
+    });
+  });
+
+  it('refuses an on for an unconfirmed account before touching the room', async () => {
+    await expect(post(choice())).rejects.toMatchObject({
+      status: 403,
+      code: 'MIRA_ACCOUNT_CONFIRMATION_REQUIRED',
+    });
+    expect(f.room).not.toHaveBeenCalled();
+    expect(f.record).not.toHaveBeenCalled();
+  });
+
+  it('refuses automatic on when the durable meeting choice was off', async () => {
+    f.getUserById.mockResolvedValue({ data: { user: { id: actor, app_metadata: marker } } });
+    f.lastChoice.mockResolvedValue('off');
+    await expect(post(choice())).rejects.toMatchObject({ status: 409, code: 'MIRA_ROOM_JOIN_OVER_OFF' });
+    expect(f.room).not.toHaveBeenCalled();
+  });
+
+  it('writes the account marker only for the authenticated actor and once if confirmed', async () => {
+    const action = { action: 'confirm_account', expectedActorId: actor };
+    const confirmed = { data: { user: { id: actor, app_metadata: marker } } };
+    f.updateUserById.mockImplementation(async () => {
+      f.getUserById.mockResolvedValue(confirmed);
+      return confirmed;
+    });
+    await expect(post({ ...action, expectedActorId: PENDING })).rejects.toMatchObject({ status: 403 });
+    expect(f.updateUserById).not.toHaveBeenCalled();
+    expect(await (await post(action)).json()).toMatchObject({ accountConfirmation: 'confirmed' });
+    expect(await (await post(action)).json()).toMatchObject({ accountConfirmation: 'confirmed' });
+    expect(f.updateUserById).toHaveBeenCalledWith(actor, { app_metadata: marker });
+    expect(f.updateUserById).toHaveBeenCalledOnce();
+  });
 });
 
 it('hides Mira without touching the room when it is unavailable', async () => {

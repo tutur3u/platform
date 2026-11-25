@@ -77,8 +77,10 @@ export async function hashMiraConsentText(text: string) {
  */
 export function MiraConsentInfoContent({
   mode = 'room',
+  accountFlow = false,
 }: {
   mode?: MiraNoticeMode;
+  accountFlow?: boolean;
 }) {
   const t = useTranslations('meet.mira_consent');
   return (
@@ -86,7 +88,7 @@ export function MiraConsentInfoContent({
       <p className="font-medium">{t('info_title')}</p>
       {miraConsentInfoKeys(mode).map((key) => (
         <p key={key} className="text-pretty text-muted-foreground text-xs">
-          {t(key)}
+          {t(accountFlow && key === 'info_what' ? 'info_what_account' : key)}
         </p>
       ))}
       <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1 text-xs">

@@ -25,6 +25,7 @@ export type MiraRoomAcceptance = {
   capabilities: MiraRoomCapability[];
   noticeVersion: string;
   acceptedAt: number;
+  accountConfirmationRequired?: true;
 };
 
 export type MiraRoomEndReason = 'turned_off' | 'minor_reported';
@@ -40,6 +41,7 @@ export const miraRoomAcceptanceCommand = z.discriminatedUnion('action', [
       .max(MIRA_ROOM_CAPABILITIES.length),
     noticeVersion: z.literal(MIRA_ROOM_NOTICE_VERSION),
     audienceAdultConfirmed: z.literal(true),
+    accountConfirmationRequired: z.literal(true).optional(),
   }),
   z.object({
     action: z.literal('mira.room.end'),
@@ -190,6 +192,9 @@ export function applyMiraRoomAcceptance(
     capabilities: [...new Set(capabilities)],
     noticeVersion: MIRA_ROOM_NOTICE_VERSION,
     acceptedAt: now,
+    ...(parsed.data.accountConfirmationRequired
+      ? { accountConfirmationRequired: true as const }
+      : {}),
   };
   const next = withoutTranscriptAllows({
     ...state,

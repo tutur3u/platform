@@ -4,17 +4,10 @@ import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { MeetRoomController } from '../lib/room-controller';
+import { GuestVerificationProvider } from '../components/guest-verification-context';
+import { JoinOutcome } from '../components/join-outcome';
 import type { PrejoinCapture } from './use-prejoin-capture';
 
-const remember = vi.hoisted(() => vi.fn(async () => {}));
-vi.mock('../../live-assistant/mira-join-box', () => ({
-  useRememberMiraJoin: () => remember,
-}));
-vi.mock('../components/call-lobby', () => ({
-  LobbyMiraBox: ({ meetingId }: { meetingId: string }) => (
-    <div data-testid="mira-box">{meetingId}</div>
-  ),
-}));
 vi.mock('../components/guest-lobby-upgrade', () => ({
   GuestLobbyUpgrade: () => <div data-testid="guest-upgrade" />,
 }));
@@ -25,6 +18,7 @@ const rename = vi.hoisted(() =>
 vi.mock('@tuturuuu/internal-api', () => ({ updateMeetCallTitle: rename }));
 
 import { ConnectedPrejoin } from './connected-prejoin';
+import { forgetGuestMedia, rememberGuestMedia } from './guest-prejoin-media';
 import { PrejoinProvider } from './prejoin-context';
 
 const call = messages.meet.call;
@@ -101,12 +95,17 @@ function show(
     error?: string;
     handedOff?: boolean;
     meetingIdFromProvider?: boolean;
+    guestRequest?: boolean;
+    permissionPending?: boolean;
+    verified?: boolean;
   } = {}
 ) {
   const cap = capture();
+  if (options.permissionPending) cap.audioPermissionPending = true;
+  if (options.guestRequest) rememberGuestMedia('m-guest', cap);
   if (options.handedOff)
     (cap as unknown as { handedOff: boolean }).handedOff = true;
-  const controller = room(options.admission ?? 'idle', {}, options.role);
+  const controller = room(options.admission ?? 'admitted', {}, options.role);
   if (options.error)
     (controller.state as unknown as { error: string }).error = options.error;
   const onJoined = vi.fn();
@@ -128,13 +127,19 @@ function show(
   const view = render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <Wrap>
+        <GuestVerificationProvider value={options.guestRequest ? {
+          meetingId: 'm-guest',
+          siteKey: 'site',
+          verified: options.verified ?? false,
+        } : null}>
         <ConnectedPrejoin
           canReadWorkspace={options.canReadWorkspace ?? true}
           capture={cap}
           defaultDisplayName={options.name ?? 'Linh Tran'}
           joined={options.joined ?? false}
           meetingName="Weekly sync"
-          miraMeetingId={options.miraMeetingId}
+          miraMeetingId={options.guestRequest ? 'm-guest' : options.miraMeetingId}
+          guestRequest={options.guestRequest}
           onJoined={onJoined}
           onLeave={onLeave}
           onOutputDeviceChange={vi.fn()}
@@ -145,6 +150,7 @@ function show(
           room={controller}
           runMediaAction={async (action) => action()}
         />
+        </GuestVerificationProvider>
       </Wrap>
     </NextIntlClientProvider>
   );
@@ -153,7 +159,61 @@ function show(
 
 afterEach(() => {
   cleanup();
+  forgetGuestMedia('m-guest');
   vi.clearAllMocks();
+});
+
+it('hands off devices after guest admission without another click', () => {
+  const { cap, onJoined } = show({ guestRequest: true, verified: true });
+  expect(screen.getByRole('status').textContent).toBe(call.prejoin.guest_admitted);
+  expect(screen.queryByRole('button', { name: call.prejoin.guest_join })).toBeNull();
+  expect(cap.handOff).toHaveBeenCalledOnce();
+  expect(onJoined).toHaveBeenCalledOnce();
+});
+
+it('keeps a manually admitted guest on the single pending device choice', () => {
+  const { cap, onJoined } = show({ guestRequest: true, permissionPending: true });
+  expect(screen.getByRole('status').textContent).toBe(call.prejoin.guest_confirm);
+  expect(screen.getAllByRole('switch')).toHaveLength(1);
+  expect(screen.getByRole('switch', { name: call.prejoin.guest_microphone })).toBeTruthy();
+  expect(screen.getByRole('button', { name: call.prejoin.guest_join })).toHaveProperty('disabled', true);
+  expect(screen.queryByRole('textbox')).toBeNull();
+  expect(cap.handOff).not.toHaveBeenCalled();
+  expect(onJoined).not.toHaveBeenCalled();
+});
+
+it('summarizes the completed guest fields and opens them on Edit', () => {
+  show({ guestRequest: true, permissionPending: true, verified: true });
+  expect(screen.getByText(`${call.prejoin.guest_summary.replace('{name}', 'Linh Tran')} · ${call.guest_join.verified}`)).toBeTruthy();
+  expect(screen.queryByRole('textbox')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: call.prejoin.guest_edit }));
+  expect(screen.getByRole('textbox', { name: call.your_name })).toHaveProperty('value', 'Linh Tran');
+  expect(screen.getByText(call.guest_join.verified)).toBeTruthy();
+});
+
+it.each(['connecting', 'waiting'])('keeps joining gated during %s', (admission) => {
+  const { onJoined } = show({ guestRequest: true, admission });
+  const expected = admission === 'waiting' ? call.prejoin.guest_waiting : call.prejoin.guest_joining;
+  expect(screen.getByRole('status').textContent).toBe(expected);
+  expect(onJoined).not.toHaveBeenCalled();
+});
+
+it('shows the guest denial copy after the room refuses admission', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <PrejoinProvider info={{
+        meetingId: 'm-guest',
+        meetingName: 'Weekly sync',
+        displayName: 'Linh Tran',
+        leaveHref: '/',
+        guest: true,
+      }}>
+        <JoinOutcome reason="denied" guestRequest />
+      </PrejoinProvider>
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByRole('heading', { name: call.prejoin.guest_denied })).toBeTruthy();
+  expect(screen.getByText(call.prejoin.guest_denied_hint)).toBeTruthy();
 });
 
 it('is ready with no name field when the profile has a name, and joins on press', async () => {
@@ -165,7 +225,7 @@ it('is ready with no name field when the profile has a name, and joins on press'
   expect(nobody.className).not.toMatch(/border|rounded|bg-/);
   expect(screen.queryByText(call.ready_to_join)).toBeNull();
   expect(screen.queryByText(call.leave)).toBeNull();
-  expect(screen.getByTestId('mira-box').textContent).toBe('m-1');
+  expect(screen.queryByRole('checkbox')).toBeNull();
   expect(
     screen.queryByText(messages.meet.call.guest_join.ask_to_join)
   ).toBeNull();

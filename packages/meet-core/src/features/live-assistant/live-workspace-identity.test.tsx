@@ -14,12 +14,16 @@ import type { MeetRoomController } from '../call/lib/room-controller';
 const f = vi.hoisted(() => ({
   start: vi.fn(),
   error: undefined as string | undefined,
+  v2: false,
   read: vi.fn(),
   choice: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   readPrivateMiraPolicy: f.read,
   setPrivateMiraChoice: f.choice,
+}));
+vi.mock('../call/prejoin/prejoin-context', () => ({
+  useMeetUxV2: () => f.v2,
 }));
 vi.mock('./use-live-assistant', () => ({
   useLiveAssistant: () => ({
@@ -56,6 +60,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
   f.error = undefined;
+  f.v2 = false;
 });
 function syntheticRoom() {
   return {
@@ -70,6 +75,7 @@ function syntheticRoom() {
     getSelectedDevices: () => ({ audio: '', microphoneRevision: 0 }),
     leave: vi.fn(),
     toggleMicrophone: vi.fn(),
+    sendChat: vi.fn(),
   } as unknown as MeetRoomController & { leave: ReturnType<typeof vi.fn> };
 }
 function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
@@ -95,6 +101,15 @@ function showPanel(room: MeetRoomController, onLeave = vi.fn()) {
   );
   fireEvent.click(screen.getByText('probe-consent'));
 }
+
+it('opens the private composer directly in the redesigned flow', async () => {
+  f.v2 = true;
+  showPanel(syntheticRoom());
+  expect(await screen.findByRole('textbox', { name: messages.meet.call.personal_chat })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: messages.meet.live.phase_continue })).toBeNull();
+  expect(screen.queryByRole('button', { name: messages.meet.live.phase_mute })).toBeNull();
+  expect(f.choice).not.toHaveBeenCalled();
+});
 it('offers private own-microphone start to the tab only after a confirmed choice for a distinct account/device', async () => {
   f.read.mockResolvedValue({
     version: 'synthetic-v1',

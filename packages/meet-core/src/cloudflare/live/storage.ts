@@ -23,6 +23,7 @@ export interface LiveEnvironment {
   /** Reviewed allow-all opt-in; only MEET_AI_ALL_WORKSPACES_REVIEWED counts. */
   MEET_AI_ALL_WORKSPACES?: string;
   MEET_AI_DISABLED?: string;
+  MEET_UX_V2?: string;
   MEET_AI_DISABLED_WORKSPACE_IDS?: string;
   MEET_AI_PROTECTED_WORKSPACE_IDS?: string;
   /** Shared with Meet hosting: only `true` admits paid Personal tiers to Mira. */

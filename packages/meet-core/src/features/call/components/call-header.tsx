@@ -26,6 +26,7 @@ export function CallHeader({
   connection,
   onRetry,
   privateMiraUsers,
+  miraAcceptanceEventId,
   actions,
 }: {
   meetingId: string;
@@ -40,6 +41,7 @@ export function CallHeader({
   onRetry: () => void;
   /** People using Mira privately, listed in the Mira control. */
   privateMiraUsers?: ComponentProps<typeof RoomMiraNotice>['privateUsers'];
+  miraAcceptanceEventId?: string;
   actions: ReactNode;
 }) {
   const t = useTranslations('meet.call');
@@ -82,6 +84,7 @@ export function CallHeader({
           meetingId={meetingId}
           accountId={accountId}
           privateUsers={privateMiraUsers}
+          acceptanceEventId={miraAcceptanceEventId}
         />
         {actions}
       </div>

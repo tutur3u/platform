@@ -21,10 +21,12 @@ import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
  */
 export function MiraAbout({
   mode = 'room',
+  showAdultNotice = true,
   children,
 }: {
   /** The meeting's notice, the one the participant's choice is hashed over. */
   mode?: MiraNoticeMode;
+  showAdultNotice?: boolean;
   children?: ReactNode;
 }) {
   const t = useTranslations('meet.mira_consent');
@@ -39,8 +41,8 @@ export function MiraAbout({
         />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-2 pt-2">
-        <MiraAdultNotice />
-        <MiraConsentInfoContent mode={mode} />
+        {showAdultNotice && <MiraAdultNotice />}
+        <MiraConsentInfoContent mode={mode} accountFlow={!showAdultNotice} />
         {children}
       </CollapsibleContent>
     </Collapsible>

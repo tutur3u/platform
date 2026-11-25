@@ -66,21 +66,23 @@ export type PrejoinJoinMedia = {
   outputDeviceId: string;
 };
 
+export type PrejoinMediaPreferences = Omit<PrejoinJoinMedia, 'previewStream'>;
+
 /**
  * The local pre-join preview: microphone and camera streams, device choice and
  * the mute and camera switches. Nothing is published until the stage hands the
  * preview to the room, so the stream stays on this device.
  */
-export function usePrejoinCapture() {
+export function usePrejoinCapture(initial?: PrejoinMediaPreferences) {
   const t = useTranslations('meet.call');
   const { devices, refreshDevices } = useLobbyMediaDevices();
-  const [audioRequested, setAudioRequested] = useState(true);
-  const [videoRequested, setVideoRequested] = useState(false);
+  const [audioRequested, setAudioRequested] = useState(initial?.audioEnabled ?? true);
+  const [videoRequested, setVideoRequested] = useState(initial?.videoEnabled ?? false);
   const [limit, setLimit] = useState<PrejoinLimit>('none');
   const [handedOff, setHandedOff] = useState(false);
-  const [audioDeviceId, setAudioDeviceId] = useState('');
-  const [videoDeviceId, setVideoDeviceId] = useState('');
-  const [outputDeviceId, setOutputDeviceId] = useState('');
+  const [audioDeviceId, setAudioDeviceId] = useState(initial?.audioDeviceId ?? '');
+  const [videoDeviceId, setVideoDeviceId] = useState(initial?.videoDeviceId ?? '');
+  const [outputDeviceId, setOutputDeviceId] = useState(initial?.outputDeviceId ?? '');
   // Bumped to re-acquire the system default after its track ended.
   const [micAttempt, setMicAttempt] = useState(0);
   const [cameraAttempt, setCameraAttempt] = useState(0);
@@ -291,6 +293,8 @@ export function usePrejoinCapture() {
     previewStream,
     previewError,
     micError,
+    audioPermissionPending: audioEnabled && !handedOff && !micStream && canCapture(),
+    videoPermissionPending: videoEnabled && !handedOff && !previewStream && canCapture(),
     handedOff,
     limited: limit !== 'none',
     setLimit,

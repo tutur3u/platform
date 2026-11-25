@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import {
+  MIRA_ACCOUNT_CONFIRMATION_KEY,
+  MIRA_ACCOUNT_CONFIRMATION_VERSION,
+} from '../../features/live-assistant/account-confirmation';
+import {
   miraAttestationFromRow,
   miraDemoAdmission,
 } from '../../features/live-assistant/demo-admission';
@@ -41,6 +45,15 @@ export async function requireCurrentPrivateGrant(
   )
     throw new Error('Private Mira choice is unavailable');
 
+  if (env.MEET_UX_V2 === 'true' && saved.claims.app !== 'parley') {
+    const actor = authResult.parse(await liveAuthUser(env, saved.claims.ownerId));
+    if (
+      actor.id !== saved.claims.ownerId ||
+      actor.app_metadata?.[MIRA_ACCOUNT_CONFIRMATION_KEY] !== MIRA_ACCOUNT_CONFIRMATION_VERSION
+    )
+      throw new Error('Private Mira account confirmation is unavailable');
+  }
+
   if (saved.claims.workspaceAuthority === 'workspace-admin') {
     const workspaceId = z.uuid().parse(saved.identity.workspaceId);
     const { workspace, attestation } = await readLiveWorkspaceAudience(
@@ -64,6 +77,7 @@ const authUser = z.object({
   id: z.uuid(),
   email: z.string().nullable().optional(),
   email_confirmed_at: z.string().nullable().optional(),
+  app_metadata: z.record(z.string(), z.unknown()).optional(),
   identities: z
     .array(
       z.object({

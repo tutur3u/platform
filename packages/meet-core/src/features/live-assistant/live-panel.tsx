@@ -10,8 +10,11 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MEETING_APP } from '../../runtime';
 import { MiraAvatar } from '../call/components/mira-profile';
+import { PersonalChat } from '../call/components/personal-chat';
 import type { MeetRoomController } from '../call/lib/room-controller';
+import { useMeetUxV2 } from '../call/prejoin/prejoin-context';
 import {
   clearLiveSession,
   type LiveSessionControls,
@@ -47,6 +50,8 @@ export function MeetLivePanel({
   onLeave: () => void;
 }) {
   const t = useTranslations('meet.live');
+  const call = useTranslations('meet.call');
+  const v2 = useMeetUxV2() && MEETING_APP === 'meet';
   const streams: MediaStream[] = [];
   const live = useLiveAssistant(
     meetingId,
@@ -69,7 +74,7 @@ export function MeetLivePanel({
   const policy = useQuery({
     queryKey: ['mira-private-choice', meetingId],
     queryFn: () => readPrivateMiraPolicy(meetingId),
-    enabled: roomAdmitted,
+    enabled: roomAdmitted && !v2,
     retry: false,
   });
   const confirmed =
@@ -99,14 +104,15 @@ export function MeetLivePanel({
       live.send({ type: 'pause', paused: true });
   }, [active, live.mode, room.media.audioEnabled, live.send]);
   const accepted = choiceAccepted && confirmed;
-  const latest = useRef({ live, room, accepted, audioSuppressed, accountId });
-  latest.current = { live, room, accepted, audioSuppressed, accountId };
+  const canStart = v2 ? roomAdmitted : accepted;
+  const latest = useRef({ live, room, canStart, audioSuppressed, accountId });
+  latest.current = { live, room, canStart, audioSuppressed, accountId };
   const controls = useMemo<LiveSessionControls>(
     () => ({
       start: async () => {
-        const { live, room, accepted, audioSuppressed, accountId } =
+        const { live, room, canStart, audioSuppressed, accountId } =
           latest.current;
-        if (!accepted || audioSuppressed || !accountId) return;
+        if (!canStart || audioSuppressed || !accountId) return;
         const restoreMicrophone = room.media.audioEnabled;
         const muteRevision = room.getSelectedDevices().microphoneRevision + 1;
         if (restoreMicrophone) await room.toggleMicrophone();
@@ -188,24 +194,39 @@ export function MeetLivePanel({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MiraAvatar />
-            {t('title')}
+            {v2 ? t('open_private') : t('title')}
           </DialogTitle>
-          <DialogDescription>{t('consent_hint')}</DialogDescription>
+          <DialogDescription className={v2 ? 'sr-only' : undefined}>
+            {v2 ? call('personal_chat') : t('consent_hint')}
+          </DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 overflow-y-auto">
-          <PrivateMiraNotice
-            wsId={wsId}
-            meetingId={meetingId}
-            accountId={accountId}
-            connected={roomAdmitted}
-            onStop={live.stop}
-            onLeave={() => {
-              setOpen(false);
-              onLeave();
-            }}
-            onAccepted={setChoiceAccepted}
-          />
-        </div>
+        {v2 ? (
+          <div className="flex min-h-0 flex-col">
+            {open && (
+              <PersonalChat
+                meetingId={meetingId}
+                accountId={accountId}
+                wsId={wsId}
+                onShare={room.sendChat}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="min-h-0 overflow-y-auto">
+            <PrivateMiraNotice
+              wsId={wsId}
+              meetingId={meetingId}
+              accountId={accountId}
+              connected={roomAdmitted}
+              onStop={live.stop}
+              onLeave={() => {
+                setOpen(false);
+                onLeave();
+              }}
+              onAccepted={setChoiceAccepted}
+            />
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

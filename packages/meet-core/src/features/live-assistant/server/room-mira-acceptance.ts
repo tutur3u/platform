@@ -10,6 +10,10 @@ import {
   callRoomService,
   type MeetCallRouteAccess,
 } from '../../call/server/room-service';
+import {
+  requireMiraAccountConfirmation,
+  usesMiraAccountConfirmation,
+} from './account-confirmation';
 import { readRoomMiraAvailability } from './room-mira-authority';
 import { endMiraAcceptance, recordMiraAcceptance } from './room-mira-evidence';
 
@@ -42,6 +46,8 @@ export async function acceptRoomMira(
 ) {
   if (isGuest(access))
     throw new MeetCallAccessError(403, 'Guests cannot turn on Mira');
+  const accountFlow = usesMiraAccountConfirmation();
+  if (accountFlow) await requireMiraAccountConfirmation(access);
   if (!(await readRoomMiraAvailability(access)))
     throw new MeetCallAccessError(
       403,
@@ -86,6 +92,7 @@ export async function acceptRoomMira(
         capabilities,
         noticeVersion: MIRA_ROOM_NOTICE_VERSION,
         audienceAdultConfirmed: true,
+        ...(accountFlow ? { accountConfirmationRequired: true } : {}),
       },
       options
     );

@@ -7,6 +7,7 @@ import {
   getSignalingRecovery,
   type MeetSignalingStatus,
 } from '../lib/signaling';
+import { useMeetUxV2 } from '../prejoin/prejoin-context';
 import { CallPreparation } from './call-preparation';
 
 export function JoinOutcome({
@@ -14,20 +15,23 @@ export function JoinOutcome({
   meetingName,
   leaveHref = '/',
   onRetry,
+  guestRequest = false,
 }: {
   reason: 'denied' | 'removed' | 'missing' | 'error';
   meetingName?: string;
   leaveHref?: string;
   onRetry?: () => void;
+  guestRequest?: boolean;
 }) {
   const t = useTranslations('meet.call');
+  const guestDenied = useMeetUxV2() && guestRequest && reason === 'denied';
   return (
     <CallPreparation
       lifecycle="error"
       meetingName={meetingName}
       leaveHref={leaveHref}
-      title={t(`join_${reason}_title`)}
-      description={t(`join_${reason}_hint`)}
+      title={t(guestDenied ? 'prejoin.guest_denied' : `join_${reason}_title`)}
+      description={t(guestDenied ? 'prejoin.guest_denied_hint' : `join_${reason}_hint`)}
     >
       {onRetry && <Button onClick={onRetry}>{t('connection_refresh')}</Button>}
     </CallPreparation>

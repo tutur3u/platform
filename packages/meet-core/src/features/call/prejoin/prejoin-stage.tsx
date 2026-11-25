@@ -59,7 +59,6 @@ export function PrejoinStage({
   summary,
   notice,
   fields,
-  consent,
   secondary,
   onSubmit,
   viewer,
@@ -82,8 +81,6 @@ export function PrejoinStage({
   notice?: ReactNode;
   /** The name field, or the guest name and human check. */
   fields?: ReactNode;
-  /** The Mira consent box, rendered as given. */
-  consent?: ReactNode;
   /** Fallback actions such as asking the host; they scroll with the form. */
   secondary?: ReactNode;
   onSubmit: () => void;
@@ -147,7 +144,6 @@ export function PrejoinStage({
             />
           )}
           {fields && <div className="scroll-mb-28 space-y-4">{fields}</div>}
-          {consent && <div className="scroll-mb-28">{consent}</div>}
           {secondary && <div className="space-y-2">{secondary}</div>}
           <div className="sticky bottom-0 z-10 -mx-4 border-t bg-background/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur supports-backdrop-filter:bg-background/80 lg:static lg:mx-0 lg:border-t-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
             <JoinButton phase={phase} />
