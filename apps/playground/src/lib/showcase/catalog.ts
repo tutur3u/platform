@@ -52,6 +52,7 @@ const SUMMARIES: Record<LaunchableAppSlug | 'roadmap', string> = {
   git: 'Browse repositories and code changes.',
   apps: 'Launch every Tuturuuu app from one place.',
   docs: 'Guides and reference documentation.',
+  documents: 'Write, organize and share workspace documents.',
   finance: 'Wallets, transactions and invoices with live totals.',
   hive: 'A simulation sandbox.',
   inventory: 'Stock levels across warehouses.',

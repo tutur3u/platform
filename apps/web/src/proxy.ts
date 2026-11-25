@@ -77,7 +77,10 @@ import {
 import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
 import { withWebProxyGuards } from './lib/web-identity-abuse-guard';
-import { isUnknownRouteShape } from './lib/route-shape';
+import {
+  isUnknownRouteShape,
+  KNOWN_ROOT_ROUTE_SEGMENTS,
+} from './lib/route-shape';
 import { defaultWorkspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
 import {
   getWorkspaceRoutePermissionRequirements,
@@ -1123,6 +1126,7 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
     if (
       workspaceSlug &&
       !PUBLIC_PATHS.includes(`/${workspaceSlug}`) &&
+      !KNOWN_ROOT_ROUTE_SEGMENTS.has(workspaceSlug) &&
       !designPublic.isExactPublicAppPath(`/${workspaceSlug}`)
     ) {
       try {

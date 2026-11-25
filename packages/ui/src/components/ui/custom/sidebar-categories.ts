@@ -92,7 +92,8 @@ export function getSidebarCategory(itemId?: string | null): SidebarCategoryId {
 
 /** Default position of an item inside its category (unknown items sort last). */
 export function getSidebarItemRank(itemId?: string | null): number {
-  return (itemId && itemRank.get(itemId)) ?? Number.MAX_SAFE_INTEGER;
+  if (!itemId) return Number.MAX_SAFE_INTEGER;
+  return itemRank.get(itemId) ?? Number.MAX_SAFE_INTEGER;
 }
 
 export function getSidebarCategoryRank(categoryId: SidebarCategoryId): number {
