@@ -132,6 +132,9 @@ void main() {
     testWidgets('a cancelled refresh over visible rows raises no banner', (
       tester,
     ) async {
+      // The minute timer only refreshes a resumed app; the test binding
+      // starts without a lifecycle state.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpApp(
         MailWorkspace(workspaceId: 'ws', repository: repository),
       );
@@ -158,6 +161,9 @@ void main() {
     testWidgets('a failed refresh keeps rows under a quiet notice', (
       tester,
     ) async {
+      // The minute timer only refreshes a resumed app; the test binding
+      // starts without a lifecycle state.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpApp(
         MailWorkspace(workspaceId: 'ws', repository: repository),
       );
