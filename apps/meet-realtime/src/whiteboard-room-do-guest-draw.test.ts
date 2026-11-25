@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'bun:test';
+import { jest, test } from 'bun:test';
 import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import {
   fixture,
@@ -8,6 +8,7 @@ import {
   open,
   SECRET,
   ticket,
+  useRoomFakeTimers,
 } from './whiteboard-room-do.fixtures';
 
 installRoomTestHooks();
@@ -39,9 +40,11 @@ test('refuses and closes a guest edit ticket while guest drawing is held', async
 });
 
 test('shows a held guest as a viewer in presence', async () => {
+  useRoomFakeTimers();
   const f = fixture({ MEET_GUEST_WHITEBOARD_DRAW: undefined });
   const member = await open(f);
   await open(f, { ...guest, role: 'edit' });
+  jest.advanceTimersByTime(1000);
   const presence = member.sent.filter((m) => m.type === 'presence').at(-1);
   assert.deepEqual(
     presence.members.map((m: { role: string }) => m.role).sort(),
@@ -50,8 +53,11 @@ test('shows a held guest as a viewer in presence', async () => {
 });
 
 test('a signed refresh cannot upgrade a held guest to edit', async () => {
+  useRoomFakeTimers();
   const f = fixture({ MEET_GUEST_WHITEBOARD_DRAW: 'false' });
+  const member = await open(f);
   const socket = await open(f, { ...guest, role: 'view' });
+  jest.advanceTimersByTime(1000);
   await f.the.webSocketMessage(
     socket as any,
     JSON.stringify({
@@ -61,6 +67,8 @@ test('a signed refresh cannot upgrade a held guest to edit', async () => {
   );
   assert.equal(socket.closed, null);
   assert.ok(!socket.sent.some((m) => m.type === 'role' && m.role === 'edit'));
+  jest.advanceTimersByTime(1000);
+  assert.equal(member.sent.filter((m) => m.type === 'presence').length, 1);
   await f.the.webSocketMessage(socket as any, draw('g'));
   assert.equal(socket.closed, 1008);
 });

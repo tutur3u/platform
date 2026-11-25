@@ -44,12 +44,38 @@ describe('GuestRelay', () => {
     const to = target({ a: fanout, b: fanout, c: fanout });
     for (const id of ['a', 'b', 'c']) relay.hold(id, 'cursor', bytes(size));
     // Two fit the full bucket; the third is held, not dropped or queued.
-    expect(relay.flush(0, to)).toBe(interval);
+    const cost = size * fanout;
+    const refilled = Math.ceil(((3 * cost - capacity) / refill) * 1000);
+    expect(relay.flush(0, to)).toBe(refilled);
     expect(to.sent.map(([id]) => id)).toEqual(['a', 'b']);
     relay.hold('c', 'cursor', bytes(size));
-    const refilled = Math.ceil(((size * fanout) / refill) * 1000);
-    relay.flush(refilled, to);
+    expect(relay.flush(refilled - 1, to)).toBe(1);
+    expect(to.sent.map(([id]) => id)).toEqual(['a', 'b']);
+    expect(relay.flush(refilled, to)).toBeNull();
     expect(to.sent.map(([id]) => id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('reserves the refill for the first due update that was short on bytes', () => {
+    const relay = new GuestRelay();
+    const to = target({ cooling: 1, blocked: 1, other: 1 });
+    relay.hold('cooling', 'cursor', bytes(capacity - 20));
+    relay.flush(0, to);
+    relay.hold('cooling', 'cursor', 'cooled');
+    relay.hold('blocked', 'cursor', bytes(10));
+    const selection = bytes(refill / 4);
+    relay.hold('blocked', 'selection', selection);
+    relay.hold('other', 'cursor', 'other');
+
+    expect(relay.flush(0, to)).toBe(250);
+    expect(to.sent.map(([id]) => id)).toEqual(['cooling', 'blocked']);
+    relay.hold('blocked', 'cursor', 'new');
+    expect(relay.flush(interval, to)).toBe(250 - interval);
+    expect(to.sent.map(([id]) => id)).toEqual(['cooling', 'blocked']);
+    relay.flush(250, to);
+    expect(to.sent.slice(2, 4)).toEqual([
+      ['blocked', selection],
+      ['blocked', 'new'],
+    ]);
   });
 
   it('drops what the full bucket could never cover and gone senders', () => {
@@ -63,6 +89,16 @@ describe('GuestRelay', () => {
     expect(relay.size).toBe(0);
   });
 
+  it('prunes gone senders even when an earlier update is out of bytes', () => {
+    const relay = new GuestRelay();
+    const to = target({ a: 1, b: 1 });
+    relay.hold('a', 'selection', bytes(capacity));
+    relay.hold('b', 'cursor', 'held');
+    relay.hold('gone', 'cursor', 'discarded');
+    expect(relay.flush(0, to)).toBe(1);
+    expect(relay.size).toBe(2);
+  });
+
   it('treats a clock that went back as due', () => {
     const relay = new GuestRelay();
     const to = target({ a: 1 });
@@ -71,5 +107,19 @@ describe('GuestRelay', () => {
     relay.hold('a', 'cursor', 'c2');
     expect(relay.flush(0, to)).toBeNull();
     expect(to.sent.map(([, p]) => p)).toEqual(['c1', 'c2']);
+  });
+
+  it('does not credit the same refill time twice after the clock goes back', () => {
+    const relay = new GuestRelay();
+    const to = target({ a: 1, b: 1 });
+    relay.hold('a', 'selection', bytes(capacity));
+    relay.flush(10_000, to);
+
+    relay.hold('b', 'cursor', bytes(100));
+    expect(relay.flush(9000, to)).toBe(1001);
+    expect(relay.flush(10_000, to)).toBe(1);
+    expect(to.sent.map(([id]) => id)).toEqual(['a']);
+    expect(relay.flush(10_001, to)).toBeNull();
+    expect(to.sent.map(([id]) => id)).toEqual(['a', 'b']);
   });
 });

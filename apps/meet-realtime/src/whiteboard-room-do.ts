@@ -79,6 +79,7 @@ type Attachment = {
 
 const CHECKPOINT_PATH = '/api/v1/realtime/whiteboard/checkpoint';
 const OPENS_KEY = 'guest-opens';
+const PRESENCE_INTERVAL_MS = 1000;
 
 async function sha256(text: string) {
   return Buffer.from(
@@ -120,6 +121,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
    */
   private guestRelay = new GuestRelay();
   private relayTimer: ReturnType<typeof setTimeout> | null = null;
+  private presenceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private state: DurableObjectState,
@@ -215,12 +217,11 @@ export class WhiteboardRoomDurableObject implements DurableObject {
 
   /**
    * Relays guests' held cursors and selections that are due and within the
-   * byte bucket, and arms the flush timer while any remain held. The timer
-   * calls this; tests call it under the test clock.
+   * byte bucket, and arms the flush timer while any remain held.
    */
   flushGuestRelays() {
     const live = new Map(
-      this.sockets().map((socket) => [
+      (this.room.closed ? [] : this.sockets()).map((socket) => [
         this.attachment(socket).connectionId,
         socket,
       ])
@@ -231,7 +232,12 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       fanout: (id) => (live.has(id) ? live.size - 1 : null),
       send: (id, payload) => this.broadcastPayload(payload, live.get(id)),
     });
-    if (wait === null || this.relayTimer) return;
+    if (wait === null) {
+      if (this.relayTimer !== null) clearTimeout(this.relayTimer);
+      this.relayTimer = null;
+      return;
+    }
+    if (this.relayTimer !== null) return;
     this.relayTimer = setTimeout(() => {
       this.relayTimer = null;
       this.flushGuestRelays();
@@ -244,14 +250,28 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   }
 
   private members(): BoardMember[] {
-    return this.sockets().map((socket) => {
+    const now = Date.now();
+    return this.sockets().flatMap((socket) => {
       const attachment = this.attachment(socket);
-      return {
-        id: this.actorOf(attachment),
-        displayName: attachment.ticket.displayName,
-        role: this.honoured(attachment.ticket).role,
-      };
+      if (attachment.ticket.exp * 1000 <= now) return [];
+      return [
+        {
+          id: this.actorOf(attachment),
+          displayName: attachment.ticket.displayName,
+          role: this.honoured(attachment.ticket).role,
+        },
+      ];
     });
+  }
+
+  private schedulePresence() {
+    if (this.presenceTimer !== null || this.room.closed) return;
+    this.presenceTimer = setTimeout(() => {
+      this.presenceTimer = null;
+      if (this.room.closed) return;
+      const members = this.members();
+      if (members.length > 0) this.broadcast({ type: 'presence', members });
+    }, PRESENCE_INTERVAL_MS);
   }
 
   private platformOrigin() {
@@ -372,6 +392,9 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       });
     }
     if (this.room.closed) return new Response(null, { status: 410 });
+    // Preparing the room can yield while other sockets join.
+    if (this.sockets().length >= BOARD_LIMITS.maxSockets)
+      return new Response('Room full', { status: 429 });
     const pair = new WebSocketPair();
     pair[1].serializeAttachment({
       ticket: joined,
@@ -387,7 +410,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
     } satisfies Attachment);
     this.state.acceptWebSocket(pair[1]);
     this.sendScene(pair[1], joined.role);
-    this.broadcast({ type: 'presence', members: this.members() });
+    this.schedulePresence();
     await this.room.connectionsChanged();
     return new Response(null, {
       status: 101,
@@ -481,7 +504,7 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         socket.serializeAttachment(attachment);
         if (renewed.role !== ticket.role) {
           socket.send(JSON.stringify({ type: 'role', role: renewed.role }));
-          this.broadcast({ type: 'presence', members: this.members() });
+          this.schedulePresence();
         }
         return;
       }
@@ -591,7 +614,13 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   }
 
   async webSocketClose() {
-    this.broadcast({ type: 'presence', members: this.members() });
+    if (this.sockets().length > 0) {
+      this.schedulePresence();
+    } else {
+      if (this.presenceTimer !== null) clearTimeout(this.presenceTimer);
+      this.presenceTimer = null;
+      this.flushGuestRelays();
+    }
     await this.room.connectionsChanged();
   }
 

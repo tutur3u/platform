@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'bun:test';
+import { jest, test } from 'bun:test';
 import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import { boardActorId } from '../../../packages/realtime/src/meet/board-sync-actor';
 import { guestElement } from '../../../packages/realtime/src/meet/board-sync-guest.fixtures';
@@ -17,6 +17,7 @@ import {
   rect,
   SECRET,
   ticket,
+  useRoomFakeTimers,
 } from './whiteboard-room-do.fixtures';
 
 installRoomTestHooks();
@@ -362,9 +363,11 @@ test('keeps member seats free when guests crowd a board', async () => {
 });
 
 test('names people by a per-board id, never their user id', async () => {
+  useRoomFakeTimers();
   const f = fixture();
   const member = await open(f, { userId: 'member-user-id' });
   const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  jest.advanceTimersByTime(1000);
   const actor = boardActorId(SECRET, ids.boardId, 'member-user-id');
   const presence = guest.sent.findLast((m) => m.type === 'presence');
   assert.deepEqual(

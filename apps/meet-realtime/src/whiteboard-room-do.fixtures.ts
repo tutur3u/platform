@@ -1,4 +1,4 @@
-import { afterEach, beforeEach } from 'bun:test';
+import { afterEach, beforeEach, jest } from 'bun:test';
 import { guestElement } from '../../../packages/realtime/src/meet/board-sync-guest.fixtures';
 import {
   BOARD_TICKET_AUDIENCE,
@@ -24,7 +24,7 @@ export const ticket = (over: Partial<BoardTicket> = {}): BoardTicket => ({
   userId: 'u1',
   displayName: 'Ada',
   role: 'edit',
-  exp: Math.floor(clock.now / 1000) + 120,
+  exp: Math.floor(Date.now() / 1000) + 120,
   ...over,
 });
 /** A complete rectangle, as a guest's editor sends it. */
@@ -98,6 +98,8 @@ export function fixture(env: Record<string, string | undefined> = {}) {
     ...env,
   };
   const the = new WhiteboardRoomDurableObject(state, config);
+  const message = (socket: (typeof sockets)[number], data: string) =>
+    the.webSocketMessage(socket as unknown as WebSocket, data);
   /** A new instance over the same storage and sockets, like an eviction. */
   const restart = () => new WhiteboardRoomDurableObject(state, config);
   async function join(over: Partial<BoardTicket> = {}) {
@@ -110,7 +112,7 @@ export function fixture(env: Record<string, string | undefined> = {}) {
     const response = await the.fetch(request).catch((e) => e);
     return response;
   }
-  return { the, values, ops, sockets, state, join, restart };
+  return { the, values, ops, sockets, state, join, message, restart };
 }
 
 /** Installs the test clock and a fake platform for each test in a file. */
@@ -131,9 +133,15 @@ export function installRoomTestHooks() {
     (globalThis as any).__status = {};
   });
   afterEach(() => {
+    if (jest.isFakeTimers()) jest.useRealTimers();
     Date.now = realNow;
     globalThis.fetch = realFetch;
   });
+}
+
+export function useRoomFakeTimers() {
+  Date.now = realNow;
+  jest.useFakeTimers({ now: clock.now });
 }
 
 // A real Response with status 101 is not constructible in Node; the adapter

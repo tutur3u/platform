@@ -194,15 +194,22 @@ keep two-minute tickets.
   limit is refused or closed; the client reconnects with a fresh ticket. The
   open counts are stored with the board room, so an eviction does not reset
   them (except while `MEET_WHITEBOARD_FLUSH_DISABLED` keeps storage off).
+- Each board broadcasts its participant list at most once a second, with at
+  most 50 entries sent to at most 50 sockets. Joins, leaves and ticket
+  refreshes that change an honoured role are batched into one snapshot of
+  the current participants. New connections receive the scene immediately
+  and the participant list with the next broadcast.
 - Cursors and selections from people outside the workspace are relayed at
   most ten times a second per connection; updates in between are replaced by
   the latest, never queued. Every such relay spends the board's shared relay
   budget by its size times the people it reaches: a 512 KiB burst that
   refills 256 KiB a second. A relay over the budget is held, still only the
-  latest, until the budget refills, so the room's guests cannot fan their
-  pointers out into unbounded traffic. Their selections name at most 100
-  elements; a larger one is not relayed. Members' cursors and selections are
-  relayed at once and never spend the budget. The budget and held updates
+  latest, until the budget refills. The first update waiting for bytes gets
+  the next refill before later updates can spend it. The relay timer uses
+  the time needed to refill the missing bytes and stops when no updates
+  remain. Their selections name at most 100 elements; a larger one is not
+  relayed. Members' cursors and selections are relayed at once and never spend
+  the budget. The budget and held updates
   live in memory, so an eviction restarts the budget full, which grants at
   most one extra burst: the room sits idle about ten seconds before eviction,
   and the budget refills from empty in two.
@@ -300,9 +307,10 @@ rate, size, connection, reopen and seat caps across an eviction, guest viewers,
 per-board ids, guest field types and link stripping),
 `apps/meet-realtime/src/whiteboard-room-do-guest-relay.test.ts` (a guest
 cursor and selection flood held to the relay byte budget across the fanout,
-coalescing to the latest, members relayed at once, the guest selection cap),
+coalescing to the latest, timer cleanup, members relayed at once, the guest
+selection cap, presence batching and fanout, role changes on refresh),
 `packages/realtime/src/meet/board-sync-relay.test.ts` (the relay bucket,
-coalescing, dropped and gone relays),
+coalescing, dropped and gone relays, refill timing, fairness and clock rollback),
 `apps/meet-realtime/src/whiteboard-room-do-guest-budget.test.ts` (a costly
 guest batch, the churn bucket across an eviction, the board's shared bucket),
 `apps/meet-realtime/src/room-service-board-access.test.ts` (only an open

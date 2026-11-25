@@ -36,6 +36,7 @@ const bytesOf = (payload: string) => new TextEncoder().encode(payload).length;
 export class GuestRelay {
   private pending = new Map<string, Pending>();
   private bucket: ChurnBucket = {};
+  private blocked: { id: string; kind: GuestRelayKind } | null = null;
 
   /** Holds `payload` as the connection's latest update of its kind. */
   hold(connectionId: string, kind: GuestRelayKind, payload: string) {
@@ -50,9 +51,9 @@ export class GuestRelay {
   }
 
   /**
-   * Relays every held update that is due and within the bucket. Returns the
-   * milliseconds until the next flush could relay something, or null when
-   * nothing is held.
+   * Relays due updates until one needs more bytes. That update gets first
+   * claim on the refill. Returns the delay until the next flush could relay
+   * something, or null when nothing is held.
    */
   flush(now: number, target: GuestRelayTarget): number | null {
     const {
@@ -61,15 +62,22 @@ export class GuestRelay {
       relayIntervalMs: interval,
     } = BOARD_GUEST_LIMITS;
     let tokens = refillBucket(this.bucket, now, capacity, refill);
+    const tokensAt = Math.max(now, this.bucket.tokensAt ?? now);
     let wait: number | null = null;
-    // Iterating a copy: a relayed connection moves to the back, so the
-    // bucket is shared out in turn rather than to the first guest.
-    for (const [id, entry] of [...this.pending]) {
+    const priority = this.blocked;
+    this.blocked = null;
+    // Prune disconnected senders even beyond the first unaffordable update.
+    const pending = [...this.pending].flatMap(([id, entry]) => {
       const fanout = target.fanout(id);
       if (fanout === null || fanout === 0) {
         this.pending.delete(id);
-        continue;
+        return [];
       }
+      return [{ id, entry, fanout }];
+    });
+    const blockedIndex = pending.findIndex(({ id }) => id === priority?.id);
+    if (blockedIndex > 0) pending.unshift(...pending.splice(blockedIndex, 1));
+    for (const { id, entry, fanout } of pending) {
       const held = !!(entry.cursor || entry.selection);
       const since =
         entry.sentAt === undefined
@@ -84,10 +92,18 @@ export class GuestRelay {
       }
       if (early) {
         wait = Math.min(wait ?? interval, interval - since);
+        if (priority?.id === id) {
+          this.blocked = priority;
+          break;
+        }
         continue;
       }
       let sent = false;
-      for (const kind of ['cursor', 'selection'] as const) {
+      const first = priority?.id === id ? priority.kind : 'cursor';
+      for (const kind of [
+        first,
+        first === 'cursor' ? 'selection' : 'cursor',
+      ] as const) {
         const payload = entry[kind];
         if (!payload) continue;
         const cost = bytesOf(payload) * fanout;
@@ -96,7 +112,12 @@ export class GuestRelay {
           delete entry[kind];
           continue;
         }
-        if (cost > tokens) continue;
+        if (cost > tokens) {
+          this.blocked = { id, kind };
+          const refillWait = Math.ceil(((cost - tokens) / refill) * 1000);
+          wait = Math.max(tokensAt - now + refillWait, sent ? interval : 0);
+          break;
+        }
         tokens -= cost;
         target.send(id, payload);
         delete entry[kind];
@@ -107,11 +128,9 @@ export class GuestRelay {
         this.pending.delete(id);
         this.pending.set(id, entry);
       }
-      // Still held: over the bucket, so try again a gap later.
-      if (entry.cursor || entry.selection)
-        wait = Math.min(wait ?? interval, interval);
+      if (this.blocked) break;
     }
-    this.bucket = { tokens, tokensAt: now };
+    this.bucket = { tokens, tokensAt };
     return wait;
   }
 }
