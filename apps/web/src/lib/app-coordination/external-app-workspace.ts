@@ -108,10 +108,13 @@ export function externalAppWorkspaceRequiredResponse() {
   );
 }
 
+export const EXTERNAL_APP_WORKSPACE_BOUND_SIGN_IN_ERROR =
+  'Workspace-bound sign-in required';
+
 /** The exchange's 401 for a refresh token that cannot be bound. */
 export function workspaceBoundSignInRequired() {
   return NextResponse.json(
-    { error: 'Workspace-bound sign-in required' },
+    { error: EXTERNAL_APP_WORKSPACE_BOUND_SIGN_IN_ERROR },
     { status: 401 }
   );
 }

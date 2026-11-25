@@ -103,6 +103,45 @@ describe('app token exchange strict binding (RA-MEDIA-C1-001)', () => {
     expect(refreshed.status).toBe(400);
   });
 
+  it('logs the app id and outcome of a refusal without tokens or workspace ids', async () => {
+    vi.setSystemTime(atExpiry);
+    mockRegisteredApp(driveScopes, 'cybershield35', [workspaceId]);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    await exchange('cybershield35', { token: 'valid-cross-app-token' });
+    const refreshToken = unboundRefreshToken('cybershield35');
+    await exchange('cybershield35', { refreshToken });
+
+    const lines = warn.mock.calls.filter(
+      ([prefix]) => prefix === '[app-token-exchange]'
+    );
+    warn.mockRestore();
+    expect(lines.map(([, fields]) => fields)).toEqual([
+      {
+        appId: 'cybershield35',
+        outcome: 'workspace-id-required',
+        refresh: false,
+        status: 400,
+      },
+      {
+        appId: 'cybershield35',
+        outcome: 'workspace-id-required',
+        refresh: true,
+        status: 400,
+      },
+    ]);
+    const logged = JSON.stringify(lines);
+    for (const secret of [
+      'valid-cross-app-token',
+      refreshToken,
+      workspaceId,
+      victimUserId,
+      'victim@example.com',
+    ]) {
+      expect(logged).not.toContain(secret);
+    }
+  });
+
   it('applies strict binding to every other app before the expiry', async () => {
     vi.setSystemTime(beforeExpiry);
     mockRegisteredApp(driveScopes, 'drive-app', [workspaceId]);

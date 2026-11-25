@@ -21,6 +21,11 @@ import {
   getAllowedAppTokenScopesWithWorkspaceSession,
   requiresWorkspaceSessionAuthorization,
 } from '@/lib/app-coordination/exchange-scopes';
+import {
+  type ExchangeLogContext,
+  logExchangeOutcome,
+  logExchangeResponse,
+} from '@/lib/app-coordination/exchange-outcome-log';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import {
   INVITATION_ACTION_SCOPE,
@@ -285,7 +290,10 @@ function createPendingInvitationResponse({
   );
 }
 
-async function exchangeAppToken(request: NextRequest) {
+async function exchangeAppToken(
+  request: NextRequest,
+  logContext: ExchangeLogContext
+) {
   const body = await request.json().catch(() => null);
   const parsed = exchangeSchema.safeParse(body);
 
@@ -308,6 +316,8 @@ async function exchangeAppToken(request: NextRequest) {
     workspaceId: requestedWorkspaceId,
   } = parsed.data;
   let workspaceId = requestedWorkspaceId;
+  logContext.appId = targetApp ?? appId;
+  logContext.refresh = Boolean(refreshToken);
 
   if (Boolean(token) === Boolean(refreshToken)) {
     return NextResponse.json(
@@ -367,6 +377,7 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
 
+  logContext.appId = resolvedTarget.targetApp;
   // RA-MEDIA-C1-001 exempts listed apps from strict binding until expiry.
   const strictBinding = isExternalAppStrictBinding(resolvedTarget.targetApp);
   const requiresWorkspace =
@@ -683,6 +694,16 @@ export async function POST(request: NextRequest) {
       request,
       route: '/api/v1/auth/app-token/exchange',
     },
-    () => exchangeAppToken(request)
+    async () => {
+      const logContext: ExchangeLogContext = { refresh: false };
+      try {
+        const response = await exchangeAppToken(request, logContext);
+        await logExchangeResponse(logContext, response);
+        return response;
+      } catch (error) {
+        logExchangeOutcome(logContext, 'error', 500);
+        throw error;
+      }
+    }
   );
 }
