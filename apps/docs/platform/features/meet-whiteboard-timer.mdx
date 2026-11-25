@@ -131,14 +131,18 @@ device pixel ratio of three, the densest common phone and tablet screens.
 For everyone on the board, the editor never caches a shape above its
 100%-zoom size: zooming in draws the cache upscaled instead of growing it, so
 zoomed shapes and text look blocky, which the product owner accepted. Images
-keep their full zoom detail. It rebuilds a cache only when its scale changes,
-fits an arrow's label canvas within the per-element cap, and copies only the
-visible part of each cached canvas, so drawing one element costs at most about
-a viewport of pixels at any zoom (see Excalidraw canvas cap in the development
+keep their full zoom detail; the Meet board accepts no images from anyone. It
+rebuilds a cache only when its scale changes and fits an arrow's label canvas
+within the per-element cap. Each frame draws at most the 24 topmost elements
+that each cover half the view or more; above that, older covering elements
+are skipped until the view zooms out or moves, so a dense stack zoomed in
+cannot stall the board. Smaller elements always draw, and the rule is the
+same for members and guests (see Excalidraw canvas cap in the development
 guide; regression test
-`packages/whiteboard/src/excalidraw-canvas-cap.test.ts`). Every element has
-one render cost, roughly the lines and points a viewer draws for it: one,
-plus its fill, its stroke points, its dashes and its text lines.
+`packages/whiteboard/src/excalidraw-canvas-cap.test.ts`, which runs at a
+device pixel ratio of two while the guest budget measures at three). Every
+element has one render cost, roughly the lines and points a viewer draws for
+it: one, plus its fill, its stroke points, its dashes and its text lines.
 
 - A hachure, zigzag or cross-hatch fill on a rectangle, diamond or ellipse
   costs its diagonal over four times the stroke width, plus its diagonal over
@@ -324,7 +328,7 @@ Under `packages/whiteboard/src`:
 
 - `excalidraw-canvas-cap.test.ts`: the patched Excalidraw cache for the dev
   and prod builds: sizing at zoom 1 to 3, the image exemption, the rebuild
-  rule, and the clipped draw at 10x zoom.
+  rule, and at most 24 viewport-covering elements per frame at 10x zoom.
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do-guest-draw.test.ts`
 (a guest edit ticket refused and closed while guest drawing is held or the

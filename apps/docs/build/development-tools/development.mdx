@@ -73,18 +73,25 @@ The patch changes the element canvas cache in both shipped builds
   never grows past its 100%-zoom size; zoomed in, Excalidraw draws it
   upscaled, so shapes and text look blocky. The product owner accepted blocky
   zoomed text in exchange for bounded memory. Images are exempt and keep the
-  upstream zoom scale, since a photo's detail is the point of zooming in and
-  people outside the workspace cannot add images.
+  upstream zoom scale, since a photo's detail is the point of zooming in; the
+  Meet board accepts no images from anyone, so images only come from boards
+  edited outside Meet.
 - A labelled arrow's scale also keeps its label canvas within Excalidraw's own
   limits of 16,777,216 px and 32,767 px a side.
 - `generateElementWithCanvas` rebuilds a cached canvas only when its effective
   scale changes, not on every zoom change, so zooming between 100% and 1000%
-  reuses the same caches.
-- `drawElementFromCanvas` draws through `__ttrDrawClipped`, appended to each
-  chunk, which copies only the part of a cached canvas that lands on the
-  visible canvas. The pixels are the same, and one element costs at most
-  about a viewport of pixels (up to twice that when rotated), however far it
-  is zoomed.
+  reuses the same caches. It recomputes the scale only when the zoom differs
+  from the one the cache entry last saw, and records the new zoom when the
+  scale is unchanged, so steady frames skip the check.
+- The static scene draws at most 24 viewport-covering elements per frame: an
+  element whose unrotated box covers half the visible area or more. Drawing
+  one costs about a viewport of pixels however its cache is sized, so a dense
+  stack zoomed in would otherwise cost one viewport per element. The 24
+  topmost (last drawn) are kept; above that, older covering elements are
+  skipped until the view zooms out or moves so that fewer cover it. Smaller
+  elements always draw, members' and guests' alike, and exports draw
+  everything. `__ttrCoveringToSkip`, appended to each chunk, picks the
+  skipped elements.
 
 The patch is produced by a script that applies each edit to the pristine
 chunks and refuses unless every edit matches exactly once. Replace the whole
@@ -93,9 +100,10 @@ run the script inside `bun patch @excalidraw/excalidraw`, then
 `bun patch --commit`.
 
 `packages/whiteboard/src/excalidraw-canvas-cap.test.ts` runs the patched code
-of both builds: the sizing at zoom 1 to 3 and a device pixel ratio of two,
-the image exemption, the rebuild rule, and the clipped draw at 10x zoom,
-straight and rotated. It fails against the unpatched package. Any
+of both builds: the sizing at zoom 1 to 3, the image exemption, the rebuild
+rule and its skipped checks, and the covering-element limit at 10x zoom. It
+runs at a device pixel ratio of two, while the server's guest budget measures
+canvases at three. It fails against the unpatched package. Any
 `@excalidraw/excalidraw` upgrade must re-apply the patch to the new build's
 chunks, update the test's chunk names and helper names, and pass that test
 before it lands.
