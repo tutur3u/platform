@@ -79,12 +79,19 @@ export function createSidebarAppLinks(
     id: resolvedWorkspaceId,
     personal: isPersonal,
   };
-  const registryHref = (slug: SidebarAppSlug) => {
+  const registryHref = (slug: string) => {
     const app = getLaunchableApp(slug);
     if (!app) throw new Error(`Unknown launchable app: ${slug}`);
 
     return resolveLaunchableAppUrl({ app, currentOrigin, workspace });
   };
+  // Whiteboards is a page of Documents until the registry lists it as an app of
+  // its own; from then on it is a top-level entry that opens where the registry
+  // resolves it.
+  const whiteboardsIsApp = Boolean(getLaunchableApp('whiteboards'));
+  const whiteboardsTier = createTierRequirement('whiteboards', {
+    alwaysShow: true,
+  });
   const icon = (name: Parameters<typeof createDashboardNavigationIcon>[0]) =>
     createDashboardNavigationIcon(name, 'h-5 w-5');
 
@@ -145,7 +152,7 @@ export function createSidebarAppLinks(
         `/${personalOrWsId}/documents/*`,
         `/${personalOrWsId}/notes/*`,
         `/${personalOrWsId}/personal-journal/*`,
-        `/${personalOrWsId}/whiteboards/*`,
+        ...(whiteboardsIsApp ? [] : [`/${personalOrWsId}/whiteboards/*`]),
       ],
       icon: icon('FileText'),
       experimental: 'beta',
@@ -171,16 +178,31 @@ export function createSidebarAppLinks(
           icon: icon('BookText'),
           disabled: !isPersonal,
         },
-        {
-          title: documentsPageTitles.whiteboards,
-          href: `/${personalOrWsId}/whiteboards`,
-          icon: icon('PencilRuler'),
-          requiredWorkspaceTier: createTierRequirement('whiteboards', {
-            alwaysShow: true,
-          }),
-        },
+        ...(whiteboardsIsApp
+          ? []
+          : [
+              {
+                title: documentsPageTitles.whiteboards,
+                href: `/${personalOrWsId}/whiteboards`,
+                icon: icon('PencilRuler'),
+                requiredWorkspaceTier: whiteboardsTier,
+              },
+            ]),
       ],
     },
+    ...(whiteboardsIsApp
+      ? [
+          {
+            id: 'whiteboards',
+            appSlug: 'whiteboards',
+            title: documentsPageTitles.whiteboards,
+            href: registryHref('whiteboards'),
+            icon: icon('PencilRuler'),
+            external: true,
+            requiredWorkspaceTier: whiteboardsTier,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
     {
       id: 'mail',
       appSlug: 'mail',

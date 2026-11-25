@@ -38,6 +38,7 @@ describe('sidebar categories', () => {
     expect(getSidebarCategory('finance')).toBe('operations');
     expect(getSidebarCategory('inventory')).toBe('operations');
     expect(getSidebarCategory('drive')).toBe('files_content');
+    expect(getSidebarCategory('whiteboards')).toBe('files_content');
     expect(getSidebarCategory('hive')).toBe('ai');
     expect(getSidebarCategory('qr_generator')).toBe('utilities');
     expect(getSidebarItemRank('tasks')).toBeLessThan(

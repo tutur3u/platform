@@ -17,11 +17,11 @@ Every app belongs to exactly one category, categories always appear in the same 
 | Productivity | Tasks, Calendar, Track, Forms, Documents |
 | Communication | Mail, Chat, Meet, Contacts |
 | Finance & Operations | Finance, Inventory |
-| Files & Content | Drive |
+| Files & Content | Drive, Whiteboards (once the registry lists it as an app) |
 | AI | Mind, Hive, AI Studio |
 | Utilities | Tools, Shortener, Feedback (feedback staff only) |
 
-Documents and Shortener are served by the platform, so they open platform paths (`/<workspace>/documents`, `/<workspace>/link-shortener`). Documents is the only entry with a second level: Notes, Personal journal and Whiteboards are pages of the Documents app and open from it.
+Documents and Shortener are served by the platform, so they open platform paths (`/<workspace>/documents`, `/<workspace>/link-shortener`). Documents is the only entry with a second level: Notes, Personal journal and Whiteboards are pages of the Documents app and open from it. When the app registry lists a `whiteboards` app, Whiteboards becomes its own entry under Files & Content and leaves the Documents second level without a sidebar change (`sidebar-apps-whiteboards.test.ts`).
 
 Inner pages belong to the app that owns them:
 
@@ -35,7 +35,7 @@ Inner pages belong to the app that owns them:
 | Workforce, Reports | Contacts app navigation |
 | QR Generator | Tools app |
 | Link shortener | Shortener entry |
-| Notes, Personal journal, Whiteboards | Documents (second level) |
+| Notes, Personal journal, Whiteboards | Documents (second level); Whiteboards moves to its own entry with its registry slug |
 | AI Lab pages (Spark, AI chat, Memories, Models, Datasets, Pipelines, Crawlers, Cron, Queues) | AI Studio entry; the pages stay routable in the platform |
 | Polls, Google Workspace launcher | Not in the sidebar; reachable by direct route |
 

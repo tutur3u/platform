@@ -34,7 +34,7 @@ export const SIDEBAR_CATEGORIES = [
   {
     id: 'files_content',
     collapsible: true,
-    itemIds: ['drive'],
+    itemIds: ['drive', 'whiteboards'],
     showLabel: true,
   },
   {
