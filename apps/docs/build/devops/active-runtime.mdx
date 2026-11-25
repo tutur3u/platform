@@ -58,8 +58,9 @@ Calendar, Mail and Apps are admitted in `productionPublicationPolicy` in
 `tuturuuu.ci.ts`. Each production push that selects Mail or Apps publishes it
 in the same planner run through `wave1-native-production.yaml`; see
 [Environments & Release Flow](/build/devops/environments-release-flow#production).
-Calendar stays held from automatic publication until a manual release smokes
-its first version privately behind `calendar.tuturuuu.com`. Meet publishes
+Calendar stays held from automatic publication until its first staged release
+by manual dispatch is smoked and serving behind `calendar.tuturuuu.com`; see
+[Wave-1 production publication](/build/devops/wave1-production-publication). Meet publishes
 through its own policy-gated production job. Drive and Contacts stay held, and
 each held or excluded app carries an owned, dated record in
 `productionPublicationExemptions`. Native CI validation stays enabled for

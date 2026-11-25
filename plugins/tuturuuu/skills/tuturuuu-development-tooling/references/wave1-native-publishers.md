@@ -62,17 +62,21 @@ The production planner calls `wave1-native-production.yaml` through
 `calendar-cloudflare.yaml`, `mail-cloudflare.yaml` and `apps-cloudflare.yaml`
 for each selected production push after the app's explicit policy admission
 and only when no `productionPublicationExemptions` record holds it (Calendar
-is held until a manual release smokes its first version privately); a
-dispatch on the production branch is the recovery path. Its protected
+is held until its first staged release by manual dispatch serves); a
+dispatch of `wave1-native-production.yaml` on the production branch is the
+only manual route. Its protected
 `wave1-calendar-production` environment requires only the production branch, an
 no required reviewer and disabled admin bypass. It supplies only the named
 `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` to the final upload step. The sealed Calendar/Mail/Apps production profiles have
 no routes, workers.dev or preview ingress. Refuse existing hosted Route/Custom
 Domain attachments as well: a code deploy to an already attached Worker changes
 traffic even with an empty local route list. The only exception is a reviewed
-`productionServingTopology` record in `tuturuuu.ci.ts`, which must equal the
-observed topology exactly before and after the upload; none exists until a
-publish path smokes the new version privately before it serves. Preserve the initial private rollback
+`productionServingTopology` record in `tuturuuu.ci.ts` (Calendar's
+`calendar.tuturuuu.com`), which must equal the observed topology exactly
+before and after the upload. Every production upload is a version without
+traffic, staged at 0% and smoked through the version override header before
+it switches; a failed post-switch health gate restores the recorded
+deployment. See the wave-1 production publication page in `apps/docs`. Preserve the initial private rollback
 baseline, exact public inputs and before/after topology. Earlier production runs,
 reruns and absent versions never authorize replay of an uncertain upload. Keep
 pending/uploaded receipts and reconcile the original operation. Inspect earlier

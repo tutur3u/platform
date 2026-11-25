@@ -114,7 +114,7 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 | Canonical host | `calendar.tuturuuu.com` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`, `CRON_SECRET`; optional `TUTURUUU_APP_COORDINATION_SECRET` |
 | Bindings | `ASSETS` and `ABUSE_GUARD` (service `tuturuuu-abuse-guard`, entrypoint `AbuseGuardEntrypoint`); no database, KV, R2 or queue. Var `ABUSE_GUARD_FAMILIES=proxy`; Web sets `ABUSE_GUARD_KEY_PEPPER`, which is not deploy-required (without it `proxy` is `off` and fails open) |
-| Publication | Admitted in `tuturuuu.ci.ts`, held from automatic publication by its `productionPublicationExemptions` record until a manual release smokes the first version privately behind `calendar.tuturuuu.com`; then the production planner publishes it through `calendar-cloudflare.yaml` and `wave1-native-production.yaml` (environment `wave1-calendar-production`) |
+| Publication | Admitted in `tuturuuu.ci.ts`; its `productionServingTopology` record admits exactly `calendar.tuturuuu.com`. Its first staged release runs by dispatching `wave1-native-production.yaml` with `app=calendar` from `production` (environment `wave1-calendar-production`); its `productionPublicationExemptions` record holds planner publication until that release is smoked and serving. See [Wave-1 production publication](/build/devops/wave1-production-publication) |
 | Rollback | Previous `tuturuuu-calendar` version verified on the canonical host |
 
 The production artifact uses `TTR_ONE_ORIGIN_CALENDAR=shadow` to serve both

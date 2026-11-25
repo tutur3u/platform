@@ -177,31 +177,17 @@ No package version, dependency resolution or published changelog is rewritten.
   of that importer: a change to `apps/calendar/messages/` reaches Mail and
   Apps through `packages/ui`. Regression coverage:
   `scripts/ci/production-shared-package-selection.test.mjs`.
-- Selected Mail and Apps publish in the same planner run. Each app
-  workflow's `production-policy` job re-reads `productionPublicationPolicy` in
-  `tuturuuu.ci.ts` with `--automatic`; only then does
-  `native-publish-production` call `wave1-native-production.yaml`. That
-  workflow builds, restores and uploads the sealed production bytes once,
-  with the exact production SHA, a read-only preflight, a rollback receipt
-  naming the previous deployment, a deploy credential only in the upload
-  step, and the serving topology unchanged before and after. Builds of one
-  app and SHA share a queue, so a planner run and a manual dispatch of the
-  same SHA reconcile instead of uploading twice; uploads of one app queue
-  in their own group and are never cancelled. When the serving version
-  carries a newer production SHA, an older attempt records `superseded` in
-  its preflight and uploads nothing. A Worker that already serves through a
-  Custom Domain or zone route publishes only when `productionServingTopology`
-  in `tuturuuu.ci.ts` records exactly that topology; no record exists yet,
-  because the upload activates the new version at 100% and a Custom Domain
-  would serve it before any private smoke. A manual dispatch of the same
-  workflow from `production` is the recovery path, and both kinds of run
-  share one upload history, which skips attempts that provably never
-  started the upload.
-- Calendar is admitted but held from automatic publication by its
-  `productionPublicationExemptions` record: its first publish behind
-  `calendar.tuturuuu.com` needs a manual release whose version is smoked
-  privately before it serves. Removing the record lets the planner publish
-  it.
+- Selected Mail and Apps publish in the same planner run through
+  `wave1-native-production.yaml`, the publisher every wave-1 app shares: a version upload with no
+  traffic, a 0% staged deployment smoked signed-out through the version
+  override header, a switch to 100% only after that smoke passes, then a
+  public health gate that rolls back to the recorded deployment on failure.
+  An older SHA never downgrades a newer serving one. See
+  [Wave-1 production publication](/build/devops/wave1-production-publication).
+- Calendar publishes behind `calendar.tuturuuu.com` through the same staged
+  mode, but its `productionPublicationExemptions` record holds it from the
+  planner until its first staged release by manual dispatch is smoked and
+  serving.
 - The serving Workers (roadmap, learn, teach, nova, tools and lms) republish
   through `serving-workers-production.yaml` whenever their live build is not
   the production SHA. It is inert until its repository variable and
@@ -209,8 +195,9 @@ No package version, dependency resolution or published changelog is rewritten.
   [Serving Worker republication](/build/devops/serving-workers-publication).
 - Every active production app publishes through the planner or the serving
   Workers, or has a record in `productionPublicationExemptions` (`reason`,
-  `owner`, `approvedOn`, `source`). A record also holds its app from
-  automatic publication. `scripts/ci/production-publication-coverage.test.mjs`
+  `owner`, `approvedOn`, `source`). The owner is a GitHub login or an
+  `@org/team` handle that can be notified, never a lane or role label. A
+  record also holds its app from automatic publication. `scripts/ci/production-publication-coverage.test.mjs`
   runs in the Test workflow and fails for an excluded, held or
   publisher-less app without a record, or a record that is unowned, undated
   or malformed. It never depends on the current date. Remove the record in

@@ -240,6 +240,7 @@
                   "build/devops/native-start-migration",
                   "build/devops/serving-workers-publication",
                   "build/devops/wave1-cutover-packets",
+                  "build/devops/wave1-production-publication",
                   "build/devops/mail-local-workerd-acceptance",
                   "build/devops/mastermind-web",
                   "build/devops/tanstack-cloudflare-migration-inventory",

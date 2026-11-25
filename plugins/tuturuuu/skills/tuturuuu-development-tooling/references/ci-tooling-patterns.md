@@ -748,8 +748,9 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   selects every consumer (`production-shared-package-selection.test.mjs`).
 - Every active production app publishes on a production push through the
   planner or `serving-workers-production.yaml`, or carries a record in
-  `productionPublicationExemptions` (`reason`, `owner`, `approvedOn`,
-  `source`) that also holds it from automatic publication.
+  `productionPublicationExemptions` (`reason`, `owner` as a GitHub login or
+  `@org/team` handle, `approvedOn`, `source`) that also holds it from
+  automatic publication.
   `production-publication-coverage.test.mjs` fails on a missing, unowned,
   undated or malformed record and never reads the current date; do not add
   date-triggered failures. When adding a production target, policy entry or
@@ -767,8 +768,14 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   enforces it, and `wave1-production-admission.test.js` evaluates each
   publish condition across refs, events and policy outcomes. Wave-1 Workers
   stay route-free unless `productionServingTopology` records their exact
-  Custom Domains and routes; add a record only with a private-smoke publish
-  path, because the upload activates the new version at 100%.
+  Custom Domains and routes.
+- Wave-1 production publication uploads a version without traffic, stages it
+  at 0% beside the serving version, smokes it signed-out through
+  `Cloudflare-Workers-Version-Overrides`, switches only after the smoke and
+  then runs a public health gate that restores the recorded deployment on
+  failure; never shift traffic before a staged smoke, never record response
+  bodies, and never treat an unproven serving SHA as older. See
+  [wave-1 production publication](../../../../../apps/docs/build/devops/wave1-production-publication.mdx).
 - Check the queued automatic revision against the live `production` ref inside
   the planner's non-cancelling workflow lock, before checkout and target
   resolution. Only a proven descendant supersedes the candidate. Emit an empty

@@ -1,0 +1,114 @@
+---
+title: "Wave-1 production publication"
+description: "How Mail, Calendar, Apps, Finance and Drive publish to production: version upload, 0% staged smoke, traffic switch, health gate and automatic rollback."
+updatedAt: "2026-11-25"
+audience: developers
+---
+
+`wave1-native-production.yaml` publishes the wave-1 native Workers (Mail,
+Calendar, Apps, Finance and Drive). The Production Deployment Planner calls it
+through each app's `<app>-cloudflare.yaml` when a production push selects the
+app; a dispatch of `wave1-native-production.yaml` from `production` is the only
+manual route. A direct dispatch of `<app>-cloudflare.yaml` on `production`
+never publishes: its run is not part of the upload history.
+
+## Admission
+
+- `productionPublicationPolicy` in `tuturuuu.ci.ts` admits the app. The caller's
+  `production-policy` job, the called workflow's `production-policy` job and
+  the publisher itself all check it.
+- A called run defaults its `automatic` input to true, so an app with a
+  `productionPublicationExemptions` record is held. Calendar has such a record
+  until its first staged release by manual dispatch is smoked and serving;
+  remove the record to let the planner publish it.
+- A Worker that already serves through a Custom Domain or zone route publishes
+  only when `productionServingTopology` records exactly that topology. Calendar's
+  record is `calendar.tuturuuu.com` with no routes. Every other wave-1 Worker
+  must stay route-free.
+
+## Publish sequence
+
+Everything below runs in the publish job. The preflight and verify steps hold
+only the read token; the upload step holds only the deploy token and performs
+every Cloudflare write.
+
+1. **Read-only preflight.** Exact production SHA, topology, secrets, rollback
+   deployment and upload history. The history walks manual dispatches and
+   planner runs newest first. It skips attempts that provably never started an
+   upload, receipts whose serving deployment was restored and confirmed, and
+   superseded attempts. An `uncertain` or unknown attempt blocks. The serving
+   SHA must be proven, from the serving version's annotation or from the
+   accepted receipt that wrote it. When it is newer than the candidate, the
+   attempt records `superseded` and uploads nothing.
+2. **Version upload.** `cf workers versions create --prebuilt` creates the
+   version with no traffic.
+3. **Stage at 0%.** A gradual deployment keeps the serving version at 100% and
+   adds the new version at 0%.
+4. **Staged smoke.** Signed-out requests carry
+   `Cloudflare-Workers-Version-Overrides: <worker>="<version>"`. The smoke
+   contract:
+   - `GET <public host>/api/build-info` and `GET tuturuuu.com/<mount>/api/build-info`
+     answer 200 and report the candidate `commitHash`. Retries cover edge
+     propagation for about a minute; if either path never reports it, the
+     override did not reach the staged version and the smoke fails.
+   - Where the app's source emits it (Finance today), `x-tuturuuu-runtime: native`
+     must be present. Mail, Calendar, Apps and Drive do not emit it yet; their
+     records keep the observed value. A test flips the requirement on when an
+     app's `start-bridge.config.ts` starts emitting it.
+   - `GET tuturuuu.com/<mount>` answers 307 into `https://tuturuuu.com/login`
+     (Apps answers 200: its catalog is public; Drive has no apex mount).
+   - Login pages answer without a 5xx, and the release recipe's smoke cases
+     match.
+   - Any 5xx or timeout fails the stage. Records keep each response's status
+     and allowed headers (`cache-control`, `cf-ray`, `content-type`,
+     `location`, `server`, `x-tuturuuu-runtime`), never a body.
+5. **Abort or switch.** A failed smoke restores the serving deployment alone
+   (`smoke-failed`); traffic never moves. Otherwise traffic switches to the
+   new version at 100%, but only while the staged deployment is still active.
+6. **Health gate.** Public probes without the override, every 10 seconds for
+   about a minute: every build-info origin reports the candidate commit, and
+   no probe answers 5xx or times out. On failure the upload step restores the
+   recorded rollback deployment, confirms it is active, probes the restored
+   state, records both outcomes (`rolled-back`) and fails the job. A restore
+   that cannot be confirmed marks the receipt `uncertain` and the job fails
+   loudly; restore the receipt's rollback deployment by hand.
+7. **Verify.** The read-only step confirms the active version, script settings
+   and unchanged topology, and records `accepted-private`.
+
+The receipt artifact `wave1-<app>-production-publication-<sha>-<run>-<attempt>`
+is retained 90 days in every outcome. An attempt that failed after its version
+upload leaves that version in the Worker's history, so a rerun of the same SHA
+refuses; ship a fix on a new SHA.
+
+## Why a 0% gradual deployment
+
+Cloudflare's version override header selects only among the versions of the
+current deployment. Staging the new version at 0% beside the serving one puts
+it in the current deployment, so the header reaches it on the app's real
+public paths, with the Worker's real bindings and secrets, while no reader is
+served by it. It changes no route, Custom Domain, `workers.dev` or preview URL
+setting.
+
+A preview-URL window would need `preview_urls` enabled on a production Worker:
+a settings write that exposes every version on `workers.dev` until it is
+reverted, outside the Access and gateway paths real users take. A failed revert
+leaves that exposure open. The 0% deployment avoids both. The header is not
+guaranteed to pass through every service binding, so the smoke fails closed
+unless build-info on each path proves it reached the staged version.
+
+## Concurrency
+
+Builds of one app and SHA share a queue (`wave1-native-production-<app>-<sha>`);
+uploads of one app share another (`wave1-native-upload-<app>`). Neither cancels
+a run. Callers use a group per run on `production`, so no planner callee
+replaces another.
+
+## Regression coverage
+
+- `scripts/ci/wave1-production-staged.test.mjs`: end-to-end sequence with fakes.
+- `scripts/ci/wave1-production-health.test.mjs`: health gate, smoke contract,
+  switch guards and serving-SHA proof.
+- `scripts/ci/wave1-native-production-history.test.mjs`: upload history.
+- `scripts/ci/wave1-production-admission.test.js` and
+  `scripts/ci/wave1-production-concurrency.test.js`: workflow conditions and
+  groups.
