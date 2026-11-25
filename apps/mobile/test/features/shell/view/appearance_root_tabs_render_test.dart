@@ -53,6 +53,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+import '../../../helpers/fake_sidebar_preferences.dart';
+
 part 'home_render_cases.dart';
 part 'notifications_render_cases.dart';
 part 'profile_render_cases.dart';
@@ -76,6 +78,7 @@ Future<void> _settle(WidgetTester tester) async {
 /// Captures are written only when `SETTINGS_RENDER_DIR` is set; assertions
 /// always run.
 void main() {
+  useFakeSidebarPreferences();
   setUpAll(() async {
     // Initialise outside any test's fake-async zone; the notification cases
     // read and write the cache.

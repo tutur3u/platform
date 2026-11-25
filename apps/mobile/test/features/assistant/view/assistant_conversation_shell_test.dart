@@ -12,9 +12,11 @@ import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.d
 import 'package:mobile/features/assistant/widgets/assistant_transcript_bubble.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 
+import '../../../helpers/fake_sidebar_preferences.dart';
 import 'assistant_s5_shell_harness.dart';
 
 void main() {
+  useFakeSidebarPreferences();
   setUpAssistantShellHarness();
 
   testWidgets('composer clears the dock and follows the keyboard', (

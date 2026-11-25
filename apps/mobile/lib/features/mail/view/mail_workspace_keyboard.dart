@@ -164,6 +164,21 @@ extension _MailWorkspaceKeyboard on _MailWorkspaceState {
       );
     }
     if (listAction == null || row == null || _folder == 'drafts') return false;
+    if (command == MailKeyboardCommand.archive ||
+        command == MailKeyboardCommand.trash) {
+      // Archive and Delete go through the swipe path so the row is held with
+      // an Undo, as in the reader. A row already in the target folder has
+      // nothing to move.
+      final trash = command == MailKeyboardCommand.trash;
+      if (_folder == (trash ? 'trash' : 'archive')) return false;
+      unawaited(
+        _swipeMessage(
+          row,
+          trash ? MailSwipeAction.trash : MailSwipeAction.archive,
+        ),
+      );
+      return true;
+    }
     unawaited(_bulk(listAction, ids: {row['id'] as String}));
     return true;
   }

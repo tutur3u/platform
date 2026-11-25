@@ -79,6 +79,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+import '../../../helpers/fake_sidebar_preferences.dart';
 import '../../../helpers/helpers.dart';
 import '../../assistant/assistant_personal_settings_harness.dart' as personal;
 import '../../assistant/local/assistant_local_chat_harness.dart';
@@ -103,6 +104,7 @@ part 'settings_timezone_rows_checks.dart';
 part 'settings_timezone_picker_checks.dart';
 
 void main() {
+  useFakeSidebarPreferences();
   tearDown(() => GoRouter.optionURLReflectsImperativeAPIs = false);
   registerHiddenRecoveryChecks();
   registerSettingsSearchKeyboardChecks();

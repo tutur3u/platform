@@ -10,6 +10,7 @@ import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_workspace_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
+import '../../../helpers/fake_sidebar_preferences.dart';
 import 'shell_rail_harness.dart';
 
 const _user = User(
@@ -22,6 +23,7 @@ const _user = User(
 );
 
 void main() {
+  useFakeSidebarPreferences();
   setUp(mockShellBackChannel);
 
   for (final (size, extended) in [

@@ -22,7 +22,6 @@ import 'package:mobile/features/command_palette/palette_repository.dart';
 import 'package:mobile/features/command_palette/palette_shortcut_help.dart';
 import 'package:mobile/features/command_palette/palette_shortcuts.dart';
 import 'package:mobile/features/command_palette/palette_view.dart';
-import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/notes/notes_offline_preparation.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
@@ -96,6 +95,12 @@ class _PaletteHostState extends State<PaletteHost> {
     }
   }
 
+  /// A page pushed on a navigator, such as the Mail composer or a form, rather
+  /// than a routed destination. Navigating away from it would discard its
+  /// unsaved state.
+  static bool _isPushedFullPage(ModalRoute<dynamic>? route) =>
+      route is PageRoute<dynamic> && route.settings is! Page && !route.isFirst;
+
   void _invoke(PaletteShortcut shortcut) {
     final scope = _scope;
     final navigatorContext = _navigatorContext;
@@ -110,8 +115,7 @@ class _PaletteHostState extends State<PaletteHost> {
         : ModalRoute.of(focusedContext);
     final chrome = context.read<ShellChromeActionsCubit>().state;
     if (focusedRoute is PopupRoute<dynamic> ||
-        (shortcut == PaletteShortcut.newItem &&
-            focusedRoute is MailComposerRoute) ||
+        (shortcut.leavesCurrentPage && _isPushedFullPage(focusedRoute)) ||
         chrome.topmostModalOwner != null ||
         _launchingAction) {
       return;

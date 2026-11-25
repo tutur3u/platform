@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior.dart';
@@ -17,54 +18,46 @@ class ShellSidebarShortcuts extends StatelessWidget {
   final ValueChanged<SidebarBehavior>? onSelected;
 
   @override
-  Widget build(BuildContext context) => Shortcuts(
-    shortcuts: {
-      if (onSelected != null) ...const {
-        SingleActivator(
-          LogicalKeyboardKey.keyB,
-          control: true,
-          includeRepeats: false,
-        ): _SidebarBehaviorIntent(),
-        SingleActivator(
-          LogicalKeyboardKey.keyB,
-          meta: true,
-          includeRepeats: false,
-        ): _SidebarBehaviorIntent(),
-        SingleActivator(
-          LogicalKeyboardKey.keyB,
-          control: true,
-          alt: true,
-          includeRepeats: false,
-        ): _SidebarBehaviorIntent(
-          minimal: true,
-        ),
-        SingleActivator(
-          LogicalKeyboardKey.keyB,
-          meta: true,
-          alt: true,
-          includeRepeats: false,
-        ): _SidebarBehaviorIntent(
-          minimal: true,
-        ),
+  Widget build(BuildContext context) {
+    final mac = defaultTargetPlatform == TargetPlatform.macOS;
+    return Shortcuts(
+      shortcuts: {
+        if (onSelected != null) ...{
+          SingleActivator(
+            LogicalKeyboardKey.keyB,
+            meta: mac,
+            control: !mac,
+            includeRepeats: false,
+          ): const _SidebarBehaviorIntent(),
+          SingleActivator(
+            LogicalKeyboardKey.keyB,
+            meta: mac,
+            control: !mac,
+            alt: true,
+            includeRepeats: false,
+          ): const _SidebarBehaviorIntent(
+            minimal: true,
+          ),
+        },
       },
-    },
-    child: Actions(
-      actions: {
-        _SidebarBehaviorIntent: _SidebarBehaviorAction((intent) {
-          onSelected?.call(
-            intent.minimal ? SidebarBehavior.minimal : behavior.toggled,
-          );
-          return null;
-        }),
-      },
-      child: Focus(
-        focusNode: focusNode,
-        autofocus: onSelected != null,
-        skipTraversal: true,
-        child: child,
+      child: Actions(
+        actions: {
+          _SidebarBehaviorIntent: _SidebarBehaviorAction((intent) {
+            onSelected?.call(
+              intent.minimal ? SidebarBehavior.minimal : behavior.toggled,
+            );
+            return null;
+          }),
+        },
+        child: Focus(
+          focusNode: focusNode,
+          autofocus: onSelected != null,
+          skipTraversal: true,
+          child: child,
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SidebarBehaviorIntent extends Intent {

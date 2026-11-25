@@ -762,3 +762,26 @@ Schedule feature-owned network work from lifecycle resume with
 owner to coalesce repeated resume work. Check that the widget is still mounted
 inside the callback. Keep background cancellation synchronous. The root drains
 queued work after the Flutter frame and App Lock check.
+
+### Desktop keyboard shortcuts
+
+Chords bind one modifier per platform: Cmd on macOS, Ctrl elsewhere. This holds
+for the command palette (`PaletteShortcut.activator`) and the sidebar chords in
+`shell_sidebar_shortcuts.dart`. A chord never fires from a focused text field
+(`EditableText` guard) for the sidebar, and the palette host ignores every chord
+while a popup route or modal owner is open. The chords that replace the routed
+page (tabs 1-5, Settings, New item) are also ignored while an imperatively
+pushed page route is open, such as the Mail composer or a form, so an unsaved
+draft is never discarded. Cover a new chord on macOS and one other platform,
+and cover each guard in `palette_shortcuts_test.dart`,
+`palette_host_fences_test.dart` or `shell_sidebar_shortcuts_test.dart`.
+
+Mail list shortcuts for Archive (`E`) and Delete (`#`) go through the swipe
+path, so the row is held behind the same Undo window; a row already in the
+target folder is left alone. Selection-wide shortcuts mirror the bulk toolbar.
+
+Tests that mount `ShellSidebarFrame` call `useFakeSidebarPreferences()` so the
+sidebar cubit builds no real API client.
+
+The macOS and Linux runners enforce a 960x640 minimum window; Windows keeps its
+own minimum. The size is intentional.

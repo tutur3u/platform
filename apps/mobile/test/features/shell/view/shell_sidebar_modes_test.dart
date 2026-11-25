@@ -237,7 +237,10 @@ void main() {
     expect(_bodyRect(tester).left, shellNavigationSidebarExtent);
     await _shortcut(tester);
     expect(_bodyRect(tester).left, shellNavigationRailExtent);
+    // Cmd is the macOS modifier; this platform binds Ctrl only.
     await _shortcut(tester, command: true);
+    expect(_bodyRect(tester).left, shellNavigationRailExtent);
+    await _shortcut(tester);
     expect(_bodyRect(tester).left, shellNavigationSidebarExtent);
     await _shortcut(tester, alt: true);
     expect(_bodyRect(tester).left, shellSidebarMinimalExtent);
@@ -248,7 +251,7 @@ void main() {
     await tester.pump();
     expect(editor.hasFocus, isTrue);
     await _shortcut(tester);
-    await _shortcut(tester, alt: true, command: true);
+    await _shortcut(tester, alt: true);
     expect(_bodyRect(tester).left, shellNavigationRailExtent);
   });
 

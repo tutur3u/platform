@@ -8,6 +8,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior_cubit.dart';
+import 'package:mobile/features/shell/cubit/sidebar_preferences.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_mode_menu.dart';
@@ -32,6 +33,12 @@ class ShellSidebarFrame extends StatelessWidget {
   final Widget body;
   final String location;
   final SidebarRailBuilder? railBuilder;
+
+  /// Builds the preference store behind each frame's [SidebarBehaviorCubit].
+  /// Tests replace it so no real API client is created.
+  @visibleForTesting
+  static SidebarPreferences Function() preferencesFactory =
+      SidebarPreferences.new;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +77,9 @@ class _SidebarPreferenceHost extends StatefulWidget {
 }
 
 class _SidebarPreferenceHostState extends State<_SidebarPreferenceHost> {
-  final _cubit = SidebarBehaviorCubit();
+  final _cubit = SidebarBehaviorCubit(
+    preferences: ShellSidebarFrame.preferencesFactory(),
+  );
   bool _started = false;
 
   @override

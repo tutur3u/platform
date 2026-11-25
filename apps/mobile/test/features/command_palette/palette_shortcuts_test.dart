@@ -1,144 +1,15 @@
-import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/data/models/workspace.dart';
-import 'package:mobile/data/repositories/task_repository.dart';
-import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/command_palette/command_palette_host.dart';
 import 'package:mobile/features/command_palette/palette_view.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
-import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
-import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
-import 'package:mobile/features/workspace/cubit/workspace_state.dart';
-import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
-class _AuthCubit extends MockCubit<AuthState> implements AuthCubit {}
-
-class _WorkspaceCubit extends MockCubit<WorkspaceState>
-    implements WorkspaceCubit {}
-
-class _AppLockCubit extends MockCubit<AppLockState> implements AppLockCubit {}
-
-class _TaskRepository extends Mock implements TaskRepository {}
+import 'palette_host_harness.dart';
 
 class _MailRepository extends Mock implements MailRepository {}
-
-Future<void> _chord(
-  WidgetTester tester,
-  LogicalKeyboardKey modifier,
-  LogicalKeyboardKey key,
-) async {
-  await tester.sendKeyDownEvent(modifier);
-  await tester.sendKeyEvent(key);
-  await tester.sendKeyUpEvent(modifier);
-  await tester.pumpAndSettle();
-}
-
-Future<GoRouter> _pumpApp(
-  WidgetTester tester, {
-  required TargetPlatform platform,
-  required Size size,
-  WidgetBuilder? home,
-}) async {
-  debugDefaultTargetPlatformOverride = platform;
-  addTearDown(() => debugDefaultTargetPlatformOverride = null);
-  tester.view.physicalSize = size;
-  tester.view.devicePixelRatio = 1;
-  addTearDown(tester.view.resetPhysicalSize);
-  addTearDown(tester.view.resetDevicePixelRatio);
-  SharedPreferences.setMockInitialValues({});
-
-  final auth = _AuthCubit();
-  final workspace = _WorkspaceCubit();
-  final lock = _AppLockCubit();
-  final chrome = ShellChromeActionsCubit();
-  addTearDown(chrome.close);
-  chrome.register(
-    registrationId: 'tasks',
-    ownerId: 'tasks',
-    locations: const {Routes.taskAssigned},
-    actions: [
-      ShellActionSpec(id: 'my-task-create', icon: Icons.add, onPressed: () {}),
-    ],
-  );
-  whenListen(
-    auth,
-    const Stream<AuthState>.empty(),
-    initialState: const AuthState.authenticated(
-      User(
-        id: 'actor',
-        appMetadata: {},
-        userMetadata: {},
-        aud: 'authenticated',
-        createdAt: '',
-      ),
-    ),
-  );
-  whenListen(
-    workspace,
-    const Stream<WorkspaceState>.empty(),
-    initialState: const WorkspaceState(
-      currentWorkspace: Workspace(id: 'workspace'),
-    ),
-  );
-  whenListen(
-    lock,
-    const Stream<AppLockState>.empty(),
-    initialState: const AppLockState(hasLoaded: true),
-  );
-  final router = GoRouter(
-    routes: [
-      GoRoute(
-        path: Routes.home,
-        builder: (context, _) =>
-            home?.call(context) ??
-            const Scaffold(
-              body: AppTextField(placeholder: 'Page input', autofocus: true),
-            ),
-      ),
-      GoRoute(
-        path: Routes.apps,
-        builder: (_, _) => const Scaffold(body: Text('Apps route')),
-      ),
-      GoRoute(
-        path: Routes.taskAssigned,
-        builder: (_, _) => const Scaffold(body: TextField(autofocus: true)),
-      ),
-    ],
-  );
-  addTearDown(router.dispose);
-  final tasks = _TaskRepository();
-  await tester.pumpWidget(
-    MultiBlocProvider(
-      providers: [
-        BlocProvider<AuthCubit>.value(value: auth),
-        BlocProvider<WorkspaceCubit>.value(value: workspace),
-        BlocProvider<AppLockCubit>.value(value: lock),
-        BlocProvider.value(value: chrome),
-      ],
-      child: MaterialApp.router(
-        routerConfig: router,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        builder: (_, child) => PaletteHost(router, tasks, child!),
-      ),
-    ),
-  );
-  await tester.pumpAndSettle();
-  return router;
-}
 
 void main() {
   for (final (platform, modifier) in [
@@ -148,7 +19,7 @@ void main() {
     testWidgets(
       'new-item chord stays out of Mail compose on ${platform.name}',
       (tester) async {
-        final router = await _pumpApp(
+        final harness = await pumpPaletteApp(
           tester,
           platform: platform,
           size: const Size(1200, 800),
@@ -172,29 +43,20 @@ void main() {
 
         await tester.tap(find.text('Open compose'));
         await tester.pumpAndSettle();
-        await _chord(tester, modifier, LogicalKeyboardKey.keyN);
+        await paletteChord(tester, modifier, LogicalKeyboardKey.keyN);
         expect(find.byType(MailComposer), findsOneWidget);
-        expect(
-          router.routerDelegate.currentConfiguration.uri.path,
-          Routes.home,
-        );
+        expect(harness.path, Routes.home);
 
         await tester.enterText(find.byType(TextField).at(3), 'Draft subject');
-        await _chord(tester, modifier, LogicalKeyboardKey.keyN);
+        await paletteChord(tester, modifier, LogicalKeyboardKey.keyN);
         expect(find.byType(MailComposer), findsOneWidget);
         expect(find.text('Draft subject'), findsOneWidget);
-        expect(
-          router.routerDelegate.currentConfiguration.uri.path,
-          Routes.home,
-        );
+        expect(harness.path, Routes.home);
 
         Navigator.of(tester.element(find.byType(MailComposer))).pop();
         await tester.pumpAndSettle();
-        await _chord(tester, modifier, LogicalKeyboardKey.keyN);
-        expect(
-          router.routerDelegate.currentConfiguration.uri.path,
-          Routes.taskAssigned,
-        );
+        await paletteChord(tester, modifier, LogicalKeyboardKey.keyN);
+        expect(harness.path, Routes.taskAssigned);
       },
     );
   }
@@ -202,7 +64,7 @@ void main() {
   testWidgets('Ctrl+K opens above routed content and arrows select a route', (
     tester,
   ) async {
-    final router = await _pumpApp(
+    final harness = await pumpPaletteApp(
       tester,
       platform: TargetPlatform.linux,
       size: const Size(1200, 800),
@@ -210,7 +72,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.keyK);
     expect(find.byType(CommandPaletteView), findsNothing);
-    await _chord(
+    await paletteChord(
       tester,
       LogicalKeyboardKey.controlLeft,
       LogicalKeyboardKey.keyK,
@@ -225,20 +87,23 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pumpAndSettle();
     expect(palette, findsNothing);
-    expect(router.routerDelegate.currentConfiguration.uri.path, '/apps');
+    expect(harness.path, '/apps');
     expect(find.text('Apps route'), findsOneWidget);
   });
 
   testWidgets('Cmd+K opens a compact sheet, toggles it, and respects Escape', (
     tester,
   ) async {
-    final router = await _pumpApp(
+    final harness = await pumpPaletteApp(
       tester,
       platform: TargetPlatform.macOS,
       size: const Size(390, 700),
     );
-    Future<void> toggle() =>
-        _chord(tester, LogicalKeyboardKey.metaLeft, LogicalKeyboardKey.keyK);
+    Future<void> toggle() => paletteChord(
+      tester,
+      LogicalKeyboardKey.metaLeft,
+      LogicalKeyboardKey.keyK,
+    );
 
     await toggle();
     expect(find.byType(BottomSheet), findsOneWidget);
@@ -249,6 +114,98 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);
     await tester.pumpAndSettle();
     expect(find.byType(CommandPaletteView), findsNothing);
-    expect(router.routerDelegate.currentConfiguration.uri.path, '/');
+    expect(harness.path, '/');
   });
+
+  for (final (platform, modifier, other) in [
+    (
+      TargetPlatform.linux,
+      LogicalKeyboardKey.controlLeft,
+      LogicalKeyboardKey.metaLeft,
+    ),
+    (
+      TargetPlatform.macOS,
+      LogicalKeyboardKey.metaLeft,
+      LogicalKeyboardKey.controlLeft,
+    ),
+  ]) {
+    testWidgets(
+      'tab and settings chords use one modifier on ${platform.name}',
+      (tester) async {
+        final harness = await pumpPaletteApp(
+          tester,
+          platform: platform,
+          size: const Size(1200, 800),
+        );
+
+        await paletteChord(tester, other, LogicalKeyboardKey.digit2);
+        expect(harness.path, Routes.home);
+        await paletteChord(tester, modifier, LogicalKeyboardKey.digit2);
+        expect(harness.path, Routes.apps);
+        await paletteChord(tester, modifier, LogicalKeyboardKey.digit3);
+        expect(harness.path, Routes.assistant);
+        await paletteChord(tester, other, LogicalKeyboardKey.comma);
+        expect(harness.path, Routes.assistant);
+        await paletteChord(tester, modifier, LogicalKeyboardKey.comma);
+        expect(harness.path, Routes.settings);
+      },
+    );
+  }
+
+  testWidgets(
+    'a pushed full page keeps tab and settings chords from leaving it',
+    (tester) async {
+      final harness = await pumpPaletteApp(
+        tester,
+        platform: TargetPlatform.linux,
+        size: const Size(1200, 800),
+        home: (context) => Scaffold(
+          body: TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) => const Scaffold(
+                  body: TextField(autofocus: true, key: Key('draft')),
+                ),
+              ),
+            ),
+            child: const Text('Open editor'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open editor'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('draft')), 'unsaved');
+
+      for (final key in [
+        LogicalKeyboardKey.digit1,
+        LogicalKeyboardKey.digit2,
+        LogicalKeyboardKey.digit5,
+        LogicalKeyboardKey.comma,
+        LogicalKeyboardKey.keyN,
+      ]) {
+        await paletteChord(tester, LogicalKeyboardKey.controlLeft, key);
+        expect(harness.path, Routes.home, reason: key.keyLabel);
+        expect(find.text('unsaved'), findsOneWidget, reason: key.keyLabel);
+      }
+
+      await paletteChord(
+        tester,
+        LogicalKeyboardKey.controlLeft,
+        LogicalKeyboardKey.keyK,
+      );
+      expect(find.byType(CommandPaletteView), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      Navigator.of(tester.element(find.byKey(const Key('draft')))).pop();
+      await tester.pumpAndSettle();
+      await paletteChord(
+        tester,
+        LogicalKeyboardKey.controlLeft,
+        LogicalKeyboardKey.digit2,
+      );
+      expect(harness.path, Routes.apps);
+    },
+  );
 }

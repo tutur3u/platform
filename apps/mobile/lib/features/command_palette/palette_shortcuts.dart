@@ -21,6 +21,11 @@ enum PaletteShortcut {
   final String keyLabel;
   final ShellRootTab? tab;
 
+  /// Whether the shortcut replaces the routed page, so a page holding unsaved
+  /// work must not receive it.
+  bool get leavesCurrentPage =>
+      tab != null || this == settings || this == newItem;
+
   SingleActivator activator(TargetPlatform platform) => SingleActivator(
     key,
     meta: platform == TargetPlatform.macOS,
