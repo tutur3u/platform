@@ -227,7 +227,15 @@ List<AppFormatAction> documentFormatActions({
 
 /// Inserts a horizontal rule on its own line at the caret, as typing
 /// `---` does on the web.
-void insertDocumentDivider(QuillController editor) {
+///
+/// From the toolbar ([replaceEmptyLine]), a rule on an empty line takes
+/// that line's place and the caret moves to the next line, as the web's
+/// setHorizontalRule does. The `---` input rule keeps the empty line below,
+/// as the web's input rule does.
+void insertDocumentDivider(
+  QuillController editor, {
+  bool replaceEmptyLine = true,
+}) {
   final selection = editor.selection;
   final index = selection.start.clamp(0, editor.document.length - 1);
   final length = selection.end - selection.start;
@@ -242,24 +250,46 @@ void insertDocumentDivider(QuillController editor) {
   final plain = editor.document.toPlainText();
   var at = index;
   if (index > 0 && plain[index - 1] != '\n') {
-    editor.replaceText(
-      index,
-      0,
-      '\n',
-      TextSelection.collapsed(offset: index + 1),
-    );
-    at = index + 1;
+    if (plain[index] == '\n' && index + 1 < plain.length) {
+      // At the end of a line: the rule goes on the line below.
+      at = index + 1;
+    } else {
+      editor.replaceText(
+        index,
+        0,
+        '\n',
+        TextSelection.collapsed(offset: index + 1),
+      );
+      at = index + 1;
+    }
   }
+  final text = editor.document.toPlainText();
+  final emptyLine =
+      replaceEmptyLine &&
+      at == index &&
+      text[at] == '\n' &&
+      (at == 0 || text[at - 1] == '\n');
   // The rule gets a line of its own, without list, heading, quote or code
   // styling, and the caret moves to the line below it, as on the web.
-  editor
-    ..replaceText(
-      at,
+  editor.replaceText(
+    at,
+    0,
+    const BlockEmbed(taskDescriptionDividerEmbedType, 'hr'),
+    TextSelection.collapsed(offset: at + 1),
+  );
+  // An empty line's own newline ends the rule; a line is added below only
+  // when there is none to move to.
+  final addedLastLine = emptyLine && at + 2 >= editor.document.length;
+  if (!emptyLine || addedLastLine) {
+    editor.replaceText(
+      at + 1,
       0,
-      const BlockEmbed(taskDescriptionDividerEmbedType, 'hr'),
-      TextSelection.collapsed(offset: at + 1),
-    )
-    ..replaceText(at + 1, 0, '\n', TextSelection.collapsed(offset: at + 2));
+      '\n',
+      TextSelection.collapsed(offset: at + 2),
+    );
+  }
+  // The rule's line is plain. A line added below an empty styled last
+  // line is plain too, as the web's new paragraph is.
   for (final attribute in <Attribute<dynamic>>[
     Attribute.header,
     Attribute.list,
@@ -269,6 +299,9 @@ void insertDocumentDivider(QuillController editor) {
     Attribute.align,
   ]) {
     editor.formatText(at, 1, Attribute.clone(attribute, null));
+    if (addedLastLine) {
+      editor.formatText(at + 2, 1, Attribute.clone(attribute, null));
+    }
   }
   editor.updateSelection(
     TextSelection.collapsed(offset: at + 2),

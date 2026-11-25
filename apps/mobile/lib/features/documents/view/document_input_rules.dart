@@ -67,7 +67,7 @@ bool applyDocumentInputRules(
       '',
       TextSelection.collapsed(offset: lineStart),
     );
-    insertDocumentDivider(editor);
+    insertDocumentDivider(editor, replaceEmptyLine: false);
     return true;
   }
 

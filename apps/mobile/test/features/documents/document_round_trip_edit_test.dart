@@ -247,4 +247,144 @@ void main() {
     final saved = jsonEncode(snapshot.payloadFor(document));
     expect(saved, isNot(contains('center')));
   });
+
+  group('A divider that splits a block keeps its settings', () {
+    Map<String, dynamic> splitAt(Map<String, dynamic> block, String after) {
+      final snapshot = DocumentContentSnapshot.parse(
+        jsonEncode({
+          'type': 'doc',
+          'content': [block],
+        }),
+      );
+      final editor = QuillController(
+        document: snapshot.toQuill(),
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+      addTearDown(editor.dispose);
+      final index = editor.document.toPlainText().indexOf(after);
+      editor.updateSelection(
+        TextSelection.collapsed(offset: index + after.length),
+        ChangeSource.local,
+      );
+      insertDocumentDivider(editor);
+      return snapshot.payloadFor(editor.document);
+    }
+
+    test('both halves of a code block keep its language', () {
+      final saved = splitAt({
+        'type': 'codeBlock',
+        'attrs': {'language': 'dart'},
+        'content': [text('final a = 1;\nfinal b = 2;')],
+      }, 'final a = 1;');
+      final nodes = (saved['content'] as List).cast<Map<String, dynamic>>();
+      final code = nodes.where((node) => node['type'] == 'codeBlock');
+      expect(code, hasLength(2));
+      for (final node in code) {
+        expect(node['attrs'], {'language': 'dart'});
+      }
+      expect(nodes.map((node) => node['type']), contains('horizontalRule'));
+    });
+
+    test('the second half of an ordered list continues its numbers', () {
+      final saved = splitAt(_list('orderedList', ['four', 'five']), 'four');
+      final lists = [
+        for (final node in saved['content'] as List)
+          if ((node as Map)['type'] == 'orderedList') node,
+      ];
+      expect(lists, hasLength(2));
+      expect((lists.first['attrs'] as Map)['start'], 4);
+      expect((lists.last['attrs'] as Map)['start'], 5);
+    });
+  });
+
+  test('a toolbar divider on an empty line takes its place', () {
+    final editor = QuillController.basic();
+    addTearDown(editor.dispose);
+    editor.document.insert(0, 'Plan\n\nNext');
+    editor.updateSelection(
+      const TextSelection.collapsed(offset: 5),
+      ChangeSource.local,
+    );
+    insertDocumentDivider(editor);
+    final types = [
+      for (final node
+          in (documentContentPayload(editor.document) as Map)['content']
+              as List)
+        (node as Map)['type'],
+    ];
+    expect(types, ['paragraph', 'horizontalRule', 'paragraph']);
+    expect(
+      editor.selection.baseOffset,
+      editor.document.toPlainText().indexOf('Next'),
+    );
+  });
+
+  test('a toolbar divider at the end of a line keeps a blank line below', () {
+    final editor = QuillController.basic();
+    addTearDown(editor.dispose);
+    editor.document.insert(0, 'Plan\n\nNext');
+    editor.updateSelection(
+      const TextSelection.collapsed(offset: 4),
+      ChangeSource.local,
+    );
+    insertDocumentDivider(editor);
+    final types = [
+      for (final node
+          in (documentContentPayload(editor.document) as Map)['content']
+              as List)
+        (node as Map)['type'],
+    ];
+    expect(types, ['paragraph', 'horizontalRule', 'paragraph', 'paragraph']);
+  });
+
+  test('a divider on an empty last heading leaves a plain line', () {
+    final editor = QuillController.basic();
+    addTearDown(editor.dispose);
+    editor.document.insert(0, 'Plan\n');
+    editor
+      ..updateSelection(
+        const TextSelection.collapsed(offset: 5),
+        ChangeSource.local,
+      )
+      ..formatSelection(Attribute.h1);
+    insertDocumentDivider(editor);
+    final types = [
+      for (final node
+          in (documentContentPayload(editor.document) as Map)['content']
+              as List)
+        (node as Map)['type'],
+    ];
+    expect(types, isNot(contains('heading')));
+    expect(types.take(2), ['paragraph', 'horizontalRule']);
+  });
+
+  test('splitting a list with no stored start numbers on from one', () {
+    final list = {
+      'type': 'orderedList',
+      'content': [
+        item([_plainParagraph('one')]),
+        item([_plainParagraph('two')]),
+      ],
+    };
+    final snapshot = DocumentContentSnapshot.parse(
+      jsonEncode({
+        'type': 'doc',
+        'content': [list],
+      }),
+    );
+    final editor = QuillController(
+      document: snapshot.toQuill(),
+      selection: const TextSelection.collapsed(offset: 3),
+    );
+    addTearDown(editor.dispose);
+    insertDocumentDivider(editor);
+    final lists = [
+      for (final node
+          in snapshot.payloadFor(editor.document)['content'] as List)
+        if ((node as Map)['type'] == 'orderedList') node,
+    ];
+    expect(lists, hasLength(2));
+    expect(lists.first.containsKey('attrs'), isFalse);
+    expect((lists.last['attrs'] as Map)['start'], 2);
+  });
 }

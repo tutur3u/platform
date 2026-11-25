@@ -144,18 +144,59 @@ const Map<String, Set<String>> _carriedAttrs = {
 };
 
 /// Edited blocks keep the stored attributes in [_carriedAttrs] (a code
-/// block's language, an ordered list's start) when the edit leaves the
-/// same blocks in the same order. When counts differ, which stored block
-/// an edited one came from is unknown, so nothing carries.
+/// block's language, an ordered list's start).
+///
+/// When the edit leaves the same blocks in the same order, each edited
+/// block takes its stored counterpart's attributes. Otherwise a type with
+/// exactly one stored block passes its attributes to every edited block of
+/// that type, so a code block or list split in two (by a divider, say)
+/// keeps its language, and the later parts of a split ordered list
+/// continue its numbering. Types with several stored blocks carry nothing,
+/// since which one an edited block came from is unknown.
 List<Map<String, dynamic>> _carryAttrs(
   List<Map<String, dynamic>> converted,
   List<Map<String, dynamic>> replaced,
 ) {
-  if (converted.length != replaced.length) return converted;
+  if (converted.length == replaced.length) {
+    return [
+      for (var i = 0; i < converted.length; i++)
+        _withCarried(converted[i], replaced[i]),
+    ];
+  }
+  final sources = <String, Map<String, dynamic>?>{};
+  for (final node in replaced) {
+    final type = node['type'];
+    if (type is! String || !_carriedAttrs.containsKey(type)) continue;
+    sources[type] = sources.containsKey(type) ? null : node;
+  }
+  final nextStart = <String, int>{};
   return [
-    for (var i = 0; i < converted.length; i++)
-      _withCarried(converted[i], replaced[i]),
+    for (final node in converted)
+      if (sources[node['type']] case final source?)
+        _continued(_withCarried(node, source), nextStart)
+      else
+        node,
   ];
+}
+
+/// A later part of a split ordered list starts where the earlier part
+/// ended.
+Map<String, dynamic> _continued(
+  Map<String, dynamic> node,
+  Map<String, int> nextStart,
+) {
+  if (node['type'] != 'orderedList') return node;
+  final attrs = (node['attrs'] as Map?)?.cast<String, dynamic>() ?? {};
+  final stored = attrs['start'];
+  final start =
+      nextStart['orderedList'] ?? (stored is num ? stored.toInt() : 1);
+  final items = node['content'] is List ? (node['content'] as List).length : 0;
+  nextStart['orderedList'] = start + items;
+  if (start == stored || (stored == null && start == 1)) return node;
+  return {
+    ...node,
+    'attrs': {...attrs, 'start': start},
+  };
 }
 
 Map<String, dynamic> _withCarried(
