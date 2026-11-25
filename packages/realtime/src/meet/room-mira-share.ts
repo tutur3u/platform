@@ -88,12 +88,93 @@ function freshContext(grant: MiraShareGrant | null, now: number) {
     : null;
 }
 
-export function applyMiraShare(
+/** Whether a stored grant still holds, without a caller's token. */
+function grantHolds(
   state: RoomServiceState,
+  account: string,
+  grant: MiraShareGrant
+) {
+  const choice = state.miraPrivate?.choices[account];
+  return (
+    grant.enabled &&
+    !state.ended &&
+    choice?.choice === 'continue' &&
+    choice.version === MIRA_PRIVATE_NOTICE_VERSION &&
+    choice.accountId === account &&
+    choice.meetingId === grant.meetingId &&
+    choice.revision === grant.choiceRevision
+  );
+}
+
+/**
+ * Drops shared tutor chat that has expired or whose grant no longer holds
+ * (revoked, or the Private Mira choice changed). Returns the same object when
+ * nothing changes, so callers persist only real drops.
+ */
+export function pruneMiraShares<T extends RoomServiceState>(
+  state: T,
+  now = Date.now()
+): T {
+  const shares = state.miraShares;
+  if (!shares) return state;
+  let changed = false;
+  const next: MiraShareState = {};
+  for (const [account, grant] of Object.entries(shares)) {
+    if (
+      grant.context &&
+      (!grantHolds(state, account, grant) || !freshContext(grant, now))
+    ) {
+      const { context: _dropped, ...kept } = grant;
+      next[account] = kept;
+      changed = true;
+    } else next[account] = grant;
+  }
+  return changed ? { ...state, miraShares: next } : state;
+}
+
+/** Subject or meeting erasure removes the grant and anything it shared. */
+export function eraseMiraShares<T extends RoomServiceState>(
+  state: T,
+  target: { all?: boolean; userId?: string }
+): T {
+  const shares = state.miraShares;
+  if (!shares) return state;
+  if (target.all) return { ...state, miraShares: undefined };
+  if (!target.userId || !shares[target.userId]) return state;
+  const { [target.userId]: _erased, ...kept } = shares;
+  return { ...state, miraShares: kept };
+}
+
+/** Adds the caller's own share status to their Private Mira choice read. */
+export function withMiraShareStatus<
+  R extends { state: RoomServiceState; body: unknown; status?: number },
+>(result: R, token: MeetRealtimeTokenPayload, input: unknown): R {
+  if (
+    result.status ||
+    !input ||
+    typeof input !== 'object' ||
+    (input as { action?: unknown }).action !== 'mira.private.read' ||
+    !result.body ||
+    typeof result.body !== 'object'
+  )
+    return result;
+  const account = token.accountId ?? token.userId;
+  return {
+    ...result,
+    body: {
+      ...result.body,
+      shared: !!activeMiraShare(result.state, token, account),
+    },
+  };
+}
+
+export function applyMiraShare(
+  snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
   now = Date.now()
 ) {
+  const state = pruneMiraShares(snapshot, now);
   const parsed = command.safeParse(input);
   if (!parsed.success) {
     const action =
@@ -140,6 +221,11 @@ export function applyMiraShare(
 
   // People set and read their own grant; Mira never changes it.
   if (liveServer || token.guest) return fail();
+  // Only the app server, after its own account confirmation and flag checks,
+  // may read, turn on or fill a share. Revoking stays open to the owner.
+  const serverIssued = token.scopes.includes('meet:server');
+  const revoking = message.action === 'mira.share.set' && !message.enabled;
+  if (!serverIssued && !revoking) return fail();
   const admitted = Object.values(state.presence).some(
     (person) => (person.accountId ?? person.userId) === account
   );
@@ -151,7 +237,7 @@ export function applyMiraShare(
     state: { ...state, miraShares: { ...state.miraShares, [account]: grant } },
     body: { enabled: grant.enabled, revision: grant.revision },
   });
-  if (message.action === 'mira.share.set' && !message.enabled) {
+  if (revoking) {
     // Revoking is always allowed and takes the shared context with it.
     if (!previous) return { state, body: view(null) };
     return save({

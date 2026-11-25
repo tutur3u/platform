@@ -134,6 +134,7 @@
     "../../packages/realtime/src/meet/room-mira-dispatch.ts",
     "../../packages/realtime/src/meet/room-media-role.ts",
     "../../packages/realtime/src/meet/room-mira-private.ts",
+    "../../packages/realtime/src/meet/room-mira-share.ts",
     "../../packages/realtime/src/meet/room-transcript-consent.ts",
     "../../packages/realtime/src/meet/room-self-capture.ts",
     "../../packages/realtime/src/meet/room-self-capture-cycle.ts",

@@ -51,7 +51,12 @@ import { transcriptionClientSnapshot } from './transcription';
 import { locksClientTranscription } from './room-self-capture-state';
 import type { MiraRoomState } from './room-mira-consent';
 import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
-import { applyMiraShare, type MiraShareState } from './room-mira-share';
+import {
+  applyMiraShare,
+  type MiraShareState,
+  pruneMiraShares,
+  withMiraShareStatus,
+} from './room-mira-share';
 import { isGuestRemovalBlocked } from './room-removed-guests';
 import {
   applyRoomAttachment,
@@ -172,6 +177,9 @@ export function roomService(
     status,
   });
   if (!token.scopes.includes('meet:server')) return fail('Forbidden');
+  // Shared tutor chat leaves room state as soon as it expires or its grant
+  // stops holding; any room-service write after that persists the drop.
+  snapshot = pruneMiraShares(snapshot);
   const removal = guestRemovalStatus.safeParse(input);
   if (removal.success) {
     const guestId = removal.data.guestId ?? token.accountId ?? token.userId;
@@ -188,7 +196,12 @@ export function roomService(
   const forms = applyRoomForms(snapshot, token, input, formsEnv);
   if (forms) return forms;
   const privateMira = applyPrivateMira(snapshot, token, input);
-  if (privateMira) return privateMira;
+  if (privateMira)
+    return withMiraShareStatus(
+      { ...privateMira, state: pruneMiraShares(privateMira.state) },
+      token,
+      input
+    );
   const share = applyMiraShare(snapshot, token, input);
   if (share) return share;
   const restored = applyRoomRestore(

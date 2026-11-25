@@ -9,6 +9,7 @@ import { applyClassTimerCommand, classTimerServerMessage } from './class-timer';
 import type { MeetRealtimeServerMessage } from './messages';
 import { accountRoomTime, expireRoomBudget } from './room-budget';
 import type { MeetRoomSnapshot } from './room';
+import { eraseMiraShares } from './room-mira-share';
 import type { MeetServiceClaims } from './service-credential';
 
 export type MeetClassServiceResult = {
@@ -201,16 +202,22 @@ export function applyMeetClassService(
     userId: claims.userId,
     guestId: claims.guestId,
   });
+  // The same erasure removes what the subject shared with Private Mira.
+  const erased = eraseMiraShares(current, {
+    all: claims.erase === 'meeting',
+    userId: claims.userId,
+  });
   const epoch = current.attendanceEpoch ?? 0;
   const nextEpoch = Math.max(epoch, generation ?? epoch);
   const nextAttendance = attendance ?? [];
   const sameCopy =
     nextEpoch === epoch &&
+    erased === current &&
     (attendance === current.attendance ||
       (nextAttendance.length === 0 && !(current.attendance ?? []).length));
   return {
     snapshot: {
-      ...current,
+      ...erased,
       attendance: nextAttendance,
       attendanceEpoch: nextEpoch,
     },
