@@ -1,43 +1,65 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  ALERT_LABEL,
-  alertAction,
+  ALERT_KEY,
+  alertState,
   syncAlert,
 } from './upskii-production-e2e-alert.mjs';
+import { attemptUrl, boundedBody, MAX_ALERT_BODY } from './ttr-task-alert.mjs';
+
+const RUN = 'https://github.com/tutur3u/platform/actions/runs/1';
 
 describe('upskii production e2e alert', () => {
-  it('opens, comments and closes the single alert issue', () => {
-    assert.equal(alertAction('failure', null), 'open');
-    assert.equal(alertAction('cancelled', null), 'open');
-    assert.equal(alertAction('failure', { number: 1 }), 'comment');
-    assert.equal(alertAction('success', { number: 1 }), 'close');
-    assert.equal(alertAction('success', null), 'none');
-    assert.equal(alertAction('skipped', null), 'none');
+  it('maps job results to alert states', () => {
+    assert.equal(alertState('failure'), 'failing');
+    assert.equal(alertState('cancelled'), 'failing');
+    assert.equal(alertState('success'), 'recovered');
+    assert.equal(alertState('skipped'), null);
   });
 
-  it('closes an open issue after a green run', async () => {
-    process.env.GITHUB_TOKEN = 'test-token';
+  it('reports a recovery to the internal alert sink, never GitHub', async () => {
     const calls = [];
     const fetchImpl = async (url, init) => {
-      calls.push(`${init.method} ${new URL(url).pathname}`);
-      const body = url.includes(`labels=${ALERT_LABEL}`) ? [{ number: 7 }] : {};
-      return new Response(JSON.stringify(body), { status: 200 });
+      calls.push({ url, init });
+      return new Response(JSON.stringify({ action: 'close' }), { status: 200 });
     };
     const action = await syncAlert(
       {
-        GITHUB_REPOSITORY: 'tutur3u/platform',
+        TTR_CI_ALERT_TOKEN: 'test-token',
         E2E_RESULT: 'success',
         E2E_TRIGGER: 'workflow_dispatch',
-        E2E_RUN_URL: 'https://github.com/tutur3u/platform/actions/runs/1',
+        E2E_RUN_URL: RUN,
       },
       fetchImpl
     );
     assert.equal(action, 'close');
-    assert.deepEqual(calls, [
-      'GET /repos/tutur3u/platform/issues',
-      'POST /repos/tutur3u/platform/issues/7/comments',
-      'PATCH /repos/tutur3u/platform/issues/7',
-    ]);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].url, 'https://tasks.tuturuuu.com/api/v1/ci/alerts');
+    assert.equal(calls[0].init.headers['x-ci-alert-token'], 'test-token');
+    const body = JSON.parse(calls[0].init.body);
+    assert.equal(body.key, ALERT_KEY);
+    assert.equal(body.state, 'recovered');
+    assert.equal(body.runUrl, RUN);
+  });
+
+  it('reports each run attempt and bounds the body', () => {
+    assert.equal(attemptUrl(RUN, '2'), `${RUN}/attempts/2`);
+    assert.equal(attemptUrl(`${RUN}/attempts/1`, 3), `${RUN}/attempts/3`);
+    assert.equal(attemptUrl(RUN, ''), RUN);
+    assert.equal(boundedBody('ok'), 'ok');
+    assert.ok(boundedBody('x'.repeat(9000)).length < 8000);
+    const emoji = boundedBody(`${'x'.repeat(MAX_ALERT_BODY - 1)}\u{1F600}`);
+    assert.doesNotMatch(emoji, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/u);
+    assert.ok(MAX_ALERT_BODY < 8000);
+  });
+
+  it('files nothing without the alert token', async () => {
+    const action = await syncAlert(
+      { E2E_RESULT: 'failure', E2E_TRIGGER: 'schedule', E2E_RUN_URL: RUN },
+      () => {
+        throw new Error('must not call');
+      }
+    );
+    assert.equal(action, 'unconfigured');
   });
 });

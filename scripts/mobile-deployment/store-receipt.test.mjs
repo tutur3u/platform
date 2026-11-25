@@ -6,7 +6,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  alertAction,
+  alertState,
+  syncAlert,
   buildReceipt,
   receiptMarkdown,
 } from './store-receipt.mjs';
@@ -63,12 +64,11 @@ test('a failed CI check is a failed receipt stage', () => {
   assert.deepEqual(receipt.failed, ['check']);
 });
 
-test('any failed or cancelled stage opens or updates the alert issue', () => {
+test('any failed or cancelled stage reports a failing alert', () => {
   const failed = buildReceipt({ ...base, RESULT_IOS: 'failure' });
   assert.equal(failed.status, 'failed');
   assert.deepEqual(failed.failed, ['ios']);
-  assert.equal(alertAction(failed, null), 'open');
-  assert.equal(alertAction(failed, { number: 9 }), 'comment');
+  assert.equal(alertState(failed), 'failing');
   const preflight = buildReceipt({
     ...base,
     RESULT_PREFLIGHT: 'cancelled',
@@ -78,12 +78,36 @@ test('any failed or cancelled stage opens or updates the alert issue', () => {
   assert.deepEqual(preflight.failed, ['preflight']);
 });
 
-test('only a run that published both stores closes the alert', () => {
-  assert.equal(alertAction(buildReceipt(base), { number: 9 }), 'close');
-  assert.equal(alertAction(buildReceipt(base), null), 'none');
+test('only a run that published both stores resolves the alert', () => {
+  assert.equal(alertState(buildReceipt(base)), 'recovered');
   const partial = buildReceipt({ ...base, RESULT_IOS: 'skipped' });
   assert.equal(partial.status, 'incomplete');
-  assert.equal(alertAction(partial, { number: 9 }), 'none');
+  assert.equal(alertState(partial), null);
+});
+
+test('alerts go to the internal task sink, never GitHub', async () => {
+  const failed = buildReceipt({ ...base, RESULT_ANDROID: 'failure' });
+  const calls = [];
+  const action = await syncAlert(
+    failed,
+    { TTR_CI_ALERT_TOKEN: 'test-token' },
+    async (url, init) => {
+      calls.push({ url, body: JSON.parse(init.body) });
+      return new Response(JSON.stringify({ action: 'open' }), { status: 200 });
+    }
+  );
+  assert.equal(action, 'open');
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /^https:\/\/tasks\.tuturuuu\.com\//u);
+  assert.equal(calls[0].body.key, 'mobile-store');
+  assert.equal(calls[0].body.state, 'failing');
+  assert.equal(calls[0].body.runUrl, `${failed.run}/attempts/1`);
+  assert.equal(
+    await syncAlert(failed, {}, () => {
+      throw new Error('must not call');
+    }),
+    'unconfigured'
+  );
 });
 
 test('receipt CLI writes the receipt without contacting GitHub', () => {

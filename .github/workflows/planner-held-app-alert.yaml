@@ -9,7 +9,7 @@ on:
     branches: [production]
 
 # One queue for every run, so two finishing planners never open duplicate
-# issues for the same app.
+# alert tasks for the same app.
 concurrency:
   group: planner-held-app-alert
   cancel-in-progress: false
@@ -27,10 +27,10 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment: ci-alerts
     permissions:
       actions: read
       contents: read
-      issues: write
     steps:
       - name: Verify trusted trigger
         id: trigger
@@ -141,16 +141,18 @@ jobs:
           sparse-checkout: |
             scripts/ci/planner-held-app-alert.mjs
             scripts/ci/production-planner-job-classes.mjs
+            scripts/ci/ttr-task-alert.mjs
           sparse-checkout-cone-mode: false
       - if: steps.trigger.outputs.trusted == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           package-manager-cache: false
-      - name: Report held apps and sync their alert issues
+      - name: Report held apps and sync their internal alert tasks
         if: steps.trigger.outputs.trusted == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TTR_CI_ALERT_TOKEN: ${{ secrets.TTR_CI_ALERT_TOKEN }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
           RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}

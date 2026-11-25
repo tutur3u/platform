@@ -660,12 +660,14 @@ publish gate fails or is cancelled, ends with
 build number, commit, the number of configured Play testing tracks and
 TestFlight external groups (identifiers stay private) and per-stage results to the
 job summary and to the `mobile-store-receipt` artifact (kept 90 days). The
-artifact uploads before the alert step calls the Issues API, and the alert
-still runs when the artifact upload fails. When any stage fails or is cancelled, it opens one GitHub issue labeled
-`mobile-store-alert`, or comments on the open one. Fleet monitors watch that
-label. The next run that publishes both stores comments its receipt on the
-issue and closes it. The job needs only `issues: write` and never reads store
-credentials. Regression coverage: `scripts/mobile-deployment/store-receipt.test.mjs`.
+artifact uploads before the alert step calls the internal alert sink, and the
+alert still runs when the artifact upload fails. When any stage fails or is
+cancelled, it opens one internal alert task (key `mobile-store`, see
+[CI alert tasks](/build/devops/ci-alert-tasks)), or comments on the open one.
+The next run that publishes both stores comments its receipt on the task and
+resolves it. The job runs in the `ci-alerts` environment for the alert-sink
+token only, needs `contents: read`, and never reads store credentials or opens
+GitHub issues. Regression coverage: `scripts/mobile-deployment/store-receipt.test.mjs`.
 
 The TestFlight review queue skips all of its jobs, including the CI check, while
 `TESTFLIGHT_EXTERNAL_BETA_GROUPS` is empty. Its dispatch step checks the value

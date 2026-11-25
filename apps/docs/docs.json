@@ -304,6 +304,7 @@
                   "build/devops/meet-standalone-release",
                   "build/devops/meet-volunteer-load-test",
                   "build/devops/upskii-production-e2e",
+                  "build/devops/ci-alert-tasks",
                   "build/devops/teach-start-void",
                   "build/devops/ai-start-void",
                   "build/devops/forms-start-void",

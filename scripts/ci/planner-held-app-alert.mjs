@@ -4,9 +4,10 @@
 // A failed independent-app job (for example Meet's production publication
 // check) does not block migrations, so the planner's red conclusion is easy to
 // accept round after round without anyone acting on it. After every planner
-// run this keeps one open issue per held app, labeled ALERT_LABEL for the fleet
-// monitors, comments each further round on it, and closes it once the app's
-// jobs pass again. It also writes an error annotation and a step summary.
+// run this keeps one open internal alert task per held app (key
+// planner-held:<app>), comments each further round on it, and resolves it once
+// the app's jobs pass again. It never opens public GitHub issues. It also
+// writes an error annotation and a step summary.
 //
 // Only job names, caller ids and conclusions are reported: never logs, step
 // output or environment values.
@@ -18,15 +19,27 @@ import {
   PLANNER_JOB_CLASSES,
   plannerCaller,
 } from './production-planner-job-classes.mjs';
+import {
+  attemptUrl,
+  reportTaskAlert,
+  summarizeTaskAlert,
+} from './ttr-task-alert.mjs';
 
-export const ALERT_LABEL = 'release-admission-alert';
-// A blocked planner (a failed control-plane or platform job) gets its own issue.
+// A blocked planner (a failed control-plane or platform job) gets its own task.
 export const BLOCKED_KEY = 'production-planner';
 const HELD = new Set(['failure', 'cancelled', 'timed_out']);
 const MAX_PAGES = 10;
 
-function marker(app) {
-  return `<!-- planner-held-app:${app} -->`;
+export function alertKey(app) {
+  return `planner-held:${String(app)
+    .toLowerCase()
+    .replace(/[^a-z0-9:.-]+/gu, '-')}`.slice(0, 80);
+}
+
+function alertTitle(app) {
+  return app === BLOCKED_KEY
+    ? 'Production planner is blocked for migrations'
+    : `Production planner holds ${app}`;
 }
 
 // Group the planner's jobs by independent app: held jobs, and apps whose
@@ -87,10 +100,7 @@ async function github(path, { method = 'GET', body } = {}) {
     redirect: 'error',
     signal: AbortSignal.timeout(30_000),
   });
-  // Creating a label that already exists returns 422, which is fine.
-  const existingLabel =
-    response.status === 422 && method === 'POST' && path.endsWith('/labels');
-  if (!response.ok && !existingLabel)
+  if (!response.ok)
     throw new Error(`GitHub API ${method} ${path} failed (${response.status})`);
   return response.status === 204 ? null : response.json().catch(() => null);
 }
@@ -109,65 +119,28 @@ export async function plannerJobs(repo, runId, attempt, api = github) {
   throw new Error('planner job inventory exceeds the page limit');
 }
 
-// One open issue per app keeps each owner's thread separate.
-export async function syncAlerts(report, run, repo, api = github) {
-  const open =
-    (await api(
-      `/repos/${repo}/issues?labels=${ALERT_LABEL}&state=open&per_page=100`
-    )) ?? [];
-  // Only issues this workflow opened: never a pull request or another account's.
-  const issueFor = (app) =>
-    open.find(
-      (issue) =>
-        !issue?.pull_request &&
-        issue?.user?.login === 'github-actions[bot]' &&
-        issue?.body?.includes(marker(app))
-    ) ?? null;
+// One open task per app keeps each owner's thread separate. The server
+// answers `none` for a recovered app that had no open task.
+export async function syncAlerts(report, run, send = reportTaskAlert) {
   const alerting = report.held.map(({ app }) => app);
   if (report.blocking) alerting.push(BLOCKED_KEY);
   const body = reportMarkdown(report, run);
   const actions = [];
-  if (alerting.length)
-    await api(`/repos/${repo}/labels`, {
-      method: 'POST',
-      body: { name: ALERT_LABEL, color: 'b60205' },
+  const sync = async (app, state) => {
+    const action = await send({
+      key: alertKey(app),
+      state,
+      title: alertTitle(app),
+      body,
+      runUrl: attemptUrl(run.url, run.attempt),
     });
-  for (const app of alerting) {
-    const issue = issueFor(app);
-    if (issue) {
-      await api(`/repos/${repo}/issues/${issue.number}/comments`, {
-        method: 'POST',
-        body: { body },
-      });
-      actions.push(`comment:${app}`);
-    } else {
-      await api(`/repos/${repo}/issues`, {
-        method: 'POST',
-        body: {
-          title:
-            app === BLOCKED_KEY
-              ? 'Production planner is blocked for migrations'
-              : `Production planner holds ${app}`,
-          labels: [ALERT_LABEL],
-          body: `${marker(app)}\n${body}`,
-        },
-      });
-      actions.push(`open:${app}`);
-    }
-  }
-  for (const app of report.recovered) {
-    const issue = issueFor(app);
-    if (!issue) continue;
-    await api(`/repos/${repo}/issues/${issue.number}/comments`, {
-      method: 'POST',
-      body: { body },
-    });
-    await api(`/repos/${repo}/issues/${issue.number}`, {
-      method: 'PATCH',
-      body: { state: 'closed', state_reason: 'completed' },
-    });
-    actions.push(`close:${app}`);
-  }
+    // Recovered apps without a task, or with no sink configured, stay quiet.
+    const quiet =
+      action === 'none' || (state === 'recovered' && action === 'unconfigured');
+    if (!quiet) actions.push(`${action}:${app}`);
+  };
+  for (const app of alerting) await sync(app, 'failing');
+  for (const app of report.recovered) await sync(app, 'recovered');
   return actions;
 }
 
@@ -179,7 +152,7 @@ export function escapeAnnotation(value) {
     .replaceAll('\n', '%0A');
 }
 
-// A re-run of an older planner must not reopen or close the current issues.
+// A re-run of an older planner must not reopen or resolve the current alerts.
 export async function isCurrentProductionHead(repo, sha, api = github) {
   const ref = await api(`/repos/${repo}/git/ref/heads/production`);
   return ref?.object?.sha === sha;
@@ -225,8 +198,11 @@ async function main(env = process.env) {
     console.log(
       `::error title=Production planner blocked::${escapeAnnotation(report.blocking)}`
     );
-  const actions = await syncAlerts(report, run, env.GITHUB_REPOSITORY);
-  console.log(`Alert actions: ${actions.join(', ') || 'none'}.`);
+  const actions = await syncAlerts(report, run, (alert) =>
+    reportTaskAlert(alert, env)
+  );
+  summarizeTaskAlert('planner-held', actions.join(', ') || 'none', env);
+  console.log(`Alert task actions: ${actions.join(', ') || 'none'}.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)

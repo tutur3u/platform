@@ -210,8 +210,9 @@ test('store workflow promotes opted-in Play tracks, localizes notes, and alerts'
   assert.equal(viStep['continue-on-error'], true);
 
   const receipt = workflow.jobs['mobile-store-receipt'];
-  assert.deepEqual(receipt.permissions, { contents: 'read', issues: 'write' });
-  assert.equal(receipt.environment, undefined);
+  assert.deepEqual(receipt.permissions, { contents: 'read' });
+  // Only the narrowly scoped internal alert-sink secret lives in ci-alerts.
+  assert.equal(receipt.environment, 'ci-alerts');
   assert.match(receipt.if, /^always\(\)/);
   assert.match(receipt.if, /needs\.check-ci\.result/);
   assert.deepEqual(receipt.needs, [
@@ -222,14 +223,15 @@ test('store workflow promotes opted-in Play tracks, localizes notes, and alerts'
     'publish-ios-testflight',
   ]);
   const names = receipt.steps.map((step) => step.name);
-  const alert = receipt.steps.find(
-    (step) => step.name === 'Sync the mobile-store-alert issue'
-  );
+  const alertName = 'Sync the mobile-store internal alert task';
+  const alert = receipt.steps.find((step) => step.name === alertName);
   assert.equal(alert.if, "always() && steps.receipt.outcome == 'success'");
+  assert.deepEqual(alert.env, {
+    TTR_CI_ALERT_TOKEN: '${{ secrets.TTR_CI_ALERT_TOKEN }}',
+  });
   assert.ok(
-    names.indexOf('Upload the mobile store receipt') <
-      names.indexOf('Sync the mobile-store-alert issue'),
-    'the receipt artifact uploads before the Issues API call'
+    names.indexOf('Upload the mobile store receipt') < names.indexOf(alertName),
+    'the receipt artifact uploads before the alert sink call'
   );
   const write = receipt.steps.find((step) =>
     step.run?.includes('store-receipt.mjs write')

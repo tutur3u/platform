@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
-  ALERT_LABEL,
+  alertKey,
   BLOCKED_KEY,
   escapeAnnotation,
   isCurrentProductionHead,
@@ -37,16 +37,6 @@ function jobs(overrides = {}) {
   }));
 }
 
-function fakeApi(open = []) {
-  const calls = [];
-  const api = async (path, options = {}) => {
-    calls.push({ path, method: options.method ?? 'GET', body: options.body });
-    if (path.includes('/issues?labels=')) return open;
-    return {};
-  };
-  return { api, calls };
-}
-
 test('a held independent app is reported without blocking migrations', () => {
   const report = summarizeHeldApps(jobs(), 'failure');
   assert.deepEqual(report, {
@@ -79,64 +69,59 @@ test('a failed control-plane job is reported as blocking', () => {
   assert.match(reportMarkdown(report, run), /blocked for migrations/);
 });
 
-test('a new held app opens one labeled issue with a per-app marker', async () => {
-  const { api, calls } = fakeApi([]);
+function fakeSink(openKeys = []) {
+  const open = new Set(openKeys);
+  const calls = [];
+  const send = async (alert) => {
+    calls.push(alert);
+    if (alert.state === 'failing') {
+      const action = open.has(alert.key) ? 'comment' : 'open';
+      open.add(alert.key);
+      return action;
+    }
+    if (!open.has(alert.key)) return 'none';
+    open.delete(alert.key);
+    return 'close';
+  };
+  return { send, calls };
+}
+
+test('a new held app opens one internal alert task keyed by app', async () => {
+  const { send, calls } = fakeSink();
   const actions = await syncAlerts(
     summarizeHeldApps(jobs(), 'failure'),
     run,
-    'o/r',
-    api
+    send
   );
   assert.deepEqual(actions, ['open:deploy-meet-cloudflare']);
-  const created = calls.find((call) => call.path === '/repos/o/r/issues');
-  assert.deepEqual(created.body.labels, [ALERT_LABEL]);
-  assert.match(
-    created.body.body,
-    /<!-- planner-held-app:deploy-meet-cloudflare -->/
-  );
-  assert.equal(
-    created.body.title,
-    'Production planner holds deploy-meet-cloudflare'
-  );
+  const opened = calls.find((call) => call.state === 'failing');
+  assert.equal(opened.key, 'planner-held:deploy-meet-cloudflare');
+  assert.equal(opened.title, 'Production planner holds deploy-meet-cloudflare');
+  assert.equal(opened.runUrl, `${run.url}/attempts/1`);
 });
 
-test('an open issue is commented while held and closed once the app passes', async () => {
-  const open = [
-    {
-      number: 5,
-      user: { login: 'github-actions[bot]', type: 'Bot' },
-      body: '<!-- planner-held-app:deploy-meet-cloudflare -->\nold',
-    },
-    {
-      number: 6,
-      user: { login: 'github-actions[bot]', type: 'Bot' },
-      body: '<!-- planner-held-app:deploy-parley-cloudflare -->\nold',
-    },
-  ];
-  const { api, calls } = fakeApi(open);
+test('an open task is commented while held and resolved once the app passes', async () => {
+  const { send } = fakeSink([
+    alertKey('deploy-meet-cloudflare'),
+    alertKey('deploy-parley-cloudflare'),
+  ]);
   const actions = await syncAlerts(
     summarizeHeldApps(jobs(), 'failure'),
     run,
-    'o/r',
-    api
+    send
   );
   assert.deepEqual(actions, [
     'comment:deploy-meet-cloudflare',
     'close:deploy-parley-cloudflare',
   ]);
-  assert.ok(
-    calls.some(
-      (call) =>
-        call.path === '/repos/o/r/issues/6' &&
-        call.method === 'PATCH' &&
-        call.body.state === 'closed'
-    )
+});
+
+test('alert keys are safe for the task sink', () => {
+  assert.equal(
+    alertKey('Deploy_Meet Cloudflare'),
+    'planner-held:deploy-meet-cloudflare'
   );
-  assert.ok(
-    !calls.some(
-      (call) => call.path === '/repos/o/r/issues/5' && call.method === 'PATCH'
-    )
-  );
+  assert.ok(alertKey('x'.repeat(200)).length <= 80);
 });
 
 test('job inventory pages until the total is read', async () => {
@@ -171,33 +156,30 @@ test('the workflow reads the trusted planner run with least privilege', () => {
   assert.match(workflow, /branches: \[production\]/);
   assert.match(workflow, /head_repository\.full_name == github\.repository/);
   assert.match(workflow, /permissions:\n  contents: read\n/);
-  assert.match(workflow, /issues: write/);
-  assert.doesNotMatch(workflow, /secrets\./);
+  assert.doesNotMatch(workflow, /issues: write/);
+  assert.match(workflow, /environment: ci-alerts/);
+  // The only secret is the narrowly scoped internal alert-sink token.
+  assert.deepEqual(
+    [...workflow.matchAll(/secrets\.([A-Z_]+)/g)].map((match) => match[1]),
+    ['TTR_CI_ALERT_TOKEN']
+  );
 });
 
-test('a blocked planner opens its own issue and closes it once unblocked', async () => {
+test('a blocked planner opens its own task and resolves it once unblocked', async () => {
+  const sink = fakeSink();
   const blocked = summarizeHeldApps(
     jobs({ 'deploy-colab-cloudflare / deploy': 'failure' }),
     'failure'
   );
-  const first = fakeApi([]);
-  const actions = await syncAlerts(blocked, run, 'o/r', first.api);
+  const actions = await syncAlerts(blocked, run, sink.send);
   assert.ok(actions.includes(`open:${BLOCKED_KEY}`));
-  const created = first.calls.find(
-    (call) =>
-      call.path === '/repos/o/r/issues' &&
-      call.body.title === 'Production planner is blocked for migrations'
+  assert.ok(
+    sink.calls.some(
+      (call) =>
+        call.key === alertKey(BLOCKED_KEY) &&
+        call.title === 'Production planner is blocked for migrations'
+    )
   );
-  assert.ok(created);
-
-  const open = [
-    {
-      number: 9,
-      user: { login: 'github-actions[bot]', type: 'Bot' },
-      body: `<!-- planner-held-app:${BLOCKED_KEY} -->`,
-    },
-  ];
-  const later = fakeApi(open);
   const cleared = await syncAlerts(
     summarizeHeldApps(
       jobs({
@@ -207,32 +189,12 @@ test('a blocked planner opens its own issue and closes it once unblocked', async
       'success'
     ),
     run,
-    'o/r',
-    later.api
+    sink.send
   );
-  assert.deepEqual(cleared, [`close:${BLOCKED_KEY}`]);
-});
-
-test('pull requests and issues other accounts opened are never touched', async () => {
-  const open = [
-    {
-      number: 3,
-      pull_request: {},
-      user: { login: 'github-actions[bot]', type: 'Bot' },
-      body: '<!-- planner-held-app:deploy-parley-cloudflare -->',
-    },
-    {
-      number: 4,
-      user: { login: 'dependabot[bot]', type: 'Bot' },
-      body: '<!-- planner-held-app:deploy-parley-cloudflare -->',
-    },
-  ];
-  const { api, calls } = fakeApi(open);
-  await syncAlerts(summarizeHeldApps(jobs(), 'failure'), run, 'o/r', api);
-  assert.ok(
-    !calls.some((call) => /\/issues\/(3|4)(\/|$)/.test(call.path)),
-    'no comment or close on a pull request or a human issue'
-  );
+  assert.deepEqual(cleared.sort(), [
+    'close:deploy-meet-cloudflare',
+    `close:${BLOCKED_KEY}`,
+  ]);
 });
 
 test('only the current production head changes alerts', async () => {

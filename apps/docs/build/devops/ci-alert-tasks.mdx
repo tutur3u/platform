@@ -1,0 +1,93 @@
+---
+title: CI alert tasks
+description: How repository workflows report failing alerts as internal tasks instead of public GitHub issues, and how to provision and rotate the alert-sink token.
+---
+
+`tutur3u/platform` is public, so workflow alerts never open GitHub issues.
+They report to an internal alert sink on the Tasks app instead. The sink keeps
+one open task per alert key on the fleet backlog board (Tuturuuu workspace,
+board `Platform backlog (from GitHub)`, key `GH`).
+
+## Behavior
+
+`POST https://tasks.tuturuuu.com/api/v1/ci/alerts` with the header
+`x-ci-alert-token` and a JSON body
+`{ key, state: "failing" | "recovered", title, body, runUrl }`.
+
+| State | Open task for the key | Result |
+| --- | --- | --- |
+| `failing` | none | Opens a high-priority task named `[alert:<key>] <title>` in the alert list and records the run as its first comment (`open`) |
+| `failing` | yes | Comments the report on it (`comment`) |
+| `recovered` | yes | Comments, then moves it to the done list as completed (`close`) |
+| `recovered` | none | Nothing (`none`) |
+
+- Keys match `^[a-z0-9][a-z0-9:.-]{0,79}$`.
+- An open task anywhere on the alert board counts, so moving it to
+  In Progress or Blocked does not open a duplicate.
+- `runUrl` is the GitHub Actions run attempt URL
+  (`.../actions/runs/<id>/attempts/<n>`). Comments are unique per task and
+  `runUrl`, so a retried report never duplicates one, while a re-run of failed
+  jobs still reports.
+- Bodies over 8000 characters are rejected; the shared client truncates them
+  first.
+- The token can only do the actions above: open tasks in the alert list, and
+  comment on or resolve open `[alert:<key>] ...` tasks on the alert board. It
+  cannot read tasks or touch any other board or workspace data.
+
+| Workflow | Script | Keys |
+| --- | --- | --- |
+| `mobile-deploy-stores.yaml` | `scripts/mobile-deployment/store-receipt.mjs` | `mobile-store` |
+| `planner-held-app-alert.yaml` | `scripts/ci/planner-held-app-alert.mjs` | `planner-held:<app>`, `planner-held:production-planner` |
+| `upskii-production-e2e.yaml` | `scripts/ci/upskii-production-e2e-alert.mjs` | `upskii-production-e2e` |
+
+All three share `scripts/ci/ttr-task-alert.mjs`. Each alert job runs in the
+`ci-alerts` GitHub environment, needs no `issues` permission, and writes one
+job-summary line with the action taken. Without `TTR_CI_ALERT_TOKEN`, the action
+is `unconfigured`. The job still writes its summary and error annotations, and
+nothing is filed.
+
+## Configuration
+
+Tasks Worker (production):
+
+| Name | Kind | Value |
+| --- | --- | --- |
+| `TASKS_CI_ALERT_TOKENS` | Secret | Comma-separated accepted tokens (at least 32 characters each) for rotation |
+| `TASKS_CI_ALERT_LIST_ID` | Variable | The `To Do` list of the `GH` board |
+| `TASKS_CI_ALERT_DONE_LIST_ID` | Variable | The `Done` list of the `GH` board (must be on the same board) |
+| `TASKS_CI_ALERT_ACTOR_ID` | Variable | The user id (UUID) recorded as the alert task creator |
+
+The route answers `503` until all four are set, and fails closed when either
+list is missing or the lists are on different boards. Writes go through a
+cookie-free admin client attributed to `TASKS_CI_ALERT_ACTOR_ID`.
+
+GitHub: create the environment `ci-alerts`, limit its deployment branches to
+`main` and `production`, and add the secret `TTR_CI_ALERT_TOKEN`.
+
+## Provisioning and rotation
+
+1. Mint a random token (`openssl rand -hex 32`) into a `0600` file. Never print
+   it or paste it in chat.
+2. Append it to the Tasks Worker secret `TASKS_CI_ALERT_TOKENS` with the
+   `cf` CLI, reading the value from that file.
+3. Write the same file into the `ci-alerts` environment secret:
+   `gh secret set TTR_CI_ALERT_TOKEN --env ci-alerts < <file>`.
+4. Dispatch a workflow that reports an alert and check that its job summary
+   shows a real action, not `unconfigured`. Then delete the file.
+5. To rotate, add the new token first, switch the GitHub secret, then remove
+   the old token from `TASKS_CI_ALERT_TOKENS`.
+
+Record the token's purpose and rotation date in the private secrets ledger,
+never its value.
+
+## Regression coverage
+
+- `packages/tasks-api/src/server/ci-alerts/handler.test.ts` covers
+  authorization, key validation, the open, comment, close and none paths,
+  board-wide lookup and the done-list board check.
+- `scripts/ci/upskii-production-e2e-alert.test.mjs`,
+  `scripts/ci/planner-held-app-alert.test.mjs` and
+  `scripts/mobile-deployment/store-receipt.test.mjs` cover each alert's state
+  mapping and prove that the reports go to the sink, not GitHub.
+- `scripts/ci/testflight-distribution.test.js` pins the receipt job's
+  permissions and environment.

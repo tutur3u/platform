@@ -295,10 +295,11 @@ goes to the USER.
    Held apps never block the apply, so they are reported loudly instead:
    after every planner run for the current `production` head,
    `planner-held-app-alert.yaml` writes an error annotation per held job and
-   keeps one open issue per held app labeled `release-admission-alert`
-   (fleet monitors watch it), plus one for a planner blocked for migrations.
-   Each later round comments on the issue, and the first round in which the
-   app passes closes it. Regression coverage:
+   keeps one open internal alert task per held app (key
+   `planner-held:<app>`, see [CI alert tasks](/build/devops/ci-alert-tasks)),
+   plus one for a planner blocked for migrations. Each later round comments on
+   the task, and the first round in which the app passes resolves it. It never
+   opens public GitHub issues. Regression coverage:
    `scripts/ci/planner-held-app-alert.test.mjs`.
 3. The `main` staging migration for the same target commit must have completed
    with a `success` conclusion.

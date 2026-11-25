@@ -278,23 +278,24 @@ jobs:
           if-no-files-found: ignore
 
   alert:
-    name: Sync the upskii-production-e2e-alert issue
+    name: Sync the upskii-production-e2e alert task
     needs: [gate, e2e]
     if: always() && needs.gate.outputs.trusted == 'true' && needs.e2e.result != 'skipped'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment: ci-alerts
     permissions:
       contents: read
-      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           sparse-checkout: scripts/ci
-      - name: Open, update or close the alert issue
+      - name: Open, update or resolve the internal alert task
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          TTR_CI_ALERT_TOKEN: ${{ secrets.TTR_CI_ALERT_TOKEN }}
           E2E_RESULT: ${{ needs.e2e.result }}
           E2E_TRIGGER: ${{ github.event_name }}
           E2E_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          E2E_RUN_ATTEMPT: ${{ github.run_attempt }}
         run: node scripts/ci/upskii-production-e2e-alert.mjs

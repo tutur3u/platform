@@ -3740,6 +3740,10 @@
     "digest": "d88ad23777555ca94f03fb54b33a13fbae01bb5624cf66d3b6c00c062b6ae4e8"
   },
   {
+    "file": "apps/tasks/src/app/api/v1/ci/alerts/route.ts",
+    "digest": "0cd757e136b3d84d64975174f81915bf88b3e70edd641a46521f518b0b8ae23f"
+  },
+  {
     "file": "apps/tasks/src/app/api/v1/mira/tasks/complete/route.ts",
     "digest": "b481de3ffc2d3cca812d78c6a2105ce32ac23d54b8b984ca50dd3c712d27684a"
   },

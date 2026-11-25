@@ -98,9 +98,9 @@ passes.
 
 ## Reading a failure
 
-Failures keep one open issue labelled `upskii-production-e2e-alert`. Fleet
-monitors watch the label, and the next green run comments on the issue and
-closes it.
+Failures keep one open internal alert task (key `upskii-production-e2e`, see
+[CI alert tasks](/build/devops/ci-alert-tasks)). The next green run comments on
+the task and resolves it. No public GitHub issue is opened.
 
 | Failed step | Meaning | Next step |
 | --- | --- | --- |
@@ -120,7 +120,7 @@ production. Set the same variables, then run
   QA-only addresses, the host and egress fences, the ledger fold, cleanup
   order and idempotency, purge looping, leak detection and the sweep's
   current-run protection.
-- `scripts/ci/upskii-production-e2e-alert.test.mjs` covers the alert issue
+- `scripts/ci/upskii-production-e2e-alert.test.mjs` covers the alert task
   lifecycle.
 
 ## Related

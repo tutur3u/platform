@@ -1048,7 +1048,6 @@ jobs:
   mobile-store-receipt:
     permissions:
       contents: read
-      issues: write
     name: Write mobile store receipt and alerts
     needs:
       [
@@ -1060,12 +1059,15 @@ jobs:
       ]
     if: always() && github.ref == 'refs/heads/production' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'release')) && (contains(fromJSON('["failure","cancelled"]'), needs.check-ci.result) || contains(fromJSON('["failure","cancelled"]'), needs.mobile-store-publish-gate.result) || needs.mobile-store-publish-gate.outputs.publish == 'true')
     runs-on: ubuntu-latest
+    environment: ci-alerts
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          sparse-checkout: scripts/mobile-deployment
+          sparse-checkout: |
+            scripts/mobile-deployment
+            scripts/ci
 
       - name: Write the mobile store receipt
         id: receipt
@@ -1089,11 +1091,11 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Sync the mobile-store-alert issue
+      - name: Sync the mobile-store internal alert task
         # Alert even when artifact storage fails after the receipt was written.
         if: always() && steps.receipt.outcome == 'success'
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          TTR_CI_ALERT_TOKEN: ${{ secrets.TTR_CI_ALERT_TOKEN }}
         run: node scripts/mobile-deployment/store-receipt.mjs alert "$RUNNER_TEMP/mobile-store-receipt.json"
 
   retry-ios-testflight-review:
