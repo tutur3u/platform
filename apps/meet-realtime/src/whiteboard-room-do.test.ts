@@ -533,3 +533,57 @@ test('stores only known fields and safe links from guests', async () => {
   );
   assert.equal(guest.sent.at(-1).changes[0].element.sneaky, 'x');
 });
+
+test('refuses guest elements whose known fields have the wrong type', async () => {
+  const f = fixture();
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  const peer = await open(f, { userId: 'u2' });
+  await f.the.webSocketMessage(
+    guest as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [
+        { type: 'insert', element: { ...rect('groups'), groupIds: {} } },
+        { type: 'insert', element: { ...rect('points'), points: 'x' } },
+        { type: 'insert', element: { ...rect('font'), fontFamily: {} } },
+        { type: 'insert', element: { ...rect('round'), roundness: 1 } },
+        { type: 'insert', element: rect('fine') },
+      ],
+    })
+  );
+  assert.deepEqual(
+    peer.sent.at(-1).changes.map((c: any) => c.element.id),
+    ['fine']
+  );
+  assert.deepEqual(guest.sent.at(-1), {
+    type: 'rejected',
+    reason: 'unsupported',
+  });
+  assert.equal(guest.closed, null);
+});
+
+test('keeps the guest open limit across an eviction', async () => {
+  const f = fixture();
+  const guest = { userId: 'g1', actorKind: 'guest' } as const;
+  for (let i = 0; i < BOARD_GUEST_LIMITS.opensPerMinute; i++) {
+    await open(f, guest);
+    f.sockets.splice(0);
+  }
+  const restored = f.restart();
+  const response = await restored.fetch(
+    new Request('https://x/whiteboard', {
+      headers: {
+        Upgrade: 'websocket',
+        'x-board-ticket': JSON.stringify(ticket(guest)),
+      },
+    })
+  );
+  assert.equal(response.status, 429);
+  assert.equal(f.sockets.length, 0);
+});
+
+test('the stop fence keeps the guest open windows out of storage', async () => {
+  const f = fixture({ MEET_WHITEBOARD_FLUSH_DISABLED: 'true' });
+  await open(f, { userId: 'g1', actorKind: 'guest' });
+  assert.equal(f.values.has('guest-opens'), false);
+});

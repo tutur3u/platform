@@ -4,6 +4,7 @@ import {
   type BoardOpenWindows,
   chargeBoardOpen,
   isSafeBoardLink,
+  sanitizeGuestChanges,
   sanitizeGuestElement,
 } from './board-sync-guest';
 import type { BoardElement } from './board-sync-schema';
@@ -27,6 +28,11 @@ describe('guest board links', () => {
       'not a url',
       42,
       null,
+      '/\\evil.example',
+      '/\t/evil.example',
+      '\nhttps://evil.example',
+      'https://example.com/\u0000',
+      '/page\u007f',
     ])
       expect(isSafeBoardLink(link)).toBe(false);
   });
@@ -83,5 +89,79 @@ describe('board actor ids', () => {
     expect(boardActorId('secret-secret', 'board-2', 'user-1')).not.toBe(id);
     expect(boardActorId('other-secret', 'board-1', 'user-1')).not.toBe(id);
     expect(() => boardActorId(' ', 'board-1', 'user-1')).toThrow();
+  });
+});
+
+describe('guest element types', () => {
+  const base = {
+    id: 'a',
+    type: 'arrow',
+    version: 2,
+    versionNonce: 7,
+    x: 1,
+    y: 2,
+    groupIds: ['g1'],
+    points: [
+      [0, 0],
+      [10, 5],
+    ],
+    boundElements: [{ id: 't', type: 'text' }],
+    roundness: { type: 2 },
+    fontFamily: 5,
+    startBinding: { elementId: 'b', focus: 0, gap: 4 },
+    endArrowhead: 'arrow',
+    strokeStyle: 'dashed',
+    opacity: 100,
+  };
+
+  it('keeps a well-formed element', () => {
+    expect(sanitizeGuestElement(base as unknown as BoardElement)).toEqual(
+      base
+    );
+  });
+
+  it.each([
+    ['groupIds', {}],
+    ['groupIds', Array.from({ length: 33 }, (_, i) => `g${i}`)],
+    ['points', 'x'],
+    ['points', [[0, Number.POSITIVE_INFINITY]]],
+    ['points', [[0, 0, 0]]],
+    ['boundElements', 1],
+    ['boundElements', [{ id: 't', type: 'image' }]],
+    ['roundness', 1],
+    ['fontFamily', {}],
+    ['fontFamily', 1.5],
+    ['x', 'NaN'],
+    ['opacity', 400],
+    ['strokeStyle', 'wavy'],
+    ['startBinding', { elementId: 5 }],
+    ['text', 'x'.repeat(20_001)],
+    ['link', 7],
+  ])('refuses %s set to a confused value', (key, value) => {
+    expect(
+      sanitizeGuestElement({ ...base, [key]: value } as unknown as BoardElement)
+    ).toBeNull();
+  });
+
+  it('refuses a points array past ten thousand pairs', () => {
+    const points = Array.from({ length: 10_001 }, () => [0, 0]);
+    expect(
+      sanitizeGuestElement({ ...base, points } as unknown as BoardElement)
+    ).toBeNull();
+  });
+
+  it('drops the refused elements of a batch and counts them', () => {
+    const element = (over: object) =>
+      ({ ...base, ...over }) as unknown as BoardElement;
+    const result = sanitizeGuestChanges([
+      { type: 'insert', element: element({ id: 'ok' }) },
+      { type: 'insert', element: element({ id: 'bad', groupIds: {} }) },
+      { type: 'update', element: element({ id: 'ok2' }) },
+    ]);
+    expect(result.dropped).toBe(1);
+    expect(result.changes.map((change) => change.element.id)).toEqual([
+      'ok',
+      'ok2',
+    ]);
   });
 });

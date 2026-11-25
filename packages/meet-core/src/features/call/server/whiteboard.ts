@@ -69,15 +69,17 @@ const proveAdmission = (access: Access) =>
   callRoomService(access, { action: 'programming.read' });
 
 /**
- * Board reads for an anonymous guest need the guest whiteboard switch, stay
- * within the guest's per-meeting call budget, and need a live connection to
- * the room: the room's `board.access` action refuses a guest who left, was
- * removed, is still waiting or was only remembered as approved. Guest tickets
- * last a minute and are renewed through this check, so a guest who leaves
- * loses the board within that minute.
+ * Board reads for anyone outside the workspace (anonymous guests and
+ * signed-in non-members) need the guest whiteboard switch, stay within the
+ * person's per-meeting call budget, and need a live connection to the room:
+ * the room's `board.access` action refuses someone who left, was removed, is
+ * still waiting, whose connection dropped or who was only remembered as
+ * approved. Their tickets last a minute and are renewed through this check.
+ * Workspace members keep the room's admission read.
  */
 async function proveBoardAdmission(access: Access) {
-  if (!isGuest(access)) return proveAdmission(access);
+  if (!isGuest(access) && access.canReadWorkspace)
+    return proveAdmission(access);
   if (!isMeetGuestWhiteboardEnabled())
     throw new MeetCallAccessError(403, 'Whiteboard access denied');
   const limit = await checkMeetGuestWhiteboardLimit(

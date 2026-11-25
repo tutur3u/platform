@@ -4,11 +4,20 @@ export interface WhiteboardPolicyInput {
   merged: boolean;
   /** The server's `MEET_GUEST_WHITEBOARD` switch. */
   guestWhiteboard: boolean;
-  /** This person is an anonymous guest. */
+  /**
+   * This person is outside the workspace: an anonymous guest or a signed-in
+   * non-member. The server holds both to the guest whiteboard switch.
+   */
   requiresAccount: boolean;
-  /** Someone in the room is an anonymous guest. */
+  /** Someone in the room is outside the workspace (`isOutsideWorkspace`). */
   guestsPresent: boolean;
 }
+
+/** A room participant the server holds to the guest whiteboard switch. */
+export const isOutsideWorkspace = (person: {
+  guest?: boolean;
+  external?: boolean;
+}) => !!(person.guest || person.external);
 
 export interface WhiteboardPolicy {
   /** The Tuturuuu Whiteboard is listed for this person. */

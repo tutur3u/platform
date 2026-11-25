@@ -59,6 +59,7 @@ type Attachment = {
 };
 
 const CHECKPOINT_PATH = '/api/v1/realtime/whiteboard/checkpoint';
+const OPENS_KEY = 'guest-opens';
 
 async function sha256(text: string) {
   return Buffer.from(
@@ -79,7 +80,10 @@ export class WhiteboardRoomDurableObject implements DurableObject {
   private ready: Promise<void>;
   private alarmInFlight: Promise<void> | null = null;
   private identityStored = false;
-  /** Guest socket opens per person this minute; lost on eviction, by design. */
+  /**
+   * Guest socket opens per person this minute. Stored under `OPENS_KEY`, so
+   * an eviction does not reset the limit; `chargeBoardOpen` bounds its size.
+   */
   private opens: BoardOpenWindows = new Map();
 
   constructor(
@@ -117,6 +121,13 @@ export class WhiteboardRoomDurableObject implements DurableObject {
           'identity'
         )) ?? null;
       this.identityStored = this.identity !== null;
+      this.opens = new Map(
+        Object.entries(
+          (await state.storage.get<
+            Record<string, { count: number; windowAt: number }>
+          >(OPENS_KEY)) ?? {}
+        )
+      );
       await this.room.restore();
     });
   }
@@ -255,6 +266,11 @@ export class WhiteboardRoomDurableObject implements DurableObject {
         )
       )
         return new Response('Too many connections', { status: 429 });
+      // The stop fence keeps every storage write off.
+      if (!boardFlushFenced(this.env.MEET_WHITEBOARD_FLUSH_DISABLED))
+        await this.state.storage.put({
+          [OPENS_KEY]: Object.fromEntries(this.opens),
+        });
     }
     this.identity ??= { meetingId, wsId, boardId };
     // The fence keeps every storage write off; the identity is stored on the
@@ -421,13 +437,17 @@ export class WhiteboardRoomDurableObject implements DurableObject {
       case 'elements': {
         if (ticket.role !== 'edit')
           return socket.close(1008, 'Read-only board');
-        // People outside the workspace store only known fields and safe links.
-        const changes =
+        // People outside the workspace store only well-typed known fields and
+        // safe links; an element that fails is refused like an image is.
+        const guest =
           ticket.actorKind === 'guest'
             ? sanitizeGuestChanges(message.changes)
-            : message.changes;
-        const { applied, rejected } = await this.room.edit(changes);
-        const refusal = rejected ?? (unsupported > 0 ? 'unsupported' : null);
+            : null;
+        const { applied, rejected } = await this.room.edit(
+          guest?.changes ?? message.changes
+        );
+        const refused = unsupported + (guest?.dropped ?? 0);
+        const refusal = rejected ?? (refused > 0 ? 'unsupported' : null);
         if (refusal)
           socket.send(
             JSON.stringify({

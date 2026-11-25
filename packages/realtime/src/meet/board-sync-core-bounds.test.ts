@@ -156,6 +156,20 @@ describe('deletions made elsewhere stay deleted', () => {
     expect(h.ops.loads).toBe(2);
   });
 
+  it('keeps the reload window across an eviction', async () => {
+    const h = harness({ connections: 0 });
+    await h.room.prepare();
+    const restarted = createBoardRoom(h.deps);
+    await restarted.restore();
+    expect(restarted.snapshotMeta().loadedAt).toBe(h.now);
+    h.tick(1000);
+    await restarted.prepare();
+    expect(h.ops.loads).toBe(1);
+    h.tick(BOARD_LIMITS.reloadAfterMs);
+    await restarted.prepare();
+    expect(h.ops.loads).toBe(2);
+  });
+
   it('keeps an element deleted on the web deleted after a concurrent-save merge', async () => {
     const h = harness({ connections: 0 });
     let calls = 0;

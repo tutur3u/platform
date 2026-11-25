@@ -200,15 +200,34 @@ describe('anonymous guests', () => {
       });
     }
     expect(fx.room).not.toHaveBeenCalled();
-    // Signed-in people are not behind the switch.
-    expect(
-      (
-        await mod.joinMeetingWhiteboard(
-          member({ canReadWorkspace: false, isHost: false }),
-          b1
-        )
-      ).role
-    ).toBe('view');
+    // Signed-in non-members are behind the same switch; members are not.
+    await expect(
+      mod.joinMeetingWhiteboard(
+        member({ canReadWorkspace: false, isHost: false }),
+        b1
+      )
+    ).rejects.toMatchObject({ status: 403 });
+    expect(fx.room).not.toHaveBeenCalled();
+    expect((await mod.joinMeetingWhiteboard(member(), b1)).role).toBe('edit');
+  });
+
+  it('holds signed-in non-members to the room check and the call limit', async () => {
+    const outsider = () => member({ canReadWorkspace: false, isHost: false });
+    await mod.joinMeetingWhiteboard(outsider(), b1);
+    expect(fx.room).toHaveBeenLastCalledWith(expect.anything(), {
+      action: 'board.access',
+    });
+    for (let call = 1; call < 30; call++)
+      await mod.listMeetingWhiteboards(outsider());
+    await expect(
+      mod.joinMeetingWhiteboard(outsider(), b1)
+    ).rejects.toMatchObject({ status: 429 });
+    // A remembered approval without a live connection is refused by the room.
+    fx.room.mockRejectedValue(Object.assign(new Error('no'), { status: 403 }));
+    limits.resetMeetGuestWhiteboardLimiter();
+    await expect(
+      mod.joinMeetingWhiteboard(outsider(), b1)
+    ).rejects.toMatchObject({ status: 403 });
   });
 
   it('needs a guest connected to the room for every read', async () => {

@@ -21,6 +21,8 @@ export interface BoardRoomMeta {
   sceneChunks?: number;
   /** The board was unlinked or archived; nothing flushes again. */
   closed?: boolean;
+  /** When the platform last answered a load with the scene (epoch ms). */
+  loadedAt?: number;
 }
 
 export const emptyMeta = (): BoardRoomMeta => ({

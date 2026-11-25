@@ -4,6 +4,7 @@ import {
 } from '../../../packages/realtime/src/meet/class-features';
 import type { MeetRoomFormsEnv } from '../../../packages/realtime/src/meet/room-forms';
 import type { MeetRealtimeTokenPayload } from '../../../packages/realtime/src/meet/primitives';
+import { applyRoomBoardAccess } from '../../../packages/realtime/src/meet/room-board-access';
 import { applyRoomClassroomTools } from '../../../packages/realtime/src/meet/room-classroom-tools';
 import {
   applyMiraRoomConsent,
@@ -19,13 +20,27 @@ import {
   roomService as applyRoomService,
 } from '../../../packages/realtime/src/meet/room-service';
 export type { RoomServiceState };
+
+/** The room's environment, plus the room ids that have an open socket. */
+export type RoomServiceEnv = MeetRoomFormsEnv & {
+  connectedUsers?: ReadonlySet<string>;
+};
+
 export function roomService(
   state: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
   features: MeetClassFeatures = meetClassFeatures(),
-  formsEnv: MeetRoomFormsEnv = {}
+  formsEnv: RoomServiceEnv = {}
 ): RoomServiceResult {
+  // The board check needs the live sockets, which only the room knows.
+  const board = applyRoomBoardAccess(
+    state,
+    token,
+    input,
+    formsEnv.connectedUsers ?? new Set()
+  );
+  if (board) return board;
   if (
     input &&
     typeof input === 'object' &&

@@ -87,8 +87,6 @@ export function createBoardRoom(deps: BoardRoomDeps) {
   let sweepDueAt: number | null = null;
   let armedAt: number | null = null;
   let loaded = false;
-  /** When the platform last answered a load with the scene. */
-  let loadedAt: number | null = null;
   let flushing: Promise<void> | null = null;
   let loading: Promise<unknown> | null = null;
 
@@ -180,9 +178,10 @@ export function createBoardRoom(deps: BoardRoomDeps) {
         baseUpdatedAt: answer.result.updatedAt,
         // Stale chunk keys of the previous scene are deleted by the next persist.
         sceneChunks: meta.sceneChunks,
+        // Stored with the meta, so the reload window survives an eviction.
+        loadedAt: deps.now(),
       };
       loaded = true;
-      loadedAt = deps.now();
       if (!fenced()) await persist();
       return 'loaded' as const;
     }
@@ -347,8 +346,8 @@ export function createBoardRoom(deps: BoardRoomDeps) {
       const idle = () =>
         deps.connections() === 0 &&
         !needsFlush(meta) &&
-        (loadedAt === null ||
-          deps.now() - loadedAt >= BOARD_LIMITS.reloadAfterMs);
+        (meta.loadedAt === undefined ||
+          deps.now() - meta.loadedAt >= BOARD_LIMITS.reloadAfterMs);
       if (meta.closed || idle()) await adopt(() => !!meta.closed || idle());
     },
     get closed() {

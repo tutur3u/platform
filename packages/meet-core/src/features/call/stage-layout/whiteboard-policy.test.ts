@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { whiteboardPolicy } from './whiteboard-policy';
+import { isOutsideWorkspace, whiteboardPolicy } from './whiteboard-policy';
 
 const base = {
   merged: true,
@@ -52,5 +52,13 @@ describe('whiteboardPolicy', () => {
       penBoardFirst: false,
     });
     expect(whiteboardPolicy(on).penBoardFirst).toBe(false);
+  });
+});
+
+describe('isOutsideWorkspace', () => {
+  it('counts anonymous guests and signed-in non-members', () => {
+    expect(isOutsideWorkspace({ guest: true })).toBe(true);
+    expect(isOutsideWorkspace({ external: true })).toBe(true);
+    expect(isOutsideWorkspace({})).toBe(false);
   });
 });

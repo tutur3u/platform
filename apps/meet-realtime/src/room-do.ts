@@ -252,7 +252,7 @@ export class MeetRoomDurableObject implements DurableObject {
         token,
         body,
         meetClassFeatures(this.env),
-        this.env
+        { ...this.env, connectedUsers: this.delivery.connectedUsers() }
       );
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;

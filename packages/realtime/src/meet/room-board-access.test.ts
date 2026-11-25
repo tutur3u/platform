@@ -4,6 +4,7 @@ import {
   meetRoomLimitsSchema,
 } from './primitives';
 import { createMeetPresence, createMeetRoomSnapshot } from './room';
+import { applyRoomBoardAccess } from './room-board-access';
 import { roomService } from './room-service';
 
 const now = '2026-11-25T00:00:00Z';
@@ -64,5 +65,25 @@ describe('board access', () => {
 
   it('answers only signed server callers', () => {
     expect(check(present, { ...guest, scopes: [] }).status).toBe(403);
+  });
+
+  it('refuses a guest whose connection dropped during the grace period', () => {
+    // Presence outlives a dropped socket; only an open socket counts.
+    const board = { action: 'board.access' };
+    const access = (connected: ReadonlySet<string>) =>
+      applyRoomBoardAccess(present, guest, board, connected);
+    expect(access(new Set(['guest']))).toMatchObject({ body: { ok: true } });
+    expect(access(new Set())?.status).toBe(403);
+    expect(access(new Set(['someone-else']))?.status).toBe(403);
+    const host = { ...guest, role: 'host' } as MeetRealtimeTokenPayload;
+    expect(
+      applyRoomBoardAccess(empty, host, board, new Set())
+    ).toMatchObject({ body: { ok: true } });
+  });
+
+  it('ignores every other action', () => {
+    expect(
+      applyRoomBoardAccess(present, guest, { action: 'read' }, new Set())
+    ).toBeNull();
   });
 });

@@ -67,7 +67,10 @@ import { RoomStage } from '../stage-layout/room-stage';
 import { useStageLayout } from '../stage-layout/use-stage-layout';
 import { useStageNavigation } from '../stage-layout/use-stage-navigation';
 import { useDefaultActivity } from '../stage-layout/use-default-activity';
-import { whiteboardPolicy } from '../stage-layout/whiteboard-policy';
+import {
+  isOutsideWorkspace,
+  whiteboardPolicy,
+} from '../stage-layout/whiteboard-policy';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { FollowBanner } from './room-navigation-controls';
 function CallShellContent({
@@ -292,10 +295,8 @@ function CallShellContent({
   const whiteboard = whiteboardPolicy({
     merged,
     guestWhiteboard,
-    requiresAccount,
-    guestsPresent: Object.values(state.participants).some(
-      (person) => person.guest
-    ),
+    requiresAccount: requiresAccount || !canReadWorkspace,
+    guestsPresent: Object.values(state.participants).some(isOutsideWorkspace),
   });
   const tools = useMeetTools({
     stage,
