@@ -13,7 +13,8 @@ import { describe, expect, it } from 'vitest';
  *   and side limits;
  * - a cached canvas is rebuilt only when its effective scale changes, and the
  *   scale is recomputed only when the zoom changes;
- * - a frame draws at most the 24 topmost viewport-covering elements.
+ * - a frame draws cached canvases worth at most 32 viewports of visible
+ *   area, topmost first.
  * These tests run that code from each build the app loads, at a device pixel
  * ratio of two (the server's guest budget measures at three). After an
  * upgrade the chunk names change and these tests fail: re-apply the patch and
@@ -183,24 +184,42 @@ type Skip = (
   isExporting: boolean
 ) => Set<Box>;
 
-/** The frame's skip rule the patch appends to `file`. */
-function coveringToSkip(file: string): Skip {
+/** The frame's area budget the patch appends to `file`. */
+function overAreaBudget(file: string): Skip {
   const source = slice(
     file,
     '/* tuturuuu-lod:start */',
     '/* tuturuuu-lod:end */'
   );
-  return runInNewContext(`${source};__ttrCoveringToSkip`, {}) as Skip;
+  return runInNewContext(`${source};__ttrOverAreaBudget`, {}) as Skip;
 }
 
-/** A 1920 by 1080 view at `zoom`, scrolled to the scene origin. */
-const view = (zoom: number) => ({
+type View = ReturnType<typeof view>;
+
+/** A view at `zoom`, 1920 by 1080 and scrolled to the origin by default. */
+const view = (zoom: number, width = 1920, height = 1080, scroll = 0) => ({
   zoom: { value: zoom },
-  width: 1920,
-  height: 1080,
-  scrollX: 0,
-  scrollY: 0,
+  width,
+  height,
+  scrollX: scroll,
+  scrollY: scroll,
 });
+
+/** Viewports of visible area `boxes` cover in `at`. */
+function viewports(boxes: readonly Box[], at: View) {
+  const left = -at.scrollX;
+  const top = -at.scrollY;
+  const right = left + at.width / at.zoom.value;
+  const bottom = top + at.height / at.zoom.value;
+  const area = (right - left) * (bottom - top);
+  return boxes.reduce((sum, [x1, y1, x2, y2]) => {
+    const w = Math.min(x2, right) - Math.max(x1, left);
+    const h = Math.min(y2, bottom) - Math.max(y1, top);
+    return w > 0 && h > 0 ? sum + (w * h) / area : sum;
+  }, 0);
+}
+
+const BUDGET = 32;
 
 describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
   const { size, draw } = load(build);
@@ -257,54 +276,71 @@ describe.each(BUILDS)('patched Excalidraw $build canvas cache', (build) => {
     expect(draw(box, 0.5)).toEqual({ builds: 2, sizings: 3 });
   });
 
-  describe('viewport-covering elements per frame', () => {
-    const skip = (
-      elements: readonly Box[],
-      zoom = 10,
-      exporting = false
-    ) =>
-      coveringToSkip(build.file)(
-        elements,
-        (element) => element,
-        view(zoom),
-        exporting
+  describe('visible-area budget per frame', () => {
+    const skip = (elements: readonly Box[], at: View, exporting = false) =>
+      overAreaBudget(build.file)(elements, (element) => element, at, exporting);
+    const drawn = (elements: readonly Box[], at: View) => {
+      const skipped = skip(elements, at);
+      return elements.filter((element) => !skipped.has(element));
+    };
+    const stack = (count: number, box: Box): Box[] =>
+      Array.from({ length: count }, () => [...box] as Box);
+
+    it('bounds 6,700 stacked just-under-half boxes at 30x', () => {
+      // At 30x a 1920 by 1080 view shows 64 by 36 units; each box is 0.49.
+      const at = view(30);
+      const elements = stack(6700, [0, 0, 44.8, 25.2]);
+      const shown = drawn(elements, at);
+      expect(shown).toEqual(elements.slice(-shown.length));
+      expect(viewports(shown, at)).toBeLessThanOrEqual(BUDGET);
+      expect(viewports(shown, at)).toBeGreaterThan(BUDGET - 1);
+    });
+
+    it('draws the 32 topmost of 1,000 view-covering boxes at 3x', () => {
+      const elements = Array.from(
+        { length: 1000 },
+        (_, i): Box => [-i, -i, 1000, 1000]
       );
-    // At 10x a 1920 by 1080 view shows 192 by 108 scene units.
-    const stack = (count: number): Box[] =>
-      Array.from({ length: count }, (_, i) => [-i, -i, 1000, 1000]);
-
-    it('draws only the 24 topmost of 1,000 stacked covering elements', () => {
-      const elements = stack(1000);
-      const skipped = skip(elements);
-      const drawn = elements.filter((element) => !skipped.has(element));
-      expect(drawn).toHaveLength(24);
-      expect(drawn).toEqual(elements.slice(-24));
+      expect(drawn(elements, view(3))).toEqual(elements.slice(-32));
     });
 
-    it('always draws small elements, wherever they sit in the stack', () => {
-      const elements = stack(100).flatMap((element, i): Box[] => [
-        element,
-        [i, i, i + 10, i + 10],
-      ]);
-      const skipped = skip(elements);
-      expect(skipped.size).toBe(100 - 24);
-      for (const [x1, , x2] of skipped) expect(x2 - x1).toBeGreaterThan(500);
+    it('draws every element of ordinary boards at 2x', () => {
+      // 40 diagonal lines and 40 zig-zag strokes, in a 1024 by 768 view.
+      const at = view(2, 1024, 768, -60);
+      const lines = Array.from(
+        { length: 40 },
+        (_, i): Box => [i * 8, 0, i * 8 + 400, 400]
+      );
+      const strokes = Array.from(
+        { length: 40 },
+        (_, i): Box => [0, i * 2, 400, 400 + i * 2]
+      );
+      for (const board of [lines, strokes]) {
+        expect(viewports(board, at)).toBeLessThan(BUDGET);
+        expect(drawn(board, at)).toEqual(board);
+      }
     });
 
-    it('counts only what covers half the view, at the current zoom', () => {
-      // A third of the view, inside it: never covering.
-      const third = stack(1000).map((): Box => [0, 0, 64, 108]);
-      expect(skip(third).size).toBe(0);
-      // Zoomed out, the same stack fits in the view and nothing is skipped.
-      expect(skip(stack(1000), 0.5).size).toBe(0);
-      // Exactly 24 covering elements all draw; an export draws everything.
-      expect(skip(stack(24)).size).toBe(0);
-      expect(skip(stack(1000), 10, true).size).toBe(0);
+    it('charges small elements a little; they draw until it is spent', () => {
+      const at = view(1);
+      const small = stack(1000, [0, 0, 10, 10]);
+      const cover = (count: number) => stack(count, [0, 0, 1920, 1080]);
+      expect(drawn([...small, ...cover(31)], at)).toHaveLength(1031);
+      // The 33rd covering box passes the budget; everything older is skipped.
+      expect(drawn([...small, ...cover(33)], at)).toHaveLength(32);
+    });
+
+    it('charges nothing off screen and skips nothing in an export', () => {
+      const at = view(10);
+      const away = stack(1000, [5000, 5000, 6000, 6000]);
+      expect(drawn(away, at)).toHaveLength(1000);
+      const covering = stack(1000, [0, 0, 1000, 1000]);
+      expect(skip(covering, at, true).size).toBe(0);
     });
 
     it('is wired into the static scene before each element draws', () => {
       const text = readFileSync(join(packageRoot, build.file), 'utf8');
-      const calls = text.split('__ttrCoveringToSkip(').length - 1;
+      const calls = text.split('__ttrOverAreaBudget(').length - 1;
       // The declaration and one call per build.
       expect(calls).toBe(2);
       expect(text).toContain(
