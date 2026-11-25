@@ -21,6 +21,7 @@ import {
   type ProxyRoutePolicy,
   type RateLimitProfile,
 } from '@tuturuuu/utils/api-proxy-guard';
+import { isPublicBuildInfoRequest } from '@tuturuuu/utils/build-info-route';
 import {
   INTERNAL_WORKSPACE_SLUG,
   PERSONAL_WORKSPACE_SLUG,
@@ -1019,6 +1020,7 @@ async function guardGuestWorkspaceRoute({
   }
 }
 async function webProxy(req: NextRequest): Promise<NextResponse> {
+  if (isPublicBuildInfoRequest(req)) return NextResponse.next();
   if (
     req.nextUrl.pathname.startsWith('/api') ||
     req.nextUrl.pathname === '/native-integrity/turnstile'
@@ -1033,8 +1035,6 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
       const suspicious = await blockSuspiciousAnonymousApiRequest(req);
       if (suspicious) return suspicious;
     }
-    // API cost accounting and CSRF checks run in the central Web proxy that
-    // serves every forwarded /api request.
     if (versionedAsset) return NextResponse.next();
     const additionalRoutePolicies = (await hasWorkspaceEmailRateLimitOverrides(
       req.nextUrl.pathname

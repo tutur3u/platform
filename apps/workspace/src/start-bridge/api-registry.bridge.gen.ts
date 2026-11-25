@@ -7,4 +7,5 @@ import {
 
 export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/auth/recovery/confirm", module: lazyRouteModule(() => import('../app/[locale]/(auth)/auth/recovery/confirm/route'), ["GET"]), defaults: { "locale": "en" } },
+  { pattern: "/api/build-info", module: lazyRouteModule(() => import('../app/api/build-info/route'), ["GET"]) },
 ]);

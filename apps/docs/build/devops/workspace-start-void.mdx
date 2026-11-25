@@ -261,7 +261,7 @@ Auth, with no `[wsId]` segment. English and Vietnamese:
 - `/signup`, `/vi/signup`
 - `/add-account`, `/vi/add-account`
 - `/auth/recovery`, `/vi/auth/recovery`
-- `/auth/recovery/confirm`, `/vi/auth/recovery/confirm` (the only owned API route, `api-patterns.bridge.gen.ts`)
+- `/auth/recovery/confirm`, `/vi/auth/recovery/confirm` (owned recovery handler)
 - `/sso/consent`, `/vi/sso/consent`
 - `/verify-token`, `/vi/verify-token`
 
@@ -290,8 +290,11 @@ prefix `/workspace` as well.
 | Calendar (redirect to the Calendar app) | `/[wsId]/calendar` |
 
 `/` (and `/vi`) is the locale root and answers `404`. It stays off the Worker
-on `tuturuuu.com`. Every `/api/*` path other than `/auth/recovery/confirm` is
-forwarded to Web.
+on `tuturuuu.com`. Workspace owns the public build stamp at `/api/build-info`
+and the recovery confirmation handler at `/auth/recovery/confirm`. Web
+serves the remaining `/api/*` paths. Probe `/api/build-info` on the legacy host
+and `/workspace/api/build-info` through the apex. Both return the Workspace
+commit SHA with `Cache-Control: no-store`.
 
 ### Patterns that stay on Web
 

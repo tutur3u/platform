@@ -49,10 +49,7 @@ const EXPECTED = { '/': 404, '/login': 200 };
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
 const POLICY_PROBES = [
   { kind: 'page', path: '/login' },
-  {
-    kind: 'api',
-    skip: 'the app owns a single auth-recovery confirmation route; every other /api request is forwarded to the central Web API',
-  },
+  { kind: 'api', path: '/api/build-info' },
   { kind: 'notFound', path: '/login/__native-smoke-missing__' },
 ];
 // The Worker's mounts: the generated defaults plus the app-owned
@@ -320,6 +317,22 @@ test(
         }
       );
     }
+
+    await t.test(
+      'build-info identifies the exact Worker at both origins',
+      async () => {
+        const probes = [[ROOT_HOST, '/api/build-info']];
+        if (MOUNTED) probes.push([APEX, mountedPath(BASE, '/api/build-info')]);
+        for (const [host, path] of probes) {
+          const response = await call(path, host);
+          assert.equal(response.status, 200, `${host}${path}`);
+          assert.match(response.headers['cache-control'], /\bno-store\b/u);
+          const { appName, commitHash } = JSON.parse(response.body);
+          assert.equal(appName, 'workspace');
+          assert.equal(commitHash, source);
+        }
+      }
+    );
 
     await t.test('an unknown path is not a server error', async () => {
       const response = await get('/__native-smoke-missing__');
