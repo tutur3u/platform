@@ -14,7 +14,7 @@
  */
 
 const { execFileSync, spawnSync } = require('node:child_process');
-const { pinVitestTsconfig } = require('./check-changed/vitest-tsconfig-pin.js');
+const { runCommand } = require('./check-changed/run-command.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { selectAffectedWorkspaces } = require('./check-changed/affected.js');
@@ -417,29 +417,7 @@ function runTypeCheck(step, context) {
 function runStep(step, context) {
   if (step.inline) return { status: step.inline() ? 'pass' : 'fail' };
   if (step.typeCheck) return runTypeCheck(step, context);
-  const prefix = step.heavy && context.ttr ? context.ttr : [];
-  const pin = (context.pinVitestTsconfig ?? pinVitestTsconfig)(
-    step,
-    context.root
-  );
-  const [command, ...args] = [...prefix, step.command, ...pin.args];
-  let result;
-  try {
-    result = context.spawn(command, args, {
-      cwd: path.join(context.root, step.cwd ?? ''),
-      encoding: 'utf8',
-      env: context.env,
-      maxBuffer: 64 * 1024 * 1024,
-    });
-  } finally {
-    pin.cleanup();
-  }
-  if (result.error) {
-    return { status: 'fail', detail: result.error.message };
-  }
-  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
-  if (result.status === 0) return { status: 'pass' };
-  return { status: step.advisory ? 'advisory' : 'fail', output };
+  return runCommand(step, context);
 }
 
 const ICONS = { pass: 'ok  ', fail: 'FAIL', advisory: 'warn', skip: 'skip' };

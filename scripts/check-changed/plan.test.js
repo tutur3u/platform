@@ -128,8 +128,22 @@ test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () 
     'src/date.ts',
   ]);
   assert.equal(vitest.heavy, true);
+  assert.deepEqual(vitest.explicitVitestTests, []);
   const web = plan.steps.find((step) => step.id === 'vitest:apps/web');
   assert.deepEqual(web.args.slice(-1), ['src/app/page.tsx']);
+});
+
+test('Vitest receives each explicitly changed test path', () => {
+  const files = [
+    'packages/utils/src/first.test.ts',
+    'packages/utils/src/second.test.ts',
+  ];
+  const plan = planChecks(changed(...files), context(files));
+  const vitest = plan.steps.find((step) => step.id === 'vitest:packages/utils');
+  assert.deepEqual(vitest.explicitVitestTests, [
+    'src/first.test.ts',
+    'src/second.test.ts',
+  ]);
 });
 
 test('bun:test suites run with bun test from their workspace, never Vitest or node --test', () => {

@@ -550,6 +550,9 @@ function planChecks(changes, context) {
     if (!inputs.length) continue;
     steps.push({
       id: `vitest:${workspace}`,
+      explicitVitestTests: inputs
+        .filter((file) => TEST_FILE.test(file))
+        .map((file) => path.posix.relative(workspace, file)),
       label: `vitest related ${workspace} (${inputs.length} changed files)`,
       command: 'bun',
       args: [

@@ -24,6 +24,7 @@ export default defineConfig({
     ],
   },
   root: import.meta.dirname,
+  tsconfig: path.join(import.meta.dirname, 'tsconfig.json'),
   esbuild: { jsx: 'automatic' },
   oxc: false,
   test: {
