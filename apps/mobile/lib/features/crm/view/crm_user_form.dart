@@ -211,10 +211,12 @@ class _UserFormSheetState extends State<_UserFormSheet> {
                     : null,
               ),
               const SizedBox(width: AppSpacing.md),
-              AppButton.outline(
-                onPressed: widget.canEdit ? _pickAvatar : null,
-                leading: const Icon(LucideIcons.image),
-                child: Text(l10n.crmUploadAvatar),
+              Flexible(
+                child: AppButton.outline(
+                  onPressed: widget.canEdit ? _pickAvatar : null,
+                  leading: const Icon(LucideIcons.image),
+                  child: Text(l10n.crmUploadAvatar),
+                ),
               ),
             ],
           ),

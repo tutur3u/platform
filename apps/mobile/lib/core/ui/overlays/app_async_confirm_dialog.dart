@@ -115,6 +115,7 @@ class _AppAsyncConfirmDialogState extends State<AppAsyncConfirmDialog> {
                 ? AppButtonVariant.destructive
                 : AppButtonVariant.primary,
             loading: _running,
+            replaceLabelWhileLoading: true,
             onPressed: _running ? null : () => unawaited(_confirm()),
             child: Text(widget.confirmLabel),
           ),

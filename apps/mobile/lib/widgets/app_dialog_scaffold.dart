@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
+import 'package:mobile/core/ui/overlays/app_dialog_actions.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class AppDialogScaffold extends StatelessWidget {
@@ -210,11 +211,9 @@ class AppDialogScaffold extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            child: Wrap(
-                              alignment: WrapAlignment.end,
+                            child: AppDialogActions(
                               spacing: 10,
-                              runSpacing: 10,
-                              children: actions,
+                              actions: actions,
                             ),
                           ),
                       ],

@@ -286,18 +286,15 @@ class _EditProfileFieldSheetState extends State<_EditProfileFieldSheet> {
       icon: Icons.edit_outlined,
       maxWidth: 520,
       actions: [
-        shad.OutlineButton(
+        AppButton.outline(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
           child: Text(context.l10n.profileCancel),
         ),
-        shad.PrimaryButton(
+        AppButton.primary(
           onPressed: _isSaving ? null : _save,
-          child: _isSaving
-              ? const SizedBox.square(
-                  dimension: 16,
-                  child: NovaLoadingIndicator(size: 20),
-                )
-              : Text(context.l10n.profileSave),
+          loading: _isSaving,
+          replaceLabelWhileLoading: true,
+          child: Text(context.l10n.profileSave),
         ),
       ],
       child: Column(

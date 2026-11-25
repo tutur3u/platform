@@ -22,6 +22,7 @@ class AppButton extends StatelessWidget {
     this.shape = AppButtonShape.rounded,
     this.enabled,
     this.loading = false,
+    this.replaceLabelWhileLoading = false,
     this.alignment,
     this.onLongPress,
     this.focusNode,
@@ -40,6 +41,7 @@ class AppButton extends StatelessWidget {
     this.shape = AppButtonShape.rounded,
     this.enabled,
     this.loading = false,
+    this.replaceLabelWhileLoading = false,
     this.alignment,
     this.onLongPress,
     this.focusNode,
@@ -58,6 +60,7 @@ class AppButton extends StatelessWidget {
     this.shape = AppButtonShape.rounded,
     this.enabled,
     this.loading = false,
+    this.replaceLabelWhileLoading = false,
     this.alignment,
     this.onLongPress,
     this.focusNode,
@@ -76,6 +79,7 @@ class AppButton extends StatelessWidget {
     this.shape = AppButtonShape.rounded,
     this.enabled,
     this.loading = false,
+    this.replaceLabelWhileLoading = false,
     this.alignment,
     this.onLongPress,
     this.focusNode,
@@ -94,6 +98,7 @@ class AppButton extends StatelessWidget {
     this.shape = AppButtonShape.rounded,
     this.enabled,
     this.loading = false,
+    this.replaceLabelWhileLoading = false,
     this.alignment,
     this.onLongPress,
     this.focusNode,
@@ -112,6 +117,7 @@ class AppButton extends StatelessWidget {
     this.shape = AppButtonShape.rounded,
     this.enabled,
     this.loading = false,
+    this.replaceLabelWhileLoading = false,
     this.alignment,
     this.onLongPress,
     this.focusNode,
@@ -132,8 +138,12 @@ class AppButton extends StatelessWidget {
   /// Overrides the enabled state derived from [onPressed].
   final bool? enabled;
 
-  /// Replaces [leading] with a spinner and blocks presses.
+  /// Shows a spinner and blocks presses.
   final bool loading;
+
+  /// Centers the spinner while keeping the idle content's layout and label
+  /// semantics. Otherwise the spinner takes the leading slot.
+  final bool replaceLabelWhileLoading;
   final AlignmentGeometry? alignment;
   final VoidCallback? onLongPress;
   final FocusNode? focusNode;
@@ -150,12 +160,14 @@ class AppButton extends StatelessWidget {
       dimension: style.iconSize,
       child: CircularProgressIndicator(strokeWidth: 2, color: foreground),
     );
+    final showLeadingSpinner = loading && !replaceLabelWhileLoading;
+    final showCenteredSpinner = loading && replaceLabelWhileLoading;
     final content = Row(
-      mainAxisSize: alignment == null ? MainAxisSize.min : MainAxisSize.max,
+      mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (loading) spinner else ?leading,
-        if (loading || leading != null) SizedBox(width: style.gap),
+        if (showLeadingSpinner) spinner else ?leading,
+        if (showLeadingSpinner || leading != null) SizedBox(width: style.gap),
         Flexible(child: child),
         if (trailing != null) ...[SizedBox(width: style.gap), trailing!],
       ],
@@ -174,9 +186,23 @@ class AppButton extends StatelessWidget {
         textAlign: TextAlign.center,
         child: IconTheme.merge(
           data: IconThemeData(color: foreground, size: style.iconSize),
-          child: alignment == null
-              ? content
-              : Align(alignment: alignment!, child: content),
+          child: Align(
+            alignment: alignment ?? Alignment.center,
+            widthFactor: alignment == null ? 1 : null,
+            heightFactor: 1,
+            child: showCenteredSpinner
+                ? Stack(
+                    children: [
+                      Opacity(
+                        opacity: 0,
+                        alwaysIncludeSemantics: true,
+                        child: content,
+                      ),
+                      Positioned.fill(child: Center(child: spinner)),
+                    ],
+                  )
+                : content,
+          ),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
+import 'package:mobile/core/ui/overlays/app_dialog_actions.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
@@ -64,34 +65,37 @@ class AppDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Semantics(
-              header: true,
-              child: Text(
-                title,
-                style: tokens.typography.h4.copyWith(color: c.foreground),
-              ),
-            ),
-            if (content != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: DefaultTextStyle.merge(
-                    style: tokens.typography.small.copyWith(
-                      color: c.mutedForeground,
+            Flexible(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        style: tokens.typography.h4.copyWith(
+                          color: c.foreground,
+                        ),
+                      ),
                     ),
-                    child: content!,
-                  ),
+                    if (content != null) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      DefaultTextStyle.merge(
+                        style: tokens.typography.small.copyWith(
+                          color: c.mutedForeground,
+                        ),
+                        child: content!,
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
+            ),
             if (actions.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.xl),
-              Wrap(
-                alignment: WrapAlignment.end,
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: actions,
-              ),
+              AppDialogActions(spacing: AppSpacing.sm, actions: actions),
             ],
           ],
         ),

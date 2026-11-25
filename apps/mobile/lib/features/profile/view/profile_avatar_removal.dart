@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/features/profile/view/profile_picker_intent.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
@@ -20,11 +21,11 @@ Future<void> confirmRemoveProfileAvatar(BuildContext context) async {
         maxHeightFactor: 0.56,
         scrollHeader: true,
         actions: [
-          shad.OutlineButton(
+          AppButton.outline(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(dialogContext.l10n.profileCancel),
           ),
-          shad.DestructiveButton(
+          AppButton.destructive(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(dialogContext.l10n.profileRemoveAvatar),
           ),

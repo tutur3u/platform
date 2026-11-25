@@ -6,13 +6,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Shows a bottom sheet (compact) or dialog (medium+) for creating a new
@@ -159,17 +159,17 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
           icon: Icons.add_business_outlined,
           maxWidth: 520,
           actions: [
-            shad.OutlineButton(
+            AppButton.outline(
               onPressed: state.isCreating
                   ? null
                   : () => Navigator.maybePop(context),
               child: Text(l10n.workspaceCreateCancel),
             ),
-            shad.PrimaryButton(
+            AppButton.primary(
               onPressed: (canCreate && !state.isCreating) ? _onSubmit : null,
-              child: state.isCreating
-                  ? const NovaLoadingIndicator(size: 16)
-                  : Text(l10n.workspaceCreateSubmit),
+              loading: state.isCreating,
+              replaceLabelWhileLoading: true,
+              child: Text(l10n.workspaceCreateSubmit),
             ),
           ],
           child: Column(
@@ -221,7 +221,7 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                     Row(
                       children: [
                         Expanded(
-                          child: shad.OutlineButton(
+                          child: AppButton.outline(
                             onPressed: (canCreate && !state.isCreating)
                                 ? _pickAvatar
                                 : null,
@@ -230,7 +230,7 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                         ),
                         const shad.Gap(12),
                         Expanded(
-                          child: shad.DestructiveButton(
+                          child: AppButton.destructive(
                             onPressed: state.isCreating
                                 ? null
                                 : () => setState(() => _avatarFile = null),
@@ -241,7 +241,7 @@ class _CreateWorkspaceContentState extends State<_CreateWorkspaceContent> {
                     )
                   else
                     Center(
-                      child: shad.OutlineButton(
+                      child: AppButton.outline(
                         onPressed: (canCreate && !state.isCreating)
                             ? _pickAvatar
                             : null,

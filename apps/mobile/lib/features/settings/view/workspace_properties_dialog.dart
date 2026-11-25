@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -12,7 +13,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> showWorkspacePropertiesDialog(
@@ -241,15 +241,15 @@ class _WorkspacePropertiesDialogState
         icon: Icons.business_center_outlined,
         maxWidth: 520,
         actions: [
-          shad.OutlineButton(
+          AppButton.outline(
             onPressed: _isSaving ? null : () => Navigator.maybePop(context),
             child: Text(l10n.commonCancel),
           ),
-          shad.PrimaryButton(
+          AppButton.primary(
             onPressed: _isSaving ? null : _onSave,
-            child: _isSaving
-                ? const NovaLoadingIndicator(size: 16)
-                : Text(l10n.profileSave),
+            loading: _isSaving,
+            replaceLabelWhileLoading: true,
+            child: Text(l10n.profileSave),
           ),
         ],
         child: Column(
@@ -279,7 +279,7 @@ class _WorkspacePropertiesDialogState
             Row(
               children: [
                 Expanded(
-                  child: shad.OutlineButton(
+                  child: AppButton.outline(
                     onPressed: _isSaving ? null : _pickAvatar,
                     child: Text(l10n.profileUploadAvatar),
                   ),
@@ -287,7 +287,7 @@ class _WorkspacePropertiesDialogState
                 if (_avatarFile != null || _hadInitialAvatar) ...[
                   const shad.Gap(12),
                   Expanded(
-                    child: shad.DestructiveButton(
+                    child: AppButton.destructive(
                       onPressed: _isSaving
                           ? null
                           : () {

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/data/models/profile_media_result.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
@@ -130,9 +131,7 @@ void main() {
         auth.change(_user('actor-a'));
         await tester.pump();
       }
-      await tester.tap(
-        find.widgetWithText(shad.DestructiveButton, 'Remove avatar'),
-      );
+      await tester.tap(find.widgetWithText(AppButton, 'Remove avatar'));
       await tester.pumpAndSettle();
       expect(repository.removals, 0);
       expect(find.text('Avatar removed successfully'), findsNothing);
@@ -144,9 +143,7 @@ void main() {
     final (_, repository, cubit) = await _pump(tester);
     await tester.tap(find.text('Open removal'));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.widgetWithText(shad.DestructiveButton, 'Remove avatar'),
-    );
+    await tester.tap(find.widgetWithText(AppButton, 'Remove avatar'));
     await tester.pumpAndSettle();
     expect(repository.removals, 1);
     expect(cubit.state.profile?.avatarUrl, isNull);
