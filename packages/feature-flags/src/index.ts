@@ -178,3 +178,7 @@ export const cookieConsentBanner = {
   default: false,
   removeBy: '2026-12-08',
 } satisfies FlagDefinition<'cookie_consent_banner'>;
+
+export { createRuntimeReader, readRuntimePlatformSnapshot } from './runtime-reader';
+export type { RuntimeReaderContext, RuntimeReaderOptions } from './runtime-reader';
+export type { RuntimeSnapshot, RuntimeSnapshotRead } from './runtime-snapshot';
