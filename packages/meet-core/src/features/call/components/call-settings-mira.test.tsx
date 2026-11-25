@@ -112,6 +112,15 @@ function show(participants: Record<string, { accountId?: string }>) {
   );
 }
 
+async function openMiraSettings() {
+  fireEvent.click(
+    screen.getByRole('button', { name: messages.meet.call.settings_title })
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: copy.settings_tab })
+  );
+}
+
 beforeEach(() => {
   vi.resetAllMocks();
   f.confirmation.mockResolvedValue({
@@ -166,9 +175,7 @@ it('hides withdrawal for an unconfirmed account with the workspace switch on', a
     confirmed: false,
   });
   show({ device: { accountId: 'synthetic-account' } });
-  fireEvent.click(
-    await screen.findByRole('button', { name: copy.open_settings })
-  );
+  await openMiraSettings();
   const toggle = await screen.findByRole('switch', { name: copy.toggle });
   expect(toggle.getAttribute('aria-checked')).toBe('true');
   expect(f.confirmation).toHaveBeenCalledOnce();
@@ -187,14 +194,8 @@ it('withdraws the signed-in participant’s confirmation from Mira settings', as
   f.read.mockResolvedValue(off);
   f.withdraw.mockResolvedValue({ available: false });
   show({ device: { accountId: 'synthetic-account' } });
-  fireEvent.click(
-    await screen.findByRole('button', { name: copy.open_settings })
-  );
-  fireEvent.click(
-    await screen.findByRole('button', {
-      name: messages.meet.mira_consent.withdraw_account,
-    })
-  );
+  await openMiraSettings();
+  fireEvent.click(await screen.findByRole('button', withdrawLabel));
   expect(
     await screen.findByText(messages.meet.mira_consent.withdrawn_account)
   ).toBeTruthy();
@@ -214,14 +215,8 @@ it('retries an incomplete withdrawal for the same account and meeting', async ()
     )
     .mockResolvedValueOnce({ available: false });
   show({ device: { accountId: 'synthetic-account' } });
-  fireEvent.click(
-    await screen.findByRole('button', { name: copy.open_settings })
-  );
-  fireEvent.click(
-    await screen.findByRole('button', {
-      name: messages.meet.mira_consent.withdraw_account,
-    })
-  );
+  await openMiraSettings();
+  fireEvent.click(await screen.findByRole('button', withdrawLabel));
   await screen.findByText(messages.meet.mira_consent.withdrawn_account);
   expect(f.withdraw.mock.calls).toEqual([
     ['synthetic-meeting', 'synthetic-account', 'en'],

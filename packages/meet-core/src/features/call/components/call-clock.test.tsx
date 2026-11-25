@@ -105,7 +105,7 @@ it('announces each timer change in one always-mounted polite status', () => {
     },
   });
   expect(status.textContent).toBe("Time's up");
-  expect(screen.getByTitle("Time's up").className).toContain(
+  expect(screen.getByTitle("Class timer · Time's up").className).toContain(
     'motion-safe:animate-pulse'
   );
   expect(view.container.querySelector('audio, video')).toBeNull();
