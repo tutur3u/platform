@@ -28,7 +28,7 @@ import 'package:mobile/l10n/gen/app_localizations.dart';
       taskOverdueOffset => l10n.remindersTaskOverdue(occurrence),
       _ when entry.isAllDay && sameDay => l10n.remindersTaskDueToday,
       _ when leadTime != null => l10n.remindersTaskDueIn(
-        leadTime.toLowerCase(),
+        l10n.localeName == 'vi' ? leadTime : leadTime.toLowerCase(),
         occurrence,
       ),
       _ => l10n.remindersTaskDue(occurrence),

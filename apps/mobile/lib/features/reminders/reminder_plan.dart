@@ -87,6 +87,7 @@ List<ReminderPlanEntry> buildReminderPlan({
   required List<String> taskOffsets,
   required List<String> eventOffsets,
   int limit = 60,
+  bool includeOverdue = true,
   String? timezone,
   Set<String> deliveredTaskKeys = const {},
   Map<String, DateTime> pendingOverdueTimes = const {},
@@ -106,7 +107,8 @@ List<ReminderPlanEntry> buildReminderPlan({
   }) {
     final isOverdue = !dueAt.isAfter(now);
     final availableOffsets = isOverdue
-        ? kind == ReminderKind.task &&
+        ? includeOverdue &&
+                  kind == ReminderKind.task &&
                   offsets.isNotEmpty &&
                   now.difference(dueAt) < taskOverdueWindow
               ? const [taskOverdueOffset]

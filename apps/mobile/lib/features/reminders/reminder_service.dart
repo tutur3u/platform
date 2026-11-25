@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleState, WidgetsBinding;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/user_task.dart';
@@ -29,14 +30,22 @@ class ReminderService extends ChangeNotifier {
     PushNotificationService? notifications,
     SettingsRepository? settingsRepository,
     DateTime Function()? now,
+    bool Function()? isForeground,
   }) : _timezoneResolver = timezoneResolver ?? ReminderTimezoneResolver(),
        _taskRepository = taskRepository ?? TaskRepository(),
        _calendarRepository = calendarRepository ?? CalendarRepository(),
        _notifications = notifications ?? PushNotificationService.instance,
        _settingsRepository = settingsRepository ?? SettingsRepository(),
-       _now = now ?? DateTime.now;
+       _now = now ?? DateTime.now,
+       _isForeground = isForeground ?? (() => false);
 
-  static final ReminderService instance = ReminderService();
+  static final ReminderService instance = ReminderService(
+    isForeground: () {
+      final state = WidgetsBinding.instance.lifecycleState;
+      return state != AppLifecycleState.hidden &&
+          state != AppLifecycleState.paused;
+    },
+  );
   final ReminderTimezoneResolver _timezoneResolver;
   int _scopeGeneration = 0;
 
@@ -48,6 +57,7 @@ class ReminderService extends ChangeNotifier {
   final PushNotificationService _notifications;
   final SettingsRepository _settingsRepository;
   final DateTime Function() _now;
+  final bool Function() _isForeground;
   String? _userId;
   List<Workspace> _workspaces = const [];
   bool _workspacesResolved = false;
@@ -253,6 +263,11 @@ class ReminderService extends ChangeNotifier {
     await refresh();
   }
 
+  Future<void> refreshAfterBackgrounding() async {
+    if (_refreshing case final running?) await running;
+    if (!_isForeground()) await refresh();
+  }
+
   Future<void> refresh() {
     final existing = _refreshing;
     if (existing != null) return existing;
@@ -358,6 +373,12 @@ class ReminderService extends ChangeNotifier {
           .toSet();
       // An inexact native alert can still be pending after its requested time.
       // Leave that native request queued while every member is still eligible.
+      final legacyOverdueIds = {
+        for (final entry in receipts.entries)
+          if (entry.key.contains(':$taskOverdueOffset:') &&
+              previousIds.contains(entry.value.notificationId))
+            entry.value.notificationId,
+      };
       final elapsed = receipts.entries.where(
         (entry) => !entry.value.at.isAfter(plannedAt),
       );
@@ -376,7 +397,9 @@ class ReminderService extends ChangeNotifier {
               .toList(growable: false),
       };
       final delayed = reconcileDelayedTaskReminders(
-        elapsed: elapsed,
+        elapsed: elapsed.where(
+          (entry) => !entry.key.contains(':$taskOverdueOffset:'),
+        ),
         eligibleTasks: eligibleTasks,
         offsets: settings.taskOffsets,
         pendingIds: pendingIds.intersection(previousIds),
@@ -414,6 +437,7 @@ class ReminderService extends ChangeNotifier {
             retryPendingTaskKeys: retryKeys,
             pendingOverdueTimes: pendingOverdueTimes,
             limit: 1 << 31,
+            includeOverdue: !_isForeground(),
           ),
       ], limit: availableSlots);
       final scheduledIds = {...groups.map(reminderGroupId), ...delayed.retain};
@@ -430,7 +454,9 @@ class ReminderService extends ChangeNotifier {
       // before retrying so a failed native schedule cannot leave it behind.
       final cancelIds = previousIds
           .difference(scheduledIds)
-          .union(delayed.cancel);
+          .union(delayed.cancel)
+          .union(legacyOverdueIds.intersection(pendingIds))
+          .union(legacyOverdueIds.intersection(scheduledIds));
       for (final id in cancelIds) {
         if (!_isCurrent(userId, generation)) return;
         final canceled = receipts.entries
@@ -469,6 +495,11 @@ class ReminderService extends ChangeNotifier {
       for (final group in groups) {
         if (!_isCurrent(userId, generation)) return;
         final entry = group.first;
+        final overdue = entry.offset == taskOverdueOffset;
+        if (overdue && _isForeground()) {
+          scheduledIds.remove(reminderGroupId(group));
+          continue;
+        }
         final copy = reminderGroupCopy(group, l10n);
         final id = reminderGroupId(group);
         final previousReceipts = {
@@ -492,7 +523,7 @@ class ReminderService extends ChangeNotifier {
           for (final key in previousReceipts.keys) {
             receipts[key] = (
               notificationId: id,
-              at: entry.scheduledAt,
+              at: overdue ? _now() : entry.scheduledAt,
               retry: false,
             );
           }
@@ -505,24 +536,40 @@ class ReminderService extends ChangeNotifier {
           }
         }
         try {
-          await _notifications.scheduleLocalReminder(
-            id: id,
-            scheduledAt: entry.scheduledAt,
-            title: copy.title,
-            body: copy.body,
-            request: PushNavigationRequest(
-              notificationId: '',
-              openTarget: switch (entry.kind) {
-                ReminderKind.event => 'calendar',
-                ReminderKind.task =>
-                  group.length > 1 || entry.boardId == null ? 'tasks' : 'task',
-              },
-              wsId: entry.workspaceId,
-              entityId: group.length == 1 ? entry.entityId : null,
-              boardId: group.length == 1 ? entry.boardId : null,
-              userId: userId,
-            ),
+          final request = PushNavigationRequest(
+            notificationId: '',
+            openTarget: switch (entry.kind) {
+              ReminderKind.event => 'calendar',
+              ReminderKind.task =>
+                group.length > 1 || entry.boardId == null ? 'tasks' : 'task',
+            },
+            wsId: entry.workspaceId,
+            entityId: group.length == 1 ? entry.entityId : null,
+            boardId: group.length == 1 ? entry.boardId : null,
+            userId: userId,
           );
+          if (overdue) {
+            final shown = await _notifications.showOverdueReminder(
+              id: id,
+              title: copy.title,
+              body: copy.body,
+              request: request,
+              isForeground: () =>
+                  !_isCurrent(userId, generation) || _isForeground(),
+              grouped: group.length > 1,
+            );
+            if (!shown) await rollbackReceipts();
+            scheduledIds.remove(id);
+          } else {
+            await _notifications.scheduleLocalReminder(
+              id: id,
+              scheduledAt: entry.scheduledAt,
+              title: copy.title,
+              body: copy.body,
+              request: request,
+              grouped: group.length > 1,
+            );
+          }
         } on Object {
           await rollbackReceipts();
           rethrow;
@@ -536,7 +583,11 @@ class ReminderService extends ChangeNotifier {
         'reminders.$userId.lastSuccessAt',
         finishedAt.millisecondsSinceEpoch,
       );
-      final nextReminder = groups.firstOrNull?.first.scheduledAt;
+      final nextReminder = groups
+          .where((group) => group.first.offset != taskOverdueOffset)
+          .firstOrNull
+          ?.first
+          .scheduledAt;
       if (nextReminder == null) {
         await store.remove('reminders.$userId.nextReminderAt');
       } else {

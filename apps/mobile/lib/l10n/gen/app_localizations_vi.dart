@@ -8590,7 +8590,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String remindersTaskDueIn(String leadTime, String occurrence) {
-    return 'Đến hạn $leadTime · $occurrence';
+    return '$leadTime đến hạn · $occurrence';
   }
 
   @override
@@ -8598,12 +8598,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String remindersTaskGroupMore(int count) {
-    return '+$count nhiệm vụ khác';
+    return '+$count công việc khác';
   }
 
   @override
   String remindersTaskGroupTitle(int count) {
-    return '$count nhiệm vụ sắp đến hạn';
+    return '$count công việc sắp đến hạn';
   }
 
   @override
@@ -8613,7 +8613,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String remindersTaskOverdueGroupTitle(int count) {
-    return '$count nhiệm vụ quá hạn';
+    return '$count công việc quá hạn';
   }
 
   @override

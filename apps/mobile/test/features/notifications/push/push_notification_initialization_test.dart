@@ -4,7 +4,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mocktail/mocktail.dart';
@@ -16,6 +18,8 @@ class _LocalNotifications extends Mock
     implements FlutterLocalNotificationsPlugin {}
 
 class _Repository extends Mock implements NotificationPushRepository {}
+
+class _Settings extends Mock implements SettingsRepository {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -106,6 +110,85 @@ void main() {
     await service.dispose();
     await subscription.cancel();
     unawaited(messages.close());
+  });
+
+  test('Android grouped reminder expands the complete body', () {
+    const title = '2 tasks due soon';
+    const body = 'First task\nSecond task';
+    final grouped = localReminderDetails(title, body, grouped: true);
+    final style = grouped.android!.styleInformation! as BigTextStyleInformation;
+    expect(style.bigText, body);
+    expect(style.contentTitle, title);
+    expect(style.summaryText, title);
+    expect(style.htmlFormatBigText, isFalse);
+    expect(grouped.android!.channelId, 'tuturuuu_reminders');
+    expect(
+      localReminderDetails(
+        title,
+        body,
+        grouped: false,
+      ).android!.styleInformation,
+      isNull,
+    );
+  });
+
+  for (final owner in ['synthetic-actor', 'other-actor', null]) {
+    test(
+      'cold task summary is routed only for its active owner ($owner)',
+      () async {
+        final opened = <PushNavigationRequest>[];
+        service.configure(
+          appFlavor: AppFlavor.development,
+          settingsRepository: _Settings(),
+          onOpen: (request) async => opened.add(request),
+        );
+        final payload = payloadFromPushRequest(
+          PushNavigationRequest(
+            notificationId: '',
+            openTarget: 'tasks',
+            wsId: 'workspace',
+            userId: owner,
+          ),
+        );
+        when(local.getNotificationAppLaunchDetails).thenAnswer(
+          (_) async => NotificationAppLaunchDetails(
+            true,
+            notificationResponse: NotificationResponse(
+              notificationResponseType:
+                  NotificationResponseType.selectedNotification,
+              payload: payload,
+            ),
+          ),
+        );
+        gate.complete();
+        await service.initialize();
+        expect(opened, isEmpty);
+        await service.startSession('synthetic-actor');
+        await Future<void>.delayed(Duration.zero);
+        if (owner == 'synthetic-actor') {
+          expect(opened.single.openTarget, 'tasks');
+          expect(opened.single.wsId, 'workspace');
+        } else {
+          expect(opened, isEmpty);
+        }
+      },
+    );
+  }
+
+  test('reminder targets and malformed local payloads are classified', () {
+    for (final target in ['task', 'tasks', 'calendar']) {
+      expect(requestFromPushData({'openTarget': target}).opensReminder, isTrue);
+    }
+    expect(requestFromPushData({'openTarget': 'mail'}).opensReminder, isFalse);
+    expect(requestFromLocalNotificationPayload('{'), isNull);
+    expect(
+      requestFromLocalNotificationPayload('{"openTarget":"tasks","wsId":12}'),
+      isNull,
+    );
+    expect(
+      requestFromPushData({'openTarget': 'task', 'entityId': 12}).opensTask,
+      isFalse,
+    );
   });
 
   test('reminders schedule in the native Asia/Saigon location', () async {

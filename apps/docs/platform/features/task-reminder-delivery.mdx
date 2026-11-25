@@ -12,7 +12,9 @@ workspace timezone, with device timezone as a fallback. End-of-day deadlines
 show “Due today” on that day. Nearby reminders in one workspace share a single
 alert with up to three task names and deadline details. Tap a single alert to
 open its task or tap a summary to open Tasks in that workspace. An active task
-can receive one overdue alert during the first day after its deadline. The
+can receive one overdue alert during the first day after its deadline when a
+background refresh completes. A foreground refresh leaves the overdue alert
+eligible for a later background refresh. The
 device keeps elapsed reminder receipts for each task, offset and deadline
 revision through replanning and restart.
 

@@ -123,6 +123,7 @@ void main() {
         title: any(named: 'title'),
         body: any(named: 'body'),
         request: any(named: 'request'),
+        grouped: any(named: 'grouped'),
       ),
     ).thenAnswer((call) async {
       final id = call.namedArguments[#id] as int;
@@ -183,6 +184,7 @@ void main() {
         title: any(named: 'title'),
         body: any(named: 'body'),
         request: any(named: 'request'),
+        grouped: any(named: 'grouped'),
       ),
     );
     expect(f.pending, isEmpty);

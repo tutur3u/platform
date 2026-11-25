@@ -82,6 +82,7 @@ void main() {
           title: any(named: 'title'),
           body: any(named: 'body'),
           request: any(named: 'request'),
+          grouped: any(named: 'grouped'),
         ),
       ).thenAnswer((invocation) async {
         queue[invocation.namedArguments[#id] as int] = (

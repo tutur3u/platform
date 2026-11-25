@@ -256,6 +256,7 @@ void main() {
             title: any(named: 'title'),
             body: any(named: 'body'),
             request: any(named: 'request'),
+            grouped: any(named: 'grouped'),
           ),
         ).thenAnswer((invocation) async {
           final id = invocation.namedArguments[#id] as int;

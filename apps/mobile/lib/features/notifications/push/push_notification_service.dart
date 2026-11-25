@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
@@ -25,6 +26,7 @@ export 'package:mobile/features/notifications/push/push_navigation_request.dart'
 
 part 'push_notification_preferences.dart';
 part 'push_firebase_lifecycle.dart';
+part 'push_local_reminder_details.dart';
 
 enum PushNotificationEventType { received, opened, archived }
 
@@ -149,6 +151,7 @@ class PushNotificationService {
     required String title,
     required String body,
     required PushNavigationRequest request,
+    bool grouped = false,
   }) async {
     await _ensureInitialized();
     await (_reminderTimezoneSetup ??= _configureReminderTimezone());
@@ -158,18 +161,29 @@ class PushNotificationService {
       title: title,
       body: body,
       payload: payloadFromPushRequest(request),
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'tuturuuu_reminders',
-          'Reminders',
-          channelDescription: 'Task and calendar reminders',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
+      notificationDetails: localReminderDetails(title, body, grouped: grouped),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
+  }
+
+  Future<bool> showOverdueReminder({
+    required int id,
+    required String title,
+    required String body,
+    required PushNavigationRequest request,
+    required bool Function() isForeground,
+    required bool grouped,
+  }) async {
+    await _ensureInitialized();
+    if (isForeground()) return false;
+    await _localNotifications.show(
+      id: id,
+      title: title,
+      body: body,
+      payload: payloadFromPushRequest(request),
+      notificationDetails: localReminderDetails(title, body, grouped: grouped),
+    );
+    return true;
   }
 
   Future<void> _configureReminderTimezone() async {

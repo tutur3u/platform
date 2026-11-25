@@ -84,6 +84,9 @@ extension _AppPushNavigation on _AppState {
       onSuspend: (state) {
         _mobileFlags.setForeground(foreground: false);
         _mastermind.irisLifecycle(state);
+        if (state == AppLifecycleState.hidden) {
+          unawaited(ReminderService.instance.refreshAfterBackgrounding());
+        }
       },
       refresh: _refreshAfterResume,
     );
@@ -210,28 +213,21 @@ extension _AppPushNavigation on _AppState {
       }
       return;
     }
-    final targetWorkspaceId = request.wsId;
-    if (targetWorkspaceId != null &&
-        targetWorkspaceId.isNotEmpty &&
-        _workspaceCubit.state.currentWorkspace?.id != targetWorkspaceId) {
-      if (_workspaceCubit.state.workspaces.isEmpty) {
-        await _workspaceCubit.loadWorkspaces();
-      }
-      if (!isCurrentActor()) return;
-      Workspace? targetWorkspace;
-      for (final workspace in _workspaceCubit.state.workspaces) {
-        if (workspace.id == targetWorkspaceId) {
-          targetWorkspace = workspace;
-          break;
-        }
-      }
-      if (targetWorkspace == null) {
-        _router.go(Routes.notifications);
-        return;
-      }
-      await _workspaceCubit.selectWorkspace(targetWorkspace);
-    }
+    final workspaceReady = await preparePushWorkspace(
+      targetId: request.wsId,
+      currentId: () => _workspaceCubit.state.currentWorkspace?.id,
+      workspaces: () => _workspaceCubit.state.workspaces,
+      loadWorkspaces: () => _workspaceCubit.loadWorkspaces(),
+      selectWorkspace: (workspace) async {
+        await _workspaceCubit.selectWorkspace(workspace);
+      },
+      isCurrentActor: isCurrentActor,
+    );
     if (!isCurrentActor()) return;
+    if (!workspaceReady) {
+      _router.go(Routes.notifications);
+      return;
+    }
     // A device Pomodoro phase ended; the Timer shows what is next.
     if (request.openTarget == 'timer') {
       _router.go(Routes.timer);

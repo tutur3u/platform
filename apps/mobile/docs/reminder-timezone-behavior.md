@@ -27,6 +27,10 @@ titles are not deduplicated: identity still includes kind, workspace, entity and
 offset. Different recurrence rows may legitimately have the same title and
 delivery clock.
 
+An overdue task alert is delivered during a background refresh within one day
+of its deadline. Skipping it in the foreground leaves its receipt available
+for the next background refresh.
+
 Focused verification uses `flutter test` on the three reminder planner, copy and
 timezone resolver test files. Required validation is `bun check:mobile`, queued
 through `ttr resources run --`. These tests do not schedule OS notifications or
