@@ -28,8 +28,13 @@ export function useInstantBoardSync() {
 // so the mounted board also registers its sync here. One board is active.
 let activeInstantBoardSync: InstantBoardSync | null = null;
 
-export function setActiveInstantBoardSync(sync: InstantBoardSync | null) {
+export function setActiveInstantBoardSync(sync: InstantBoardSync) {
   activeInstantBoardSync = sync;
+}
+
+/** Clear the handle only if it still belongs to this board instance. */
+export function clearActiveInstantBoardSync(sync: InstantBoardSync) {
+  if (activeInstantBoardSync === sync) activeInstantBoardSync = null;
 }
 
 export function getActiveInstantBoardSync(boardId: string) {

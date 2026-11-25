@@ -257,6 +257,60 @@ describe('instant reorder', () => {
     expect(collection.get('a')?.list_id).toBe('todo');
   });
 
+  it('still persists when the drop preview already shows the target state', async () => {
+    const original = task('a', {
+      list_id: 'todo',
+      sort_key: 100,
+      completed: false,
+      completed_at: null,
+      closed_at: null,
+    } as Partial<Task>);
+    const calls: string[] = [];
+    const { actions, cacheRow, queryClient } = setup([original], {
+      reorderTask: async (id, listId, sortKey) => {
+        calls.push(`${id}:${listId}:${sortKey}`);
+        return task(id, { list_id: listId, sort_key: sortKey });
+      },
+    });
+    // Same values the instant overlay would compute: the overlay has no diff.
+    const preview = {
+      ...original,
+      list_id: 'review',
+      sort_key: 5,
+      completed: false,
+      completed_at: null,
+      closed_at: null,
+      _localMutationAt: 1,
+    } as Task;
+    queryClient.setQueryData(boardTasksQueryKey(BOARD), [preview]);
+
+    await expect(
+      actions.reorderTask({
+        taskId: 'a',
+        newListId: 'review',
+        newSortKey: 5,
+        targetListStatus: 'review',
+        optimisticPreviousTasks: [original],
+      })
+    ).resolves.toMatchObject({ list_id: 'review' });
+    expect(calls).toEqual(['a:review:5']);
+    expect(cacheRow('a')?.list_id).toBe('review');
+  });
+
+  it('persists writes for tasks that are not loaded in the collection', async () => {
+    const calls: string[] = [];
+    const { actions } = setup([task('a')], {
+      updateTask: async (id) => {
+        calls.push(id);
+        return task(id);
+      },
+    });
+    await expect(
+      actions.updateTask('elsewhere', { name: 'x' })
+    ).resolves.toMatchObject({ id: 'elsewhere' });
+    expect(calls).toEqual(['elsewhere']);
+  });
+
   it('keeps a newer remote move instead of reverting to the stale snapshot', async () => {
     const original = task('a', { list_id: 'todo' });
     const server = deferred<Task>();

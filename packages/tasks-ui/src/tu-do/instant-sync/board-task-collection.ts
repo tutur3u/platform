@@ -142,8 +142,17 @@ export function upsertServerTaskIntoBoardCaches(
   queryClient: QueryClient,
   boardId: string,
   serverTask: Task,
-  replaceTaskId: string = serverTask.id
+  {
+    localMutationAt,
+    replaceTaskId = serverTask.id,
+  }: { localMutationAt?: number; replaceTaskId?: string } = {}
 ) {
+  // The `_localMutationAt` stamp keeps the progressive loader from merging a
+  // stale in-flight page over this confirmed local write.
+  const confirmed =
+    localMutationAt === undefined
+      ? serverTask
+      : ({ ...serverTask, _localMutationAt: localMutationAt } as Task);
   updateBoardTaskCaches(queryClient, boardId, (tasks) => {
     if (!tasks) return tasks;
     let found = false;
@@ -152,12 +161,12 @@ export function upsertServerTaskIntoBoardCaches(
       if (task.id === replaceTaskId || task.id === serverTask.id) {
         if (found) continue;
         found = true;
-        next.push({ ...task, ...serverTask });
+        next.push({ ...task, ...confirmed });
       } else {
         next.push(task);
       }
     }
-    if (!found) next.push(serverTask);
+    if (!found) next.push(confirmed);
     return next;
   });
 }
@@ -187,14 +196,35 @@ export function revertTaskRowInBoardCaches(
   {
     taskId,
     previous,
+    previousFullEntries = [],
     speculative,
-  }: { taskId: string; previous: Task | undefined; speculative: Task }
+  }: {
+    taskId: string;
+    previous: Task | undefined;
+    previousFullEntries?: [QueryKey, Task[] | undefined][];
+    speculative: Task;
+  }
 ) {
-  updateBoardTaskCaches(queryClient, boardId, (tasks) => {
-    if (!tasks) return tasks;
-    const current = tasks.find((task) => task.id === taskId);
-    if (!current || !isSameSpeculativeRow(current, speculative)) return tasks;
-    if (!previous) return tasks.filter((task) => task.id !== taskId);
-    return tasks.map((task) => (task.id === taskId ? previous : task));
-  });
+  const revertTo =
+    (previousRow: Task | undefined) => (tasks: Task[] | undefined) => {
+      if (!tasks) return tasks;
+      const current = tasks.find((task) => task.id === taskId);
+      if (!current || !isSameSpeculativeRow(current, speculative)) return tasks;
+      if (!previousRow) return tasks.filter((task) => task.id !== taskId);
+      return tasks.map((task) => (task.id === taskId ? previousRow : task));
+    };
+
+  queryClient.setQueryData<Task[]>(
+    boardTasksQueryKey(boardId),
+    revertTo(previous)
+  );
+  // Each tasks-full cache holds its own row shape, so it reverts only from its
+  // own snapshot.
+  for (const [queryKey, previousTasks] of previousFullEntries) {
+    if (!previousTasks) continue;
+    queryClient.setQueryData<Task[]>(
+      queryKey,
+      revertTo(previousTasks.find((task) => task.id === taskId))
+    );
+  }
 }

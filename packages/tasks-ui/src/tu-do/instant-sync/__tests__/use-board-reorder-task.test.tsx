@@ -4,6 +4,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  clearActiveInstantBoardSync,
   getActiveInstantBoardSync,
   type InstantBoardSync,
   InstantBoardSyncProvider,
@@ -18,6 +19,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@tuturuuu/utils/task-helper', () => ({
   useReorderTask: () => mocks.legacy,
+}));
+vi.mock('@tuturuuu/internal-api/tasks', () => ({
+  getWorkspaceTaskRelationships: vi.fn().mockResolvedValue({ blocking: [] }),
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { error: mocks.toastError },
@@ -107,7 +111,13 @@ describe('active instant board registry', () => {
     setActiveInstantBoardSync(sync);
     expect(getActiveInstantBoardSync('board-1')).toBe(sync);
     expect(getActiveInstantBoardSync('board-2')).toBeNull();
-    setActiveInstantBoardSync(null);
+
+    // A stale unmount must not clear a newer board's handle.
+    const newer = makeSync(vi.fn());
+    setActiveInstantBoardSync(newer);
+    clearActiveInstantBoardSync(sync);
+    expect(getActiveInstantBoardSync('board-1')).toBe(newer);
+    clearActiveInstantBoardSync(newer);
     expect(getActiveInstantBoardSync('board-1')).toBeNull();
   });
 });

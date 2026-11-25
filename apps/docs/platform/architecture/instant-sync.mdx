@@ -72,7 +72,10 @@ internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── r
   cache. While a transaction persists, TanStack DB **holds** incoming sync
   writes. It applies them together with dropping that transaction's optimistic
   state, so the row never flickers back.
-- Cards can read `$hasPendingWrites` from live rows to show a pending state.
+- Live rows carry `$hasPendingWrites`, which a card could use for a pending
+  indicator. The pilot does not render one yet.
+- A write whose optimistic change is empty still persists. That covers a row
+  the drag preview already moved, and a row not loaded in the collection.
 - Code: `packages/tasks-ui/src/tu-do/instant-sync/`.
 
 ### Coexistence with TanStack Query and internal-api
@@ -94,9 +97,10 @@ internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── r
   internal-api already returned to this user for this board, and every write
   goes through the same authorized route handlers and RLS as before.
 - Collections are scoped to one board (`instant-board-tasks:<boardId>`) and
-  built from the board's resolved workspace id. They live inside the
-  per-session Query client, so signing out or switching accounts discards them
-  with the cache.
+  built from the board's resolved workspace id. They are separate objects that
+  mirror the per-session Query client. After the board unmounts, their own
+  garbage-collection timer (60 s) stops the mirror and frees them. The rows they
+  hold come only from that client's cache, which signing out clears.
 - Realtime topics are authorized per board by the channels route. A client
   cannot subscribe to a board it cannot read. Remote events only patch the cache
   and never bypass server authorization.
@@ -113,8 +117,12 @@ internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── r
   task while our write is in flight and ours fails, the board shows their value,
   not our stale pre-write snapshot.
 - **Drag previews.** The drag-and-drop code writes a speculative row into the
-  cache before persisting. On failure only that row is reverted, and only if it
-  is still the speculative value.
+  cache before persisting. On failure only that row is reverted, in each cache
+  from its own snapshot, and only if it is still the speculative value. The
+  sort-key repair path in `use-kanban-dnd.ts` still uses its own
+  whole-snapshot rollback.
+- **Stale pages.** Confirmed rows carry `_localMutationAt`. The progressive
+  loader therefore does not merge an older in-flight page over a local write.
 - **Concurrent writes to one task.** A failure does **not** cascade to a later
   write on the same task that is already persisting. That later write's overlay
   captured the whole row, including the failed field, until it settles. Then the
@@ -181,6 +189,11 @@ internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── r
 2. Covered interactions: drag-and-drop move/reorder, the card edit dialog
    (update), and the task dialog create path. Other menus keep their cache-level
    optimistic code and stay live through the mirror.
+   **Kanban only.** Search, list and timeline views read
+   `['tasks-full', boardId, ...]` directly. They show collection-only optimistic
+   rows (dialog create, edit-dialog update, moves without a drag preview) only
+   once the server confirms. Move them to the live query before widening the
+   pilot.
 3. Watch rollback toasts, console reorder failures, duplicate/ghost cards after
    create, and memory on large boards. Compare perceived latency with the flag
    on and off for the same workspace.

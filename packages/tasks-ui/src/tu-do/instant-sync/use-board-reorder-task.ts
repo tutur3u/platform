@@ -1,10 +1,12 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryKey, useQueryClient } from '@tanstack/react-query';
+import { getWorkspaceTaskRelationships } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useReorderTask } from '@tuturuuu/utils/task-helper';
+import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import type { InstantReorderInput } from './board-task-actions';
@@ -12,8 +14,27 @@ import { useInstantBoardSync } from './instant-board-sync-context';
 
 type ReorderVariables = Omit<InstantReorderInput, 'targetListStatus'> & {
   optimisticPreviousFullTasks?: Task[];
-  optimisticPreviousFullTaskEntries?: unknown;
 };
+
+/** Ids this task was blocking, fetched before a move to a resolved list. */
+function loadBlockedTaskIds(wsId: string, taskId: string) {
+  const baseUrl =
+    typeof window !== 'undefined' ? window.location.origin : undefined;
+  return Promise.resolve(
+    getWorkspaceTaskRelationships(
+      wsId,
+      taskId,
+      baseUrl ? { baseUrl } : undefined
+    )
+  )
+    .then((relationships) =>
+      (relationships?.blocking ?? []).map((task) => task.id)
+    )
+    .catch((error: unknown) => {
+      console.error('Failed to fetch blocked task IDs:', error);
+      return [] as string[];
+    });
+}
 
 type ReorderCallbacks = {
   onError?: (error: unknown, variables: ReorderVariables) => void;
@@ -51,6 +72,14 @@ export function useBoardReorderTask(boardId: string, wsId: string) {
       const targetListStatus = lists?.find(
         (list) => list.id === variables.newListId
       )?.status;
+      const blockedTaskIds = isTaskBoardResolvedStatus(targetListStatus)
+        ? loadBlockedTaskIds(wsId, variables.taskId)
+        : null;
+      const fullEntries: [QueryKey, Task[] | undefined][] | undefined =
+        variables.optimisticPreviousFullTaskEntries ??
+        (variables.optimisticPreviousFullTasks
+          ? [[['tasks-full', boardId], variables.optimisticPreviousFullTasks]]
+          : undefined);
 
       try {
         const task = await sync.actions.reorderTask({
@@ -58,12 +87,22 @@ export function useBoardReorderTask(boardId: string, wsId: string) {
           newListId: variables.newListId,
           newSortKey: variables.newSortKey,
           optimisticPreviousTasks: variables.optimisticPreviousTasks,
+          optimisticPreviousFullTaskEntries: fullEntries,
           targetListStatus,
         });
         if (task.completed_at || task.closed_at) {
           void queryClient.invalidateQueries({
             queryKey: ['task-relationships', variables.taskId],
           });
+          void blockedTaskIds?.then((ids) =>
+            Promise.all(
+              ids.map((id) =>
+                queryClient.invalidateQueries({
+                  queryKey: ['task-relationships', id],
+                })
+              )
+            )
+          );
         }
         callbacks.onSuccess?.(task, variables);
         callbacks.onSettled?.(task, null, variables);
@@ -84,7 +123,7 @@ export function useBoardReorderTask(boardId: string, wsId: string) {
         });
       },
     };
-  }, [boardId, queryClient, revertedMessage, sync]);
+  }, [boardId, queryClient, revertedMessage, sync, wsId]);
 
   return instant ?? legacy;
 }

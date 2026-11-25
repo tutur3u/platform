@@ -7,6 +7,7 @@ import {
   useInstantBoardTasks,
 } from './instant-board-sync';
 import {
+  clearActiveInstantBoardSync,
   InstantBoardSyncProvider,
   setActiveInstantBoardSync,
 } from './instant-board-sync-context';
@@ -26,7 +27,7 @@ export default function InstantBoardViews({ boardId, wsId, ...props }: Props) {
 
   useEffect(() => {
     setActiveInstantBoardSync(sync);
-    return () => setActiveInstantBoardSync(null);
+    return () => clearActiveInstantBoardSync(sync);
   }, [sync]);
 
   return (

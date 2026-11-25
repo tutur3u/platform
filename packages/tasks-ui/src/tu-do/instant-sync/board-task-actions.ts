@@ -1,5 +1,5 @@
 import { createTransaction } from '@tanstack/db';
-import type { QueryClient } from '@tanstack/react-query';
+import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
@@ -26,6 +26,8 @@ export type InstantReorderInput = {
   targetListStatus?: TaskList['status'] | null;
   /** Pre-drop snapshot supplied by the drag-and-drop preview, if any. */
   optimisticPreviousTasks?: Task[];
+  /** Pre-drop snapshots of the `['tasks-full', boardId, ...]` caches. */
+  optimisticPreviousFullTaskEntries?: [QueryKey, Task[] | undefined][];
 };
 
 /** Server boundary, injected so the pilot stays testable without network. */
@@ -84,18 +86,24 @@ export function applyReorderToTask(
  * any later pending transaction that touched the same task), then the promise
  * rejects with the original error so the caller can notify the user.
  */
-async function runOptimistic<T>(
+export async function runOptimistic<T>(
   apply: () => void,
   persist: () => Promise<T>
 ): Promise<T> {
   let result: { value: T } | null = null;
   const tx = createTransaction<Task>({
+    autoCommit: false,
     mutationFn: async () => {
       result = { value: await persist() };
     },
   });
   tx.mutate(apply);
-  await tx.when('settled');
+  // A transaction without a visible change skips its mutationFn. That happens
+  // when the drag preview already wrote the same values into the synced cache,
+  // or when the row is not in this collection. The write must still persist.
+  const hasOptimisticChange = tx.mutations.length > 0;
+  await tx.commit();
+  if (!hasOptimisticChange) return persist();
   if (!result) throw new Error('Instant board sync: missing server result');
   return (result as { value: T }).value;
 }
@@ -142,7 +150,9 @@ export function createBoardTaskActions({
       async () => {
         void cancelInFlightReads();
         const created = await api.createTask(listId, input);
-        upsertServerTaskIntoBoardCaches(queryClient, boardId, created, tempId);
+        upsertServerTaskIntoBoardCaches(queryClient, boardId, created, {
+          replaceTaskId: tempId,
+        });
         return created;
       }
     );
@@ -164,7 +174,9 @@ export function createBoardTaskActions({
       async () => {
         void cancelInFlightReads();
         const saved = await api.updateTask(taskId, patch);
-        upsertServerTaskIntoBoardCaches(queryClient, boardId, saved);
+        upsertServerTaskIntoBoardCaches(queryClient, boardId, saved, {
+          localMutationAt: now().getTime(),
+        });
         return saved;
       }
     );
@@ -198,7 +210,9 @@ export function createBoardTaskActions({
             input.newListId,
             input.newSortKey
           );
-          upsertServerTaskIntoBoardCaches(queryClient, boardId, saved);
+          upsertServerTaskIntoBoardCaches(queryClient, boardId, saved, {
+            localMutationAt: at.getTime(),
+          });
           return saved;
         }
       );
@@ -207,6 +221,7 @@ export function createBoardTaskActions({
         revertTaskRowInBoardCaches(queryClient, boardId, {
           taskId: input.taskId,
           previous,
+          previousFullEntries: input.optimisticPreviousFullTaskEntries,
           speculative,
         });
       }
