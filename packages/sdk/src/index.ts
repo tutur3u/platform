@@ -102,6 +102,20 @@ export type {
   QaUserTier,
 } from './platform-qa-users';
 export { QaClient, QaUsersAdminClient } from './platform-qa-users';
+export { FeatureFlagsAdminClient } from './platform-feature-flags';
+export type {
+  FeatureFlagApiResult,
+  FeatureFlagAuditRow,
+  FeatureFlagEnvironment,
+  FeatureFlagMode,
+  FeatureFlagRule,
+  FeatureFlagRuleBody,
+  FeatureFlagRuleCursor,
+  FeatureFlagRulePage,
+  FeatureFlagScope,
+  FeatureFlagWriteInput,
+  FeatureFlagWriteResult,
+} from './platform-feature-flags';
 export type {
   FinanceBudgetUpsertPayload,
   FinanceTagPayload,

@@ -882,8 +882,8 @@ export class TuturuuuUserClient {
     };
   }
 
-  getClientOptions(): InternalApiClientOptions {
-    return this.createClientOptions(this.baseUrl);
+  getClientOptions(baseUrl = this.baseUrl): InternalApiClientOptions {
+    return this.createClientOptions(baseUrl);
   }
 
   getCalendarClientOptions(): InternalApiClientOptions {

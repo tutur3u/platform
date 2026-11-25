@@ -1,0 +1,59 @@
+---
+title: Feature flags
+description: Manage runtime feature flag rules with ttr flags
+---
+
+`ttr flags` reads and writes the runtime feature flag rules described in
+[feature flags](/build/development-tools/feature-flags). It authenticates like
+every other `ttr` command, with the session from `ttr login`. The server derives
+the actor from that token and rejects any actor, client or time in a request, so
+a rule write is attributed to the signed-in operator and recorded with client
+`ttr` in the audit log.
+
+Reading needs the root `view_infrastructure` or `manage_feature_flags`
+permission. Writing needs `manage_feature_flags`, and the database checks the
+controller of the rule's scope again.
+
+```bash
+ttr flags list [KEY] [--scope platform|workspace|user] [--workspace ID | --user ID] [--env production|development] [--all] [--json]
+ttr flags get KEY [--workspace ID | --user ID] [--env ...] [--json]
+ttr flags set KEY --mode on|off|staff|rollout [--percent N] [--allow-workspaces a,b] [--allow-users a,b] \
+  [--workspace ID | --user ID] [--env production] --reason "<text>" \
+  [--expected-revision N] [--operation-id UUID] [--confirm KEY] [--dry-run] [--json]
+ttr flags unset KEY [--workspace ID | --user ID] [--env ...] --reason "<text>" --confirm KEY [--json]
+ttr flags audit [KEY] [--limit N] [--before ISO --before-id UUID] [--json]
+```
+
+Rules are platform rules unless `--workspace` or `--user` names a subject. The
+default environment is `production`, so a production write needs `--confirm KEY`
+with the flag key; `--dry-run` prints the request without sending it. `--reason`
+is required and kept in the audit log. Never put a secret in a reason.
+
+Without `--expected-revision` the command reads the stored revision first and
+writes against it, which only guards the gap between that read and the write. A
+script that must not overwrite a concurrent change passes `--expected-revision`
+so a stale write fails with exit code 2. A retry with the same `--operation-id` is safe: the database
+replays the stored result. `--json` prints one object per command:
+
+```json
+{"ok":true,"key":"MEET_UX_V2","scope":"platform","subjectId":null,"environment":"production","mode":"staff","revision":4,"status":"applied","operationId":"..."}
+```
+
+| Exit code | Meaning |
+| --- | --- |
+| 0 | Done (`applied`, `replayed` or `noop`). |
+| 1 | Usage or validation error. |
+| 2 | Revision conflict; the current revision is in the error object. Re-read, then retry. |
+| 3 | Not signed in or not permitted. |
+| 4 | No such flag or stored rule. |
+| 5 | The rule store is unavailable. |
+| 6 | Rejected: the operation ID was reused for a different rule, or the subject is being erased. Do not retry blindly. |
+
+A saved rule reaches every surface within about a minute. The HTTP contract is
+`GET` and `POST /api/v1/infrastructure/feature-flags/rules` and
+`GET /api/v1/infrastructure/feature-flags/rules/audit`; regression coverage is
+in `packages/sdk/src/cli/flags.test.ts`,
+`packages/feature-flags/src/rule-api.test.ts` and the admin route test.
+
+Workspace administrators manage their own workspace rules and workspace
+secrets through the workspace API, not through this root command group.

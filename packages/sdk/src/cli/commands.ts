@@ -2035,7 +2035,7 @@ export async function runCli(argv = process.argv.slice(2)) {
   }
   const workspaceId = getWorkspaceId(config, flags);
 
-  if (group === 'external' || group === 'domains' || group === 'people') {
+  if (group === 'external' || Object.hasOwn(adminCommands, group)) {
     await (adminCommands[group] ?? runExternalCommand)({
       client,
       flags,

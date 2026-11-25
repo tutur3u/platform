@@ -19,6 +19,7 @@ export function getGlobalHelp() {
     '  external <apps|templates|binding|projects>  configure and manage external sites',
     '  domains <list|add|verify|remove>  bind custom domains to a workspace',
     '  people <ls|search|show|link|fact|rules|consent|...>  people registry (managers)',
+    '  flags <list|get|set|unset|audit>  platform feature flag rules (platform admins)',
     '  accounts <command>          manage staff and disposable fleet accounts',
     '  qa users <create|list|session|delete|cleanup>  disposable QA test accounts',
     '  employees create <address> --name <name>  staff account with a mailbox',

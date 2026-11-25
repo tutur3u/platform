@@ -253,6 +253,12 @@ the `p_after_*` arguments until it is null, and
 root `view_infrastructure` or `manage_feature_flags`; the audit pages newest
 first on the `(occurredAt, id)` cursor of the last row.
 
+**Control plane.** Platform admins write and read rules over
+`/api/v1/infrastructure/feature-flags/rules` and its `/audit` route, with the
+actor and client taken from the session; the contract is `parseRuleWrite` and
+`ruleWriteResponse` in `packages/feature-flags/src/rule-api.ts`. The `ttr flags`
+command group wraps it, see [feature flags CLI](/reference/packages/cli-feature-flags).
+
 **Deferred erasure.** Migration `20261125085000_feature_flag_erasure_intents.sql`
 records one row in `private.feature_flag_erasure_intents` after every delete on
 `auth.users` and `public.workspaces`. The trigger does constant work: it never

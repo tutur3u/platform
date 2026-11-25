@@ -580,6 +580,7 @@
                 "pages": [
                   "reference/packages/sdk",
                   "reference/packages/cli-operational-state",
+                  "reference/packages/cli-feature-flags",
                   "reference/packages/cli-fleet",
                   "reference/packages/masonry",
                   "reference/packages/utils-effect",

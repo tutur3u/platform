@@ -115,6 +115,18 @@ export type {
   RuleShape,
   RuleShapeErrorCode,
 } from './rule-validation';
+export {
+  parseRuleListQuery,
+  parseRuleWrite,
+  ruleWriteResponse,
+  ruleWriteRpcArgs,
+} from './rule-api';
+export type {
+  RuleApiFailure,
+  RuleListQuery,
+  RuleWriteCommand,
+  RuleWriteParse,
+} from './rule-api';
 export { runtimeDefinitionRows } from './rule-definitions';
 export type { RuntimeDefinitionRow } from './rule-definitions';
 export { evaluateRuntimeFlag, rolloutBucket } from './runtime-evaluate';
