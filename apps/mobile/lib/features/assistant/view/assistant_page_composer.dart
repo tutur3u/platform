@@ -80,10 +80,6 @@ extension _AssistantPageComposer on _AssistantPageState {
       onRetryAttachment: retryComposerAttachment,
     );
     return AssistantComposerPanel(
-      // The home's quick actions own prompt shortcuts, so the composer
-      // keeps a single surface for typing.
-      showSuggestions: false,
-      onPromptSelected: _applyStarterPrompt,
       onHeightChanged: _setComposerHeight,
       controls: showControls
           ? AssistantComposerControls(
@@ -102,7 +98,6 @@ extension _AssistantPageComposer on _AssistantPageState {
                       repository: _repository,
                       onModelSelected: _selectRemoteModel,
                     ),
-              onThinkingModeChanged: _shellCubit.setThinkingMode,
             )
           : null,
       child: composer,

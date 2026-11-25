@@ -22,7 +22,6 @@ Future<TextEditingController> _pumpComposer(
   bool inPage = false,
   VoidCallback? onRecord,
   VoidCallback? onSend,
-  ValueChanged<String>? onPromptSelected,
 }) async {
   DesignRender.setSize(tester, Size(inPage ? 320 : 390, 240));
   final controller = TextEditingController();
@@ -81,12 +80,7 @@ Future<TextEditingController> _pumpComposer(
           child: Stack(
             children: [
               if (inPage)
-                AssistantComposerPanel(
-                  showSuggestions: true,
-                  onPromptSelected: onPromptSelected ?? (_) {},
-                  onHeightChanged: (_) {},
-                  child: composer,
-                )
+                AssistantComposerPanel(onHeightChanged: (_) {}, child: composer)
               else
                 Positioned(
                   left: 16,
@@ -201,53 +195,6 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
-
-  testWidgets('starter prompts scroll through both outer gutters', (
-    tester,
-  ) async {
-    String? selectedPrompt;
-    await _pumpComposer(
-      tester,
-      scale: 1,
-      inPage: true,
-      onPromptSelected: (prompt) => selectedPrompt = prompt,
-    );
-    final strip = find.byKey(const ValueKey('assistant-starter-prompts'));
-    // The prompts share the composer's surface, edge to edge inside it.
-    final card = tester.getRect(find.byType(AppCard));
-    expect(tester.getRect(strip).left, card.left);
-    expect(tester.getRect(strip).right, card.right);
-    expect(tester.getRect(strip).bottom, lessThan(card.bottom));
-    final first = find
-        .descendant(of: strip, matching: find.byType(AppChip))
-        .first;
-    final last = find
-        .descendant(of: strip, matching: find.byType(AppChip))
-        .last;
-    expect(tester.getRect(first).left, card.left + AppSpacing.sm);
-    final edge = tester.getTopRight(strip) + const Offset(-4, 24);
-    await tester.dragFrom(edge, const Offset(-120, 0));
-    await tester.pumpAndSettle();
-    expect(tester.getRect(first).left, lessThan(card.left + AppSpacing.sm));
-    final scrollable = find.descendant(
-      of: strip,
-      matching: find.byType(Scrollable),
-    );
-    final position = tester.state<ScrollableState>(scrollable).position;
-    position.jumpTo(position.maxScrollExtent);
-    await tester.pumpAndSettle();
-    expect(
-      tester.getRect(last).right,
-      closeTo(card.right - AppSpacing.sm, 0.5),
-    );
-    await tester.tap(last);
-    expect(
-      selectedPrompt,
-      tester
-          .widget<Text>(find.descendant(of: last, matching: find.byType(Text)))
-          .data,
-    );
-  });
 
   testWidgets('multi-line prompt grows upward with controls on the last line', (
     tester,

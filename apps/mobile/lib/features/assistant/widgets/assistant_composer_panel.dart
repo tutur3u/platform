@@ -7,29 +7,23 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
-import 'package:mobile/l10n/l10n.dart';
 
 class AssistantComposerPanel extends StatelessWidget {
   const AssistantComposerPanel({
-    required this.showSuggestions,
-    required this.onPromptSelected,
     required this.onHeightChanged,
     required this.child,
     this.controls,
     super.key,
   });
 
-  final bool showSuggestions;
-  final ValueChanged<String> onPromptSelected;
   final ValueChanged<double> onHeightChanged;
   final Widget child;
 
-  /// Model and mode controls under the prompt, inside the same surface.
+  /// Model controls under the prompt, inside the same surface.
   final Widget? controls;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     return Positioned(
       left: 0,
       right: 0,
@@ -69,31 +63,6 @@ class AssistantComposerPanel extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (showSuggestions)
-                            AppHorizontalScrollView(
-                              key: const ValueKey('assistant-starter-prompts'),
-                              padding: const EdgeInsets.fromLTRB(
-                                AppSpacing.sm,
-                                AppSpacing.sm,
-                                AppSpacing.sm,
-                                0,
-                              ),
-                              child: Row(
-                                spacing: AppSpacing.xs,
-                                children: [
-                                  for (final prompt in [
-                                    l10n.assistantStarterFocus,
-                                    l10n.assistantStarterPlan,
-                                    l10n.assistantStarterBacklog,
-                                    l10n.assistantStarterDraft,
-                                  ])
-                                    AppChip(
-                                      label: Text(prompt, maxLines: 1),
-                                      onPressed: () => onPromptSelected(prompt),
-                                    ),
-                                ],
-                              ),
-                            ),
                           Padding(
                             padding: const EdgeInsets.all(AppSpacing.xs),
                             child: child,

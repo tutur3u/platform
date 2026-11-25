@@ -66,8 +66,6 @@ void main() {
                         key: viewportKey,
                         children: [
                           AssistantComposerPanel(
-                            showSuggestions: !showKeyboard,
-                            onPromptSelected: (_) {},
                             onHeightChanged: (height) =>
                                 measuredHeight = height,
                             child: Builder(
@@ -116,16 +114,6 @@ void main() {
             if (window == const Size(768, 1024)) {
               expect(cardRect.left, 24);
               expect(cardRect.right, 744);
-            }
-            if (!showKeyboard) {
-              final stripRect = tester.getRect(
-                find.byKey(const ValueKey('assistant-starter-prompts')),
-              );
-              // The prompts sit inside the composer card, above the field.
-              expect(stripRect.left, closeTo(cardRect.left, 0.01));
-              expect(stripRect.right, closeTo(cardRect.right, 0.01));
-              expect(stripRect.top, greaterThanOrEqualTo(cardRect.top));
-              expect(stripRect.bottom, lessThan(cardRect.bottom));
             }
             expect(measuredHeight, closeTo(panelRect.height, 0.01));
             expect(
