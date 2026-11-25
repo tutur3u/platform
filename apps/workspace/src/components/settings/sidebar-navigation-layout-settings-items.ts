@@ -14,6 +14,7 @@ import {
   Link,
   Mail,
   MessageCircleIcon,
+  PencilRuler,
   QrCodeIcon,
   Settings,
   SquaresIntersect,
@@ -44,7 +45,8 @@ type SidebarLayoutItemKey =
   | 'items.qr_generator'
   | 'items.settings'
   | 'items.tasks'
-  | 'items.time_tracker';
+  | 'items.time_tracker'
+  | 'items.whiteboards';
 type SidebarSectionKey = SidebarCategoryId;
 type SidebarLayoutTranslate = (key: SidebarLayoutItemKey) => string;
 type SidebarSectionTranslate = (key: SidebarSectionKey) => string;
@@ -143,6 +145,12 @@ export function createSidebarNavigationItemDefinitions(
       id: 'drive',
       title: t('items.drive'),
       icon: HardDrive,
+      defaultPlacement: 'more',
+    },
+    {
+      id: 'whiteboards',
+      title: t('items.whiteboards'),
+      icon: PencilRuler,
       defaultPlacement: 'more',
     },
     {

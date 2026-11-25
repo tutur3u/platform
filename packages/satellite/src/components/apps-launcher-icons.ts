@@ -18,6 +18,7 @@ import {
   Mail,
   MessageSquare,
   Package,
+  PencilRuler,
   QrCode,
   Server,
   Sparkles,
@@ -57,6 +58,7 @@ const APP_ICONS: Partial<Record<LaunchableApp['slug'], LucideIcon>> = {
   teach: BookText,
   tools: QrCode,
   track: History,
+  whiteboards: PencilRuler,
 };
 
 export function getAppLauncherIcon(app: LaunchableApp): LucideIcon {

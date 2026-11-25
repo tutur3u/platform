@@ -63,14 +63,13 @@ describe('sidebar app entries', () => {
     const appSlugs = links.map((link) => link.appSlug);
 
     expect(new Set(appSlugs).size).toBe(appSlugs.length);
-    expect(appSlugs.sort()).toEqual([...slugs].sort());
+    expect(appSlugs.sort()).toEqual([...slugs, 'whiteboards'].sort());
     for (const slug of appSlugs) {
       expect(LAUNCHABLE_APPS.map((app) => app.slug)).toContain(slug);
     }
     for (const innerPage of [
       'notes',
       'personal_journal',
-      'whiteboards',
       'habits',
       'workforce',
       'posts',
@@ -194,15 +193,19 @@ describe('sidebar app entries', () => {
     );
   });
 
-  it('puts notes, journal and whiteboards under Documents', () => {
-    const documents = find(createSidebarAppLinks(input()), 'documents');
+  it('puts notes and the journal under Documents and lists Whiteboards as its own app', () => {
+    const links = createSidebarAppLinks(input());
+    const documents = find(links, 'documents');
 
     expect(documents?.children?.map((child) => child?.title)).toEqual([
       'title-documents',
       'Notes',
       'Personal journal',
-      'Whiteboards',
     ]);
+    expect(find(links, 'whiteboards')).toMatchObject({
+      appSlug: 'whiteboards',
+      external: true,
+    });
     expect(
       find(
         createSidebarAppLinks(input({ isPersonal: false })),
