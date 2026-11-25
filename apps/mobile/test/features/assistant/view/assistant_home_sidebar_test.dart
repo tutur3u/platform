@@ -6,8 +6,8 @@ import 'package:mobile/features/assistant/widgets/assistant_empty_hero.dart';
 
 import 'assistant_s5_shell_harness.dart';
 
-const _sidebar = ValueKey('assistant-history-sidebar');
-const _recent = ValueKey('assistant-recent-conversations');
+const ValueKey<String> _sidebar = ValueKey('assistant-history-sidebar');
+const ValueKey<String> _recent = ValueKey('assistant-recent-conversations');
 
 void _size(WidgetTester tester, Size size) {
   tester.view

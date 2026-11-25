@@ -107,9 +107,12 @@ void main() {
         h.auth.change(signedIn);
         await tester.pump();
       } else {
+        // Each switch gets its own frame, as it would on a device.
         h.workspace.change('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
         await tester.pump();
+        await tester.pump();
         h.workspace.change('22222222-2222-4222-8222-222222222222');
+        await tester.pump();
         await tester.pump();
       }
       h.repository.stream.add(

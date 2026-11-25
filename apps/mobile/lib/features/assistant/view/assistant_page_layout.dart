@@ -497,8 +497,8 @@ extension _AssistantPageLayout on _AssistantPageState {
   }) => _transcriptPage(
     headerHeight: headerHeight,
     sliver: !showTranscript && !showLiveStrip
-        ? SliverFillRemaining(
-            hasScrollBody: false,
+        ? SliverAssistantHome(
+            bottomReserve: _composerReservedSpace(context),
             child:
                 BlocSelector<
                   AssistantVoiceCaptureCubit,

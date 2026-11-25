@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/features/assistant/widgets/assistant_empty_hero.dart';
@@ -60,4 +62,43 @@ class AssistantHomeView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Places [child] in the space left between the header and the composer,
+/// centred when it fits and scrolling when it does not.
+///
+/// The home lays out with plain box constraints rather than the intrinsic
+/// sizing `SliverFillRemaining` relies on, so width-aware children such as
+/// the quick-action grid can use `LayoutBuilder`.
+class SliverAssistantHome extends StatelessWidget {
+  const SliverAssistantHome({
+    required this.child,
+    this.bottomReserve = 0,
+    super.key,
+  });
+
+  final Widget child;
+
+  /// Space at the bottom of the viewport already covered by the composer.
+  final double bottomReserve;
+
+  @override
+  Widget build(BuildContext context) => SliverLayoutBuilder(
+    builder: (context, constraints) {
+      final extent = math
+          .max(
+            0,
+            constraints.viewportMainAxisExtent -
+                constraints.precedingScrollExtent -
+                bottomReserve,
+          )
+          .toDouble();
+      return SliverToBoxAdapter(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: extent),
+          child: Center(child: child),
+        ),
+      );
+    },
+  );
 }

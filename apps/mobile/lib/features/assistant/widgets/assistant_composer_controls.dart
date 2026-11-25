@@ -73,27 +73,39 @@ class AssistantComposerControls extends StatelessWidget {
             ),
           ),
           if (localModelLabel == null) ...[
-            const SizedBox(width: AppSpacing.xxs),
-            AppButton.ghost(
-              key: const ValueKey('assistant-composer-mode'),
-              size: AppButtonSize.small,
-              density: AppButtonDensity.compact,
-              selected: thinking,
-              leading: Icon(
-                thinking ? LucideIcons.brain : LucideIcons.zap,
-                size: 16,
-                color: thinking ? colors.primary : colors.mutedForeground,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+              child: SizedBox(
+                width: 1,
+                height: 16,
+                child: ColoredBox(color: colors.border),
               ),
-              onPressed: () => unawaited(
-                onThinkingModeChanged(
-                  thinking
-                      ? AssistantThinkingMode.fast
-                      : AssistantThinkingMode.thinking,
+            ),
+            Flexible(
+              child: AppButton.ghost(
+                key: const ValueKey('assistant-composer-mode'),
+                size: AppButtonSize.small,
+                density: AppButtonDensity.compact,
+                selected: thinking,
+                leading: Icon(
+                  thinking ? LucideIcons.brain : LucideIcons.zap,
+                  size: 16,
+                  color: thinking ? colors.primary : colors.mutedForeground,
                 ),
-              ),
-              child: Text(
-                thinking ? l10n.assistantModeThinking : l10n.assistantModeFast,
-                maxLines: 1,
+                onPressed: () => unawaited(
+                  onThinkingModeChanged(
+                    thinking
+                        ? AssistantThinkingMode.fast
+                        : AssistantThinkingMode.thinking,
+                  ),
+                ),
+                child: Text(
+                  thinking
+                      ? l10n.assistantModeThinking
+                      : l10n.assistantModeFast,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ],

@@ -6,10 +6,7 @@ extension _AssistantPageHistoryPanes on _AssistantPageState {
   /// Width of the history sidebar, or 0 when it is hidden. Records whether
   /// the window is wide enough for it, so the history action toggles the
   /// sidebar there instead of opening the Conversations page.
-  double _historySidebarWidthFor(
-    BuildContext context, {
-    required bool hidden,
-  }) {
+  double _historySidebarWidthFor(BuildContext context, {required bool hidden}) {
     final size = MediaQuery.sizeOf(context);
     final body = size.width - shellNavigationExtentFor(size);
     _historySidebarAvailable =
