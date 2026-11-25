@@ -125,4 +125,54 @@ void main() {
     expect(find.byKey(_sidebar), findsNothing);
     expect(find.byKey(_recent), findsOneWidget);
   });
+
+  testWidgets('landscape phones keep the Conversations page', (tester) async {
+    // A landscape iPhone is wider than the sidebar threshold but still a
+    // phone, with the notch on the leading edge.
+    _size(tester, const Size(932, 430));
+    tester.view
+      ..padding = const FakeViewPadding(left: 59, right: 59, bottom: 21)
+      ..viewPadding = const FakeViewPadding(left: 59, right: 59, bottom: 21);
+    final router = await pumpAssistantShell(
+      tester,
+      repository: AssistantShellFixtureRepository(),
+      storedId: null,
+    );
+    expect(find.byKey(_sidebar), findsNothing);
+    expect(find.byKey(_recent), findsOneWidget);
+    await tester.tap(find.byTooltip('Conversations'));
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      Routes.assistantConversations,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the sidebar takes the leading safe-area inset', (tester) async {
+    _size(tester, const Size(834, 1194));
+    tester.view
+      ..padding = const FakeViewPadding(left: 24)
+      ..viewPadding = const FakeViewPadding(left: 24);
+    await pumpAssistantShell(
+      tester,
+      repository: AssistantShellFixtureRepository(),
+      storedId: null,
+    );
+    final sidebar = tester.getRect(find.byKey(_sidebar));
+    expect(sidebar.left, 24);
+    expect(sidebar.width, 280);
+    // The thread starts at the sidebar's edge rather than adding the inset
+    // again.
+    final slot = tester.getRect(
+      find.byKey(const ValueKey('assistant-history-sidebar-slot')),
+    );
+    final actions = tester.getRect(
+      find.byKey(const ValueKey('assistant-quick-actions')),
+    );
+    expect(slot.right, 304);
+    expect(actions.left, greaterThan(slot.right));
+    expect(actions.left, lessThan(slot.right + 64));
+    expect(tester.takeException(), isNull);
+  });
 }

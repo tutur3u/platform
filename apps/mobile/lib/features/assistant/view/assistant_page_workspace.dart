@@ -1,6 +1,9 @@
 part of 'assistant_page.dart';
 
 extension _AssistantPageWorkspace on _AssistantPageState {
+  Workspace? _workspaceOf(WorkspaceState state) =>
+      state.currentWorkspace ?? state.personalWorkspaceOrCurrent;
+
   void _syncWorkspace(Workspace workspace) {
     if (workspace.id == _loadedWorkspaceId) {
       return;

@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -89,6 +90,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -167,9 +169,6 @@ class _AssistantPageState extends State<AssistantPage>
       widget.shellLocation == Routes.assistantConversations;
   bool _settingsWritePending = false;
 
-  /// Whether the window is wide enough for the history sidebar; set while
-  /// building, read when the history action runs.
-  bool _historySidebarAvailable = false;
   bool _historySidebarCollapsed = false;
   void _toggleHistorySidebar() =>
       setState(() => _historySidebarCollapsed = !_historySidebarCollapsed);

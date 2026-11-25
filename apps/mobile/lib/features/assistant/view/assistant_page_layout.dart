@@ -13,9 +13,7 @@ extension _AssistantPageLayout on _AssistantPageState {
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         key: const ValueKey('assistant-workspace-content'),
         builder: (context, workspaceState) {
-          final currentWorkspace =
-              workspaceState.currentWorkspace ??
-              workspaceState.personalWorkspaceOrCurrent;
+          final currentWorkspace = _workspaceOf(workspaceState);
           if (currentWorkspace == null) {
             if (workspaceState.status == WorkspaceStatus.initial ||
                 workspaceState.status == WorkspaceStatus.loading) {
@@ -32,6 +30,18 @@ extension _AssistantPageLayout on _AssistantPageState {
 
           return MultiBlocListener(
             listeners: [
+              // Each workspace emission retires the previous scope as it
+              // arrives, so a quick switch away and back still fences replies
+              // even when no frame runs in between.
+              BlocListener<WorkspaceCubit, WorkspaceState>(
+                listenWhen: (previous, current) =>
+                    _workspaceOf(previous)?.id != _workspaceOf(current)?.id,
+                listener: (_, state) {
+                  if (_workspaceOf(state) case final workspace?) {
+                    _syncWorkspace(workspace);
+                  }
+                },
+              ),
               BlocListener<AuthCubit, AuthState>(
                 listenWhen: (previous, current) =>
                     previous.user?.id != current.user?.id ||
@@ -364,6 +374,9 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             ),
                                         ],
                                       ),
+                                      // Under the scroll-to-bottom button,
+                                      // which stays fully visible above it.
+                                      _composerScrim(context),
                                       if (hasTranscript)
                                         AssistantScrollToBottomOverlay(
                                           bottomClearance:
@@ -378,7 +391,6 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               _handleScrollToBottomPressed,
                                         ),
                                     ],
-                                    if (!isLiveMode) _composerScrim(context),
                                     if (isLiveMode)
                                       _buildLiveDock(
                                         wsId: currentWorkspace.id,
@@ -429,6 +441,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                         }
 
                         return _historySplit(
+                          context: context,
                           hidden: isLiveMode || localLane,
                           sidebar: () => _buildHistorySidebar(
                             wsId: currentWorkspace.id,
@@ -496,7 +509,7 @@ extension _AssistantPageLayout on _AssistantPageState {
     sliver: !showTranscript && !showLiveStrip
         ? SliverAssistantHome(
             bottomReserve: _composerReservedSpace(context),
-            child:
+            builder: (context, availableHeight) =>
                 BlocSelector<
                   AssistantVoiceCaptureCubit,
                   AssistantVoiceCaptureState,
@@ -510,6 +523,7 @@ extension _AssistantPageLayout on _AssistantPageState {
                     listening: listening,
                     now: widget.conversationsClock?.call(),
                     onPromptSelected: _applyStarterPrompt,
+                    availableHeight: availableHeight,
                     recent: recent,
                   ),
                 ),

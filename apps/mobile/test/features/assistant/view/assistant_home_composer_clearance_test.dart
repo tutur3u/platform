@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_size_reporter.dart';
 import 'package:mobile/features/assistant/widgets/assistant_conversation_row.dart';
+import 'package:mobile/features/assistant/widgets/assistant_scroll_to_bottom_overlay.dart';
 
 import 'assistant_s5_shell_harness.dart';
 
@@ -114,6 +115,29 @@ void main() {
     final actions = tester.getRect(find.byKey(_actions));
     final composer = _composer(tester);
     expect(actions.bottom, lessThanOrEqualTo(composer.top));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the scroll-to-bottom button paints above the composer scrim', (
+    tester,
+  ) async {
+    _size(tester, const Size(390, 844), 1);
+    await pumpAssistantShell(
+      tester,
+      repository: AssistantShellFixtureRepository()..longTranscript = true,
+    );
+    final scrim = find.byKey(const ValueKey('assistant-composer-scrim'));
+    final stack = tester.widget<Stack>(
+      find.ancestor(of: scrim, matching: find.byType(Stack)).first,
+    );
+    final scrimIndex = stack.children.indexWhere(
+      (child) => child.key == const ValueKey('assistant-composer-scrim'),
+    );
+    final buttonIndex = stack.children.indexWhere(
+      (child) => child is AssistantScrollToBottomOverlay,
+    );
+    expect(scrimIndex, isNonNegative);
+    expect(buttonIndex, greaterThan(scrimIndex));
     expect(tester.takeException(), isNull);
   });
 }

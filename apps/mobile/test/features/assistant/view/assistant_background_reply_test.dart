@@ -88,7 +88,12 @@ void main() {
       'Before resume after resume',
     );
   });
-  for (final change in ['mode ABA', 'logout ABA', 'workspace ABA']) {
+  for (final change in [
+    'mode ABA',
+    'logout ABA',
+    'workspace ABA',
+    'workspace ABA without a frame',
+  ]) {
     testWidgets('actual page rejects late reply after $change', (tester) async {
       final h = BackgroundReplyHarness();
       addTearDown(() => h.dispose(tester));
@@ -106,13 +111,17 @@ void main() {
         await tester.pump();
         h.auth.change(signedIn);
         await tester.pump();
+      } else if (change == 'workspace ABA without a frame') {
+        // Both switches land before any frame, so only the emissions
+        // themselves can retire the old scope.
+        h.workspace.change('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+        await tester.idle();
+        h.workspace.change('22222222-2222-4222-8222-222222222222');
+        await tester.idle();
       } else {
-        // Each switch gets its own frame, as it would on a device.
         h.workspace.change('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
         await tester.pump();
-        await tester.pump();
         h.workspace.change('22222222-2222-4222-8222-222222222222');
-        await tester.pump();
         await tester.pump();
       }
       h.repository.stream.add(

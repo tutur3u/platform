@@ -11,6 +11,7 @@ class AssistantHomeView extends StatelessWidget {
   const AssistantHomeView({
     required this.assistantName,
     required this.onPromptSelected,
+    required this.availableHeight,
     this.recent,
     this.thinking = false,
     this.listening = false,
@@ -21,8 +22,16 @@ class AssistantHomeView extends StatelessWidget {
   /// Widest the home content grows, so tiles stay readable on desktop.
   static const double maxWidth = 640;
 
+  /// Available heights below which the home tightens (phones) and shrinks
+  /// its character further (small phones and short windows).
+  static const double compactHeight = 680;
+  static const double tinyHeight = 440;
+
   final String assistantName;
   final ValueChanged<String> onPromptSelected;
+
+  /// Height between the header and the composer that the home centres in.
+  final double availableHeight;
 
   /// Recent conversations; null where the history sidebar already shows them.
   final Widget? recent;
@@ -32,10 +41,9 @@ class AssistantHomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Phone-height windows get a smaller character and tighter gaps so the
-    // greeting, quick actions and recent chats fit above the composer.
-    final height = MediaQuery.sizeOf(context).height;
-    final compact = height < 900;
+    // A short space above the composer gets a smaller character and tighter
+    // gaps so the greeting, quick actions and recent chats fit in it.
+    final compact = availableHeight < compactHeight;
     return Center(
       key: const ValueKey('assistant-home'),
       child: ConstrainedBox(
@@ -51,7 +59,7 @@ class AssistantHomeView extends StatelessWidget {
                 thinking: thinking,
                 listening: listening,
                 now: now,
-                characterSize: height < 700
+                characterSize: availableHeight < tinyHeight
                     ? 56
                     : compact
                     ? 64
@@ -72,7 +80,7 @@ class AssistantHomeView extends StatelessWidget {
   }
 }
 
-/// Places [child] in the space left between the header and the composer,
+/// Places the home from [builder] between the header and the composer,
 /// centred when it fits and scrolling when it does not.
 ///
 /// The home lays out with plain box constraints rather than the intrinsic
@@ -80,12 +88,13 @@ class AssistantHomeView extends StatelessWidget {
 /// the quick-action grid can use `LayoutBuilder`.
 class SliverAssistantHome extends StatelessWidget {
   const SliverAssistantHome({
-    required this.child,
+    required this.builder,
     this.bottomReserve = 0,
     super.key,
   });
 
-  final Widget child;
+  /// Builds the home for the height left between the header and composer.
+  final Widget Function(BuildContext context, double availableHeight) builder;
 
   /// Space at the bottom of the viewport already covered by the composer.
   final double bottomReserve;
@@ -104,7 +113,7 @@ class SliverAssistantHome extends StatelessWidget {
       return SliverToBoxAdapter(
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: extent),
-          child: Center(child: child),
+          child: Center(child: builder(context, extent)),
         ),
       );
     },

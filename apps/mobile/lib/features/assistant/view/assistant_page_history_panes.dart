@@ -63,29 +63,66 @@ extension _AssistantPageHistoryPanes on _AssistantPageState {
     );
   }
 
-  /// The thread beside the history sidebar when the page's own width
-  /// fits both. Sized from the page constraints rather than the window, so
-  /// the split holds wherever the shell places the page. Records whether the
-  /// sidebar fits, so the history action toggles it there instead of opening
-  /// the Conversations page.
+  /// Whether this window shows the history sidebar beside the thread: a
+  /// tablet-class window (shortest side of at least 600dp) whose body beside
+  /// the shell navigation fits [assistantHistorySidebarMinWidth]. Phones keep
+  /// the Conversations page, landscape included.
+  bool _historySidebarFits(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final body = size.width - shellNavigationExtentFor(size);
+    return size.shortestSide >= Breakpoints.mediumMin &&
+        body >= assistantHistorySidebarMinWidth;
+  }
+
+  /// The thread beside the history sidebar when the window fits it. The
+  /// sidebar takes the leading safe-area inset, so its rows clear a notch or
+  /// camera housing, and the thread drops that inset. The tree keeps one
+  /// shape either way, so toggling the sidebar never remounts the thread.
   Widget _historySplit({
+    required BuildContext context,
     required bool hidden,
     required Widget Function() sidebar,
     required Widget Function(bool sidebarShown) page,
-  }) => LayoutBuilder(
-    builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      _historySidebarAvailable =
-          !hidden && width >= assistantHistorySidebarMinWidth;
-      final shown = _historySidebarAvailable && !_historySidebarCollapsed;
-      final sidebarWidth = shown ? assistantHistorySidebarWidth(width) : 0.0;
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(width: sidebarWidth, child: shown ? sidebar() : null),
-          Expanded(child: page(shown)),
-        ],
-      );
-    },
-  );
+  }) {
+    final shown =
+        !hidden && !_historySidebarCollapsed && _historySidebarFits(context);
+    final size = MediaQuery.sizeOf(context);
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final padding = MediaQuery.paddingOf(context);
+    final start = shown ? (rtl ? padding.right : padding.left) : 0.0;
+    final width = shown
+        ? assistantHistorySidebarWidth(
+                size.width - shellNavigationExtentFor(size),
+              ) +
+              start
+        : 0.0;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          key: const ValueKey('assistant-history-sidebar-slot'),
+          width: width,
+          child: shown
+              ? Padding(
+                  padding: EdgeInsetsDirectional.only(start: start),
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeLeft: !rtl,
+                    removeRight: rtl,
+                    child: sidebar(),
+                  ),
+                )
+              : null,
+        ),
+        Expanded(
+          child: MediaQuery.removePadding(
+            context: context,
+            removeLeft: shown && !rtl,
+            removeRight: shown && rtl,
+            child: page(shown),
+          ),
+        ),
+      ],
+    );
+  }
 }
