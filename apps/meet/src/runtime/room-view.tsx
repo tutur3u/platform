@@ -3,6 +3,7 @@ import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-s
 import { MeetGuestJoin } from '@tuturuuu/meet-core/features/call/components/guest-join';
 import { GuestVerificationProvider } from '@tuturuuu/meet-core/features/call/components/guest-verification-context';
 import { ParticipantNameForm } from '@tuturuuu/meet-core/features/call/components/participant-name-form';
+import { meetingDisplayName } from '@tuturuuu/meet-core/features/call/lib/meeting-display-name';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useTranslations } from 'next-intl';
 import { MeetingNotesSection } from '@/features/meeting-notes/meeting-notes-section';
@@ -48,7 +49,10 @@ export function RoomView({
   const { access, policy } = model;
   const { meeting, user, isHost, canReadWorkspace, workspaceSlug } = access;
   const requiresAccount = 'guest' in access && access.guest === true;
-  const meetingName = meeting.name ?? t('untitled_meeting');
+  const meetingName = meetingDisplayName(
+    meeting.name,
+    t('untitled_meeting')
+  );
   const leaveHref = canReadWorkspace
     ? `/${workspaceSlug}/meetings/${meeting.id}`
     : '/';

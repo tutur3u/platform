@@ -6,6 +6,7 @@ import {
   Users,
   Video,
 } from '@tuturuuu/icons';
+import { meetingDisplayName } from '@tuturuuu/meet-core/features/call/lib/meeting-display-name';
 import { MeetingProjects } from '@tuturuuu/meet-core/features/meeting-record/meeting-projects';
 import { MeetingRecordSection } from '@tuturuuu/meet-core/features/meeting-record/meeting-record-section';
 import { Button } from '@tuturuuu/ui/button';
@@ -40,7 +41,7 @@ export function MeetingView({ model }: { model: DetailModel }) {
   const meetingId = meeting.id;
   const t = useTranslations('meet.call');
   const details = useTranslations('meet.details');
-  const title = meeting.name ?? t('untitled_meeting');
+  const title = meetingDisplayName(meeting.name, t('untitled_meeting'));
   if (model.detail.kind === 'ended')
     return (
       <CallEnded

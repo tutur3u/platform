@@ -20,6 +20,7 @@ import {
 import { prefersMiraOff } from '../../live-assistant/mira-join-choice';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
 import { GUEST_TURNSTILE_SCRIPT_SRC } from '../lib/guest-turnstile-recovery';
+import { meetingDisplayName } from '../lib/meeting-display-name';
 import { GuestPrejoin } from '../prejoin/guest-prejoin';
 import { GuestTurnstile } from './guest-turnstile';
 
@@ -96,6 +97,12 @@ export function MeetGuestJoin({
   // readable from the element), so hydration never replaces the form.
   const earlyScriptNonce = scriptNonce ?? renderedScriptNonce();
   const t = useTranslations('meet.call.guest_join');
+  const callT = useTranslations('meet.call');
+  // A stored default name renders in this viewer's locale, not the creator's.
+  const title =
+    meetingTitle === undefined
+      ? t('title')
+      : meetingDisplayName(meetingTitle, callT('untitled_meeting'));
   const router = useRouter();
   const [name, setName] = useState('');
   // The name field is uncontrolled: WebKit can take seconds to hydrate, and
@@ -218,7 +225,7 @@ export function MeetGuestJoin({
               : { kind: state.kind }
         }
         statusLabel={status}
-        title={meetingTitle || t('title')}
+        title={title}
         widget={widget}
       />
     );
@@ -238,7 +245,7 @@ export function MeetGuestJoin({
           <span className="font-medium text-sm">Tuturuuu Meet</span>
         </div>
         <h1 className="break-words font-semibold text-2xl tracking-tight">
-          {meetingTitle || t('title')}
+          {title}
         </h1>
         <div className="space-y-2">
           <Label htmlFor="meet-guest-display-name">{t('name_label')}</Label>

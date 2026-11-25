@@ -24,6 +24,7 @@ import {
 import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { buildMeetSeo } from '@tuturuuu/meet-core/features/call/lib/seo/metadata';
 import { meetSeoToNextMetadata } from '@tuturuuu/meet-core/features/call/lib/seo/next-metadata';
+import { meetingDisplayName } from '@tuturuuu/meet-core/features/call/lib/meeting-display-name';
 import { getMeetingPublicInfo } from '@tuturuuu/meet-core/features/call/lib/meeting-public-info';
 import { decodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
@@ -135,6 +136,10 @@ export default async function RoomPage({
     workspaceSlug,
   } = access;
   const wsId = meeting.ws_id;
+  const meetingName = meetingDisplayName(
+    meeting.name,
+    t('untitled_meeting')
+  );
   const leaveHref =
     MEETING_APP !== 'parley' && canReadWorkspace
       ? `/${workspaceSlug}/meetings/${meeting.id}`
@@ -158,7 +163,7 @@ export default async function RoomPage({
           shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
           meetingId={meetingId}
           wsId={wsId}
-          meetingName={meeting.name ?? t('untitled_meeting')}
+          meetingName={meetingName}
           backHref={
             MEETING_APP !== 'parley' && canReadWorkspace
               ? `/${workspaceSlug}/meetings`
@@ -181,7 +186,7 @@ export default async function RoomPage({
     return (
       <ParticipantNameForm
         initialName={access.suggestedDisplayName ?? ''}
-        meetingName={meeting.name ?? t('untitled_meeting')}
+        meetingName={meetingName}
         leaveHref={leaveHref}
         siteKey={turnstileSiteKey}
       />
@@ -200,7 +205,7 @@ export default async function RoomPage({
         leaveHref={leaveHref}
         canReadWorkspace={canReadWorkspace}
         meetingId={meeting.id}
-        meetingName={meeting.name ?? t('untitled_meeting')}
+        meetingName={meetingName}
         wsId={wsId}
       />
     </WorkspaceVisibilityProvider>

@@ -6,6 +6,7 @@ import {
   Users,
   Video,
 } from '@tuturuuu/icons';
+import { meetingDisplayName } from '@tuturuuu/meet-core/features/call/lib/meeting-display-name';
 import { MeetingProjects } from '@tuturuuu/meet-core/features/meeting-record/meeting-projects';
 import { MeetingRecordSection } from '@tuturuuu/meet-core/features/meeting-record/meeting-record-section';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -81,7 +82,7 @@ export default async function MeetingDetailPage({
   }
 
   const isHost = meeting.creator_id === user.id;
-  const title = meeting.name ?? t('untitled_meeting');
+  const title = meetingDisplayName(meeting.name, t('untitled_meeting'));
   // Permissions do not depend on room policy. Capture rejection immediately so
   // the ended-room shortcut and policy error precedence remain unchanged.
   const permissionsPromise = getPermissions({ user, wsId }).then(

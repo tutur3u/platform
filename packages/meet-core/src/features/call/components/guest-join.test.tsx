@@ -140,6 +140,32 @@ it('joins with the Turnstile token once the check passes', async () => {
   );
 });
 
+it('renders a stored default meeting name in the viewer locale', () => {
+  const { rerender } = render(
+    <MeetGuestJoin
+      meetingId="7f2a528e-3bff-40ee-bfda-5b944ad03ed8"
+      meetingTitle="Cuộc họp chưa đặt tên"
+      returnTo="/r/abc"
+      siteKey="site-key"
+    />
+  );
+  // The mocked translator returns keys: the viewer's own default is shown.
+  expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+    'untitled_meeting'
+  );
+  rerender(
+    <MeetGuestJoin
+      meetingId="7f2a528e-3bff-40ee-bfda-5b944ad03ed8"
+      meetingTitle="Lớp 10A1"
+      returnTo="/r/abc"
+      siteKey="site-key"
+    />
+  );
+  expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(
+    'Lớp 10A1'
+  );
+});
+
 it('(d) still joins when the Mira box cannot be stored', async () => {
   const setItem = vi
     .spyOn(Storage.prototype, 'setItem')

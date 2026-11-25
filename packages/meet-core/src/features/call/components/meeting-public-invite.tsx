@@ -2,6 +2,7 @@ import { Calendar, LockKeyhole, Video } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { meetingDisplayName } from '../lib/meeting-display-name';
 import type { MeetingPublicInfo } from '../lib/meeting-public-info';
 import { MeetingLocalTime } from './meeting-local-time';
 
@@ -49,6 +50,7 @@ export async function MeetingPublicInvite({
   returnTo: string;
 }) {
   const t = await getTranslations('meet.public');
+  const callT = await getTranslations('meet.call');
   return (
     <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-12">
       <article className="w-full max-w-xl space-y-8 rounded-2xl border bg-card p-6 shadow-sm sm:p-10">
@@ -61,7 +63,7 @@ export async function MeetingPublicInvite({
             {info.ended ? t('ended') : t('invitation')}
           </p>
           <h1 className="break-words font-semibold text-3xl tracking-tight sm:text-4xl">
-            {info.title}
+            {meetingDisplayName(info.title, callT('untitled_meeting'))}
           </h1>
           {Number.isFinite(Date.parse(info.scheduledAt)) && (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
