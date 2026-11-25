@@ -51,6 +51,7 @@ import { transcriptionClientSnapshot } from './transcription';
 import { locksClientTranscription } from './room-self-capture-state';
 import type { MiraRoomState } from './room-mira-consent';
 import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
+import { applyMiraShare, type MiraShareState } from './room-mira-share';
 import { isGuestRemovalBlocked } from './room-removed-guests';
 import {
   applyRoomAttachment,
@@ -72,6 +73,8 @@ export type RoomServiceState = MeetRoomSnapshot & {
   whiteboard?: RoomWhiteboard;
   breakouts?: RoomBreakouts;
   miraPrivate?: MiraPrivateState;
+  /** Per-person, owner-only shares of private notes with Private Mira. */
+  miraShares?: MiraShareState;
   miraRoom?: MiraRoomState;
   transcriptConsent?: MeetTranscriptState;
   programmingMira?: RoomProgrammingMira;
@@ -186,6 +189,8 @@ export function roomService(
   if (forms) return forms;
   const privateMira = applyPrivateMira(snapshot, token, input);
   if (privateMira) return privateMira;
+  const share = applyMiraShare(snapshot, token, input);
+  if (share) return share;
   const restored = applyRoomRestore(
     snapshot,
     token,

@@ -362,4 +362,46 @@ describe('room documents', () => {
     });
     expect(readRoomDocuments(own.state.documents, now).mira).toBeNull();
   });
+
+  it('lets Mira edit only room-shared tabs, names the requester, and undoes', () => {
+    const created = create().state;
+    const named: RoomServiceState = {
+      ...created,
+      presence: Object.fromEntries(
+        Object.entries(created.presence).map(([key, person]) => [
+          key,
+          { ...person, displayName: 'Lan' },
+        ])
+      ),
+    };
+    const edit = (target: string) =>
+      run(named, {
+        action: 'documents.mira.edit',
+        consentRevision: 1,
+        edit: {
+          id: uuid(90),
+          tabId: target,
+          source: 'chat',
+          action: 'refine',
+          before: 'Old line',
+          after: 'New line',
+        },
+      });
+    expect(edit(uuid(91)).status).toBe(404);
+    const recorded = edit(tabId);
+    const [recordedEdit] = readRoomDocuments(recorded.state.documents).edits;
+    expect(recordedEdit).toMatchObject({
+      askedBy: account,
+      askedByName: 'Lan',
+      review: 'pending',
+    });
+    const undone = run(recorded.state, {
+      action: 'documents.mira.review',
+      editId: uuid(90),
+      decision: 'reverted',
+    });
+    expect(readRoomDocuments(undone.state.documents).edits[0]?.review).toBe(
+      'reverted'
+    );
+  });
 });

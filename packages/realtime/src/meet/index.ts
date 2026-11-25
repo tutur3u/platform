@@ -308,6 +308,11 @@ export {
   MIRA_ROOM_DENIED,
 } from './room-mira-private';
 export {
+  MIRA_SHARE_MAX_CONTEXT_BYTES,
+  MIRA_SHARE_MAX_TURNS,
+  type MiraSharedTurn,
+} from './room-mira-share';
+export {
   MIRA_ROOM_CAPABILITIES,
   type MiraRoomCapability,
   type MiraRoomEndReason,

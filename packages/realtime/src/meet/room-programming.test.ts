@@ -223,3 +223,33 @@ it('shares a scoped Playground run with the room and ignores stale receipts', ()
   ).toBe(409);
   expect(roomService(state, { ...token, scopes: [] }, input)?.status).toBe(403);
 });
+
+it('keeps Mira code to a diff that a person, never Mira, accepts', () => {
+  const drafted = roomService(
+    roomService(openRoom(), host, start)!.state,
+    viaLive,
+    draft
+  )!.state;
+  // A saved voice draft writes nothing to the room's code or fix state.
+  expect(drafted.programmingMira?.presence?.proposedFix ?? null).toBeNull();
+  const published = roomService(drafted, host, {
+    action: 'programming.miraPresence',
+    phase: 'publish',
+    attempt,
+  })!.state;
+  const resolve = {
+    action: 'programming.resolveFix',
+    phase: 'begin',
+    attempt,
+    decision: 'accepted',
+  };
+  for (const actor of [
+    viaLive,
+    { ...viaLive, scopes: [...viaLive.scopes, 'meet:private-mira'] },
+    { ...host, role: 'speaker' as const },
+  ])
+    expect(roomService(published, actor, resolve)?.status).toBe(403);
+  expect(
+    roomService(published, host, resolve)?.body as { fix?: unknown }
+  ).toHaveProperty('fix');
+});

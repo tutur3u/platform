@@ -14,9 +14,15 @@ export function endMeetRoom(
 ) {
   // Room Mira state names the acceptor and keys every choice by account id.
   // A room that has ended cannot run Mira, so it keeps none of it; the durable
-  // evidence in the database is what remains.
-  const { miraRoom: _miraRoom, ...kept } = state as MeetRoomSnapshot & {
+  // evidence in the database is what remains. Private notes shared with a
+  // person's own Private Mira never outlive the meeting either.
+  const {
+    miraRoom: _miraRoom,
+    miraShares: _miraShares,
+    ...kept
+  } = state as MeetRoomSnapshot & {
     miraRoom?: unknown;
+    miraShares?: unknown;
   };
   const attendance = closeOpenAttendanceIntervals(state.attendance, now);
   return {
