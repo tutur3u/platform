@@ -36,6 +36,9 @@ class ChatState extends Equatable {
     this.isSending = false,
     this.isUploadingAttachment = false,
     this.canManageChat = false,
+    this.replyToMessageId,
+    this.hasOlderMessages = const {},
+    this.isLoadingOlderMessages = false,
     this.error,
   });
 
@@ -62,7 +65,28 @@ class ChatState extends Equatable {
   final bool isSending;
   final bool isUploadingAttachment;
   final bool canManageChat;
+
+  /// Message the composer answers; sent as `replyToMessageId`.
+  final String? replyToMessageId;
+
+  /// Conversations whose last history page was full, keyed by id.
+  final Map<String, bool> hasOlderMessages;
+  final bool isLoadingOlderMessages;
   final String? error;
+
+  ChatMessage? get replyToMessage {
+    final replyId = replyToMessageId;
+    if (replyId == null) return null;
+    for (final message in selectedMessages) {
+      if (message.id == replyId) return message;
+    }
+    return null;
+  }
+
+  bool get selectedHasOlderMessages {
+    final selectedId = selectedConversationId;
+    return selectedId != null && (hasOlderMessages[selectedId] ?? false);
+  }
 
   ChatConversation? get selectedConversation {
     final selectedId = selectedConversationId;
@@ -116,6 +140,9 @@ class ChatState extends Equatable {
     bool? isSending,
     bool? isUploadingAttachment,
     bool? canManageChat,
+    Object? replyToMessageId = _chatStateSentinel,
+    Map<String, bool>? hasOlderMessages,
+    bool? isLoadingOlderMessages,
     Object? error = _chatStateSentinel,
     bool clearError = false,
   }) {
@@ -155,6 +182,12 @@ class ChatState extends Equatable {
       isUploadingAttachment:
           isUploadingAttachment ?? this.isUploadingAttachment,
       canManageChat: canManageChat ?? this.canManageChat,
+      replyToMessageId: replyToMessageId == _chatStateSentinel
+          ? this.replyToMessageId
+          : replyToMessageId as String?,
+      hasOlderMessages: hasOlderMessages ?? this.hasOlderMessages,
+      isLoadingOlderMessages:
+          isLoadingOlderMessages ?? this.isLoadingOlderMessages,
       error: clearError
           ? null
           : error == _chatStateSentinel
@@ -188,6 +221,9 @@ class ChatState extends Equatable {
     isSending,
     isUploadingAttachment,
     canManageChat,
+    replyToMessageId,
+    hasOlderMessages,
+    isLoadingOlderMessages,
     error,
   ];
 }

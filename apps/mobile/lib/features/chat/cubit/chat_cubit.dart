@@ -15,6 +15,7 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'chat_state.dart';
 part 'chat_cubit_actions.dart';
+part 'chat_cubit_thread_actions.dart';
 
 class ChatCubit extends Cubit<ChatState> {
   ChatCubit({
@@ -62,6 +63,9 @@ class ChatCubit extends Cubit<ChatState> {
     caseSensitive: false,
   );
   bool _refreshingFallback = false;
+
+  /// Messages per history page; a full page means older messages may exist.
+  static const int messagePageSize = 60;
   int _loadToken = 0;
   int _searchRequestVersion = 0;
 
@@ -283,6 +287,9 @@ class ChatCubit extends Cubit<ChatState> {
           sharedContent: null,
           aiSettings: null,
           aiObservability: null,
+          replyToMessageId: state.selectedConversationId == conversationId
+              ? state.replyToMessageId
+              : null,
           clearError: true,
         ),
       );
@@ -332,9 +339,14 @@ class ChatCubit extends Cubit<ChatState> {
         state.copyWith(
           messageStatus: ChatMessageStatus.loaded,
           messages: allMessages,
+          hasOlderMessages: {
+            ...state.hasOlderMessages,
+            conversationId: messages.length >= ChatCubit.messagePageSize,
+          },
         ),
       );
       if (!quietly) {
+        _clearUnread(conversationId);
         unawaited(_repository.markRead(wsId, conversationId));
         unawaited(loadConversationPanels());
       }

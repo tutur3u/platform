@@ -10,6 +10,7 @@ extension ChatCubitActions on ChatCubit {
         sharedContent: null,
         aiSettings: null,
         aiObservability: null,
+        replyToMessageId: null,
       ),
     );
     // Leaving the thread closes its room socket. An open socket is foreground
@@ -107,10 +108,14 @@ extension ChatCubitActions on ChatCubit {
     final attachments = state.pendingAttachments
         .map((attachment) => attachment.toDraft())
         .toList(growable: false);
+    final replyToMessageId = state.replyToMessage?.deletedAt == null
+        ? state.replyToMessageId
+        : null;
     _emitState(
       state.copyWith(
         isSending: true,
         pendingAttachments: const [],
+        replyToMessageId: null,
         streamingAssistantText: '',
         clearError: true,
       ),
@@ -129,6 +134,7 @@ extension ChatCubitActions on ChatCubit {
           conversation.id,
           content: trimmed,
           attachments: attachments,
+          replyToMessageId: replyToMessageId,
         )
         .listen(
           _handleMessageStreamEvent,
@@ -201,6 +207,15 @@ extension ChatCubitActions on ChatCubit {
         (state.selectedConversation?.isReadOnlyAgent ?? false)) {
       return;
     }
+    final userId = _currentUserId();
+    final before = _findMessage(message.conversationId, message.id) ?? message;
+    if (userId != null) {
+      _patchMessage(
+        before.copyWith(
+          reactions: toggledReactions(before.reactions, emoji, userId),
+        ),
+      );
+    }
     try {
       final updated = await _repository.toggleReaction(
         wsId,
@@ -208,8 +223,11 @@ extension ChatCubitActions on ChatCubit {
         messageId: message.id,
         emoji: emoji,
       );
-      _upsertMessage(updated);
+      // A queued (offline) toggle answers with an id-only placeholder; keep
+      // the optimistic reactions until the server returns the message.
+      if (updated.createdAt != null) _patchMessage(updated);
     } on ApiException catch (error) {
+      _patchMessage(before);
       _emitState(state.copyWith(error: error.message));
     }
   }
