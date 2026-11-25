@@ -152,7 +152,6 @@ test/features/finance/widgets/transaction_detail_sheet_test.dart
 test/features/habits/view/habits_page_search_test.dart
 test/features/inventory/stock_health/inventory_stock_health_test.dart
 test/features/inventory/view/inventory_checkout_recovery_exit_test.dart
-test/features/inventory/view/inventory_product_editor_page_test.dart
 test/features/inventory/widgets/inventory_compact_test.dart
 test/features/inventory/widgets/inventory_fractional_stock_test.dart
 test/features/mail/mail_workspace_test.dart

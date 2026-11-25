@@ -8,7 +8,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
-import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -21,7 +20,6 @@ import 'package:mobile/features/inventory/view/inventory_product_editor_page.dar
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../../helpers/helpers.dart';
@@ -177,18 +175,16 @@ Future<GlobalKey> mountEditorModal(WidgetTester tester, Widget editor) async {
       builder: (context) => TextButton(
         onPressed: () => showFinanceFullscreenModal<void>(
           context: context,
-          builder: (context) => shad.Theme(
-            data: MobileShadTheme.light,
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                textTheme: Theme.of(
-                  context,
-                ).textTheme.apply(fontFamily: 'NotoSans'),
-              ),
-              child: DefaultTextStyle.merge(
-                style: const TextStyle(fontFamily: 'NotoSans'),
-                child: RepaintBoundary(key: key, child: editor),
-              ),
+          // pumpApp provides the app's component theme to the modal route.
+          builder: (context) => Theme(
+            data: Theme.of(context).copyWith(
+              textTheme: Theme.of(
+                context,
+              ).textTheme.apply(fontFamily: 'NotoSans'),
+            ),
+            child: DefaultTextStyle.merge(
+              style: const TextStyle(fontFamily: 'NotoSans'),
+              child: RepaintBoundary(key: key, child: editor),
             ),
           ),
         ),
