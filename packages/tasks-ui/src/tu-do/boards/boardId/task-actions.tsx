@@ -48,8 +48,10 @@ import {
 } from '@tuturuuu/utils/task-helper';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import { useParams } from 'next/navigation';
-import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useInstantBoardSync } from '../../instant-sync/instant-board-sync-context';
+import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 
 interface Props {
   taskId: string;
@@ -117,6 +119,9 @@ export function TaskActions({
   const refetchingAfterWorkspaceRef = useRef(false);
 
   const updateTaskMutation = useUpdateTask(boardId, workspaceId);
+  const instantSync = useInstantBoardSync();
+  const broadcast = useBoardBroadcast();
+  const tTasks = useTranslations('ws-tasks');
 
   // Update local state when task data changes
   useEffect(() => {
@@ -224,7 +229,6 @@ export function TaskActions({
   async function handleUpdate() {
     if (!hasChanges || !task) return;
 
-    setIsLoading(true);
     const updates = {
       name: newName,
       description: newDescription === '' ? undefined : newDescription,
@@ -233,6 +237,25 @@ export function TaskActions({
       priority: newPriority,
     };
 
+    if (instantSync?.boardId === boardId) {
+      // Instant sync pilot: visible at once, rolled back if the server rejects.
+      setIsEditDialogOpen(false);
+      instantSync.actions.updateTask(taskId, updates).then(
+        (saved) => {
+          broadcast?.('task:upsert', { task: saved });
+          onUpdate();
+        },
+        (error: unknown) =>
+          toast({
+            title: tTasks('failed_update_task_reverted'),
+            description: error instanceof Error ? error.message : undefined,
+            variant: 'destructive',
+          })
+      );
+      return;
+    }
+
+    setIsLoading(true);
     try {
       if (workspaceId) {
         await updateWorkspaceTask(workspaceId, taskId, updates);

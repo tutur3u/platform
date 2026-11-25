@@ -401,6 +401,7 @@
                   "platform/architecture/tanstack-rust-migration",
                   "platform/architecture/tanstack-rust-migration-plan",
                   "platform/architecture/data-fetching",
+                  "platform/architecture/instant-sync",
                   "platform/architecture/effect",
                   "platform/architecture/whiteboard-package",
                   "platform/architecture/api-routes",

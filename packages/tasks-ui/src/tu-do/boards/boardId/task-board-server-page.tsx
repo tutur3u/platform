@@ -24,6 +24,8 @@ interface Props {
   rootLoading?: boolean;
   /** Verified actor supplied by satellite apps that do not use Web's Supabase session. */
   sessionUser?: { id: string };
+  /** App-owned pilot flag lookup for instant board sync (default off). */
+  resolveInstantSync?: (workspaceId: string) => Promise<boolean>;
 }
 
 async function getAuthorizedBoard(
@@ -62,6 +64,7 @@ export default async function TaskBoardServerPage({
   routePrefix = '/tasks',
   rootLoading = false,
   sessionUser,
+  resolveInstantSync,
 }: Props) {
   const { wsId: id, boardId } = await params;
 
@@ -82,6 +85,8 @@ export default async function TaskBoardServerPage({
     model.access === 'guest'
       ? { ...model.workspace, joined: false }
       : model.workspace;
+  const instantSyncEnabled =
+    (await resolveInstantSync?.(workspace.id)) ?? false;
 
   return (
     <BoardClient
@@ -94,6 +99,7 @@ export default async function TaskBoardServerPage({
       routePrefix={routePrefix}
       idleBottomIsland={idleBottomIsland}
       rootLoading={rootLoading}
+      instantSyncEnabled={instantSyncEnabled}
     />
   );
 }

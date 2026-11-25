@@ -1,0 +1,194 @@
+---
+title: "Instant UI sync"
+description: "TanStack DB live queries and optimistic transactions over TanStack Query, internal-api and Cloudflare realtime; the Tasks board pilot and the path to a Durable Object sync source."
+updatedAt: "2026-11-25"
+---
+
+## Decision
+
+Adopt **TanStack DB** as the client read/write model for collaborative,
+Linear-style surfaces, layered over what the platform already runs:
+
+- **TanStack Query** keeps owning fetching, pagination and the cache.
+- **`@tuturuuu/internal-api`** keeps owning every server read and write.
+- **Cloudflare realtime channels** (Durable Object fan-out) keep invalidating
+  and patching that cache.
+
+TanStack DB mirrors the cache into a collection, serves the UI through
+incremental `useLiveQuery` views, and runs every user write as an optimistic
+transaction. A failed transaction rolls back by itself.
+
+Do **not** adopt ElectricSQL. Do **not** build a bespoke Durable Object sync
+protocol until the board data moves to Cloudflare storage (stage 3 below).
+
+The first surface is the Tasks board in `apps/tasks`. It runs behind the
+default-off workspace secret `ENABLE_INSTANT_BOARD_SYNC`.
+
+## What exists today
+
+- The board renders `['tasks', boardId]` from the TanStack Query cache. Lists
+  load progressively into that cache. The cache is also persisted to a local
+  snapshot for instant reopen.
+- About ten call sites hand-roll optimistic updates: drag and drop, the
+  priority/assignee/label menus, the create dialog and bulk actions. Most use
+  **whole-snapshot rollback**: `setQueryData(previousTasks)` on error. That
+  silently discards any realtime change or concurrent write to *other* rows that
+  arrived while the request was in flight. Several edits are not optimistic at
+  all; the card's edit dialog waits a full round trip.
+- Board realtime already runs on Cloudflare. `createRealtimeClient` in
+  `@tuturuuu/internal-api/realtime` is the `CloudflareRealtimeClient` channel
+  transport (`packages/realtime/src/channels`). The topic is authorized by
+  `POST /api/v1/realtime/channels`. Server task mutations still publish to the
+  legacy private Supabase channels as well; that is a bounded bridge for older
+  clients (see the
+  [existing-client transition](/build/devops/programming-realtime-runbook#existing-client-transition)).
+
+## Options evaluated
+
+| Option | Verdict | Why |
+| --- | --- | --- |
+| **A. TanStack DB over TanStack Query + internal-api, invalidated by realtime** | **Recommended now** | No new server, data path or authorization model. Adopts per-board. Removes hand-rolled rollback. Works unchanged when the realtime source moves. |
+| **B. Durable-Object-backed sync collection** | **Target after the data moves** | Ideal once board rows live in D1/DO storage. The DO streams a snapshot plus ordered deltas with a sequence number. Premature while Postgres is the system of record: the DO would only be a second cache of Supabase. |
+| **C. ElectricSQL** | **Rejected (comparison only)** | Requires Postgres logical replication and a hosted sync service. Shapes bypass internal-api authorization and re-derive RLS outside our API. The Supabase Postgres it would replicate is being retired by mid-December. It would also add a new non-Cloudflare backend owner, against [Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership). |
+
+## Architecture (stage 1, the pilot)
+
+```text
+internal-api reads ──► TanStack Query cache ['tasks', boardId] ◄── realtime channel (DO fan-out)
+                              │  (synced source of truth on the client)
+                              ▼ reference diff, one sync transaction per cache change
+                     TanStack DB collection  ◄── optimistic transactions (create / update / move)
+                              │                         │
+                              ▼                         └─► internal-api write ─► confirmed row
+                        useLiveQuery ─► board                                     written back to the cache
+```
+
+- `createBoardTaskCollection` subscribes to the Query cache. On each change of
+  `['tasks', boardId]` it writes inserts, updates and deletes as one sync
+  transaction. Rows are compared by reference. Query's structural sharing keeps
+  unchanged rows identical, so a diff touches only changed rows.
+- `createBoardTaskActions` runs each write as a `createTransaction`. Its
+  `mutationFn` calls internal-api, then writes the confirmed row into the Query
+  cache. While a transaction persists, TanStack DB **holds** incoming sync
+  writes. It applies them together with dropping that transaction's optimistic
+  state, so the row never flickers back.
+- Cards can read `$hasPendingWrites` from live rows to show a pending state.
+- Code: `packages/tasks-ui/src/tu-do/instant-sync/`.
+
+### Coexistence with TanStack Query and internal-api
+
+- The Query cache stays authoritative on the client. Progressive loading,
+  focus revalidation, local snapshots, the realtime handler and every
+  not-yet-migrated mutation keep writing to it, and the collection follows.
+  Unmigrated optimistic code therefore still works under the flag.
+- Components outside the live view (for example `useCachedBoardTasks`) still
+  read the cache. They see confirmed and cache-optimistic state, not
+  collection-only optimistic rows.
+- No new endpoints. Writes reuse `createTask`, `updateTask` and `reorderTask`
+  from `@tuturuuu/utils/task-helper` over internal-api. No client-side raw API
+  fetches and no `useEffect` data loading.
+
+## Authorization, RLS and workspace scoping
+
+- The pilot adds no read path. A collection only ever holds rows that
+  internal-api already returned to this user for this board, and every write
+  goes through the same authorized route handlers and RLS as before.
+- Collections are scoped to one board (`instant-board-tasks:<boardId>`) and
+  built from the board's resolved workspace id. They live inside the
+  per-session Query client, so signing out or switching accounts discards them
+  with the cache.
+- Realtime topics are authorized per board by the channels route. A client
+  cannot subscribe to a board it cannot read. Remote events only patch the cache
+  and never bypass server authorization.
+- The flag is a workspace secret checked server-side in `apps/tasks`
+  (`src/lib/instant-board-sync/access.ts`). A lookup failure keeps the
+  established path.
+
+## Rollback, conflicts and offline
+
+- **Per-transaction rollback.** A failed write discards only its own optimistic
+  state. Rows changed by other users or other writes meanwhile are kept. That
+  fixes the whole-snapshot rollback hazard above.
+- **Remote wins over a failed local write.** If another user changes the same
+  task while our write is in flight and ours fails, the board shows their value,
+  not our stale pre-write snapshot.
+- **Drag previews.** The drag-and-drop code writes a speculative row into the
+  cache before persisting. On failure only that row is reverted, and only if it
+  is still the speculative value.
+- **Concurrent writes to one task.** A failure does **not** cascade to a later
+  write on the same task that is already persisting. That later write's overlay
+  captured the whole row, including the failed field, until it settles. Then the
+  confirmed server row wins. This is pinned by tests as observed in
+  `@tanstack/db` 1.0.0-rc.1.5.
+- **Conflict resolution** stays server-side last-writer-wins, as today. The
+  client never overrides a newer synced row with an older optimistic one.
+- **Offline:** stage 1 keeps no durable write queue. Offline writes fail, roll
+  back and show "Failed to update task. Changes reverted." The local board
+  snapshot still gives instant reopen. A durable outbox
+  (`@tanstack/offline-transactions`) is a separate decision. It needs
+  idempotency keys on the task write routes first.
+
+## Migration path to Durable Objects
+
+1. **Done:** board events flow over Cloudflare channels. The server dual-publishes
+   to legacy Supabase channels for older clients.
+2. **Stage 1 (this pilot):** TanStack DB over the Query cache, invalidated by
+   those channels. No server change.
+3. **Stage 2, confirmed sync:** task write responses and realtime events carry a
+   per-board monotonically increasing sequence. Optimistic state is then dropped
+   when sync reaches that sequence, not when the HTTP response returns. That
+   closes the gap where a slow event arrives after the response.
+4. **Stage 3, DO sync source:** once board rows live in D1/Durable Object
+   storage, the board DO serves a snapshot and ordered deltas over its
+   WebSocket. A custom collection `sync` consumes them directly, with
+   `loadSubset` for progressive lists, and the Query cache mirror is retired for
+   that surface. UI code using `useLiveQuery` and the actions does not change.
+   The DO must meet the
+   [runaway-work and cost acceptance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
+   rules, use hibernatable WebSockets and keep no self-rearming alarms.
+5. **Bridge removal:** remove the Supabase dual-publish per the runbook's
+   removal criterion.
+
+## Bundle and cost impact
+
+- `@tanstack/db` + `@tanstack/react-db` (1.0.0-rc.1.5, exact-pinned while in
+  RC). This adds about **281 KB minified / 82 KB gzip / 72 KB brotli**
+  (production bundle of `createCollection`, `createTransaction` and
+  `useLiveQuery`). The pilot renderer is loaded with `React.lazy`, so boards
+  without the flag download none of it. General rollout needs this budget
+  accepted, or a shared chunk across surfaces.
+- Client CPU, measured locally with headless Bun (not browser paint), median over
+  60 runs:
+
+| Board size | Path | Before | After |
+| --- | --- | --- | --- |
+| 500 tasks | Move (already optimistic) | 0.035 ms | 0.036 ms |
+| 2,000 tasks | Move | 0.186 ms | 0.028 ms |
+| 2,000 tasks | Edit dialog save, 120 ms server | 122.5 ms | 0.064 ms |
+| 2,000 tasks | Create | dialog insert | 0.195 ms |
+| 2,000 tasks | Remote event to view | (cache only) | 0.236 ms |
+| 2,000 tasks | Initial mirror + live query | none | 5.2 ms |
+
+- The mirror diffs the whole cached board on every cache write. That is O(n) per
+  event, about 0.24 ms at 2,000 rows. Stage 3 removes it.
+- Server and network: unchanged in stage 1. Same endpoints, same realtime
+  messages, no new Workers or Durable Objects.
+
+## Pilot plan
+
+1. Enable `ENABLE_INSTANT_BOARD_SYNC=true` on an internal workspace in
+   `apps/tasks` only. Web's shared board route does not pass the flag.
+2. Covered interactions: drag-and-drop move/reorder, the card edit dialog
+   (update), and the task dialog create path. Other menus keep their cache-level
+   optimistic code and stay live through the mirror.
+3. Watch rollback toasts, console reorder failures, duplicate/ghost cards after
+   create, and memory on large boards. Compare perceived latency with the flag
+   on and off for the same workspace.
+4. Expand only when stage 2 sequencing is designed and the bundle budget is
+   accepted. Roll back by deleting the secret; no data migration is involved.
+
+Regression coverage:
+`packages/tasks-ui/src/tu-do/instant-sync/__tests__/board-task-actions.test.ts`
+(mirror, create swap, rollback isolation, remote-wins conflicts, drag-preview
+revert, concurrent writes) and `use-board-reorder-task.test.tsx` (flag-off
+passthrough, success callbacks, failure toast and settle).

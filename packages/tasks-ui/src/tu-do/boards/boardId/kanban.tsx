@@ -18,7 +18,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
-import { useBoardConfig, useReorderTask } from '@tuturuuu/utils/task-helper';
+import { useBoardConfig } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
@@ -29,6 +29,7 @@ import {
   useState,
 } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
+import { useBoardReorderTask } from '../../instant-sync/use-board-reorder-task';
 import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import type { ListStatusFilter } from '../../shared/board-header';
@@ -153,7 +154,7 @@ export function KanbanBoard({
     !!wsPresence?.cursorsEnabled &&
     !wsPresence.isBoardOverLimit(boardId);
 
-  const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
+  const reorderTaskMutation = useBoardReorderTask(boardId ?? '', workspaceId);
   const { createTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
   const boardAssigneesEnabled = canUseBoardAssignees ?? !workspace.personal;

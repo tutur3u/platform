@@ -3,6 +3,7 @@ import TaskBoardServerPage from '@tuturuuu/tasks-ui/tu-do/boards/boardId/task-bo
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createElement } from 'react';
+import { isInstantBoardSyncEnabled } from '@/lib/instant-board-sync/access';
 
 interface Props {
   params: Promise<{
@@ -21,6 +22,7 @@ export default async function Page({ params }: Props) {
     defaultView: 'kanban',
     params,
     routePrefix: '',
+    resolveInstantSync: isInstantBoardSyncEnabled,
     rootLoading: true,
     sessionUser: user,
   });

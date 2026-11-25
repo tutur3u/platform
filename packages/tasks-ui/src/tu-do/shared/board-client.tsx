@@ -13,7 +13,9 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
 import {
+  lazy,
   type ReactNode,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -43,6 +45,12 @@ import { TaskBoardLoadingState } from './task-board-loading-state';
 import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
+// Pilot (default off): TanStack DB board sync ships in its own chunk so boards
+// without the flag never download it.
+const InstantBoardViews = lazy(
+  () => import('../instant-sync/instant-board-views')
+);
+
 // Coalesce paired focus/visibility events without suppressing the next tab visit.
 const BOARD_REVALIDATE_COOLDOWN_MS = 1_000;
 const RELATION_REVALIDATE_DELAY_MS = 5_000;
@@ -57,6 +65,8 @@ interface Props {
   defaultView?: ViewType;
   idleBottomIsland?: ReactNode;
   rootLoading?: boolean;
+  /** Pilot: read and write board tasks through TanStack DB (default off). */
+  instantSyncEnabled?: boolean;
 }
 
 export function BoardClient({
@@ -69,6 +79,7 @@ export function BoardClient({
   currentUserId,
   routePrefix = '/tasks',
   rootLoading = false,
+  instantSyncEnabled = false,
 }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -391,22 +402,40 @@ export function BoardClient({
     );
   }
 
+  const boardViewsProps = {
+    workspace,
+    workspaceTier,
+    board,
+    lists,
+    workspaceLabels,
+    currentUserId,
+    defaultView,
+    canManageBoard,
+    idleBottomIsland,
+  };
+
   return (
     <BoardBroadcastProvider value={broadcast}>
       <ProgressiveLoaderProvider value={progressiveLoader}>
         <TaskCardHotkeysProvider enabled={canManageBoard}>
-          <BoardViews
-            workspace={workspace}
-            workspaceTier={workspaceTier}
-            board={board}
-            tasks={tasks}
-            lists={lists}
-            workspaceLabels={workspaceLabels}
-            currentUserId={currentUserId}
-            defaultView={defaultView}
-            canManageBoard={canManageBoard}
-            idleBottomIsland={idleBottomIsland}
-          />
+          {instantSyncEnabled ? (
+            <Suspense
+              fallback={
+                <TaskBoardLoadingState
+                  root={rootLoading}
+                  showHeader={rootLoading}
+                />
+              }
+            >
+              <InstantBoardViews
+                {...boardViewsProps}
+                boardId={boardId}
+                wsId={boardWorkspaceId}
+              />
+            </Suspense>
+          ) : (
+            <BoardViews {...boardViewsProps} tasks={tasks} />
+          )}
         </TaskCardHotkeysProvider>
       </ProgressiveLoaderProvider>
     </BoardBroadcastProvider>

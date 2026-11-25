@@ -12,6 +12,7 @@ import {
   removeOptimisticTaskFromBoardCaches,
 } from '@tuturuuu/utils/task-helper';
 import type React from 'react';
+import { getActiveInstantBoardSync } from '../../../instant-sync/instant-board-sync-context';
 import type { BoardBroadcastFn } from '../../board-broadcast-context';
 import { dispatchTaskSoundCue } from '../../task-sound-effects';
 import type {
@@ -199,7 +200,12 @@ export async function handleCreateTask({
       ? (recoveryDraft.persistedTask ?? null)
       : null;
 
-  insertOptimisticTaskIntoBoardCaches(queryClient, boardId, optimisticTask);
+  // Instant sync pilot: the optimistic row lives in a TanStack DB transaction
+  // that rolls back by itself; otherwise it is written into the query cache.
+  const instantSync = getActiveInstantBoardSync(boardId);
+  if (!instantSync) {
+    insertOptimisticTaskIntoBoardCaches(queryClient, boardId, optimisticTask);
+  }
 
   try {
     let desiredAssignees = [...selectedAssignees];
@@ -252,7 +258,14 @@ export async function handleCreateTask({
     };
     const resumingTask = !!persistedTask;
     const newTask =
-      persistedTask ?? (await createTask(wsId, selectedListId, createPayload));
+      persistedTask ??
+      (instantSync
+        ? await instantSync.actions.createTask(selectedListId, {
+            ...optimisticTask,
+            ...createPayload,
+            name: name.trim(),
+          })
+        : await createTask(wsId, selectedListId, createPayload));
     if (!newTask?.id) throw new Error();
     if (persistedTask) {
       await updateWorkspaceTask(wsId, newTask.id, {
