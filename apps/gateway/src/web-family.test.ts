@@ -411,6 +411,23 @@ describe('web family matching', () => {
     );
   });
 
+  it('routes the Documents app entry to the dashboard web, not the public-docs family', async () => {
+    const t = setup({ flags: 'public-docs' });
+    for (const path of ['/docs', '/en/docs', '/vi/docs', '/docs?x=1']) {
+      expect(await (await t.call(path)).text(), path).toBe('web');
+    }
+    expect(t.family).not.toHaveBeenCalled();
+
+    const publicDocs = FIXTURE.webFamilies?.families.find(
+      (family) => family.id === 'public-docs'
+    );
+    expect(publicDocs).toBeDefined();
+    for (const path of ['/docs', '/en/docs', '/vi/docs']) {
+      expect(matchFamily(path, publicDocs!, ['en', 'vi'])).toBeNull();
+    }
+    expect(await (await t.call('/changelog')).text()).toBe('family');
+  });
+
   it('keeps exclusions ahead of case-insensitive prefixes and preserves the forwarded path', async () => {
     const t = setup({ flags: 'api-identity' });
     for (const path of [
