@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide ThemeMode;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
@@ -16,7 +16,6 @@ import 'package:mobile/features/shell/view/account_presentation.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' show ThemeMode;
 
 /// Key of the account menu's name and email header.
 const shellAccountMenuHeaderKey = ValueKey<String>('shell-account-menu-header');
@@ -155,8 +154,10 @@ Widget? _themeMenu(BuildContext context) {
         _choice(
           label,
           icon,
-          selected: mode == current,
-          onPressed: () => unawaited(cubit.setThemeMode(mode)),
+          selected: mode.name == current.name,
+          onPressed: () => unawaited(
+            cubit.setThemeMode(ThemeCubit.parseThemeMode(mode.name)),
+          ),
         ),
     ],
     child: Text(l10n.settingsTheme),

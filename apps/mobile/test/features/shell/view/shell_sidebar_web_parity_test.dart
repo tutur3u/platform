@@ -12,7 +12,6 @@ import 'package:mobile/features/shell/view/shell_sidebar_workspace_switcher.dart
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_body.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import 'shell_rail_harness.dart';
@@ -132,7 +131,7 @@ void main() {
     addTearDown(theme.close);
     await _pump(tester, theme: theme);
     final l10n = shellL10n(tester);
-    expect(theme.state.themeMode, shad.ThemeMode.system);
+    expect(theme.state.themeMode.name, ThemeMode.system.name);
 
     await _openAccountMenu(tester);
     await tester.tap(find.text(l10n.settingsTheme));
@@ -140,7 +139,7 @@ void main() {
     await tester.tap(find.text(l10n.settingsThemeDark));
     await settleShell(tester);
 
-    expect(theme.state.themeMode, shad.ThemeMode.dark);
+    expect(theme.state.themeMode.name, ThemeMode.dark.name);
     expect(find.text(l10n.settingsThemeDark), findsNothing);
   });
 
@@ -217,17 +216,15 @@ void main() {
   ) async {
     final shell = await _pump(tester, size: _phone);
     final l10n = shellL10n(tester);
-    final appBar = find.byType(shad.AppBar);
+    final button = find.byKey(shellSidebarDrawerButtonKey);
     expect(find.byType(ShellNavigationRail), findsNothing);
-    expect(
-      find.descendant(of: appBar, matching: find.text(l10n.navBack)),
-      findsNothing,
-    );
-    final button = find.descendant(
-      of: appBar,
-      matching: find.byKey(shellSidebarDrawerButtonKey),
-    );
     expect(button, findsOneWidget);
+    // The top bar row carries no Back control; the dock below owns it.
+    final barBottom = tester.getRect(button).bottom;
+    final backLabels = find.text(l10n.navBack);
+    for (var i = 0; i < backLabels.evaluate().length; i++) {
+      expect(tester.getTopLeft(backLabels.at(i)).dy, greaterThan(barBottom));
+    }
 
     await tester.tap(button);
     await settleShell(tester);
