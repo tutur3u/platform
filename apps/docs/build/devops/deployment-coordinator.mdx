@@ -49,15 +49,16 @@ project (catalog entry, e.g. "calendar")
 
   | Environment | Vercel apps | Cloudflare Workers |
   | ----------- | ----------- | ------------------ |
-  | production  | `meet-cloudflare.yaml` for `meet` and `tasks-cloudflare.yaml` for `tasks` | `<worker>-cloudflare.yaml` |
+  | production  | `meet-cloudflare.yaml` for `meet`, `tasks-cloudflare.yaml` for `tasks`, `wave1-native-production.yaml` for `apps`, `calendar` and `mail` (from the planner or its own dispatch) and `finance` (dispatch only), `serving-worker-publish.yaml` from `serving-workers-production.yaml` for `learn` and `nova` | `<worker>-cloudflare.yaml`; `mastermind-cloudflare.yaml`; `web-opennext.yaml` for `gateway` and each `web-<family>`; `serving-worker-publish.yaml` for `teach`, `tools`, `roadmap` and `lms`; `wave1-native-production.yaml` dispatch for `drive`; `supabase-production.yaml` for `database` (provider `supabase`) |
   | staging     | `wave1-native-publish.yaml` called from `<app>-cloudflare.yaml`, for `apps`, `calendar` and `mail`; none for the others, whose `<app>-cloudflare.yaml` only qualifies builds | none |
   | preview     | none | none: Worker previews run on pull request events, which are rejected |
 
   Chat, CMS, Drive, Forms, Teach, Tools and Track publish production natively
   on Cloudflare after their Vercel production workflows retired (see
   [retiring an app's Vercel project](/build/devops/native-start-migration#retiring-an-apps-vercel-project)).
-  That release does not report to the coordinator yet, so they list no
-  workflow.
+  Drive reports from its `wave1-native-production.yaml` dispatch and Teach and
+  Tools from the serving Worker publisher; Chat, CMS, Forms and Track have no
+  CI production publisher and list no workflow.
 
   A job inside a reusable workflow reports that reusable file as its
   `job_workflow_ref` and the workflow the run started from as its
@@ -68,7 +69,10 @@ project (catalog entry, e.g. "calendar")
   `source_sha` that can differ from the token's `sha`, so its record would name
   the wrong commit until that workflow can state its source commit. The
   catalog tests check that every listed file exists, that each production
-  file has a job gated on the production ref in a GitHub Environment, that
+  file has a job gated on the production ref in a GitHub Environment and
+  calls the coordinator's `begin` and `finish`, that each reusable production
+  publisher is run by its listed caller for that app, that every Web OpenNext
+  family in `families.json` has its own project, that
   each staging caller runs the shared publisher with its own `app` and
   `profile: staging`, and that no project lists a preview workflow.
 - **Environments** follow the existing branch flow (see
@@ -295,11 +299,12 @@ caller of a wired workflow. The Colab production `deploy` job in
 # phase: check before `wrangler deploy`; phase: finish under if: always()
 ```
 
-Every production deploy job reports, in one of two wirings:
+Every CI production deploy job reports, in one of two wirings; the gaps are
+listed under [coverage](#production-publish-coverage):
 
 | Wiring | Jobs | `mode` input |
 | ------ | ---- | ------------ |
-| Enforce-capable: begin, publish steps gated on `publish`, check before the first provider effect, finish | Colab, Coordination, Cron Control, Devbox Control, Lettin and Parley `deploy` jobs | `vars.DEPLOY_COORDINATOR_MODE` |
+| Enforce-capable: begin, publish steps gated on `publish`, check before the first provider effect, finish | Colab, Coordination, Cron Control, Devbox Control, Lettin and Parley `deploy` jobs; the wave-1 production `publish` job (`wave1-native-production.yaml`); the serving Worker publisher (`serving-worker-publish.yaml`); the Mastermind `deploy` job; each Web OpenNext `family` matrix job (registered after the build, so the lane is held only for `wrangler deploy`); the Supabase production `deploy` job (`db push` and its marker) | `vars.DEPLOY_COORDINATOR_MODE` |
 | Observe-only: begin and finish under `continue-on-error` and a 5-minute step timeout, no gating | the Meet (`meet-worker`), Tasks and gateway (`web-opennext.yaml`) publishers, which keep their own release admission and rollback; the Android, iOS and macOS store publishes | `observe` whenever the variable is `observe` or `enforce` |
 
 A Meet release dispatch of another commit (`release: true` with a
@@ -307,6 +312,50 @@ A Meet release dispatch of another commit (`release: true` with a
 The gateway reports as the `gateway` project and each store publish as its own
 `mobile-android`, `mobile-ios` or `mobile-macos` project, because those jobs run
 in parallel in one run and would otherwise wait on one lane.
+
+The shared publishers pass `project: ${{ inputs.app }}` (wave-1 and serving
+Workers) or `web-${{ matrix.family }}`, and wait at most 10 minutes for the
+lane so the wait fits inside their job budgets; their own concurrency groups
+already serialize uploads per app.
+
+### Production publish coverage
+
+| Path | Reports | Notes |
+| ---- | ------- | ----- |
+| Colab, Coordination, Cron Control, Devbox Control, Lettin, Parley, Meet, Tasks, gateway, store publishes | yes | as above |
+| `wave1-native-production.yaml` (Calendar, Mail, Apps from the planner; Finance, Drive by dispatch) | yes | enforce-capable |
+| `serving-worker-publish.yaml` (Roadmap, Learn, Teach, Nova, Tools, LMS) | yes | still behind `SERVING_WORKERS_PUBLICATION=enabled` |
+| `mastermind-cloudflare.yaml` | yes | enforce-capable |
+| `web-opennext.yaml` family jobs | yes | one `web-<family>` project each |
+| `supabase-production.yaml` | yes | project `database` |
+| `deploy-coordinator-cloudflare.yaml` | no | the coordinator does not coordinate its own publish |
+| `web-cloudflare-production.yaml` | not a publisher | verifies serving and records the Web marker |
+| `playground-execution-production.yaml` | no | its build runs on `refs/heads/main`, which a production token cannot carry |
+| Meet `release: true` dispatch of another commit | no | the token names the dispatching commit |
+| `wave1-native-publish.yaml` (staging) | no | listed in the catalog for `apps`, `calendar` and `mail` staging but never calls the coordinator: dead catalog wiring until staging is wired |
+| Apps with only `native-start-app.yaml` (build-only `--dry-run`): AI, Chat, CMS, Contacts, Forms, Git, Hive, Infrastructure, Inventory, Marketing, Mind, Pay, Playground, Rewise, Shortener, Storefront, Track, Whiteboards, Workspace and others | no | no CI production publisher; production is a manual `cf`/`wrangler` deploy |
+| Manual `cf deploy` / `wrangler deploy` / `wrangler versions deploy` by agents or operators (runbooks in `web-vinext-families`, `marketing-start-void`, `workspace-start-void`, `mastermind-store`, `chat-realtime-runbook`, `playground-execution`, `serving-workers-publication` rollback, `workspace-domains-runbook`, event-day deploys) | no | see below |
+
+`vercel-production.yaml` is not dead wiring: it is the live Production
+Deployment Planner, whose name the catalog's `workflow_ref` bindings, the
+wave-1 callers' planner gate and `supabase-production.yaml`'s `workflow_run`
+trigger depend on. A rename must change all of them in one commit.
+
+Manual deploys cannot report today: the coordinator accepts registrations,
+claims, heartbeats and completions only from GitHub OIDC tokens, and the
+operator token can only read, stop, resume, cancel, resolve, promote and roll
+back. The proposed wrapper is `ttr deploy begin|check|finish --project <id>
+--environment production`: `begin` registers an operator deployment
+(`actor: operator:<name>`, idempotency key `op:<uuid>` kept in a 0600 state
+file), waits for a grant with the CI client's backoff and starts the same
+240-second heartbeat; `check` fails when the lease lapsed or the lane is
+stopped; `finish` completes with the exit status. It needs operator-authored
+create, claim, heartbeat and complete routes in the Worker, a scoped
+deploy-only operator credential distinct from the stop/rollback token, and
+catalog entries for hand-deployed apps, so it is a reviewed Worker change, not
+a client-only script. Until it lands, an agent deploying by hand must first
+read the environment (`GET /v1/projects/<id>/environments/production` with the
+operator token) and not deploy while it is `stopped` or a lane is locked.
 
 The repository variable `DEPLOY_COORDINATOR_MODE` selects:
 
@@ -381,10 +430,10 @@ calls, well inside its budget; a budget that runs out falls open in CI, so it
 never blocks a release. The hard ceiling, with every catalog environment
 pinned at its budget every day:
 
-- 37 projects × 3 environments × 500 calls ≈ 55,500 calls a day, about 1.7
+- 51 projects × 3 environments × 500 calls ≈ 76,500 calls a day, about 2.3
   million a month.
 - Worker requests: inside the 10 million included, so nothing extra.
-- Durable Object requests above the 1 million included: about $0.10.
+- Durable Object requests above the 1 million included: about $0.20.
 - SQLite rows written. Cloudflare bills each row a write touches in a table
   and in every index on it. Text-keyed tables are `WITHOUT ROWID`, so a
   primary key is the table itself: a deployment write is 4 rows (table,
@@ -409,8 +458,8 @@ pinned at its budget every day:
   terminal transition 5, its deletion 4, its lane 1), and no other call
   exceeds 6 once its share is counted. The first counted call of each UTC day
   also replaces the budget row, 1 more row once a day per environment.
-- Hard ceiling, every call a create: 55,500 × 18 ≈ 1.0 million rows a day,
-  about 30 million a month, inside the 50 million included.
+- Hard ceiling, every call a create: 76,500 × 18 ≈ 1.4 million rows a day,
+  about 41 million a month, inside the 50 million included.
 - The cost test pins a worst-case lifecycle of 41 calls and 166 rows: the
   deployment's create, 12 backed-off wait polls, its grant, 23 heartbeats and
   completion, plus the create, claim and completion of the run blocking it.
@@ -418,11 +467,11 @@ pinned at its budget every day:
 - Rows read stay far below the 25 billion included; duration is the
   millisecond-scale handling time of each call, far below 400,000 GB-s.
 
-Standalone, the hard ceiling is about $0.10 a month above the Workers paid
+Standalone, the hard ceiling is about $0.20 a month above the Workers paid
 plan. The included requests and rows are shared by every Worker on the
 account, so once other Workers use them up the coordinator's marginal hard
-ceiling is about $0.50 in Worker requests, $0.25 in Durable Object requests
-and $30 in rows written, about $31 a month, or about $7 at the CI client's 4
+ceiling is about $0.70 in Worker requests, $0.35 in Durable Object requests
+and $41 in rows written, about $42 a month, or about $10 at the CI client's 4
 rows a call. Both scale linearly with the catalog size. A CI
 create is idempotent per run attempt and lane, so reaching the hard ceiling
 needs a distinct GitHub run, or a distinct preview lane, for every call. The

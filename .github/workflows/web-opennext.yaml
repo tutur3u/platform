@@ -204,6 +204,8 @@ jobs:
     environment: colab-production
     permissions:
       contents: read
+      # Reports each family deploy to the deployment coordinator with OIDC.
+      id-token: write
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -286,7 +288,31 @@ jobs:
             apps/web/cloudflare/opennext/prune-receipt.json
           retention-days: 30
           if-no-files-found: warn
+      # One coordinator project per family (web-<family>), so the parallel
+      # matrix never serializes on one lane. Registered after the build so
+      # the lane is held only for the publish.
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: web-${{ matrix.family }}
+          environment: production
+          max-wait-minutes: '10'
+      - name: Check the deployment coordinator lease
+        if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: check
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: web-${{ matrix.family }}
+          environment: production
       - name: Deploy the family Worker
+        if: steps.coordinator.outputs.publish != 'false'
         working-directory: apps/web
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
@@ -303,6 +329,16 @@ jobs:
             --var "SUPABASE_URL:$SUPABASE_URL" \
             --var "ROOT_WORKSPACE_ID:$ROOT_WORKSPACE_ID" \
             --var "PLATFORM_BUILD_COMMIT_HASH:$GITHUB_SHA"
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: web-${{ matrix.family }}
+          environment: production
+          job-status: ${{ job.status }}
   gateway:
     needs: [plan, family]
     # Runs after every family deploy succeeded, or when no family was built.

@@ -67,6 +67,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     # The publisher's token is an environment secret, and a called workflow
     # reads no secret, environment ones included, unless the caller hands
     # them over. Without this line the publisher starts with an empty token.
@@ -88,6 +89,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     secrets: inherit
     with:
       app: learn
@@ -106,6 +108,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     secrets: inherit
     with:
       app: teach
@@ -124,6 +127,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     secrets: inherit
     with:
       app: nova
@@ -142,6 +146,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     secrets: inherit
     with:
       app: tools
@@ -160,6 +165,7 @@ jobs:
     permissions:
       contents: read
       actions: read
+      id-token: write
     secrets: inherit
     with:
       app: lms

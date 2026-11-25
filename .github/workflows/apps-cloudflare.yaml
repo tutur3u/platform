@@ -528,6 +528,8 @@ jobs:
       contents: read
       actions: read
       deployments: read
+      # The reusable publisher reports to the deployment coordinator with OIDC.
+      id-token: write
     uses: ./.github/workflows/wave1-native-production.yaml
     with:
       app: apps

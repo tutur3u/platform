@@ -430,6 +430,8 @@ jobs:
     permissions:
       contents: read
       deployments: write
+      # Reports the migration to the deployment coordinator with GitHub OIDC.
+      id-token: write
     steps:
       - name: Check out approved migration target
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -437,10 +439,36 @@ jobs:
           ref: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
           persist-credentials: false
 
+      # Lane lock and stop fence for production schema changes: enforce mode
+      # skips db push when the database lane is stopped, held or superseded.
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: database
+          environment: production
+          max-wait-minutes: '10'
+
       - name: Setup Supabase CLI
+        if: steps.coordinator.outputs.publish != 'false'
         uses: ./.github/actions/setup-supabase-cli-with-retry
 
+      - name: Check the deployment coordinator lease
+        if: steps.coordinator.outputs.publish != 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: check
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: database
+          environment: production
+
       - name: Deploy migrations to production
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           PRODUCTION_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
           ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: ${{ inputs.allow_cloudflare_verification_failures }}
@@ -475,6 +503,7 @@ jobs:
           supabase db push --include-all
 
       - name: Record successful production migration marker
+        if: steps.coordinator.outputs.publish != 'false'
         env:
           DEPLOYMENT_MARKER_REF_NAME: production
           DEPLOYMENT_MARKER_SHA: ${{ needs.evaluate-prerequisites.outputs.target_sha }}
@@ -483,6 +512,17 @@ jobs:
         run: >-
           node --experimental-strip-types
           scripts/ci/record-deployment-marker.ts
+
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: database
+          environment: production
+          job-status: ${{ job.status }}
 
   list-versions:
     name: List production migration versions

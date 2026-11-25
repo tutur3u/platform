@@ -4,7 +4,7 @@
 export const ENVIRONMENTS = ['preview', 'staging', 'production'] as const;
 export type EnvironmentName = (typeof ENVIRONMENTS)[number];
 
-export type Provider = 'cloudflare' | 'store' | 'vercel';
+export type Provider = 'cloudflare' | 'store' | 'supabase' | 'vercel';
 
 // A workflow allowed to report for an environment. A job inside a reusable
 // workflow reports that reusable file as its `job_workflow_ref` and the
@@ -26,7 +26,7 @@ export type ProjectEntry = {
 // events, which the coordinator rejects.
 const vercel = (
   app: string,
-  extra: { staging?: WorkflowRule[]; production?: string[] } = {}
+  extra: { staging?: WorkflowRule[]; production?: WorkflowRule[] } = {}
 ): ProjectEntry => ({
   id: app,
   provider: 'vercel',
@@ -37,8 +37,25 @@ const vercel = (
   },
 });
 
+// Native production upload through the shared wave-1 publisher: from the
+// production planner for the apps it selects, and from a manual dispatch of
+// the publisher itself, its recovery path.
+// Finance and Drive are not planner-selected, so they report only from the
+// manual dispatch.
+const WAVE1_DISPATCH: WorkflowRule = {
+  reusable: 'wave1-native-production.yaml',
+  caller: 'wave1-native-production.yaml',
+};
+const WAVE1_PRODUCTION: WorkflowRule[] = [
+  {
+    reusable: 'wave1-native-production.yaml',
+    caller: 'vercel-production.yaml',
+  },
+  WAVE1_DISPATCH,
+];
+
 // Native staging through the shared wave-1 publisher, called on main from the
-// app's own `<app>-cloudflare.yaml`.
+// app's own `<app>-cloudflare.yaml`, and native production as above.
 const wave1 = (app: string) =>
   vercel(app, {
     staging: [
@@ -47,21 +64,49 @@ const wave1 = (app: string) =>
         caller: `${app}-cloudflare.yaml`,
       },
     ],
+    production: WAVE1_PRODUCTION,
   });
 
+// Serving Workers republished from their sealed production build by the
+// shared publisher, called only by serving-workers-production.yaml.
+const SERVING_RULE: WorkflowRule = {
+  reusable: 'serving-worker-publish.yaml',
+  caller: 'serving-workers-production.yaml',
+};
+const SERVING_PRODUCTION: WorkflowRule[] = [SERVING_RULE];
+
 // Apps whose production moved from Vercel to a native Cloudflare release
-// (apps/docs/build/devops/native-start-migration.mdx). That release does not
-// report to the coordinator yet, so no environment lists a workflow.
-const cutover = (app: string): ProjectEntry => ({
+// (apps/docs/build/devops/native-start-migration.mdx). Only the releases
+// passed here report; the others publish by hand and list no workflow.
+const cutover = (
+  app: string,
+  production: WorkflowRule[] = []
+): ProjectEntry => ({
   id: app,
   provider: 'cloudflare',
-  workflows: { production: [], staging: [], preview: [] },
+  workflows: { production, staging: [], preview: [] },
 });
+
+// apps/web route families published as their own Workers by the Web OpenNext
+// workflow, one project each so its parallel matrix never shares a lane.
+// Mirrors apps/web/cloudflare/opennext/families.json (pinned by the test).
+export const WEB_FAMILIES = [
+  'public-docs',
+  'api-identity',
+  'dashboard-core',
+  'finance-billing',
+  'api-workspace',
+  'api-platform',
+  'api-auth',
+  'ai-api',
+  'ai-chat',
+  'public-auth',
+] as const;
 
 // Cloudflare Workers publish production from their own workflow at the
 // production ref. Their previews run on pull request events, which the
 // coordinator rejects, and they have no staging publish.
-const worker = (id: string, workflow: string): ProjectEntry => ({
+const worker = (id: string, workflow: WorkflowRule): ProjectEntry => ({
   id,
   provider: 'cloudflare',
   workflows: { production: [workflow], staging: [], preview: [] },
@@ -90,26 +135,29 @@ export const PROJECTS: readonly ProjectEntry[] = [
   cutover('chat'),
   cutover('cms'),
   vercel('contacts'),
-  cutover('drive'),
-  vercel('finance'),
+  cutover('drive', [WAVE1_DISPATCH]),
+  vercel('finance', { production: [WAVE1_DISPATCH] }),
   cutover('forms'),
   vercel('git'),
   vercel('infrastructure'),
   vercel('inventory'),
-  vercel('learn'),
+  vercel('learn', { production: SERVING_PRODUCTION }),
   wave1('mail'),
   vercel('meet', { production: ['meet-cloudflare.yaml'] }),
   vercel('mind'),
-  vercel('nova'),
+  vercel('nova', { production: SERVING_PRODUCTION }),
   vercel('pay'),
   vercel('platform'),
   vercel('rewise'),
   vercel('shortener'),
   vercel('storefront'),
   vercel('tasks', { production: ['tasks-cloudflare.yaml'] }),
-  cutover('teach'),
-  cutover('tools'),
+  cutover('teach', SERVING_PRODUCTION),
+  cutover('tools', SERVING_PRODUCTION),
   cutover('track'),
+  worker('roadmap', SERVING_RULE),
+  worker('lms', SERVING_RULE),
+  worker('mastermind', 'mastermind-cloudflare.yaml'),
   worker('colab', 'colab-cloudflare.yaml'),
   worker('coordination', 'coordination-cloudflare.yaml'),
   worker('cron-control', 'cron-control-cloudflare.yaml'),
@@ -119,6 +167,20 @@ export const PROJECTS: readonly ProjectEntry[] = [
   worker('parley', 'parley-cloudflare.yaml'),
   // The tuturuuu.com gateway Worker, published by the Web OpenNext workflow.
   worker('gateway', 'web-opennext.yaml'),
+  ...WEB_FAMILIES.map((family) =>
+    worker(`web-${family}`, 'web-opennext.yaml')
+  ),
+  // Production schema migrations: supabase-production.yaml's manual,
+  // USER-OK-gated dispatch on the production branch.
+  {
+    id: 'database',
+    provider: 'supabase',
+    workflows: {
+      production: ['supabase-production.yaml'],
+      staging: [],
+      preview: [],
+    },
+  },
   store('mobile-android'),
   store('mobile-ios'),
   store('mobile-macos'),

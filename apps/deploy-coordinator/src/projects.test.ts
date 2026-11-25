@@ -1,7 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ENVIRONMENTS, findProject, PROJECTS, workflowFiles } from './projects';
+import {
+  ENVIRONMENTS,
+  findProject,
+  PROJECTS,
+  WEB_FAMILIES,
+  workflowFiles,
+} from './projects';
 
 const workflows = fileURLToPath(
   new URL('../../../.github/workflows/', import.meta.url)
@@ -12,8 +18,8 @@ describe('project catalog', () => {
   // The cost ceiling in the deployment coordinator design scales with this
   // count; growing the catalog is a reviewed change to that figure.
   it('pins the catalog size and unique ids', () => {
-    expect(PROJECTS).toHaveLength(37);
-    expect(new Set(PROJECTS.map((project) => project.id)).size).toBe(37);
+    expect(PROJECTS).toHaveLength(51);
+    expect(new Set(PROJECTS.map((project) => project.id)).size).toBe(51);
   });
 
   it('allowlists only workflow files that exist', () => {
@@ -43,18 +49,66 @@ describe('project catalog', () => {
     expect(bound).toBe(3);
   });
 
-  it('lists production publishers only', () => {
+  it('lists production publishers only, and each one reports', () => {
     for (const project of PROJECTS)
       for (const rule of project.workflows.production) {
-        expect(typeof rule).toBe('string');
-        const source = read(String(rule));
+        const file = typeof rule === 'string' ? rule : rule.reusable;
+        const source = read(file);
         // A job gated on the production ref that runs in a protected
         // GitHub Environment: the publisher, not a qualification build.
-        expect(source, String(rule)).toMatch(
+        expect(source, file).toMatch(
           /^\s+if:.*github\.ref == 'refs\/heads\/production'/m
         );
-        expect(source, String(rule)).toMatch(/^\s+environment:/m);
+        expect(source, file).toMatch(/^\s+environment:/m);
+        // Listing a workflow that never calls the coordinator is dead wiring.
+        for (const phase of ['begin', 'finish'])
+          expect(source, `${file} ${phase}`).toMatch(
+            new RegExp(
+              `uses: \\./\\.github/actions/deploy-coordinator\\s+with:\\s+phase: ${phase}`
+            )
+          );
       }
+  });
+
+  it('runs each reusable production publisher from its listed caller', () => {
+    for (const project of PROJECTS)
+      for (const rule of project.workflows.production) {
+        if (typeof rule === 'string' || rule.caller === rule.reusable)
+          continue;
+        const caller = read(rule.caller);
+        if (rule.caller === 'vercel-production.yaml') {
+          // The planner reaches wave-1 uploads through the app's workflow.
+          expect(caller, project.id).toContain(
+            `uses: ./.github/workflows/${project.id}-cloudflare.yaml`
+          );
+          expect(read(`${project.id}-cloudflare.yaml`), project.id).toContain(
+            `uses: ./.github/workflows/${rule.reusable}`
+          );
+        } else {
+          expect(caller, project.id).toMatch(
+            new RegExp(
+              `uses: \\./\\.github/workflows/${rule.reusable.replace('.', '\\.')}[\\s\\S]*?app: ${project.id}\\b`
+            )
+          );
+        }
+      }
+  });
+
+  it('gives every Web OpenNext family its own production project', () => {
+    const families = JSON.parse(
+      readFileSync(
+        fileURLToPath(
+          new URL(
+            '../../web/cloudflare/opennext/families.json',
+            import.meta.url
+          )
+        ),
+        'utf8'
+      )
+    ) as { families: { id: string }[] };
+    expect([...WEB_FAMILIES].sort()).toEqual(
+      families.families.map((family) => family.id).sort()
+    );
   });
 
   it('lists no preview reporters', () => {

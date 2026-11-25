@@ -1,4 +1,9 @@
 name: Production Deployment Planner
+# Live: this is the production planner, not a Vercel deploy. The file keeps
+# its historical name because OIDC workflow_ref bindings in the deployment
+# coordinator catalog (apps/deploy-coordinator/src/projects.ts), the wave-1
+# callers' workflow_ref gate and supabase-production.yaml's workflow_run name
+# all identify it; renaming it needs those changed in the same commit.
 on:
   push:
     branches:
@@ -178,18 +183,39 @@ jobs:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'calendar-cloudflare.yaml')
     uses: ./.github/workflows/calendar-cloudflare.yaml
+    # wave1-native-production.yaml reports its upload to the deployment
+    # coordinator with GitHub OIDC; the rest matches the workflow defaults.
+    permissions:
+      actions: write
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-mail-native:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'mail-cloudflare.yaml')
     uses: ./.github/workflows/mail-cloudflare.yaml
+    # wave1-native-production.yaml reports its upload to the deployment
+    # coordinator with GitHub OIDC; the rest matches the workflow defaults.
+    permissions:
+      actions: write
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-apps-native:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'apps-cloudflare.yaml')
     uses: ./.github/workflows/apps-cloudflare.yaml
+    # wave1-native-production.yaml reports its upload to the deployment
+    # coordinator with GitHub OIDC; the rest matches the workflow defaults.
+    permissions:
+      actions: write
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-meet-cloudflare:
@@ -219,10 +245,12 @@ jobs:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'mastermind-cloudflare.yaml')
     uses: ./.github/workflows/mastermind-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:
       actions: read
       contents: read
       deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-tasks:

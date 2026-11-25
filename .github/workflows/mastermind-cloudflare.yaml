@@ -249,6 +249,8 @@ jobs:
       contents: read
       deployments: write
       actions: read
+      # Reports the release to the deployment coordinator with GitHub OIDC.
+      id-token: write
     environment: mastermind-production
     env:
       SOURCE_SHA: ${{ github.sha }}
@@ -267,6 +269,19 @@ jobs:
           persist-credentials: false
       - name: Verify immutable checkout identity
         run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      # Lane lock and stop fence. When enforce mode refuses, the head
+      # admission below does not run, so nothing is captured or published.
+      - name: Register with the deployment coordinator
+        id: coordinator
+        if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: begin
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mastermind
+          environment: production
+          max-wait-minutes: '10'
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
@@ -335,6 +350,7 @@ jobs:
       # head may publish, checked after this job holds the deploy slot.
       - name: Admit only the current production head
         id: admission
+        if: steps.coordinator.outputs.publish != 'false'
         run: |
           head=$(git ls-remote "https://github.com/$GITHUB_REPOSITORY" refs/heads/production | cut -f1)
           test -n "$head" || { echo 'Cannot read the production head'; exit 1; }
@@ -349,6 +365,15 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.MASTERMIND_CLOUDFLARE_API_TOKEN }}
         run: node scripts/ci/void-cf-publisher.mjs capture --worker tuturuuu-mastermind --out "$RUNNER_TEMP/mastermind-rollback.json"
+      - name: Check the deployment coordinator lease
+        if: steps.admission.outputs.superseded == 'false' && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: check
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mastermind
+          environment: production
       - name: Publish the exact artifact
         id: publish
         if: steps.admission.outputs.superseded == 'false'
@@ -466,3 +491,13 @@ jobs:
           DEPLOYMENT_MARKER_SHA: ${{ env.SOURCE_SHA }}
           DEPLOYMENT_MARKER_WORKFLOW_NAME: mastermind-cloudflare.yaml
         run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts
+      - name: Report to the deployment coordinator
+        if: always() && (vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce')
+        uses: ./.github/actions/deploy-coordinator
+        with:
+          phase: finish
+          mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+          origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+          project: mastermind
+          environment: production
+          job-status: ${{ job.status }}
