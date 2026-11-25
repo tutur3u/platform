@@ -32,6 +32,7 @@ jobs:
   check-ci:
     if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
+      actions: read
       contents: read
       deployments: read
     uses: ./.github/workflows/ci-check.yml

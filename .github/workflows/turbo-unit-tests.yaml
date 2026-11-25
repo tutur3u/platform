@@ -11,20 +11,26 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
   merge_group:
     types: [checks_requested]
+  # Release-candidate dispatches give a pinned SHA its own evidence run.
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-# Production, generated release attempts, and each main push keep their runs.
-# Feature-branch pushes and pull requests supersede obsolete validation.
+# Production and generated release attempts keep their runs. Main pushes,
+# feature-branch pushes and pull requests supersede obsolete validation; a
+# main run diffs from this workflow's last green main run
+# (scripts/ci/main-supersession.json), and a pinned SHA keeps its evidence
+# through a release-candidate dispatch.
 concurrency:
-  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}-{2}-{3}{4}', github.workflow, github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
-  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}-{2}-{3}{4}', github.workflow, github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 jobs:
   plan:
     if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
+      actions: read
       contents: read
     uses: ./.github/workflows/ci-plan.yaml
     with:
@@ -53,6 +59,7 @@ jobs:
   check-ci:
     if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
+      actions: read
       contents: read
       deployments: read
     uses: ./.github/workflows/ci-check.yml
@@ -63,6 +70,7 @@ jobs:
   coverage-check-ci:
     if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
+      actions: read
       contents: read
       deployments: read
     uses: ./.github/workflows/ci-check.yml

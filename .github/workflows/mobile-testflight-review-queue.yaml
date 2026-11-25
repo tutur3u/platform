@@ -15,6 +15,7 @@ jobs:
     # the opt-in every scheduled run skips before using a runner.
     if: vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS != ''
     permissions:
+      actions: read
       contents: read
       deployments: read
     uses: ./.github/workflows/ci-check.yml

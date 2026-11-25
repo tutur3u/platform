@@ -56,6 +56,7 @@ jobs:
     if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'roadmap') }}
     uses: ./.github/workflows/roadmap-cloudflare.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
       pull-requests: read
@@ -81,6 +82,7 @@ jobs:
     if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'learn') }}
     uses: ./.github/workflows/learn-cloudflare.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
   publish-learn:
@@ -100,6 +102,7 @@ jobs:
     if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'teach') }}
     uses: ./.github/workflows/teach-cloudflare.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
   publish-teach:
@@ -119,6 +122,7 @@ jobs:
     if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'nova') }}
     uses: ./.github/workflows/nova-cloudflare.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
   publish-nova:
@@ -138,6 +142,7 @@ jobs:
     if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'tools') }}
     uses: ./.github/workflows/tools-cloudflare.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
   publish-tools:
@@ -157,6 +162,7 @@ jobs:
     if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'lms') }}
     uses: ./.github/workflows/lms-cloudflare.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
   publish-lms:

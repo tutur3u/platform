@@ -13,11 +13,12 @@ on:
     types: [checks_requested]
   workflow_dispatch:
 
-# Pull requests supersede. Each main push keeps its own run.
-# Reruns and manual evidence stay independent.
+# Pull requests and main pushes supersede; a main run diffs from this
+# workflow's last green main run (scripts/ci/main-supersession.json).
+# Reruns and manual or release-candidate evidence stay independent.
 concurrency:
-  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}-{2}-{3}{4}', github.workflow, github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
-  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}-{2}-{3}{4}', github.workflow, github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 permissions:
   contents: read
@@ -26,6 +27,7 @@ jobs:
   plan:
     if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
+      actions: read
       contents: read
     uses: ./.github/workflows/ci-plan.yaml
     with:
@@ -67,6 +69,8 @@ jobs:
         id: changed_files
         shell: bash
         env:
+          # No token here: a superseding main push fails open to a full run.
+          MAIN_SUPERSESSION_CHECK: 'true'
           WORKFLOW_NAME: type-check.yaml
         run: |
           node --experimental-strip-types scripts/ci/resolve-changed-files.ts
@@ -99,9 +103,15 @@ jobs:
         id: release_relevance
         shell: bash
         env:
-          # A merge group has no event.before; its queue base B is the range start.
-          BEFORE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
+          # A merge group has no event.before; its queue base B is the range
+          # start. A superseding main push starts at its last green main commit.
+          BEFORE_SHA: ${{ steps.changed_files.outputs.changed_files_source == 'main-last-green' && steps.changed_files.outputs.base_sha || github.event.before || github.event.merge_group.base_sha }}
+          CHANGED_SOURCE: ${{ steps.changed_files.outputs.changed_files_source }}
         run: |
+          if [ "$CHANGED_SOURCE" = main-last-green-unavailable ]; then
+            echo "run_checks=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
 
@@ -212,6 +222,8 @@ jobs:
         id: changed_files
         shell: bash
         env:
+          # No token here: a superseding main push fails open to a full run.
+          MAIN_SUPERSESSION_CHECK: 'true'
           WORKFLOW_NAME: type-check.yaml
         run: |
           node --experimental-strip-types scripts/ci/resolve-changed-files.ts
@@ -244,9 +256,15 @@ jobs:
         id: release_relevance
         shell: bash
         env:
-          # A merge group has no event.before; its queue base B is the range start.
-          BEFORE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
+          # A merge group has no event.before; its queue base B is the range
+          # start. A superseding main push starts at its last green main commit.
+          BEFORE_SHA: ${{ steps.changed_files.outputs.changed_files_source == 'main-last-green' && steps.changed_files.outputs.base_sha || github.event.before || github.event.merge_group.base_sha }}
+          CHANGED_SOURCE: ${{ steps.changed_files.outputs.changed_files_source }}
         run: |
+          if [ "$CHANGED_SOURCE" = main-last-green-unavailable ]; then
+            echo "run_checks=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
 

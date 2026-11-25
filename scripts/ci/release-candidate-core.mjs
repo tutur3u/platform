@@ -28,13 +28,12 @@ export const DISPATCHED_WORKFLOWS = Object.freeze([
   'i18n-check.yaml',
   'required-account-mfa-contract.yaml',
   'security-checks.yaml',
-]);
-// Each main SHA already keeps its own non-cancelling run of these.
-export const OBSERVED_WORKFLOWS = Object.freeze([
-  'oxc-check.yaml',
+  // Main pushes supersede these (scripts/ci/main-supersession.json).
   'turbo-unit-tests.yaml',
   'type-check.yaml',
 ]);
+// Each main SHA already keeps its own non-cancelling run of these.
+export const OBSERVED_WORKFLOWS = Object.freeze(['oxc-check.yaml']);
 export const REQUIRED_WORKFLOWS = Object.freeze(
   [...DISPATCHED_WORKFLOWS, ...OBSERVED_WORKFLOWS].sort()
 );

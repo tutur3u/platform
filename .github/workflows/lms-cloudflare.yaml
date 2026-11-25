@@ -17,6 +17,7 @@ on:
     branches: [main]
     paths: *lms-paths
 permissions:
+  actions: read
   contents: read
   deployments: read
 concurrency:

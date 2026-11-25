@@ -155,6 +155,7 @@ test('recovery reruns a cancelled run once and dispatches missing candidates', (
   assert.deepEqual(plan.dispatch.sort(), [
     'codex-plugin.yaml',
     'cron-control-cloudflare.yaml',
+    'type-check.yaml',
   ]);
 });
 

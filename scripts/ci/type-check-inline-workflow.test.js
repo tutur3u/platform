@@ -77,7 +77,11 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.deepEqual(job.needs, ['plan']);
   assert.equal(workflow.jobs.plan.uses, './.github/workflows/ci-plan.yaml');
   assert.equal(workflow.jobs.plan.with.selector, 'typecheck');
-  assert.deepEqual(workflow.jobs.plan.permissions, { contents: 'read' });
+  // The plan reads the last green main run of a superseding main push.
+  assert.deepEqual(workflow.jobs.plan.permissions, {
+    actions: 'read',
+    contents: 'read',
+  });
   assert.match(job.if, /!cancelled\(\)/);
   assert.match(prJob.if, /!cancelled\(\)/);
   assert.doesNotMatch(String(workflow.jobs.plan.if), /!cancelled\(\)/);
@@ -128,7 +132,9 @@ test('same preflight scripts precede every heavy step without error overrides', 
   );
   assert.equal(
     job.steps.find((entry) => entry.id === 'release_relevance').env.BEFORE_SHA,
-    expression('github.event.before || github.event.merge_group.base_sha')
+    expression(
+      "steps.changed_files.outputs.changed_files_source == 'main-last-green' && steps.changed_files.outputs.base_sha || github.event.before || github.event.merge_group.base_sha"
+    )
   );
   const lastPreflight = job.steps.findIndex(
     (step) => step.id === 'release_relevance'
@@ -468,7 +474,7 @@ function evaluateConcurrency(value, github) {
   return value.replace(/\$\{\{(.*?)\}\}/g, (_, body) => String(evaluate(body)));
 }
 
-test('feature branches supersede while main, production and manual attempts stay independent', () => {
+test('feature branches and main supersede while production and manual attempts stay independent', () => {
   assert.ok(
     workflow.concurrency,
     'Type Check needs bounded branch supersession'
@@ -491,15 +497,12 @@ test('feature branches supersede while main, production and manual attempts stay
     });
   assert.equal(group({}), group({ sha: 'latest', run_id: 2 }));
   assert.equal(cancel({}), true);
-  assert.equal(cancel({ ref: 'refs/heads/main' }), false);
-  // Distinct main push groups preserve pending and active runs.
-  assert.notEqual(
+  // Main pushes supersede (scripts/ci/main-supersession.json); a newer main
+  // run diffs from the last green main commit.
+  assert.equal(cancel({ ref: 'refs/heads/main' }), true);
+  assert.equal(
     group({ ref: 'refs/heads/main' }),
     group({ ref: 'refs/heads/main', sha: 'latest', run_id: 2 })
-  );
-  assert.notEqual(
-    group({ ref: 'refs/heads/main' }),
-    group({ ref: 'refs/heads/main', run_id: 2 })
   );
   assert.equal(cancel({ ref: 'refs/heads/main-spoof' }), true);
   assert.equal(

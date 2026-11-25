@@ -3,6 +3,7 @@ const test = require('node:test');
 const {
   boundedMainProducers,
   mainArtifactProducers,
+  mainSupersession,
   context,
   pushesMain,
   render,
@@ -29,7 +30,11 @@ for (const file of boundedMainProducers) {
   });
 }
 
-for (const file of mainArtifactProducers) {
+// Listed pure CI producers supersede on main instead; see
+// scripts/ci/main-supersession-workflows.test.js.
+for (const file of mainArtifactProducers.filter(
+  (name) => !mainSupersession.includes(name)
+)) {
   test(`${file}: pending main artifact attempts retain distinct groups`, () => {
     const { concurrency: policy, jobs, name: workflow } = workflows[file];
     const first = { ...context('refs/heads/main'), workflow };

@@ -13,6 +13,7 @@ jobs:
   plan:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     permissions:
+      actions: read
       contents: read
     uses: ./.github/workflows/ci-plan.yaml
     with:
@@ -20,6 +21,7 @@ jobs:
   check-ci:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     permissions:
+      actions: read
       contents: read
       deployments: read
     uses: ./.github/workflows/ci-check.yml

@@ -29,6 +29,7 @@ jobs:
 
   check-ci:
     permissions:
+      actions: read
       contents: read
       deployments: read
     if: github.ref == 'refs/heads/production'

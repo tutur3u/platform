@@ -11,7 +11,16 @@ export type ChangedFilesResult = {
   source: string;
 };
 
+export type MainSupersessionBase = () => Promise<{
+  base: string | null;
+  reason?: string;
+}>;
+
 export type ResolveChangedFilesInput = {
+  // Set for a superseding main push (scripts/ci/main-supersession.mjs): the
+  // range starts at this workflow's last green main commit, not the push's
+  // own before SHA, because newer pushes cancel older runs.
+  mainSupersessionBase?: MainSupersessionBase;
   requireExplicitDeployment?: boolean;
   eventName?: string;
   eventPath?: string;
@@ -346,6 +355,7 @@ function isSupabaseMigrationWorkflow(
 }
 
 export async function resolveChangedFiles({
+  mainSupersessionBase,
   requireExplicitDeployment = false,
   eventName = process.env.GITHUB_EVENT_NAME,
   eventPath,
@@ -402,6 +412,29 @@ export async function resolveChangedFiles({
       requireAncestor: true,
       rootDir,
       source: 'deployment-marker',
+    });
+  }
+
+  if (eventName === 'push' && mainSupersessionBase) {
+    const { base, reason } = await mainSupersessionBase();
+    if (!base || !headSha) {
+      return {
+        available: false,
+        baseSha: base ?? undefined,
+        files: [],
+        headSha,
+        reason: `${
+          reason ?? 'no last green main commit'
+        }; affected gating must fail open`,
+        source: 'main-last-green-unavailable',
+      };
+    }
+    return getChangedFilesFromRange({
+      baseSha: base,
+      headSha,
+      requireAncestor: true,
+      rootDir,
+      source: 'main-last-green',
     });
   }
 

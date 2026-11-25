@@ -29,6 +29,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
+      # Superseding main pushes read the caller's last green main run.
+      actions: read
       contents: read
     outputs:
       run: ${{ steps.select.outputs.run || 'true' }}
@@ -42,9 +44,18 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - id: main_base
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MAIN_SUPERSESSION_CHECK: 'true'
+        run: node scripts/ci/main-supersession.mjs --github-output "$GITHUB_OUTPUT"
       - id: select
         continue-on-error: true
         env:
+          MAIN_SUPERSESSION_ACTIVE: ${{ steps.main_base.outputs.active || 'unknown' }}
+          MAIN_SUPERSESSION_BASE: ${{ steps.main_base.outputs.base }}
+          MAIN_SUPERSESSION_CHECK: 'true'
           EVENT_NAME: ${{ github.event_name }}
           BASE_REF: ${{ github.base_ref }}
           BEFORE_SHA: ${{ github.event.before }}

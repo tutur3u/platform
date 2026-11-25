@@ -254,6 +254,7 @@ test('shared preflight retains release relevance, least privilege and release-on
       check_release_only: true,
     });
     assert.deepEqual(job.permissions, {
+      actions: 'read',
       contents: 'read',
       deployments: 'read',
     });

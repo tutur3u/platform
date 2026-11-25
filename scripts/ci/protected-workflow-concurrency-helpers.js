@@ -93,6 +93,13 @@ const boundedMainProducers = new Set();
 const mainSupersedeAllowed = {
   'e2e-smoke-report-only.yaml': 'Report-only smoke; the newest main run wins',
 };
+// Pure CI checks that supersede on main. Each diffs from its last green main
+// run (scripts/ci/main-supersession.mjs), and a pinned SHA keeps evidence
+// through a release-candidate dispatch.
+const mainSupersession = require('./main-supersession.json');
+for (const file of mainSupersession)
+  mainSupersedeAllowed[file] =
+    'Pure CI check; the newest main run diffs from the last green main run';
 
 function mainRunCancels(file) {
   return !queuedMainBaselines.has(file) && !boundedMainProducers.has(file);
@@ -121,7 +128,9 @@ const mainArtifactProducers = Object.keys(workflows).filter(
         'mail-calendar-tasks-builds.yaml',
       ].includes(file))
 );
-for (const file of mainArtifactProducers) queuedMainBaselines.add(file);
+for (const file of mainArtifactProducers)
+  if (!mainSupersession.includes(file)) queuedMainBaselines.add(file);
+for (const file of mainSupersession) queuedMainBaselines.delete(file);
 for (const [file, workflow] of Object.entries(workflows)) {
   if (
     pushesMain(workflow) &&
@@ -264,6 +273,8 @@ const cloudflareDeployLocks = [
 ];
 
 module.exports = {
+  mainSupersession,
+  mainSupersedeAllowed,
   cloudflareDeployLocks,
   serialized,
   prExceptions,

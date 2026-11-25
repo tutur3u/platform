@@ -32,6 +32,7 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // devbox-control workflows; app sources and cf parity paths are unchanged.
 // The fifteen satellite Cloudflare workflows carry no packages/vercel path
 // filter; their other trigger inputs are unchanged.
+// Test gains workflow_dispatch so a release candidate can dispatch it.
 // CodeQL push and pull_request runs share one security-sensitive path list;
 // the nightly security-checks.yaml schedule is the complete scan.
 const PROTECTED_TRIGGERS = {
@@ -111,7 +112,7 @@ const PROTECTED_TRIGGERS = {
   'track-cloudflare.yaml': '720b202ce2c58683',
   'tsrs-shadow.yaml': '0b7a9bf95294a1fd',
   'turbo-cache-cloudflare.yaml': 'c8aeb63fcad4a92e',
-  'turbo-unit-tests.yaml': 'e94a048af91d2cc0',
+  'turbo-unit-tests.yaml': '47acd08d33c6cf4c',
   'tutoring-absence-credit-contract.yaml': 'f0f9259c069d33ec',
   'tutoring-teacher-hours-contract.yaml': 'cb666f22d4bbdc8f',
   'type-check.yaml': '47acd08d33c6cf4c',

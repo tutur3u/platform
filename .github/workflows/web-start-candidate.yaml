@@ -58,6 +58,7 @@ jobs:
     if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
+      actions: read
       contents: read
       deployments: read
     with:

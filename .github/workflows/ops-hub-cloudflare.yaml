@@ -5,6 +5,7 @@ on:
     paths: ['apps/ops-hub/**', '.github/workflows/ops-hub-cloudflare.yaml', 'bun.lock']
   workflow_dispatch:
 permissions:
+  actions: read
   contents: read
   deployments: read
 concurrency:

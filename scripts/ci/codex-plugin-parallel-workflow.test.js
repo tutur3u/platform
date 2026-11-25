@@ -15,7 +15,7 @@ test('plugin pilot preserves its triggers, switchboard and required check', () =
   });
   assert.deepEqual(Object.keys(workflow.jobs), ['check-ci', 'validate']);
   assert.deepEqual(workflow.jobs['check-ci'], {
-    permissions: { contents: 'read', deployments: 'read' },
+    permissions: { actions: 'read', contents: 'read', deployments: 'read' },
     uses: './.github/workflows/ci-check.yml',
     with: { workflow_name: 'codex-plugin.yaml' },
   });

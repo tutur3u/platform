@@ -21,7 +21,8 @@ where no main push can cancel them.
 | --- | --- | --- |
 | Dispatched on the candidate ref | Codex Plugin, Docs/SEO, i18n, MFA contract, Security Checks | Main pushes share one `latest` concurrency group, so a later push drops the pending run. |
 | Dispatched on the candidate ref | Cron Control producer | It is path-filtered, so most commits have no producer run. Dispatch ignores path filters. |
-| Observed from the main push | Oxc, Test, Type Check | Each main SHA already has its own non-cancelling group. |
+| Dispatched on the candidate ref | Test, Type Check | A newer main push cancels the older run ([main-push supersession](/build/devops/github-actions-runbook#main-push-supersession)). |
+| Observed from the main push | Oxc | Each main SHA keeps its own non-cancelling group. |
 
 `scripts/ci/release-candidate.test.mjs` fails when a new always-on main
 workflow uses a shared main group but is missing from the dispatched list, or
@@ -58,7 +59,9 @@ critical or high findings are open, which is a release blocker anyway.
    as usual. A release candidate never deploys. Who may deploy, the production
    workflows and their gates stay unchanged.
 
-Keep merging to main throughout; nothing waits for the candidate.
+Keep merging to main throughout; nothing waits for the candidate. A
+candidate ref protects its runs until it is pruned: a pass keeps the newest
+three candidates and drops any older than seven days.
 
 ## Evidence rule
 

@@ -151,6 +151,7 @@ jobs:
     if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.i18n == 'true') && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/i18n-check.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
       pull-requests: write
@@ -160,6 +161,7 @@ jobs:
     if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.docs == 'true') && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     uses: ./.github/workflows/docs-seo-check.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
 
@@ -168,6 +170,7 @@ jobs:
     if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.migrations == 'true')
     uses: ./.github/workflows/check-migration-timestamps.yml
     permissions:
+      actions: read
       contents: read
       deployments: read
 
@@ -176,6 +179,7 @@ jobs:
     if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.migrations == 'true')
     uses: ./.github/workflows/check-migrations.yml
     permissions:
+      actions: read
       contents: read
       deployments: read
 
@@ -184,6 +188,7 @@ jobs:
     if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.mobile == 'true') && github.base_ref == 'main'
     uses: ./.github/workflows/mobile-api-mappings.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
 
@@ -192,6 +197,7 @@ jobs:
     if: always() && !cancelled() && (needs.scope.result == 'failure' || needs.scope.result == 'cancelled' || needs.scope.outputs.plugin == 'true')
     uses: ./.github/workflows/codex-plugin.yaml
     permissions:
+      actions: read
       contents: read
       deployments: read
 

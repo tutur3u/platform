@@ -426,6 +426,22 @@ export function resolveBase(env, cwd) {
       return { uncertain: true, reason: 'merge group base is missing' };
     return { base };
   }
+  // ci-plan.yaml resolves main supersession in its own step
+  // (scripts/ci/main-supersession.mjs) and passes the decision here, so the
+  // sparse affected-gate checkouts of this file need no other module. A
+  // superseding main push diffs from the workflow's last green main commit;
+  // an unknown decision or base on a main push runs every check.
+  if (
+    eventName === 'push' &&
+    env.MAIN_SUPERSESSION_CHECK === 'true' &&
+    env.REF === 'refs/heads/main' &&
+    env.MAIN_SUPERSESSION_ACTIVE !== 'false'
+  ) {
+    const base = env.MAIN_SUPERSESSION_BASE ?? '';
+    if (env.MAIN_SUPERSESSION_ACTIVE !== 'true' || !SHA.test(base))
+      return { uncertain: true, reason: 'last green main commit is unknown' };
+    return { base };
+  }
   if (eventName === 'push') {
     const before = env.BEFORE_SHA ?? '';
     if (!SHA.test(before) || /^0+$/u.test(before))

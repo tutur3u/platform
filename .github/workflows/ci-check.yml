@@ -34,6 +34,9 @@ on:
         value: ${{ jobs.check.outputs.should_run }}
 
 permissions:
+  # Superseding main pushes read this workflow's last green main run
+  # (scripts/ci/main-supersession.mjs).
+  actions: read
   contents: read
   deployments: read
 
@@ -64,6 +67,8 @@ jobs:
             scripts/ci/check-workflow-config.ts
             scripts/ci/github-deployment-markers.ts
             scripts/ci/lockfile-workspace-delta.ts
+            scripts/ci/main-supersession.json
+            scripts/ci/main-supersession.mjs
             scripts/ci/mastermind-production-target.ts
             scripts/ci/mobile-build-selection.ts
             scripts/ci/mail-calendar-tasks-affected.ts
@@ -94,6 +99,7 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          MAIN_SUPERSESSION_CHECK: 'true'
           WORKFLOW_NAME: ${{ inputs.workflow_name }}
         run: |
           node --experimental-strip-types scripts/ci/resolve-changed-files.ts
@@ -123,13 +129,20 @@ jobs:
 
           node --experimental-strip-types scripts/ci/check-workflow-config.ts
 
+      # A superseding main push starts its range at the last green main
+      # commit; when that is unknown, nothing may be skipped as release-only.
       - name: Detect release-only changes
         id: release_relevance
         if: inputs.check_release_only
         shell: bash
         env:
-          BEFORE_SHA: ${{ github.event.before }}
+          BEFORE_SHA: ${{ steps.changed_files.outputs.changed_files_source == 'main-last-green' && steps.changed_files.outputs.base_sha || github.event.before }}
+          CHANGED_SOURCE: ${{ steps.changed_files.outputs.changed_files_source }}
         run: |
+          if [ "$CHANGED_SOURCE" = main-last-green-unavailable ]; then
+            echo "run_checks=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
 

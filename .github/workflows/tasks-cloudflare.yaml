@@ -27,6 +27,7 @@ jobs:
     needs: production-policy
     if: needs.production-policy.outputs.allowed == 'true'
     permissions:
+      actions: read
       contents: read
       deployments: read
     uses: ./.github/workflows/mail-calendar-tasks-builds.yaml

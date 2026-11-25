@@ -8,6 +8,7 @@ const {
   mainExceptions,
   queuedMainBaselines,
   mainRunCancels,
+  mainSupersession,
   workflows,
   events,
   context,
@@ -688,7 +689,7 @@ test('Oxc keeps each main push', () => {
   }
 });
 
-test('Cloudflare Source isolates main pushes and docs coalesces them', () => {
+test('Cloudflare Source supersedes listed main pushes, isolates the rest, and docs coalesces them', () => {
   const files = Object.entries(workflows)
     .filter(([, workflow]) =>
       String(workflow.name || '').endsWith(' Cloudflare Source')
@@ -701,7 +702,9 @@ test('Cloudflare Source isolates main pushes and docs coalesces them', () => {
   files.push('docs-seo-check.yaml');
   for (const file of files) {
     const coalesces = file === 'docs-seo-check.yaml';
-    assert.equal(queuedMainBaselines.has(file), !coalesces, file);
+    const supersedes = mainSupersession.includes(file);
+    const queued = !coalesces && !supersedes;
+    assert.equal(queuedMainBaselines.has(file), queued, file);
     const policy = workflows[file].concurrency;
     const first = {
       ...context('refs/heads/main', 'a'.repeat(40), 11),
@@ -713,11 +716,12 @@ test('Cloudflare Source isolates main pushes and docs coalesces them', () => {
     };
     assert.equal(
       render(policy.group, first) === render(policy.group, second),
-      coalesces,
+      coalesces || supersedes,
       file
     );
-    assert.equal(render(policy['cancel-in-progress'], first), false, file);
-    assert.equal(render(policy['cancel-in-progress'], second), false, file);
+    const cancel = policy['cancel-in-progress'];
+    assert.equal(render(cancel, first), supersedes, file);
+    assert.equal(render(cancel, second), supersedes, file);
     const feature = {
       ...first,
       ref: 'refs/heads/fix/example',
@@ -746,15 +750,7 @@ test('Cloudflare Source isolates main pushes and docs coalesces them', () => {
 });
 
 test('main evidence survives rapid pushes and feature branches still supersede', () => {
-  assert.ok(
-    events(workflows['turbo-unit-tests.yaml']).push.branches.includes('main')
-  );
-  for (const file of [
-    'turbo-unit-tests.yaml',
-    'type-check.yaml',
-    'ci-admitted.yaml',
-    'sdk-package-qualification.yaml',
-  ]) {
+  for (const file of ['ci-admitted.yaml', 'sdk-package-qualification.yaml']) {
     const workflow = workflows[file];
     const policy = workflow.concurrency;
     const first = { ...context('refs/heads/main'), workflow: workflow.name };

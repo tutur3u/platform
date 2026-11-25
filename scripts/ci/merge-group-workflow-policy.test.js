@@ -290,6 +290,6 @@ test('merge group ranges come from the queue payload and gates from base B', () 
     workflows['type-check.yaml'].jobs['type-check'].steps.find(
       (step) => step.id === 'release_relevance'
     ).env.BEFORE_SHA,
-    '${{ github.event.before || github.event.merge_group.base_sha }}'
+    "${{ steps.changed_files.outputs.changed_files_source == 'main-last-green' && steps.changed_files.outputs.base_sha || github.event.before || github.event.merge_group.base_sha }}"
   );
 });

@@ -146,7 +146,21 @@ function printResult(
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const result = await resolveChangedFiles(args);
+  // Loaded only when a CI step asks for main supersession, so trusted-scope
+  // copies of this resolver (Security Checks, CodeQL) need no extra files.
+  const supersession =
+    process.env.MAIN_SUPERSESSION_CHECK === 'true'
+      ? await import('./main-supersession.mjs')
+      : null;
+  const result = await resolveChangedFiles({
+    ...args,
+    ...(supersession?.supersedesOnMain(process.env)
+      ? {
+          mainSupersessionBase: () =>
+            supersession.lastGreenMainBase({ rootDir: args.rootDir }),
+        }
+      : {}),
+  });
   const outputDir = args.outputDir ?? process.env.RUNNER_TEMP ?? tmpdir();
   const changedFilesPath = writeChangedFiles({ outputDir, result });
 

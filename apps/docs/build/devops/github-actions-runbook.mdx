@@ -95,9 +95,11 @@ Public pull-request jobs use GitHub-hosted runners. Self-hosted CI is restricted
 
 Cancellation needs explicit authorization for its scope. Identify each run and its source before acting, preserve required release and deployment work, and record the observed outcome. A branch name alone does not establish that a run is redundant.
 
-Preserve all `main` runs during queue cleanup. Test, TypeScript Type Check, and
-Cloudflare app artifact producers use a different concurrency group for each main
-push. Deployments take their target lock in arrival order. GitHub can replace a
+During queue cleanup, cancel only superseded `main` runs of the workflows in
+`scripts/ci/main-supersession.json`; preserve every other `main` run. Oxc,
+Cloudflare app artifact producers outside that list, and every workflow that
+publishes, deploys, migrates or writes keep a separate concurrency group for
+each main push. Deployments take their target lock in arrival order. GitHub can replace a
 pending run in a shared group even when active-run cancellation is disabled. A cancelled
 run with no jobs at the next push is consistent with pending replacement. Check
 job history and timing before attributing it to an operator or fleet task.
@@ -105,6 +107,40 @@ job history and timing before attributing it to an operator or fleet task.
 Before enabling staging publication from parallel main builds, add a
 source-revision check under the upload lock so a late older build cannot
 replace a newer deployment.
+
+## Main-push supersession
+
+Every main push starts about fifty workflows. When each main push keeps its
+runs, the queue grows faster than runners drain it, so the pure CI checks listed in
+`scripts/ci/main-supersession.json` (Test, TypeScript Type Check and the
+build-only Cloudflare Source and Worker checks) share one `main` concurrency
+group per workflow with `cancel-in-progress`: a newer main push cancels the
+older run.
+
+- **Range.** A push run's `before..after` covers only its own push, so a
+  superseding run would leave cancelled pushes unchecked. Instead, a listed
+  workflow's main push diffs from the newest commit whose main push run of
+  that workflow ended green; a dispatch never counts, because it can skip
+  push-only jobs (`scripts/ci/main-supersession.mjs`, one Actions API read
+  through `ci-check.yml` or `ci-plan.yaml`, which hold `actions: read`). When
+  that commit cannot be read, the range is unknown and every check runs; the
+  release-only shortcut is also skipped. The inline Type Check preflight has
+  no token, so its main pushes always run in full.
+- **Kept runs.** Production, generated release branches, reruns and manual
+  dispatches keep their own groups and never cancel. Release-candidate
+  dispatches therefore keep a pinned SHA's evidence: nominate the SHA as a
+  [release candidate](/build/devops/release-candidates); Test and Type Check
+  are on its dispatched list, and the Meet release gate accepts a dispatch on
+  `release-candidate/<sha>` as exact-SHA evidence. A cutover that needs a
+  listed workflow's artifact at a superseded SHA dispatches that workflow on
+  the candidate ref ([cutover runbooks](/build/devops/d74-cutover-runbooks)).
+- **Never listed.** Workflows that publish, deploy, migrate, release or write,
+  hold a GitHub Environment, or are called by a production workflow.
+  `scripts/ci/protected-workflow-concurrency.test.js` checks every listed
+  file's concurrency and that none of them writes or holds an environment.
+
+Add a new pure CI workflow to the list when its main runs need no per-SHA
+evidence; leave it off when a later job or person pins its main run.
 
 ## Draft PR runner admission
 

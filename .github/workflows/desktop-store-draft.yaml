@@ -21,6 +21,7 @@ concurrency:
 jobs:
   check-ci:
     permissions:
+      actions: read
       contents: read
       deployments: read
     uses: ./.github/workflows/ci-check.yml

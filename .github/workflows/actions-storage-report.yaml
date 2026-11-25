@@ -13,6 +13,7 @@ jobs:
   check-ci:
     uses: ./.github/workflows/ci-check.yml
     permissions:
+      actions: read
       contents: read
       deployments: read
     with:

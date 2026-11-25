@@ -124,6 +124,7 @@ jobs:
     uses: ./.github/workflows/colab-cloudflare.yaml
     # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:
+      actions: read
       contents: read
       deployments: write
       id-token: write
@@ -135,6 +136,7 @@ jobs:
     uses: ./.github/workflows/coordination-cloudflare.yaml
     # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:
+      actions: read
       contents: read
       deployments: write
       id-token: write
@@ -146,6 +148,7 @@ jobs:
     uses: ./.github/workflows/cron-control-cloudflare.yaml
     # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:
+      actions: read
       contents: read
       deployments: write
       id-token: write
@@ -163,6 +166,7 @@ jobs:
     uses: ./.github/workflows/devbox-control-cloudflare.yaml
     # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:
+      actions: read
       contents: read
       deployments: write
       id-token: write
@@ -174,6 +178,7 @@ jobs:
     uses: ./.github/workflows/lettin-cloudflare.yaml
     # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:
+      actions: read
       contents: read
       deployments: write
       id-token: write
@@ -236,6 +241,7 @@ jobs:
     uses: ./.github/workflows/parley-cloudflare.yaml
     # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:
+      actions: read
       contents: read
       deployments: write
       id-token: write

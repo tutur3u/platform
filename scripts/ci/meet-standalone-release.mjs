@@ -323,7 +323,11 @@ export function admissionOutputs(result) {
   return `superseded=${result.guardCode === 'MEET_RELEASE_SUPERSEDED'}\n${live}`;
 }
 
-/** The newest main push or dispatch run of a workflow on the exact source. */
+/**
+ * The newest run of a workflow on the exact source: a main push or dispatch,
+ * or a dispatch on the source's release-candidate ref, which keeps evidence
+ * for a pinned commit whose superseding main runs were cancelled.
+ */
 export function latestWorkflowRun(payload, source, currentRun) {
   if (!Array.isArray(payload?.workflow_runs)) stop('MEET_RELEASE_CI_RESPONSE');
   return payload.workflow_runs
@@ -333,8 +337,10 @@ export function latestWorkflowRun(payload, source, currentRun) {
         String(run.id) !== String(currentRun) &&
         run.repository?.full_name === 'tutur3u/platform' &&
         run.head_repository?.full_name === 'tutur3u/platform' &&
-        run.head_branch === 'main' &&
-        ['push', 'workflow_dispatch'].includes(run.event)
+        ((run.head_branch === 'main' &&
+          ['push', 'workflow_dispatch'].includes(run.event)) ||
+          (run.head_branch === `release-candidate/${source}` &&
+            run.event === 'workflow_dispatch'))
     )
     .sort(
       (a, b) => b.run_number - a.run_number || b.run_attempt - a.run_attempt

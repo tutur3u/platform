@@ -31,7 +31,11 @@ test('release relevance is opt-in and shares the exact full-history checkout', (
   );
   assert.equal(gate.jobs.check.name, 'Check CI Config');
   assert.deepEqual(Object.keys(gate.jobs), ['check']);
-  assert.deepEqual(gate.permissions, { contents: 'read', deployments: 'read' });
+  assert.deepEqual(gate.permissions, {
+    actions: 'read',
+    contents: 'read',
+    deployments: 'read',
+  });
   const checkouts = gate.jobs.check.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
@@ -63,7 +67,13 @@ test('release relevance is opt-in and shares the exact full-history checkout', (
   );
   assert.equal(release.if, 'inputs.check_release_only');
   assert.equal(release.shell, 'bash');
-  assert.equal(release.env.BEFORE_SHA, expression('github.event.before'));
+  // A superseding main push starts at its last green main commit.
+  assert.equal(
+    release.env.BEFORE_SHA,
+    expression(
+      "steps.changed_files.outputs.changed_files_source == 'main-last-green' && steps.changed_files.outputs.base_sha || github.event.before"
+    )
+  );
   assert.match(
     release.run,
     /node scripts\/ci\/release-only-changes\.js "\$BEFORE_SHA" "\$GITHUB_SHA"/

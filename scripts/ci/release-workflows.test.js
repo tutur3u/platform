@@ -184,7 +184,7 @@ test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', (
   assert.match(workflow, /\npermissions:\n {2}contents: read\n/u);
   assert.match(
     checkCiJob,
-    /permissions:\n {6}contents: read\n {6}deployments: read/u
+    /permissions:\n {6}(?:actions: read\n {6})?contents: read\n {6}deployments: read/u
   );
   assert.notEqual(preBuildCleanupIndex, -1);
   assert.notEqual(prePullIndex, -1);
