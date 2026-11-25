@@ -6,8 +6,10 @@ import { formatTime, type MessageKey, useI18n } from '../i18n';
 function CountGroup({
   title,
   counts,
+  emptyLabel,
 }: {
   title: string;
+  emptyLabel: string;
   counts: Partial<Record<string, number>>;
 }) {
   const { t } = useI18n();
@@ -25,7 +27,7 @@ function CountGroup({
           ))}
         </dl>
       ) : (
-        <p className="text-muted-foreground text-sm">{t('recovery.none')}</p>
+        <p className="text-muted-foreground text-sm">{emptyLabel}</p>
       )}
     </div>
   );
@@ -84,6 +86,11 @@ export function RecoverySummary({
                   key={group}
                   title={t(`recovery.${group}`)}
                   counts={counts}
+                  emptyLabel={t(
+                    group === 'executed'
+                      ? 'recovery.notReported'
+                      : 'recovery.none'
+                  )}
                 />
               ))}
               <div>

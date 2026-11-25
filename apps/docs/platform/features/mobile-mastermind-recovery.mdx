@@ -8,14 +8,25 @@ The producer counts unsettled failed and interrupted threads from the local
 T3 SQLite projections and the publisher's authenticated T3 peer links. A peer
 is counted only after a complete live listing. A failed or incomplete listing,
 expired link, or usage-only configured machine gets an unread host slot.
-The producer never uses SSH. Missing classification evidence is recorded as
-`unknown`. Holds and eligibility grant no retry permission.
+A linked production host uses the same read-only MCP transport as other peers.
+The producer makes a descriptor GET and thread-list calls over its existing
+publisher peer link. The producer uses no SSH transport.
+Missing classification evidence is recorded as `unknown`.
+`holds_preserved` asserts the producer's policy holds. These are not
+observations about individual threads. Holds and eligibility grant no retry
+permission.
+
+`host-1` represents the local host. Remaining slots follow the alphabetical
+order of publisher machine IDs for linked peers and environment IDs for
+usage-only hosts, with environment ID as the tie-breaker. A change to the
+inventory can shift the slots.
 
 The sweep log is optional. Only complete aggregate receipts in the form
 `YYYY-MM-DD HH:mm ICT | <action-key>=<count>` within two hours populate
 `actions_executed`. The latest receipt per contract key wins. An omitted
 action count means there was no accepted receipt. Existing free-form sweep
-entries are ignored.
+entries are ignored. An unreadable sweep log produces one count-only warning
+and the summary is still refreshed.
 
 ## Install on the publisher host
 
@@ -35,7 +46,7 @@ host slots.
 Create private `recovery/` and `logs/` directories under the fleet-sync root.
 Copy `recovery-producer.plist.template` to the user's LaunchAgents directory
 as `com.tuturuuu.fleet-recovery-producer.plist`. Substitute the absolute Node
-26 executable and fleet-sync root, then check the result with `plutil -lint`.
+24.22.3 or newer executable and fleet-sync root, then check the result with `plutil -lint`.
 Bootstrap it in the publisher user's GUI launchd domain after updating the
 publisher consumer and the Web recovery contract.
 
@@ -43,10 +54,15 @@ The job runs at load and every five minutes. This is well inside the two-hour
 staleness window while keeping peer read volume bounded. A single launchd job
 label serializes its invocations. Peer calls share a ten-second per-peer
 deadline, and the process watchdog bounds an asynchronous stall to 25 seconds.
+The synchronous SQLite read (84 ms measured on the live database) runs in a
+separate process with a five-second wall-clock limit, independent of the
+JavaScript watchdog.
 
 The producer fsyncs a mode-0600 temporary file beside `summary.json` and then
-renames it. A failure before rename preserves the previous summary and writes
-one count-only line to `logs/recovery-producer.log`. Forced termination can
+renames it and fsyncs the directory. A failure before rename preserves the
+previous summary. If the directory fsync fails after rename, the complete new
+file is visible and its durability is unconfirmed. A reported failure writes
+one timestamped line with a closed stage and counts to `logs/recovery-producer.log`. Forced termination can
 leave an unpublished mode-0600 temporary file, which the publisher ignores.
 After bootout, an operator can remove abandoned `.summary-*.tmp` files.
 

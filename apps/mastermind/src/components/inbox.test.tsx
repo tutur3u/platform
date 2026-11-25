@@ -236,22 +236,27 @@ test('shows stale partial coverage and reports holds without a retry button', ()
   expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
 });
 
-test('uses the singular-safe total and shows none for empty holds and actions', () => {
+test('distinguishes empty holds from unreported actions', () => {
   const state = recoveryState();
   state.recovery!.holdsPreserved = [];
   state.recovery!.actionsExecuted = {};
+  state.recovery!.byOwnerClass = { unknown: 1 };
   render(wrap(<RecoverySummary state={state} now={now} />));
   expect(
     screen.getByText('Unsettled failed or interrupted threads: 1')
   ).toBeTruthy();
-  expect(screen.getAllByText('None')).toHaveLength(2);
+  expect(screen.getByText('None')).toBeTruthy();
+  expect(screen.getByText('Not reported')).toBeTruthy();
+  expect(screen.getByText('Unknown')).toBeTruthy();
 });
 
 test('renders holds, actions and providers in Vietnamese', () => {
+  const state = recoveryState();
+  state.recovery!.byOwnerClass = { unknown: 1 };
   render(
     <QueryClientProvider client={new QueryClient()}>
       <I18nProvider locale="vi">
-        <RecoverySummary state={recoveryState()} now={now} />
+        <RecoverySummary state={state} now={now} />
       </I18nProvider>
     </QueryClientProvider>
   );
@@ -260,4 +265,5 @@ test('renders holds, actions and providers in Vietnamese', () => {
   expect(screen.getByText('Hành động đã thực hiện')).toBeTruthy();
   expect(screen.getByText('Đã đóng các luồng con bị thay thế')).toBeTruthy();
   expect(screen.getByText('Nhóm nhà cung cấp')).toBeTruthy();
+  expect(screen.getByText('Chưa rõ')).toBeTruthy();
 });

@@ -596,13 +596,13 @@ thread ancestry, apart from Iris's turn.
 
 The publisher reads an optional mode-0600 `fleet-recovery-summary/v1` file at
 `~/.local/share/fleet-sync/recovery/summary.json`, which the producer must write
-atomically. See the [recovery producer runbook](/platform/features/mobile-mastermind-recovery). Host slots (`host-1` to
-`host-32`) come from the hosts the summary names, and `coverage.partial` reports
-a missing host. A `generatedAt` up to 60 seconds ahead is clamped to now. Today
-marks the report stale after two hours, shows partial coverage, holds, executed
-actions and the provider split, and shows unavailable coverage for a missing,
-invalid or oversized file. Holds and eligibility grant no retry permission. The
-v1 fallback omits recovery and delegated counts. Tests:
+atomically.
+[Recovery producer runbook](/platform/features/mobile-mastermind-recovery)
+Partial coverage marks unread host slots. Producer time up to 60 seconds ahead
+clamps to now. Today shows holds, actions and provider counts, and marks reports
+stale after two hours. A missing, invalid or oversized file shows unavailable
+coverage. Holds and eligibility grant no retry permission. The v1 fallback
+omits recovery and delegated counts. Tests:
 `scripts/mastermind-fleet/*.test.mjs` and the Today component tests.
 
 ## Fleet command center on mobile

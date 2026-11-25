@@ -46,11 +46,13 @@
         "settle_after_owner_confirms": "Close after owner confirmation",
         "settle_candidate": "Eligible for closure review",
         "settled_superseded_children": "Superseded child threads closed",
+        "unknown": "Unknown",
         "unknown_write_lanes": "Lanes with unknown writes",
         "unpushed_work_threads": "Threads with unpushed work",
         "wait_for_weekly_reset_or_topup": "Wait for weekly reset or top-up"
       },
       "none": "None",
+      "notReported": "Not reported",
       "owner": "Owner class",
       "partial": "Partial coverage · hosts read: {read} of {expected}",
       "provider": "Provider family",

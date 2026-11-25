@@ -1,9 +1,10 @@
+import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { peerMachineIds, slugify } from './fleet-state.mjs';
 import { readPeers } from './peer-lanes.mjs';
 import {
@@ -58,6 +59,7 @@ export async function listRecoveryThreads(call) {
       allProjects: true,
       includeSubagents: true,
       statuses: STATUS,
+      settled: false,
       limit: 100,
       cursor,
     });
@@ -114,11 +116,12 @@ function classify(row, now) {
   return {
     by_status: row.status,
     by_reason: reason,
-    by_owner_class: row.parentSettled
-      ? 'parent_settled_orphan'
-      : row.parent
-        ? 'unknown'
-        : 'parent_lead',
+    by_owner_class:
+      row.parentSettled && typeof row.parent === 'string'
+        ? 'parent_settled_orphan'
+        : row.parent === null
+          ? 'parent_lead'
+          : 'unknown',
     by_retry_eligibility:
       row.status === 'failed' && reset > now.getTime()
         ? 'blocked_seat_exhausted'
@@ -133,16 +136,16 @@ function classify(row, now) {
 
 // The sweep log is free prose. Count only explicit, timestamped aggregate
 // receipts with an exact action key; never infer an action from prose or a title.
-export function readActionReceipts(file, now) {
+function readReceipts(file, now) {
   let fd;
-  const actions = {};
+  const receipts = new Map();
   try {
     fd = fs.openSync(
       file,
       fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK
     );
     const stat = fs.fstatSync(fd);
-    if (!stat.isFile()) return actions;
+    if (!stat.isFile()) throw new Error('invalid sweep log');
     const offset = Math.max(0, stat.size - LOG_BYTES);
     const buffer = Buffer.alloc(stat.size - offset);
     const length = fs.readSync(fd, buffer, 0, buffer.length, offset);
@@ -154,17 +157,29 @@ export function readActionReceipts(file, now) {
         line
       );
       if (!match || !ACTIONS.includes(match[2])) continue;
-      const age =
-        now.getTime() - Date.parse(match[1].replace(' ', 'T') + ':00+07:00');
-      if (age >= 0 && age <= STALE_AFTER_MS)
-        actions[match[2]] = Number(match[3]);
+      const timestamp = Date.parse(match[1].replace(' ', 'T') + ':00+07:00');
+      const age = now.getTime() - timestamp;
+      if (
+        age >= 0 &&
+        age <= STALE_AFTER_MS &&
+        timestamp >= (receipts.get(match[2])?.timestamp ?? 0)
+      )
+        receipts.set(match[2], { timestamp, count: Number(match[3]) });
     }
-    return actions;
-  } catch (error) {
-    if (error.code === 'ENOENT') return actions;
-    throw error;
+    return Object.fromEntries(
+      [...receipts].map(([key, receipt]) => [key, receipt.count])
+    );
   } finally {
     if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
+export function readActionReceipts(file, now, onReadError = () => {}) {
+  try {
+    return readReceipts(file, now);
+  } catch (error) {
+    if (error.code !== 'ENOENT') onReadError();
+    return {};
   }
 }
 
@@ -225,31 +240,39 @@ export function writeSummary(file, summary, beforeRename = () => {}) {
   const contents = JSON.stringify(summary) + '\n';
   if (Buffer.byteLength(contents) > 4096)
     throw new Error('recovery summary too large');
-  const temp = path.join(path.dirname(file), `.summary-${randomUUID()}.tmp`);
-  const fd = fs.openSync(temp, 'wx', 0o600);
+  const directory = path.dirname(file);
+  const temp = path.join(directory, `.summary-${randomUUID()}.tmp`);
+  const directoryFd = fs.openSync(
+    directory,
+    fs.constants.O_RDONLY | fs.constants.O_DIRECTORY
+  );
   try {
+    const fd = fs.openSync(temp, 'wx', 0o600);
     try {
-      fs.fchmodSync(fd, 0o600);
-      fs.writeFileSync(fd, contents);
-      fs.fsyncSync(fd);
-    } finally {
-      fs.closeSync(fd);
+      try {
+        fs.fchmodSync(fd, 0o600);
+        fs.writeFileSync(fd, contents);
+        fs.fsyncSync(fd);
+      } finally {
+        fs.closeSync(fd);
+      }
+      beforeRename();
+      fs.renameSync(temp, file);
+    } catch (error) {
+      try {
+        fs.unlinkSync(temp);
+      } catch {
+        // Keep the original write error.
+      }
+      throw error;
     }
-    beforeRename();
-    fs.renameSync(temp, file);
-  } catch (error) {
-    fs.unlinkSync(temp);
-    throw error;
+    fs.fsyncSync(directoryFd);
+  } finally {
+    fs.closeSync(directoryFd);
   }
 }
 
-async function main() {
-  const home = os.homedir();
-  const root = path.join(home, '.local/share/fleet-sync');
-  const now = new Date();
-  const config = JSON.parse(
-    fs.readFileSync(path.join(root, 'config.json'), 'utf8')
-  );
+function readDatabase(home) {
   const db = new DatabaseSync(path.join(home, '.t3/userdata/statev2.sqlite'), {
     readOnly: true,
   });
@@ -268,58 +291,143 @@ async function main() {
   } finally {
     db.close();
   }
-  const localId = slugify(
-    config.machineId || config.machineLabel || os.hostname(),
-    'local'
+  return { local, links };
+}
+
+function readDatabaseWithinBudget(home) {
+  const child = spawnSync(
+    process.execPath,
+    [
+      '--disable-warning=ExperimentalWarning',
+      fileURLToPath(import.meta.url),
+      '--read-database',
+      home,
+    ],
+    {
+      encoding: 'utf8',
+      timeout: 5_000,
+      killSignal: 'SIGKILL',
+      maxBuffer: 4 * 1024 * 1024,
+    }
   );
-  const ids = peerMachineIds(links, localId);
-  const expected = new Set([
-    ...links.map((link) => link.environment_id),
-    ...(config.usageMachines ?? [])
-      .filter((machine) => machine.id !== localId)
-      .map((machine) => machine.environmentId),
-  ]);
-  if (expected.size >= MAX_HOSTS) throw new Error('too many recovery hosts');
-  const { peers } = await readPeers({
-    links,
-    secretsDir: path.join(home, '.t3/userdata/secrets'),
-    now,
-    listThreads: listRecoveryThreads,
-  });
-  const byEnvironment = new Map(
-    peers.map((peer) => [peer.environment_id, peer])
-  );
-  // Usage-only machines have no thread endpoint or credential in usageMachines.
-  // Keep their slot unread. No shell transport is used by this program.
-  const hosts = [
-    { rows: local },
-    ...[...expected]
-      .sort((a, b) => (ids.get(a) ?? a).localeCompare(ids.get(b) ?? b))
-      .map((id) => {
-        const peer = byEnvironment.get(id);
-        return {
-          rows:
-            peer?.live && peer.laneCoverage === 'complete'
-              ? peer.threads
-              : null,
-        };
-      }),
-  ];
-  const actions = readActionReceipts(
-    path.join(home, '.t3/scratch/automations/limit-recovery.log'),
-    now
-  );
-  writeSummary(
-    path.join(root, 'recovery/summary.json'),
-    buildSummary(hosts, actions, now)
+  if (child.error || child.status !== 0)
+    throw new Error('recovery database unavailable');
+  return JSON.parse(child.stdout);
+}
+
+function usageEnvironments(config, localId) {
+  const machines = config.usageMachines ?? [];
+  if (
+    !Array.isArray(machines) ||
+    machines.length > MAX_HOSTS ||
+    machines.some(
+      (machine) =>
+        typeof machine?.id !== 'string' ||
+        typeof machine.environmentId !== 'string' ||
+        !/^[a-z0-9-]{1,80}$/i.test(machine.environmentId)
+    )
+  )
+    throw new Error('invalid usage machine inventory');
+  return machines
+    .filter((machine) => machine.id !== localId)
+    .map((machine) => machine.environmentId);
+}
+
+function report(log, stage, failures, sweepLogReadErrors) {
+  log(
+    JSON.stringify({
+      at: new Date().toISOString(),
+      stage,
+      failures,
+      sweepLogReadErrors,
+    })
   );
 }
 
+export async function main({
+  home = os.homedir(),
+  now = new Date(),
+  collectPeers = readPeers,
+  log = console.error,
+} = {}) {
+  let stage = 'config';
+  let sweepLogReadErrors = 0;
+  try {
+    const root = path.join(home, '.local/share/fleet-sync');
+    const config = JSON.parse(
+      fs.readFileSync(path.join(root, 'config.json'), 'utf8')
+    );
+    const localId = slugify(
+      config.machineId || config.machineLabel || os.hostname(),
+      'local'
+    );
+    const usage = usageEnvironments(config, localId);
+    stage = 'database';
+    const { local, links } = readDatabaseWithinBudget(home);
+    stage = 'coverage';
+    const ids = peerMachineIds(links, localId);
+    const expected = new Set([
+      ...links.map((link) => link.environment_id),
+      ...usage,
+    ]);
+    if (expected.size >= MAX_HOSTS) throw new Error('too many recovery hosts');
+    const { peers } = await collectPeers({
+      links,
+      secretsDir: path.join(home, '.t3/userdata/secrets'),
+      now,
+      listThreads: listRecoveryThreads,
+    });
+    const byEnvironment = new Map(
+      peers.map((peer) => [peer.environment_id, peer])
+    );
+    const hosts = [
+      { rows: local },
+      ...[...expected]
+        .sort(
+          (a, b) =>
+            (ids.get(a) ?? a).localeCompare(ids.get(b) ?? b) ||
+            a.localeCompare(b)
+        )
+        .map((id) => {
+          const peer = byEnvironment.get(id);
+          return {
+            rows:
+              peer?.live && peer.laneCoverage === 'complete'
+                ? peer.threads
+                : null,
+          };
+        }),
+    ];
+    const actions = readActionReceipts(
+      path.join(home, '.t3/scratch/automations/limit-recovery.log'),
+      now,
+      () => sweepLogReadErrors++
+    );
+    stage = 'summary';
+    const summary = buildSummary(hosts, actions, now);
+    stage = 'write';
+    writeSummary(path.join(root, 'recovery/summary.json'), summary);
+    if (sweepLogReadErrors) report(log, 'sweep_log', 0, sweepLogReadErrors);
+    return 0;
+  } catch {
+    report(log, stage, 1, sweepLogReadErrors);
+    return 1;
+  }
+}
+
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const fail = () => {
-    console.error('fleet recovery producer failures: 1');
-    process.exit(1);
-  };
-  const watchdog = setTimeout(fail, 25_000);
-  main().then(() => clearTimeout(watchdog), fail);
+  if (process.argv[2] === '--read-database') {
+    try {
+      process.stdout.write(JSON.stringify(readDatabase(process.argv[3])));
+    } catch {
+      process.exitCode = 1;
+    }
+  } else {
+    const watchdog = setTimeout(() => {
+      report(console.error, 'watchdog', 1, 0);
+      process.exit(1);
+    }, 25_000);
+    process.exitCode = await main();
+    clearTimeout(watchdog);
+  }
 }

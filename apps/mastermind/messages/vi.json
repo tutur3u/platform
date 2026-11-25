@@ -46,11 +46,13 @@
         "settle_after_owner_confirms": "Kết thúc sau khi người phụ trách xác nhận",
         "settle_candidate": "Có thể xem xét kết thúc",
         "settled_superseded_children": "Đã đóng các luồng con bị thay thế",
+        "unknown": "Chưa rõ",
         "unknown_write_lanes": "Luồng có thao tác ghi chưa rõ",
         "unpushed_work_threads": "Luồng có công việc chưa đẩy lên",
         "wait_for_weekly_reset_or_topup": "Chờ đặt lại hạn mức hằng tuần hoặc nạp thêm"
       },
       "none": "Không có",
+      "notReported": "Chưa có báo cáo",
       "owner": "Nhóm phụ trách",
       "partial": "Phạm vi chưa đầy đủ · Đã đọc {read}/{expected} máy",
       "provider": "Nhóm nhà cung cấp",

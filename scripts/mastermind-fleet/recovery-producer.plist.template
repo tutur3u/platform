@@ -7,12 +7,23 @@
   <key>ProgramArguments</key>
   <array>
     <string>__NODE_ABSOLUTE_PATH__</string>
+    <string>--disable-warning=ExperimentalWarning</string>
     <string>__FLEET_SYNC_ROOT__/bin/recovery-producer.mjs</string>
   </array>
   <key>StartInterval</key>
   <integer>300</integer>
   <key>RunAtLoad</key>
   <true/>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>Nice</key>
+  <integer>10</integer>
+  <key>Umask</key>
+  <integer>63</integer>
+  <key>WorkingDirectory</key>
+  <string>__FLEET_SYNC_ROOT__</string>
+  <key>StandardOutPath</key>
+  <string>__FLEET_SYNC_ROOT__/logs/recovery-producer.stdout.log</string>
   <key>StandardErrorPath</key>
   <string>__FLEET_SYNC_ROOT__/logs/recovery-producer.log</string>
 </dict>
