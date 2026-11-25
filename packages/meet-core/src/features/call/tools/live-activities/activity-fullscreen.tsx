@@ -3,7 +3,10 @@
 import { Maximize2, Minimize2 } from '@tuturuuu/icons';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useMeetUxV2 } from '../../prejoin/prejoin-context';
+import { useActivityPane } from '../../stage-layout/activity-pane-context';
 import { ToolAction, ToolIconAction } from '../tool-ui';
 
 /**
@@ -31,40 +34,68 @@ export function ActivityFullscreen({
   children: ReactNode;
 }) {
   const t = useTranslations('meet.call.live_activities');
+  const meetUxV2 = useMeetUxV2();
+  const pane = useActivityPane();
+  const visible = !meetUxV2 || !pane || pane.visible;
+  // Keep the fullscreen body's local draft in a stable portal host while
+  // closing the modal so a share can use the stage and receive focus.
+  const [host] = useState(() =>
+    meetUxV2 && pane && typeof document !== 'undefined'
+      ? document.createElement('div')
+      : null
+  );
+  const attach = useCallback(
+    (container: HTMLDivElement | null) => {
+      if (container && host) {
+        host.className = 'flex min-h-0 flex-1 flex-col';
+        container.append(host);
+      }
+    },
+    [host]
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        presentation="fullscreen"
-        showCloseButton={false}
-        aria-describedby={undefined}
-        className="flex-col"
-      >
-        <header className="flex min-h-14 items-center gap-3 border-b px-4 py-2 md:px-6">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
-            <DialogTitle className="truncate font-semibold text-base">
-              {title}
-            </DialogTitle>
-            {meta}
+    <>
+      {host && createPortal(children, host)}
+      <Dialog open={open && visible} onOpenChange={onOpenChange}>
+        <DialogContent
+          presentation="fullscreen"
+          showCloseButton={false}
+          aria-describedby={undefined}
+          className="flex-col"
+        >
+          <header className="flex min-h-14 items-center gap-3 border-b px-4 py-2 md:px-6">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+              <DialogTitle className="truncate font-semibold text-base">
+                {title}
+              </DialogTitle>
+              {meta}
+            </div>
+            {actions}
+            <ToolAction
+              icon={Minimize2}
+              label={t('exit_fullscreen')}
+              variant="ghost"
+              className="pointer-coarse:h-11"
+              onClick={() => onOpenChange(false)}
+            />
+          </header>
+          <div className="flex min-h-0 flex-1">
+            <div
+              ref={host ? attach : undefined}
+              className="flex min-h-0 min-w-0 flex-1 flex-col"
+            >
+              {host ? null : children}
+            </div>
+            {aside ? (
+              <aside className="hidden w-96 shrink-0 overflow-y-auto border-l bg-muted/30 p-6 lg:block">
+                {aside}
+              </aside>
+            ) : null}
           </div>
-          {actions}
-          <ToolAction
-            icon={Minimize2}
-            label={t('exit_fullscreen')}
-            variant="ghost"
-            className="pointer-coarse:h-11"
-            onClick={() => onOpenChange(false)}
-          />
-        </header>
-        <div className="flex min-h-0 flex-1">
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
-          {aside ? (
-            <aside className="hidden w-96 shrink-0 overflow-y-auto border-l bg-muted/30 p-6 lg:block">
-              {aside}
-            </aside>
-          ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

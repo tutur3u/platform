@@ -1,6 +1,10 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useActivityActive } from '../stage-layout/activity-pane-context';
+import { useMeetUxV2 } from '../prejoin/prejoin-context';
+import {
+  useActivityActive,
+  useActivityPane,
+} from '../stage-layout/activity-pane-context';
 import {
   checkMeetProgramming,
   checkpointMeetProgramming,
@@ -81,6 +85,8 @@ export function ProgrammingPanel({
   previewUrl?: (port: number) => string;
 }) {
   const t = useTranslations('programmingPlayground');
+  const meetUxV2 = useMeetUxV2();
+  const visible = useActivityPane()?.visible ?? true;
   const locale = useLocale() === 'vi' ? 'vi' : 'en';
   const cache = useQueryClient();
   // A hidden tab or pane keeps its editor and room state but stops polling.
@@ -255,7 +261,7 @@ export function ProgrammingPanel({
     <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 wrap-anywhere">
       {canManage && (
         <ProgrammingSetup
-          open={setupOpen}
+          open={setupOpen && (!meetUxV2 || visible)}
           onOpenChange={setSetupOpen}
           wsId={wsId}
           accountId={accountId}
@@ -323,6 +329,7 @@ export function ProgrammingPanel({
                 : undefined
             }
             meeting={{
+              collapsibleOutput: meetUxV2,
               mira: {
                 presence:
                   miraMatches && !mira.isError

@@ -97,6 +97,7 @@ function NavigationPanel({
 export function useRoomNavigationControls(nav: RoomNavigation): {
   menu: ReactNode;
   dialogs: ReactNode;
+  openFollow: () => void;
 } {
   const t = useTranslations('meet.call');
   const [dialog, setDialog] = useState<Kind | null>(null);
@@ -117,6 +118,7 @@ export function useRoomNavigationControls(nav: RoomNavigation): {
         nav.canManage ? 'navigation.summon_hint_host' : 'navigation.summon_hint'
       );
   return {
+    openFollow: () => setDialog('follow'),
     menu: (
       <>
         <ControlMenuLabel>{t('navigation.guide')}</ControlMenuLabel>

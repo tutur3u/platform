@@ -27,6 +27,7 @@ import {
   tabId,
 } from './pane-chrome';
 import { PhoneSwitcher } from './phone-switcher';
+import type { ActivityPresentation } from './use-activity-presentation';
 import type { StageLayoutController } from './use-stage-layout';
 import { useStageFullscreen } from './use-stage-fullscreen';
 
@@ -68,12 +69,14 @@ export function StageLayoutView({
   activities,
   stage,
   peopleCount,
+  presentation,
 }: {
   controller: StageLayoutController;
   activities: readonly StageActivity[];
   /** The call's people. Always rendered, wherever the strip puts them. */
   stage: ReactNode;
   peopleCount: number;
+  presentation?: ActivityPresentation;
 }) {
   const t = useTranslations('meet.call.stage_layout');
   const { tier } = controller;
@@ -126,7 +129,11 @@ export function StageLayoutView({
   const hasPanes = panes.length > 0;
   const paneCount = countPanes(layout);
   const maximizedId = layout.maximizedPaneId;
-  const mode = videoStripMode(hasPanes, controller, !!maximizedId);
+  const minimized = presentation?.minimized ?? false;
+  const activityRail = !!presentation && hasPanes && !minimized;
+  const mode = presentation
+    ? 'full'
+    : videoStripMode(hasPanes, controller, !!maximizedId);
   const phone = tier === 'phone';
   // Following someone shows their arrangement; rearranging waits until the
   // person leaves follow mode.
@@ -135,7 +142,7 @@ export function StageLayoutView({
     maximizedId,
     maximize: controller.maximize,
   });
-  const canFullscreen = full.supported && !phone && !locked;
+  const canFullscreen = full.supported && !phone && !locked && !minimized;
   // Following someone, or moving to a phone layout, ends a fullscreen that is
   // already on: the arrangement is no longer ours to maximize.
   const fullscreenExit = full.exit;
@@ -147,7 +154,7 @@ export function StageLayoutView({
   const rectOf = (paneId: string) =>
     paneId === maximizedId ? FULL : (geometry.panes[paneId] ?? FULL);
   const hiddenPane = (paneId: string) =>
-    !!maximizedId && paneId !== maximizedId;
+    minimized || (!!maximizedId && paneId !== maximizedId);
   const gutter = maximizedId ? 0 : STAGE_GUTTER;
   const toggleMaximize = (paneId: string) =>
     controller.maximize(maximizedId === paneId ? null : paneId);
@@ -185,7 +192,11 @@ export function StageLayoutView({
   };
 
   const overlayHidden = mode === 'overlay' && peopleHidden;
-  const focusedPane = panes.find((pane) => pane.id === layout.focusedPaneId);
+  const focusedPane = panes.find((pane) => pane.id === focusedPaneId);
+  const dockActivity = meta(
+    (maximizedId ? panes.find((pane) => pane.id === maximizedId) : focusedPane)
+      ?.active ?? ''
+  );
   const switchItems = useMemo(
     () => controller.openIds.map(meta),
     [controller.openIds, meta]
@@ -196,14 +207,22 @@ export function StageLayoutView({
   };
 
   return (
-    <div className="relative flex h-full min-h-0 min-w-0 flex-col gap-2">
+    <div
+      className={cn(
+        'relative flex h-full min-h-0 min-w-0 flex-col gap-2',
+        activityRail && 'md:landscape:flex-row lg:flex-row'
+      )}
+    >
       {stage != null && (
         <div
+          data-activity-video-rail={activityRail || undefined}
           aria-hidden={mode === 'pill' || overlayHidden || undefined}
           inert={mode === 'pill' || overlayHidden || undefined}
           className={cn(
             'relative min-w-0',
-            mode === 'full' && 'min-h-0 flex-1',
+            activityRail
+              ? 'order-last h-24 shrink-0 md:landscape:h-auto md:landscape:w-40 lg:h-auto lg:w-44'
+              : mode === 'full' && 'min-h-0 flex-1',
             mode === 'row' && 'h-32 shrink-0',
             mode === 'pill' && 'h-0 overflow-hidden',
             mode === 'overlay' &&
@@ -275,7 +294,12 @@ export function StageLayoutView({
           ref={containerRef}
           role="group"
           aria-label={t('region')}
-          className="relative min-h-0 flex-1"
+          aria-hidden={minimized || undefined}
+          inert={minimized || undefined}
+          className={cn(
+            'min-h-0 min-w-0',
+            minimized ? 'invisible absolute inset-0' : 'relative flex-1'
+          )}
           onKeyDownCapture={fullscreenKey}
           onKeyDown={cycleFocus}
         >
@@ -302,6 +326,11 @@ export function StageLayoutView({
               onSwap={controller.swapPanes}
               onToggleMaximize={toggleMaximize}
               onClose={controller.close}
+              onMinimize={
+                pane.id === (maximizedId ?? focusedPaneId)
+                  ? presentation?.minimize
+                  : undefined
+              }
               onSwitcher={
                 phone && !locked && controller.openIds.length > 1
                   ? () => setSwitcher(true)
@@ -309,7 +338,8 @@ export function StageLayoutView({
               }
             />
           ))}
-          {!maximizedId &&
+          {!minimized &&
+            !maximizedId &&
             !locked &&
             geometry.boundaries.map((boundary) => (
               <LayoutSeparator
@@ -390,7 +420,22 @@ export function StageLayoutView({
             })}
         </div>
       )}
-      {phone && (
+      {minimized && presentation && (
+        <div className="flex shrink-0 justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 max-w-full rounded-full pointer-coarse:h-11"
+            aria-label={t('reopen', { title: dockActivity.title })}
+            onClick={presentation.restore}
+          >
+            <dockActivity.icon aria-hidden="true" className="size-4" />
+            <span className="truncate">{dockActivity.title}</span>
+          </Button>
+        </div>
+      )}
+      {phone && !minimized && (
         <PhoneSwitcher
           open={switcher}
           onOpenChange={setSwitcher}

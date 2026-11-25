@@ -28,6 +28,7 @@ import {
 } from './mira-code-presence';
 import { isFormatShortcut } from './format-shortcut';
 import { isRunShortcut } from './run-shortcut';
+import { useOutputDisclosure } from './use-output-disclosure';
 import { useProgrammingRoom } from './use-programming-room';
 import { runnerGate } from './use-runner-availability';
 import { useWorkbenchDiagnostics } from './use-workbench-diagnostics';
@@ -91,7 +92,7 @@ export function ProgrammingWorkbench({
   const [stdin, setStdin] = useState('');
   const [port, setPort] = useState('3000');
   const [preview, setPreview] = useState(false);
-  const [outputOpen, setOutputOpen] = useState(true);
+  const outputDisclosure = useOutputDisclosure(!!meeting?.collapsibleOutput);
   const [promptOpen, setPromptOpen] = useState(true);
   const [shareOpen, setShareOpen] = useState(false);
   const [testOutput, setTestOutput] = useState('');
@@ -160,7 +161,7 @@ export function ProgrammingWorkbench({
     sandboxFailed,
     save,
     run,
-    runOperation,
+    runOperation: sendRunOperation,
     runner,
     durationMs,
   } = useWorkbenchRun({
@@ -175,13 +176,20 @@ export function ProgrammingWorkbench({
     meeting,
     onStarted: () => {
       setOutputTab('console');
-      setOutputOpen(true);
+      outputDisclosure.reveal();
     },
   });
+  const runOperation = (operation: 'run' | 'stop') => {
+    if (operation === 'run' && meeting?.collapsibleOutput) {
+      setOutputTab('console');
+      outputDisclosure.reveal();
+    }
+    return sendRunOperation(operation);
+  };
   const test = useMutation({
     mutationFn: async (): Promise<WorkbenchTestRun | undefined> => {
       setOutputTab('tests');
-      setOutputOpen(true);
+      outputDisclosure.reveal();
       if (!active) return;
       if (meeting?.runTests) return meeting.runTests(active.content);
       if (onTest) setTestOutput(await onTest(active.content));
@@ -294,17 +302,21 @@ export function ProgrammingWorkbench({
           {
             id: 'preview',
             label: t(
-              (meeting ? outputTab === 'preview' : preview)
+              (meeting
+                ? outputDisclosure.open && outputTab === 'preview'
+                : preview)
                 ? 'previewClose'
                 : 'preview'
             ),
             onSelect: () => {
               if (meeting)
-                setOutputTab((value) =>
-                  value === 'preview' ? 'console' : 'preview'
+                setOutputTab(
+                  outputDisclosure.open && outputTab === 'preview'
+                    ? 'console'
+                    : 'preview'
                 );
               else setPreview((value) => !value);
-              setOutputOpen(true);
+              outputDisclosure.reveal();
             },
           },
         ]
@@ -517,6 +529,9 @@ export function ProgrammingWorkbench({
             {...output}
             tab={outputTab}
             onTab={setOutputTab}
+            disclosure={
+              meeting.collapsibleOutput ? outputDisclosure : undefined
+            }
             test={tests}
             testing={test.isPending}
             canTest={!!meeting.runTests}
@@ -577,8 +592,8 @@ export function ProgrammingWorkbench({
       {!meeting && (
         <WorkbenchOutput
           {...output}
-          open={outputOpen}
-          onToggle={() => setOutputOpen((value) => !value)}
+          open={outputDisclosure.open}
+          onToggle={outputDisclosure.toggle}
           preview={preview ? previewSettings : undefined}
         />
       )}

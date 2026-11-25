@@ -368,10 +368,10 @@ export function useRoomNavigation({
         room.requestNavigation({ mode: 'follow.stop', targets: leading });
       setLeading(null);
     },
-    summon: (targets: NavigationTargets) => {
+    summon: (targets: NavigationTargets, destination = view) => {
       const count = reached(targets);
-      if (!count || paused) return;
-      room.requestNavigation({ mode: 'summon', targets, view });
+      if (!allowed || !count || paused) return;
+      room.requestNavigation({ mode: 'summon', targets, view: destination });
       pace();
       toast.success(t(canManage ? 'summon.moved' : 'summon.sent', { count }));
     },

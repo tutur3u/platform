@@ -4,6 +4,7 @@ import { PLAYGROUND_STDIN_MAX_LENGTH } from '@tuturuuu/types/primitives/playgrou
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../apps/meet/messages/en.json';
+import { useOutputDisclosure } from './use-output-disclosure';
 import { WorkbenchMeetingOutput } from './workbench-meeting-output';
 import { WorkbenchOutput } from './workbench-output';
 
@@ -209,4 +210,63 @@ it('silences the runner status line only while the sandbox note is showing', () 
     </NextIntlClientProvider>
   );
   expect(status()?.getAttribute('aria-live')).toBe('off');
+});
+
+function MeetingOutput({ tab }: { tab: 'tests' | 'console' | 'preview' }) {
+  const disclosure = useOutputDisclosure(true);
+  return (
+    <WorkbenchMeetingOutput
+      disclosure={disclosure}
+      tab={tab}
+      onTab={() => undefined}
+      view={{ text: 'Program output', exitCode: 0, running: false }}
+      save="idle"
+      testing={false}
+      canTest
+    />
+  );
+}
+
+const mountMeetingOutput = (tab: 'tests' | 'console' | 'preview') =>
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <MeetingOutput tab={tab} />
+    </NextIntlClientProvider>
+  );
+
+it.each(['tests', 'console', 'preview'] as const)(
+  'starts with the Meet %s panel collapsed without a saved preference',
+  (tab) => {
+    localStorage.clear();
+    mountMeetingOutput(tab);
+    expect(
+      screen.getByRole('button', { name: t.outputPanes }).getAttribute(
+        'aria-expanded'
+      )
+    ).toBe('false');
+    expect(screen.queryByRole('tabpanel')).toBeNull();
+    expect(screen.queryByText('Program output')).toBeNull();
+  }
+);
+
+it('remembers the output disclosure across workbench mounts', () => {
+  localStorage.clear();
+  try {
+    const first = mountMeetingOutput('console');
+    const toggle = () => screen.getByRole('button', { name: t.outputPanes });
+    fireEvent.click(toggle());
+    expect(screen.getByText('Program output')).toBeTruthy();
+    first.unmount();
+
+    const second = mountMeetingOutput('console');
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    fireEvent.click(toggle());
+    second.unmount();
+
+    mountMeetingOutput('tests');
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('tabpanel')).toBeNull();
+  } finally {
+    localStorage.clear();
+  }
 });

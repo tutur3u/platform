@@ -161,3 +161,24 @@ it('ships the Ask Mira labels in Vietnamese', () => {
     expect(vn[key]).not.toBe(en[key]);
   }
 });
+
+it('keeps the three chat buttons square and Mira icon-only with a tooltip', async () => {
+  show();
+  const composer = screen.getByRole('textbox', { name: call.chat });
+  const attach = screen.getByRole('button', { name: call.attach_files });
+  const mira = screen.getByRole('button', { name: call.ask_mira });
+  const send = screen.getByRole('button', { name: call.send });
+
+  expect(mira.textContent).toBe('');
+  expect(mira.getAttribute('aria-label')).toBe(call.ask_mira);
+  expect(composer.getAttribute('placeholder')).toBe(call.chat_placeholder);
+  expect(composer.classList.contains('min-h-9')).toBe(true);
+  expect(composer.parentElement?.classList.contains('items-center')).toBe(true);
+  for (const button of [attach, mira, send]) {
+    expect(button.classList.contains('size-9')).toBe(true);
+    expect(button.classList.contains('self-end')).toBe(true);
+  }
+
+  fireEvent.focus(mira);
+  expect((await screen.findByRole('tooltip')).textContent).toBe(call.ask_mira);
+});

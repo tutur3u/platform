@@ -65,6 +65,8 @@ import {
 } from './mira-tool-card';
 import type { MiraSurface, MiraSurfaceActivity } from './mira-where-strip';
 
+const composerButtonClass = 'size-9 shrink-0 self-end';
+
 type RoomMira = {
   typing?: boolean;
   activity?: Partial<Record<MiraSurface, MiraSurfaceActivity>>;
@@ -532,7 +534,7 @@ export function ChatPanel({
         {hasMeetAssistantMention(draft) && (
           <MiraAdultNotice id={`${paletteId}-adults`} />
         )}
-        <div className="@container flex items-end gap-1">
+        <div className="flex items-center gap-1">
           <input
             ref={input}
             type="file"
@@ -555,11 +557,13 @@ export function ChatPanel({
             size="icon"
             disabled={busy}
             onClick={() => input.current?.click()}
+            className={composerButtonClass}
             aria-label={t('attach_files')}
           >
             <Paperclip className="size-4" />
           </Button>
           <AskMiraMenu
+            className={composerButtonClass}
             disabled={busy || !!draft.trim()}
             onPick={(action) => {
               setDraft(`@mira ${t(`${action}_prompt`)}`);
@@ -592,7 +596,7 @@ export function ChatPanel({
             disabled={busy}
             aria-label={t('chat')}
             placeholder={t(qaLive ? 'chat_placeholder_qa' : 'chat_placeholder')}
-            className="max-h-32 min-h-9 min-w-0 flex-1 resize-none py-1.5"
+            className="max-h-32 min-h-9 min-w-0 flex-1 resize-none py-[5px] leading-6"
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) return;
               if (commands.length) {
@@ -631,6 +635,7 @@ export function ChatPanel({
               (!draft.trim() && !files.length) ||
               (hasMeetAssistantMention(draft) && !assistantScope.allowed)
             }
+            className={composerButtonClass}
             aria-label={t('send')}
           >
             {busy ? (

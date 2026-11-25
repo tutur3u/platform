@@ -39,6 +39,8 @@ import {
 import { fitTileGrid, useElementSize } from './stage-grid-fit';
 export type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar';
 const FIXED_STRIP_TILE = 'aspect-video w-40 shrink-0 lg:w-full';
+const ACTIVITY_RAIL_TILE =
+  'aspect-video w-28 shrink-0 md:landscape:w-full lg:w-full';
 const FILM_TILE = 'h-full w-24 shrink-0 snap-start';
 const densities = ['auto', 'large', 'compact'] as const;
 type GridDensity = (typeof densities)[number];
@@ -64,6 +66,7 @@ export function CallStage({
   audioSuppressed = false,
   layout,
   compact = false,
+  activityRail = false,
   hideSelfCamera = false,
   selfInGrid,
   focus,
@@ -75,6 +78,7 @@ export function CallStage({
   audioSuppressed?: boolean;
   layout: CallLayout;
   compact?: boolean;
+  activityRail?: boolean;
   /** Omit the local camera tile when it renders as a floating preview. */
   hideSelfCamera?: boolean;
   /**
@@ -205,7 +209,9 @@ export function CallStage({
       <MiraParticipant
         sessionId={mira.sessionId}
         compact={compact}
-        className={compact && !fit ? FIXED_STRIP_TILE : className}
+        className={
+          compact && !fit && !activityRail ? FIXED_STRIP_TILE : className
+        }
         focused={!share && focus === 'mira'}
         onFocus={
           share ? undefined : () => onFocus(focus === 'mira' ? null : 'mira')
@@ -279,7 +285,7 @@ export function CallStage({
       onSilence={toggleSilence}
       key={tile.key}
       className={cn(
-        compact && !fit ? FIXED_STRIP_TILE : className,
+        className,
         share && tile.kind === 'camera' && '[&_video]:object-cover'
       )}
       kind={tile.kind}
@@ -325,7 +331,8 @@ export function CallStage({
       )
     : undefined;
   const fitted =
-    compact || (!spotlight && !phoneFilm && (phone || density === 'auto'));
+    !activityRail &&
+    (compact || (!spotlight && !phoneFilm && (phone || density === 'auto')));
   const fit =
     fitted && stageSize
       ? fitTileGrid({
@@ -338,6 +345,7 @@ export function CallStage({
         })
       : null;
   const tileClass = (key: string) => {
+    if (activityRail) return ACTIVITY_RAIL_TILE;
     if (fit) return 'h-(--tile-h) w-(--tile-w) shrink-0';
     if (compact) return FIXED_STRIP_TILE;
     if (!spotlight) return density === 'compact' ? 'min-h-24' : 'min-h-32';
@@ -470,15 +478,17 @@ export function CallStage({
         }
         className={cn(
           'min-h-0 flex-1 overflow-auto p-1',
-          fit
-            ? cn(
-                'flex flex-wrap justify-center',
-                compact ? 'gap-2' : 'gap-3',
-                fit.scroll ? 'content-start' : 'content-center'
-              )
-            : phoneFilm
-              ? 'flex flex-col gap-2'
-              : cn('grid gap-3', compact && 'flex gap-2 lg:flex-col'),
+          activityRail
+            ? 'flex items-stretch gap-2 overflow-y-hidden md:landscape:flex-col md:landscape:overflow-y-auto lg:flex-col lg:overflow-y-auto'
+            : fit
+              ? cn(
+                  'flex flex-wrap justify-center',
+                  compact ? 'gap-2' : 'gap-3',
+                  fit.scroll ? 'content-start' : 'content-center'
+                )
+              : phoneFilm
+                ? 'flex flex-col gap-2'
+                : cn('grid gap-3', compact && 'flex gap-2 lg:flex-col'),
           !compact &&
             spotlight &&
             (sidebar

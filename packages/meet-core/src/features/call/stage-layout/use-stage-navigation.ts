@@ -16,17 +16,10 @@ import {
   PROGRAMMING_ACTIVITY,
   toolActivityId,
   toolIdOf,
+  viewOfActivity,
 } from './activity-ids';
 import { openActivities } from './layout-model';
 import type { StageLayoutController } from './use-stage-layout';
-
-/** The room view an activity stands for; classroom panes have none. */
-function viewOfActivity(activityId: string | null): MeetRoomView | null {
-  if (activityId === PROGRAMMING_ACTIVITY) return { surface: 'programming' };
-  if (activityId === DOCUMENT_ACTIVITY) return { surface: 'document' };
-  const toolId = toolIdOf(activityId);
-  return toolId ? { surface: 'tool', toolId } : null;
-}
 
 /**
  * Follow and Summon over the stage. A leader shares the activity in their

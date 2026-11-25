@@ -338,3 +338,56 @@ it('ignores a request while there is nothing to show and registers once there is
   act(() => ask());
   expect(dialog()).not.toBeNull();
 });
+
+function activityNavigation(allowed: boolean) {
+  return {
+    allowed,
+    canManage: allowed,
+    leading: null,
+    others: [{ userId: 'peer', displayName: 'Peer' }],
+    paused: false,
+    reveal: vi.fn(),
+    summon: vi.fn(),
+    openFollow: vi.fn(),
+  };
+}
+
+it('opens an activity locally with one primary button', () => {
+  const navigation = activityNavigation(true);
+  renderMenu({ navigation });
+  open();
+  const name = `Open ${pollsLabel}`;
+  const buttons = screen.getAllByRole('button', { name, exact: true });
+  expect(buttons).toHaveLength(1);
+  fireEvent.click(screen.getByRole('button', { name, exact: true }));
+  expect(navigation.reveal).toHaveBeenCalledWith('tool:polls');
+  expect(navigation.summon).not.toHaveBeenCalled();
+});
+
+it('shows Bring everyone in the split menu and summons the selected activity', () => {
+  const navigation = activityNavigation(true);
+  renderMenu({ navigation });
+  open();
+  fireEvent.keyDown(
+    screen.getByRole('button', { name: `More ways to open ${pollsLabel}` }),
+    { key: 'Enter' }
+  );
+  fireEvent.click(screen.getByRole('menuitem', { name: a.bring_everyone }));
+  expect(navigation.summon).toHaveBeenCalledWith('everyone', {
+    surface: 'tool',
+    toolId: 'polls',
+  });
+  expect(navigation.reveal).toHaveBeenCalledWith('tool:polls');
+});
+
+it('keeps local Open available when the room disallows navigation', () => {
+  const navigation = activityNavigation(false);
+  renderMenu({ navigation });
+  open();
+
+  expect(screen.queryByRole('button', { name: /^More ways to open/ })).toBeNull();
+  expect(screen.queryByRole('menuitem', { name: a.bring_everyone })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: `Open ${pollsLabel}` }));
+  expect(navigation.reveal).toHaveBeenCalledWith('tool:polls');
+  expect(navigation.summon).not.toHaveBeenCalled();
+});

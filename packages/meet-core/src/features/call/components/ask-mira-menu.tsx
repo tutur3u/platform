@@ -3,6 +3,7 @@
 import { CircleCheck, FileText, ListTodo, Sparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -20,9 +21,11 @@ const icons = {
  * writes its prompt into the composer for the person to send.
  */
 export function AskMiraMenu({
+  className,
   disabled,
   onPick,
 }: {
+  className: string;
   disabled?: boolean;
   onPick: (action: AskMiraAction) => void;
 }) {
@@ -30,19 +33,23 @@ export function AskMiraMenu({
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={disabled}
-          aria-label={t('ask_mira')}
-          className="shrink-0 gap-1.5"
-        >
-          <Sparkles aria-hidden className="size-4" />
-          <span className="hidden @[23rem]:inline">{t('ask_mira')}</span>
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              disabled={disabled}
+              aria-label={t('ask_mira')}
+              className={className}
+            >
+              <Sparkles aria-hidden="true" className="size-4" />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{t('ask_mira')}</TooltipContent>
+      </Tooltip>
       <PopoverContent
         align="start"
         side="top"

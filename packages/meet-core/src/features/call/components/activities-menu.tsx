@@ -7,6 +7,14 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useState } from 'react';
+import {
+  BOARD_ACTIVITY,
+  CLASSROOM_ACTIVITIES,
+  DOCUMENT_ACTIVITY,
+  PROGRAMMING_ACTIVITY,
+  toolActivityId,
+} from '../stage-layout/activity-ids';
+import type { ActivityNavigation } from './activity-launch-control';
 import type { MeetToolDefinition } from '../tools/registry';
 import { useActivitiesRequest } from '../stage-layout/activities-request';
 import { ActivitiesDialog } from './activities-dialog';
@@ -40,6 +48,7 @@ export function ActivitiesMenu({
   pages = [],
   preview,
   navigationAllowed = false,
+  navigation,
 }: {
   tools: readonly MeetToolDefinition[];
   /** Ids of the tools open on the stage. */
@@ -57,6 +66,7 @@ export function ActivitiesMenu({
   preview?: { onFeedback: () => void };
   /** Whether this person may Follow and Summon (`nav.allowed`). */
   navigationAllowed?: boolean;
+  navigation?: ActivityNavigation;
 }) {
   const t = useTranslations('meet.call.activities');
   const programmingT = useTranslations('programmingPlayground');
@@ -90,6 +100,7 @@ export function ActivitiesMenu({
       ? [
           {
             id: 'programming',
+            stageId: PROGRAMMING_ACTIVITY,
             label: programmingT('coding'),
             icon: CodeXml,
             active: !!collaboration?.programming.active,
@@ -97,6 +108,7 @@ export function ActivitiesMenu({
           },
           {
             id: 'document',
+            stageId: DOCUMENT_ACTIVITY,
             label: collaborationT('document'),
             icon: FileText,
             active: !!collaboration?.document.active,
@@ -106,6 +118,7 @@ export function ActivitiesMenu({
             ? [
                 {
                   id: 'board',
+                  stageId: BOARD_ACTIVITY,
                   label: collaborationT('board'),
                   icon: Presentation,
                   active: collaboration.board.active,
@@ -117,6 +130,7 @@ export function ActivitiesMenu({
       : []),
     ...tools.map((tool) => ({
       id: tool.id,
+      stageId: toolActivityId(tool.id),
       label: toolLabel(tool),
       icon: tool.icon,
       active: openToolIds.includes(tool.id),
@@ -124,6 +138,7 @@ export function ActivitiesMenu({
     })),
     ...extra.map((entry) => ({
       id: entry.id,
+      stageId: CLASSROOM_ACTIVITIES.find((id) => id === entry.id),
       label: entry.label,
       icon: entry.icon,
       active: entry.active,
@@ -188,12 +203,15 @@ export function ActivitiesMenu({
         <TooltipContent>{label}</TooltipContent>
       </Tooltip>
       {open && (
-        <ActivitiesNavigationContext.Provider value={navigationAllowed}>
+        <ActivitiesNavigationContext.Provider
+          value={{ legacyAllowed: !navigation && navigationAllowed, navigation }}
+        >
           <ActivitiesDialog
             tiles={tiles}
             persistedTab={persistedTab}
             setPersistedTab={setPersistedTab}
             onClose={() => changeOpen(false)}
+            onReveal={navigation?.reveal}
             onFeedback={
               preview
                 ? () => {

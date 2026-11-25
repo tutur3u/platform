@@ -1535,10 +1535,10 @@ never hidden; the device-only **Private timer** ("Hẹn giờ riêng") sits ther
 it is never confused with the room's Timer. Every sidebar entry has a distinct
 name. All activities lists **Open now** first, then **Start an activity** as
 cards with an icon, name, one-line description and a Start or Open action.
-For people who may use Follow and Summon, Start and Open on launchable
-activities carry the tooltip "Opens for you; Summon brings others": starting
-an activity opens it for this person only. Others see no tooltip. Starting closes the dialog
-and opens the activity; an activity that is already open stays open. Timer and
+With `MEET_UX_V2` off, Start and Open on launchable activities carry the
+tooltip "Opens for you; Summon brings others" for people who may use room
+navigation. Starting opens the activity locally and closes the dialog. An
+activity that is already open stays open. Timer and
 Room activities render inside the dialog. While open, the dialog keeps its tab
 in the `activitiesTab` URL parameter, apart from Settings' `settingsTab`;
 closing clears it, so the dock and presence-roster entries both reopen on the
@@ -1564,10 +1564,10 @@ access checks.
 More holds the remaining actions as rows that share one grid (a 20px icon
 slot, the label, a trailing slot; 40px tall, 44px on touch screens): phone
 fallbacks, recording, **Transcript & notes** (a switch, only for people who may
-read notes), Layout, Camera effects, then **Guide the room** with **Follow** and
-**Summon**, then **Meeting settings** and the presence-only switch for hosts.
-Each row's tooltip, also its accessible description, says what it does for the
-sender. For a host or co-host: Follow "People you pick move with you whenever
+read notes), Layout, Camera effects, **Meeting settings** and the presence-only
+switch for hosts. With `MEET_UX_V2` off, **Guide the room** includes **Follow**
+and **Summon** between Camera effects and Meeting settings. Each row's tooltip
+also provides its accessible description. For a host or co-host: Follow "People you pick move with you whenever
 you change what you have open" and Summon "Brings the people you pick to what
 you have open, once". For anyone else, both are worded as invitations. Alone in
 the call, both rows stay listed and focusable but `aria-disabled`, with the
@@ -1651,7 +1651,17 @@ and any tool panel. They never change admission, media, or tool access.
 - **Follow** mirrors the sender's whole stage layout as the sender changes it,
   until the sender stops or the follower leaves follow mode. See Follow mode
   below.
-- Both target one person, several people, or everyone in the call.
+
+With `MEET_UX_V2` on in Meet, activities that support room navigation have
+one **Open** control in the Activities picker. Its primary button opens or
+focuses the activity locally. The adjacent menu appears for people allowed to
+guide the room. **Bring everyone** summons the whole room to that activity
+once, and **Follow** opens the same target picker for ongoing Follow. The
+primary button's tooltip tells hosts and co-hosts "Opens for you; Bring
+everyone moves others". Other permitted participants see that it sends an
+invitation. With the flag off, the separate More actions can each target one
+person, several people, or everyone.
+[Activities picker tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/activities-dialog.test.tsx).
 
 Default and permissions:
 
@@ -1753,10 +1763,19 @@ media, or tool access.
   tab and Alt with Left or Right reorders it. F6 and Shift+F6 move focus
   between panes. Closing an activity removes its tab, and its pane when it was
   the last one.
-- **Video.** On a desktop the people sit in a row above the panes; on a tablet
-  or phone they collapse to a pill with the head count. The pill and the row
-  toggle each other, and the choice is remembered. The people are never
-  unmounted, so audio and video continue while the strip changes.
+- **Video.** In Meet with `MEET_UX_V2` on, video sits in a scrolling strip to
+  the right of open activities on desktop and landscape tablets. Narrow
+  screens and portrait tablets use a scrolling rail below the activities.
+  With the flag off, desktop starts with video above the panes and smaller
+  viewports start with a count pill. The legacy video toggle remembers its
+  choice. The media stage stays mounted through these layout changes.
+- **Screen sharing.** In Meet with `MEET_UX_V2` on, starting a screen share
+  gives the media stage the available space. Open activity panes stay
+  mounted and collapse into a chip with the focused activity's title and icon.
+  Selecting the chip restores the pane layout, even during a share. Ending the
+  last share restores an activity layout that the share minimized. Using
+  **Minimize activities** keeps the chip in the dock until you reopen it.
+  [Stage layout tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/stage-layout/stage-layout-view.test.tsx).
 - **Adaptive content.** Each pane is a container for container queries, not
   viewport breakpoints: compact under 360px, medium from 360px to 720px, wide
   beyond. A pane smaller than 280 by 220 shows "Needs more room" with a
@@ -2682,6 +2701,11 @@ This is browser capture, not a Cloudflare server-side recording service.
 
 ## Chat and Mira
 
+Attach, Ask Mira and Send are square icon buttons aligned to the last line of
+the room message field as it grows. The Mira sparkle has an **Ask Mira**
+tooltip and an accessible name. The message field keeps its placeholder.
+[Room composer tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/conversation-panel-room.test.tsx).
+
 Room chat supports Markdown, avatars, and up to five 25 MiB attachments per message. Chat saving defaults on; admins can stop retaining new messages in Settings without deleting earlier messages. The recent 500-message snapshot survives Worker eviction; chat retries reuse a stable message ID to avoid duplicates after lost acknowledgements.
 Files use the creator's personal Drive provider and storage capacity checks. Room
 admission controls attachment access; a signed URL is short-lived. Mention
@@ -3195,6 +3219,12 @@ Learn uses the same workbench without the meeting-only controls.
   the read-only note. Saving shows once, in the Checkpoints row under the output
   tabs. Learn's hosted playground keeps its plain header chip and its own save
   line. The call bar's "You are in Co-Programming" label is text only.
+- **Programming output.** With `MEET_UX_V2` on in Meet, the console, tests and
+  web preview start collapsed. Use **Programming output** to expand or
+  collapse them. The browser remembers the last manual choice, and running
+  code, running tests or opening the preview can reveal the output for that
+  session.
+  [Workbench output tests](https://github.com/tutur3u/platform/blob/main/packages/programming-ui/src/workbench-output.test.tsx).
 - **Ask Mira.** The host's Ask Mira menu sits at the end of the file tab row.
   Mira's own status (checking, attribution, a failure) takes a row above the
   editor only while it has something to say.

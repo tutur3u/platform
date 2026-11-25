@@ -16,12 +16,18 @@ import {
   ActivitiesRequestProvider,
   useActivitiesRequest,
 } from './activities-request';
+import { ActivityFullscreen } from '../tools/live-activities/activity-fullscreen';
 import { ActivityShell } from './activity-shell';
 import { useActivityActive } from './activity-pane-context';
 import type { ViewportTier } from './layout-model';
 import { PhoneSwitcher } from './phone-switcher';
 import { StageLayoutView } from './stage-layout-view';
+import { useActivityPresentation } from './use-activity-presentation';
 import { useStageLayout } from './use-stage-layout';
+
+vi.mock('../prejoin/prejoin-context', () => ({
+  useMeetUxV2: () => true,
+}));
 
 const mounts: Record<string, number> = {};
 const Probe = ({ id }: { id: string }) => {
@@ -40,7 +46,15 @@ const Probe = ({ id }: { id: string }) => {
 let controller: ReturnType<typeof useStageLayout>;
 const icon = () => null;
 
-function Harness({ tier = 'desktop' as ViewportTier }) {
+function Harness({
+  tier = 'desktop',
+  meetUxV2 = false,
+  sharers = [],
+}: {
+  tier?: ViewportTier;
+  meetUxV2?: boolean;
+  sharers?: readonly string[];
+}) {
   const stage = useStageLayout({
     accountId: 'u',
     meetingId: 'm',
@@ -48,18 +62,34 @@ function Harness({ tier = 'desktop' as ViewportTier }) {
     tier,
   });
   controller = stage;
+  const presentation = useActivityPresentation(
+    meetUxV2 && stage.openIds.length > 0,
+    meetUxV2 ? sharers : []
+  );
   const [people] = useState(() => <p data-testid="people">people</p>);
   return (
     <div style={{ width: 1000, height: 600 }}>
       <StageLayoutView
         controller={stage}
         peopleCount={4}
+        presentation={meetUxV2 ? presentation : undefined}
         stage={people}
         activities={stage.openIds.map((id) => ({
           id,
           title: id,
           icon,
-          content: <Probe id={id} />,
+          content:
+            id === 'fullscreen-qa' ? (
+              <ActivityFullscreen
+                open
+                title="Q&A full screen"
+                onOpenChange={() => undefined}
+              >
+                <Probe id={id} />
+              </ActivityFullscreen>
+            ) : (
+              <Probe id={id} />
+            ),
         }))}
       />
     </div>
@@ -537,4 +567,84 @@ it('does not open the Activities dialog for a handoff that never completed', asy
   view.rerender(tree(false));
   await new Promise((resolve) => setTimeout(resolve, 50));
   expect(onBrowse).not.toHaveBeenCalled();
+});
+
+const presenting = (sharers: readonly string[] = []) => (
+  <NextIntlClientProvider locale="en" messages={messages}>
+    <Harness meetUxV2 sharers={sharers} />
+  </NextIntlClientProvider>
+);
+
+it('places the activity video rail after the activity and switches to a row layout for wider screens', () => {
+  render(presenting());
+  const people = screen.getByTestId('people');
+  expect(people.closest('[data-activity-video-rail]')).toBeNull();
+
+  open('document');
+  const rail = people.closest('[data-activity-video-rail]');
+  expect(rail?.classList.contains('order-last')).toBe(true);
+  expect(rail?.classList.contains('h-24')).toBe(true);
+  expect(rail?.classList.contains('md:landscape:w-40')).toBe(true);
+  expect(rail?.parentElement?.classList.contains('flex-col')).toBe(true);
+  expect(rail?.parentElement?.classList.contains('md:landscape:flex-row')).toBe(
+    true
+  );
+  expect(rail?.parentElement?.classList.contains('lg:flex-row')).toBe(true);
+});
+
+it('gives a new screen share the stage and restores the same mounted activity when it ends', () => {
+  const { rerender } = render(presenting());
+  open('document');
+  const input = screen.getByRole('textbox', { name: 'document input' });
+  fireEvent.change(input, { target: { value: 'Unsaved draft' } });
+  const media = screen.getByTestId('people');
+
+  rerender(presenting(['peer']));
+  const chip = screen.getByRole('button', { name: 'Reopen document' });
+  expect(chip.textContent).toBe('document');
+  expect(screen.queryByRole('textbox', { name: 'document input' })).toBeNull();
+  expect(screen.getByTestId('document-active').textContent).toBe('false');
+  expect(media.closest('[data-activity-video-rail]')).toBeNull();
+
+  rerender(presenting());
+  expect(screen.queryByRole('button', { name: 'Reopen document' })).toBeNull();
+  expect(screen.getByRole('textbox', { name: 'document input' })).toBe(input);
+  expect(input).toHaveProperty('value', 'Unsaved draft');
+  expect(screen.getByTestId('people')).toBe(media);
+  expect(mounts.document).toBe(1);
+});
+
+it('keeps a manual minimize after sharing ends and reopens the activity with one click', () => {
+  const { rerender } = render(presenting());
+  open('document');
+  rerender(presenting(['peer']));
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reopen document' }));
+  expect(screen.getByRole('textbox', { name: 'document input' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Minimize activities' }));
+  rerender(presenting());
+  expect(screen.queryByRole('textbox', { name: 'document input' })).toBeNull();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Reopen document' }));
+  expect(screen.getByRole('textbox', { name: 'document input' })).toBeTruthy();
+  expect(mounts.document).toBe(1);
+});
+
+it('keeps a fullscreen activity draft when screen shares overlap', () => {
+  const { rerender } = render(presenting());
+  open('fullscreen-qa');
+  const input = screen.getByRole('textbox', { name: 'fullscreen-qa input' });
+  fireEvent.change(input, { target: { value: 'Question draft' } });
+
+  rerender(presenting(['peer']));
+  expect(screen.queryByRole('dialog', { name: 'Q&A full screen' })).toBeNull();
+  rerender(presenting(['peer', 'another-peer']));
+  rerender(presenting(['another-peer']));
+  expect(screen.queryByRole('dialog', { name: 'Q&A full screen' })).toBeNull();
+  expect(screen.getByRole('button', { name: 'Reopen fullscreen-qa' })).toBeTruthy();
+
+  rerender(presenting());
+  expect(screen.getByRole('dialog', { name: 'Q&A full screen' })).toBeTruthy();
+  expect(screen.getByRole('textbox', { name: 'fullscreen-qa input' })).toBe(input);
+  expect(input).toHaveProperty('value', 'Question draft');
 });

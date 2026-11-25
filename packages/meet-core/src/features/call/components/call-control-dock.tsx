@@ -73,6 +73,7 @@ export function CallControlDock({
   layout,
   setLayout,
   nav,
+  revealActivity,
   transcript,
 }: {
   meetingId: string;
@@ -106,6 +107,7 @@ export function CallControlDock({
   layout: CallLayout;
   setLayout: (layout: CallLayout) => void;
   nav: RoomNavigation;
+  revealActivity?: (activityId: string) => void;
   /** Present for people allowed to read the transcript and notes. */
   transcript?: Toggle;
 }) {
@@ -133,6 +135,11 @@ export function CallControlDock({
       extra={activities.entries}
       pages={pages}
       navigationAllowed={nav.allowed}
+      navigation={
+        revealActivity
+          ? { ...nav, openFollow: navControls.openFollow, reveal: revealActivity }
+          : undefined
+      }
       collaboration={
         roomTools.canUse ? { programming, document, board } : undefined
       }
@@ -158,7 +165,7 @@ export function CallControlDock({
         activePanel={panel}
         activities={activitiesMenu}
         reactions={<CallReactionsMenu react={room.react} />}
-        navigation={nav.allowed ? navControls.menu : undefined}
+        navigation={nav.allowed && !revealActivity ? navControls.menu : undefined}
         onOpenSettings={
           settingsLinked ? () => settingsDialog.setOpen(true) : undefined
         }

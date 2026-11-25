@@ -1,3 +1,5 @@
+import type { MeetRoomView } from '@tuturuuu/realtime/meet';
+
 /** What the call shell and its hooks need of the stage to open activities. */
 export interface ActivityStage {
   isOpen: (activityId: string) => boolean;
@@ -22,3 +24,11 @@ export const toolIdOf = (activityId: string | null) =>
 
 /** Classroom activities that render as panes beside the registered tools. */
 export const CLASSROOM_ACTIVITIES = ['whiteboard', 'breakouts'] as const;
+
+/** The room view an activity stands for; classroom panes have none. */
+export function viewOfActivity(activityId: string | null): MeetRoomView | null {
+  if (activityId === PROGRAMMING_ACTIVITY) return { surface: 'programming' };
+  if (activityId === DOCUMENT_ACTIVITY) return { surface: 'document' };
+  const toolId = toolIdOf(activityId);
+  return toolId ? { surface: 'tool', toolId } : null;
+}

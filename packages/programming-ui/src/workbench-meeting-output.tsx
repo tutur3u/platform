@@ -3,6 +3,7 @@
 import {
   Bookmark,
   Check,
+  ChevronDown,
   Globe,
   ListChecks,
   Sparkles,
@@ -34,6 +35,7 @@ export type OutputTab = 'tests' | 'console' | 'preview';
 export function WorkbenchMeetingOutput({
   tab,
   onTab,
+  disclosure,
   test,
   testing,
   canTest,
@@ -47,6 +49,7 @@ export function WorkbenchMeetingOutput({
 }: Omit<SharedOutput, 'open' | 'onToggle' | 'embedded' | 'preview'> & {
   tab: OutputTab;
   onTab: (tab: OutputTab) => void;
+  disclosure?: { open: boolean; toggle: () => void };
   test?: WorkbenchTestRun;
   testing: boolean;
   canTest: boolean;
@@ -60,6 +63,7 @@ export function WorkbenchMeetingOutput({
 }) {
   const t = useTranslations('programmingPlayground');
   const id = useId();
+  const open = disclosure?.open ?? true;
   const tabs = [
     { value: 'tests', label: t('tests'), icon: ListChecks },
     { value: 'console', label: t('console'), icon: TerminalSquare },
@@ -69,8 +73,8 @@ export function WorkbenchMeetingOutput({
   const selectedFailure =
     failed.find((item) => item.index === selectedFailureIndex) ?? failed.at(0);
 
-  return (
-    <section className="flex h-[40%] min-h-40 shrink-0 flex-col overflow-hidden rounded-[var(--radius-xl)] border bg-card @4xl:h-full @4xl:w-[34%]">
+  const panel = open && (
+    <>
       <div
         role="tablist"
         aria-label={t('outputPanes')}
@@ -270,6 +274,41 @@ export function WorkbenchMeetingOutput({
           </Button>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <section
+      className={cn(
+        'flex shrink-0 flex-col overflow-hidden rounded-[var(--radius-xl)] border bg-card',
+        open && 'h-[40%] min-h-40 @4xl:h-full @4xl:w-[34%]',
+        !open && '@4xl:self-start'
+      )}
+    >
+      {disclosure && (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="justify-start rounded-none px-2.5"
+          aria-expanded={open}
+          aria-controls={`${id}-output`}
+          onClick={disclosure.toggle}
+        >
+          <ChevronDown
+            aria-hidden="true"
+            className={cn('size-4', !open && '-rotate-90')}
+          />
+          {t('outputPanes')}
+        </Button>
+      )}
+      <div
+        id={`${id}-output`}
+        hidden={!open}
+        className={open ? 'flex min-h-0 flex-1 flex-col' : undefined}
+      >
+        {panel}
+      </div>
     </section>
   );
 }

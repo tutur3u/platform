@@ -12,12 +12,17 @@ import {
   useContext,
   useId,
 } from 'react';
+import { viewOfActivity } from '../stage-layout/activity-ids';
+import {
+  ActivityLaunchControl,
+  type ActivityNavigation,
+} from './activity-launch-control';
 
-/**
- * Whether this person may Follow and Summon. Only then does a launch action
- * explain that it opens the activity for them and Summon brings others.
- */
-export const ActivitiesNavigationContext = createContext(false);
+/** How the Activities picker presents its room navigation actions. */
+export const ActivitiesNavigationContext = createContext<{
+  legacyAllowed?: boolean;
+  navigation?: ActivityNavigation;
+}>({});
 
 /** One entry in the Activities dialog. */
 export type ActivityTile = {
@@ -27,6 +32,7 @@ export type ActivityTile = {
   /** Open for this person now; listed under Open now. */
   active: boolean;
   description?: string;
+  stageId?: string;
   /** Launches the activity; absent where it may only be previewed. */
   open?: () => void;
   /** Content shown inside the dialog instead of launching anything. */
@@ -56,8 +62,17 @@ function LaunchButton({
   onLaunch: (tile: ActivityTile) => void;
 }) {
   const t = useTranslations('meet.call.activities');
-  const navigationAllowed = useContext(ActivitiesNavigationContext);
+  const { legacyAllowed, navigation } = useContext(ActivitiesNavigationContext);
   if (!tile.open && !tile.page) return null;
+  if (navigation && tile.stageId && !tile.page)
+    return (
+      <ActivityLaunchControl
+        label={tile.label}
+        onOpen={() => onLaunch(tile)}
+        view={viewOfActivity(tile.stageId)}
+        navigation={navigation}
+      />
+    );
   const opens = tile.active || !!tile.page;
   const button = (
     <Button
@@ -75,7 +90,7 @@ function LaunchButton({
   );
   // Starting an activity opens it for this person only; Summon brings
   // others to it.
-  if (tile.page || !navigationAllowed) return button;
+  if (tile.page || !legacyAllowed) return button;
   return (
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>

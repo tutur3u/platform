@@ -5,6 +5,7 @@ import {
   Maximize2,
   Minimize,
   Minimize2,
+  Minus,
   RefreshCw,
   X,
 } from '@tuturuuu/icons';
@@ -228,6 +229,7 @@ export function PaneWindowActions({
   canClose = true,
   fullscreen = false,
   onToggleFullscreen,
+  onMinimize,
 }: {
   title: string;
   maximized: boolean;
@@ -239,6 +241,7 @@ export function PaneWindowActions({
   fullscreen?: boolean;
   /** Absent where fullscreen is unavailable: phones, following, or a browser without it. */
   onToggleFullscreen?: () => void;
+  onMinimize?: () => void;
 }) {
   const t = useTranslations('meet.call.stage_layout');
   // Corner brackets: the pane fills the stage. Activities with their own full
@@ -278,6 +281,19 @@ export function PaneWindowActions({
           onClick={onToggleMaximize}
         >
           <MaximizeIcon aria-hidden="true" className="size-4" />
+        </Button>
+      )}
+      {onMinimize && (
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
+          aria-label={t('minimize_activities')}
+          title={t('minimize_activities')}
+          onClick={onMinimize}
+        >
+          <Minus aria-hidden="true" className="size-4" />
         </Button>
       )}
       {canClose && (

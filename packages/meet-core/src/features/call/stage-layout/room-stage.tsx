@@ -18,6 +18,7 @@ import {
   toolIdOf,
 } from './activity-ids';
 import { type StageActivity, StageLayoutView } from './stage-layout-view';
+import type { ActivityPresentation } from './use-activity-presentation';
 import type { StageLayoutController } from './use-stage-layout';
 
 /**
@@ -28,6 +29,7 @@ export function RoomStage({
   controller,
   stage,
   peopleCount,
+  presentation,
   tools,
   renderTool,
   renderClassroom,
@@ -36,6 +38,7 @@ export function RoomStage({
   controller: StageLayoutController;
   stage: ReactNode;
   peopleCount: number;
+  presentation?: ActivityPresentation;
   tools: readonly MeetToolDefinition[];
   renderTool: (activityId: string) => ReactNode;
   renderClassroom: (activityId: string) => ReactNode;
@@ -103,6 +106,7 @@ export function RoomStage({
       activities={activities}
       stage={stage}
       peopleCount={peopleCount}
+      presentation={presentation}
     />
   );
 }

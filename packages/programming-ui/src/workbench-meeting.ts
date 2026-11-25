@@ -13,6 +13,7 @@ export type RunnerRefusal = {
 /** What a meeting adds to the workbench; Learn passes none of it. */
 export interface WorkbenchMeeting {
   mira: WorkbenchMira;
+  collapsibleOutput?: boolean;
   runTests?: (source: string) => Promise<WorkbenchTestRun>;
   onRuntime?: (language: PlaygroundLanguage) => void;
   runtimePending?: boolean;

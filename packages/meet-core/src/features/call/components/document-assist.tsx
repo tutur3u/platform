@@ -12,6 +12,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { useMeetUxV2 } from '../prejoin/prejoin-context';
+import { useActivityPane } from '../stage-layout/activity-pane-context';
 import { MiraAdultNotice } from '../../live-assistant/mira-adult-notice';
 import { MiraMark } from './mira-mark';
 import {
@@ -113,6 +115,8 @@ export function DocumentAssist({
 }) {
   const t = useTranslations('meet.collaboration');
   const [open, setOpen] = useState(false);
+  const meetUxV2 = useMeetUxV2();
+  const visible = useActivityPane()?.visible ?? true;
   const [mode, setMode] = useState<Mode>('refine');
   const [instruction, setInstruction] = useState('');
   const target = useRef<Target | null>(null);
@@ -160,7 +164,7 @@ export function DocumentAssist({
   const needsSelection = mode === 'refine' && !target.current?.text.trim();
   return (
     <Popover
-      open={open}
+      open={open && (!meetUxV2 || visible)}
       onOpenChange={(next) => {
         if (assist.isPending) return;
         // Keyboard activation has no pointerdown, so capture on open as well.

@@ -29,6 +29,7 @@ export function ActivitiesDialog({
   persistedTab,
   setPersistedTab,
   onClose,
+  onReveal,
   onFeedback,
 }: {
   tiles: readonly ActivityTile[];
@@ -36,6 +37,7 @@ export function ActivitiesDialog({
   persistedTab: string | null;
   setPersistedTab: (tab: string | null) => unknown;
   onClose: () => void;
+  onReveal?: (activityId: string) => void;
   onFeedback?: () => void;
 }) {
   const t = useTranslations('meet.call.activities');
@@ -85,8 +87,8 @@ export function ActivitiesDialog({
       select(tile.id);
       return;
     }
-    // An activity already open for this person stays open.
-    if (!tile.active) tile.open?.();
+    if (tile.stageId && onReveal) onReveal(tile.stageId);
+    else if (!tile.active) tile.open?.();
     // Reopening Activities lands on the overview.
     void setPersistedTab(null);
     onClose();
