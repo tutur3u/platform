@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior.dart';
 import 'package:mobile/features/shell/cubit/sidebar_preferences.dart';
 
@@ -36,7 +37,9 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
     try {
       _device = await _preferences.readDevice();
     } on Object catch (error) {
-      debugPrint('Could not read sidebar device preference: $error');
+      debugPrint(
+        'Could not read sidebar device preference: ${_describe(error)}',
+      );
     }
     if (isClosed) return;
     _ready = true;
@@ -131,7 +134,7 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
         () => _preferences.writeAccount(userId, remote, pending: false),
       );
     } on Object catch (error) {
-      debugPrint('Could not sync sidebar preference: $error');
+      debugPrint('Could not sync sidebar preference: ${_describe(error)}');
     }
   }
 
@@ -141,7 +144,7 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
         await write();
         return true;
       } on Object catch (error) {
-        debugPrint('Could not store sidebar preference: $error');
+        debugPrint('Could not store sidebar preference: ${_describe(error)}');
         return false;
       }
     });
@@ -168,7 +171,7 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
         });
       } on Object catch (error) {
         // The pending value is retried when this account is bound again.
-        debugPrint('Could not upload sidebar preference: $error');
+        debugPrint('Could not upload sidebar preference: ${_describe(error)}');
       }
     });
     _uploads[userId] = send;
@@ -177,3 +180,9 @@ class SidebarBehaviorCubit extends Cubit<SidebarBehaviorState> {
     });
   }
 }
+
+/// Names a failure without its message: API and storage errors can carry
+/// response content that must not reach logs.
+String _describe(Object error) => error is ApiException
+    ? 'ApiException(${error.statusCode})'
+    : error.runtimeType.toString();

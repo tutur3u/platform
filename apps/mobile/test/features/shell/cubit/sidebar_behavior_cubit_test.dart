@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior.dart';
 import 'package:mobile/features/shell/cubit/sidebar_behavior_cubit.dart';
 import 'package:mobile/features/shell/cubit/sidebar_preferences.dart';
@@ -12,10 +14,12 @@ class _Preferences extends SidebarPreferences {
   final reads = <String, Completer<SidebarBehavior?>>{};
   final firstRead = Completer<void>();
   bool rejectWrites = false;
+  Exception? failure;
 
   @override
   Future<SidebarBehavior?> loadAccount(String userId) async {
     if (!firstRead.isCompleted) firstRead.complete();
+    if (failure case final error?) throw error;
     final pending = reads[userId];
     if (pending != null) return await pending.future;
     return remote[userId];
@@ -127,4 +131,28 @@ void main() {
     expect(cubit.state.behavior, SidebarBehavior.collapsed);
     expect((await prefs.readAccount('a')).behavior, isNull);
   });
+
+  test(
+    'a failed account sync logs the failure kind without its content',
+    () async {
+      final logs = <String?>[];
+      final original = debugPrint;
+      debugPrint = (message, {wrapWidth}) => logs.add(message);
+      addTearDown(() => debugPrint = original);
+      final prefs = _Preferences()
+        ..failure = const ApiException(
+          message: 'response body with private details',
+          statusCode: 503,
+        );
+      final cubit = SidebarBehaviorCubit(preferences: prefs);
+      addTearDown(cubit.close);
+
+      await cubit.restore('a');
+
+      final joined = logs.join('\n');
+      expect(joined, contains('Could not sync sidebar preference'));
+      expect(joined, contains('ApiException(503)'));
+      expect(joined, isNot(contains('private details')));
+    },
+  );
 }
