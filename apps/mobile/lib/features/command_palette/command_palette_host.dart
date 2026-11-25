@@ -124,7 +124,11 @@ class _PaletteHostState extends State<PaletteHost> {
         unawaited(_showHelp(navigatorContext));
       case PaletteShortcut.newItem:
         unawaited(_create(chat: _inMira, scope: scope));
-      default:
+      case PaletteShortcut.home ||
+          PaletteShortcut.apps ||
+          PaletteShortcut.mira ||
+          PaletteShortcut.notifications ||
+          PaletteShortcut.profile:
         break;
     }
   }
@@ -153,37 +157,36 @@ class _PaletteHostState extends State<PaletteHost> {
     _overlayKind = PaletteShortcut.palette;
     PaletteEntry? selected;
     try {
-      selected = await showPaletteOverlay<PaletteEntry>(
-        navigatorContext,
-        (context) {
-          final apps = AppRegistry.modules(context);
-          final notesVisible = apps.any((app) => app.id == 'notes');
-          return BlocProvider(
-            create: (_) {
-              final cubit = PaletteCubit(
-                repository: WorkspacePaletteRepository(
-                  workspaceId: scope.workspace,
-                  actor: scope.actor,
-                  isCurrent: () => _overlayKey == key && _scope == scope,
-                  tasks: widget.tasks,
-                  notes: notesVisible ? NoteRepository(apiClient: api) : null,
-                  prepareNotes: notesVisible
-                      ? NotesOfflinePreparation(api: api)
-                      : null,
-                ),
-                recents: recents,
-              );
-              unawaited(cubit.loadRecents());
-              return cubit;
-            },
-            child: CommandPaletteView(
-              key: key,
-              commands: paletteCatalog(context, apps, inMira: inMira),
-              showNotes: notesVisible,
-            ),
-          );
-        },
-      );
+      selected = await showPaletteOverlay<PaletteEntry>(navigatorContext, (
+        context,
+      ) {
+        final apps = AppRegistry.modules(context);
+        final notesVisible = apps.any((app) => app.id == 'notes');
+        return BlocProvider(
+          create: (_) {
+            final cubit = PaletteCubit(
+              repository: WorkspacePaletteRepository(
+                workspaceId: scope.workspace,
+                actor: scope.actor,
+                isCurrent: () => _overlayKey == key && _scope == scope,
+                tasks: widget.tasks,
+                notes: notesVisible ? NoteRepository(apiClient: api) : null,
+                prepareNotes: notesVisible
+                    ? NotesOfflinePreparation(api: api)
+                    : null,
+              ),
+              recents: recents,
+            );
+            unawaited(cubit.loadRecents());
+            return cubit;
+          },
+          child: CommandPaletteView(
+            key: key,
+            commands: paletteCatalog(context, apps, inMira: inMira),
+            showNotes: notesVisible,
+          ),
+        );
+      });
     } finally {
       api.dispose();
       _overlayKey = null;
@@ -245,7 +248,7 @@ class _PaletteHostState extends State<PaletteHost> {
         widget.router.go(target);
       }
       await SchedulerBinding.instance.endOfFrame;
-      if (_scope != scope || _location != target) return;
+      if (!mounted || _scope != scope || _location != target) return;
       final action = context
           .read<ShellChromeActionsCubit>()
           .state
@@ -275,8 +278,7 @@ class _PaletteHostState extends State<PaletteHost> {
     listeners: [
       BlocListener<AuthCubit, AuthState>(
         listenWhen: (before, after) =>
-            before.user?.id != after.user?.id ||
-            before.status != after.status,
+            before.user?.id != after.user?.id || before.status != after.status,
         listener: (_, _) => _closeOverlay(removing: true),
       ),
       BlocListener<WorkspaceCubit, WorkspaceState>(

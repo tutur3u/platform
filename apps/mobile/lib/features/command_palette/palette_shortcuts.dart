@@ -9,11 +9,7 @@ enum PaletteShortcut {
   home(LogicalKeyboardKey.digit1, '1', ShellRootTab.home),
   apps(LogicalKeyboardKey.digit2, '2', ShellRootTab.apps),
   mira(LogicalKeyboardKey.digit3, '3', ShellRootTab.assistant),
-  notifications(
-    LogicalKeyboardKey.digit4,
-    '4',
-    ShellRootTab.notifications,
-  ),
+  notifications(LogicalKeyboardKey.digit4, '4', ShellRootTab.notifications),
   profile(LogicalKeyboardKey.digit5, '5', ShellRootTab.profile),
   settings(LogicalKeyboardKey.comma, ','),
   help(LogicalKeyboardKey.slash, '/'),

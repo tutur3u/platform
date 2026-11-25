@@ -64,7 +64,13 @@ Future<GoRouter> _pumpApp(
     auth,
     const Stream<AuthState>.empty(),
     initialState: const AuthState.authenticated(
-      User(id: 'actor', appMetadata: {}, aud: 'authenticated', createdAt: ''),
+      User(
+        id: 'actor',
+        appMetadata: {},
+        userMetadata: {},
+        aud: 'authenticated',
+        createdAt: '',
+      ),
     ),
   );
   whenListen(

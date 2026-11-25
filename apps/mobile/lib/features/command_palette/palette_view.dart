@@ -10,18 +10,16 @@ import 'package:mobile/features/command_palette/palette_entry.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-Future<T?> showPaletteOverlay<T>(
-  BuildContext context,
-  WidgetBuilder builder,
-) => showAppSheet<T>(
-  context: context,
-  useRootNavigator: true,
-  forceBottomSheet:
-      shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
-      ShellNavigationMode.dock,
-  maxDialogWidth: 640,
-  builder: builder,
-);
+Future<T?> showPaletteOverlay<T>(BuildContext context, WidgetBuilder builder) =>
+    showAppSheet<T>(
+      context: context,
+      useRootNavigator: true,
+      forceBottomSheet:
+          shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
+          ShellNavigationMode.dock,
+      maxDialogWidth: 640,
+      builder: builder,
+    );
 
 class CommandPaletteView extends StatefulWidget {
   const CommandPaletteView({
@@ -211,7 +209,7 @@ class _CommandPaletteViewState extends State<CommandPaletteView> {
           AppIconButton(
             tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
             icon: const Icon(AppIcons.close),
-          onPressed: () => _close(),
+            onPressed: _close,
           ),
         ],
       ),

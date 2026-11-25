@@ -69,7 +69,7 @@ class WorkspacePaletteRepository implements PaletteRepository {
 
   @override
   Future<PaletteSearchResult> search(String query) async {
-    if (!isCurrent()) return (records: const [], failed: false);
+    if (!isCurrent()) return (records: const <PaletteRecord>[], failed: false);
     final taskRequest = _taskSnapshot ??= _loadTasks();
     final noteRequest = _noteSnapshot ??= _loadNotes();
     final rows = await Future.wait([taskRequest, noteRequest]);

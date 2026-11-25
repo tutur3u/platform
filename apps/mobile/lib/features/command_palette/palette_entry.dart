@@ -14,7 +14,10 @@ class PaletteEntry {
     this.appId,
     this.recordKind,
     this.shortcut,
-  }) : assert((route == null) != (action == null));
+  }) : assert(
+         (route == null) != (action == null),
+         'A palette entry has exactly one of a route or an action.',
+       );
 
   final String id;
   final String label;
@@ -50,17 +53,16 @@ int paletteMatchScore(String text, String query) {
   return 0;
 }
 
-List<T> rankPaletteMatches<T>(
-  Iterable<T> items,
-  int Function(T item) score,
-) {
-  final matches = [
-    for (final (index, item) in items.indexed)
-      (item: item, score: score(item), index: index),
-  ]..removeWhere((match) => match.score == 0);
-  matches.sort((a, b) {
-    final byScore = b.score.compareTo(a.score);
-    return byScore == 0 ? a.index.compareTo(b.index) : byScore;
-  });
+List<T> rankPaletteMatches<T>(Iterable<T> items, int Function(T item) score) {
+  final matches =
+      [
+          for (final (index, item) in items.indexed)
+            (item: item, score: score(item), index: index),
+        ]
+        ..removeWhere((match) => match.score == 0)
+        ..sort((a, b) {
+          final byScore = b.score.compareTo(a.score);
+          return byScore == 0 ? a.index.compareTo(b.index) : byScore;
+        });
   return [for (final match in matches) match.item];
 }

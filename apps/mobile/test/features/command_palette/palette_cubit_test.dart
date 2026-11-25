@@ -86,19 +86,16 @@ void main() {
       await recents.remember('command-$i');
     }
     await recents.remember('command-5');
-    expect(
-      await recents.read(),
-      [
-        'command-5',
-        'command-9',
-        'command-8',
-        'command-7',
-        'command-6',
-        'command-4',
-        'command-3',
-        'command-2',
-      ],
-    );
+    expect(await recents.read(), [
+      'command-5',
+      'command-9',
+      'command-8',
+      'command-7',
+      'command-6',
+      'command-4',
+      'command-3',
+      'command-2',
+    ]);
     const otherAccount = DevicePaletteRecents('other-actor');
     expect(await otherAccount.read(), isEmpty);
   });
