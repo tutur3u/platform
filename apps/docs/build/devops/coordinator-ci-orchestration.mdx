@@ -1,0 +1,138 @@
+---
+title: 'Coordinator-orchestrated CI'
+description: 'Design for the deployment coordinator to start, schedule, supersede and record main-branch CI: one registration per push, affected-only dispatch deduplicated by closure, newest-SHA-wins lanes with release pins, a runner budget, exact-SHA verdicts for release admission, and a stop fence that falls back to push-triggered CI.'
+updatedAt: '2026-11-26'
+audience: developers
+---
+
+Status: design. Nothing here is built yet. The first slice, register and
+observe, changes no CI behaviour. Each later slice lands on its own, with its
+own review and gate.
+
+## Problem
+
+Every push to `main` starts about fifty workflows on its own. GitHub
+concurrency can only supersede inside one workflow, and it knows nothing about
+release pins, so main-push supersession
+([runbook](/build/devops/github-actions-runbook#main-push-supersession)) is
+limited to pure checks, and a pinned SHA keeps its evidence only through a
+[release candidate](/build/devops/release-candidates). Nothing decides across
+workflows what one push needs, which runs a newer push makes obsolete, or how
+many runs may be in flight. Release admission reads raw GitHub runs and
+reconstructs a verdict on every call.
+
+## Target
+
+The [deployment coordinator](/build/devops/deployment-coordinator) becomes the
+authority for main CI, the same way it already is for deploy lanes:
+
+1. **Register.** A push to `main` runs one thin workflow,
+   `ci-register.yaml`, that sends the SHA, `before`, and the push's changed
+   paths to the coordinator with GitHub OIDC (the same token rules as deploy
+   jobs: repository id, `refs/heads/main`, an allowlisted workflow file). Heavy
+   CI workflows keep `workflow_dispatch` and `workflow_call` and lose their
+   `push: main` trigger only when their slice moves them.
+2. **Plan what runs.** The coordinator does not parse the repository. The
+   registration carries the output of the existing planners
+   (`scripts/ci/ci-plan.mjs`, `tuturuuu.ts` workflow decisions and the
+   affected-app closure), computed by the register job against the newest
+   commit already green for each workflow. The coordinator stores a closure
+   key per workflow: a hash of the workflow file, the planner's selected
+   workspaces, and their source tree hashes. A workflow whose closure key
+   already has a green verdict is recorded green for the new SHA without a
+   run.
+3. **Decide when.** One CI lane per workflow on `main`. Newest SHA wins: a
+   newer registration supersedes queued work for older SHAs and asks GitHub
+   to cancel their running, non-writing runs. Bursts coalesce: a dispatch
+   waits a short settle window (default 90 seconds, bounded) so ten pushes
+   become one run on the newest SHA. Pins outrank the newest SHA: a pinned
+   SHA's required set is dispatched once, on its own candidate ref, and is
+   never cancelled. Hotfix and release pins (R-rounds, Meet, mobile) take
+   priority in the runner budget.
+4. **Cap in-flight work.** The coordinator holds a runner budget (a ceiling on
+   dispatched, unfinished runs, per runner pool) and dispatches in priority
+   order: pins, then the newest main SHA, then everything else. Nothing
+   dispatches above the budget; queued plans wait in the Durable Object.
+5. **Record verdicts.** Workflow-run completion reaches the coordinator
+   (a `workflow_run` reporter job with OIDC, or the run's final job). The
+   coordinator stores each SHA's per-workflow verdict and closure key.
+   Release admission asks "is SHA X green for app Y?" and gets the stored
+   answer, with links to the runs. GitHub commit statuses and required checks
+   are still reported by the runs themselves, so branch protection and the
+   commit page keep working.
+
+### Pins
+
+A pin is a coordinator record `{sha, reason, requiredSet, expiresAt,
+actor}` written by the production planner, the Meet release, the R-round
+pinning step or an operator (`ttr ci pin <sha> --reason r20`). It replaces
+manual release-candidate nominations: the coordinator creates the candidate
+ref and dispatches the required set there. A pin expires after seven days or
+when production serves a descendant, whichever comes first. Pins are capped
+(three active) like candidates.
+
+## Safety
+
+- **Dispatch credential.** A GitHub App installed only on `tutur3u/platform`
+  with `actions: write` and `contents: read`, its private key held only as a
+  coordinator Worker secret. It can dispatch and cancel workflow runs, not
+  push code. Cancellation is limited by an allowlist to the pure CI workflows
+  in `scripts/ci/main-supersession.json`; the coordinator never cancels a
+  workflow that publishes, deploys, migrates or writes, and never touches a
+  pinned SHA.
+- **Stop fence.** `DEPLOY_COORDINATOR_CI_MODE` is `off`, `observe` or
+  `orchestrate`, plus the coordinator's own durable stop. `off` and every
+  coordinator failure fall back to the current push-triggered CI: until a
+  slice removes a workflow's `push` trigger, nothing depends on the
+  coordinator, and the slice that removes it keeps a fallback job in
+  `ci-register.yaml` that dispatches the workflow directly when the
+  coordinator does not acknowledge within its timeout.
+- **Idempotency.** Registration is keyed by SHA; dispatch by
+  `(sha, workflow, attempt)`; verdicts by run id. Retries never double
+  dispatch.
+- **Bounded cost.** Each push costs one registration call plus one completion
+  call per dispatched workflow. Closure dedup and coalescing reduce the
+  dispatches. Every call is charged to the coordinator's durable daily budget,
+  and an exhausted budget falls back to push-triggered CI.
+
+## Cost
+
+Per push, with the current catalog of about fifty workflows and a typical
+affected set of eight:
+
+| Item | Calls | Rows written |
+| ---- | ----- | ------------ |
+| Registration (plan for every workflow) | 1 | about 55: one SHA row and one plan row per workflow, plus indexes |
+| Dispatch decisions (coalesced, affected only) | 0 extra (taken on registration or the settle alarm) | about 8 |
+| Completion reports | 8 | about 8 × 6 = 48 |
+| Total per push | about 9 | about 110 |
+
+At 150 main pushes a day that is about 1,350 calls and 17,000 rows a day,
+about 0.5 million rows a month, inside the included 50 million. The settle
+window uses one Durable Object alarm per lane only while a plan is waiting,
+bounded by the lane count. GitHub API calls made by the coordinator (dispatch
+and cancel) are bounded by the runner budget and the cancellation allowlist.
+The hard ceiling is the existing per-environment daily budget, applied to a
+new `ci:main` object.
+
+## Slices
+
+1. **Register and observe (shadow).** `ci-register.yaml` registers each main
+   push and the plan it would run; the coordinator records it. A daily
+   comparison reports what the coordinator would have dispatched, skipped as
+   closure-green, coalesced or cancelled against the runs GitHub actually
+   ran. No dispatch, no cancel, no trigger change.
+2. **Pins.** Pin records and `ttr ci pin`; the coordinator nominates release
+   candidates. Release admission reads coordinator verdicts in observe mode
+   beside the existing GitHub-run check.
+3. **Orchestrate a few workflows.** Move two or three pure checks (for example
+   Codex Plugin and two Cloudflare Source checks) from `push` to coordinator
+   dispatch, with the fallback job. Compare queue depth and verdict parity.
+4. **All pure CI.** Move the rest of `main-supersession.json`, then Oxc once
+   its write job is split. Workflows that publish stay push- or
+   planner-triggered.
+5. **Admission.** Release admission and the production planner use
+   coordinator verdicts as the source of truth.
+
+Each slice records its queue-depth and verdict-parity evidence in this page
+before the next one starts.
