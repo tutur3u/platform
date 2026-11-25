@@ -102,6 +102,12 @@ select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, deci
 select ok((select provolatile = 'v' and prosrc ~* 'for key share' from pg_proc
     where oid = 'private.meet_ai_self_v1_account_gone(uuid)'::regprocedure),
   'account_gone locks the Auth row for the rest of the transaction');
+select ok((select strpos(prosrc, 'for update') > 0 and strpos(prosrc, 'for update') < strpos(prosrc, 'gone := gone or') from pg_proc
+    where oid = 'private.meet_ai_self_v1_record_decision(uuid, uuid, text, text, bigint, text, text)'::regprocedure),
+  'record_decision rechecks the account after it has the session lock');
+select ok((select strpos(prosrc, 'for update') > 0 and strpos(prosrc, 'for update') < strpos(prosrc, 'gone := gone or') from pg_proc
+    where oid = 'private.meet_ai_self_v1_end_upload(uuid, uuid, bigint, text)'::regprocedure),
+  'end_upload rechecks the account after it has the session lock');
 select ok((select strpos(prosrc, 'account_gone') < strpos(prosrc, 'for update') from pg_proc
     where oid = 'private.meet_ai_self_v1_record_decision(uuid, uuid, text, text, bigint, text, text)'::regprocedure)
   and (select strpos(prosrc, 'account_gone') < strpos(prosrc, 'for update') from pg_proc
@@ -168,7 +174,18 @@ select ok(private.meet_ai_self_v1_close_stream(pg_temp.sess(89621), pg_temp.cid(
   'a close after that person''s erasure completed is still recorded');
 select is(pg_temp.dec(89621, 89607, 'allow', 4), '2/false',
   'an allow after that person''s erasure completed is a no-op');
+select is(pg_temp.dec(89621, 89607, 'deny', 5), '3/true',
+  'a deny after that person''s erasure completed is still recorded');
+select ok(private.meet_ai_self_v1_revoke_upload(pg_temp.sess(89621), pg_temp.cid(89607), 6),
+  'a revoke after that person''s erasure completed is still recorded');
 select is(pg_temp.dec(89621, 89603, 'withdraw', 2), '2/true', 'another account in that session still records');
+insert into private.meet_ai_erasure_jobs(id, operation_id, scope, session_id, subject_account_id,
+  subject_digest, requested_by, fence_generation, expires_at)
+  values (pg_temp.cid(89643), gen_random_uuid(), 'person_session', pg_temp.sess(89621), pg_temp.cid(89603),
+    sha256('b'::bytea), 'subject', 1, now() + interval '30 days');
+select is(pg_temp.dec(89621, 89603, 'allow', 3), '2/false',
+  'an allow while that person''s erasure is still running is a no-op');
+delete from private.meet_ai_erasure_jobs where id = pg_temp.cid(89643);
 
 select is((select r.revision::text || '/' || r.recorded from private.meet_ai_self_v1_record_decision(
     gen_random_uuid(), pg_temp.cid(89602), 'withdraw', 'v1', 1) r), null,

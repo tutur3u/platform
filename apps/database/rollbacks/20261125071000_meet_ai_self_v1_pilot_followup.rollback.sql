@@ -234,6 +234,9 @@ as $$
     and (p_session.capture_state = 'active'
       or (p_session.capture_state = 'draining' and p_session.drain_deadline_at > now()));
 $$;
+revoke all on function private.meet_ai_self_v1_capturing(public.meet_ai_sessions)
+  from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_capturing(public.meet_ai_sessions) to service_role;
 
 drop function if exists private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid, boolean);
 

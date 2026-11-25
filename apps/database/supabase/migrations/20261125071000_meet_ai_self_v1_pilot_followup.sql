@@ -70,8 +70,8 @@ grant execute on function private.meet_ai_self_v1_account_gone(uuid) to service_
 
 -- A session closed out for one account: capture deleted, transcript purged or
 -- any session erasure job, for every write; and, only for a write that opens
--- or re-links capture (p_opening, an allow), a completed person erasure of that
--- account. A withdraw, deny, close or revoke after a completed person erasure
+-- or re-links capture (p_opening, an allow), a person erasure of that account
+-- in any status (a running erasure must not gain a new row either). A withdraw, deny, close or revoke after a completed person erasure
 -- is still recorded: it is the only way to stop a stream that is still live
 -- once the upload fence lifts.
 create function private.meet_ai_self_v1_closed_out(
@@ -82,7 +82,7 @@ as $$
     or exists (select 1 from private.meet_ai_erasure_jobs j
       where j.session_id = p_session.id
         and (j.scope = 'session'
-          or (p_opening and j.subject_account_id = p_account_id and j.status = 'completed')));
+          or (p_opening and j.subject_account_id = p_account_id)));
 $$;
 revoke all on function private.meet_ai_self_v1_closed_out(public.meet_ai_sessions, uuid, boolean)
   from public, anon, authenticated;
@@ -102,6 +102,9 @@ as $$
     and (p_session.capture_state = 'active'
       or (p_session.capture_state = 'draining' and p_session.drain_deadline_at > now()));
 $$;
+revoke all on function private.meet_ai_self_v1_capturing(public.meet_ai_sessions)
+  from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_capturing(public.meet_ai_sessions) to service_role;
 
 -- Consent rows: room_seq only on self_v1 account decisions, ordered against
 -- the shared watermark; every self_v1 account `allow` carries a room_seq and
@@ -247,6 +250,7 @@ as $$
 declare
   gone boolean;
   s public.meet_ai_sessions;
+  n integer;
 begin
   if num_nulls(p_session_id, p_account_id, p_decision, p_notice_version, p_room_seq) > 0 then
     raise exception 'Missing argument' using errcode = '22023'; end if;
@@ -280,7 +284,10 @@ begin
     (session_id, user_id, decision, notice_version, room_seq, locale, text_hash)
     values (p_session_id, p_account_id, p_decision, p_notice_version, p_room_seq,
       p_locale, p_text_hash);
-  return query select st.revision, true
+  -- The BEFORE INSERT trigger can still skip the row (a fence committed after
+  -- the check above), and then nothing was recorded.
+  get diagnostics n = row_count;
+  return query select st.revision, n > 0
     from private.meet_ai_self_v1_consent_state(p_session_id, p_account_id) st;
 end;
 $$;
