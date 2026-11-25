@@ -10,15 +10,23 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
+import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
+import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/documents/document_media_upload.dart';
+import 'package:mobile/features/documents/document_mention_source.dart';
+import 'package:mobile/features/documents/document_mentions.dart';
 import 'package:mobile/features/documents/documents_content.dart';
 import 'package:mobile/features/documents/documents_labels.dart';
 import 'package:mobile/features/documents/view/document_editor.dart';
 import 'package:mobile/features/documents/view/document_format_actions.dart';
 import 'package:mobile/features/documents/view/document_format_toolbar.dart';
+import 'package:mobile/features/documents/view/document_image_embed.dart';
 import 'package:mobile/features/documents/view/document_input_rules.dart';
+import 'package:mobile/features/documents/view/document_inserts.dart';
 import 'package:mobile/features/documents/view/document_share_sheet.dart';
+import 'package:mobile/features/documents/view/document_table_embed.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -33,11 +41,21 @@ class DocumentDetailPage extends StatefulWidget {
     super.key,
     this.repository,
     this.onSaved,
+    this.uploader,
+    this.mentionOptions,
   });
 
   final String documentId;
   final DocumentRepository? repository;
   final VoidCallback? onSaved;
+
+  /// Uploads inserted media; defaults to the workspace storage flow.
+  final DocumentMediaUploader? uploader;
+
+  /// Loads what `@` can mention in a workspace; defaults to its members,
+  /// projects and tasks.
+  final Future<List<DocumentMentionOption>> Function(Workspace workspace)?
+  mentionOptions;
 
   @override
   State<DocumentDetailPage> createState() => _DocumentDetailPageState();
@@ -47,6 +65,9 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   static const Duration _autosaveDelay = Duration(milliseconds: 800);
 
   late final DocumentRepository _repository;
+  late final DocumentMediaUploader _uploader =
+      widget.uploader ?? DocumentMediaUploader();
+  Future<List<DocumentMentionOption>>? _mentionOptions;
   final TextEditingController _title = TextEditingController();
   final QuillController _editor = QuillController.basic();
   final FocusNode _editorFocus = FocusNode();
@@ -89,6 +110,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     if (widget.repository == null) {
       unawaited(pending.whenComplete(_repository.dispose));
     }
+    if (widget.uploader == null) _uploader.dispose();
     super.dispose();
   }
 
@@ -112,6 +134,14 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
           offset: typed.offset,
           typed: typed.typed,
         );
+        // A typed `@` opens the mention picker, as on the web.
+        if (typed.typed == '@' &&
+            startsDocumentMention(
+              _editor.document.toPlainText(),
+              typed.offset,
+            )) {
+          unawaited(_mention(trigger: typed.offset));
+        }
       });
     });
   }
@@ -333,6 +363,53 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     applyDocumentSwatch(_editor, channel, hue.isEmpty ? null : hue);
   }
 
+  Future<void> _mention({int? trigger}) {
+    final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
+    if (workspace == null) return Future<void>.value();
+    final options = _mentionOptions ??=
+        widget.mentionOptions?.call(workspace) ??
+        loadDocumentMentionOptions(TaskRepository(), workspace);
+    return insertDocumentMention(
+      context,
+      _editor,
+      options: options,
+      trigger: trigger,
+    );
+  }
+
+  void _insert(DocumentInsertKind kind) {
+    _rememberWorkspace();
+    final wsId = _wsIdCache;
+    if (wsId == null || wsId.isEmpty) return;
+    final media = switch (kind) {
+      DocumentInsertKind.image => DocumentMediaKind.image,
+      DocumentInsertKind.camera => DocumentMediaKind.camera,
+      DocumentInsertKind.video => DocumentMediaKind.video,
+      DocumentInsertKind.file => DocumentMediaKind.file,
+      _ => null,
+    };
+    unawaited(switch (kind) {
+      DocumentInsertKind.table => insertDocumentTable(context, _editor),
+      DocumentInsertKind.mention => _mention(),
+      _ => insertDocumentMedia(
+        context,
+        _editor,
+        kind: media!,
+        wsId: wsId,
+        uploader: _uploader,
+      ),
+    });
+  }
+
+  Future<void> _editImage(int offset, Map<String, dynamic> node) async {
+    final action = await showAppSheet<DocumentImageAction>(
+      context: context,
+      builder: (_) => DocumentImageSheet(node: node),
+    );
+    if (action == null || !mounted) return;
+    applyDocumentImageAction(context, _editor, offset, node, action);
+  }
+
   Future<void> _openShare() {
     return showAppSheet<void>(
       context: context,
@@ -453,6 +530,11 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             onHighlight: () => unawaited(
                               _pickColor(DocumentColorChannel.highlight),
                             ),
+                            onEditImage: (offset, node) =>
+                                unawaited(_editImage(offset, node)),
+                            onEditTable: (offset, node) => unawaited(
+                              editDocumentTable(context, _editor, offset, node),
+                            ),
                           ),
                   ),
                 ),
@@ -465,6 +547,8 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                         editor: _editor,
                         onLink: () => unawaited(_editLink()),
                         onColor: (channel) => unawaited(_pickColor(channel)),
+                        onInsert: _insert,
+                        camera: documentCameraAvailable,
                       ),
                     ),
                   ),

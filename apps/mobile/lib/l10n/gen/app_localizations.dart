@@ -6691,6 +6691,30 @@ abstract class AppLocalizations {
   /// **'Undo'**
   String get documentsFormatUndo;
 
+  /// No description provided for @documentsImageDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete image'**
+  String get documentsImageDelete;
+
+  /// No description provided for @documentsImageEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit image'**
+  String get documentsImageEdit;
+
+  /// No description provided for @documentsImageSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get documentsImageSize;
+
+  /// No description provided for @documentsImageView.
+  ///
+  /// In en, this message translates to:
+  /// **'View image'**
+  String get documentsImageView;
+
   /// No description provided for @documentsInlineCitation.
   ///
   /// In en, this message translates to:
@@ -6703,6 +6727,42 @@ abstract class AppLocalizations {
   /// **'Web-only item'**
   String get documentsInlineUnsupported;
 
+  /// No description provided for @documentsInsertCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Take photo'**
+  String get documentsInsertCamera;
+
+  /// No description provided for @documentsInsertFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach file'**
+  String get documentsInsertFile;
+
+  /// No description provided for @documentsInsertImage.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get documentsInsertImage;
+
+  /// No description provided for @documentsInsertMention.
+  ///
+  /// In en, this message translates to:
+  /// **'Mention'**
+  String get documentsInsertMention;
+
+  /// No description provided for @documentsInsertTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get documentsInsertTable;
+
+  /// No description provided for @documentsInsertVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video'**
+  String get documentsInsertVideo;
+
   /// No description provided for @documentsLinkPlaceholder.
   ///
   /// In en, this message translates to:
@@ -6714,6 +6774,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Link'**
   String get documentsLinkTitle;
+
+  /// No description provided for @documentsMentionCustomDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a date'**
+  String get documentsMentionCustomDate;
+
+  /// No description provided for @documentsMentionDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates'**
+  String get documentsMentionDates;
+
+  /// No description provided for @documentsMentionEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get documentsMentionEmpty;
+
+  /// No description provided for @documentsMentionNextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get documentsMentionNextMonth;
+
+  /// No description provided for @documentsMentionNextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get documentsMentionNextWeek;
+
+  /// No description provided for @documentsMentionPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get documentsMentionPeople;
+
+  /// No description provided for @documentsMentionProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'Projects'**
+  String get documentsMentionProjects;
+
+  /// No description provided for @documentsMentionSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people, projects and tasks'**
+  String get documentsMentionSearch;
+
+  /// No description provided for @documentsMentionTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get documentsMentionTasks;
+
+  /// No description provided for @documentsMentionToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get documentsMentionToday;
+
+  /// No description provided for @documentsMentionTomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get documentsMentionTomorrow;
+
+  /// No description provided for @documentsMentionWorkspaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspaces'**
+  String get documentsMentionWorkspaces;
 
   /// No description provided for @documentsNewDocument.
   ///
@@ -6799,6 +6931,78 @@ abstract class AppLocalizations {
   /// **'Draft and maintain workspace knowledge.'**
   String get documentsSubtitle;
 
+  /// No description provided for @documentsTableAddColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Add column'**
+  String get documentsTableAddColumn;
+
+  /// No description provided for @documentsTableAddRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Add row'**
+  String get documentsTableAddRow;
+
+  /// No description provided for @documentsTableColumns.
+  ///
+  /// In en, this message translates to:
+  /// **'Columns'**
+  String get documentsTableColumns;
+
+  /// No description provided for @documentsTableDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete table'**
+  String get documentsTableDelete;
+
+  /// No description provided for @documentsTableEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit table'**
+  String get documentsTableEdit;
+
+  /// No description provided for @documentsTableHeaderRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Header row'**
+  String get documentsTableHeaderRow;
+
+  /// No description provided for @documentsTableInsert.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert'**
+  String get documentsTableInsert;
+
+  /// No description provided for @documentsTableInsertTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert table'**
+  String get documentsTableInsertTitle;
+
+  /// No description provided for @documentsTableMergedCells.
+  ///
+  /// In en, this message translates to:
+  /// **'Merged cells keep their layout. Edit their text here.'**
+  String get documentsTableMergedCells;
+
+  /// No description provided for @documentsTableRemoveColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove last column'**
+  String get documentsTableRemoveColumn;
+
+  /// No description provided for @documentsTableRemoveRow.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove last row'**
+  String get documentsTableRemoveRow;
+
+  /// No description provided for @documentsTableRows.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows'**
+  String get documentsTableRows;
+
   /// No description provided for @documentsTitle.
   ///
   /// In en, this message translates to:
@@ -6816,6 +7020,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Document saved.'**
   String get documentsUpdated;
+
+  /// No description provided for @documentsUploadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t upload the file'**
+  String get documentsUploadFailed;
+
+  /// No description provided for @documentsUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading…'**
+  String get documentsUploading;
 
   /// No description provided for @documentsVisibilityPrivate.
   ///

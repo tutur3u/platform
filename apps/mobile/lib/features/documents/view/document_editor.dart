@@ -1,9 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/documents/document_links.dart';
+import 'package:mobile/features/documents/view/document_image_embed.dart';
+import 'package:mobile/features/documents/view/document_mention_embed.dart';
 import 'package:mobile/features/documents/view/document_opaque_embeds.dart';
 import 'package:mobile/features/documents/view/document_shortcuts.dart';
+import 'package:mobile/features/documents/view/document_table_embed.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_embed_builders.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_viewer.dart'
     show taskDescriptionStyles;
@@ -22,6 +28,8 @@ class DocumentEditor extends StatelessWidget {
     required this.owner,
     required this.onLink,
     required this.onHighlight,
+    this.onEditImage,
+    this.onEditTable,
     this.lastEdited,
     super.key,
   });
@@ -33,6 +41,8 @@ class DocumentEditor extends StatelessWidget {
   final String owner;
   final VoidCallback onLink;
   final VoidCallback onHighlight;
+  final DocumentImageEditCallback? onEditImage;
+  final DocumentTableEditCallback? onEditTable;
   final String? lastEdited;
 
   @override
@@ -100,14 +110,15 @@ class DocumentEditor extends StatelessWidget {
                   editor: editor,
                   onLink: onLink,
                 ),
-                embedBuilders: const [
-                  TaskDescriptionImageEmbedBuilder(),
-                  TaskDescriptionVideoEmbedBuilder(),
-                  TaskDescriptionMentionEmbedBuilder(),
-                  TaskDescriptionTableEmbedBuilder(),
-                  TaskDescriptionDividerEmbedBuilder(),
-                  DocumentOpaqueBlockEmbedBuilder(),
-                  DocumentOpaqueInlineEmbedBuilder(),
+                onLaunchUrl: (url) => unawaited(openDocumentLink(url)),
+                embedBuilders: [
+                  DocumentImageEmbedBuilder(onEdit: onEditImage),
+                  const TaskDescriptionVideoEmbedBuilder(),
+                  const DocumentMentionEmbedBuilder(),
+                  DocumentTableEmbedBuilder(onEdit: onEditTable),
+                  const TaskDescriptionDividerEmbedBuilder(),
+                  const DocumentOpaqueBlockEmbedBuilder(),
+                  const DocumentOpaqueInlineEmbedBuilder(),
                 ],
               ),
             ),

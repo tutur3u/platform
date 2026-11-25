@@ -4,14 +4,15 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/documents/view/document_block_insert.dart';
 import 'package:mobile/features/tasks_boards/utils/tiptap_quill_colors.dart'
     show
         quillColorOrNull,
         taskDescriptionThemeColorKey,
         tipTapColorMarksAttribute;
-import 'package:mobile/features/tasks_boards/utils/tiptap_quill_models.dart'
-    show taskDescriptionDividerEmbedType;
 import 'package:mobile/l10n/l10n.dart';
+
+export 'package:mobile/features/documents/view/document_block_insert.dart';
 
 /// The web editor's swatches, in its order. Each stores a theme variable
 /// (`var(--red)`, `var(--calendar-bg-red)`), so it follows the theme on
@@ -30,6 +31,9 @@ const List<String> documentSwatchHues = [
 /// Which colour channel a swatch sets.
 enum DocumentColorChannel { highlight, text }
 
+/// What the toolbar's insert group adds.
+enum DocumentInsertKind { table, image, camera, video, file, mention }
+
 /// The editor's formatting controls, grouped as the web toolbar groups
 /// them: history, headings, inline marks, colour, blocks, indent,
 /// alignment and insert.
@@ -38,6 +42,8 @@ List<List<AppFormatAction>> documentFormatGroups({
   required QuillController editor,
   required VoidCallback onLink,
   required ValueChanged<DocumentColorChannel> onColor,
+  ValueChanged<DocumentInsertKind>? onInsert,
+  bool camera = false,
 }) {
   final l10n = context.l10n;
   final style = editor.getSelectionStyle();
@@ -206,6 +212,47 @@ List<List<AppFormatAction>> documentFormatGroups({
         onPressed: () => insertDocumentDivider(editor),
       ),
     ],
+    if (onInsert != null)
+      [
+        for (final (kind, icon, tooltip) in [
+          (
+            DocumentInsertKind.table,
+            LucideIcons.table,
+            l10n.documentsInsertTable,
+          ),
+          (
+            DocumentInsertKind.image,
+            LucideIcons.image,
+            l10n.documentsInsertImage,
+          ),
+          if (camera)
+            (
+              DocumentInsertKind.camera,
+              LucideIcons.camera,
+              l10n.documentsInsertCamera,
+            ),
+          (
+            DocumentInsertKind.video,
+            LucideIcons.video,
+            l10n.documentsInsertVideo,
+          ),
+          (
+            DocumentInsertKind.file,
+            LucideIcons.paperclip,
+            l10n.documentsInsertFile,
+          ),
+          (
+            DocumentInsertKind.mention,
+            LucideIcons.atSign,
+            l10n.documentsInsertMention,
+          ),
+        ])
+          AppFormatAction(
+            icon: icon,
+            tooltip: tooltip,
+            onPressed: () => onInsert(kind),
+          ),
+      ],
   ];
 }
 
@@ -215,99 +262,19 @@ List<AppFormatAction> documentFormatActions({
   required QuillController editor,
   required VoidCallback onLink,
   ValueChanged<DocumentColorChannel>? onColor,
+  ValueChanged<DocumentInsertKind>? onInsert,
+  bool camera = false,
 }) => [
   for (final group in documentFormatGroups(
     context: context,
     editor: editor,
     onLink: onLink,
     onColor: onColor ?? (_) {},
+    onInsert: onInsert,
+    camera: camera,
   ))
     ...group,
 ];
-
-/// Inserts a horizontal rule on its own line at the caret, as typing
-/// `---` does on the web.
-///
-/// From the toolbar ([replaceEmptyLine]), a rule on an empty line takes
-/// that line's place and the caret moves to the next line, as the web's
-/// setHorizontalRule does. The `---` input rule keeps the empty line below,
-/// as the web's input rule does.
-void insertDocumentDivider(
-  QuillController editor, {
-  bool replaceEmptyLine = true,
-}) {
-  final selection = editor.selection;
-  final index = selection.start.clamp(0, editor.document.length - 1);
-  final length = selection.end - selection.start;
-  if (length > 0) {
-    editor.replaceText(
-      index,
-      length,
-      '',
-      TextSelection.collapsed(offset: index),
-    );
-  }
-  final plain = editor.document.toPlainText();
-  var at = index;
-  if (index > 0 && plain[index - 1] != '\n') {
-    if (plain[index] == '\n' && index + 1 < plain.length) {
-      // At the end of a line: the rule goes on the line below.
-      at = index + 1;
-    } else {
-      editor.replaceText(
-        index,
-        0,
-        '\n',
-        TextSelection.collapsed(offset: index + 1),
-      );
-      at = index + 1;
-    }
-  }
-  final text = editor.document.toPlainText();
-  final emptyLine =
-      replaceEmptyLine &&
-      at == index &&
-      text[at] == '\n' &&
-      (at == 0 || text[at - 1] == '\n');
-  // The rule gets a line of its own, without list, heading, quote or code
-  // styling, and the caret moves to the line below it, as on the web.
-  editor.replaceText(
-    at,
-    0,
-    const BlockEmbed(taskDescriptionDividerEmbedType, 'hr'),
-    TextSelection.collapsed(offset: at + 1),
-  );
-  // An empty line's own newline ends the rule; a line is added below only
-  // when there is none to move to.
-  final addedLastLine = emptyLine && at + 2 >= editor.document.length;
-  if (!emptyLine || addedLastLine) {
-    editor.replaceText(
-      at + 1,
-      0,
-      '\n',
-      TextSelection.collapsed(offset: at + 2),
-    );
-  }
-  // The rule's line is plain. A line added below an empty styled last
-  // line is plain too, as the web's new paragraph is.
-  for (final attribute in <Attribute<dynamic>>[
-    Attribute.header,
-    Attribute.list,
-    Attribute.blockQuote,
-    Attribute.codeBlock,
-    Attribute.indent,
-    Attribute.align,
-  ]) {
-    editor.formatText(at, 1, Attribute.clone(attribute, null));
-    if (addedLastLine) {
-      editor.formatText(at + 2, 1, Attribute.clone(attribute, null));
-    }
-  }
-  editor.updateSelection(
-    TextSelection.collapsed(offset: at + 2),
-    ChangeSource.local,
-  );
-}
 
 /// Applies a web swatch ([hue] null clears it) to the selection.
 ///

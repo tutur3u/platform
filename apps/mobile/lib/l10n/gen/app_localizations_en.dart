@@ -3476,16 +3476,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsFormatUndo => 'Undo';
 
   @override
+  String get documentsImageDelete => 'Delete image';
+
+  @override
+  String get documentsImageEdit => 'Edit image';
+
+  @override
+  String get documentsImageSize => 'Size';
+
+  @override
+  String get documentsImageView => 'View image';
+
+  @override
   String get documentsInlineCitation => 'Citation';
 
   @override
   String get documentsInlineUnsupported => 'Web-only item';
 
   @override
+  String get documentsInsertCamera => 'Take photo';
+
+  @override
+  String get documentsInsertFile => 'Attach file';
+
+  @override
+  String get documentsInsertImage => 'Image';
+
+  @override
+  String get documentsInsertMention => 'Mention';
+
+  @override
+  String get documentsInsertTable => 'Table';
+
+  @override
+  String get documentsInsertVideo => 'Video';
+
+  @override
   String get documentsLinkPlaceholder => 'https://';
 
   @override
   String get documentsLinkTitle => 'Link';
+
+  @override
+  String get documentsMentionCustomDate => 'Pick a date';
+
+  @override
+  String get documentsMentionDates => 'Dates';
+
+  @override
+  String get documentsMentionEmpty => 'No matches';
+
+  @override
+  String get documentsMentionNextMonth => 'Next month';
+
+  @override
+  String get documentsMentionNextWeek => 'Next week';
+
+  @override
+  String get documentsMentionPeople => 'People';
+
+  @override
+  String get documentsMentionProjects => 'Projects';
+
+  @override
+  String get documentsMentionSearch => 'Search people, projects and tasks';
+
+  @override
+  String get documentsMentionTasks => 'Tasks';
+
+  @override
+  String get documentsMentionToday => 'Today';
+
+  @override
+  String get documentsMentionTomorrow => 'Tomorrow';
+
+  @override
+  String get documentsMentionWorkspaces => 'Workspaces';
 
   @override
   String get documentsNewDocument => 'New document';
@@ -3530,6 +3596,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsSubtitle => 'Draft and maintain workspace knowledge.';
 
   @override
+  String get documentsTableAddColumn => 'Add column';
+
+  @override
+  String get documentsTableAddRow => 'Add row';
+
+  @override
+  String get documentsTableColumns => 'Columns';
+
+  @override
+  String get documentsTableDelete => 'Delete table';
+
+  @override
+  String get documentsTableEdit => 'Edit table';
+
+  @override
+  String get documentsTableHeaderRow => 'Header row';
+
+  @override
+  String get documentsTableInsert => 'Insert';
+
+  @override
+  String get documentsTableInsertTitle => 'Insert table';
+
+  @override
+  String get documentsTableMergedCells => 'Merged cells keep their layout. Edit their text here.';
+
+  @override
+  String get documentsTableRemoveColumn => 'Remove last column';
+
+  @override
+  String get documentsTableRemoveRow => 'Remove last row';
+
+  @override
+  String get documentsTableRows => 'Rows';
+
+  @override
   String get documentsTitle => 'Documents';
 
   @override
@@ -3537,6 +3639,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get documentsUpdated => 'Document saved.';
+
+  @override
+  String get documentsUploadFailed => 'Couldn\'t upload the file';
+
+  @override
+  String get documentsUploading => 'Uploading…';
 
   @override
   String get documentsVisibilityPrivate => 'Only workspace members';

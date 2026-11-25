@@ -3460,16 +3460,82 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsFormatUndo => 'Hoàn tác';
 
   @override
+  String get documentsImageDelete => 'Xóa hình ảnh';
+
+  @override
+  String get documentsImageEdit => 'Chỉnh sửa hình ảnh';
+
+  @override
+  String get documentsImageSize => 'Kích thước';
+
+  @override
+  String get documentsImageView => 'Xem hình ảnh';
+
+  @override
   String get documentsInlineCitation => 'Trích dẫn';
 
   @override
   String get documentsInlineUnsupported => 'Mục chỉ có trên web';
 
   @override
+  String get documentsInsertCamera => 'Chụp ảnh';
+
+  @override
+  String get documentsInsertFile => 'Đính kèm tệp';
+
+  @override
+  String get documentsInsertImage => 'Hình ảnh';
+
+  @override
+  String get documentsInsertMention => 'Nhắc đến';
+
+  @override
+  String get documentsInsertTable => 'Bảng';
+
+  @override
+  String get documentsInsertVideo => 'Video';
+
+  @override
   String get documentsLinkPlaceholder => 'https://';
 
   @override
   String get documentsLinkTitle => 'Liên kết';
+
+  @override
+  String get documentsMentionCustomDate => 'Chọn ngày';
+
+  @override
+  String get documentsMentionDates => 'Ngày';
+
+  @override
+  String get documentsMentionEmpty => 'Không có kết quả';
+
+  @override
+  String get documentsMentionNextMonth => 'Tháng sau';
+
+  @override
+  String get documentsMentionNextWeek => 'Tuần sau';
+
+  @override
+  String get documentsMentionPeople => 'Mọi người';
+
+  @override
+  String get documentsMentionProjects => 'Dự án';
+
+  @override
+  String get documentsMentionSearch => 'Tìm người, dự án và công việc';
+
+  @override
+  String get documentsMentionTasks => 'Công việc';
+
+  @override
+  String get documentsMentionToday => 'Hôm nay';
+
+  @override
+  String get documentsMentionTomorrow => 'Ngày mai';
+
+  @override
+  String get documentsMentionWorkspaces => 'Không gian làm việc';
 
   @override
   String get documentsNewDocument => 'Tài liệu mới';
@@ -3514,6 +3580,42 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsSubtitle => 'Soạn thảo và duy trì tri thức workspace.';
 
   @override
+  String get documentsTableAddColumn => 'Thêm cột';
+
+  @override
+  String get documentsTableAddRow => 'Thêm hàng';
+
+  @override
+  String get documentsTableColumns => 'Cột';
+
+  @override
+  String get documentsTableDelete => 'Xóa bảng';
+
+  @override
+  String get documentsTableEdit => 'Chỉnh sửa bảng';
+
+  @override
+  String get documentsTableHeaderRow => 'Hàng tiêu đề';
+
+  @override
+  String get documentsTableInsert => 'Chèn';
+
+  @override
+  String get documentsTableInsertTitle => 'Chèn bảng';
+
+  @override
+  String get documentsTableMergedCells => 'Ô đã gộp giữ nguyên bố cục. Bạn có thể sửa nội dung tại đây.';
+
+  @override
+  String get documentsTableRemoveColumn => 'Xóa cột cuối';
+
+  @override
+  String get documentsTableRemoveRow => 'Xóa hàng cuối';
+
+  @override
+  String get documentsTableRows => 'Hàng';
+
+  @override
   String get documentsTitle => 'Tài liệu';
 
   @override
@@ -3521,6 +3623,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get documentsUpdated => 'Đã lưu tài liệu.';
+
+  @override
+  String get documentsUploadFailed => 'Không thể tải tệp lên';
+
+  @override
+  String get documentsUploading => 'Đang tải lên…';
 
   @override
   String get documentsVisibilityPrivate => 'Chỉ thành viên không gian làm việc';

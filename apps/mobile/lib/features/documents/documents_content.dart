@@ -4,6 +4,7 @@ import 'package:dart_quill_delta/dart_quill_delta.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:mobile/core/utils/tiptap_document_codec.dart';
 import 'package:mobile/features/documents/document_line_alignment.dart';
+import 'package:mobile/features/documents/document_media.dart';
 import 'package:mobile/features/tasks_boards/utils/quill_to_tiptap_converter.dart';
 import 'package:mobile/features/tasks_boards/utils/tiptap_to_quill_converter.dart';
 
@@ -41,12 +42,7 @@ class DocumentContentSnapshot {
     final nodes = _nodes(doc['content']);
     final own = <List<DocumentLine>>[];
     for (final node in nodes) {
-      final ops = tipTapBlockToQuillDelta(
-        node,
-        dividerEmbeds: true,
-        themeColorKeys: true,
-        opaqueNodes: true,
-      ).toList()..forEach(delta.push);
+      final ops = _blockOps(node)..forEach(delta.push);
       own.add(documentLines([for (final op in ops) op.toJson()]));
     }
     if (delta.isEmpty || !_endsWithNewline(delta)) delta.insert('\n');
@@ -62,7 +58,7 @@ class DocumentContentSnapshot {
     for (var i = 0; i < nodes.length; i++) {
       final lines = sameShape ? loaded.sublist(at, at + counts[i]) : own[i];
       at += counts[i];
-      final back = quillOpsToTipTapNodes([for (final l in lines) ...l.ops]);
+      final back = _convert(lines);
       blocks.add(
         AlignedBlock(
           nodes[i],
@@ -219,9 +215,54 @@ Map<String, dynamic> _withCarried(
   };
 }
 
-/// TipTap nodes for edited [lines].
-List<Map<String, dynamic>> _convert(List<DocumentLine> lines) =>
-    quillOpsToTipTapNodes([for (final line in lines) ...line.ops]);
+/// The Quill ops a top-level block loads as. An image carries its whole
+/// node, so resizing it rewrites only the width and every other attribute
+/// saves as stored.
+List<Operation> _blockOps(Map<String, dynamic> node) {
+  if (isDocumentImageNode(node)) {
+    return [
+      Operation.insert({documentImageEmbedType: documentImageEmbedValue(node)}),
+      Operation.insert('\n'),
+    ];
+  }
+  return tipTapBlockToQuillDelta(
+    node,
+    dividerEmbeds: true,
+    themeColorKeys: true,
+    opaqueNodes: true,
+  ).toList();
+}
+
+/// TipTap nodes for edited [lines]. A line holding only an image node
+/// writes that node; the rest convert together, so lists and code blocks
+/// spanning several lines stay one node.
+List<Map<String, dynamic>> _convert(List<DocumentLine> lines) {
+  final nodes = <Map<String, dynamic>>[];
+  final run = <Map<String, dynamic>>[];
+  void flush() {
+    if (run.isEmpty) return;
+    nodes.addAll(quillOpsToTipTapNodes([...run]));
+    run.clear();
+  }
+
+  for (final line in lines) {
+    final image = line.ops.length == 2
+        ? documentImageNodeFromEmbed(
+            (line.ops.first['insert'] as Object?) is Map
+                ? (line.ops.first['insert'] as Map)[documentImageEmbedType]
+                : null,
+          )
+        : null;
+    if (image != null) {
+      flush();
+      nodes.add(image);
+    } else {
+      run.addAll(line.ops);
+    }
+  }
+  flush();
+  return nodes;
+}
 
 /// An editor holding nothing but its final newline.
 bool _isBlank(Document document) {
