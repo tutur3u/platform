@@ -442,19 +442,23 @@ commit; do not run `bun validate` or app builds on the shared machine.
   references that exact path and the member can read the template: any public
   or workspace template, including one whose creator was deleted, or their own
   private template. Nobody writes or deletes them directly; the template APIs
-  sign uploads and remove objects with the service role. Accepted risk: a
-  member can point their own template's `background_path` at another
-  `template-backgrounds/<name>` object in the same workspace and then read it.
-  Names carry a random UUID and listing that folder goes through the same rule,
-  so this needs a name the member already knows. A template pointing outside
-  `template-backgrounds/` grants nothing; Drive and service-root rules still
-  apply to that path. Since `20261125085600` the database also requires a
+  sign uploads and remove objects with the service role. Members cannot set
+  `board_templates.background_path` themselves: migration
+  `20260312113000_lock_description_tables_to_server_apis.sql` enabled RLS on
+  `board_templates` (it has a text `description` column), dropped every policy
+  and revoked all privileges from `anon` and `authenticated`, so only the
+  service-role template routes write the table. A pgTAP regression test pins that
+  lock. A member therefore cannot point a template at another member's
+  `template-backgrounds/<name>` object, because that needs a direct client write.
+  Verify the production table ACL read-only before relying on this. Since
+  `20261125085600` the database also requires a
   template's `background_path` to be `<ws_id>/template-backgrounds/<name>` of its
-  own workspace, with no empty, `.` or `..` segment, on every new or updated row
-  (the constraint is `NOT VALID` until a census shows no legacy violators; a
-  legacy row with a bad path becomes editable again once the path is repaired or
-  cleared). That keeps pointers out of other workspaces and roots; a pointer at
-  another member's name inside the same folder remains the accepted risk above.
+  own workspace, with no empty, `.` or `..` segment, on every new or updated row,
+  including service-role writes (defense in depth; the constraint is `NOT VALID`
+  until a census shows no legacy violators, and a legacy row with a bad path
+  becomes editable again once the path is repaired or cleared). A legacy template
+  that points at another root grants nothing; Drive and service-root rules still
+  apply to that path.
 - **Affected surfaces:** Web, Rewise and Mind AI chat attachments now upload
   through `POST /api/ai/chat/upload-url`. It enforces chat ownership and issues
   a signed upload URL. Meeting recording, project update attachment and CMS
