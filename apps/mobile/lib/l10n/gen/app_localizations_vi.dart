@@ -6415,6 +6415,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailAdmin => 'Quản trị viên';
 
   @override
+  String get mailAfterArchive => 'Sau khi lưu trữ hoặc xóa';
+
+  @override
+  String get mailAfterArchiveList => 'Quay lại danh sách';
+
+  @override
+  String get mailAfterArchiveNext => 'Mở cuộc trò chuyện tiếp theo';
+
+  @override
   String get mailAiDraft => 'Soạn thư với AI';
 
   @override
@@ -6425,6 +6434,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailAnyone => 'Mọi người';
+
+  @override
+  String get mailAppearanceAppTheme => 'Giao diện ứng dụng';
 
   @override
   String get mailAppearanceOriginal => 'Nguyên bản';
@@ -6443,6 +6455,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailBcc => 'Bcc';
+
+  @override
+  String get mailBlockInvalid => 'Nhập địa chỉ email hoặc tên miền hợp lệ có thể chặn.';
+
+  @override
+  String get mailBlockMoveExisting => 'Chuyển thư hiện có từ người gửi này vào Thư rác';
+
+  @override
+  String get mailBlockSender => 'Chặn người gửi';
+
+  @override
+  String get mailBlockSenderPlaceholder => 'Địa chỉ email hoặc @tên-miền';
+
+  @override
+  String get mailBlockedSenders => 'Người gửi bị chặn';
 
   @override
   String get mailBody => 'Nội dung';
@@ -6617,6 +6644,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mailInvitationWhen => 'Thời gian';
 
   @override
+  String get mailKeyboardBack => 'Đóng cuộc trò chuyện hoặc bỏ chọn';
+
+  @override
+  String get mailKeyboardNavigate => 'Cuộc trò chuyện tiếp theo hoặc trước đó';
+
+  @override
+  String get mailKeyboardReference => 'Xem phím tắt';
+
+  @override
+  String get mailKeyboardSelect => 'Chọn cuộc trò chuyện';
+
+  @override
+  String get mailKeyboardShortcuts => 'Phím tắt';
+
+  @override
   String get mailLabels => 'Nhãn';
 
   @override
@@ -6663,6 +6705,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailName => 'Tên';
+
+  @override
+  String get mailNoBlockedSenders => 'Chưa chặn người gửi nào';
 
   @override
   String get mailNoSubject => '(Không có tiêu đề)';
@@ -6720,6 +6765,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailSignature => 'Chữ ký';
+
+  @override
+  String get mailSignatureHtml => 'Chữ ký HTML';
+
+  @override
+  String get mailSignatureHtmlPlaceholder => 'Dán mã HTML của chữ ký';
 
   @override
   String get mailSmartLabels => 'Nhãn thông minh';
@@ -6789,6 +6840,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mailTrash => 'Thùng rác';
+
+  @override
+  String get mailUnblockRestore => 'Bỏ chặn và chuyển thư liên quan về Hộp thư đến';
+
+  @override
+  String get mailUnblockSender => 'Bỏ chặn người gửi';
 
   @override
   String get mailUnmute => 'Bật lại thông báo';
@@ -9006,6 +9063,27 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appearanceResetDone => 'Đã khôi phục giao diện mặc định';
+
+  @override
+  String get appearanceSidebarCollapsed => 'Thu gọn';
+
+  @override
+  String get appearanceSidebarExpanded => 'Mở rộng';
+
+  @override
+  String get appearanceSidebarHover => 'Mở rộng khi rê chuột';
+
+  @override
+  String get appearanceSidebarLocalOverride => 'Dùng thanh bên riêng trên thiết bị này';
+
+  @override
+  String get appearanceSidebarMinimal => 'Tối giản';
+
+  @override
+  String get appearanceSidebarOpen => 'Mở thanh bên';
+
+  @override
+  String get appearanceSidebarTitle => 'Thanh bên';
 
   @override
   String get appearanceSoftness => 'Độ mềm';

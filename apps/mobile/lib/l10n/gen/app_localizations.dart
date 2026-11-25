@@ -12205,6 +12205,24 @@ abstract class AppLocalizations {
   /// **'Admin'**
   String get mailAdmin;
 
+  /// No description provided for @mailAfterArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'After archiving or deleting'**
+  String get mailAfterArchive;
+
+  /// No description provided for @mailAfterArchiveList.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to the list'**
+  String get mailAfterArchiveList;
+
+  /// No description provided for @mailAfterArchiveNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the next conversation'**
+  String get mailAfterArchiveNext;
+
   /// No description provided for @mailAiDraft.
   ///
   /// In en, this message translates to:
@@ -12228,6 +12246,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Anyone'**
   String get mailAnyone;
+
+  /// No description provided for @mailAppearanceAppTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'App theme'**
+  String get mailAppearanceAppTheme;
 
   /// No description provided for @mailAppearanceOriginal.
   ///
@@ -12264,6 +12288,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Bcc'**
   String get mailBcc;
+
+  /// No description provided for @mailBlockInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address or domain that can be blocked.'**
+  String get mailBlockInvalid;
+
+  /// No description provided for @mailBlockMoveExisting.
+  ///
+  /// In en, this message translates to:
+  /// **'Move existing mail from this sender to Spam'**
+  String get mailBlockMoveExisting;
+
+  /// No description provided for @mailBlockSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Block sender'**
+  String get mailBlockSender;
+
+  /// No description provided for @mailBlockSenderPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address or @domain'**
+  String get mailBlockSenderPlaceholder;
+
+  /// No description provided for @mailBlockedSenders.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked senders'**
+  String get mailBlockedSenders;
 
   /// No description provided for @mailBody.
   ///
@@ -12601,6 +12655,36 @@ abstract class AppLocalizations {
   /// **'When'**
   String get mailInvitationWhen;
 
+  /// No description provided for @mailKeyboardBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Close conversation or clear selection'**
+  String get mailKeyboardBack;
+
+  /// No description provided for @mailKeyboardNavigate.
+  ///
+  /// In en, this message translates to:
+  /// **'Next or previous conversation'**
+  String get mailKeyboardNavigate;
+
+  /// No description provided for @mailKeyboardReference.
+  ///
+  /// In en, this message translates to:
+  /// **'View keyboard shortcuts'**
+  String get mailKeyboardReference;
+
+  /// No description provided for @mailKeyboardSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select conversation'**
+  String get mailKeyboardSelect;
+
+  /// No description provided for @mailKeyboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Keyboard shortcuts'**
+  String get mailKeyboardShortcuts;
+
   /// No description provided for @mailLabels.
   ///
   /// In en, this message translates to:
@@ -12696,6 +12780,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name'**
   String get mailName;
+
+  /// No description provided for @mailNoBlockedSenders.
+  ///
+  /// In en, this message translates to:
+  /// **'No blocked senders'**
+  String get mailNoBlockedSenders;
 
   /// No description provided for @mailNoSubject.
   ///
@@ -12810,6 +12900,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Signature'**
   String get mailSignature;
+
+  /// No description provided for @mailSignatureHtml.
+  ///
+  /// In en, this message translates to:
+  /// **'HTML signature'**
+  String get mailSignatureHtml;
+
+  /// No description provided for @mailSignatureHtmlPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste your signature HTML'**
+  String get mailSignatureHtmlPlaceholder;
 
   /// No description provided for @mailSmartLabels.
   ///
@@ -12948,6 +13050,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Trash'**
   String get mailTrash;
+
+  /// No description provided for @mailUnblockRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock and move affected mail to Inbox'**
+  String get mailUnblockRestore;
+
+  /// No description provided for @mailUnblockSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock sender'**
+  String get mailUnblockSender;
 
   /// No description provided for @mailUnmute.
   ///
@@ -17106,6 +17220,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Appearance reset to default'**
   String get appearanceResetDone;
+
+  /// No description provided for @appearanceSidebarCollapsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapsed'**
+  String get appearanceSidebarCollapsed;
+
+  /// No description provided for @appearanceSidebarExpanded.
+  ///
+  /// In en, this message translates to:
+  /// **'Expanded'**
+  String get appearanceSidebarExpanded;
+
+  /// No description provided for @appearanceSidebarHover.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand on hover'**
+  String get appearanceSidebarHover;
+
+  /// No description provided for @appearanceSidebarLocalOverride.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a different sidebar on this device'**
+  String get appearanceSidebarLocalOverride;
+
+  /// No description provided for @appearanceSidebarMinimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal'**
+  String get appearanceSidebarMinimal;
+
+  /// No description provided for @appearanceSidebarOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open sidebar'**
+  String get appearanceSidebarOpen;
+
+  /// No description provided for @appearanceSidebarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sidebar'**
+  String get appearanceSidebarTitle;
 
   /// No description provided for @appearanceSoftness.
   ///

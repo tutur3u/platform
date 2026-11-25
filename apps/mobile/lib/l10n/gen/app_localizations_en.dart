@@ -6493,6 +6493,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailAdmin => 'Admin';
 
   @override
+  String get mailAfterArchive => 'After archiving or deleting';
+
+  @override
+  String get mailAfterArchiveList => 'Return to the list';
+
+  @override
+  String get mailAfterArchiveNext => 'Open the next conversation';
+
+  @override
   String get mailAiDraft => 'Write with AI';
 
   @override
@@ -6503,6 +6512,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailAnyone => 'Anyone';
+
+  @override
+  String get mailAppearanceAppTheme => 'App theme';
 
   @override
   String get mailAppearanceOriginal => 'Original';
@@ -6521,6 +6533,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailBcc => 'Bcc';
+
+  @override
+  String get mailBlockInvalid => 'Enter a valid email address or domain that can be blocked.';
+
+  @override
+  String get mailBlockMoveExisting => 'Move existing mail from this sender to Spam';
+
+  @override
+  String get mailBlockSender => 'Block sender';
+
+  @override
+  String get mailBlockSenderPlaceholder => 'Email address or @domain';
+
+  @override
+  String get mailBlockedSenders => 'Blocked senders';
 
   @override
   String get mailBody => 'Message';
@@ -6695,6 +6722,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mailInvitationWhen => 'When';
 
   @override
+  String get mailKeyboardBack => 'Close conversation or clear selection';
+
+  @override
+  String get mailKeyboardNavigate => 'Next or previous conversation';
+
+  @override
+  String get mailKeyboardReference => 'View keyboard shortcuts';
+
+  @override
+  String get mailKeyboardSelect => 'Select conversation';
+
+  @override
+  String get mailKeyboardShortcuts => 'Keyboard shortcuts';
+
+  @override
   String get mailLabels => 'Labels';
 
   @override
@@ -6741,6 +6783,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailName => 'Name';
+
+  @override
+  String get mailNoBlockedSenders => 'No blocked senders';
 
   @override
   String get mailNoSubject => '(No subject)';
@@ -6798,6 +6843,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailSignature => 'Signature';
+
+  @override
+  String get mailSignatureHtml => 'HTML signature';
+
+  @override
+  String get mailSignatureHtmlPlaceholder => 'Paste your signature HTML';
 
   @override
   String get mailSmartLabels => 'Smart labels';
@@ -6867,6 +6918,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mailTrash => 'Trash';
+
+  @override
+  String get mailUnblockRestore => 'Unblock and move affected mail to Inbox';
+
+  @override
+  String get mailUnblockSender => 'Unblock sender';
 
   @override
   String get mailUnmute => 'Unmute thread';
@@ -9120,6 +9177,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appearanceResetDone => 'Appearance reset to default';
+
+  @override
+  String get appearanceSidebarCollapsed => 'Collapsed';
+
+  @override
+  String get appearanceSidebarExpanded => 'Expanded';
+
+  @override
+  String get appearanceSidebarHover => 'Expand on hover';
+
+  @override
+  String get appearanceSidebarLocalOverride => 'Use a different sidebar on this device';
+
+  @override
+  String get appearanceSidebarMinimal => 'Minimal';
+
+  @override
+  String get appearanceSidebarOpen => 'Open sidebar';
+
+  @override
+  String get appearanceSidebarTitle => 'Sidebar';
 
   @override
   String get appearanceSoftness => 'Softness';
