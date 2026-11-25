@@ -41,7 +41,10 @@ import {
   RoomMiraNotice,
   RoomMiraSelfChoice,
 } from '../call/components/room-mira-notice';
-import { useRoomMira } from '../call/components/use-room-mira';
+import {
+  MIRA_OFF_RETRY_MS,
+  useRoomMira,
+} from '../call/components/use-room-mira';
 import { hashMiraConsentText } from '../live-assistant/mira-consent-box';
 import {
   forgetMiraJoinChoice,
@@ -539,7 +542,15 @@ describe('a failed Mira off', () => {
         .mutateAsync({ choice: 'off', source: 'toggle' })
         .catch(() => undefined);
     });
-    await act(() => vi.advanceTimersByTimeAsync(20_000));
+    // Step through each retry wait only after the attempt before it is sent:
+    // the payload hash is real async work, so one early jump of the fake
+    // clock could run before the first wait is even scheduled.
+    for (const [index, wait] of MIRA_OFF_RETRY_MS.entries()) {
+      await vi.waitFor(() =>
+        expect(f.miraChoose).toHaveBeenCalledTimes(index + 1)
+      );
+      await act(() => vi.advanceTimersByTimeAsync(wait));
+    }
     await act(async () => {
       await done;
     });
@@ -563,6 +574,7 @@ describe('a failed Mira off', () => {
         .mutateAsync({ choice: 'on', source: 'toggle' })
         .catch(() => undefined);
     });
+    await vi.waitFor(() => expect(f.miraChoose).toHaveBeenCalledTimes(1));
     await act(() => vi.advanceTimersByTimeAsync(30_000));
     await act(async () => {
       await done;
