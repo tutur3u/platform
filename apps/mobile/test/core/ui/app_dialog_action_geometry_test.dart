@@ -30,8 +30,9 @@ void main() {
         await tester.pumpThemedHome(
           Builder(
             builder: (context) => MediaQuery(
-              data: MediaQuery.of(context)
-                  .copyWith(textScaler: TextScaler.linear(scale)),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(scale)),
               child: Scaffold(
                 body: ValueListenableBuilder<bool>(
                   valueListenable: busy,
@@ -122,39 +123,43 @@ void main() {
   ) async {
     DesignRender.setSize(tester, const Size(280, 650));
     final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
-    final pending = Completer<void>();
-    const label = 'Xóa lượt nhập';
-    await tester.pumpThemedHome(
-      Builder(
-        builder: (context) => MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(textScaler: const TextScaler.linear(2)),
-          child: Scaffold(
-            body: AsyncDeleteConfirmationDialog(
-              title: 'Xóa',
-              message: '',
-              cancelLabel: 'Hủy',
-              confirmLabel: label,
-              onConfirm: () => pending.future,
+    try {
+      final pending = Completer<void>();
+      const label = 'Xóa lượt nhập';
+      await tester.pumpThemedHome(
+        Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: Scaffold(
+              body: AsyncDeleteConfirmationDialog(
+                title: 'Xóa',
+                message: '',
+                cancelLabel: 'Hủy',
+                confirmLabel: label,
+                onConfirm: () => pending.future,
+              ),
             ),
           ),
         ),
-      ),
-    );
-    final action = find.widgetWithText(AppButton, label);
-    final before = tester.getRect(action);
-    await tester.tap(action);
-    await tester.pump();
-    expect(tester.getRect(action), before);
-    expect(
-      tester.getCenter(find.byType(CircularProgressIndicator)),
-      before.center,
-    );
-    expect(find.bySemanticsLabel(label), findsOneWidget);
-    await tester.pumpWidget(const SizedBox());
-    pending.complete();
-    await tester.pump();
+      );
+      final action = find.widgetWithText(AppButton, label);
+      final before = tester.getRect(action);
+      await tester.tap(action);
+      await tester.pump();
+      expect(tester.getRect(action), before);
+      expect(
+        tester.getCenter(find.byType(CircularProgressIndicator)),
+        before.center,
+      );
+      expect(find.bySemanticsLabel(label), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      pending.complete();
+      await tester.pump();
+    } finally {
+      semantics.dispose();
+    }
   });
 
   testWidgets('explicit leading button alignment is respected', (tester) async {
