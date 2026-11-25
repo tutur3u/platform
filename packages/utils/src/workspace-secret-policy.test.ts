@@ -32,6 +32,26 @@ const REPO_ROOT = resolve(__dirname, '../../..');
 const MAX_DIRECT_READERS = 68;
 const MAX_CREDENTIAL_REFERENCES = 30;
 
+/** Source text that names or reaches a credential-tier secret. */
+const CREDENTIAL_REFERENCE_PATTERN = new RegExp(
+  [
+    ...WORKSPACE_CREDENTIAL_SECRET_NAMES,
+    ...WORKSPACE_SERVER_ONLY_CONFIG_SECRET_NAMES,
+    'channelSecretKey',
+    // The external app registry field, as a quoted key literal.
+    '[\'"`]secretHash[\'"`]',
+    ':channel:[^:]+:secret:',
+    // Storage credential reveals reached through the shared name list.
+    'revealWorkspaceStorageCredentials',
+    'DRIVE_R2_CREDENTIAL_SECRET_NAMES',
+    // Each call to the storage config diagnostic performs two plaintext R2
+    // credential reveals with no audit row or rate limit, so every caller
+    // needs a security review and an allowlist entry.
+    '\\bdiagnoseWorkspaceStorageConfig\\b',
+  ].join('|'),
+  'u'
+);
+
 describe('workspace secret policy', () => {
   it.each([
     ['ENABLE_CHAT', 'config', 'boolean'],
@@ -159,23 +179,9 @@ describe('workspace secret registry scan', () => {
   });
 
   it('references credential-tier names only from allowed server paths', () => {
-    const credentialPattern = new RegExp(
-      [
-        ...WORKSPACE_CREDENTIAL_SECRET_NAMES,
-        ...WORKSPACE_SERVER_ONLY_CONFIG_SECRET_NAMES,
-        'channelSecretKey',
-        // The external app registry field, as a quoted key literal.
-        '[\'"`]secretHash[\'"`]',
-        ':channel:[^:]+:secret:',
-        // Storage credential reveals reached through the shared name list.
-        'revealWorkspaceStorageCredentials',
-        'DRIVE_R2_CREDENTIAL_SECRET_NAMES',
-      ].join('|'),
-      'u'
-    );
     const references = filterWorkspaceSecretScanMatches(
       sources,
-      credentialPattern
+      CREDENTIAL_REFERENCE_PATTERN
     );
     expect(references).toEqual(
       [...WORKSPACE_CREDENTIAL_SECRET_REFERENCES].sort()
@@ -183,6 +189,18 @@ describe('workspace secret registry scan', () => {
     expect(WORKSPACE_CREDENTIAL_SECRET_REFERENCES.length).toBeLessThanOrEqual(
       MAX_CREDENTIAL_REFERENCES
     );
+  });
+
+  it('flags callers of the storage config diagnostic', () => {
+    const caller = [
+      "import { diagnoseWorkspaceStorageConfig } from '@tuturuuu/storage-core/workspace-storage-config-diagnostics';",
+      'export const GET = async () => diagnoseWorkspaceStorageConfig(wsId);',
+    ].join('\n');
+    const settingsOnly =
+      'diagnoseWorkspaceStorageSettings(wsId, settings); diagnoseWorkspaceStorageConfigs();';
+
+    expect(CREDENTIAL_REFERENCE_PATTERN.test(caller)).toBe(true);
+    expect(CREDENTIAL_REFERENCE_PATTERN.test(settingsOnly)).toBe(false);
   });
 
   it('reads only config-tier names in SQL functions', () => {
