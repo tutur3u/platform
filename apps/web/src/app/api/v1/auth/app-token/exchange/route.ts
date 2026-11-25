@@ -572,7 +572,14 @@ async function exchangeAppToken(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: workspaceSessionAuthorization.error },
+      {
+        // Only the authoritative denial carries a code; a refresh with a
+        // pending invite stays a plain 403.
+        ...(workspaceSessionAuthorization.code === 'NOT_A_MEMBER'
+          ? { code: 'NOT_A_MEMBER' }
+          : {}),
+        error: workspaceSessionAuthorization.error,
+      },
       { status: workspaceSessionAuthorization.status }
     );
   }

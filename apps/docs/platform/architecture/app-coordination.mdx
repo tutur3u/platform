@@ -578,6 +578,76 @@ must be granted and request it by name. The `HIDE_MEMBER_EMAIL` workspace
 setting still hides emails. Coverage:
 `apps/web/src/lib/external-apps/workspace-members-email.test.ts`.
 
+#### Membership read contract (v2) and NOT_A_MEMBER
+
+Apps that gate access on workspace membership, such as EduFest's
+workspace-gated admin, read two additive signals. Callers that don't opt in see
+no change.
+
+**Explicit membership denial.** A workspace-gated exchange (`workspace:session`,
+including a silent refresh) and this members route return `403` with
+`code: "NOT_A_MEMBER"` only when the membership lookup succeeded and found no
+direct `MEMBER` row: the user never joined, was removed, or is now a `GUEST`.
+For the exchange, a pending invite still wins (`PENDING_WORKSPACE_INVITE` on a
+fresh sign-in; a plain `403` on refresh). Bad credentials, missing scopes,
+unlinked or mismatched workspaces and failed lookups keep their generic bodies
+without that code. An app may treat `NOT_A_MEMBER` as authoritative grounds to
+revoke its own grants. It must not treat any other `403` that way.
+
+**Member list v2.** Add `?version=2`. Scopes, bearer checks and the caller's
+direct-`MEMBER` requirement are unchanged; no `version` (or `version=1`) keeps
+the body above. Optional `limit` is 1–500 (default 500); `cursor` is opaque.
+
+```json
+{
+  "version": 2,
+  "revision": "r1_3f0c…",
+  "complete": true,
+  "total": 2,
+  "nextCursor": null,
+  "context": { "canManageMembers": true, "canManageRoles": true, "defaultAdminEnabled": false },
+  "members": [
+    {
+      "id": "8c1d…", "email": null, "displayName": "A", "avatarUrl": null,
+      "role": "admin", "roleSources": ["role"], "isCreator": false, "isCurrentUser": true,
+      "membershipType": "MEMBER", "membershipRevision": "mr1_9a7e…"
+    }
+  ],
+  "invitations": [{ "email": null, "createdAt": "2026-11-20T03:00:00Z" }]
+}
+```
+
+- `members` contains only `workspace_members` rows. Board-share guests that v1
+  can include are dropped, and workspace guests appear with
+  `membershipType: "GUEST"`.
+- `membershipRevision` is opaque. It changes when the membership row is
+  recreated (a remove-and-readd, even one that happens entirely between two
+  observations) or when its type changes. `revision` hashes every member's
+  revision, role, role sources and creator flag, plus the default-admin state
+  and pending invitations. It is the same for every caller.
+- Pages list members (by user ID) and then invitations; `total` counts both.
+  `nextCursor` is set while pages remain. A cursor from an older `revision`
+  returns `409` `REVISION_CHANGED` with the new `revision`; restart from page one.
+- `complete: true` appears only on the final page, and only when the platform
+  proved the set exhaustive: ranged `workspace_members` reads matched an exact
+  count, every membership resolved to a profile, and the enrichment view stayed
+  below PostgREST's 1,000-row cap. Otherwise every page has `complete: false`
+  and `incompleteReason` (`membership_scan_limit`, `row_cap` or
+  `unresolved_members`). Treat absence as revocation evidence only after reading
+  every page of one `revision` with the last page `complete: true`. The route
+  reads profiles before memberships, so a concurrent add makes the list
+  incomplete instead of silently omitting the new member.
+- Errors: `400` `UNSUPPORTED_VERSION`, `INVALID_LIMIT` or `INVALID_CURSOR`.
+  Responses are `no-store`. Both versions count as `GET members` reads under
+  [Rate limits](#rate-limits).
+- Residual: role memberships are read in 500-user batches without a range, so
+  a batch over the row cap can under-report `role`. It never drops a member.
+
+Coverage: `apps/web/src/lib/external-apps/workspace-member-list-v2.test.ts`,
+`apps/web/src/lib/external-apps/workspace-members-access.test.ts`,
+`apps/web/src/lib/app-coordination/workspace-session.test.ts`, the members
+`route-v2.test.ts`, and the exchange `route.test.ts`/`route-refresh.test.ts`.
+
 ### App-owned Drive attachments
 
 Registered external apps can request `workspace:drive:read` and

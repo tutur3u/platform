@@ -251,7 +251,10 @@ describe('app token exchange route', () => {
     );
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+    await expect(response.json()).resolves.toEqual({
+      code: 'NOT_A_MEMBER',
+      error: 'Forbidden',
+    });
   });
 
   it('returns pending invite details for workspace session exchanges', async () => {

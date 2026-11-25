@@ -19,7 +19,7 @@ export type WorkspaceSessionAppTokenExchangeAuthorization =
       ok: true;
     }
   | {
-      code?: 'PENDING_WORKSPACE_INVITE';
+      code?: 'NOT_A_MEMBER' | 'PENDING_WORKSPACE_INVITE';
       error: string;
       invitation?: WorkspaceInvitationRecord;
       normalizedWorkspaceId?: string;
@@ -165,7 +165,11 @@ export async function authorizeWorkspaceSessionAppTokenExchange({
     };
   }
 
+  // The membership lookup succeeded and found no direct MEMBER row (missing or
+  // GUEST) with no pending invite. Callers may treat this code as an
+  // authoritative membership denial, unlike the generic 403s above.
   return {
+    code: 'NOT_A_MEMBER',
     error: 'Forbidden',
     ok: false,
     status: 403,

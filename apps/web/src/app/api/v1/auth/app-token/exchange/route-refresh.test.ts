@@ -73,6 +73,41 @@ describe('app token exchange route', () => {
     }
   });
 
+  it('returns NOT_A_MEMBER when a removed member refreshes a workspace session', async () => {
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ workspaceMember: false })
+    );
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'workspace-app',
+        userId: victimUserId,
+        workspaceId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['workspace:session'],
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      code: 'NOT_A_MEMBER',
+      error: 'Forbidden',
+    });
+  });
+
   it('refreshes registered app tokens without a fresh cross-app token', async () => {
     mockRegisteredApp(['external-projects:*']);
     const { token: refreshToken } = createAppCoordinationToken(

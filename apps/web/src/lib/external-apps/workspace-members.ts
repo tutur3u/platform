@@ -58,10 +58,17 @@ export type ExternalAppWorkspaceMembersAccess = {
   };
 };
 
-function accessError(message: string, status: 400 | 401 | 403 | 500) {
+function accessError(
+  message: string,
+  status: 400 | 401 | 403 | 500,
+  code?: 'NOT_A_MEMBER'
+) {
   return {
     ok: false as const,
-    response: NextResponse.json({ error: message }, { status }),
+    response: NextResponse.json(
+      code ? { code, error: message } : { error: message },
+      { status }
+    ),
   };
 }
 
@@ -134,7 +141,9 @@ export async function requireExternalAppWorkspaceMembersAccess({
   }
 
   if (!membership.ok) {
-    return accessError('Forbidden', 403);
+    // Authoritative: the lookup succeeded and found no direct MEMBER row
+    // (never joined, removed, or GUEST). Other 403s stay generic.
+    return accessError('Forbidden', 403, 'NOT_A_MEMBER');
   }
 
   const permissions = await getPermissions({
