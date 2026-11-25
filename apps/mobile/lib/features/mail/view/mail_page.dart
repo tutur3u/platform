@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -9,6 +10,7 @@ import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart' show AppButton;
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -18,13 +20,16 @@ import 'package:mobile/features/mail/data/mail_optimistic.dart';
 import 'package:mobile/features/mail/data/mail_preview_store.dart';
 import 'package:mobile/features/mail/data/mail_push_destination.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_action_bar.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
 import 'package:mobile/features/mail/view/mail_document_request.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
+import 'package:mobile/features/mail/view/mail_keyboard.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_quick_filter.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
+import 'package:mobile/features/mail/view/mail_reading_preferences.dart';
 import 'package:mobile/features/mail/view/mail_rendered_documents.dart';
 import 'package:mobile/features/mail/view/mail_settings_page.dart';
 import 'package:mobile/features/mail/view/mail_skeletons.dart';
@@ -36,6 +41,7 @@ import 'package:mobile/features/settings/view/settings_scoped_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -44,6 +50,9 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'mail_workspace_layout.dart';
+part 'mail_workspace_sidebar.dart';
+part 'mail_workspace_keyboard.dart';
+part 'mail_workspace_toolbar.dart';
 part 'mail_workspace_controls.dart';
 part 'mail_shell_actions.dart';
 part 'mail_workspace_bulk.dart';
@@ -156,6 +165,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   int _openRequest = 0;
   bool _split = false;
   Route<void>? _readerRoute;
+  final _routeSelection = ValueNotifier<_MailSelection?>(null);
   bool _migratingReader = false;
   final Set<String> _visibleIds = {};
 
@@ -163,10 +173,20 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   final Set<String> _prerenderIds = {};
   Timer? _prefetchDebounce;
   ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _swipeFeedback;
+  final _wideFeedback = ValueNotifier<_PendingMailFeedback?>(null);
+  Timer? _feedbackTimeout;
 
   void _dismissSwipeFeedback() {
+    _feedbackTimeout?.cancel();
+    if (_disposing) return;
     _swipeFeedback?.close();
     _swipeFeedback = null;
+    final feedback = _wideFeedback.value;
+    _wideFeedback.value = null;
+    if (feedback != null && identical(_activeFeedback, feedback)) {
+      _activeFeedback = null;
+      _flushDeferredCommit(feedback);
+    }
   }
 
   Future<void> _pushChild(Route<void> route) async {
@@ -194,6 +214,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
   bool _searchVisible = false;
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
+  final _conversationScroll = ScrollController();
+  String? _keyboardRowId;
+  String? _keyboardListKey;
   List<Map<String, dynamic>> _mailboxes = [];
   List<Map<String, dynamic>> _items = [];
   List<Map<String, dynamic>> _labels = [];
@@ -281,6 +304,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       onHide: () => unawaited(_settleDeferredWrites()),
     );
     unawaited(_swipePreferences.load());
+    unawaited(MailReadingPreferences.instance.load());
     // A pre-render must use the reader's image and appearance choices.
     unawaited(MailImagePreference.instance.load());
     unawaited(MailAppearancePreference.instance.load());
@@ -315,6 +339,10 @@ class _MailWorkspaceState extends State<MailWorkspace> {
     _repository.accessRevoked?.removeListener(_onCacheAccessRevoked);
     _flushAllDeferredFeedback();
     _swipeFeedback = null;
+    _feedbackTimeout?.cancel();
+    _wideFeedback.dispose();
+    _routeSelection.dispose();
+    _conversationScroll.dispose();
     _snoozeRefreshTimer?.cancel();
     _prefetchDebounce?.cancel();
     _previews.dispose();

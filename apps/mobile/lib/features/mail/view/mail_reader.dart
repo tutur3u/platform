@@ -11,12 +11,13 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_people_resolver.dart';
 import 'package:mobile/features/mail/data/mail_preview_store.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_action_bar.dart';
 import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_attachment_preview.dart';
 import 'package:mobile/features/mail/view/mail_attachment_tile.dart';
 import 'package:mobile/features/mail/view/mail_composer.dart';
-import 'package:mobile/features/mail/view/mail_html_document.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
+import 'package:mobile/features/mail/view/mail_keyboard.dart';
 import 'package:mobile/features/mail/view/mail_message_content.dart';
 import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_message_details.dart';
@@ -56,6 +57,9 @@ class MailReader extends StatefulWidget {
     this.summary,
     this.loadDetail,
     this.onClose,
+    this.onActionClose,
+    this.adaptiveActions = false,
+    this.actionFeedback,
     this.pushRoute,
     this.renderedDocuments,
     this.refreshOnOpen = false,
@@ -105,6 +109,9 @@ class MailReader extends StatefulWidget {
   /// Closes a reader shown in a split layout's detail pane. Pushed readers
   /// pop their route instead.
   final VoidCallback? onClose;
+  final bool Function(String action)? onActionClose;
+  final bool adaptiveActions;
+  final Widget? actionFeedback;
 
   /// Pushes reader child routes through the owner, so its chrome yields.
   final Future<void> Function(Route<void> route)? pushRoute;
@@ -375,7 +382,7 @@ class _MailReaderState extends State<MailReader> {
   }
 
   Future<void> _reply(
-    Map<String, dynamic> message, {
+    Map<String, dynamic>? message, {
     bool all = false,
     bool forward = false,
   }) async {
@@ -432,6 +439,7 @@ class _MailReaderState extends State<MailReader> {
         ? ''
         : l10n.mailNoSubject;
     final pane = AppMasterDetail.inDetailPaneOf(context);
+    final wideActions = widget.adaptiveActions && usesMailActionBar(context);
     final sharedShell = lookupShellTitleOverrideCubit(context) != null;
     // Capture the shell inset before Scaffold adjusts its body's MediaQuery.
     final readerBottomClearance = AppPageInsets.contentBottomClearance(context);
@@ -448,16 +456,19 @@ class _MailReaderState extends State<MailReader> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (sharedShell && !pane && !_childRouteOpen) _readerChrome(title),
+        if (sharedShell && !pane && !_childRouteOpen)
+          _readerChrome(title, wideActions: wideActions),
         Scaffold(
           backgroundColor: sharedShell
               ? Colors.transparent
               : AppTokens.of(context).colorScheme.background,
-          appBar: sharedShell || pane ? null : _fallbackAppBar(title),
+          appBar: sharedShell || pane
+              ? null
+              : _fallbackAppBar(title, wideActions: wideActions),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (pane) _paneHeader(),
+              if (pane && !wideActions) _paneHeader(),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) =>
@@ -466,17 +477,11 @@ class _MailReaderState extends State<MailReader> {
                         child: NotificationListener<ScrollNotification>(
                           onNotification: _onScroll,
                           child: ListView.builder(
-                            padding:
-                                AppPageInsets.of(
-                                  context,
-                                  width: constraints.maxWidth,
-                                  kind: AppPageKind.reading,
-                                ).copyWith(
-                                  top: AppSpacing.sm,
-                                  bottom:
-                                      readerBottomClearance +
-                                      AppLayout.scrollEndGap,
-                                ),
+                            padding: _readerInsets(
+                              constraints.maxWidth,
+                              bottom: wideActions ? 0 : readerBottomClearance,
+                              wide: wideActions,
+                            ),
                             itemCount: count,
                             itemBuilder: (context, index) {
                               if (index == 0) return _threadHeader(title);
@@ -492,10 +497,32 @@ class _MailReaderState extends State<MailReader> {
                       ),
                 ),
               ),
+              if (widget.actionFeedback case final feedback?) feedback,
+              if (wideActions)
+                _wideReaderActions(bottomClearance: readerBottomClearance),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  EdgeInsets _readerInsets(
+    double width, {
+    required double bottom,
+    required bool wide,
+  }) {
+    final insets = AppPageInsets.of(
+      context,
+      width: wide ? width.clamp(0.0, 800.0) : width,
+      kind: wide ? AppPageKind.root : AppPageKind.reading,
+    );
+    final centre = wide && width > 800 ? (width - 800) / 2 : 0.0;
+    return insets.copyWith(
+      left: insets.left + centre,
+      right: insets.right + centre,
+      top: AppSpacing.sm,
+      bottom: bottom + AppLayout.scrollEndGap,
     );
   }
 

@@ -18,6 +18,8 @@ class MailMessageTile extends StatelessWidget {
     required this.onSelect,
     required this.workspaceId,
     this.active = false,
+    this.desktop = false,
+    this.keyboardActive = false,
     this.onPressStart,
     super.key,
   });
@@ -34,6 +36,8 @@ class MailMessageTile extends StatelessWidget {
 
   /// The conversation open in a split layout's detail pane.
   final bool active;
+  final bool desktop;
+  final bool keyboardActive;
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +67,7 @@ class MailMessageTile extends StatelessWidget {
       child: Semantics(
         selected: selected || active,
         child: Material(
-          color: selected
+          color: selected || keyboardActive
               ? colors.primary.withValues(alpha: 0.08)
               : active
               ? colors.muted
@@ -77,33 +81,73 @@ class MailMessageTile extends StatelessWidget {
                 onSelect();
               },
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(10, 9, 16, 9),
+                padding: desktop
+                    ? const EdgeInsets.fromLTRB(10, 7, 16, 7)
+                    : const EdgeInsets.fromLTRB(10, 9, 16, 9),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
-                      width: 16,
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: selected
-                            ? Icon(
-                                Icons.check_circle,
-                                size: 16,
-                                color: colors.primary,
-                              )
-                            : unread
-                            ? Center(
-                                child: DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: colors.info,
-                                    shape: BoxShape.circle,
+                    if (desktop)
+                      Tooltip(
+                        message: context.l10n.mailKeyboardSelect,
+                        excludeFromSemantics: true,
+                        child: Semantics(
+                          button: true,
+                          checked: selected,
+                          label: context.l10n.mailKeyboardSelect,
+                          child: InkWell(
+                            onTap: onSelect,
+                            child: SizedBox.square(
+                              dimension: 32,
+                              child: Center(
+                                child: unread && !selected
+                                    ? DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          color: colors.info,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const SizedBox.square(
+                                          dimension: 8,
+                                        ),
+                                      )
+                                    : Icon(
+                                        selected
+                                            ? Icons.check_box_outlined
+                                            : Icons.check_box_outline_blank,
+                                        size: 16,
+                                        color: selected
+                                            ? colors.primary
+                                            : muted,
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        width: 16,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: selected
+                              ? Icon(
+                                  Icons.check_circle,
+                                  size: 16,
+                                  color: colors.primary,
+                                )
+                              : unread
+                              ? Center(
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: colors.info,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const SizedBox.square(dimension: 8),
                                   ),
-                                  child: const SizedBox.square(dimension: 8),
-                                ),
-                              )
-                            : null,
+                                )
+                              : null,
+                        ),
                       ),
-                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Column(

@@ -4,7 +4,7 @@ extension _MailSettingsPageData on _MailSettingsPageState {
   void _clearSettings() {
     _savedDraft = null;
     _hasSnapshot = false;
-    for (final controller in [_sender, _signature, _instructions, _forwardTo]) {
+    for (final controller in _settingsControllers) {
       controller.clear();
     }
     _group = null;
@@ -23,6 +23,7 @@ extension _MailSettingsPageData on _MailSettingsPageState {
     final forwarding = automation?['forwarding'] as Map<String, dynamic>?;
     _sender.text = settings['senderName'] as String? ?? '';
     _signature.text = settings['signatureText'] as String? ?? '';
+    _signatureHtml.text = settings['signatureHtml'] as String? ?? '';
 
     _instructions.text = settings['aiInstructions'] as String? ?? '';
     _forwardTo.text = forwarding?['address'] as String? ?? '';
@@ -149,6 +150,7 @@ extension _MailSettingsPageData on _MailSettingsPageState {
   Map<String, dynamic> get _formSettings => {
     'senderName': _sender.text.trim(),
     'signatureText': _signature.text,
+    'signatureHtml': _signatureHtml.text.isEmpty ? null : _signatureHtml.text,
     'aiInstructions': _instructions.text,
     'autoDraftEnabled': _autoDraft,
     'outboundProviderOverride': _provider,

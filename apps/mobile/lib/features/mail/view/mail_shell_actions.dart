@@ -9,14 +9,17 @@ extension _MailShellActions on _MailWorkspaceState {
   }
 
   /// [onBack] closes an open split-layout pane before Back leaves Mail.
-  Widget _buildMailShellActions({Future<void> Function()? onBack}) {
+  Widget _buildMailShellActions({
+    required bool wide,
+    Future<void> Function()? onBack,
+  }) {
     final l10n = context.l10n;
     return ShellChromeActions(
       ownerId: 'mail-workspace-actions',
       locations: const {Routes.mail},
       onBack: onBack,
       actions: [
-        if (_mailboxId != null && _canSend)
+        if (!wide && _mailboxId != null && _canSend)
           ShellActionSpec(
             id: 'mail-compose',
             inDock: true,

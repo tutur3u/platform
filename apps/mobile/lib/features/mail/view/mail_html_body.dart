@@ -300,9 +300,7 @@ class _MailHtmlBodyState extends State<MailHtmlBody> {
                   child: Text(context.l10n.mailViewOriginal),
                 ),
               const Spacer(),
-              MailAppearanceControl(
-                appearance: _appearance ?? MailMessageAppearance.original,
-              ),
+              const MailAppearanceControl(),
               IconButton(
                 tooltip: context.l10n.mailLoadImages,
                 onPressed: widget.onImagesChanged != null

@@ -20,11 +20,16 @@ extension _MailWorkspaceBulk on _MailWorkspaceState {
     return false;
   }
 
-  Future<void> _bulk(String action, {String? labelId, String? folderId}) async {
+  Future<void> _bulk(
+    String action, {
+    String? labelId,
+    String? folderId,
+    Set<String>? ids,
+  }) async {
     final box = _mailboxId;
-    if (_mutating || _selected.isEmpty || box == null) return;
+    if (_mutating || (ids ?? _selected).isEmpty || box == null) return;
     final threads = _threads;
-    final selected = Set<String>.of(_selected);
+    final selected = Set<String>.of(ids ?? _selected);
     final listKey = _visibleListKey;
     if (!await _beginMutation()) return;
     final sameList = listKey == _visibleListKey;
@@ -40,7 +45,7 @@ extension _MailWorkspaceBulk on _MailWorkspaceState {
           folder: _folder,
           query: _query,
         );
-        _selected.clear();
+        if (ids == null) _selected.clear();
       });
     }
     try {
@@ -58,7 +63,7 @@ extension _MailWorkspaceBulk on _MailWorkspaceState {
         if (sameList && generation == _generation) {
           _updateState(() {
             _items = previous;
-            _selected.addAll(selected);
+            if (ids == null) _selected.addAll(selected);
           });
         }
         ScaffoldMessenger.of(context).showSnackBar(

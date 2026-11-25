@@ -1,6 +1,13 @@
 part of 'mail_page.dart';
 
 extension _MailWorkspaceControls on _MailWorkspaceState {
+  void _startMailSearch() {
+    _updateState(() => _searchVisible = true);
+    if (lookupShellTitleOverrideCubit(context) == null) {
+      _searchFocus.requestFocus();
+    }
+  }
+
   Future<String?> _chooseMailOption(
     String title,
     Map<String, String> options,
@@ -122,12 +129,17 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
     unawaited(_load(forceRefresh: false));
   }
 
-  Widget _buildMailControls(Widget folderPicker, bool sharedShell) {
+  Widget _buildMailControls(
+    Widget folderPicker,
+    bool sharedShell, {
+    required bool showPickers,
+    required bool showCompose,
+  }) {
     final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!sharedShell)
+        if (showPickers)
           Row(
             children: [
               folderPicker,
@@ -141,12 +153,22 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
                 icon: Icons.filter_alt_outlined,
                 onPressed: _chooseFilter,
               ),
-              IconButton(
-                tooltip: l10n.mailSearch,
-                onPressed: () =>
-                    _updateState(() => _searchVisible = !_searchVisible),
-                icon: const Icon(AppIcons.search),
-              ),
+              if (!sharedShell)
+                IconButton(
+                  tooltip: l10n.mailSearch,
+                  onPressed: showCompose
+                      ? (_searchVisible ? _closeShellSearch : _startMailSearch)
+                      : () => _updateState(
+                          () => _searchVisible = !_searchVisible,
+                        ),
+                  icon: const Icon(AppIcons.search),
+                ),
+              if (showCompose && _canSend)
+                IconButton(
+                  tooltip: l10n.mailCompose,
+                  onPressed: _mutating ? null : _compose,
+                  icon: const Icon(Icons.edit_outlined),
+                ),
             ],
           ),
         if (_folder != 'drafts')

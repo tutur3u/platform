@@ -30,17 +30,28 @@ class MailAppearancePreference extends ValueNotifier<MailMessageAppearance?> {
     }
   }
 
-  Future<void> select(MailMessageAppearance appearance) async {
+  Future<void> select(MailMessageAppearance? appearance) async {
     _selected = true;
     value = appearance;
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, appearance.name);
+      await prefs.setString(storageKey, appearance?.name ?? 'auto');
     } on Exception {
       // Keep the current session choice even if disk storage is unavailable.
     }
   }
+
+  Future<void> selectMode(String id) => select(
+    id == 'auto' ? null : MailMessageAppearance.values.byName(id),
+  );
 }
+
+Map<String, String> mailAppearanceLabels(BuildContext context) => {
+  'auto': context.l10n.mailAppearanceAppTheme,
+  MailMessageAppearance.dark.name: context.l10n.settingsThemeDark,
+  MailMessageAppearance.original.name: context.l10n.mailAppearanceOriginal,
+  MailMessageAppearance.light.name: context.l10n.settingsThemeLight,
+};
 
 /// The appearance a message renders with: the saved choice, else the app's
 /// own theme, so HTML mail is not a white sheet inside a dark app.
@@ -51,29 +62,23 @@ MailMessageAppearance mailEffectiveAppearance(BuildContext context) =>
         : MailMessageAppearance.original);
 
 class MailAppearanceControl extends StatelessWidget {
-  const MailAppearanceControl({required this.appearance, super.key});
-
-  final MailMessageAppearance appearance;
+  const MailAppearanceControl({super.key});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final choices = {
-      MailMessageAppearance.original: l10n.mailAppearanceOriginal,
-      MailMessageAppearance.light: l10n.settingsThemeLight,
-      MailMessageAppearance.dark: l10n.settingsThemeDark,
-    };
-    return PopupMenuButton<MailMessageAppearance>(
+    final preference = MailAppearancePreference.instance;
+    final current = preference.value?.name ?? 'auto';
+    return PopupMenuButton<String>(
       tooltip: l10n.mailMessageAppearance,
-      initialValue: appearance,
+      initialValue: current,
       icon: const Icon(Icons.contrast_rounded),
-      onSelected: (value) =>
-          unawaited(MailAppearancePreference.instance.select(value)),
+      onSelected: (value) => unawaited(preference.selectMode(value)),
       itemBuilder: (_) => [
-        for (final choice in choices.entries)
+        for (final choice in mailAppearanceLabels(context).entries)
           CheckedPopupMenuItem(
             value: choice.key,
-            checked: appearance == choice.key,
+            checked: current == choice.key,
             child: Text(choice.value),
           ),
       ],

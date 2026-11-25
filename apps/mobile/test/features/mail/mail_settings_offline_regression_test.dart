@@ -220,6 +220,25 @@ void main() {
     },
   );
 
+  test('HTML signature survives a plain signature edit', () {
+    final confirmed = mailSettingsFormValues({
+      'signatureText': 'Plain signature',
+      'signatureHtml': '<b>HTML signature</b>',
+    });
+    expect(
+      mailSettingsChanges(confirmed, {...confirmed, 'signatureText': 'Plain'}),
+      {'signatureText': 'Plain'},
+    );
+    expect(
+      mailSettingsChanges(confirmed, {...confirmed, 'signatureHtml': null}),
+      {'signatureHtml': null},
+    );
+    expect(
+      mailSettingsSnapshot({'settings': confirmed})['settings'],
+      containsPair('signatureHtml', '<b>HTML signature</b>'),
+    );
+  });
+
   for (final status in [403, 404]) {
     test('mailbox $status keeps other mailboxes and inbox snapshots', () async {
       final other = '${MailRepository.mailboxPath(ws, 'other')}/settings';

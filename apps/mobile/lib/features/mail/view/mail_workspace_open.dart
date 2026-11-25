@@ -22,6 +22,8 @@ class _MailSelection {
 
   /// The list [beforeRead] was taken from (mailbox, folder, query, labels).
   final String? listKey;
+  final paneReader = GlobalKey<State<MailReader>>();
+  final routeReader = GlobalKey<State<MailReader>>();
   String get id => item['id'] as String;
 }
 
@@ -107,6 +109,19 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
       await _openDraft(item, box);
       return;
     }
+    final selection = _selectConversation(
+      item,
+      box,
+      notificationEntry: notificationEntry,
+    );
+    if (!_split) await _presentReaderRoute(selection);
+  }
+
+  _MailSelection _selectConversation(
+    Map<String, dynamic> item,
+    String box, {
+    bool notificationEntry = false,
+  }) {
     final selection = _MailSelection(
       item: item,
       mailboxId: box,
@@ -121,6 +136,10 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     }
     _updateState(() {
       _selection = selection;
+      if (_keyboardRowId != null) {
+        _keyboardRowId = selection.id;
+        _keyboardListKey = _visibleListKey;
+      }
       _items = optimisticMailItems(
         _items,
         {selection.id},
@@ -130,7 +149,42 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
       );
     });
     _prefetchAround(selection.id, selection.beforeRead);
-    if (!_split) await _presentReaderRoute(selection);
+    return selection;
+  }
+
+  bool _continueReading(_MailSelection selection, String action) {
+    if (!mounted ||
+        !identical(_selection, selection) ||
+        selection.mailboxId != _mailboxId ||
+        selection.folder != _folder ||
+        selection.listKey != _visibleListKey ||
+        !const {'archive', 'trash', 'restore', 'move_to_folder'}
+            .contains(action)) {
+      return false;
+    }
+    final order = _items.any((row) => row['id'] == selection.id)
+        ? _items
+        : selection.beforeRead;
+    final id = mailConversationAfterAction(
+      preference: MailReadingPreferences.instance.afterArchive,
+      order: order.map((row) => row['id'] as String).toList(),
+      current: selection.id,
+      remaining: {
+        for (final row in _items)
+          if (!_pendingDeferredIds.containsKey(row['id']) &&
+              !_pendingReaderIds.containsKey(row['id']) &&
+              !_pendingSwipeIds.containsKey(row['id']))
+            row['id'] as String,
+      },
+    );
+    if (id == null) return false;
+    final next = _items.firstWhere((row) => row['id'] == id);
+    final opened = _selectConversation(next, selection.mailboxId);
+    if (!_split) {
+      _routeSelection.value = opened;
+      _flushPendingFeedback(inReader: true);
+    }
+    return true;
   }
 
   /// Drafts change whenever the composer saves, so they always load fresh
@@ -151,22 +205,34 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
   }
 
   Future<void> _presentReaderRoute(_MailSelection selection) async {
+    _routeSelection.value = selection;
     final route = MaterialPageRoute<void>(
       builder: (_) => AppMasterDetailRouteBody(
         onSplit: () => _onSplitChanged(true),
-        child: _buildReader(selection, pane: false),
+        child: ValueListenableBuilder(
+          valueListenable: _routeSelection,
+          builder: (context, current, _) => current == null
+              ? const SizedBox.shrink()
+              : _withMailKeyboard(
+                  context,
+                  _buildReader(current, pane: false),
+                  routeSelection: current,
+                ),
+        ),
       ),
     );
     _readerRoute = route;
     await _pushChild(route);
-    if (_readerRoute == route) _readerRoute = null;
-    if (!mounted || !identical(_selection, selection)) return;
+    if (!mounted || _readerRoute != route) return;
+    _readerRoute = null;
+    final current = _routeSelection.value;
+    _routeSelection.value = null;
     if (_migratingReader) {
       // The route was folded into the split layout's pane; keep reading.
       _migratingReader = false;
       return;
     }
-    _closeSelection();
+    if (identical(_selection, current)) _closeSelection();
   }
 
   void _closeSelection() {
@@ -218,7 +284,7 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
     final cached = _previews.peek(box, selection.id, thread: selection.thread);
     return MailReader(
       renderedDocuments: _renderedDocuments,
-      key: ValueKey('mail-reader:$box:${selection.id}'),
+      key: pane ? selection.paneReader : selection.routeReader,
       repository: _repository,
       workspaceId: widget.workspaceId,
       mailboxId: box,
@@ -229,6 +295,9 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
       loadDetail: () =>
           _previews.load(box, selection.id, thread: selection.thread),
       onClose: pane ? _closeSelection : null,
+      onActionClose: (action) => _continueReading(selection, action),
+      adaptiveActions: true,
+      actionFeedback: pane ? null : _buildWideFeedback(bottomClearance: 0),
       pushRoute: pane ? _pushChild : null,
       // Bodies shown from memory or the encrypted snapshot are revalidated
       // once on open; the reader also revalidates a snapshot it hydrates.
@@ -372,6 +441,7 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
               threads: selection.thread,
               inverse: selection.folder == 'inbox' ? 'restore' : null,
             ),
+            inReader: !identical(_selection, selection),
           );
         }
         if (_visibleMailboxSettled) unawaited(_load());
@@ -469,12 +539,14 @@ class _MailRowVisibility extends StatefulWidget {
     required this.id,
     required this.onChanged,
     required this.child,
+    required this.ensureVisible,
     super.key,
   });
 
   final String id;
   final void Function(String id, {required bool visible}) onChanged;
   final Widget child;
+  final bool ensureVisible;
 
   @override
   State<_MailRowVisibility> createState() => _MailRowVisibilityState();
@@ -485,6 +557,7 @@ class _MailRowVisibilityState extends State<_MailRowVisibility> {
   void initState() {
     super.initState();
     widget.onChanged(widget.id, visible: true);
+    if (widget.ensureVisible) _reveal();
   }
 
   @override
@@ -494,6 +567,18 @@ class _MailRowVisibilityState extends State<_MailRowVisibility> {
       oldWidget.onChanged(oldWidget.id, visible: false);
       widget.onChanged(widget.id, visible: true);
     }
+    if (widget.ensureVisible && !oldWidget.ensureVisible) _reveal();
+  }
+
+  void _reveal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.ensureVisible) {
+        unawaited(Scrollable.ensureVisible(
+          context,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        ));
+      }
+    });
   }
 
   @override

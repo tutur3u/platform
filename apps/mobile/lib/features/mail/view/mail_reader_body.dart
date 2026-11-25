@@ -16,19 +16,24 @@ extension _MailReaderBody on _MailReaderState {
   }
 
   /// Standalone readers (outside the shared shell) keep a plain app bar.
-  PreferredSizeWidget _fallbackAppBar(String subject) {
+  PreferredSizeWidget _fallbackAppBar(
+    String subject, {
+    required bool wideActions,
+  }) {
     final idle = !_busy && _detail != null;
     return AppBar(
       backgroundColor: AppTokens.of(context).colorScheme.background,
       surfaceTintColor: Colors.transparent,
       title: Text(_navbarTitle(subject)),
       actions: [
-        ?_quickButton(),
-        IconButton(
-          tooltip: MaterialLocalizations.of(context).showMenuTooltip,
-          onPressed: idle ? _chooseAction : null,
-          icon: const Icon(Icons.more_horiz),
-        ),
+        if (!wideActions) ...[
+          ?_quickButton(),
+          IconButton(
+            tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+            onPressed: idle ? _chooseAction : null,
+            icon: const Icon(Icons.more_horiz),
+          ),
+        ],
       ],
     );
   }

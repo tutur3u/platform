@@ -8,6 +8,16 @@ extension _MailReaderMutations on _MailReaderState {
   }) async {
     final generation = _contentGeneration;
     if (_detail == null || (_busy && action != 'mark_read')) return;
+    final id = _id;
+    final moveIds = folderId == null
+        ? null
+        : widget.thread
+        ? [
+            for (final message in _messages)
+              if (message['id'] case final String id) id,
+          ]
+        : [id];
+    if (moveIds?.isEmpty ?? false) return;
     if (action == 'mark_read' || action == 'mark_unread') {
       if (_readPending) return;
       _updateState(() => _readPending = true);
@@ -22,7 +32,6 @@ extension _MailReaderMutations on _MailReaderState {
       }
     }
     final previousStarred = _starred;
-    final id = _id;
     final optimisticClose =
         close &&
         (action == 'archive' ||
@@ -50,23 +59,27 @@ extension _MailReaderMutations on _MailReaderState {
               ) ??
               false);
       if (!deferred) widget.onOptimisticAction?.call(action, id);
-      lookupShellMiniNavCubit(context)?.dismissOwner('mail-reader');
-      try {
-        context.read<ShellChromeActionsCubit>().dismissOwner('mail-reader');
-      } on ProviderNotFoundException {
-        // Standalone reader tests and screens need no shared dock handoff.
+      // A split pane or pushed route can replace the conversation in place.
+      final continued = widget.onActionClose?.call(action) ?? false;
+      if (!continued) {
+        lookupShellMiniNavCubit(context)?.dismissOwner('mail-reader');
+        try {
+          context.read<ShellChromeActionsCubit>().dismissOwner('mail-reader');
+        } on ProviderNotFoundException {
+          // Standalone readers have no shared dock registration.
+        }
+        _close();
       }
-      _close();
       if (deferred) return;
     }
     try {
-      if (folderId != null) {
+      if (moveIds != null) {
         await widget.repository.bulk(
           widget.workspaceId,
           widget.mailboxId,
-          [id],
+          moveIds,
           action,
-          threads: widget.thread,
+          threads: false,
           folderId: folderId,
         );
       } else {

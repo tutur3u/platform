@@ -30,6 +30,7 @@ Map<String, dynamic> mailSettingsSnapshot(Map<String, dynamic> source) {
       for (final key in const [
         'senderName',
         'signatureText',
+        'signatureHtml',
         'aiInstructions',
         'autoDraftEnabled',
         'outboundProviderOverride',
@@ -98,7 +99,9 @@ Map<String, dynamic> mailSettingsChanges(
       if (!_sameSettingsValue(baseline[field.key], field.value))
         field.key: field.value,
   };
-  if (delta.containsKey('signatureText')) delta['signatureHtml'] = null;
+  if (delta.containsKey('signatureText') && draft['signatureHtml'] == null) {
+    delta['signatureHtml'] = null;
+  }
   return delta;
 }
 
@@ -109,6 +112,7 @@ Map<String, dynamic> mailSettingsFormValues(Map<String, dynamic> settings) {
   return {
     'senderName': (settings['senderName'] as String? ?? '').trim(),
     'signatureText': settings['signatureText'] as String? ?? '',
+    'signatureHtml': settings['signatureHtml'] as String?,
     'aiInstructions': settings['aiInstructions'] as String? ?? '',
     'autoDraftEnabled': settings['autoDraftEnabled'] as bool? ?? false,
     'outboundProviderOverride': settings['outboundProviderOverride'],

@@ -167,16 +167,22 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
     }
   }
 
-  bool _isFeedbackVisible(_PendingMailFeedback feedback) =>
+  bool _isFeedbackVisible(
+    _PendingMailFeedback feedback, {
+    required bool inReader,
+  }) =>
       mounted &&
-      !_childRouteOpen &&
+      (!_childRouteOpen || (inReader && (_readerRoute?.isCurrent ?? false))) &&
       _mailboxId == feedback.box &&
       _folder == feedback.folder;
 
-  void _presentOrQueueFeedback(_PendingMailFeedback feedback) {
+  void _presentOrQueueFeedback(
+    _PendingMailFeedback feedback, {
+    bool inReader = false,
+  }) {
     _flushPendingOnly();
     _flushActiveOnly();
-    if (_isFeedbackVisible(feedback)) {
+    if (_isFeedbackVisible(feedback, inReader: inReader)) {
       _showMailFeedback(feedback);
     } else if (mounted &&
         _mailboxId == feedback.box &&
@@ -187,11 +193,11 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
     }
   }
 
-  void _flushPendingFeedback() {
+  void _flushPendingFeedback({bool inReader = false}) {
     final pending = _pendingFeedback;
     if (pending == null) return;
     _pendingFeedback = null;
-    _presentOrQueueFeedback(pending);
+    _presentOrQueueFeedback(pending, inReader: inReader);
   }
 
   void _flushPendingOnly() {
@@ -205,6 +211,7 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
     final active = _activeFeedback;
     if (active == null) return;
     _activeFeedback = null;
+    _dismissSwipeFeedback();
     _flushDeferredCommit(active);
   }
 
@@ -345,9 +352,16 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
   /// Confirms a finished or deferred change with an Undo that either cancels
   /// the pending write or applies its inverse action.
   void _showMailFeedback(_PendingMailFeedback feedback) {
-    if (!_isFeedbackVisible(feedback)) return;
     _dismissSwipeFeedback();
     _activeFeedback = feedback;
+    if (usesMailActionBar(context)) {
+      _wideFeedback.value = feedback;
+      _feedbackTimeout = Timer(
+        const Duration(seconds: 3),
+        _dismissSwipeFeedback,
+      );
+      return;
+    }
     final width = MediaQuery.sizeOf(context).width;
     final sideInset = width > 320 ? (width - 288) / 2 : 16.0;
     final messenger = ScaffoldMessenger.of(context)
@@ -374,61 +388,7 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
             ? null
             : SnackBarAction(
                 label: context.l10n.mailSwipeUndo,
-                onPressed: () async {
-                  if (feedback.commit != null) {
-                    if (feedback.settled) return;
-                    feedback.settled = true;
-                    if (identical(_activeFeedback, feedback)) {
-                      _activeFeedback = null;
-                    }
-                    _pendingDeferredIds.remove(feedback.id);
-                    if (!mounted || _mailboxId != feedback.box) return;
-                    _returnDeferredRow(feedback);
-                    // The server decides what the list holds; the returned
-                    // row stands in until it answers, and if it cannot.
-                    await _load();
-                    return;
-                  }
-                  if (!mounted ||
-                      !_canSubmitWrites ||
-                      _mailboxId != feedback.box ||
-                      _mutating ||
-                      _pendingSwipeIds.containsKey(feedback.id)) {
-                    return;
-                  }
-                  _updateState(() => _mutating = true);
-                  try {
-                    await _repository.bulk(
-                      widget.workspaceId,
-                      feedback.box,
-                      [feedback.id],
-                      feedback.inverse!,
-                      threads: feedback.threads,
-                    );
-                    if (feedback.inverse == 'restore' &&
-                        feedback.restoreUnread) {
-                      await _repository.bulk(
-                        widget.workspaceId,
-                        feedback.box,
-                        [feedback.id],
-                        'mark_unread',
-                        threads: feedback.threads,
-                      );
-                    }
-                  } on Object {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(context.l10n.mailActionFailed)),
-                      );
-                    }
-                  } finally {
-                    if (mounted) {
-                      _updateState(() => _mutating = false);
-                      // Also covers a deferred write that finished meanwhile.
-                      if (_mailboxId == feedback.box) unawaited(_load());
-                    }
-                  }
-                },
+                onPressed: () => unawaited(_undoMailFeedback(feedback)),
               ),
       ),
     );
@@ -442,5 +402,95 @@ extension _MailWorkspaceSwipes on _MailWorkspaceState {
         }
       }),
     );
+  }
+
+  Widget _buildWideFeedback({double? bottomClearance}) {
+    return ValueListenableBuilder(
+      valueListenable: _wideFeedback,
+      builder: (context, feedback, _) {
+        if (feedback == null) return const SizedBox.shrink();
+        final undo = context.l10n.mailSwipeUndo;
+        return MailActionBar(
+          label: feedback.message,
+          bottomClearance: bottomClearance,
+          liveRegion: true,
+          children: [
+            ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: Text(feedback.message, softWrap: false),
+              ),
+            ),
+            if (feedback.inverse != null)
+              MailBarButton(
+                icon: Icons.undo,
+                label: undo,
+                onPressed: () {
+                  if (!identical(_activeFeedback, feedback)) return;
+                  _activeFeedback = null;
+                  _dismissSwipeFeedback();
+                  unawaited(_undoMailFeedback(feedback));
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _undoMailFeedback(_PendingMailFeedback feedback) async {
+    if (feedback.commit != null) {
+      if (feedback.settled) return;
+      feedback.settled = true;
+      if (identical(_activeFeedback, feedback)) {
+        _activeFeedback = null;
+      }
+      _pendingDeferredIds.remove(feedback.id);
+      if (!mounted || _mailboxId != feedback.box) return;
+      _returnDeferredRow(feedback);
+      // The server decides what the list holds; the returned
+      // row stands in until it answers, and if it cannot.
+      await _load();
+      return;
+    }
+    if (!mounted ||
+        !_canSubmitWrites ||
+        _mailboxId != feedback.box ||
+        _mutating ||
+        _pendingSwipeIds.containsKey(feedback.id)) {
+      return;
+    }
+    _updateState(() => _mutating = true);
+    try {
+      await _repository.bulk(
+        widget.workspaceId,
+        feedback.box,
+        [feedback.id],
+        feedback.inverse!,
+        threads: feedback.threads,
+      );
+      if (feedback.inverse == 'restore' &&
+          feedback.restoreUnread) {
+        await _repository.bulk(
+          widget.workspaceId,
+          feedback.box,
+          [feedback.id],
+          'mark_unread',
+          threads: feedback.threads,
+        );
+      }
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.mailActionFailed)),
+        );
+      }
+    } finally {
+      if (mounted) {
+        _updateState(() => _mutating = false);
+        // Also covers a deferred write that finished meanwhile.
+        if (_mailboxId == feedback.box) unawaited(_load());
+      }
+    }
   }
 }

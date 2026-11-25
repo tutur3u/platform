@@ -199,6 +199,56 @@ abstract class MailSettingsRepository extends MailInvitationRepository {
     );
     _checkSettingsScope();
   }
+
+  String _senderBlocksPath(String wsId, String mailboxId) =>
+      '${MailRepository.mailboxPath(wsId, mailboxId)}/sender-blocks';
+
+  Future<List<Map<String, dynamic>>> senderBlocks(
+    String wsId,
+    String mailboxId,
+  ) => _forSettingsActor(() async {
+    final result = await _settingsApi.getJson(
+      _senderBlocksPath(wsId, mailboxId),
+    );
+    return mailRows(result['blocks']);
+  });
+
+  Future<void> addSenderBlock(
+    String wsId,
+    String mailboxId, {
+    required String kind,
+    required String value,
+    required bool moveExisting,
+  }) async {
+    await _forSettingsActor(
+      () => _settingsCache.mutate(
+        wsId,
+        () => _settingsApi.postJson(_senderBlocksPath(wsId, mailboxId), {
+          'kind': kind,
+          'value': value,
+          'moveExisting': moveExisting,
+        }),
+      ),
+    );
+  }
+
+  Future<void> removeSenderBlock(
+    String wsId,
+    String mailboxId,
+    String blockId, {
+    required bool restoreToInbox,
+  }) async {
+    final id = Uri.encodeComponent(blockId);
+    final query = restoreToInbox ? '?restoreToInbox=true' : '';
+    await _forSettingsActor(
+      () => _settingsCache.mutate(
+        wsId,
+        () => _settingsApi.deleteJson(
+          '${_senderBlocksPath(wsId, mailboxId)}/$id$query',
+        ),
+      ),
+    );
+  }
 }
 
 class _MailSettingsChallenge implements Exception {

@@ -57,6 +57,7 @@ class MailDeferredFixture {
 
   void _reset() {
     SharedPreferences.setMockInitialValues({
+      'mail.afterArchive': 'list',
       'mail.swipe.left': 'read',
       'mail.swipe.right': 'trash',
     });

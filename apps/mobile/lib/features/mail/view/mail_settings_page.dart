@@ -11,9 +11,13 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/mail/data/mail_settings_snapshot.dart';
+import 'package:mobile/features/mail/view/mail_appearance_control.dart';
 import 'package:mobile/features/mail/view/mail_image_preference.dart';
+import 'package:mobile/features/mail/view/mail_keyboard.dart';
 import 'package:mobile/features/mail/view/mail_organization_page.dart';
 import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
+import 'package:mobile/features/mail/view/mail_reading_preferences.dart';
+import 'package:mobile/features/mail/view/mail_sender_blocks.dart';
 import 'package:mobile/features/mail/view/mail_settings_chrome.dart';
 import 'package:mobile/features/mail/view/mail_settings_controls.dart';
 import 'package:mobile/features/mail/view/mail_swipe_preferences.dart';
@@ -22,6 +26,7 @@ import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 part 'mail_settings_page_data.dart';
+part 'mail_settings_reading_controls.dart';
 
 class MailSettingsPage extends StatefulWidget {
   const MailSettingsPage({
@@ -50,6 +55,7 @@ class MailSettingsPage extends StatefulWidget {
 class _MailSettingsPageState extends State<MailSettingsPage> {
   final _sender = TextEditingController();
   final _signature = TextEditingController();
+  final _signatureHtml = TextEditingController();
   final _instructions = TextEditingController();
   final _forwardTo = TextEditingController();
   bool _busy = true;
@@ -72,16 +78,21 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
 
   void _updateSettingsState(VoidCallback update) => setState(update);
 
+  List<TextEditingController> get _settingsControllers =>
+      [_sender, _signature, _signatureHtml, _instructions, _forwardTo];
+
   @override
   void initState() {
     super.initState();
-    for (final controller in [_sender, _signature, _instructions, _forwardTo]) {
+    for (final controller in _settingsControllers) {
       controller.addListener(_draftChanged);
     }
     MailImagePreference.instance.addListener(_imagePreferenceChanged);
     MailPrimaryActionPreference.instance.addListener(_imagePreferenceChanged);
     unawaited(MailImagePreference.instance.load());
     unawaited(MailPrimaryActionPreference.instance.load());
+    unawaited(MailAppearancePreference.instance.load());
+    unawaited(MailReadingPreferences.instance.load());
     widget.repository.accessRevoked?.addListener(_accessRevoked);
     widget.repository.settingsRevoked?.addListener(_mailboxRevoked);
     _hadPendingSettings = _hasPendingSettings;
@@ -113,7 +124,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     MailPrimaryActionPreference.instance.removeListener(
       _imagePreferenceChanged,
     );
-    for (final c in [_sender, _signature, _instructions, _forwardTo]) {
+    for (final c in _settingsControllers) {
       c
         ..removeListener(_draftChanged)
         ..dispose();
@@ -130,6 +141,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
   String get _draft => jsonEncode([
     _sender.text,
     _signature.text,
+    _signatureHtml.text,
     _instructions.text,
     _forwardTo.text,
     _autoDraft,
@@ -409,6 +421,7 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
     );
     return [
       section(l10n.mailSettingsReadingGroup, [
+        ..._readingControls(),
         SettingsSwitchRow(
           icon: LucideIcons.image,
           title: l10n.mailLoadImages,
@@ -466,6 +479,16 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
               label: l10n.mailSignature,
               placeholder: l10n.mailSignaturePlaceholder,
               helperText: l10n.mailSignatureHelper,
+            ),
+          ),
+          SettingsFieldRow(
+            child: AppTextField(
+              controller: _signatureHtml,
+              enabled: editable,
+              minLines: 3,
+              maxLines: 8,
+              label: l10n.mailSignatureHtml,
+              placeholder: l10n.mailSignatureHtmlPlaceholder,
             ),
           ),
         ]),
@@ -565,6 +588,18 @@ class _MailSettingsPageState extends State<MailSettingsPage> {
           ]),
         if (_canEdit)
           section(l10n.mailSettingsOrganizeGroup, [
+            SettingsTile(
+              grouped: true,
+              icon: Icons.block_outlined,
+              title: l10n.mailBlockedSenders,
+              onTap: () => showMailSenderBlocks(
+                context,
+                repository: widget.repository,
+                workspaceId: widget.workspaceId,
+                mailboxId: widget.mailboxId,
+                isScopeCurrent: () => mounted && _scopeCurrent && _canEdit,
+              ),
+            ),
             for (final section in {
               'labels': (l10n.mailLabels, LucideIcons.tag),
               'folders': (l10n.mailFolders, LucideIcons.folder),

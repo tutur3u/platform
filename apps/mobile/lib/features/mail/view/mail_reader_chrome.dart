@@ -70,10 +70,7 @@ extension _MailReaderChrome on _MailReaderState {
   Future<void> _chooseAppearanceAsync() => _chooseAppearance();
 
   void _setAppearance(String id) {
-    final mode = MailMessageAppearance.values
-        .where((value) => value.name == id)
-        .firstOrNull;
-    if (mode != null) unawaited(MailAppearancePreference.instance.select(mode));
+    unawaited(MailAppearancePreference.instance.selectMode(id));
   }
 
   /// Shares the newest message as plain text through the system sheet.
@@ -124,7 +121,7 @@ extension _MailReaderChrome on _MailReaderState {
     };
   }
 
-  Widget _readerChrome(String subject) => Stack(
+  Widget _readerChrome(String subject, {required bool wideActions}) => Stack(
     children: [
       ShellTitleOverride(
         ownerId: 'mail-reader',
@@ -135,8 +132,8 @@ extension _MailReaderChrome on _MailReaderState {
       ShellChromeActions(
         ownerId: 'mail-reader',
         locations: const {Routes.mail},
-        actions: _navbarActions(),
-        actionGroup: _dockGroup(),
+        actions: wideActions ? const [] : _navbarActions(),
+        actionGroup: wideActions ? null : _dockGroup(),
         // The reader sits in Mail's own navigator at the Mail location, so
         // the dock's Back closes it back to the list instead of leaving Mail.
         // While the reader animates out, Back does nothing; the registration
@@ -312,7 +309,7 @@ extension _MailReaderChrome on _MailReaderState {
     final l10n = context.l10n;
     final plan = _dockPlan();
     final canReply = !_busy && _detail != null && _messages.isNotEmpty;
-    final appearance = mailEffectiveAppearance(context);
+    final appearance = MailAppearancePreference.instance.value;
 
     ShellDockGroupAction reply(MailDockReply kind) => switch (kind) {
       MailDockReply.reply => ShellDockGroupAction(
@@ -356,20 +353,10 @@ extension _MailReaderChrome on _MailReaderState {
             icon: Icons.contrast_rounded,
             label: l10n.mailMessageAppearance,
             options: [
-              (
-                id: MailMessageAppearance.original.name,
-                label: l10n.mailAppearanceOriginal,
-              ),
-              (
-                id: MailMessageAppearance.light.name,
-                label: l10n.settingsThemeLight,
-              ),
-              (
-                id: MailMessageAppearance.dark.name,
-                label: l10n.settingsThemeDark,
-              ),
+              for (final choice in mailAppearanceLabels(context).entries)
+                (id: choice.key, label: choice.value),
             ],
-            selectedId: appearance.name,
+            selectedId: appearance?.name ?? 'auto',
             onSelected: _setAppearance,
           )
         : action(kind);
@@ -387,50 +374,40 @@ extension _MailReaderChrome on _MailReaderState {
   }
 
   Future<void> _chooseAppearance() async {
-    final l10n = context.l10n;
-    final modes = {
-      MailMessageAppearance.original: l10n.mailAppearanceOriginal,
-      MailMessageAppearance.light: l10n.settingsThemeLight,
-      MailMessageAppearance.dark: l10n.settingsThemeDark,
-    };
-    final value = await showAdaptiveSheet<MailMessageAppearance>(
+    final preference = MailAppearancePreference.instance;
+    final selected = preference.value?.name ?? 'auto';
+    final value = await showAppActionSheet<String>(
       context: context,
       useRootNavigator: true,
-      builder: (sheetContext) => AppDialogScaffold(
-        title: l10n.mailMessageAppearance,
-        child: Material(
-          color: Colors.transparent,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final mode in modes.entries)
-                ListTile(
-                  dense: true,
-                  leading: Icon(switch (mode.key) {
-                    MailMessageAppearance.original =>
-                      Icons.auto_awesome_outlined,
-                    MailMessageAppearance.light => Icons.light_mode_outlined,
-                    MailMessageAppearance.dark => Icons.dark_mode_outlined,
-                  }),
-                  title: Text(mode.value),
-                  selected: MailAppearancePreference.instance.value == mode.key,
-                  onTap: () => Navigator.of(sheetContext).pop(mode.key),
-                ),
-            ],
+      title: context.l10n.mailMessageAppearance,
+      actions: [
+        for (final choice in mailAppearanceLabels(context).entries)
+          AppSheetAction(
+            label: choice.value,
+            icon: choice.key == selected ? Icons.check : null,
+            value: choice.key,
           ),
-        ),
-      ),
+      ],
     );
-    if (value != null) await MailAppearancePreference.instance.select(value);
+    if (value != null) await preference.selectMode(value);
   }
 
   /// The More sheet for split panes and standalone readers, which have no
   /// shell dock: replies first, then the same entries as the dock's More.
-  Future<void> _chooseAction() async {
+  Future<void> _chooseAction({bool includeReply = false}) async {
     if (_busy || _detail == null) return;
     final l10n = context.l10n;
     final plan = _dockPlan();
     final entries = <_MailMoreEntry>[
+      if (includeReply && plan.replies.contains(MailDockReply.reply))
+        (
+          id: 'reply',
+          icon: Icons.reply_outlined,
+          label: l10n.mailReply,
+          enabled: _messages.isNotEmpty,
+          destructive: false,
+          run: _replyLast,
+        ),
       if (plan.replies.contains(MailDockReply.replyAll))
         (
           id: 'reply_all',
