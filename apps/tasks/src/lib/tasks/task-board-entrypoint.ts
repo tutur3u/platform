@@ -16,8 +16,6 @@ const DEFAULT_LIST_NAME_KEYS: Record<string, string> = {
   Closed: 'ws-tasks.default_list_closed',
 };
 
-const inFlightEntrypointResolutions = new Map<string, Promise<string | null>>();
-
 interface ResolveTaskBoardEntrypointOptions {
   locale?: string;
 }
@@ -150,40 +148,24 @@ async function resolveTaskBoardEntrypointOnce(
   }
 }
 
-// Aliases are resolved server-side from each caller's session (`personal` is a
-// different workspace for every user), so their resolutions must never be
-// shared across requests. `internal` is a fixed workspace but is kept out of
-// the shared map conservatively, like every alias.
-const WORKSPACE_ALIASES = new Set(['personal', 'internal']);
-
-export async function resolveTaskBoardEntrypoint(
+/**
+ * Resolves the board a Tasks entry route should open for the calling user.
+ *
+ * Every step is scoped to the caller: the forwarded credentials, the user's
+ * default-board preference and the locale used to name a new default board.
+ * Resolutions are therefore never shared between concurrent requests. When
+ * two requests race to create a workspace's first board, the per-workspace
+ * unique board name lets one create win and the other recovers it in
+ * `resolveBoardAfterCreateRace`.
+ */
+export function resolveTaskBoardEntrypoint(
   workspaceId: string,
   internalApiOptions: InternalApiClientOptions,
   options: ResolveTaskBoardEntrypointOptions = {}
 ) {
-  if (WORKSPACE_ALIASES.has(workspaceId.toLowerCase())) {
-    return resolveTaskBoardEntrypointOnce(
-      workspaceId,
-      internalApiOptions,
-      options
-    );
-  }
-
-  const pending = inFlightEntrypointResolutions.get(workspaceId);
-  if (pending) return pending;
-
-  const resolution = resolveTaskBoardEntrypointOnce(
+  return resolveTaskBoardEntrypointOnce(
     workspaceId,
     internalApiOptions,
     options
   );
-  inFlightEntrypointResolutions.set(workspaceId, resolution);
-
-  try {
-    return await resolution;
-  } finally {
-    if (Object.is(inFlightEntrypointResolutions.get(workspaceId), resolution)) {
-      inFlightEntrypointResolutions.delete(workspaceId);
-    }
-  }
 }

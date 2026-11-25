@@ -284,37 +284,71 @@ describe('tasks app task pages', () => {
     expect(mocks.listWorkspaceTaskBoards).toHaveBeenCalledTimes(2);
   });
 
-  it('coalesces concurrent default-board initialization', async () => {
-    mocks.listWorkspaceTaskBoards.mockResolvedValue({ boards: [], count: 0 });
-    let finishCreate:
-      | ((value: { board: { id: string; name: string } }) => void)
-      | undefined;
-    mocks.createWorkspaceTaskBoard.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          finishCreate = resolve;
-        })
+  it('resolves concurrent members of one workspace with their own credentials and preferences', async () => {
+    mocks.listWorkspaceTaskBoards.mockResolvedValue({
+      boards: [
+        { id: 'board-a', name: 'A' },
+        { id: 'board-b', name: 'B' },
+      ],
+      count: 2,
+    });
+    mocks.getUserWorkspaceConfig.mockImplementation(
+      async (
+        _workspaceId: string,
+        _configId: string,
+        options?: { defaultHeaders?: HeadersInit }
+      ) => ({
+        value:
+          new Headers(options?.defaultHeaders).get('authorization') ===
+          'Bearer member-b'
+            ? 'board-b'
+            : 'board-a',
+      })
     );
-    mocks.listWorkspaceTaskLists.mockResolvedValue({ lists: [] });
     const { resolveTaskBoardEntrypoint } =
       await import('@/lib/tasks/task-board-entrypoint');
 
-    const first = resolveTaskBoardEntrypoint('workspace-concurrent', {
-      baseUrl: 'http://first.test',
+    const memberA = resolveTaskBoardEntrypoint('workspace-shared', {
+      defaultHeaders: { authorization: 'Bearer member-a' },
     });
-    const second = resolveTaskBoardEntrypoint('workspace-concurrent', {
-      baseUrl: 'http://second.test',
+    const memberB = resolveTaskBoardEntrypoint('workspace-shared', {
+      defaultHeaders: { authorization: 'Bearer member-b' },
     });
-    await vi.waitFor(() =>
-      expect(mocks.createWorkspaceTaskBoard).toHaveBeenCalledTimes(1)
-    );
-    finishCreate?.({ board: { id: 'board-shared', name: 'Shared' } });
 
-    await expect(Promise.all([first, second])).resolves.toEqual([
-      'board-shared',
-      'board-shared',
+    await expect(Promise.all([memberA, memberB])).resolves.toEqual([
+      'board-a',
+      'board-b',
     ]);
-    expect(mocks.createWorkspaceTaskBoard).toHaveBeenCalledTimes(1);
+    expect(mocks.listWorkspaceTaskBoards).toHaveBeenCalledTimes(2);
+    expect(mocks.listWorkspaceTaskBoards).toHaveBeenNthCalledWith(
+      2,
+      'workspace-shared',
+      expect.anything(),
+      expect.objectContaining({
+        defaultHeaders: { authorization: 'Bearer member-b' },
+      })
+    );
+  });
+
+  it("keeps one member's failure out of a concurrent member's resolution", async () => {
+    mocks.listWorkspaceTaskBoards
+      .mockRejectedValueOnce(new Error('member-a is not allowed'))
+      .mockResolvedValueOnce({
+        boards: [{ id: 'board-b', name: 'B' }],
+        count: 1,
+      });
+    const { resolveTaskBoardEntrypoint } =
+      await import('@/lib/tasks/task-board-entrypoint');
+
+    const memberA = resolveTaskBoardEntrypoint('workspace-shared', {
+      defaultHeaders: { authorization: 'Bearer member-a' },
+    });
+    const memberB = resolveTaskBoardEntrypoint('workspace-shared', {
+      defaultHeaders: { authorization: 'Bearer member-b' },
+    });
+
+    await expect(memberA).rejects.toThrow('member-a is not allowed');
+    await expect(memberB).resolves.toBe('board-b');
   });
 
   it('never shares a per-user workspace alias resolution across requests', async () => {
