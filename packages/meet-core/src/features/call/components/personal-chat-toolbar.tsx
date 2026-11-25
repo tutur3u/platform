@@ -9,6 +9,7 @@ import {
   MiraPermissionsCard,
   type MiraPermissionsProps,
 } from './mira-permissions-card';
+import { MiraPrivateShareChip } from './mira-private-share';
 
 function VoiceSettings({ locked }: { locked: boolean }) {
   const t = useTranslations('meet.live');
@@ -99,6 +100,32 @@ export function PersonalChatToolbar({
         {voice && <VoiceSettings locked={voiceLocked} />}
         <AssistantInfo permissions={permissions} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * The redesigned panel's privacy line: what Mira may do, and a chip with a
+ * one-tap revoke while this person shares notes with their Private Mira.
+ */
+export function PersonalChatPrivacyRow({
+  summary,
+  permissions,
+}: {
+  summary: string;
+  permissions: MiraPermissionsProps;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-start gap-1">
+        <p className="flex-1 text-pretty text-muted-foreground text-xs">
+          {summary}
+        </p>
+        <AssistantInfo permissions={permissions} />
+      </div>
+      {permissions.privateShare?.enabled && (
+        <MiraPrivateShareChip share={permissions.privateShare} />
+      )}
     </div>
   );
 }

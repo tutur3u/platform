@@ -5,6 +5,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { MEETING_APP } from '../../../runtime';
+import { useMeetUxV2 } from '../prejoin/prejoin-context';
 import { MiraAttributionPill } from './document-mira-presence';
 
 export function DocumentEdits({
@@ -25,6 +27,9 @@ export function DocumentEdits({
   const format = useFormatter();
   const now = useNow({ updateInterval: 15_000 });
   const [diff, setDiff] = useState<ReadonlySet<string>>(new Set());
+  // The redesign names whom each edit was for: "Mira for <person>".
+  const attribution =
+    useMeetUxV2() && MEETING_APP === 'meet' ? 'mira_for' : 'mira_asked_by';
   if (!edits.length) return null;
   return (
     <section
@@ -59,7 +64,7 @@ export function DocumentEdits({
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <MiraAttributionPill source={edit.source} action={edit.action} />
               <span className="font-semibold text-muted-foreground text-xs">
-                {t('mira_asked_by', {
+                {t(attribution, {
                   name: edit.askedByName ?? t('someone'),
                   time: format.relativeTime(edit.createdAt, now),
                 })}

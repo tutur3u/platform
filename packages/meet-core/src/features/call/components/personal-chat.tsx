@@ -27,11 +27,18 @@ import {
   PersonalChatMessages,
   type Turn,
 } from './personal-chat-messages';
-import { PersonalChatToolbar } from './personal-chat-toolbar';
+import {
+  PersonalChatPrivacyRow,
+  PersonalChatToolbar,
+} from './personal-chat-toolbar';
 import { roomMiraConsentKey } from './room-mira-key';
+import { usePrivateMiraShare } from './use-private-mira-share';
 import { useRoomMiraConsent } from './use-room-mira';
 
 export type { MiraTutorReference };
+
+/** Under the redesign these are fixed meeting rules the server enforces. */
+const MIRA_RULES = { draft: true, editDocs: true, suggestCode: true } as const;
 
 const privateFailureKeys = {
   MIRA_ACCOUNT_UNAVAILABLE: 'personal_account_unavailable',
@@ -79,6 +86,7 @@ export function PersonalChat({
   const queryClient = useQueryClient();
   const roomConsent = useRoomMiraConsent(meetingId, false).data;
   const session = useLiveSession(meetingId, accountId);
+  const privateShare = usePrivateMiraShare(meetingId, accountId, v2);
   const [history, setHistory] = useState<Turn[]>([]);
   const [draft, setDraft] = useState('');
   const [confirmEnable, setConfirmEnable] = useState(false);
@@ -258,9 +266,15 @@ export function PersonalChat({
   return (
     <>
       {v2 && (
-        <p className="text-muted-foreground text-xs">
-          {liveT('private_notice_summary')}
-        </p>
+        <PersonalChatPrivacyRow
+          summary={liveT('private_notice_summary')}
+          permissions={{
+            ...permissions,
+            enabled: permissions?.enabled ?? MIRA_RULES,
+            fixedRules: !permissions?.onToggle,
+            privateShare,
+          }}
+        />
       )}
       {!v2 && (
         <PersonalChatToolbar
