@@ -68,10 +68,7 @@ void main() {
       ..padding = FakeViewPadding.zero
       ..viewInsets = const FakeViewPadding(bottom: 305);
     await tester.pumpAndSettle();
-    expect(
-      tester.getBottomLeft(composer).dy,
-      closeTo(844 - 305 - AppSpacing.md, 1),
-    );
+    expect(tester.getBottomLeft(composer).dy, closeTo(844 - 305, 1));
     final opacity = find.byKey(const ValueKey('floating-shell-dock-opacity'));
     expect(tester.widget<AnimatedOpacity>(opacity).opacity, 0);
     expect(tester.takeException(), isNull);

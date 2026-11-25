@@ -32,17 +32,24 @@ class AssistantComposerPanel extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final deviceClass = Breakpoints.fromWidth(constraints.maxWidth);
-          final maxWidth = AppLayout.maxContentWidth(
-            AppPageKind.reading,
-            deviceClass,
-          );
+          // Phones keep the full-width page insets in either orientation.
+          final phone =
+              MediaQuery.sizeOf(context).shortestSide < Breakpoints.mediumMin;
+          final maxWidth = phone
+              ? null
+              : AppLayout.maxContentWidth(AppPageKind.reading, deviceClass);
           final panelWidth = math.min(
             constraints.maxWidth,
             maxWidth ?? constraints.maxWidth,
           );
-          final insets = EdgeInsets.symmetric(
-            horizontal: AppLayout.gutter(deviceClass),
-          );
+          final insets = phone
+              ? AppPageInsets.of(
+                  context,
+                  width: constraints.maxWidth,
+                  kind: AppPageKind.root,
+                  consumeBottomClearance: false,
+                ).copyWith(top: 0)
+              : EdgeInsets.symmetric(horizontal: AppLayout.gutter(deviceClass));
           return Center(
             child: SizedBox(
               width: panelWidth,
@@ -60,7 +67,7 @@ class AssistantComposerPanel extends StatelessWidget {
                           constraints: BoxConstraints(
                             minWidth: maxWidth == null
                                 ? 0
-                                : math.max(0.0, panelWidth - insets.horizontal),
+                                : math.max(0, panelWidth - insets.horizontal),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,

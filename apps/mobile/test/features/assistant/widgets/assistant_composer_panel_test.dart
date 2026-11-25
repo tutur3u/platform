@@ -13,99 +13,119 @@ void main() {
     ('compact without dock', const Size(390, 844), 0.0, false, 390.0),
     ('medium dock', const Size(768, 1024), 0.0, true, 640.0),
     ('medium without dock', const Size(768, 1024), 0.0, false, 640.0),
-    ('landscape rail', const Size(1024, 768), 80.0, false, 680.0),
-    ('desktop sidebar', const Size(1440, 900), 240.0, false, 680.0),
+    ('phone landscape dock', const Size(844, 390), 0.0, true, 844.0),
+    ('landscape rail', const Size(1024, 768), 80.0, false, 792.0),
+    ('desktop sidebar', const Size(1440, 900), 240.0, false, 792.0),
   ]) {
     for (final safeArea in [0.0, 34.0]) {
       for (final keyboard in [0.0, 300.0]) {
-        testWidgets('$name panel clears safe area $safeArea and IME $keyboard', (
-          tester,
-        ) async {
-          tester.view
-            ..physicalSize = window
-            ..devicePixelRatio = 1;
-          addTearDown(tester.view.reset);
-          const viewportKey = ValueKey('assistant-viewport');
-          final showKeyboard = keyboard > 0;
-          final showDock = dock && !showKeyboard;
-          final dockClearance =
-              ShellDockMetrics.clearanceFor(safeArea) + safeArea;
-          double? measuredHeight;
-          await tester.pumpWidget(
-            MaterialApp(
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: MediaQuery(
-                data: MediaQueryData(
-                  size: window,
-                  padding: EdgeInsets.only(
-                    bottom: showKeyboard
-                        ? 0
-                        : showDock
-                        ? dockClearance
-                        : safeArea,
+        testWidgets(
+          '$name panel clears safe area $safeArea and IME $keyboard',
+          (tester) async {
+            tester.view
+              ..physicalSize = window
+              ..devicePixelRatio = 1;
+            addTearDown(tester.view.reset);
+            const viewportKey = ValueKey('assistant-viewport');
+            final showKeyboard = keyboard > 0;
+            final showDock = dock && !showKeyboard;
+            final dockClearance =
+                ShellDockMetrics.clearanceFor(safeArea) + safeArea;
+            double? measuredHeight;
+            await tester.pumpWidget(
+              MaterialApp(
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: MediaQuery(
+                  data: MediaQueryData(
+                    size: window,
+                    padding: EdgeInsets.only(
+                      bottom: showKeyboard
+                          ? 0
+                          : showDock
+                          ? dockClearance
+                          : safeArea,
+                    ),
+                    viewPadding: EdgeInsets.only(bottom: safeArea),
+                    viewInsets: EdgeInsets.only(bottom: keyboard),
+                    textScaler: TextScaler.linear(showKeyboard ? 3 : 1),
                   ),
-                  viewPadding: EdgeInsets.only(bottom: safeArea),
-                  viewInsets: EdgeInsets.only(bottom: keyboard),
-                  textScaler: TextScaler.linear(showKeyboard ? 3 : 1),
-                ),
-                child: Material(
-                  child: Padding(
-                    padding: EdgeInsets.only(left: railWidth, bottom: keyboard),
-                    child: Stack(
-                      key: viewportKey,
-                      children: [
-                        AssistantComposerPanel(
-                          showSuggestions: !showKeyboard,
-                          onPromptSelected: (_) {},
-                          onHeightChanged: (height) => measuredHeight = height,
-                          child: Builder(
-                            builder: (context) => SizedBox(
-                              height: assistantComposerHeight(context),
+                  child: Material(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: railWidth,
+                        bottom: keyboard,
+                      ),
+                      child: Stack(
+                        key: viewportKey,
+                        children: [
+                          AssistantComposerPanel(
+                            showSuggestions: !showKeyboard,
+                            onPromptSelected: (_) {},
+                            onHeightChanged: (height) =>
+                                measuredHeight = height,
+                            child: Builder(
+                              builder: (context) => SizedBox(
+                                height: assistantComposerHeight(context),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-
-          final viewport = find.byKey(viewportKey);
-          final context = tester.element(viewport);
-          final viewportRect = tester.getRect(viewport);
-          final panelRect = tester.getRect(
-            find.byType(AssistantComposerSizeReporter),
-          );
-          final cardRect = tester.getRect(find.byType(AppCard));
-          final offset = assistantPageComposerBottomOffset(context);
-          final minGap = window.width == 390 ? AppSpacing.md : AppSpacing.xl;
-          final safeBottom = showKeyboard ? 0.0 : safeArea;
-          expect(offset, showDock ? dockClearance : safeBottom + minGap);
-          expect(offset - safeBottom, greaterThanOrEqualTo(minGap));
-          expect(viewportRect.bottom - cardRect.bottom, closeTo(offset, 0.01));
-          expect(panelRect.center.dx, closeTo(viewportRect.center.dx, 0.01));
-          expect(panelRect.width, closeTo(maxPanelWidth, 0.01));
-          expect(cardRect.center.dx, closeTo(panelRect.center.dx, 0.01));
-          if (!showKeyboard) {
-            final stripRect = tester.getRect(
-              find.byKey(const ValueKey('assistant-starter-prompts')),
             );
-            expect(stripRect.center.dx, closeTo(panelRect.center.dx, 0.01));
-            expect(stripRect.width, closeTo(panelRect.width, 0.01));
-          }
-          expect(measuredHeight, closeTo(panelRect.height, 0.01));
-          expect(
-            assistantPageTranscriptBottomClearance(
-              context,
-              composerHeight: measuredHeight,
-            ),
-            closeTo(panelRect.height + offset + AppSpacing.md, 0.01),
-          );
-          expect(tester.takeException(), isNull);
-        });
+
+            final viewport = find.byKey(viewportKey);
+            final context = tester.element(viewport);
+            final viewportRect = tester.getRect(viewport);
+            final panelRect = tester.getRect(
+              find.byType(AssistantComposerSizeReporter),
+            );
+            final cardRect = tester.getRect(find.byType(AppCard));
+            final offset = assistantPageComposerBottomOffset(context);
+            final withNavigationDock = railWidth == 0;
+            if (withNavigationDock) {
+              expect(
+                offset,
+                showKeyboard
+                    ? 0
+                    : showDock
+                    ? dockClearance
+                    : safeArea,
+              );
+            } else if (showKeyboard) {
+              expect(offset, railWidth > 80 ? AppSpacing.xl : 0);
+            } else {
+              expect(offset, safeArea + AppSpacing.xl);
+            }
+            expect(
+              viewportRect.bottom - cardRect.bottom,
+              closeTo(offset, 0.01),
+            );
+            expect(panelRect.center.dx, closeTo(viewportRect.center.dx, 0.01));
+            expect(panelRect.width, closeTo(maxPanelWidth, 0.01));
+            expect(cardRect.center.dx, closeTo(panelRect.center.dx, 0.01));
+            if (!showKeyboard) {
+              final stripRect = tester.getRect(
+                find.byKey(const ValueKey('assistant-starter-prompts')),
+              );
+              expect(stripRect.center.dx, closeTo(panelRect.center.dx, 0.01));
+              expect(stripRect.width, closeTo(panelRect.width, 0.01));
+            }
+            expect(measuredHeight, closeTo(panelRect.height, 0.01));
+            expect(
+              assistantPageTranscriptBottomClearance(
+                context,
+                composerHeight: measuredHeight,
+              ),
+              closeTo(panelRect.height + offset + AppSpacing.md, 0.01),
+            );
+            expect(tester.takeException(), isNull);
+          },
+        );
       }
     }
   }

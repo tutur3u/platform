@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/layout/page_insets.dart';
-import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
@@ -30,31 +29,44 @@ double assistantComposerBottomOffset(BuildContext context) {
       : assistantComposerBottomGap;
 }
 
-/// The in-page composer clears the floating navigation when present and owns
-/// its edge spacing beside the rail or above the keyboard.
+/// The in-page composer's distance from the bottom of its viewport.
+///
+/// With the floating dock (phones and windows below the rail breakpoint) or
+/// the icon rail (tablets), the composer sits on the dock's clearance or on
+/// the keyboard. Beside the sidebar (desktop windows) there is no dock, so the
+/// composer keeps [AppSpacing.xl] above the bottom safe area or the keyboard.
 double assistantPageComposerBottomOffset(BuildContext context) {
   final media = MediaQuery.of(context);
-  final keyboardVisible = media.viewInsets.bottom > 0;
-  final safeBottom = keyboardVisible ? 0.0 : media.viewPadding.bottom;
-  final gap = Breakpoints.fromWidth(media.size.width) == DeviceClass.compact
-      ? AppSpacing.md
-      : AppSpacing.xl;
-  final minimumOffset = safeBottom + gap;
-  if (!keyboardVisible &&
-      shellNavigationModeFor(media.size) == ShellNavigationMode.dock) {
-    return math.max(minimumOffset, media.padding.bottom);
+  if (shellNavigationModeFor(media.size) == ShellNavigationMode.dock) {
+    return media.viewInsets.bottom > 0
+        ? 0
+        : AppPageInsets.contentBottomClearance(context);
   }
-  return minimumOffset;
+  // The shell's resized body consumes the inset, so the window's own is read.
+  final view = View.maybeOf(context);
+  final keyboardVisible =
+      media.viewInsets.bottom > 0 ||
+      (view != null && view.viewInsets.bottom > 0);
+  if (keyboardVisible) {
+    return shellNavigationExtendedFor(media.size) ? AppSpacing.xl : 0;
+  }
+  return media.viewPadding.bottom + AppSpacing.xl;
 }
 
 /// Keep the last message and jump action above the full measured panel.
 double assistantPageTranscriptBottomClearance(
   BuildContext context, {
   double? composerHeight,
-}) =>
-    (composerHeight ?? assistantComposerHeight(context) + AppSpacing.xs * 2) +
-    assistantPageComposerBottomOffset(context) +
-    AppSpacing.md;
+}) {
+  final withDock =
+      shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
+      ShellNavigationMode.dock;
+  return (composerHeight ??
+          assistantComposerHeight(context) +
+              (withDock ? 0 : AppSpacing.xs * 2)) +
+      assistantPageComposerBottomOffset(context) +
+      AppSpacing.md;
+}
 
 /// Shell Scaffold consumes the IME inset before this viewport. Its inherited
 /// padding already includes navigation clearance when the composer is hidden.
