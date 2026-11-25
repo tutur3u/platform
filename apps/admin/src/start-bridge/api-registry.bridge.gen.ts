@@ -92,6 +92,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/infrastructure/external-apps", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/external-apps/route'), ["GET","POST"]) },
   { pattern: "/api/v1/infrastructure/feature-flags/audit", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/feature-flags/audit/route'), ["GET"]) },
   { pattern: "/api/v1/infrastructure/feature-flags", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/feature-flags/route'), ["GET","POST"]) },
+  { pattern: "/api/v1/infrastructure/feature-flags/sync", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/feature-flags/sync/route'), ["POST"]) },
   { pattern: "/api/v1/infrastructure/github-bot/auto-pickup", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/github-bot/auto-pickup/route'), ["POST"]) },
   { pattern: "/api/v1/infrastructure/github-bot/clients/[clientId]", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/github-bot/clients/[clientId]/route'), ["DELETE"]) },
   { pattern: "/api/v1/infrastructure/github-bot/clients", module: lazyRouteModule(() => import('../app/api/v1/infrastructure/github-bot/clients/route'), ["POST"]) },
