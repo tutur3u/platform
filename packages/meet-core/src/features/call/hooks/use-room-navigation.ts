@@ -84,7 +84,7 @@ export function useRoomNavigation({
 }: {
   room: MeetRoomController;
   surface: CallSurfaceState;
-  /** This person's stage arrangement, which the people following them mirror. */
+  /** The stage arrangement mirrored by this person's followers. */
   layout?: MeetStageLayoutSnapshot;
   /**
    * `forced` marks a move a host or co-host made, which opens the surface.
@@ -93,10 +93,7 @@ export function useRoomNavigation({
    * `back` that undoes the move. `layout` is the leader's arrangement when
    * the move comes from someone this person follows.
    */
-  apply: (
-    next: CallSurfaceState,
-    options: ApplyOptions
-  ) => ApplyResult | void;
+  apply: (next: CallSurfaceState, options: ApplyOptions) => ApplyResult | void;
   access: RoomViewAccess;
 }) {
   const t = useTranslations('meet.call');
@@ -185,8 +182,7 @@ export function useRoomNavigation({
       followingRef.current = leaderId;
       // An arrangement is mirrored even when its focused surface is one this
       // person may not open; the mirror leaves such activities out.
-      if (next && (layout || canOpen(next, forced)))
-        go(next, options);
+      if (next && (layout || canOpen(next, forced))) go(next, options);
     },
     [canOpen, go]
   );
@@ -281,15 +277,11 @@ export function useRoomNavigation({
                 // The leader may have moved since asking; follow them there.
                 const latest = invitations.current.get(leaderId);
                 forget();
-                startFollowing(
-                  leaderId,
-                  latest?.view ?? decision.view,
-                  {
-                    forced: latest?.forced ?? false,
-                    layout: latest ? latest.layout : decision.layout,
-                    source,
-                  }
-                );
+                startFollowing(leaderId, latest?.view ?? decision.view, {
+                  forced: latest?.forced ?? false,
+                  layout: latest ? latest.layout : decision.layout,
+                  source,
+                });
               },
             },
             cancel: { label: t('navigation.not_now'), onClick: forget },

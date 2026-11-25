@@ -12,14 +12,14 @@ import { NextIntlClientProvider } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
+import { ActivityFullscreen } from '../tools/live-activities/activity-fullscreen';
+import { NewAttemptAction } from '../tools/live-activities/assessment/new-attempt-action';
 import {
   ActivitiesRequestProvider,
   useActivitiesRequest,
 } from './activities-request';
-import { ActivityFullscreen } from '../tools/live-activities/activity-fullscreen';
-import { NewAttemptAction } from '../tools/live-activities/assessment/new-attempt-action';
-import { ActivityShell } from './activity-shell';
 import { useActivityActive } from './activity-pane-context';
+import { ActivityShell } from './activity-shell';
 import type { ViewportTier } from './layout-model';
 import { PhoneSwitcher } from './phone-switcher';
 import { StageLayoutView } from './stage-layout-view';
@@ -143,7 +143,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-it('renders open activities as panes with accessible separators that arrow keys resize', () => {
+it('resizes activity panes with accessible keyboard separators', () => {
   view();
   open('a', 'b');
   const separator = screen.getByRole('separator');
@@ -191,7 +191,7 @@ it('uses a horizontal separator for a pane split top to bottom', () => {
   ).toBe('55');
 });
 
-it('keeps hidden tabs and maximized-over panes mounted, never remounting them', () => {
+it('keeps hidden tabs and maximized-over panes mounted', () => {
   view();
   open('a', 'b', 'c', 'd');
   expect(mounts).toEqual({ a: 1, b: 1, c: 1, d: 1 });
@@ -215,7 +215,7 @@ it('keeps hidden tabs and maximized-over panes mounted, never remounting them', 
   expect(mounts).toEqual({ a: 1, b: 1, c: 1, d: 1 });
 });
 
-it('keeps the people mounted while the video moves between full, row and pill', () => {
+it('keeps people mounted in full, row and pill video modes', () => {
   view();
   const people = screen.getByTestId('people');
   open('a');
@@ -228,7 +228,7 @@ it('keeps the people mounted while the video moves between full, row and pill', 
   expect(screen.getByTestId('people')).toBe(people);
 });
 
-it('shows a Needs more room card below 280 by 220 and maximizes from it', () => {
+it('offers to maximize a pane below 280 by 220', () => {
   sizes.set('a', { width: 400, height: 400 });
   sizes.set('b', { width: 240, height: 400 });
   view();
@@ -270,7 +270,7 @@ it('tags each pane with its container-query size class', () => {
   ]);
 });
 
-it('reorders panes from the keyboard and focuses the pane being worked in', () => {
+it('reorders panes by keyboard and focuses the active pane', () => {
   view();
   open('a', 'b');
   const order = () =>
@@ -315,7 +315,7 @@ it('shows one activity at a time on a phone with a switcher sheet', () => {
   expect(mounts).toEqual({ a: 1, b: 1, c: 1 });
 });
 
-it('stacks activities as tabs past the pane limit and switches by keyboard', () => {
+it('stacks extra activities as tabs and switches by keyboard', () => {
   view('tablet');
   open('a', 'b', 'c');
   const tabs = screen.getAllByRole('tab');
@@ -497,7 +497,7 @@ const phone = (menu: boolean) =>
     </NextIntlClientProvider>
   );
 
-it('offers Open another activity on the phone switcher only with a menu to open', () => {
+it('offers Open another activity only if the phone can open its menu', () => {
   phone(false);
   open('a', 'b');
   fireEvent.click(screen.getByRole('button', { name: 'b' }));
@@ -506,7 +506,7 @@ it('offers Open another activity on the phone switcher only with a menu to open'
   ).toBeNull();
 });
 
-it('asks for the Activities dialog only after the switcher sheet has closed', async () => {
+it('requests Activities after the switcher sheet closes', async () => {
   phone(true);
   open('a', 'b');
   fireEvent.click(screen.getByRole('button', { name: 'b' }));
@@ -545,7 +545,7 @@ it('tints the phone switcher rows with each activity tone', () => {
   ).toEqual(['blue', 'orange']);
 });
 
-it('does not open the Activities dialog for a handoff that never completed', async () => {
+it('keeps Activities closed after an incomplete switcher handoff', async () => {
   const onBrowse = vi.fn();
   const items = [
     { id: 'a', title: 'a', icon: () => null },
@@ -582,14 +582,16 @@ const presenting = (sharers: readonly string[] = []) => (
   </NextIntlClientProvider>
 );
 
-it('gives a new screen share the stage and restores the same mounted activity when it ends', () => {
+it('restores the mounted activity when a screen share ends', () => {
   vi.useFakeTimers();
   const { rerender } = render(presenting());
   open('document');
   const input = screen.getByRole('textbox', { name: 'document input' });
   fireEvent.change(input, { target: { value: 'Unsaved draft' } });
   const media = screen.getByTestId('people');
-  const pane = screen.getByLabelText('document', { selector: '[data-pane-id]' });
+  const pane = screen.getByLabelText('document', {
+    selector: '[data-pane-id]',
+  });
   input.focus();
 
   rerender(presenting(['peer']));
@@ -617,7 +619,7 @@ it('gives a new screen share the stage and restores the same mounted activity wh
   expect(mounts.document).toBe(1);
 });
 
-it('keeps a manual minimize after sharing ends and reopens the activity with one click', () => {
+it('keeps manual minimize after sharing until the chip is clicked', () => {
   vi.useFakeTimers();
   const { rerender } = render(presenting());
   open('document');

@@ -11,7 +11,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { RoomNavigation } from '../hooks/use-room-navigation';
 
 export type ActivityNavigation = Pick<
@@ -46,6 +46,7 @@ export function ActivityLaunchControl({
 }) {
   const t = useTranslations('meet.call');
   const reasonId = useId();
+  const [menuOpen, setMenuOpen] = useState(false);
   const disabledReason = !navigation.others.length
     ? t('navigation.alone')
     : navigation.paused
@@ -63,7 +64,10 @@ export function ActivityLaunchControl({
       {t('activities.open')}
     </Button>
   );
-  if (!canGuide) return open;
+  if (!canGuide) {
+    if (menuOpen) setMenuOpen(false);
+    return open;
+  }
   return (
     <div className="inline-flex" role="group" aria-label={label}>
       <Tooltip>
@@ -76,7 +80,7 @@ export function ActivityLaunchControl({
           )}
         </TooltipContent>
       </Tooltip>
-      <DropdownMenu modal={false}>
+      <DropdownMenu modal={false} open={menuOpen} onOpenChange={setMenuOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             type="button"
@@ -122,8 +126,12 @@ export function ActivityLaunchControl({
               !navigation.leading && disabledReason ? reasonId : undefined
             }
             onSelect={() => {
-              if (navigation.leading) navigation.stopLeading();
-              else onOpen(() => navigation.openFollow());
+              if (navigation.leading) {
+                setMenuOpen(false);
+                navigation.stopLeading();
+              } else {
+                onOpen(() => navigation.openFollow());
+              }
             }}
           >
             <Navigation aria-hidden="true" className="size-4" />

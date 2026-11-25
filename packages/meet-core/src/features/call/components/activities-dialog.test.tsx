@@ -441,6 +441,7 @@ it('stops leading without launching an activity or closing Activities', async ()
   expect(navigation.openFollow).not.toHaveBeenCalled();
   expect(navigation.reveal).not.toHaveBeenCalled();
   expect(dialog()).toBeTruthy();
+  expect(screen.queryByRole('menu', { hidden: true })).toBeNull();
   await waitFor(() => expect(document.activeElement).toBe(options));
 });
 

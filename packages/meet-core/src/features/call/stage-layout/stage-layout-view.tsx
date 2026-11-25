@@ -104,6 +104,16 @@ export function StageLayoutView({
   const containerRef = useRef<HTMLDivElement>(null);
   const chipRef = useRef<HTMLButtonElement>(null);
   const restoreFocus = useRef(false);
+  const setChipRef = useCallback((chip: HTMLButtonElement | null) => {
+    if (!chip) return;
+    chipRef.current = chip;
+    restoreFocus.current = false;
+    return () => {
+      // Capture focus before React removes the chip during a remote restore.
+      restoreFocus.current ||= chip === document.activeElement;
+      chipRef.current = null;
+    };
+  }, []);
   const wasMinimized = useRef(false);
   const [peopleHidden, setPeopleHidden] = useState(false);
   const [slots, setSlots] = useState<Record<string, HTMLElement | null>>({});
@@ -464,14 +474,8 @@ export function StageLayoutView({
             variant="outline"
             size="sm"
             className="relative h-9 max-w-full rounded-full pointer-coarse:h-11"
-            ref={chipRef}
+            ref={setChipRef}
             aria-label={t('reopen', { title: dockActivity.title })}
-            onFocus={() => {
-              restoreFocus.current = true;
-            }}
-            onBlur={(event) => {
-              if (event.relatedTarget) restoreFocus.current = false;
-            }}
             onClick={() => {
               restoreFocus.current = true;
               presentation.restore();
