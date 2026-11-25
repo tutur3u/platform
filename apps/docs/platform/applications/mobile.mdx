@@ -82,17 +82,24 @@ Mobile documents edit tables, images, videos, file links and mentions and
 store them as the web editor does, so either platform can open the other's
 edits. The toolbar's insert group adds a table (3 by 3 with a header row by
 default, like the web), an image from the library or camera, a video, a file
-and a mention. Typing `@` at the start of a word opens the same mention menu
-as the web task editor: members, the workspace when it is not personal,
-projects, tasks and dates. A mention stores every attribute of the web schema.
-Uploads go to the workspace Drive `documents` folder through the storage
-upload URL and finalize routes, and the document stores the web's
-sign-on-read `/storage/share?path=` URL, never a signed URL. Image sizes are
-the web presets (25 to 100%) against the web's 800px reference width, and a
-stored `containerStyle` width moves with them. Tables with merged cells take
-text edits only. Blocks the user did not edit, including tables and images,
-save verbatim. `test/features/documents/document_rich_blocks_test.dart` and
-`view/document_rich_blocks_page_test.dart` cover the stored shapes.
+and a mention. Typing `@` at the start of a word, outside code, opens the same
+mention menu as the web task editor: members, the workspace when it is not
+personal, projects, tasks (searched on the server as you type) and dates. A
+mention stores every attribute of the web schema, including a task's list colour
+and assignees. Uploads go to the workspace Drive `documents` folder through the
+storage upload URL and finalize routes, and the document stores the web's
+sign-on-read `/storage/share?path=` URL, never a signed URL. The web's limits
+apply before a file is read: images 5 MB (photos are scaled to 2560px), videos
+50 MB and other files 100 MB. A workspace file link stays relative and opens
+through the session (long press on phones, Cmd+click on desktop). Image sizes
+are the web presets (25 to 100%) against the web's 800px reference width; a
+stored `containerStyle` width moves with them and a string width stays a
+string. Merged cells draw as one region; tables with merged cells take text
+edits only, and cells with formatting, mentions or lists are read-only here and
+edited on the web. Blocks the user did not edit, including tables and images,
+save verbatim. `test/features/documents/document_rich_blocks_test.dart`,
+`document_review_fixes_test.dart` and the `view/document_rich_blocks_page_test.dart`
+and `view/document_review_fixes_widget_test.dart` suites cover these rules.
 
 Course Practice is available for enrolled learners when learner progress is
 enabled. It draws up to 20 multiple-choice questions from published modules
