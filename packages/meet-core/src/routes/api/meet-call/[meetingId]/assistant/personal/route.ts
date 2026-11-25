@@ -1,6 +1,8 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import {
+  logRoomFailuresAtRoute,
+  markFailureLogged,
   roomRoute,
   roomServiceFailureAction,
   type SignedInMeetCallAccess,
@@ -35,36 +37,71 @@ const PRIVATE_MIRA_FAILED = 'MIRA_PRIVATE_FAILED';
 
 type Stage = { name: string };
 
+/** The failed room action, or none when the failure cannot be classified. */
+function failureAction(error: unknown) {
+  try {
+    return roomServiceFailureAction(error);
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Private Mira never answers a bare generic 500: a failed room action is a
- * retryable 503 and any other server failure carries a stable code. Refusals
- * keep their own status and code. Only the stage, the room action and the
- * error class are logged, never the question, history or answer.
+ * retryable 503 (a busy room keeps its 429) carrying the room's Retry-After,
+ * and any other server failure carries a stable code. Refusals keep their own
+ * status and code. A failure is logged here and only here, with the stage,
+ * the room action and the error class; never the question, history or answer.
  */
 function privateMiraFailure(error: unknown, stage: Stage) {
-  // Refusals (the access gate, consent, authority) and invalid input keep
-  // their own status before anything inspects the failure further.
-  if (error instanceof MeetCallAccessError && error.status < 500) return error;
   if (error instanceof z.ZodError || error instanceof SyntaxError) return error;
-  const action = roomServiceFailureAction(error);
-  if (error instanceof MeetCallAccessError && error.code && !action)
+  const accessError = error instanceof MeetCallAccessError ? error : undefined;
+  // Refusals (the access gate, consent, authority) keep their own status
+  // before anything inspects the failure further; only an uncoded 429 may be
+  // the room saying it is busy.
+  if (
+    accessError &&
+    accessError.status < 500 &&
+    !(accessError.status === 429 && !accessError.code)
+  )
     return error;
+  const action = failureAction(error);
+  const busy = !!action && accessError?.status === 429 && !accessError.code;
+  if (
+    accessError &&
+    !busy &&
+    (accessError.status < 500 || (accessError.code && !action))
+  )
+    return error;
+  const retryAfterSeconds = accessError?.retryAfterSeconds;
+  if (busy)
+    return new MeetCallAccessError(
+      429,
+      'Private Mira is busy. Please try again.',
+      PRIVATE_MIRA_ROOM_UNAVAILABLE,
+      retryAfterSeconds
+    );
   console.error('Private Mira answer failed', {
     stage: stage.name,
     action,
     name: error instanceof Error ? error.name : 'unknown',
   });
   if (action)
-    return new MeetCallAccessError(
-      503,
-      'Private Mira is temporarily unavailable. Please try again.',
-      PRIVATE_MIRA_ROOM_UNAVAILABLE
+    return markFailureLogged(
+      new MeetCallAccessError(
+        503,
+        'Private Mira is temporarily unavailable. Please try again.',
+        PRIVATE_MIRA_ROOM_UNAVAILABLE,
+        retryAfterSeconds
+      )
     );
-  return new MeetCallAccessError(
-    error instanceof MeetCallAccessError ? error.status : 500,
-    'Private Mira could not answer. Please try again.',
-    PRIVATE_MIRA_FAILED,
-    error instanceof MeetCallAccessError ? error.retryAfterSeconds : undefined
+  return markFailureLogged(
+    new MeetCallAccessError(
+      accessError ? accessError.status : 500,
+      'Private Mira could not answer. Please try again.',
+      PRIVATE_MIRA_FAILED,
+      retryAfterSeconds
+    )
   );
 }
 
@@ -74,6 +111,8 @@ export async function POST(
 ) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
+    // This route logs each failure once, below; the room client stays quiet.
+    logRoomFailuresAtRoute(access);
     const stage: Stage = { name: 'request' };
     try {
       return await answerPrivateMira(request, meetingId, access, stage);

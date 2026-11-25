@@ -8,6 +8,7 @@ const fixture = vi.hoisted(() => ({
   forward: vi.fn(),
   waitUntil: vi.fn(),
   roomAction: vi.fn(),
+  routeLogs: vi.fn(),
   shared: false,
   sharedAt: undefined as number | undefined,
 }));
@@ -21,7 +22,8 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
     constructor(
       public status: number,
       message: string,
-      public code?: string
+      public code?: string,
+      public retryAfterSeconds?: number
     ) {
       super(message);
     }
@@ -29,6 +31,8 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
   roomServiceFailureAction: fixture.roomAction,
+  logRoomFailuresAtRoute: fixture.routeLogs,
+  markFailureLogged: (error: unknown) => error,
   roomRoute: async (
     _request: Request,
     meetingId: string,
@@ -43,10 +47,14 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
         })
       );
     } catch (error) {
-      const problem = error as { status?: number; code?: string };
+      const problem = error as {
+        status?: number;
+        code?: string;
+        retryAfterSeconds?: number;
+      };
       // A route that leaks an untyped error would answer a generic 500.
       return Response.json(
-        { code: problem.code },
+        { code: problem.code, retryAfterSeconds: problem.retryAfterSeconds },
         { status: problem.status ?? 500 }
       );
     }
@@ -191,6 +199,54 @@ it('types a failed room action as a retryable 503, never a generic 500', async (
     name: 'Error',
   });
   expect(JSON.stringify(errors.mock.calls)).not.toContain('Hello');
+  errors.mockRestore();
+});
+
+it.each([
+  [503, 503, 7],
+  [500, 503, undefined],
+  [429, 429, 30],
+])(
+  'passes the room %s retry hint through as a typed %s',
+  async (roomStatus, status, retryAfterSeconds) => {
+    const failure = new MeetCallAccessError(
+      roomStatus,
+      'Room action is unavailable',
+      undefined,
+      retryAfterSeconds
+    );
+    fixture.privateRequest.mockRejectedValue(failure);
+    fixture.roomAction.mockImplementation((error: unknown) =>
+      error === failure ? 'personal.begin' : undefined
+    );
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const response = await ask();
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({
+      code: 'MIRA_PRIVATE_ROOM_UNAVAILABLE',
+      ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
+    });
+    // A busy room is not a server failure; a failed one is logged once.
+    expect(errors).toHaveBeenCalledTimes(roomStatus === 429 ? 0 : 1);
+    errors.mockRestore();
+  }
+);
+
+it('logs each failure once, at the route', async () => {
+  const failure = new MeetCallAccessError(503, 'Room action is unavailable');
+  fixture.privateRequest.mockRejectedValue(failure);
+  fixture.roomAction.mockImplementation((error: unknown) =>
+    error === failure ? 'personal.finish' : undefined
+  );
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  await ask();
+  expect(fixture.routeLogs).toHaveBeenCalledTimes(1);
+  expect(errors).toHaveBeenCalledTimes(1);
+  expect(errors).toHaveBeenCalledWith('Private Mira answer failed', {
+    stage: 'answer',
+    action: 'personal.finish',
+    name: 'Error',
+  });
   errors.mockRestore();
 });
 

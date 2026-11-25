@@ -77,6 +77,39 @@ export class MeetRoomServiceError extends MeetCallAccessError {
 }
 
 const ROOM_ACTION = Symbol.for('tuturuuu.meet.roomServiceAction');
+const ROUTE_LOGS = Symbol.for('tuturuuu.meet.roomServiceRouteLogs');
+const LOGGED = Symbol.for('tuturuuu.meet.failureLogged');
+
+/**
+ * The route serving `access` logs room failures itself, once, so
+ * `callRoomService` does not log them again for this request.
+ */
+export function logRoomFailuresAtRoute(access: object) {
+  Reflect.set(access, ROUTE_LOGS, true);
+}
+
+/** Records that `error` was logged, so `meetCallRoomRoute` skips it. */
+export function markFailureLogged<T>(error: T): T {
+  if (error && typeof error === 'object') Reflect.set(error, LOGGED, true);
+  return error;
+}
+
+const wasLogged = (error: unknown) =>
+  !!error && typeof error === 'object' && Reflect.get(error, LOGGED) === true;
+
+/**
+ * A `Retry-After` header as whole seconds, at least 1 and at most an hour:
+ * delay seconds or an HTTP date. Anything else reads as absent.
+ */
+export function parseRetryAfter(value: string | null, now = Date.now()) {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  const seconds = /^\d+$/u.test(trimmed)
+    ? Number(trimmed)
+    : (Date.parse(trimmed) - now) / 1000;
+  if (!Number.isFinite(seconds)) return undefined;
+  return Math.min(3600, Math.max(1, Math.ceil(seconds)));
+}
 
 function tagRoomServiceAction(error: unknown, action: string) {
   if (error && typeof error === 'object')
@@ -143,6 +176,7 @@ export async function callRoomService<T>(
   // generic 500.
   const attempts = options?.retryRead ? 2 : 1;
   const action = roomActionName(command);
+  const quiet = Reflect.get(access, ROUTE_LOGS) === true;
   let response: Response | undefined;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     const last = attempt === attempts;
@@ -158,7 +192,7 @@ export async function callRoomService<T>(
         cache: 'no-store',
       });
     } catch (error) {
-      if (!options?.retryRead || last)
+      if ((!options?.retryRead || last) && !quiet)
         console.error('Meet room service unreachable', {
           action,
           name: error instanceof Error ? error.name : 'unknown',
@@ -188,16 +222,19 @@ export async function callRoomService<T>(
             )
             .catch(() => undefined)
         : (await response?.body?.cancel().catch(() => undefined), undefined);
-    if ((response?.status ?? 503) >= 500)
-      console.error('Meet room service failed', {
-        action,
-        status: response?.status ?? 503,
-      });
+    const status = response?.status ?? 503;
+    if (status >= 500 && !quiet)
+      console.error('Meet room service failed', { action, status });
+    // The room's own retry hint passes through when it is busy or down.
+    const retryAfter =
+      response && (status === 429 || status >= 500)
+        ? parseRetryAfter(response.headers.get('Retry-After'))
+        : undefined;
     throw new MeetRoomServiceError(
-      response?.status ?? 503,
+      status,
       action,
       code,
-      options?.retryRead && (response?.status ?? 503) >= 500 ? 1 : undefined
+      retryAfter ?? (options?.retryRead && status >= 500 ? 1 : undefined)
     );
   }
   return response.json() as Promise<T>;
@@ -249,7 +286,7 @@ export async function meetCallRoomRoute(
         : error instanceof z.ZodError || error instanceof SyntaxError
           ? 400
           : 500;
-    if (status >= 500)
+    if (status >= 500 && !wasLogged(error))
       console.error('Meet room action failed', {
         name: error instanceof Error ? error.name : 'unknown',
         // The room action (never its body) when the room itself failed.

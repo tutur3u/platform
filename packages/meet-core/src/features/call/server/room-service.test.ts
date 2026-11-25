@@ -38,7 +38,11 @@ vi.mock('../lib/call-access', () => ({
 vi.mock('../lib/call-session', () => ({ getMeetCallSession: vi.fn() }));
 
 import { getMeetCallAccess, MeetCallAccessError } from '../lib/call-access';
-import { personalWorkspace, roomRoute } from './room-service';
+import {
+  markFailureLogged,
+  personalWorkspace,
+  roomRoute,
+} from './room-service';
 
 beforeEach(() => vi.clearAllMocks());
 
@@ -194,4 +198,29 @@ it.each([
   );
   expect(response.status).toBe(status);
   expect(await response.json()).toEqual({ code, error });
+});
+
+it('skips logging a failure its route already logged', async () => {
+  vi.mocked(getMeetCallAccess).mockResolvedValue({} as never);
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const fail = (error: Error) =>
+    roomRoute(
+      new Request('https://meet.tuturuuu.com/api/meet-call/meeting/x', {
+        method: 'POST',
+        headers: { Origin: 'https://meet.tuturuuu.com' },
+      }),
+      'meeting',
+      async () => {
+        throw error;
+      }
+    );
+  const logged = markFailureLogged(
+    new MeetCallAccessError(503, 'Unavailable', 'MIRA_PRIVATE_ROOM_UNAVAILABLE')
+  );
+  expect((await fail(logged)).status).toBe(503);
+  expect(errors).not.toHaveBeenCalled();
+  const fresh = await fail(new MeetCallAccessError(503, 'Unavailable'));
+  expect(fresh.status).toBe(503);
+  expect(errors).toHaveBeenCalledTimes(1);
+  errors.mockRestore();
 });

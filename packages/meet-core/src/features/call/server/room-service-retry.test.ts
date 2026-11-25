@@ -34,7 +34,11 @@ vi.mock('../lib/call-session', () => ({
 vi.mock('../lib/guest-access', () => ({ getMeetGuestCallAccess: vi.fn() }));
 vi.mock('../lib/guest-session', () => ({ MEET_GUEST_COOKIE: 'guest' }));
 
-import { callRoomService } from './room-service';
+import {
+  callRoomService,
+  logRoomFailuresAtRoute,
+  parseRetryAfter,
+} from './room-service';
 
 const access = {
   meeting: { id: 'meeting', ws_id: 'ws' },
@@ -155,4 +159,58 @@ it('forwards the room Mira notice-mode refusal code', async () => {
   await expect(
     callRoomService(access, { action: 'mira.room.choice' })
   ).rejects.toMatchObject({ status: 409, code: 'MIRA_ROOM_NOTICE_MODE_STALE' });
+});
+
+it.each([
+  [429, '12', 12],
+  [503, '0', 1],
+  // A date already past reads as one second.
+  [503, 'Wed, 21 Oct 2015 07:28:30 GMT', 1],
+  [500, 'soon', undefined],
+  [409, '12', undefined],
+])(
+  'passes a %s Retry-After of %s through as %s seconds',
+  async (code, header, retryAfterSeconds) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('{}', { status: code, headers: { 'Retry-After': header } })
+      )
+    );
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expect(
+      callRoomService(access, { action: 'personal.begin' })
+    ).rejects.toMatchObject({ status: code, retryAfterSeconds });
+    errors.mockRestore();
+  }
+);
+
+it('reads Retry-After as delay seconds or an HTTP date, within an hour', () => {
+  const now = Date.parse('2026-01-01T00:00:00Z');
+  expect(parseRetryAfter('30', now)).toBe(30);
+  expect(parseRetryAfter('Thu, 01 Jan 2026 00:00:10 GMT', now)).toBe(10);
+  expect(parseRetryAfter('86400', now)).toBe(3600);
+  expect(parseRetryAfter('soon', now)).toBeUndefined();
+  expect(parseRetryAfter(null, now)).toBeUndefined();
+});
+
+it('stays quiet when the route logs room failures itself', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(status(503)));
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+  await expect(
+    callRoomService(access, { action: 'personal.begin' })
+  ).rejects.toMatchObject({ status: 503 });
+  expect(errors).toHaveBeenCalledTimes(1);
+  errors.mockClear();
+  const routed = { ...(access as object) } as never;
+  logRoomFailuresAtRoute(routed);
+  await expect(
+    callRoomService(routed, { action: 'personal.begin' })
+  ).rejects.toMatchObject({ status: 503, action: 'personal.begin' });
+  vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('dropped')));
+  await expect(
+    callRoomService(routed, { action: 'personal.begin' })
+  ).rejects.toBeInstanceOf(TypeError);
+  expect(errors).not.toHaveBeenCalled();
+  errors.mockRestore();
 });
