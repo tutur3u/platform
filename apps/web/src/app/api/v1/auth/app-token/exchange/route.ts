@@ -23,8 +23,7 @@ import {
 } from '@/lib/app-coordination/exchange-scopes';
 import {
   type ExchangeLogContext,
-  logExchangeOutcome,
-  logExchangeResponse,
+  runLoggedExchange,
 } from '@/lib/app-coordination/exchange-outcome-log';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import {
@@ -378,6 +377,7 @@ async function exchangeAppToken(
   }
 
   logContext.appId = resolvedTarget.targetApp;
+  logContext.verified = true;
   // RA-MEDIA-C1-001 exempts listed apps from strict binding until expiry.
   const strictBinding = isExternalAppStrictBinding(resolvedTarget.targetApp);
   const requiresWorkspace =
@@ -694,16 +694,9 @@ export async function POST(request: NextRequest) {
       request,
       route: '/api/v1/auth/app-token/exchange',
     },
-    async () => {
-      const logContext: ExchangeLogContext = { refresh: false };
-      try {
-        const response = await exchangeAppToken(request, logContext);
-        await logExchangeResponse(logContext, response);
-        return response;
-      } catch (error) {
-        logExchangeOutcome(logContext, 'error', 500);
-        throw error;
-      }
-    }
+    () =>
+      runLoggedExchange((logContext) =>
+        exchangeAppToken(request, logContext)
+      )
   );
 }

@@ -122,12 +122,14 @@ describe('app token exchange strict binding (RA-MEDIA-C1-001)', () => {
         outcome: 'workspace-id-required',
         refresh: false,
         status: 400,
+        verified: true,
       },
       {
         appId: 'cybershield35',
         outcome: 'workspace-id-required',
         refresh: true,
         status: 400,
+        verified: true,
       },
     ]);
     const logged = JSON.stringify(lines);
@@ -140,6 +142,72 @@ describe('app token exchange strict binding (RA-MEDIA-C1-001)', () => {
     ]) {
       expect(logged).not.toContain(secret);
     }
+  });
+
+  it('logs a refused external-projects refresh as strict-binding-refused', async () => {
+    vi.setSystemTime(beforeExpiry);
+    mockRegisteredApp(
+      ['external-projects:read', ...driveScopes],
+      'cybershield35',
+      [workspaceId]
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const response = await exchange('cybershield35', {
+      refreshToken: unboundRefreshToken('cybershield35'),
+      requestedScopes: ['external-projects:read'],
+      workspaceId,
+    });
+
+    const lines = warn.mock.calls.filter(
+      ([prefix]) => prefix === '[app-token-exchange]'
+    );
+    warn.mockRestore();
+    expect(response.status).toBe(401);
+    expect(lines).toEqual([
+      [
+        '[app-token-exchange]',
+        {
+          appId: 'cybershield35',
+          outcome: 'strict-binding-refused',
+          refresh: true,
+          status: 401,
+          verified: true,
+        },
+      ],
+    ]);
+    expect(JSON.stringify(lines)).not.toContain(workspaceId);
+  });
+
+  it('logs a failed app secret as unverified', async () => {
+    vi.setSystemTime(beforeExpiry);
+    mocks.verifyExternalAppSecret.mockResolvedValueOnce({
+      error: 'Invalid app secret',
+      ok: false,
+    });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const response = await exchange('cybershield35', {
+      token: 'valid-cross-app-token',
+    });
+
+    const lines = warn.mock.calls.filter(
+      ([prefix]) => prefix === '[app-token-exchange]'
+    );
+    warn.mockRestore();
+    expect(response.status).toBe(401);
+    expect(lines).toEqual([
+      [
+        '[app-token-exchange]',
+        {
+          appId: 'cybershield35',
+          outcome: 'unauthorized',
+          refresh: false,
+          status: 401,
+          verified: false,
+        },
+      ],
+    ]);
   });
 
   it('applies strict binding to every other app before the expiry', async () => {

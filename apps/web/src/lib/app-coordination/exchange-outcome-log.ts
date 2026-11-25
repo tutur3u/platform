@@ -13,14 +13,20 @@ export type ExchangeOutcome =
   | 'forbidden'
   | 'unauthorized'
   | 'bad-request'
+  | 'rate-limited'
   | 'error';
 
 /** What the route knows about a request; set as it learns more. */
-export type ExchangeLogContext = { appId?: unknown; refresh: boolean };
+export type ExchangeLogContext = {
+  appId?: unknown;
+  refresh: boolean;
+  /** The app credential was verified; before that `appId` is only claimed. */
+  verified: boolean;
+};
 
-const APP_ID_PATTERN = /^[a-z0-9._-]+$/u;
+const APP_ID_PATTERN = /^[a-z0-9_-]+$/u;
 
-/** Lower-cased, capped at 64 chars, `[a-z0-9._-]` only; else `invalid`. */
+/** Lower-cased, capped at 64 chars, `[a-z0-9_-]` only; else `invalid`. */
 export function sanitizeExchangeAppId(appId: unknown) {
   if (typeof appId !== 'string') return 'invalid';
   const id = appId.toLowerCase().slice(0, 64);
@@ -49,12 +55,14 @@ export function classifyExchangeOutcome({
       ? 'strict-binding-refused'
       : 'unauthorized';
   }
-  return status === 403 ? 'forbidden' : 'error';
+  if (status === 403) return 'forbidden';
+  return status === 429 ? 'rate-limited' : 'error';
 }
 
 /**
- * One structured line per exchange: app id, outcome class, status and whether
- * it was a refresh. Never tokens, emails, user or workspace ids, IPs or bodies.
+ * One structured line per exchange: app id, outcome class, status, whether it
+ * was a refresh and whether the app credential was verified (an unverified
+ * `appId` is whatever the caller claimed). Never tokens, emails, user or workspace ids, IPs or bodies.
  */
 export function logExchangeOutcome(
   context: ExchangeLogContext,
@@ -66,6 +74,7 @@ export function logExchangeOutcome(
     outcome,
     refresh: context.refresh,
     status,
+    verified: context.verified,
   };
   if (status >= 500) console.error(EXCHANGE_LOG_PREFIX, fields);
   else if (outcome === 'ok' || outcome === 'refresh-ok') {
@@ -100,4 +109,27 @@ export async function logExchangeResponse(
     }),
     response.status
   );
+}
+
+/**
+ * Runs `handler` and logs its outcome once. Logging never changes the
+ * response: a failure while logging is swallowed.
+ */
+export async function runLoggedExchange(
+  handler: (context: ExchangeLogContext) => Promise<Response>
+) {
+  const context: ExchangeLogContext = { refresh: false, verified: false };
+  let response: Response;
+  try {
+    response = await handler(context);
+  } catch (error) {
+    try {
+      logExchangeOutcome(context, 'error', 500);
+    } catch {}
+    throw error;
+  }
+  try {
+    await logExchangeResponse(context, response);
+  } catch {}
+  return response;
 }

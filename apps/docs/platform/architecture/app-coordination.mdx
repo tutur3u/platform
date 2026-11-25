@@ -326,14 +326,17 @@ relaxes strict binding. Coverage:
 `apps/web/src/app/api/v1/auth/app-token/exchange/route-strict-binding.test.ts`.
 
 How to watch refusals: every exchange writes one `[app-token-exchange]` line
-with only `appId`, `outcome`, `status` and `refresh` (no tokens, emails, user
-or workspace ids, IPs or bodies; `appId` is lower-cased, at most 64 characters
-of `[a-z0-9._-]`, else `invalid`). Filter Workers Logs for `[app-token-exchange]`
-and the app id (for example `cybershield35`), then add `workspace-id-required`
-or `strict-binding-refused`, to see which app is being refused after the
-exemption lapses. Outcomes: `ok`, `refresh-ok`,
+with only `appId`, `outcome`, `status`, `refresh` and `verified` (no tokens,
+emails, user or workspace ids, IPs or bodies; `appId` is lower-cased, at most
+64 characters of `[a-z0-9_-]`, else `invalid`). Filter Workers Logs for
+`[app-token-exchange]` and the app id (for example `cybershield35`), then add
+`workspace-id-required` or `strict-binding-refused`, to see which app is being
+refused after the exemption lapses. Outcomes: `ok`, `refresh-ok`,
 `workspace-id-required`, `strict-binding-refused`, `forbidden`,
-`unauthorized`, `bad-request`, `error`. Helper and coverage:
+`unauthorized`, `bad-request`, `rate-limited`, `error`. `verified` is true only
+once the app credential has been checked; with `verified: false` the `appId`
+is whatever the caller claimed, so any caller can produce such a line under any
+app id. Count only `verified: true` lines per app. Helper and coverage:
 `apps/web/src/lib/app-coordination/exchange-outcome-log.ts` and its test.
 
 Coverage:
