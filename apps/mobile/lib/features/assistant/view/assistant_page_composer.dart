@@ -98,7 +98,7 @@ extension _AssistantPageComposer on _AssistantPageState {
                       onModelSelected: _selectRemoteModel,
                     ),
               onThinkingModeChanged:
-                  _thinkingModeAvailable(chatState, shellState, localLane)
+                  _thinkingModeAvailable(shellState, localLane)
                   ? _selectThinkingMode
                   : null,
               modeEnabled: _thinkingModeIdle(chatState),
@@ -151,22 +151,19 @@ extension _AssistantPageComposer on _AssistantPageState {
     );
   }
 
-  /// Whether the response mode applies: not on device, not for
-  /// subscription models that use their provider's defaults, and not in a
-  /// legacy conversation, whose settings cannot be changed.
-  bool _thinkingModeAvailable(
-    AssistantChatState chat,
-    AssistantShellState shell,
-    bool localLane,
-  ) {
-    if (localLane || assistantModelUsesProviderDefaults(shell.selectedModel)) {
-      return false;
-    }
+  /// Whether the response mode applies: not on device, and not for
+  /// subscription models that use their provider's defaults.
+  bool _thinkingModeAvailable(AssistantShellState shell, bool localLane) =>
+      !localLane && !assistantModelUsesProviderDefaults(shell.selectedModel);
+
+  /// Legacy conversations send the mode with each request instead of storing
+  /// it with the conversation.
+  bool _isLegacyChat(AssistantChatState chat) {
     final chatId = chat.chat?.id ?? chat.storedChatId;
-    if (chatId == null) return true;
+    if (chatId == null) return false;
     try {
       return AssistantChatRoute.parse(chatId).kind ==
-          AssistantChatRouteKind.native;
+          AssistantChatRouteKind.legacy;
     } on FormatException {
       return false;
     }
@@ -178,7 +175,12 @@ extension _AssistantPageComposer on _AssistantPageState {
       !chat.isBusy && chat.queuedMessages.isEmpty;
 
   Future<void> _selectThinkingMode(AssistantThinkingMode mode) async {
-    if (!_thinkingModeIdle(_chatCubit.state)) return;
+    final chat = _chatCubit.state;
+    if (!_thinkingModeIdle(chat)) return;
+    if (_isLegacyChat(chat)) {
+      _shellCubit.selectThinkingModeForRequests(mode);
+      return;
+    }
     await _shellCubit.setThinkingMode(mode);
   }
 }

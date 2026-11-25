@@ -8,9 +8,9 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// The model and response-mode controls under the Mira prompt, matching the
 /// web composer toolbar. The mode toggles between Fast and Thinking; it is
-/// absent where it does not apply (on-device models, subscription models
-/// that use their provider's defaults and legacy conversations). Local models
-/// show their label and open the local model list.
+/// absent where it does not apply (on-device models and subscription models
+/// that use their provider's defaults). Local models show their label and
+/// open the local model list.
 class AssistantComposerControls extends StatelessWidget {
   const AssistantComposerControls({
     required this.shellState,

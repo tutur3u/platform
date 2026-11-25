@@ -132,4 +132,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
   });
+
+  testWidgets('the mode waits while messages are queued', (tester) async {
+    final repository = _CreationRepository(_SettingsApi());
+    final h = BackgroundReplyHarness(repository: repository);
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester);
+    expect(h.chat.state.isBusy, isFalse);
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
+
+    // A queued message with no reply in flight still holds the mode.
+    h.chat.emit(h.chat.state.copyWith(queuedMessages: const ['Next']));
+    await tester.pumpAndSettle();
+    expect(h.chat.state.isBusy, isFalse);
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNull);
+    await tester.tap(find.byKey(_mode), warnIfMissed: false);
+    await tester.pump();
+    expect(_shell(h).state.thinkingMode, AssistantThinkingMode.fast);
+
+    h.chat.emit(h.chat.state.copyWith(queuedMessages: const []));
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
+  });
 }

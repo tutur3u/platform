@@ -52,6 +52,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
       if (!await _acceptSettings(selection, current)) return false;
       await _preferences.saveModel(workspace.id, model, shouldWrite: current);
       if (!current()) return false;
+      _followAcknowledged(selection);
       _emitIfOpen(
         state.copyWith(selectedModel: model, conversationSettings: null),
       );
@@ -92,6 +93,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
       );
       if (!await _acceptSettings(selection, current)) return false;
       if (!current()) return false;
+      _followAcknowledged(selection);
       _sessionThinkingMode = mode;
       _emitIfOpen(
         state.copyWith(thinkingMode: mode, conversationSettings: null),
@@ -128,17 +130,13 @@ extension _AssistantShellSettings on AssistantShellCubit {
         credits.defaultLanguageModel ?? _defaultAssistantModel.value,
         credits,
       );
-      if (!await _acceptSettings(
-        AssistantSettingsSelection(
-          modelId: model.value,
-          creditSource: effective,
-          creditWsId: creditWsId,
-          thinkingMode: state.thinkingMode,
-        ),
-        current,
-      )) {
-        return false;
-      }
+      final selection = AssistantSettingsSelection(
+        modelId: model.value,
+        creditSource: effective,
+        creditWsId: creditWsId,
+        thinkingMode: state.thinkingMode,
+      );
+      if (!await _acceptSettings(selection, current)) return false;
       await _preferences.saveCreditSource(
         workspace.id,
         effective,
@@ -146,6 +144,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
       );
       await _preferences.saveModel(workspace.id, model, shouldWrite: current);
       if (!current()) return false;
+      _followAcknowledged(selection);
       _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.loaded,

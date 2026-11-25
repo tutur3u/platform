@@ -50,6 +50,12 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   /// conversation shows and sends with its stored mode, which the native
   /// message endpoint requires; new chats use this one.
   AssistantThinkingMode _sessionThinkingMode = AssistantThinkingMode.fast;
+
+  /// The open conversation's stored settings, kept apart from [state] so a
+  /// workspace load that finishes after the conversation restores keeps
+  /// them: native sends require them.
+  ({String workspaceId, AssistantConversationSettings settings})?
+  _openConversation;
   final Object? Function()? _currentSettingsToken;
   final void Function(AssistantSettingsDisposition)?
   _onSettingsSelectionFailure;
@@ -79,6 +85,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     // the same workspace keeps that choice.
     if (state.workspace?.id != workspace.id) {
       _sessionThinkingMode = AssistantThinkingMode.fast;
+      _openConversation = null;
     }
     _emitIfOpen(
       state.copyWith(
@@ -155,6 +162,9 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         activeCredits,
       );
 
+      final open = _openConversation?.workspaceId == workspace.id
+          ? _openConversation?.settings
+          : null;
       _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.loaded,
@@ -167,10 +177,12 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           personalCredits: personalCredits,
           activeCredits: activeCredits,
           availableModels: models,
-          selectedModel: selectedModel,
-          thinkingMode: _sessionThinkingMode,
-          conversationSettings: null,
-          creditSource: activeCreditSource,
+          selectedModel: open == null
+              ? selectedModel
+              : _conversationModel(open, models),
+          thinkingMode: open?.thinkingMode ?? _sessionThinkingMode,
+          conversationSettings: open,
+          creditSource: open?.creditSource ?? activeCreditSource,
           workspaceContextId: storedWorkspaceContext,
           workspaceCreditLocked: workspaceCreditLocked,
           isPersonalDashboardWorkspace: isPersonalDashboardWorkspace,
@@ -235,6 +247,10 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   void restoreConversationSettings(AssistantConversationSettings? settings) {
     _settingsRequestVersion++;
     if (isClosed) return;
+    final workspaceId = state.workspace?.id;
+    _openConversation = settings == null || workspaceId == null
+        ? null
+        : (workspaceId: workspaceId, settings: settings);
     if (settings == null) {
       // A new chat takes the session's mode, not the last opened
       // conversation's.
@@ -246,21 +262,40 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       );
       return;
     }
-    final model =
-        state.availableModels
-            .where((m) => m.value == settings.modelId)
-            .firstOrNull ??
-        AssistantGatewayModel(
-          value: settings.modelId,
-          label: settings.modelId,
-          provider: settings.modelId.split('/').first,
-        );
+    final model = _conversationModel(settings, state.availableModels);
     emit(
       state.copyWith(
         selectedModel: model,
         creditSource: settings.creditSource,
         thinkingMode: settings.thinkingMode,
         conversationSettings: settings,
+      ),
+    );
+  }
+
+  AssistantGatewayModel _conversationModel(
+    AssistantConversationSettings settings,
+    List<AssistantGatewayModel> models,
+  ) =>
+      models.where((m) => m.value == settings.modelId).firstOrNull ??
+      AssistantGatewayModel(
+        value: settings.modelId,
+        label: settings.modelId,
+        provider: settings.modelId.split('/').first,
+      );
+
+  /// An acknowledged selection becomes the open conversation's stored
+  /// settings; a new chat has none to follow.
+  void _followAcknowledged(AssistantSettingsSelection selection) {
+    final open = _openConversation;
+    if (open == null || open.workspaceId != state.workspace?.id) return;
+    _openConversation = (
+      workspaceId: open.workspaceId,
+      settings: AssistantConversationSettings(
+        modelId: selection.modelId,
+        creditSource: selection.creditSource,
+        creditWsId: selection.creditWsId,
+        thinkingMode: selection.thinkingMode,
       ),
     );
   }
@@ -275,6 +310,22 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   /// current mode.
   Future<bool> setThinkingMode(AssistantThinkingMode mode) =>
       _selectThinkingMode(mode);
+
+  /// Selects the response mode for a conversation that sends it with each
+  /// request (the legacy transport), so no settings write is needed.
+  bool selectThinkingModeForRequests(AssistantThinkingMode mode) {
+    if (isClosed ||
+        state.workspace == null ||
+        _settingsSelectionPending ||
+        mode == state.thinkingMode ||
+        assistantModelUsesProviderDefaults(state.selectedModel)) {
+      return false;
+    }
+    _settingsRequestVersion++;
+    _sessionThinkingMode = mode;
+    emit(state.copyWith(thinkingMode: mode));
+    return true;
+  }
 
   Future<bool> setCreditSource(AssistantCreditSource source) =>
       _selectCreditSource(source);

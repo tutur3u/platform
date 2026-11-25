@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
+import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
@@ -175,6 +176,111 @@ void main() {
     );
     expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
   });
+
+  const thinkingChat = AssistantConversationSettings(
+    modelId: 'google/gemini-3-flash',
+    creditSource: AssistantCreditSource.workspace,
+    creditWsId: '22222222-2222-4222-8222-222222222222',
+    thinkingMode: AssistantThinkingMode.thinking,
+  );
+
+  /// The settings a native send checks against the conversation's stored
+  /// ones; a mismatch throws.
+  void expectSendable(AssistantShellState state) =>
+      requireAssistantSendSettings(
+        {
+          'settings': {'conversationId': 'chat', ...thinkingChat.toJson()},
+        },
+        chatId: 'chat',
+        modelId: state.selectedModel.value,
+        creditSource: state.creditSource.name,
+        creditWsId: state.conversationSettings?.creditWsId,
+        thinkingMode: state.thinkingMode.name,
+      );
+
+  test('a conversation restored mid-load keeps its settings', () async {
+    calendarMissing();
+    final credits = Completer<void>();
+    when(
+      () => repository.fetchCredits(
+        any(),
+        forceRefresh: any(named: 'forceRefresh'),
+      ),
+    ).thenAnswer((_) async {
+      await credits.future;
+      return const AssistantCredits(tier: 'PRO', remaining: 5000);
+    });
+    final loading = cubit.loadWorkspace(workspace);
+    await Future<void>.delayed(Duration.zero);
+    // The chat restore wins the race with the workspace load.
+    cubit.restoreConversationSettings(thinkingChat);
+    credits.complete();
+    await loading;
+    expect(cubit.state.status, AssistantShellStatus.loaded);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+    expect(cubit.state.conversationSettings, thinkingChat);
+    expect(cubit.state.selectedModel.value, thinkingChat.modelId);
+    expectSendable(cubit.state);
+  });
+
+  test('a forced refresh keeps an open Thinking conversation', () async {
+    calendarMissing();
+    await cubit.loadWorkspace(workspace);
+    cubit.restoreConversationSettings(thinkingChat);
+    await cubit.loadWorkspace(workspace, forceRefresh: true);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+    expect(cubit.state.conversationSettings, thinkingChat);
+    expectSendable(cubit.state);
+  });
+
+  test('switching workspaces away and back starts at Fast again', () async {
+    calendarMissing();
+    when(
+      () => repository.fetchTasksInsight(
+        wsId: any(named: 'wsId'),
+        isPersonal: any(named: 'isPersonal'),
+      ),
+    ).thenAnswer((_) async => const AssistantTasksInsight());
+    when(() => repository.fetchCalendarInsight(any())).thenAnswer((_) async {
+      throw const ApiException(message: 'Not found', statusCode: 404);
+    });
+    await cubit.loadWorkspace(workspace);
+    expect(await cubit.setThinkingMode(AssistantThinkingMode.thinking), isTrue);
+    await cubit.loadWorkspace(
+      const Workspace(id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', tier: 'PRO'),
+    );
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
+    await cubit.loadWorkspace(workspace);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
+  });
+
+  test(
+    'a per-request mode changes the session without a settings write',
+    () async {
+      calendarMissing();
+      final selections = <AssistantSettingsSelection>[];
+      final selecting = AssistantShellCubit(
+        repository: repository,
+        preferences: AssistantPreferences(
+          currentUserId: () => '33333333-3333-4333-8333-333333333333',
+        ),
+        selectSettings: (selection, _) async {
+          selections.add(selection);
+          return AssistantSettingsDisposition.acknowledged;
+        },
+      );
+      addTearDown(selecting.close);
+      await selecting.loadWorkspace(workspace);
+      expect(
+        selecting.selectThinkingModeForRequests(AssistantThinkingMode.thinking),
+        isTrue,
+      );
+      expect(selecting.state.thinkingMode, AssistantThinkingMode.thinking);
+      expect(selections, isEmpty);
+      selecting.restoreConversationSettings(null);
+      expect(selecting.state.thinkingMode, AssistantThinkingMode.thinking);
+    },
+  );
 
   test('missing optional Calendar does not erase Pro balances', () async {
     // Async errors model a real network failure after all requests start.
