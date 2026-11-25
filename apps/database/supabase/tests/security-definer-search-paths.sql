@@ -88,8 +88,8 @@ select is((select count(*)::integer
   'no unallowlisted first-party definer is skipped because of ownership');
 select ok(exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='storage'), 'Storage functions are bootstrapped for managed ownership inventory');
-select is((
-  select count(*)::integer from pg_catalog.pg_proc p
+create temp view unsafe_definer_paths as
+  select p.oid::regprocedure::text as signature from pg_catalog.pg_proc p
   join pg_catalog.pg_namespace n on n.oid = p.pronamespace
   where n.nspname = any(string_to_array(current_setting('security.exposed_schemas'), ','))
     and p.prosecdef and p.prokind='f'
@@ -100,8 +100,9 @@ select is((
     and not pg_temp.security_definer_path_is_safe((
       select substr(setting, 13) from unnest(p.proconfig) setting
       where setting like 'search_path=%'
-    ))
-), 0, 'every exposed definer has a privilege-checked safe search path');
+    ));
+select is((select array_agg(signature order by signature) from unsafe_definer_paths),
+  NULL::text[], 'every exposed definer has a privilege-checked safe search path');
 select ok(not has_schema_privilege('anon', 'public', 'CREATE')
   and not has_schema_privilege('authenticated', 'public', 'CREATE')
   and not exists (
@@ -138,20 +139,8 @@ select ok(has_schema_privilege('authenticated', 'security_path_writable_fixture'
     from pg_catalog.pg_proc p, lateral unnest(p.proconfig) setting
     where p.oid = 'public.security_path_writable_fixture()'::regprocedure and setting like 'search_path=%')),
   'negative control: writable schema is rejected even with pg_temp last');
-select is((
-  select count(*)::integer from pg_catalog.pg_proc p
-  join pg_catalog.pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = any(string_to_array(current_setting('security.exposed_schemas'), ','))
-    and p.prosecdef and p.prokind='f'
-    and pg_has_role(current_user, p.proowner, 'SET')
-    and n.nspname not in ('storage', 'graphql_public')
-    and not exists (select 1 from pg_catalog.pg_depend d
-      where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e')
-    and not pg_temp.security_definer_path_is_safe((
-      select substr(setting, 13) from unnest(p.proconfig) setting
-      where setting like 'search_path=%'
-    ))
-), 4, 'all four unsafe definer controls fail the catalog verifier');
+select is((select count(*)::integer from unsafe_definer_paths), 4,
+  'all four unsafe definer controls fail the catalog verifier');
 select ok(not pg_temp.security_definer_path_is_safe('security_path_missing_fixture, pg_temp'),
   'negative control: nonexistent schema is rejected');
 select ok(not pg_temp.security_definer_path_is_safe('"$user", public, pg_temp'),
