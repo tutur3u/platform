@@ -291,9 +291,7 @@ export function ProgrammingWorkbench({
             meeting ? setOutputTab('console') : setPreview(false),
         }
       : undefined;
-  const showPreview = meeting
-    ? outputOpen && outputTab === 'preview'
-    : preview;
+  const showPreview = meeting ? outputOpen && outputTab === 'preview' : preview;
   const menu: WorkbenchAction[] = [
     ...(problem
       ? [

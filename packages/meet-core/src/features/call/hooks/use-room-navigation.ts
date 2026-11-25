@@ -160,16 +160,13 @@ export function useRoomNavigation({
     >()
   );
 
-  const go = useCallback(
-    (next: MeetRoomView, options: ApplyOptions) => {
-      const result = applyRef.current(
-        surfaceFromView(next, surfaceRef.current.drawer),
-        options
-      );
-      return result?.back;
-    },
-    []
-  );
+  const go = useCallback((next: MeetRoomView, options: ApplyOptions) => {
+    const result = applyRef.current(
+      surfaceFromView(next, surfaceRef.current.drawer),
+      options
+    );
+    return result?.back;
+  }, []);
 
   const startFollowing = useCallback(
     (
