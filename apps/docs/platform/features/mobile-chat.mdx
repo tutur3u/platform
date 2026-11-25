@@ -1,15 +1,25 @@
 ---
 title: Mobile Chat navigation and pagination
 description: Native conversation browsing and scoped background loading.
-updatedAt: "2026-10-29"
+updatedAt: "2026-11-25"
 audience: users
 ---
 
 ## Conversation browsing
 
 Mobile Chat retains the shared app shell and navigation while compact screens
-switch between the conversation list and a selected thread. Wide screens keep
-both panes visible. The list remains scrollable with tall filter content.
+switch between the conversation list and a selected thread; the dock's Back
+returns from the thread to the list. Bodies at least 720dp wide (the
+`AppMasterDetail` split width) keep the list beside the thread, with an empty
+pane until a conversation is chosen, and cap the thread at a readable 880dp
+column. The open conversation names the shell title.
+
+The list matches web's sidebar grouping: pinned conversations first, then AI
+agents, channels, direct messages and groups, each in recency order. Rows show
+the latest message (prefixed with "You" or the sender's first name in shared
+conversations), the unread count and mute state. Opening a conversation clears
+its unread count locally while the read marker is sent. Search lists matching
+conversations by name and messages from the server search.
 
 Conversation pages load automatically when the remaining scroll distance falls
 below three quarters of the viewport, including when the first page cannot fill
@@ -21,17 +31,35 @@ Pagination results and failures from an older workspace or refresh generation
 cannot publish into the current list. Pending local rows continue to use the
 existing scoped Chat collection overlay.
 
+## Threads
+
+Messages from one sender within five minutes form a group: the first shows the
+avatar and, outside direct messages, the sender's name; the last shows the
+time. Day separators read Today, Yesterday or the date, and a New messages
+divider marks the first message from someone else after the viewer's read
+marker. Replies quote their parent; tapping a loaded parent scrolls to it.
+Reactions render as pills, tinted where the viewer reacted, and toggle on tap.
+Long press (secondary click on desktop) opens web's six quick reactions plus
+Reply, Copy text and, for the viewer's own synced messages, Delete. Shared
+files render as rows that request a signed URL only when opened. Older history
+loads a page at a time with `before` set to the oldest loaded message, as web
+does.
+
 ## Composer
 
 Attachments use the adaptive sheet shared by compact and expanded mobile
-surfaces. Send remains disabled while a message or attachment upload is in
-flight, and the icon exposes a localized tooltip. This changes neither message
+surfaces. The reply being written shows above the field with a cancel control
+and is sent as `replyToMessageId`. Send is enabled only with text or an
+attachment and stays disabled while a message or attachment upload is in
+flight; the icon exposes a localized tooltip. This changes neither message
 transport nor attachment permissions; live device and production verification
 are still required for delivery.
 
 Regression coverage: `chat_conversation_layout_test.dart`,
-`chat_pagination_scope_test.dart`, and `chat_thread_layout_test.dart` in
-`apps/mobile/test/features/chat`.
+`chat_pagination_scope_test.dart`, `chat_thread_layout_test.dart`,
+`chat_thread_items_test.dart`, `chat_surface_width_test.dart` and the
+`chat_page_render_test.dart` design renders (phone, tablet and desktop in
+light and dark) in `apps/mobile/test/features/chat`.
 
 
 ### Assistant settings route chrome
