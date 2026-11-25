@@ -1,64 +1,57 @@
 part of 'chat_page.dart';
 
+/// Conversation list beside the open thread on tablets and desktops
+/// ([AppMasterDetail]); phones show one pane at a time and the dock's Back
+/// returns from the thread to the list.
 class _ChatSurface extends StatelessWidget {
-  const _ChatSurface({required this.state});
+  const _ChatSurface({required this.state, required this.onCreate});
 
   final ChatState state;
-
-  /// Body width at which the conversation list and thread sit side by side.
-  static const double twoPaneMinWidth = 700;
+  final VoidCallback onCreate;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    // Pane decisions use the body width, which is narrower than the window
-    // beside the navigation rail.
-    builder: (context, constraints) {
-      final bodyWidth = constraints.maxWidth;
-      final isWide = bodyWidth >= twoPaneMinWidth;
-      // The list and thread panes read the dock clearance themselves so they
-      // can run beneath the dock.
-      return AppPageBody(
-        kind: AppPageKind.root,
-        consumeBottomClearance: false,
-        child: isWide
-            ? Row(
-                children: [
-                  SizedBox(
-                    key: const ValueKey('chat-conversation-pane'),
-                    width: bodyWidth < 900 ? 260 : 340,
-                    child: _ConversationPane(state: state),
-                  ),
-                  const SizedBox(width: AppLayout.itemGap),
-                  Expanded(child: _ThreadPane(state: state)),
-                ],
-              )
-            : _CompactChatSurface(state: state),
-      );
-    },
+  Widget build(BuildContext context) => AppPageBody.fullBleed(
+    // The panes read the dock clearance themselves so lists can run
+    // beneath the dock while the composer stays above it.
+    consumeBottomClearance: false,
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final list = _ConversationPane(state: state, onCreate: onCreate);
+        if (!AppMasterDetailLayout.isSplit(constraints.maxWidth)) {
+          final hasSelected = state.selectedConversationId != null;
+          return AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: hasSelected
+                ? _ThreadPane(key: const ValueKey('thread'), state: state)
+                : KeyedSubtree(key: const ValueKey('list'), child: list),
+          );
+        }
+        final cubit = context.read<ChatCubit>();
+        return AppMasterDetail(
+          master: KeyedSubtree(
+            key: const ValueKey('chat-conversation-pane'),
+            child: list,
+          ),
+          detailKey: state.selectedConversationId,
+          detail: state.selectedConversationId == null
+              ? null
+              : _ThreadPane(state: state),
+          emptyDetail: const ChatNoConversationSelected(),
+          onCloseDetail: () {
+            cubit.clearSelection();
+            context.go(Routes.chat);
+          },
+        );
+      },
+    ),
   );
 }
 
-class _CompactChatSurface extends StatelessWidget {
-  const _CompactChatSurface({required this.state});
-
-  final ChatState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasSelected = state.selectedConversationId != null;
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 180),
-      child: hasSelected
-          ? _ThreadPane(key: const ValueKey('thread'), state: state)
-          : _ConversationPane(key: const ValueKey('list'), state: state),
-    );
-  }
-}
-
 class _ConversationPane extends StatelessWidget {
-  const _ConversationPane({required this.state, super.key});
+  const _ConversationPane({required this.state, required this.onCreate});
 
   final ChatState state;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -71,11 +64,15 @@ class _ConversationPane extends StatelessWidget {
         currentUserId: context.select<AuthCubit, String?>(
           (auth) => auth.state.user?.id,
         ),
+        isLoading:
+            state.status == ChatStatus.loading ||
+            state.status == ChatStatus.initial,
         isLoadingMore: state.isLoadingMore,
         hasMore: state.nextOffset != null,
         onLoadMore: () => unawaited(cubit.loadMoreConversations()),
         onSelected: (conversationId) =>
             unawaited(cubit.selectConversation(conversationId)),
+        onCreate: onCreate,
         onArchive: cubit.deleteConversation,
         onDelete: (conversation) =>
             _confirmDelete(context, cubit, conversation),
@@ -117,27 +114,57 @@ class _ThreadPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<ChatCubit>();
+    final conversation = state.selectedConversation;
+    final currentUserId = context.select<AuthCubit, String?>(
+      (cubit) => cubit.state.user?.id,
+    );
+    final typingNames = [
+      for (final member
+          in conversation?.members ?? const <ChatConversationMember>[])
+        if (state.typingUserIds.contains(member.userId) &&
+            member.userId != currentUserId)
+          member.user.displayName,
+    ];
     return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.paddingOf(context).bottom + AppLayout.boxEndGap,
-      ),
-      child: ChatThreadView(
-        conversation: state.selectedConversation,
-        messages: state.selectedMessages,
-        messageStatus: state.messageStatus,
-        currentUserId: context.select<AuthCubit, String?>(
-          (cubit) => cubit.state.user?.id,
+      padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom),
+      // A readable column on wide panes; bubbles hug its edges.
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _threadMaxWidth),
+          child: ChatThreadView(
+            conversation: conversation,
+            messages: state.selectedMessages,
+            messageStatus: state.messageStatus,
+            currentUserId: currentUserId,
+            pendingAttachments: state.pendingAttachments,
+            streamingAssistantText: state.streamingAssistantText,
+            isSending: state.isSending,
+            isUploadingAttachment: state.isUploadingAttachment,
+            onSend: (content) => unawaited(cubit.sendMessage(content)),
+            onPickAttachment: cubit.uploadAttachment,
+            onRemoveAttachment: cubit.removePendingAttachment,
+            onReaction: (message, reaction) =>
+                unawaited(cubit.toggleReaction(message, reaction)),
+            replyTo: state.replyToMessage,
+            onReply: cubit.startReply,
+            onCancelReply: cubit.cancelReply,
+            onDeleteMessage: cubit.deleteMessage,
+            typingNames: typingNames,
+            hasOlderMessages: state.selectedHasOlderMessages,
+            isLoadingOlderMessages: state.isLoadingOlderMessages,
+            onLoadOlderMessages: () => unawaited(cubit.loadOlderMessages()),
+            onRetry: () => unawaited(
+              cubit.selectConversation(
+                state.selectedConversationId ?? '',
+                forceRefresh: true,
+              ),
+            ),
+          ),
         ),
-        pendingAttachments: state.pendingAttachments,
-        streamingAssistantText: state.streamingAssistantText,
-        isSending: state.isSending,
-        isUploadingAttachment: state.isUploadingAttachment,
-        onSend: (content) => unawaited(cubit.sendMessage(content)),
-        onPickAttachment: cubit.uploadAttachment,
-        onRemoveAttachment: cubit.removePendingAttachment,
-        onReaction: (message, reaction) =>
-            unawaited(cubit.toggleReaction(message, reaction)),
       ),
     );
   }
 }
+
+/// Widest the thread column grows inside the detail pane.
+const double _threadMaxWidth = 880;

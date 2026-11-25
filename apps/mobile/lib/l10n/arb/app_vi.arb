@@ -177,6 +177,53 @@
       }
     }
   },
+  "@chatAttachmentCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "@chatPreviewFromSender": {
+    "placeholders": {
+      "name": {},
+      "message": {}
+    }
+  },
+  "@chatPreviewFromYou": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "@chatReactWith": {
+    "placeholders": {
+      "emoji": {}
+    }
+  },
+  "@chatReactionSummary": {
+    "placeholders": {
+      "emoji": {},
+      "count": {}
+    }
+  },
+  "@chatReplyingTo": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatTypingMany": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "@chatTypingOne": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatUnreadCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "@chatMembersCount": {
     "placeholders": {
       "count": {}
@@ -1945,6 +1992,40 @@
   "chatUnpin": "Bỏ ghim",
   "chatUntitled": "Cuộc trò chuyện chưa đặt tên",
   "chatWorkspace": "Workspace",
+  "chatAddReaction": "Thêm cảm xúc",
+  "chatAiAgents": "Trợ lý AI",
+  "chatAttachmentCount": "{count, plural, one{{count} tệp đính kèm} other{{count} tệp đính kèm}}",
+  "chatAttachmentOpenError": "Không thể mở tệp này.",
+  "chatCancelReply": "Hủy trả lời",
+  "chatCopyText": "Sao chép văn bản",
+  "chatDeleteMessage": "Xóa tin nhắn",
+  "chatDeleteMessageConfirm": "Mọi người trong cuộc trò chuyện sẽ thấy tin nhắn đã bị xóa.",
+  "chatDirectMessages": "Tin nhắn trực tiếp",
+  "chatEdited": "Đã sửa",
+  "chatJumpToOriginal": "Xem tin nhắn gốc",
+  "chatLoadOlderMessages": "Tải tin nhắn cũ hơn",
+  "chatMessageCopied": "Đã sao chép tin nhắn",
+  "chatMessageDeleted": "Tin nhắn đã bị xóa",
+  "chatNewMessages": "Tin nhắn mới",
+  "chatOriginalUnavailable": "Không có tin nhắn gốc",
+  "chatPreviewFromSender": "{name}: {message}",
+  "chatPreviewFromYou": "Bạn: {message}",
+  "chatReactWith": "Thả {emoji}",
+  "chatReactionSummary": "{emoji}, {count, plural, one{{count} lượt} other{{count} lượt}}",
+  "chatReply": "Trả lời",
+  "chatReplyingTo": "Đang trả lời {name}",
+  "chatSearchConversations": "Cuộc trò chuyện",
+  "chatSearchHint": "Tìm người, kênh và tin nhắn.",
+  "chatSearchMessagesSection": "Tin nhắn",
+  "chatSelectConversationDescription": "Chọn một cuộc trò chuyện trong danh sách để đọc và trả lời.",
+  "chatSelectConversationTitle": "Chưa mở cuộc trò chuyện",
+  "chatSystemEvent": "Cuộc trò chuyện đã được cập nhật",
+  "chatToday": "Hôm nay",
+  "chatTypingMany": "{count} người đang nhập",
+  "chatTypingOne": "{name} đang nhập",
+  "chatUnknownSender": "Không rõ",
+  "chatUnreadCount": "{count, plural, one{{count} tin chưa đọc} other{{count} tin chưa đọc}}",
+  "chatYesterday": "Hôm qua",
   "cmsAllCollections": "Tất cả bộ sưu tập",
   "cmsArchivedBacklog": "Nội dung lưu trữ",
   "cmsCollection": "Bộ sưu tập",

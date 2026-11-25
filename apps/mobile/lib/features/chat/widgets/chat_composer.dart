@@ -9,6 +9,7 @@ import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
+import 'package:mobile/features/chat/widgets/chat_reply_quote.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
@@ -20,6 +21,8 @@ class ChatComposer extends StatefulWidget {
     required this.onSend,
     required this.onPickAttachment,
     required this.onRemoveAttachment,
+    this.replyTo,
+    this.onCancelReply,
     super.key,
   });
 
@@ -30,17 +33,45 @@ class ChatComposer extends StatefulWidget {
   final Future<void> Function(PlatformFile) onPickAttachment;
   final ValueChanged<String> onRemoveAttachment;
 
+  /// Message being answered; shown above the field with a cancel control.
+  final ChatMessage? replyTo;
+  final VoidCallback? onCancelReply;
+
   @override
   State<ChatComposer> createState() => _ChatComposerState();
 }
 
 class _ChatComposerState extends State<ChatComposer> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focus = FocusNode();
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_syncHasText);
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.replyTo != null && widget.replyTo?.id != oldWidget.replyTo?.id) {
+      _focus.requestFocus();
+    }
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller
+      ..removeListener(_syncHasText)
+      ..dispose();
+    _focus.dispose();
     super.dispose();
+  }
+
+  void _syncHasText() {
+    final hasText = _controller.text.trim().isNotEmpty;
+    if (hasText != _hasText) setState(() => _hasText = hasText);
   }
 
   Future<void> _pickAttachment() async {
@@ -110,61 +141,90 @@ class _ChatComposerState extends State<ChatComposer> {
   Widget build(BuildContext context) {
     final colors = AppTokens.of(context).colorScheme;
     final busy = widget.isSending || widget.isUploadingAttachment;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colors.card,
-        border: Border(top: BorderSide(color: colors.border)),
+    final canSend = !busy && (_hasText || widget.pendingAttachments.isNotEmpty);
+    final replyTo = widget.replyTo;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.sm,
       ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.card,
+          border: Border.all(color: colors.border),
+          borderRadius: BorderRadius.circular(AppRadius.card - 4),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.pendingAttachments.isNotEmpty)
-              _PendingAttachmentStrip(
-                attachments: widget.pendingAttachments,
-                onRemove: widget.onRemoveAttachment,
-              ),
-            AppComposerRow(
-              minHeight: AppLayout.rowMinHeight,
-              leading: [
-                AppIconButton(
-                  tooltip: context.l10n.chatAttach,
-                  icon: widget.isUploadingAttachment
-                      ? const AppLoadingIndicator.inline()
-                      : const Icon(LucideIcons.paperclip),
-                  onPressed: busy
-                      ? null
-                      : () => unawaited(_showAttachmentOptions()),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xs),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (replyTo != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ChatReplyQuote(parent: replyTo, draft: true),
+                      ),
+                      AppIconButton(
+                        tooltip: context.l10n.chatCancelReply,
+                        size: AppButtonSize.small,
+                        density: AppButtonDensity.iconDense,
+                        icon: const Icon(LucideIcons.x, size: 16),
+                        onPressed: widget.onCancelReply,
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-              field: AppTextField(
-                controller: _controller,
-                filled: true,
-                borderless: true,
-                placeholder: context.l10n.chatMessagePlaceholder,
-                minLines: 1,
-                maxLines: 5,
-                enabled: !widget.isSending,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _send(),
-              ),
-              trailing: [
-                AppIconButton(
-                  tooltip: context.l10n.assistantSendAction,
-                  variant: AppButtonVariant.primary,
-                  icon: widget.isSending
-                      ? const AppLoadingIndicator.inline()
-                      : const Icon(LucideIcons.send),
-                  onPressed: busy ? null : _send,
+              if (widget.pendingAttachments.isNotEmpty)
+                _PendingAttachmentStrip(
+                  attachments: widget.pendingAttachments,
+                  onRemove: widget.onRemoveAttachment,
                 ),
-              ],
-            ),
-          ],
+              AppComposerRow(
+                minHeight: AppLayout.rowMinHeight,
+                leading: [
+                  AppIconButton(
+                    tooltip: context.l10n.chatAttach,
+                    icon: widget.isUploadingAttachment
+                        ? const AppLoadingIndicator.inline()
+                        : const Icon(LucideIcons.paperclip),
+                    onPressed: busy
+                        ? null
+                        : () => unawaited(_showAttachmentOptions()),
+                  ),
+                ],
+                field: AppTextField(
+                  controller: _controller,
+                  focusNode: _focus,
+                  borderless: true,
+                  placeholder: context.l10n.chatMessagePlaceholder,
+                  minLines: 1,
+                  maxLines: 6,
+                  enabled: !widget.isSending,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _send(),
+                ),
+                trailing: [
+                  AppIconButton(
+                    tooltip: context.l10n.assistantSendAction,
+                    variant: canSend
+                        ? AppButtonVariant.primary
+                        : AppButtonVariant.ghost,
+                    shape: AppButtonShape.circle,
+                    icon: widget.isSending
+                        ? const AppLoadingIndicator.inline()
+                        : const Icon(LucideIcons.arrowUp),
+                    onPressed: canSend ? _send : null,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

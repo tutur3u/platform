@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -16,6 +17,7 @@ import 'package:mobile/features/chat/widgets/chat_thread_view.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -99,8 +101,20 @@ class _ChatPageState extends State<_ChatActorHost> {
         value: _chatCubit,
         child: BlocConsumer<ChatCubit, ChatState>(
           listenWhen: (previous, current) =>
-              previous.selectedConversationId != current.selectedConversationId,
+              previous.selectedConversationId !=
+                  current.selectedConversationId ||
+              (current.error != null && previous.error != current.error),
           listener: (context, state) {
+            final error = state.error;
+            if (error != null &&
+                state.conversations.isNotEmpty &&
+                state.status != ChatStatus.error) {
+              showAppToast(
+                context,
+                message: error,
+                variant: AppAlertVariant.destructive,
+              );
+            }
             final selectedId = state.selectedConversationId;
             if (selectedId == null) return;
 
@@ -131,17 +145,6 @@ class _ChatPageState extends State<_ChatActorHost> {
               );
             }
 
-            if (state.status == ChatStatus.loading &&
-                state.conversations.isEmpty) {
-              return Stack(
-                children: [
-                  shellActions,
-                  miniNav,
-                  const AppLoadingIndicator.page(),
-                ],
-              );
-            }
-
             if (state.status == ChatStatus.error &&
                 state.conversations.isEmpty) {
               final isForbidden =
@@ -152,6 +155,9 @@ class _ChatPageState extends State<_ChatActorHost> {
                   miniNav,
                   AppStateMessage(
                     icon: isForbidden ? LucideIcons.lock : AppIcons.error,
+                    illustration: isForbidden
+                        ? null
+                        : const AppIllustration(AppIllustrationKind.offline),
                     tone: isForbidden ? AppTone.neutral : AppTone.destructive,
                     title: isForbidden
                         ? l10n.chatNoAccessTitle
@@ -166,13 +172,23 @@ class _ChatPageState extends State<_ChatActorHost> {
               );
             }
 
+            final selected = state.selectedConversation;
             return Stack(
               children: [
                 shellActions,
                 miniNav,
+                if (selected != null && !_searchVisible)
+                  ShellTitleOverride(
+                    ownerId: 'chat-thread',
+                    locations: const {Routes.chat},
+                    title: selected.displayTitle(fallback: l10n.chatUntitled),
+                    subtitle: _threadSubtitle(context, selected),
+                  ),
                 if (_searchVisible)
                   ChatSearchResults(
                     state: state,
+                    query: _searchController.text,
+                    currentUserId: context.read<AuthCubit>().state.user?.id,
                     onSelect: (conversationId) {
                       unawaited(
                         _chatCubit.selectConversation(
@@ -184,7 +200,7 @@ class _ChatPageState extends State<_ChatActorHost> {
                     },
                   )
                 else
-                  _ChatSurface(state: state),
+                  _ChatSurface(state: state, onCreate: _openCreate),
               ],
             );
           },
@@ -288,8 +304,10 @@ class _ChatPageState extends State<_ChatActorHost> {
           tooltip: l10n.chatSearch,
           controller: _searchController,
           searchHint: l10n.chatSearch,
-          onSearchChanged: (query) =>
-              unawaited(_chatCubit.searchMessages(query)),
+          onSearchChanged: (query) {
+            setState(() {});
+            unawaited(_chatCubit.searchMessages(query));
+          },
           onCloseSearch: _closeSearch,
           onPressed: () {
             if (_searchVisible) {
@@ -303,12 +321,7 @@ class _ChatPageState extends State<_ChatActorHost> {
           id: 'chat-new',
           icon: LucideIcons.messageSquarePlus,
           tooltip: l10n.chatNew,
-          onPressed: () => unawaited(
-            showChatCreateConversationSheet(
-              context: context,
-              cubit: _chatCubit,
-            ),
-          ),
+          onPressed: _openCreate,
         ),
         ShellActionSpec(
           id: 'chat-directory',
@@ -347,6 +360,22 @@ class _ChatPageState extends State<_ChatActorHost> {
           ),
       ],
     );
+  }
+
+  void _openCreate() => unawaited(
+    showChatCreateConversationSheet(context: context, cubit: _chatCubit),
+  );
+
+  String? _threadSubtitle(BuildContext context, ChatConversation selected) {
+    final count = selected.memberCount > 0
+        ? selected.memberCount
+        : selected.members.length;
+    return switch (selected.type) {
+      ChatConversationType.channel || ChatConversationType.group
+          when count > 1 =>
+        context.l10n.chatMembersCount(count),
+      _ => null,
+    };
   }
 
   void _syncWorkspace() {

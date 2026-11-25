@@ -9,6 +9,8 @@ import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+import 'package:mobile/features/chat/widgets/chat_avatar.dart';
+import 'package:mobile/features/chat/widgets/chat_format.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 

@@ -2087,6 +2087,144 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatWorkspace => 'Workspace';
 
   @override
+  String get chatAddReaction => 'Thêm cảm xúc';
+
+  @override
+  String get chatAiAgents => 'Trợ lý AI';
+
+  @override
+  String chatAttachmentCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tệp đính kèm',
+      one: '$count tệp đính kèm',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatAttachmentOpenError => 'Không thể mở tệp này.';
+
+  @override
+  String get chatCancelReply => 'Hủy trả lời';
+
+  @override
+  String get chatCopyText => 'Sao chép văn bản';
+
+  @override
+  String get chatDeleteMessage => 'Xóa tin nhắn';
+
+  @override
+  String get chatDeleteMessageConfirm => 'Mọi người trong cuộc trò chuyện sẽ thấy tin nhắn đã bị xóa.';
+
+  @override
+  String get chatDirectMessages => 'Tin nhắn trực tiếp';
+
+  @override
+  String get chatEdited => 'Đã sửa';
+
+  @override
+  String get chatJumpToOriginal => 'Xem tin nhắn gốc';
+
+  @override
+  String get chatLoadOlderMessages => 'Tải tin nhắn cũ hơn';
+
+  @override
+  String get chatMessageCopied => 'Đã sao chép tin nhắn';
+
+  @override
+  String get chatMessageDeleted => 'Tin nhắn đã bị xóa';
+
+  @override
+  String get chatNewMessages => 'Tin nhắn mới';
+
+  @override
+  String get chatOriginalUnavailable => 'Không có tin nhắn gốc';
+
+  @override
+  String chatPreviewFromSender(Object name, Object message) {
+    return '$name: $message';
+  }
+
+  @override
+  String chatPreviewFromYou(Object message) {
+    return 'Bạn: $message';
+  }
+
+  @override
+  String chatReactWith(Object emoji) {
+    return 'Thả $emoji';
+  }
+
+  @override
+  String chatReactionSummary(Object emoji, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lượt',
+      one: '$count lượt',
+    );
+    return '$emoji, $_temp0';
+  }
+
+  @override
+  String get chatReply => 'Trả lời';
+
+  @override
+  String chatReplyingTo(Object name) {
+    return 'Đang trả lời $name';
+  }
+
+  @override
+  String get chatSearchConversations => 'Cuộc trò chuyện';
+
+  @override
+  String get chatSearchHint => 'Tìm người, kênh và tin nhắn.';
+
+  @override
+  String get chatSearchMessagesSection => 'Tin nhắn';
+
+  @override
+  String get chatSelectConversationDescription => 'Chọn một cuộc trò chuyện trong danh sách để đọc và trả lời.';
+
+  @override
+  String get chatSelectConversationTitle => 'Chưa mở cuộc trò chuyện';
+
+  @override
+  String get chatSystemEvent => 'Cuộc trò chuyện đã được cập nhật';
+
+  @override
+  String get chatToday => 'Hôm nay';
+
+  @override
+  String chatTypingMany(Object count) {
+    return '$count người đang nhập';
+  }
+
+  @override
+  String chatTypingOne(Object name) {
+    return '$name đang nhập';
+  }
+
+  @override
+  String get chatUnknownSender => 'Không rõ';
+
+  @override
+  String chatUnreadCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tin chưa đọc',
+      one: '$count tin chưa đọc',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatYesterday => 'Hôm qua';
+
+  @override
   String get cmsAllCollections => 'Tất cả bộ sưu tập';
 
   @override

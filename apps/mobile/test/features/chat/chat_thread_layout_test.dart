@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
@@ -47,11 +46,17 @@ void main() {
       ),
     );
     expect(find.text('Hello'), findsOneWidget);
-    expect(find.text('+1'), findsNothing);
-    await tester.tap(find.byIcon(LucideIcons.smile));
+    expect(
+      find.byKey(const ValueKey('chat-quick-reaction-\u{1F44D}')),
+      findsNothing,
+    );
+    await tester.longPress(find.text('Hello'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('+1'));
-    expect(reaction, '+1');
+    await tester.tap(
+      find.byKey(const ValueKey('chat-quick-reaction-\u{1F44D}')),
+    );
+    await tester.pumpAndSettle();
+    expect(reaction, '\u{1F44D}');
   });
 
   for (final size in [const Size(402, 874), const Size(874, 1032)]) {

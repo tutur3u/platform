@@ -2,14 +2,17 @@ import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/router/mobile_link_launcher.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
-import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
+import 'package:mobile/features/chat/widgets/chat_avatar.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
+import 'package:mobile/features/chat/widgets/chat_format.dart';
+import 'package:mobile/features/chat/widgets/chat_message_actions.dart';
+import 'package:mobile/features/chat/widgets/chat_message_bubble.dart';
+import 'package:mobile/features/chat/widgets/chat_thread_items.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
@@ -30,6 +33,15 @@ class ChatThreadView extends StatelessWidget {
     required this.onPickAttachment,
     required this.onRemoveAttachment,
     required this.onReaction,
+    this.replyTo,
+    this.onReply,
+    this.onCancelReply,
+    this.onDeleteMessage,
+    this.typingNames = const [],
+    this.hasOlderMessages = false,
+    this.isLoadingOlderMessages = false,
+    this.onLoadOlderMessages,
+    this.onRetry,
     super.key,
   });
 
@@ -46,12 +58,23 @@ class ChatThreadView extends StatelessWidget {
   final ValueChanged<String> onRemoveAttachment;
   final void Function(ChatMessage message, String emoji) onReaction;
 
+  /// Message the composer is answering.
+  final ChatMessage? replyTo;
+  final ValueChanged<ChatMessage>? onReply;
+  final VoidCallback? onCancelReply;
+  final Future<void> Function(ChatMessage message)? onDeleteMessage;
+
+  /// Display names of people typing in this conversation.
+  final List<String> typingNames;
+  final bool hasOlderMessages;
+  final bool isLoadingOlderMessages;
+  final VoidCallback? onLoadOlderMessages;
+  final VoidCallback? onRetry;
+
   @override
   Widget build(BuildContext context) {
     final selected = conversation;
-    if (selected == null) {
-      return const _NoConversationSelected();
-    }
+    if (selected == null) return const ChatNoConversationSelected();
 
     return Column(
       children: [
@@ -67,22 +90,32 @@ class ChatThreadView extends StatelessWidget {
                   ),
                 )
               : switch (messageStatus) {
-                  ChatMessageStatus.loading => const AppLoadingIndicator.page(),
+                  ChatMessageStatus.loading => const _ThreadSkeleton(),
                   ChatMessageStatus.error => _ThreadEmpty(
                     title: context.l10n.commonSomethingWentWrong,
                     description: context.l10n.chatMessagesLoadError,
                     icon: AppIcons.error,
                     tone: AppTone.destructive,
+                    actionLabel: onRetry == null
+                        ? null
+                        : context.l10n.chatRetry,
+                    onAction: onRetry,
                   ),
                   _ => _MessageList(
-                    workspaceId: selected.wsId,
+                    conversation: selected,
                     messages: messages,
                     currentUserId: currentUserId,
                     streamingAssistantText: streamingAssistantText,
                     onReaction: onReaction,
+                    onReply: onReply,
+                    onDeleteMessage: onDeleteMessage,
+                    hasOlderMessages: hasOlderMessages,
+                    isLoadingOlderMessages: isLoadingOlderMessages,
+                    onLoadOlderMessages: onLoadOlderMessages,
                   ),
                 },
         ),
+        if (typingNames.isNotEmpty) _TypingLine(names: typingNames),
         if (!selected.isReadOnlyAgent)
           ChatComposer(
             pendingAttachments: pendingAttachments,
@@ -91,8 +124,46 @@ class ChatThreadView extends StatelessWidget {
             onSend: onSend,
             onPickAttachment: onPickAttachment,
             onRemoveAttachment: onRemoveAttachment,
+            replyTo: replyTo,
+            onCancelReply: onCancelReply,
           ),
       ],
+    );
+  }
+}
+
+class _TypingLine extends StatelessWidget {
+  const _TypingLine({required this.names});
+
+  final List<String> names;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final l10n = context.l10n;
+    final label = names.length == 1
+        ? l10n.chatTypingOne(names.first)
+        : l10n.chatTypingMany(names.length);
+    return Semantics(
+      liveRegion: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          0,
+          AppSpacing.lg,
+          AppSpacing.xs,
+        ),
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text(
+            label,
+            style: tokens.typography.xSmall.copyWith(
+              color: tokens.colorScheme.mutedForeground,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

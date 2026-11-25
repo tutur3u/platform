@@ -4087,6 +4087,210 @@ abstract class AppLocalizations {
   /// **'Workspace'**
   String get chatWorkspace;
 
+  /// No description provided for @chatAddReaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add reaction'**
+  String get chatAddReaction;
+
+  /// No description provided for @chatAiAgents.
+  ///
+  /// In en, this message translates to:
+  /// **'AI agents'**
+  String get chatAiAgents;
+
+  /// No description provided for @chatAttachmentCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} attachment} other{{count} attachments}}'**
+  String chatAttachmentCount(num count);
+
+  /// No description provided for @chatAttachmentOpenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open this file.'**
+  String get chatAttachmentOpenError;
+
+  /// No description provided for @chatCancelReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel reply'**
+  String get chatCancelReply;
+
+  /// No description provided for @chatCopyText.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy text'**
+  String get chatCopyText;
+
+  /// No description provided for @chatDeleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete message'**
+  String get chatDeleteMessage;
+
+  /// No description provided for @chatDeleteMessageConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone in this chat sees that the message was deleted.'**
+  String get chatDeleteMessageConfirm;
+
+  /// No description provided for @chatDirectMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct messages'**
+  String get chatDirectMessages;
+
+  /// No description provided for @chatEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited'**
+  String get chatEdited;
+
+  /// No description provided for @chatJumpToOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show original message'**
+  String get chatJumpToOriginal;
+
+  /// No description provided for @chatLoadOlderMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Load older messages'**
+  String get chatLoadOlderMessages;
+
+  /// No description provided for @chatMessageCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Message copied'**
+  String get chatMessageCopied;
+
+  /// No description provided for @chatMessageDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Message deleted'**
+  String get chatMessageDeleted;
+
+  /// No description provided for @chatNewMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'New messages'**
+  String get chatNewMessages;
+
+  /// No description provided for @chatOriginalUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Original message unavailable'**
+  String get chatOriginalUnavailable;
+
+  /// No description provided for @chatPreviewFromSender.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}: {message}'**
+  String chatPreviewFromSender(Object name, Object message);
+
+  /// No description provided for @chatPreviewFromYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You: {message}'**
+  String chatPreviewFromYou(Object message);
+
+  /// No description provided for @chatReactWith.
+  ///
+  /// In en, this message translates to:
+  /// **'React with {emoji}'**
+  String chatReactWith(Object emoji);
+
+  /// No description provided for @chatReactionSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{emoji}, {count, plural, one{{count} reaction} other{{count} reactions}}'**
+  String chatReactionSummary(Object emoji, num count);
+
+  /// No description provided for @chatReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get chatReply;
+
+  /// No description provided for @chatReplyingTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to {name}'**
+  String chatReplyingTo(Object name);
+
+  /// No description provided for @chatSearchConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get chatSearchConversations;
+
+  /// No description provided for @chatSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Find people, channels and messages.'**
+  String get chatSearchHint;
+
+  /// No description provided for @chatSearchMessagesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get chatSearchMessagesSection;
+
+  /// No description provided for @chatSelectConversationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a conversation from the list to read and reply.'**
+  String get chatSelectConversationDescription;
+
+  /// No description provided for @chatSelectConversationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversation open'**
+  String get chatSelectConversationTitle;
+
+  /// No description provided for @chatSystemEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation updated'**
+  String get chatSystemEvent;
+
+  /// No description provided for @chatToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get chatToday;
+
+  /// No description provided for @chatTypingMany.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} people are typing'**
+  String chatTypingMany(Object count);
+
+  /// No description provided for @chatTypingOne.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing'**
+  String chatTypingOne(Object name);
+
+  /// No description provided for @chatUnknownSender.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get chatUnknownSender;
+
+  /// No description provided for @chatUnreadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} unread message} other{{count} unread messages}}'**
+  String chatUnreadCount(num count);
+
+  /// No description provided for @chatYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get chatYesterday;
+
   /// No description provided for @cmsAllCollections.
   ///
   /// In en, this message translates to:

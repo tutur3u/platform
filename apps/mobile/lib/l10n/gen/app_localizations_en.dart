@@ -2100,6 +2100,144 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatWorkspace => 'Workspace';
 
   @override
+  String get chatAddReaction => 'Add reaction';
+
+  @override
+  String get chatAiAgents => 'AI agents';
+
+  @override
+  String chatAttachmentCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count attachments',
+      one: '$count attachment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatAttachmentOpenError => 'Couldn\'t open this file.';
+
+  @override
+  String get chatCancelReply => 'Cancel reply';
+
+  @override
+  String get chatCopyText => 'Copy text';
+
+  @override
+  String get chatDeleteMessage => 'Delete message';
+
+  @override
+  String get chatDeleteMessageConfirm => 'Everyone in this chat sees that the message was deleted.';
+
+  @override
+  String get chatDirectMessages => 'Direct messages';
+
+  @override
+  String get chatEdited => 'Edited';
+
+  @override
+  String get chatJumpToOriginal => 'Show original message';
+
+  @override
+  String get chatLoadOlderMessages => 'Load older messages';
+
+  @override
+  String get chatMessageCopied => 'Message copied';
+
+  @override
+  String get chatMessageDeleted => 'Message deleted';
+
+  @override
+  String get chatNewMessages => 'New messages';
+
+  @override
+  String get chatOriginalUnavailable => 'Original message unavailable';
+
+  @override
+  String chatPreviewFromSender(Object name, Object message) {
+    return '$name: $message';
+  }
+
+  @override
+  String chatPreviewFromYou(Object message) {
+    return 'You: $message';
+  }
+
+  @override
+  String chatReactWith(Object emoji) {
+    return 'React with $emoji';
+  }
+
+  @override
+  String chatReactionSummary(Object emoji, num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count reactions',
+      one: '$count reaction',
+    );
+    return '$emoji, $_temp0';
+  }
+
+  @override
+  String get chatReply => 'Reply';
+
+  @override
+  String chatReplyingTo(Object name) {
+    return 'Replying to $name';
+  }
+
+  @override
+  String get chatSearchConversations => 'Conversations';
+
+  @override
+  String get chatSearchHint => 'Find people, channels and messages.';
+
+  @override
+  String get chatSearchMessagesSection => 'Messages';
+
+  @override
+  String get chatSelectConversationDescription => 'Pick a conversation from the list to read and reply.';
+
+  @override
+  String get chatSelectConversationTitle => 'No conversation open';
+
+  @override
+  String get chatSystemEvent => 'Conversation updated';
+
+  @override
+  String get chatToday => 'Today';
+
+  @override
+  String chatTypingMany(Object count) {
+    return '$count people are typing';
+  }
+
+  @override
+  String chatTypingOne(Object name) {
+    return '$name is typing';
+  }
+
+  @override
+  String get chatUnknownSender => 'Unknown';
+
+  @override
+  String chatUnreadCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count unread messages',
+      one: '$count unread message',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatYesterday => 'Yesterday';
+
+  @override
   String get cmsAllCollections => 'All collections';
 
   @override

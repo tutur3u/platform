@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -14,12 +15,16 @@ class ChatAttachmentPreview extends StatefulWidget {
     required this.attachment,
     this.compact = false,
     this.onRemove,
+    this.onPrimary = false,
     super.key,
   });
 
   final ChatAttachment attachment;
   final bool compact;
   final VoidCallback? onRemove;
+
+  /// Drawn inside a primary message bubble.
+  final bool onPrimary;
 
   @override
   State<ChatAttachmentPreview> createState() => _ChatAttachmentPreviewState();
@@ -39,21 +44,40 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
         record.entityId == widget.attachment.id,
   );
 
+  /// Media previews resolve their signed URL up front; files resolve it
+  /// only when opened, so a file row never fetches what it does not show.
+  Future<String> _initialReadUrl() => _isPending || !_isMedia
+      ? Future.value('')
+      : context.read<ChatCubit>().attachmentReadUrl(widget.attachment);
+
   @override
   void initState() {
     super.initState();
-    _readUrl = _isPending
-        ? Future.value('')
-        : context.read<ChatCubit>().attachmentReadUrl(widget.attachment);
+    _readUrl = _initialReadUrl();
   }
 
   @override
   void didUpdateWidget(covariant ChatAttachmentPreview oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.attachment.id != widget.attachment.id) {
-      _readUrl = _isPending
-          ? Future.value('')
-          : context.read<ChatCubit>().attachmentReadUrl(widget.attachment);
+      _readUrl = _initialReadUrl();
+    }
+  }
+
+  Future<void> _openFile() async {
+    final cubit = context.read<ChatCubit>();
+    try {
+      final url = await cubit.attachmentReadUrl(widget.attachment);
+      final uri = Uri.tryParse(url);
+      if (!mounted || uri == null) return;
+      await openMobileLink(context, uri);
+    } on Exception {
+      if (!mounted) return;
+      showAppToast(
+        context,
+        message: context.l10n.chatAttachmentOpenError,
+        variant: AppAlertVariant.destructive,
+      );
     }
   }
 
@@ -150,19 +174,123 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
     );
   }
 
-  Widget _fileTile(BuildContext context) => InputChip(
-    visualDensity: VisualDensity.compact,
-    avatar: const Icon(LucideIcons.paperclip, size: 16),
-    label: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 170),
-      child: Text(
-        widget.attachment.filename,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+  Widget _fileTile(BuildContext context) {
+    if (widget.compact) {
+      return InputChip(
+        visualDensity: VisualDensity.compact,
+        avatar: const Icon(LucideIcons.paperclip, size: 16),
+        label: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 170),
+          child: Text(
+            widget.attachment.filename,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        onDeleted: widget.onRemove,
+      );
+    }
+    return ChatFileRow(
+      attachment: widget.attachment,
+      onPrimary: widget.onPrimary,
+      onOpen: _isPending ? null : () => unawaited(_openFile()),
+    );
+  }
+}
+
+/// A shared file inside a message: type icon, name and size.
+class ChatFileRow extends StatelessWidget {
+  const ChatFileRow({
+    required this.attachment,
+    this.onOpen,
+    this.onPrimary = false,
+    super.key,
+  });
+
+  final ChatAttachment attachment;
+  final VoidCallback? onOpen;
+  final bool onPrimary;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final colors = tokens.colorScheme;
+    final ink = onPrimary ? colors.primaryForeground : colors.foreground;
+    final muted = onPrimary
+        ? colors.primaryForeground.withValues(alpha: 0.75)
+        : colors.mutedForeground;
+    final type = attachment.contentType ?? '';
+    final icon = type.startsWith('audio/')
+        ? LucideIcons.fileAudio
+        : type.contains('pdf') || type.startsWith('text/')
+        ? LucideIcons.fileText
+        : LucideIcons.file;
+    final size = attachment.sizeBytes;
+    final radius = BorderRadius.circular(AppRadius.sm);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Material(
+        color: onPrimary
+            ? colors.primaryForeground.withValues(alpha: 0.12)
+            : colors.muted.withValues(alpha: 0.6),
+        borderRadius: radius,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: onOpen,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 22, color: ink),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        attachment.filename,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tokens.typography.small.copyWith(
+                          color: ink,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (size != null && size > 0)
+                        Text(
+                          formatChatFileSize(size),
+                          style: tokens.typography.xSmall.copyWith(
+                            color: muted,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (onOpen != null) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  Icon(LucideIcons.download, size: 16, color: muted),
+                ],
+              ],
+            ),
+          ),
+        ),
       ),
-    ),
-    onDeleted: widget.onRemove,
-  );
+    );
+  }
+}
+
+String formatChatFileSize(int bytes) {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  var value = bytes.toDouble();
+  var unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  final digits = value >= 10 || unit == 0 ? 0 : 1;
+  return '${value.toStringAsFixed(digits)} ${units[unit]}';
 }
 
 class _ChatVideoFrame extends StatefulWidget {

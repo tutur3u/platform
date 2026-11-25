@@ -222,6 +222,53 @@
       }
     }
   },
+  "@chatAttachmentCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "@chatPreviewFromSender": {
+    "placeholders": {
+      "name": {},
+      "message": {}
+    }
+  },
+  "@chatPreviewFromYou": {
+    "placeholders": {
+      "message": {}
+    }
+  },
+  "@chatReactWith": {
+    "placeholders": {
+      "emoji": {}
+    }
+  },
+  "@chatReactionSummary": {
+    "placeholders": {
+      "emoji": {},
+      "count": {}
+    }
+  },
+  "@chatReplyingTo": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatTypingMany": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "@chatTypingOne": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatUnreadCount": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "@chatMembersCount": {
     "placeholders": {
       "count": {}
@@ -2120,6 +2167,40 @@
   "chatUnpin": "Unpin",
   "chatUntitled": "Untitled chat",
   "chatWorkspace": "Workspace",
+  "chatAddReaction": "Add reaction",
+  "chatAiAgents": "AI agents",
+  "chatAttachmentCount": "{count, plural, one{{count} attachment} other{{count} attachments}}",
+  "chatAttachmentOpenError": "Couldn't open this file.",
+  "chatCancelReply": "Cancel reply",
+  "chatCopyText": "Copy text",
+  "chatDeleteMessage": "Delete message",
+  "chatDeleteMessageConfirm": "Everyone in this chat sees that the message was deleted.",
+  "chatDirectMessages": "Direct messages",
+  "chatEdited": "Edited",
+  "chatJumpToOriginal": "Show original message",
+  "chatLoadOlderMessages": "Load older messages",
+  "chatMessageCopied": "Message copied",
+  "chatMessageDeleted": "Message deleted",
+  "chatNewMessages": "New messages",
+  "chatOriginalUnavailable": "Original message unavailable",
+  "chatPreviewFromSender": "{name}: {message}",
+  "chatPreviewFromYou": "You: {message}",
+  "chatReactWith": "React with {emoji}",
+  "chatReactionSummary": "{emoji}, {count, plural, one{{count} reaction} other{{count} reactions}}",
+  "chatReply": "Reply",
+  "chatReplyingTo": "Replying to {name}",
+  "chatSearchConversations": "Conversations",
+  "chatSearchHint": "Find people, channels and messages.",
+  "chatSearchMessagesSection": "Messages",
+  "chatSelectConversationDescription": "Pick a conversation from the list to read and reply.",
+  "chatSelectConversationTitle": "No conversation open",
+  "chatSystemEvent": "Conversation updated",
+  "chatToday": "Today",
+  "chatTypingMany": "{count} people are typing",
+  "chatTypingOne": "{name} is typing",
+  "chatUnknownSender": "Unknown",
+  "chatUnreadCount": "{count, plural, one{{count} unread message} other{{count} unread messages}}",
+  "chatYesterday": "Yesterday",
   "cmsAllCollections": "All collections",
   "cmsArchivedBacklog": "Archived backlog",
   "cmsCollection": "Collection",
