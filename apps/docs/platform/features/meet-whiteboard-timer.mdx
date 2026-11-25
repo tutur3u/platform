@@ -68,18 +68,35 @@ Whiteboard falls back to the pen board as described above.
 **What a guest can reach.** Only boards linked to the current meeting whose
 guest access is view or draw, in the meeting's workspace, never archived. A
 guest never sees the workspace board list, link settings or management
-actions, and the board accepts no images or files.
+actions, and the board accepts no images or files. Everyone on a board is
+named by a per-board id derived from their user id, so nobody sees another
+person's platform user id. From people outside the workspace the board keeps
+only the drawing fields Excalidraw uses and links that are http(s) or
+same-site; other links are cleared.
 
-**Revocation.** Board tickets last two minutes and the call renews them every
-minute through the Meet API, which checks again that the guest is connected to
-the room, the switch is on and the board is still linked with guest access. A
-guest who leaves, is removed, or whose board is unlinked, archived or set to no
-access loses the board within two minutes.
+**Revocation.** Board tickets for people outside the workspace last one minute
+and the call renews them every 30 seconds through the Meet API. Each renewal
+asks the room's `board.access` check whether the guest is connected right now
+(waiting, removed and only remembered guests are refused), and checks again that
+the switch is on and the board is still linked with guest access. A guest who
+leaves, is removed, or whose board is unlinked, archived or set to no access
+receives no board data and can send no edits within one minute; the board room
+closes the expired connection at its next sweep, at most a minute later.
+Members keep two-minute tickets.
 
-**Limits.** People outside the workspace get 20 board messages a second (members
-40), messages up to 256 KiB (members 1 MB) and at most three open board
-connections each. A socket over its rate or size is closed; the client
-reconnects with a fresh ticket.
+**Limits.**
+
+- The Meet whiteboard API allows each anonymous guest 30 list or join calls a
+  minute per meeting (HTTP 429 with `Retry-After` beyond that), counted in the
+  shared abuse-guard store or, when it is unavailable, per isolate.
+- People outside the workspace get 20 board messages a second (members 40),
+  messages up to 256 KiB (members 1 MB), at most three open board connections
+  each and six connection opens a minute each. Guests hold at most 30 of a
+  board's 50 connections, so members always find room. A connection over a
+  limit is refused or closed; the client reconnects with a fresh ticket.
+- A board that nobody is connected to reloads from the database for its next
+  joiner only if its last load is at least 30 seconds old, so rapid reconnects
+  cost no database read.
 
 **Exceptions.** Rules for under-18 and unconfirmed participants and every host
 control are unchanged.
@@ -141,12 +158,19 @@ Under `packages/meet-core/src/features/call`:
   sign-in state.
 - `stage-layout/use-stage-navigation.test.tsx`: guests follow onto the board
   only with the switch on.
-- `server/whiteboard.test.ts`: the switch, presence, unlink, other meetings and
-  workspaces for guests.
+- `server/whiteboard.test.ts`: the switch, the room check, the guest call
+  limit, per-board ids, ticket life, unlink, other meetings and workspaces for
+  guests.
+- `lib/guest-whiteboard-limit.test.ts`: the guest call window and its local
+  fallback.
 - `components/default-activity-setting-merged.test.tsx`: merged names in the
   default activity setting.
 
 Elsewhere: `apps/meet-realtime/src/whiteboard-room-do.test.ts` (guest message
-rate, size and connection caps, guest viewers) and
+rate, size, connection, reopen and seat caps, guest viewers, per-board ids,
+guest field and link stripping), `packages/realtime/src/meet` tests
+`room-board-access.test.ts` (who the room answers),
+`board-sync-guest.test.ts` (links, fields, open windows, actor ids) and
+`board-sync-core-bounds.test.ts` (the reload window), and
 `apps/meet/src/runtime/page-model.server.test.ts` (the switch reaches the
 room, off by default).
