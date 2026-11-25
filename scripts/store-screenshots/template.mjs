@@ -1,8 +1,3 @@
-// HTML for composed store images: a pastel field with a warm white wave, a
-// caption (product label and headline) and the raw app capture as a frameless
-// rounded card that bleeds off the canvas edge. Rendered by compose.mjs in
-// headless Chromium at the exact store pixel size; template-layout.mjs holds
-// the numbers and template-script.mjs the in-page layout pass.
 import { BASE_CSS, FONT_CSS_URL } from './template-css.mjs';
 import { MAX_HEADLINE_LINES, screenshotLayout } from './template-layout.mjs';
 import { LAYOUT_SCRIPT } from './template-script.mjs';
@@ -42,12 +37,8 @@ function card(url, data, { windowStrip = false, kind = '' } = {}) {
   return `<div class="card ${kind}" data-card="${attr(data)}">${strip}<img class="raw" src="${url}" alt=""></div>`;
 }
 
-function caption(headline, overline) {
-  return `<div class="caption"><span class="overline">${escapeHtml(overline)}</span><h1 class="headline">${escapeHtml(headline)}</h1></div>`;
-}
-
-function chipHtml(chip) {
-  return `<div class="chip" data-chip="${attr(chip.anchor)}"><i></i><span>${escapeHtml(chip.text)}</span></div>`;
+function caption(headline) {
+  return `<div class="caption"><h1 class="headline">${escapeHtml(headline)}</h1></div>`;
 }
 
 function waveHtml(wave) {
@@ -66,30 +57,46 @@ export function screenshotSpec(target, options) {
   return { ...screenshotLayout(target, options), maxLines: MAX_HEADLINE_LINES };
 }
 
-/**
- * One listing screenshot. [index] is the frame's position in its locale's set
- * (it varies the wave crest); [fanUrls] turns the frame into the fanned hook
- * of cards behind the dashboard (the layout decides how many); [crop] is the
- * share of the capture's height to show, from its `content` anchor; [chip] is `{ text, anchor }` with the anchor in fractions
- * of the raw capture: `{ done, details }`, the rectangles of the card's "Done"
- * pill and its Details button.
- */
+// Feature palettes apply only to the artwork around the captured app.
+const FEATURE_PALETTES = {
+  dashboard: ['#ffe5be', '#53242e', '#ef694a'],
+  assistant: ['#251c42', '#fff0d4', '#64408c'],
+  tasks: ['#91b9ff', '#112956', '#5577ca'],
+  calendar: ['#daedb5', '#113c34', '#a2cdb1'],
+  'time-tracker': ['#ffc66c', '#3b270b', '#db873e'],
+  finance: ['#277459', '#fffdf3', '#12523c'],
+  habits: ['#e0a2f6', '#371248', '#a85dcb'],
+  notes: ['#ca487e', '#ffffff', '#9f275b'],
+};
+
 export function screenshotHtml({
   target,
   index = 0,
   headline,
-  overline,
+  feature,
   rawUrl,
   fanUrls = null,
   crop = null,
-  chip = null,
   fontCss = FONT_CSS_URL,
 }) {
   const spec = screenshotSpec(target, {
     index,
-    fan: Boolean(fanUrls),
+    fan: Boolean(fanUrls) && target.layout === 'tablet',
     crop: crop != null,
   });
+  if (target.layout === 'stack' && !spec.fan) {
+    // Alternate the editorial alignment and reveal more of dense screens.
+    if (index % 2 === 1) {
+      spec.caption.align = 'left';
+      spec.caption.x = 8 * spec.cq;
+      spec.caption.w = 84 * spec.cq;
+      spec.card.x = 8 * spec.cq;
+      spec.card.w = 86 * spec.cq;
+      if (feature === 'assistant') spec.card.y = 51 * spec.cq;
+    } else {
+      spec.card.y = 54 * spec.cq;
+    }
+  }
   const kind = target.layout === 'window' ? '' : target.frame;
   const windowStrip =
     target.layout === 'window' &&
@@ -116,10 +123,14 @@ export function screenshotHtml({
   } else {
     cards = card(rawUrl, main, { windowStrip, kind });
   }
-  const body = `${waveHtml(spec.wave)}
-${caption(headline, overline)}
+  const artwork = Object.hasOwn(FEATURE_PALETTES, feature)
+    ? feature
+    : 'dashboard';
+  const [field, ink, accent] = FEATURE_PALETTES[artwork];
+  const body = `<div class="artwork" data-feature="${artwork}" style="--field:${field};--ink:${ink};--accent:${accent};--angle:${index % 2 === 0 ? 155 : 205}deg">
+${caption(headline)}
 ${cards}
-${chip && !spec.fan ? chipHtml(chip) : ''}`;
+</div>`;
   return { html: page(body, target.width, target.height, fontCss), spec };
 }
 

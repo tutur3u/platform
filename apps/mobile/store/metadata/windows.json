@@ -156,8 +156,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/01-dashboard.png"
         },
         "caption": {
-          "en": "Your whole day, one app",
-          "vi": "Cả ngày gọn trong một ứng dụng"
+          "en": "Tasks and events for today",
+          "vi": "Việc và lịch hẹn hôm nay"
         }
       },
       {
@@ -167,8 +167,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/02-assistant.png"
         },
         "caption": {
-          "en": "Ask Mira, get it done",
-          "vi": "Cứ hỏi Mira, để Mira lo"
+          "en": "Make time with Mira",
+          "vi": "Xếp lịch cùng Mira"
         }
       },
       {
@@ -178,8 +178,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/03-tasks.png"
         },
         "caption": {
-          "en": "Plan the week in minutes",
-          "vi": "Lên kế hoạch tuần thật nhanh"
+          "en": "Move work across the board",
+          "vi": "Theo dõi việc trên bảng"
         }
       },
       {
@@ -189,8 +189,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/04-calendar.png"
         },
         "caption": {
-          "en": "Your week at a glance",
-          "vi": "Xem cả tuần trong nháy mắt"
+          "en": "See what’s on this week",
+          "vi": "Xem lịch cả tuần"
         }
       },
       {
@@ -200,8 +200,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/05-time-tracker.png"
         },
         "caption": {
-          "en": "See where your time goes",
-          "vi": "Biết thời gian đi về đâu"
+          "en": "See what took your time",
+          "vi": "Xem thời gian đã dùng"
         }
       },
       {
@@ -211,8 +211,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/06-finance.png"
         },
         "caption": {
-          "en": "Spending, clear and simple",
-          "vi": "Chi tiêu rõ ràng, đơn giản"
+          "en": "See where your money went",
+          "vi": "Xem tiền đã chi vào đâu"
         }
       },
       {
@@ -222,8 +222,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/07-habits.png"
         },
         "caption": {
-          "en": "Build habits that stick",
-          "vi": "Thói quen tốt, giữ thật lâu"
+          "en": "Check off daily habits",
+          "vi": "Đánh dấu thói quen mỗi ngày"
         }
       },
       {
@@ -233,8 +233,8 @@
           "vi": "apps/mobile/store/screenshots/windows/desktop/vi/08-notes.png"
         },
         "caption": {
-          "en": "Catch ideas before they fade",
-          "vi": "Ghi ý tưởng trước khi quên"
+          "en": "Keep your ideas close",
+          "vi": "Ghi lại ý tưởng của bạn"
         }
       }
     ]

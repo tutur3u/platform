@@ -9,22 +9,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 175,
-        "y": 140.4,
-        "width": 729.9,
-        "height": 374.5
+        "x": 66.2,
+        "y": 131.4,
+        "width": 947.7,
+        "height": 267
       },
       "card": {
-        "x": 226.8,
-        "y": 756,
-        "width": 626.4,
-        "height": 1113.6
+        "x": 64.8,
+        "y": 583.2,
+        "width": 950.4,
+        "height": 1689.6
       },
       "headline": {
-        "fontSize": 130,
+        "fontSize": 125,
         "lines": 2
       },
-      "sha256": "fbe559396a7b9dcb2d42ae41702747dad93cfc17d0855c6151f2ef5cf63e1fc1"
+      "sha256": "cfd837eb35a64997efd8de448c204673a132b2dab892b1d046d7156b16450168"
     },
     "android/phone/en/02-assistant.jpg": {
       "canvas": {
@@ -33,29 +33,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 226.3,
-        "y": 140.4,
-        "width": 627.3,
-        "height": 374.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 657.2,
+        "height": 278
       },
       "card": {
-        "x": 64.8,
-        "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
-      },
-      "chip": {
-        "x": 388.6,
-        "y": 1546.1,
-        "width": 521,
-        "height": 98.1,
-        "fontSize": 46.2
+        "x": 86.4,
+        "y": 550.8,
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "a25eb1ca44f2ca51947400810078e69d0032edfb40973d37e8abcbda1457cc3a"
+      "sha256": "7a8daaa7fcbb4a7b1658d643527770eb797de994b6a5c0f0cab76f84af303864"
     },
     "android/phone/en/03-tasks.jpg": {
       "canvas": {
@@ -64,22 +57,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 123.9,
-        "y": 140.4,
-        "width": 832.1,
-        "height": 374.5
+        "x": 67.4,
+        "y": 117.4,
+        "width": 945.2,
+        "height": 300
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1689.6
       },
       "headline": {
-        "fontSize": 130,
+        "fontSize": 127,
         "lines": 2
       },
-      "sha256": "ea466f323934935b5abb2a74f73c8441ecb4c3ad7f0204bec3bcf030236f0e1d"
+      "sha256": "da97066fb8113cccc59ae59da862b4af6cdaaed322c532302fb069708cebf991"
     },
     "android/phone/en/04-calendar.jpg": {
       "canvas": {
@@ -88,22 +81,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 223.3,
-        "y": 140.4,
-        "width": 633.3,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 737.5,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "e978835ab827e3e9b9cb7527953fdd358012559d64723d443eb6af333c75e3ad"
+      "sha256": "224078d1eb42a1acc0fc1fb1a6da7c0fceb8a42d30e0f72dc6b399ca96799929"
     },
     "android/phone/en/05-time-tracker.jpg": {
       "canvas": {
@@ -112,14 +105,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 108.6,
-        "y": 140.4,
-        "width": 862.7,
-        "height": 374.5
+        "x": 118.4,
+        "y": 116.4,
+        "width": 843.3,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1689.6
       },
@@ -127,7 +120,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "d7da427cfa8c8e4ce7104147513fbc7f45ced5b712cd283f1b8c6d1e8ab1c7df"
+      "sha256": "067c5c42e72d934987dca29ea783d0fb8e75d0c97095ab13a4dcc5d1b903c2d7"
     },
     "android/phone/en/06-finance.jpg": {
       "canvas": {
@@ -136,22 +129,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 90.9,
-        "y": 140.4,
-        "width": 898.1,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 903.2,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "86a8ea885da4501b5ac8298dc57b6689b04dfc6d43648654db514168cb50c151"
+      "sha256": "1309547ee798f8330fd58425d5c44b4e5661935b9afd49a87f92f7eb601bcf27"
     },
     "android/phone/en/07-habits.jpg": {
       "canvas": {
@@ -160,14 +153,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 192.2,
-        "y": 140.4,
-        "width": 695.6,
-        "height": 374.5
+        "x": 205.4,
+        "y": 116.4,
+        "width": 669.2,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1689.6
       },
@@ -175,7 +168,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "bc8a0b11f177cb269a551288f8dcc06e041eb9d133dfae04bd3ecbeaca37ade2"
+      "sha256": "f87afb434792f56bc286ef2498c9106df934978b615fcb8fb6321d0f3b40978a"
     },
     "android/phone/en/08-notes.jpg": {
       "canvas": {
@@ -184,22 +177,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 65.7,
-        "y": 140.4,
-        "width": 948.5,
-        "height": 372.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 663.8,
+        "height": 278
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
-        "fontSize": 129,
+        "fontSize": 130,
         "lines": 2
       },
-      "sha256": "02aef32cc0a6eb9b2fc04bb9ffb76518a29f2d8c4dd827aed47102ea328fc72a"
+      "sha256": "31628ba52545a9b89ca34d8f614da6d0d557136c818d5ba3221e5e710642f6c2"
     },
     "android/phone/vi/01-dashboard.jpg": {
       "canvas": {
@@ -208,22 +201,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 67.4,
-        "y": 140.4,
-        "width": 945.3,
-        "height": 339.5
+        "x": 137.8,
+        "y": 131.4,
+        "width": 804.4,
+        "height": 278
       },
       "card": {
-        "x": 226.8,
-        "y": 756,
-        "width": 626.4,
-        "height": 1113.6
+        "x": 64.8,
+        "y": 583.2,
+        "width": 950.4,
+        "height": 1689.6
       },
       "headline": {
-        "fontSize": 114,
+        "fontSize": 130,
         "lines": 2
       },
-      "sha256": "4b992ec5809be0daf6661076c92032ddaf93c65132e1e882caccb595937749c4"
+      "sha256": "f6e5e17b61fbfc58ab89401551d7b232a33255810a7e30eecd228f3187c138e3"
     },
     "android/phone/vi/02-assistant.jpg": {
       "canvas": {
@@ -232,29 +225,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 195.3,
-        "y": 140.4,
-        "width": 689.4,
-        "height": 374.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 632,
+        "height": 278
       },
       "card": {
-        "x": 64.8,
-        "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
-      },
-      "chip": {
-        "x": 427.3,
-        "y": 1596.7,
-        "width": 482.3,
-        "height": 98.1,
-        "fontSize": 46.2
+        "x": 86.4,
+        "y": 550.8,
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "d9066059cefcc909cf23288834e4baa84ff05a52a8890819650f2079819e54f3"
+      "sha256": "b187704b1bcff35b7ae62c8d87f8e723b21d42ecd2638a0201101df694a6dd19"
     },
     "android/phone/vi/03-tasks.jpg": {
       "canvas": {
@@ -263,14 +249,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 71.5,
-        "y": 140.4,
-        "width": 937,
-        "height": 374.5
+        "x": 158,
+        "y": 116.4,
+        "width": 764,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1689.6
       },
@@ -278,7 +264,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "e4c0e450f455a3dcc1614f6ca720f460236ee999c015803709ef804ce45b0e19"
+      "sha256": "f8436edde0a4e2d342251b4734ff64bed2ffea0b00ee0fe5b76458547874345c"
     },
     "android/phone/vi/04-calendar.jpg": {
       "canvas": {
@@ -287,22 +273,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 90.7,
-        "y": 140.4,
-        "width": 898.6,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 498.1,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "788850828420cec86ee9e6fc1621c4593a37535e583af379648ad01900f2caeb"
+      "sha256": "456d9d9d33e1a3349bb5e9f8cde4cdb13459c6756be0c897fea14f410c187279"
     },
     "android/phone/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -311,14 +297,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 150.7,
-        "y": 140.4,
-        "width": 778.7,
-        "height": 374.5
+        "x": 162,
+        "y": 116.4,
+        "width": 756,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1689.6
       },
@@ -326,7 +312,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "a8f92933c089b7da7e532f2abea14a9e85f2116915084f7e3b587265afb13094"
+      "sha256": "c208ae72387094d97e9a72d266a9c2774f18f1d69023b2bd3cc5e27f2ceb24af"
     },
     "android/phone/vi/06-finance.jpg": {
       "canvas": {
@@ -335,22 +321,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 122.3,
-        "y": 140.4,
-        "width": 835.5,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 695.9,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "3f77e7fcfcdc8bcf332d076d2f45d0d11c89b6d04f993bd7031bb1e5d29a49ca"
+      "sha256": "e578962ec3409ad0a4b6c64cbc9743808959fe30835a31c89e16227137ddac12"
     },
     "android/phone/vi/07-habits.jpg": {
       "canvas": {
@@ -359,14 +345,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 128.8,
-        "y": 140.4,
-        "width": 822.5,
-        "height": 374.5
+        "x": 113.6,
+        "y": 116.4,
+        "width": 852.9,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1689.6
       },
@@ -374,7 +360,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "ec660a5e81a295d4b0fbb48ae5c329015109fd68b160834e40484c922eed2e83"
+      "sha256": "948b8bcec36b79c5b29b49af7ad5d928bd17413b2973515d245246971c3be8ad"
     },
     "android/phone/vi/08-notes.jpg": {
       "canvas": {
@@ -383,22 +369,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 123.5,
-        "y": 140.4,
-        "width": 833,
-        "height": 374.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 901.1,
+        "height": 275
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1689.6
+        "width": 928.8,
+        "height": 1651.2
       },
       "headline": {
-        "fontSize": 130,
+        "fontSize": 129,
         "lines": 2
       },
-      "sha256": "a5490576324317c6bd1fd8f45ae42b28739f0280002533088380df25f1ffd8d6"
+      "sha256": "2bf61808c576a09a21dd1595433f8ffe846198a6de9dda2801d6622a92f35ae5"
     },
     "android/tablet10/en/01-dashboard.jpg": {
       "canvas": {
@@ -407,14 +393,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 371.9,
-        "y": 129.6,
-        "width": 696.2,
-        "height": 366.1
+        "x": 249.9,
+        "y": 165.1,
+        "width": 940.1,
+        "height": 265
       },
       "card": {
         "x": 187.2,
-        "y": 567.7,
+        "y": 502.1,
         "width": 1065.6,
         "height": 1174.8
       },
@@ -422,7 +408,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "1cc926c83e6239fbbfef2d3f1b72d27569c94bd793472220218601e5089c5106"
+      "sha256": "8d8127f0a09b4f99a674a943103fd54d9609e5ba81d17f68da75e61e17ca023c"
     },
     "android/tablet10/en/02-assistant.jpg": {
       "canvas": {
@@ -431,29 +417,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 145.8,
-        "y": 129.6,
-        "width": 1148.4,
-        "height": 242.1
+        "x": 406.6,
+        "y": 165.1,
+        "width": 626.8,
+        "height": 265
       },
       "card": {
         "x": 115.2,
-        "y": 443.7,
+        "y": 502.1,
         "width": 1209.6,
         "height": 1935.4
       },
-      "chip": {
-        "x": 618.4,
-        "y": 1764.4,
-        "width": 422.1,
-        "height": 79.4,
-        "fontSize": 37.4
-      },
       "headline": {
         "fontSize": 124,
-        "lines": 1
+        "lines": 2
       },
-      "sha256": "f38e95b5c6fff76ce9fce98f04b937480de9e1405c744ff57ce3189ed35731a9"
+      "sha256": "a324a24b842b030f85341e94f1d38f5b8d1cdfb86ce7272f0f0965e5226629be"
     },
     "android/tablet10/en/03-tasks.jpg": {
       "canvas": {
@@ -462,14 +441,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 323.1,
-        "y": 129.6,
-        "width": 793.7,
-        "height": 366.1
+        "x": 258.5,
+        "y": 151.1,
+        "width": 922.9,
+        "height": 293
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -477,7 +456,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "8e5c57b4b869672b6e324b10110fd5677d2e3c7a13c0582b7f674b65d4864835"
+      "sha256": "79441bf522cf431f2c42d9c608d71051ecdc4ff88d8f09976726bfc1a8e3d365"
     },
     "android/tablet10/en/04-calendar.jpg": {
       "canvas": {
@@ -486,14 +465,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 418,
-        "y": 129.6,
-        "width": 604.1,
-        "height": 366.1
+        "x": 368.3,
+        "y": 151.1,
+        "width": 703.4,
+        "height": 293
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -501,7 +480,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "4d741514b6442fd4f4deb8d577f14ca0013a382a302e15e7edf840e7106f159e"
+      "sha256": "4176e87eb89e79f068f394ebec40e594f9525d9680769e7d3cbec348c396e5af"
     },
     "android/tablet10/en/05-time-tracker.jpg": {
       "canvas": {
@@ -510,14 +489,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 308.5,
-        "y": 129.6,
-        "width": 822.9,
-        "height": 366.1
+        "x": 317.8,
+        "y": 151.1,
+        "width": 804.3,
+        "height": 293
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -525,7 +504,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "d08834e4de312c5fa5ab6029ff77d006aaebfa458bf4e1230c34f5a1c436ef7f"
+      "sha256": "4bb76b460d29fd508b7e5e4c9990c434719c8b18e7dd9b862256ed80d2e23684"
     },
     "android/tablet10/en/06-finance.jpg": {
       "canvas": {
@@ -534,14 +513,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 291.6,
-        "y": 129.6,
-        "width": 856.7,
-        "height": 366.1
+        "x": 289.2,
+        "y": 151.1,
+        "width": 861.5,
+        "height": 293
       },
       "card": {
         "x": 86.4,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1267.2,
         "height": 1503.2
       },
@@ -549,7 +528,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "41e0a13ca36d73ee41ac17478b2e1fe4dd308d66f1262d442939f3e6fbbefbad"
+      "sha256": "60df424ab24e31069a2c70dda91247ab170ef933810c7da23d0bfdc550208745"
     },
     "android/tablet10/en/07-habits.jpg": {
       "canvas": {
@@ -558,22 +537,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 388.2,
-        "y": 129.6,
-        "width": 663.5,
-        "height": 366.1
+        "x": 124.6,
+        "y": 151.1,
+        "width": 1190.8,
+        "height": 169
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 392.1,
         "width": 1209.6,
         "height": 1935.4
       },
       "headline": {
         "fontSize": 124,
-        "lines": 2
+        "lines": 1
       },
-      "sha256": "6397a4e78c164380d93970d369ac307e5021dcbc6363e2e513dfb8f2b79251f8"
+      "sha256": "f12e93d5867d64fd33ef8c760342737b54b57cb6c17fdf3f21eb7d3fd4e267d8"
     },
     "android/tablet10/en/08-notes.jpg": {
       "canvas": {
@@ -582,14 +561,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 264.1,
-        "y": 129.6,
-        "width": 911.8,
-        "height": 366.1
+        "x": 403.4,
+        "y": 165.1,
+        "width": 633.2,
+        "height": 265
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 502.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -597,7 +576,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "d6c8716ace213d15efbf26bfc0de185cfe72857ce0a1f06eb30947ee3d6352b3"
+      "sha256": "daa9bf962d60d1bb4af9fb62bf6fced9bd13811796b3b1a0976b1b79512fd3a5"
     },
     "android/tablet10/vi/01-dashboard.jpg": {
       "canvas": {
@@ -606,14 +585,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 205.9,
-        "y": 129.6,
-        "width": 1028.2,
-        "height": 366.1
+        "x": 336.3,
+        "y": 165.1,
+        "width": 767.3,
+        "height": 265
       },
       "card": {
         "x": 187.2,
-        "y": 567.7,
+        "y": 502.1,
         "width": 1065.6,
         "height": 1174.8
       },
@@ -621,7 +600,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "f895e1fd9a25f1621939e7c67b4e602a9dee36ffb0a91a97cda906ebad5b3aca"
+      "sha256": "139eaa2f711453411bfc0c0430eb5c38931aa4ccc62b622cf01e4c81b2c81a81"
     },
     "android/tablet10/vi/02-assistant.jpg": {
       "canvas": {
@@ -630,29 +609,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 391.2,
-        "y": 129.6,
-        "width": 657.6,
-        "height": 366.1
+        "x": 164.7,
+        "y": 165.1,
+        "width": 1110.5,
+        "height": 141
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 378.1,
         "width": 1209.6,
         "height": 1935.4
       },
-      "chip": {
-        "x": 649.8,
-        "y": 1888.4,
-        "width": 390.7,
-        "height": 79.4,
-        "fontSize": 37.4
-      },
       "headline": {
         "fontSize": 124,
-        "lines": 2
+        "lines": 1
       },
-      "sha256": "8eab4d1c110975ed8a7ca770cb863a2436deb4734c72e1fe42d0c4935d0fd0ee"
+      "sha256": "6852c307b55692354425ca46193bbb0cbace6d1b6d4163cbc4416e9ce4ff1313"
     },
     "android/tablet10/vi/03-tasks.jpg": {
       "canvas": {
@@ -661,14 +633,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 273.1,
-        "y": 129.6,
-        "width": 893.8,
-        "height": 366.1
+        "x": 355.6,
+        "y": 151.1,
+        "width": 728.8,
+        "height": 293
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -676,7 +648,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "1fc3689400e4ffcff7fdce3daaf8f56a770a1904f56db89ed92a754fa080bb8e"
+      "sha256": "68e519de585b65601f0b61b3dbddd11c56b8e34443210dcc76d5822d3b11e7a6"
     },
     "android/tablet10/vi/04-calendar.jpg": {
       "canvas": {
@@ -685,22 +657,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 291.4,
-        "y": 129.6,
-        "width": 857.1,
-        "height": 366.1
+        "x": 265.1,
+        "y": 151.1,
+        "width": 909.8,
+        "height": 169
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 392.1,
         "width": 1209.6,
         "height": 1935.4
       },
       "headline": {
         "fontSize": 124,
-        "lines": 2
+        "lines": 1
       },
-      "sha256": "9e6fd809e6fb3684444cbb6c0b669112dfec31aa9ec26a8a0cbbab4ef2965f6e"
+      "sha256": "716652d4e2df138f1ac9fa769b19ea09debc37f7b6c0b0501ac7324ae8795429"
     },
     "android/tablet10/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -709,14 +681,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 348.6,
-        "y": 129.6,
-        "width": 742.7,
-        "height": 366.1
+        "x": 359.4,
+        "y": 151.1,
+        "width": 721.1,
+        "height": 293
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -724,7 +696,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "72045830354586d4f66b555762929822970c623e9c24053e446a06f019717be7"
+      "sha256": "dde1ba646b474d9a558b51a2214b0f2a11507d02a748f6f994084a87c117c073"
     },
     "android/tablet10/vi/06-finance.jpg": {
       "canvas": {
@@ -733,14 +705,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 321.5,
-        "y": 129.6,
-        "width": 796.9,
-        "height": 366.1
+        "x": 388.1,
+        "y": 151.1,
+        "width": 663.8,
+        "height": 293
       },
       "card": {
         "x": 86.4,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1267.2,
         "height": 1536.5
       },
@@ -748,7 +720,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "8ce2f85670f145af42acf25bb23588dfa1fd8087dc79554de4decb9fab6eb955"
+      "sha256": "efa97193b17b4aaf0079b4d156652465c47aa5d645616f5688ad6b5e9be1b2ac"
     },
     "android/tablet10/vi/07-habits.jpg": {
       "canvas": {
@@ -757,14 +729,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 327.7,
-        "y": 129.6,
-        "width": 784.5,
-        "height": 366.1
+        "x": 313.2,
+        "y": 151.1,
+        "width": 813.5,
+        "height": 293
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 516.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -772,7 +744,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "d29696ee857a93e96d22574d25ce62ea9bbcb9989e0e7a3d11fa4108b2bde49d"
+      "sha256": "9d38265738e3c19e68a94fa7d728725782aad7ca24df0361fa674efddde67942"
     },
     "android/tablet10/vi/08-notes.jpg": {
       "canvas": {
@@ -781,14 +753,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 322.7,
-        "y": 129.6,
-        "width": 794.6,
-        "height": 366.1
+        "x": 286.9,
+        "y": 165.1,
+        "width": 866.2,
+        "height": 265
       },
       "card": {
         "x": 115.2,
-        "y": 567.7,
+        "y": 502.1,
         "width": 1209.6,
         "height": 1935.4
       },
@@ -796,7 +768,7 @@
         "fontSize": 124,
         "lines": 2
       },
-      "sha256": "68f07a5e1df53e9a4ae6a3cbbd892f2c6b92353af07e15d494787e4f4eb01790"
+      "sha256": "5b8f7d3f696da106ba6a18f49caec83d4cbafff4cc7329120b33420d67503747"
     },
     "android/tablet7/en/01-dashboard.jpg": {
       "canvas": {
@@ -805,22 +777,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 175,
-        "y": 140.4,
-        "width": 729.9,
-        "height": 374.5
+        "x": 66.2,
+        "y": 131.4,
+        "width": 947.7,
+        "height": 267
       },
       "card": {
-        "x": 226.8,
-        "y": 756,
-        "width": 626.4,
-        "height": 1002.2
+        "x": 64.8,
+        "y": 583.2,
+        "width": 950.4,
+        "height": 1520.6
       },
       "headline": {
-        "fontSize": 130,
+        "fontSize": 125,
         "lines": 2
       },
-      "sha256": "fe8c1f3e2195cb2d1de2808fcfb0fe9abfa07be553f4d62c06292df2af926a76"
+      "sha256": "83769f6940bebd0ecd449a5811ef409328f28aae42bbc28ccd9a89f54a3ff711"
     },
     "android/tablet7/en/02-assistant.jpg": {
       "canvas": {
@@ -829,29 +801,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 226.3,
-        "y": 140.4,
-        "width": 627.3,
-        "height": 374.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 657.2,
+        "height": 278
       },
       "card": {
-        "x": 64.8,
-        "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
-      },
-      "chip": {
-        "x": 551.4,
-        "y": 1640.6,
-        "width": 375.1,
-        "height": 71.3,
-        "fontSize": 33.3
+        "x": 86.4,
+        "y": 550.8,
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "63777f015a01c3eba3b49c243ccf813e08afb417a0bac24b135ad05841b845c5"
+      "sha256": "67ff2150263f22306e95a356d85761b105613d66e660190118a550dfb4458459"
     },
     "android/tablet7/en/03-tasks.jpg": {
       "canvas": {
@@ -860,22 +825,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 123.9,
-        "y": 140.4,
-        "width": 832.1,
-        "height": 374.5
+        "x": 67.4,
+        "y": 117.4,
+        "width": 945.2,
+        "height": 300
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1520.6
       },
       "headline": {
-        "fontSize": 130,
+        "fontSize": 127,
         "lines": 2
       },
-      "sha256": "6a8d4b83025da4091fd27b4fee8cf63c38e043323ba7bb84147c4bbefb51ddf0"
+      "sha256": "8c664d428ef005e956fe9762f7ed04f5c07a9eef1814a80466ebc44b4a416741"
     },
     "android/tablet7/en/04-calendar.jpg": {
       "canvas": {
@@ -884,22 +849,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 223.3,
-        "y": 140.4,
-        "width": 633.3,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 737.5,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "bf5a0f91fa5602c218e1eb7908ee62459bbdb77d07d6db0b5168d7ade6c289ed"
+      "sha256": "070808f47ddb861137e925608ad760175316cecebf2186871e6c960f5a99fd5e"
     },
     "android/tablet7/en/05-time-tracker.jpg": {
       "canvas": {
@@ -908,14 +873,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 108.6,
-        "y": 140.4,
-        "width": 862.7,
-        "height": 374.5
+        "x": 118.4,
+        "y": 116.4,
+        "width": 843.3,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1520.6
       },
@@ -923,7 +888,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "f03371cc588c21d33999e711ce2e17723f410e80eb073dd6a0562b39bc6564d4"
+      "sha256": "d4b216092165b9ff6bce5575e31770b1fa205804e7901c57a8b162ce3b8369fd"
     },
     "android/tablet7/en/06-finance.jpg": {
       "canvas": {
@@ -932,22 +897,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 90.9,
-        "y": 140.4,
-        "width": 898.1,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 903.2,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "9912dd9bd3c8f12c5cec628a68374a5019765e94734d33a581bd84423748ee67"
+      "sha256": "5bf29c022fde8508163c772950cc6450b43299cef8190ff6b8e2ba2812a9b3b3"
     },
     "android/tablet7/en/07-habits.jpg": {
       "canvas": {
@@ -956,14 +921,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 192.2,
-        "y": 140.4,
-        "width": 695.6,
-        "height": 374.5
+        "x": 205.4,
+        "y": 116.4,
+        "width": 669.2,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1520.6
       },
@@ -971,7 +936,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "7bf879b05d3baf0e617f8bb39fcaf924b9ee42ba3ccded5db8777c6ed87667cc"
+      "sha256": "bebe8ea2ae6821f345f3497720e20088ed999f65ac27f9b52dff5200a452c302"
     },
     "android/tablet7/en/08-notes.jpg": {
       "canvas": {
@@ -980,22 +945,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 65.7,
-        "y": 140.4,
-        "width": 948.5,
-        "height": 372.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 663.8,
+        "height": 278
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
-        "fontSize": 129,
+        "fontSize": 130,
         "lines": 2
       },
-      "sha256": "a7692da16accef1c7f5207ceb23e9e6f0d7da7b1e551124ba3a2efd2a6caadf3"
+      "sha256": "92d2f7117abd106fbfd69bb1ebc9f966a12d35f7c5dae457aae266703ba2b891"
     },
     "android/tablet7/vi/01-dashboard.jpg": {
       "canvas": {
@@ -1004,22 +969,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 67.4,
-        "y": 140.4,
-        "width": 945.3,
-        "height": 339.5
+        "x": 137.8,
+        "y": 131.4,
+        "width": 804.4,
+        "height": 278
       },
       "card": {
-        "x": 226.8,
-        "y": 756,
-        "width": 626.4,
-        "height": 1002.2
+        "x": 64.8,
+        "y": 583.2,
+        "width": 950.4,
+        "height": 1520.6
       },
       "headline": {
-        "fontSize": 114,
+        "fontSize": 130,
         "lines": 2
       },
-      "sha256": "ce156c58b9708cf13b6a950fb0be40d03ce6562b843c1f911de929410e20bf31"
+      "sha256": "05702ef5d358d0dfb08f085fc298a96f6ce736ce9657a4c107318afb7ab442d7"
     },
     "android/tablet7/vi/02-assistant.jpg": {
       "canvas": {
@@ -1028,29 +993,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 195.3,
-        "y": 140.4,
-        "width": 689.4,
-        "height": 374.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 632,
+        "height": 278
       },
       "card": {
-        "x": 64.8,
-        "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
-      },
-      "chip": {
-        "x": 579.3,
-        "y": 1640.6,
-        "width": 347.2,
-        "height": 71.3,
-        "fontSize": 33.3
+        "x": 86.4,
+        "y": 550.8,
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "bb2a47737ed44b5865215abc75eaee1d599b4ed79bf3f38c4fab4e5adde54043"
+      "sha256": "2b40904a1711d7ae361059b93a0d0f3b94046ec99927cc961d4fd13a679cdb8a"
     },
     "android/tablet7/vi/03-tasks.jpg": {
       "canvas": {
@@ -1059,14 +1017,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 71.5,
-        "y": 140.4,
-        "width": 937,
-        "height": 374.5
+        "x": 158,
+        "y": 116.4,
+        "width": 764,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1520.6
       },
@@ -1074,7 +1032,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "72dae850299a23b8a3f7ac66e7d892b84349d8eb716a1fb0ed073cc1335cef7b"
+      "sha256": "10b9a2a05058dd3578d5477d257df927a97ceef788e1f4ab7986fe48691f4973"
     },
     "android/tablet7/vi/04-calendar.jpg": {
       "canvas": {
@@ -1083,22 +1041,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 90.7,
-        "y": 140.4,
-        "width": 898.6,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 498.1,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "fceee7f5351af7048e517d3203eed66c3e533b5995a9623c82c0f3e52dfef62c"
+      "sha256": "49c68410324418095d335a2e78b37cac9e230efbb31aa73d863e56999a769393"
     },
     "android/tablet7/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -1107,14 +1065,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 150.7,
-        "y": 140.4,
-        "width": 778.7,
-        "height": 374.5
+        "x": 162,
+        "y": 116.4,
+        "width": 756,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1520.6
       },
@@ -1122,7 +1080,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "26e492ab338c9b3a5c004a9e370026e1e8fcb9dbed9a8be7bad8e6d0739be598"
+      "sha256": "1c6763eec3aafe0aaa5d67af96272d0dc15e9e3cfd68a88cf10e35a7ed44d75e"
     },
     "android/tablet7/vi/06-finance.jpg": {
       "canvas": {
@@ -1131,22 +1089,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 122.3,
-        "y": 140.4,
-        "width": 835.5,
-        "height": 374.5
+        "x": 86.4,
+        "y": 116.4,
+        "width": 695.9,
+        "height": 307
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "9a0d531a1d95887a9be0f248a939fbadbd9757204fb4a1e21e6cc65131c61d6d"
+      "sha256": "78a9db8cd187e714ee8d53adb3367e2d9ecfce1d01662039900993d3e3b4a830"
     },
     "android/tablet7/vi/07-habits.jpg": {
       "canvas": {
@@ -1155,14 +1113,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 128.8,
-        "y": 140.4,
-        "width": 822.5,
-        "height": 374.5
+        "x": 113.6,
+        "y": 116.4,
+        "width": 852.9,
+        "height": 307
       },
       "card": {
         "x": 64.8,
-        "y": 669.6,
+        "y": 583.2,
         "width": 950.4,
         "height": 1520.6
       },
@@ -1170,7 +1128,7 @@
         "fontSize": 130,
         "lines": 2
       },
-      "sha256": "8cb5e55ab398a08cde207b8030a6c079c36059eb5048838b37fad5aeb8f8e712"
+      "sha256": "5d4214c2da5cb04083eba31f3ea10781be53b7647ed39da9da6bd070e61ecade"
     },
     "android/tablet7/vi/08-notes.jpg": {
       "canvas": {
@@ -1179,22 +1137,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 123.5,
-        "y": 140.4,
-        "width": 833,
-        "height": 374.5
+        "x": 86.4,
+        "y": 131.4,
+        "width": 901.1,
+        "height": 275
       },
       "card": {
-        "x": 64.8,
+        "x": 86.4,
         "y": 669.6,
-        "width": 950.4,
-        "height": 1520.6
+        "width": 928.8,
+        "height": 1486.1
       },
       "headline": {
-        "fontSize": 130,
+        "fontSize": 129,
         "lines": 2
       },
-      "sha256": "a4a2824f20f68a7ebd34943828c4f324fa83929201457fb3b34c18a2cff05d56"
+      "sha256": "75b0caf1b668cf474d6dbf054f7f23d02cb4deaab46679e6549602f33ab9ea9a"
     },
     "ios/ipad-13/en/01-dashboard.jpg": {
       "canvas": {
@@ -1203,14 +1161,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 532.3,
-        "y": 185.8,
-        "width": 999.4,
-        "height": 526
+        "x": 357.3,
+        "y": 175.1,
+        "width": 1349.5,
+        "height": 380
       },
       "card": {
         "x": 268.3,
-        "y": 814.9,
+        "y": 658.3,
         "width": 1527.4,
         "height": 1274.3
       },
@@ -1218,7 +1176,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "3bf84417f692cb41b70604da6d835db6317d4e03e5c0ad26b06d8fba752a67e0"
+      "sha256": "fb193fd061f21796c8f3c07811e81bb96268fa4c7c44c133abf500c55aae88b8"
     },
     "ios/ipad-13/en/02-assistant.jpg": {
       "canvas": {
@@ -1227,29 +1185,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 207.7,
-        "y": 185.8,
-        "width": 1648.5,
-        "height": 348
+        "x": 582.1,
+        "y": 175.1,
+        "width": 899.8,
+        "height": 380
       },
       "card": {
         "x": 123.8,
-        "y": 636.9,
+        "y": 658.3,
         "width": 1816.3,
         "height": 1921.9
       },
-      "chip": {
-        "x": 750.7,
-        "y": 2152.9,
-        "width": 605.2,
-        "height": 113.8,
-        "fontSize": 53.7
-      },
       "headline": {
         "fontSize": 178,
-        "lines": 1
+        "lines": 2
       },
-      "sha256": "c5838c4da8cb4ec5c83697531d2f7dbde245a593a5bdfd1c154058621358fe1f"
+      "sha256": "5260910e9efb9e8bc00ca5e1f4f3fcba9ce1b5a20e89756016d59efe45c67386"
     },
     "ios/ipad-13/en/03-tasks.jpg": {
       "canvas": {
@@ -1258,14 +1209,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 462.3,
-        "y": 185.8,
-        "width": 1139.3,
-        "height": 526
+        "x": 369.6,
+        "y": 154.1,
+        "width": 1324.8,
+        "height": 421
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1273,7 +1224,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "e10532f9086af6ec041e083b9bd7950b4eae39e48a6fda763e2944a214690811"
+      "sha256": "0fdb1155b659e87af7337992d1f773e9c1aa184c49a2e8a554616b32507bff44"
     },
     "ios/ipad-13/en/04-calendar.jpg": {
       "canvas": {
@@ -1282,14 +1233,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 598.4,
-        "y": 185.8,
-        "width": 867.1,
-        "height": 526
+        "x": 527.1,
+        "y": 154.1,
+        "width": 1009.8,
+        "height": 421
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1297,7 +1248,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "a6cbfc854328a40aaad172211880da67938df33d4ee740a418fff040b3fa6e14"
+      "sha256": "3f119c53a522b0b9b7a21ddc0ad5a02eba004adef1a9433e826347852e9ca5d9"
     },
     "ios/ipad-13/en/05-time-tracker.jpg": {
       "canvas": {
@@ -1306,14 +1257,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 441.3,
-        "y": 185.8,
-        "width": 1181.3,
-        "height": 526
+        "x": 454.7,
+        "y": 154.1,
+        "width": 1154.6,
+        "height": 421
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1321,7 +1272,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "96fadcc4c96594c9a99a7509e22d524b9ed7783d0c6186365bfd9fb8d8e3d72e"
+      "sha256": "8983ef8cb36989d1d200e333ec615694edce76d308943d1d50952315e74e9958"
     },
     "ios/ipad-13/en/06-finance.jpg": {
       "canvas": {
@@ -1330,14 +1281,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 417.1,
-        "y": 185.8,
-        "width": 1229.7,
-        "height": 526
+        "x": 413.6,
+        "y": 154.1,
+        "width": 1236.7,
+        "height": 421
       },
       "card": {
         "x": 123.8,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1816.3,
         "height": 1496
       },
@@ -1345,7 +1296,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "4eb6cf353595f6e2128cd193defdf92e60bf97b045f6c3cbaa5fbfbda0c0fd8c"
+      "sha256": "0818a8777af3bb1fb88e727ab54a84d97e6f3f8bcd5aacc940cba64fba25c57f"
     },
     "ios/ipad-13/en/07-habits.jpg": {
       "canvas": {
@@ -1354,22 +1305,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 555.7,
-        "y": 185.8,
-        "width": 952.5,
-        "height": 526
+        "x": 177.3,
+        "y": 154.1,
+        "width": 1709.3,
+        "height": 243
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 500.3,
         "width": 1733.8,
         "height": 2311.7
       },
       "headline": {
         "fontSize": 178,
-        "lines": 2
+        "lines": 1
       },
-      "sha256": "6d360da8e334551f645073a8b4cbf70ab1bcc516b3d6330a0c0c1209740c4bb0"
+      "sha256": "58ac7d3c99b0774087223ce23e2198f50ecc378cd75834452002e0a5a753eaca"
     },
     "ios/ipad-13/en/08-notes.jpg": {
       "canvas": {
@@ -1378,14 +1329,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 377.6,
-        "y": 185.8,
-        "width": 1308.8,
-        "height": 526
+        "x": 577.5,
+        "y": 175.1,
+        "width": 908.9,
+        "height": 380
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 658.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1393,7 +1344,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "2a5d3119ca67d08746a9cac2fbb82217c05962b0d05e53b440554cc2cfe191c8"
+      "sha256": "0acadddc4a196066ba577959670ce77cc19011bb2fa127d73eeecb3e1237016e"
     },
     "ios/ipad-13/vi/01-dashboard.jpg": {
       "canvas": {
@@ -1402,14 +1353,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 294,
-        "y": 185.8,
-        "width": 1475.9,
-        "height": 526
+        "x": 481.3,
+        "y": 175.1,
+        "width": 1101.5,
+        "height": 380
       },
       "card": {
         "x": 268.3,
-        "y": 814.9,
+        "y": 658.3,
         "width": 1527.4,
         "height": 1274.3
       },
@@ -1417,7 +1368,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "51a2663f70b9d89598254d01ee6a6d8039cfeb3243cce8da8f15a4b1f7d44505"
+      "sha256": "1ce92878da504c09ac84897dfa0686a403e7c7322c2f982d26aed21e59a897bf"
     },
     "ios/ipad-13/vi/02-assistant.jpg": {
       "canvas": {
@@ -1426,29 +1377,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 560,
-        "y": 185.8,
-        "width": 944,
-        "height": 526
+        "x": 234.9,
+        "y": 175.1,
+        "width": 1594.1,
+        "height": 202
       },
       "card": {
         "x": 123.8,
-        "y": 814.9,
+        "y": 480.3,
         "width": 1816.3,
         "height": 1921.9
       },
-      "chip": {
-        "x": 795.7,
-        "y": 2330.9,
-        "width": 560.2,
-        "height": 113.8,
-        "fontSize": 53.7
-      },
       "headline": {
         "fontSize": 178,
-        "lines": 2
+        "lines": 1
       },
-      "sha256": "19aa0eef07f184ea9331f2946ec0acdb207edfd915cbf150bce5993d90ac549e"
+      "sha256": "973b53873f0e7bdd0e2e1b97fcb6ebbfe25e6357e5baf919f8af9a022bae69a4"
     },
     "ios/ipad-13/vi/03-tasks.jpg": {
       "canvas": {
@@ -1457,14 +1401,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 390.5,
-        "y": 185.8,
-        "width": 1283,
-        "height": 526
+        "x": 508.9,
+        "y": 154.1,
+        "width": 1046.1,
+        "height": 421
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1472,7 +1416,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "6dc86a1b36fa03f735bf44b670bfc4d745e765258d89c1dbc7fff8bd862d04ab"
+      "sha256": "87f67bb56016fef838254c5b7d3878f9d645f561f47463a47c81645c74638640"
     },
     "ios/ipad-13/vi/04-calendar.jpg": {
       "canvas": {
@@ -1481,22 +1425,22 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 416.8,
-        "y": 185.8,
-        "width": 1230.4,
-        "height": 526
+        "x": 379,
+        "y": 154.1,
+        "width": 1306,
+        "height": 243
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 500.3,
         "width": 1733.8,
         "height": 2311.7
       },
       "headline": {
         "fontSize": 178,
-        "lines": 2
+        "lines": 1
       },
-      "sha256": "931a10e0a1c9fd5a4be90e2714969ff5bf76d7afe7255429fc3ddcd365455284"
+      "sha256": "bc199bc38b47013b2c5ba3de0118d505cc7dc3824c7beb9e9e2f2801350feb19"
     },
     "ios/ipad-13/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -1505,14 +1449,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 498.9,
-        "y": 185.8,
-        "width": 1066.2,
-        "height": 526
+        "x": 514.4,
+        "y": 154.1,
+        "width": 1035.1,
+        "height": 421
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1520,7 +1464,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "4c274de177e0e200d3b2276b9b7fc2e11d93b229f996c9a7b629b82d1c3cdc60"
+      "sha256": "481fbc184a5b527f96fba5f812a7eca9be6fdc3901af1c66beae2fe75c48d21d"
     },
     "ios/ipad-13/vi/06-finance.jpg": {
       "canvas": {
@@ -1529,14 +1473,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 460,
-        "y": 185.8,
-        "width": 1144,
-        "height": 526
+        "x": 555.6,
+        "y": 154.1,
+        "width": 952.8,
+        "height": 421
       },
       "card": {
         "x": 123.8,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1816.3,
         "height": 1533
       },
@@ -1544,7 +1488,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "43b8990532afe2434f082e59f7eb87cc93c08c4fd79017dcef56f7ff22e72d8c"
+      "sha256": "56ef3d7683c368de11cca489338679cbd9022bddcacb481644e475bb8f41267c"
     },
     "ios/ipad-13/vi/07-habits.jpg": {
       "canvas": {
@@ -1553,14 +1497,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 468.9,
-        "y": 185.8,
-        "width": 1126.1,
-        "height": 526
+        "x": 448.1,
+        "y": 154.1,
+        "width": 1167.8,
+        "height": 421
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 678.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1568,7 +1512,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "7ac2cca48a46f7588e8f54c7092b4b17808677639996a13a232341e606576216"
+      "sha256": "f4e53e4f6e6dcceb92c604a12d9976700afd6f9e86a35fe31f315dfbda67b8b9"
     },
     "ios/ipad-13/vi/08-notes.jpg": {
       "canvas": {
@@ -1577,14 +1521,14 @@
       },
       "layout": "tablet",
       "caption": {
-        "x": 461.7,
-        "y": 185.8,
-        "width": 1140.6,
-        "height": 526
+        "x": 410.3,
+        "y": 175.1,
+        "width": 1243.4,
+        "height": 380
       },
       "card": {
         "x": 165.1,
-        "y": 814.9,
+        "y": 658.3,
         "width": 1733.8,
         "height": 2311.7
       },
@@ -1592,7 +1536,7 @@
         "fontSize": 178,
         "lines": 2
       },
-      "sha256": "7669f7a556ff16b52c0d763f481c8a4ef755017cea988e97dba78d0c739879af"
+      "sha256": "c3f11e51df7ce10bd8ae7ebb4624f82a664eccda95146fb2ebcd9e17ad9c4230"
     },
     "ios/iphone-6.3/en/01-dashboard.jpg": {
       "canvas": {
@@ -1601,22 +1545,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 195.9,
-        "y": 156.8,
-        "width": 814.1,
-        "height": 418.3
+        "x": 76.1,
+        "y": 169.3,
+        "width": 1053.8,
+        "height": 296
       },
       "card": {
-        "x": 253.3,
-        "y": 844.2,
-        "width": 699.5,
-        "height": 1520.8
+        "x": 72.4,
+        "y": 651.2,
+        "width": 1061.3,
+        "height": 2307.4
       },
       "headline": {
-        "fontSize": 145,
+        "fontSize": 139,
         "lines": 2
       },
-      "sha256": "683c70259aaf54d79e1e21112b0dbe37d7cc45f0613f90a9a51ef5fc054c865c"
+      "sha256": "c0f40a3070bcff9183a2f6d5c43884fbd198276790bf344ea8bcb998f6722399"
     },
     "ios/iphone-6.3/en/02-assistant.jpg": {
       "canvas": {
@@ -1625,29 +1569,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 253.1,
-        "y": 156.8,
-        "width": 699.7,
-        "height": 418.3
+        "x": 96.5,
+        "y": 168.3,
+        "width": 733,
+        "height": 310
       },
       "card": {
-        "x": 72.4,
-        "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
-      },
-      "chip": {
-        "x": 381.7,
-        "y": 2079,
-        "width": 625.2,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 96.5,
+        "y": 615.1,
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "8000b9de9adc580eeecb500d4e6b68bbf0461509447e0959e776ccf57f350d7a"
+      "sha256": "e7acba3163930314dcbacce323b96bfc0dcb323212503f2032f973772eaae0b8"
     },
     "ios/iphone-6.3/en/03-tasks.jpg": {
       "canvas": {
@@ -1656,22 +1593,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 138.9,
-        "y": 156.8,
-        "width": 928.1,
-        "height": 418.3
+        "x": 74.6,
+        "y": 152.3,
+        "width": 1056.8,
+        "height": 336
       },
       "card": {
         "x": 72.4,
-        "y": 747.7,
+        "y": 651.2,
         "width": 1061.3,
         "height": 2307.4
       },
       "headline": {
-        "fontSize": 145,
+        "fontSize": 142,
         "lines": 2
       },
-      "sha256": "d7af91c2f960e0f99a1cbc1a5a2c9b5b2760a43b907701f1698459f17ee9ef73"
+      "sha256": "bca52cc1d9d54ca5a208cd6aa370332c623e0b4f653160c83f4773cf43d978bc"
     },
     "ios/iphone-6.3/en/04-calendar.jpg": {
       "canvas": {
@@ -1680,22 +1617,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 249.8,
-        "y": 156.8,
-        "width": 706.4,
-        "height": 418.3
+        "x": 96.5,
+        "y": 151.3,
+        "width": 822.6,
+        "height": 343
       },
       "card": {
-        "x": 72.4,
+        "x": 96.5,
         "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "3c8a3e627891b4038ec0cb0cdf21cd2a71f5013c27745abc2d3f754d2c0a826a"
+      "sha256": "99993bb9fb3063b3c47642f9032aa057594729fbc67ce03a2006452caa6f9841"
     },
     "ios/iphone-6.3/en/05-time-tracker.jpg": {
       "canvas": {
@@ -1704,14 +1641,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 121.8,
-        "y": 156.8,
-        "width": 962.3,
-        "height": 418.3
+        "x": 132.7,
+        "y": 151.3,
+        "width": 940.5,
+        "height": 343
       },
       "card": {
         "x": 72.4,
-        "y": 747.7,
+        "y": 651.2,
         "width": 1061.3,
         "height": 2307.4
       },
@@ -1719,7 +1656,7 @@
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "e78ac495f22048e469ddd75c7946918ff9e94116cd0e1c28648dbf424d503f86"
+      "sha256": "e50d72ce1588aad6e8c728a78f0043ad864d6a3d72d9857bd93d30f5b1bb1791"
     },
     "ios/iphone-6.3/en/06-finance.jpg": {
       "canvas": {
@@ -1728,22 +1665,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 102.1,
-        "y": 156.8,
-        "width": 1001.8,
-        "height": 418.3
+        "x": 96.5,
+        "y": 151.3,
+        "width": 1007.4,
+        "height": 343
       },
       "card": {
-        "x": 72.4,
+        "x": 96.5,
         "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "e4c217750944d4324f6f39e5f0c383a87b20e16a2dfb24ccce7bd6406eddd7cd"
+      "sha256": "b3c9f5f782715bd1f1a5c05eab6ed670da5d07df92e80515e3f2554f89b208fd"
     },
     "ios/iphone-6.3/en/07-habits.jpg": {
       "canvas": {
@@ -1752,14 +1689,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 215,
-        "y": 156.8,
-        "width": 775.9,
-        "height": 418.3
+        "x": 229.8,
+        "y": 151.3,
+        "width": 746.4,
+        "height": 343
       },
       "card": {
         "x": 72.4,
-        "y": 747.7,
+        "y": 651.2,
         "width": 1061.3,
         "height": 2307.4
       },
@@ -1767,7 +1704,7 @@
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "bc734cc0fc69b86afef0e8b3d6080a1212d28e65e450e8af69d5647bcb73b87a"
+      "sha256": "4edbd90e4dd718442a296177b62aa9a474325bf2c8d2b14266813076099ccb75"
     },
     "ios/iphone-6.3/en/08-notes.jpg": {
       "canvas": {
@@ -1776,22 +1713,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 73.6,
-        "y": 156.8,
-        "width": 1058.8,
-        "height": 416.3
+        "x": 96.5,
+        "y": 168.3,
+        "width": 740.4,
+        "height": 310
       },
       "card": {
-        "x": 72.4,
+        "x": 96.5,
         "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
-        "fontSize": 144,
+        "fontSize": 145,
         "lines": 2
       },
-      "sha256": "9f50d7c83369c1ed6c243d6e646bbe7398bb6e35d833a3004ad927f1e36d1089"
+      "sha256": "e90a5f7178eb9a9407eff69c99378498d8cb75611d2e725cab64279a6a77700e"
     },
     "ios/iphone-6.3/vi/01-dashboard.jpg": {
       "canvas": {
@@ -1800,22 +1737,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 76.5,
-        "y": 156.8,
-        "width": 1053,
-        "height": 379.3
+        "x": 154.4,
+        "y": 168.3,
+        "width": 897.3,
+        "height": 310
       },
       "card": {
-        "x": 253.3,
-        "y": 844.2,
-        "width": 699.5,
-        "height": 1520.8
+        "x": 72.4,
+        "y": 651.2,
+        "width": 1061.3,
+        "height": 2307.4
       },
       "headline": {
-        "fontSize": 127,
+        "fontSize": 145,
         "lines": 2
       },
-      "sha256": "d4c3674fc293a403c78ab2cbae8d9b9de902ab2a00f8de4435866d3a739cdf52"
+      "sha256": "87bc43052325556e3337ceb3ab0daea53f49c2bf5acfd8f7a210514c1728395f"
     },
     "ios/iphone-6.3/vi/02-assistant.jpg": {
       "canvas": {
@@ -1824,29 +1761,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 218.5,
-        "y": 156.8,
-        "width": 769,
-        "height": 418.3
+        "x": 96.5,
+        "y": 168.3,
+        "width": 704.9,
+        "height": 310
       },
       "card": {
-        "x": 72.4,
-        "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
-      },
-      "chip": {
-        "x": 428.2,
-        "y": 2148.9,
-        "width": 578.7,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 96.5,
+        "y": 615.1,
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "3e6cca1bb18e007a64ded0867ed5ab384cdab345fa2ad4e910ab83fe10bbb3c9"
+      "sha256": "3db3bc3f7b743340d3898fc1c6bfc316948e31a91760efe6523d3ee450b87d0b"
     },
     "ios/iphone-6.3/vi/03-tasks.jpg": {
       "canvas": {
@@ -1855,14 +1785,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 80.4,
-        "y": 156.8,
-        "width": 1045.2,
-        "height": 418.3
+        "x": 176.9,
+        "y": 151.3,
+        "width": 852.2,
+        "height": 343
       },
       "card": {
         "x": 72.4,
-        "y": 747.7,
+        "y": 651.2,
         "width": 1061.3,
         "height": 2307.4
       },
@@ -1870,7 +1800,7 @@
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "84efe1f393c2e721427ae0d2d066cc5b2547450ace18bd36c6121a5d61cbabea"
+      "sha256": "368c7d66e016b4dd2e688bf92e467a2b9dc4e502d7eb4df99622d0ee832175c6"
     },
     "ios/iphone-6.3/vi/04-calendar.jpg": {
       "canvas": {
@@ -1879,22 +1809,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 101.9,
-        "y": 156.8,
-        "width": 1002.3,
-        "height": 418.3
+        "x": 96.5,
+        "y": 151.3,
+        "width": 555.6,
+        "height": 343
       },
       "card": {
-        "x": 72.4,
+        "x": 96.5,
         "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "f12cabc4e071b85e305e825f6c5d1b931784c5c353810269b37daa9c18d8dace"
+      "sha256": "645535867250d2a5ddfd9390ae12cb5f82bfc4d4764444c55e2bcb42d50ec13f"
     },
     "ios/iphone-6.3/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -1903,14 +1833,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 168.7,
-        "y": 156.8,
-        "width": 868.5,
-        "height": 418.3
+        "x": 181.4,
+        "y": 151.3,
+        "width": 843.2,
+        "height": 343
       },
       "card": {
         "x": 72.4,
-        "y": 747.7,
+        "y": 651.2,
         "width": 1061.3,
         "height": 2307.4
       },
@@ -1918,7 +1848,7 @@
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "79511d9ab9066ce38704abd46b293b34fea31158d100a133f18b1e50781ce4a1"
+      "sha256": "7db8f65be05a488ee4fd6ed1e705b413a06d95197f94c4ae948e6805fd76dd3e"
     },
     "ios/iphone-6.3/vi/06-finance.jpg": {
       "canvas": {
@@ -1927,22 +1857,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 137,
-        "y": 156.8,
-        "width": 931.9,
-        "height": 418.3
+        "x": 96.5,
+        "y": 151.3,
+        "width": 776.2,
+        "height": 343
       },
       "card": {
-        "x": 72.4,
+        "x": 96.5,
         "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "4e8427bdddb8102c5e66a4f29f48dc9318342151ac1c898756119736ec174719"
+      "sha256": "38c570a6f2316f0ea8ea0f420e6ac29565f0d5fd372a4b0c4314eee79629afba"
     },
     "ios/iphone-6.3/vi/07-habits.jpg": {
       "canvas": {
@@ -1951,14 +1881,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 144.3,
-        "y": 156.8,
-        "width": 917.4,
-        "height": 418.3
+        "x": 127.4,
+        "y": 151.3,
+        "width": 951.3,
+        "height": 343
       },
       "card": {
         "x": 72.4,
-        "y": 747.7,
+        "y": 651.2,
         "width": 1061.3,
         "height": 2307.4
       },
@@ -1966,7 +1896,7 @@
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "6689a764ef9b5102b77c0f199f1b9b5ba9e26072d775127c1f4c5cad7026c687"
+      "sha256": "588ca41b8dd640e18cc42b5a6e6c25c761c9834bfc42e78066df1b03853d46ea"
     },
     "ios/iphone-6.3/vi/08-notes.jpg": {
       "canvas": {
@@ -1975,22 +1905,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 138.4,
-        "y": 156.8,
-        "width": 929.2,
-        "height": 418.3
+        "x": 96.5,
+        "y": 168.3,
+        "width": 1012.9,
+        "height": 310
       },
       "card": {
-        "x": 72.4,
+        "x": 96.5,
         "y": 747.7,
-        "width": 1061.3,
-        "height": 2307.4
+        "width": 1037.2,
+        "height": 2254.9
       },
       "headline": {
         "fontSize": 145,
         "lines": 2
       },
-      "sha256": "ede12932667ba7cf3d9149f367e5371c8815ec644890e5be020c0d14074aa201"
+      "sha256": "5e75f8c1f2842798fef10992236f6a7849c14d84155fca1e93a1ef7b02b977be"
     },
     "ios/iphone-6.5/en/01-dashboard.jpg": {
       "canvas": {
@@ -1999,22 +1929,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 209.7,
-        "y": 166.9,
-        "width": 864.6,
-        "height": 444.9
+        "x": 77.2,
+        "y": 177.9,
+        "width": 1129.6,
+        "height": 319
       },
       "card": {
-        "x": 269.6,
-        "y": 898.8,
-        "width": 744.7,
-        "height": 1611.2
+        "x": 77,
+        "y": 693.4,
+        "width": 1129.9,
+        "height": 2444.6
       },
       "headline": {
-        "fontSize": 154,
+        "fontSize": 149,
         "lines": 2
       },
-      "sha256": "891b2456135753f636f5d299677d413bd121ed11e3ea72dc7b211e2b9d6e14b6"
+      "sha256": "c60a49f064f579af1c06cd3a536afcb8585331392f040267b0232aacfaa7e5ea"
     },
     "ios/iphone-6.5/en/02-assistant.jpg": {
       "canvas": {
@@ -2023,29 +1953,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 270.4,
-        "y": 166.9,
-        "width": 743.1,
-        "height": 444.9
+        "x": 102.7,
+        "y": 177.9,
+        "width": 778.5,
+        "height": 329
       },
       "card": {
-        "x": 77,
-        "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
-      },
-      "chip": {
-        "x": 455,
-        "y": 2264.6,
-        "width": 625.2,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 102.7,
+        "y": 654.8,
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "efac361ae986636d8fcd3d40abc7e6d1dea80340b86962034bc3df28293a12b6"
+      "sha256": "4a52bcebbf3c6421b3c844b23409c98519afb1de83359d95b6e58161f0855b1e"
     },
     "ios/iphone-6.5/en/03-tasks.jpg": {
       "canvas": {
@@ -2054,22 +1977,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 149.1,
-        "y": 166.9,
-        "width": 985.7,
-        "height": 444.9
+        "x": 80.1,
+        "y": 160.9,
+        "width": 1123.8,
+        "height": 357
       },
       "card": {
         "x": 77,
-        "y": 796.1,
+        "y": 693.4,
         "width": 1129.9,
         "height": 2444.6
       },
       "headline": {
-        "fontSize": 154,
+        "fontSize": 151,
         "lines": 2
       },
-      "sha256": "926358e788c94d5cd07f710d64ff657f2e6b4322562fe75e55eb638c48a5b6c1"
+      "sha256": "fd4e2703be9e13933ff6d99ae9e4ac3c65c15a7cf1b7cb6e434e36eee0e9752e"
     },
     "ios/iphone-6.5/en/04-calendar.jpg": {
       "canvas": {
@@ -2078,22 +2001,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 266.9,
-        "y": 166.9,
-        "width": 750.2,
-        "height": 444.9
+        "x": 102.7,
+        "y": 160.9,
+        "width": 873.6,
+        "height": 364
       },
       "card": {
-        "x": 77,
+        "x": 102.7,
         "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "a08c5bd560d48d3d71690a7e47d7ea9fd6172ded2a6314d1f698d1606b3f0c38"
+      "sha256": "1ba1d8d38f33ae83810b6894e0ce229977f417e6f25f6018071fb13061da0d42"
     },
     "ios/iphone-6.5/en/05-time-tracker.jpg": {
       "canvas": {
@@ -2102,14 +2025,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 131,
-        "y": 166.9,
-        "width": 1022,
-        "height": 444.9
+        "x": 142.5,
+        "y": 160.9,
+        "width": 998.9,
+        "height": 364
       },
       "card": {
         "x": 77,
-        "y": 796.1,
+        "y": 693.4,
         "width": 1129.9,
         "height": 2444.6
       },
@@ -2117,7 +2040,7 @@
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "1a0cecba73fd868681cd5171eaba79be19f0f8071eabc84f631b159647fbde43"
+      "sha256": "a66d14e0b4720d661b0c56be2521b584cc59a82f995db629a49dec0ab304a9a1"
     },
     "ios/iphone-6.5/en/06-finance.jpg": {
       "canvas": {
@@ -2126,22 +2049,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 110,
-        "y": 166.9,
-        "width": 1063.9,
-        "height": 444.9
+        "x": 102.7,
+        "y": 160.9,
+        "width": 1069.9,
+        "height": 364
       },
       "card": {
-        "x": 77,
+        "x": 102.7,
         "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "4bb8eb70de98d0b171e553366e53d63dbd517a35eeebcbdd9bcd7f57036483a2"
+      "sha256": "541465847a5157e65c60638bab4fb956de995c841cc9d2e97a6a6160aee9312d"
     },
     "ios/iphone-6.5/en/07-habits.jpg": {
       "canvas": {
@@ -2150,14 +2073,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 230,
-        "y": 166.9,
-        "width": 824.1,
-        "height": 444.9
+        "x": 245.6,
+        "y": 160.9,
+        "width": 792.8,
+        "height": 364
       },
       "card": {
         "x": 77,
-        "y": 796.1,
+        "y": 693.4,
         "width": 1129.9,
         "height": 2444.6
       },
@@ -2165,7 +2088,7 @@
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "9df07e41b0afdc59d75930d7e43e9ba2407b11da403ae9ac84743b87a730d8f5"
+      "sha256": "b49dcf5871f177c7bd397ab22e291a8568b87ff8dbfd5b2aa1de8c1066ffb000"
     },
     "ios/iphone-6.5/en/08-notes.jpg": {
       "canvas": {
@@ -2174,22 +2097,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 79.5,
-        "y": 166.9,
-        "width": 1125,
-        "height": 442.9
+        "x": 102.7,
+        "y": 177.9,
+        "width": 786.4,
+        "height": 329
       },
       "card": {
-        "x": 77,
+        "x": 102.7,
         "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
-        "fontSize": 153,
+        "fontSize": 154,
         "lines": 2
       },
-      "sha256": "369bb9b372b170b30a1045742c0627de863df6977fab826b80dc1407fe8df100"
+      "sha256": "6aebf90131c6fc85b048b1f7885003ac1d621599bfb2e34604c8e0ea9a67702c"
     },
     "ios/iphone-6.5/vi/01-dashboard.jpg": {
       "canvas": {
@@ -2198,22 +2121,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 78.1,
-        "y": 166.9,
-        "width": 1127.7,
-        "height": 404.9
+        "x": 165.5,
+        "y": 177.9,
+        "width": 953,
+        "height": 329
       },
       "card": {
-        "x": 269.6,
-        "y": 898.8,
-        "width": 744.7,
-        "height": 1611.2
+        "x": 77,
+        "y": 693.4,
+        "width": 1129.9,
+        "height": 2444.6
       },
       "headline": {
-        "fontSize": 136,
+        "fontSize": 154,
         "lines": 2
       },
-      "sha256": "b4666a1ef4b08703dae05981359a79d64dcac6bde9543557101bad50d8776adb"
+      "sha256": "34cc37ec3fd28ad311a98238f31515ee231e3f021209cefdfe257372bf35573b"
     },
     "ios/iphone-6.5/vi/02-assistant.jpg": {
       "canvas": {
@@ -2222,29 +2145,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 233.6,
-        "y": 166.9,
-        "width": 816.7,
-        "height": 444.9
+        "x": 102.7,
+        "y": 177.9,
+        "width": 748.6,
+        "height": 329
       },
       "card": {
-        "x": 77,
-        "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
-      },
-      "chip": {
-        "x": 501.5,
-        "y": 2357,
-        "width": 578.7,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 102.7,
+        "y": 654.8,
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "43bf9ea73c7dbf423bce3d24fbcc7f1dc718cb135b9399e9437f72421a6fe3c3"
+      "sha256": "3748a8fe302d50510c83eae0fae8e31413cb1774dd2c4a7ff5621d9606ee3323"
     },
     "ios/iphone-6.5/vi/03-tasks.jpg": {
       "canvas": {
@@ -2253,14 +2169,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 87,
-        "y": 166.9,
-        "width": 1110,
-        "height": 444.9
+        "x": 189.4,
+        "y": 160.9,
+        "width": 905.1,
+        "height": 364
       },
       "card": {
         "x": 77,
-        "y": 796.1,
+        "y": 693.4,
         "width": 1129.9,
         "height": 2444.6
       },
@@ -2268,7 +2184,7 @@
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "afad784831d6c005e56463052819ef268c959996963d2ad731175257ed7cb744"
+      "sha256": "a156f1ef346a89162a45433b5ad2d3a6b510f81c59cdea0880c535f0167ef1bb"
     },
     "ios/iphone-6.5/vi/04-calendar.jpg": {
       "canvas": {
@@ -2277,22 +2193,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 109.8,
-        "y": 166.9,
-        "width": 1064.5,
-        "height": 444.9
+        "x": 102.7,
+        "y": 160.9,
+        "width": 590.1,
+        "height": 364
       },
       "card": {
-        "x": 77,
+        "x": 102.7,
         "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "a8823c302266272757b1986224c1398b605aa6eb9e49193a436cd6e3f221a9eb"
+      "sha256": "49b2e80a674fda14e5c92b4e72d0a00c24412eabcd24cd0920d4f844dba7be35"
     },
     "ios/iphone-6.5/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -2301,14 +2217,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 180.8,
-        "y": 166.9,
-        "width": 922.4,
-        "height": 444.9
+        "x": 194.2,
+        "y": 160.9,
+        "width": 895.5,
+        "height": 364
       },
       "card": {
         "x": 77,
-        "y": 796.1,
+        "y": 693.4,
         "width": 1129.9,
         "height": 2444.6
       },
@@ -2316,7 +2232,7 @@
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "400cbb75e1d7e1d132769c6922029a2aac5e03ad0dd8784bdfd77464bb4b484c"
+      "sha256": "e3c5d9a0ee0afe17eb2a91bff001ae51d4b4e5da31121281992de8993214f988"
     },
     "ios/iphone-6.5/vi/06-finance.jpg": {
       "canvas": {
@@ -2325,22 +2241,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 147.1,
-        "y": 166.9,
-        "width": 989.7,
-        "height": 444.9
+        "x": 102.7,
+        "y": 160.9,
+        "width": 824.4,
+        "height": 364
       },
       "card": {
-        "x": 77,
+        "x": 102.7,
         "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "82a437b4fdb1d319701ba2b287441e28b0a84c929e8a9e7a0584d532ea8c8951"
+      "sha256": "44346d9dda0c23c761947182db97c8e839a2e8f94312c8b8cd2b88d27d8504e7"
     },
     "ios/iphone-6.5/vi/07-habits.jpg": {
       "canvas": {
@@ -2349,14 +2265,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 154.8,
-        "y": 166.9,
-        "width": 974.3,
-        "height": 444.9
+        "x": 136.8,
+        "y": 160.9,
+        "width": 1010.3,
+        "height": 364
       },
       "card": {
         "x": 77,
-        "y": 796.1,
+        "y": 693.4,
         "width": 1129.9,
         "height": 2444.6
       },
@@ -2364,7 +2280,7 @@
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "caa86fd82d4a1ba271ed5ccd00a9c3c48ed59a119a243f707358fa9914c854f8"
+      "sha256": "9477b95f320d7dd219b9a4d09bd6fe0a4eb30a7da0fd4e84371069f0b5889e22"
     },
     "ios/iphone-6.5/vi/08-notes.jpg": {
       "canvas": {
@@ -2373,22 +2289,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 148.6,
-        "y": 166.9,
-        "width": 986.8,
-        "height": 444.9
+        "x": 102.7,
+        "y": 177.9,
+        "width": 1075.8,
+        "height": 329
       },
       "card": {
-        "x": 77,
+        "x": 102.7,
         "y": 796.1,
-        "width": 1129.9,
-        "height": 2444.6
+        "width": 1104.2,
+        "height": 2389.1
       },
       "headline": {
         "fontSize": 154,
         "lines": 2
       },
-      "sha256": "8a439b71dcdef4d7abf4bc695208ab5640cb3dd313e8478ca7a0846d753e8296"
+      "sha256": "dd719445d4aac9501a08aa737460527044d1973057da05cd01b7fb241d535220"
     },
     "ios/iphone-6.9/en/01-dashboard.jpg": {
       "canvas": {
@@ -2397,22 +2313,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 216.4,
-        "y": 171.6,
-        "width": 887.1,
-        "height": 457
+        "x": 80,
+        "y": 184,
+        "width": 1159.9,
+        "height": 327
       },
       "card": {
-        "x": 277.2,
-        "y": 924,
-        "width": 765.6,
-        "height": 1663.4
+        "x": 79.2,
+        "y": 712.8,
+        "width": 1161.6,
+        "height": 2523.8
       },
       "headline": {
-        "fontSize": 158,
+        "fontSize": 153,
         "lines": 2
       },
-      "sha256": "d86c42bc29a3d055802ed56e34a174826036735ad693b07eb0f9175ce6d5f539"
+      "sha256": "d58472114682391da7ea6cebd332c94e7515205d8f14befdffa5ea45dbe7d184"
     },
     "ios/iphone-6.9/en/02-assistant.jpg": {
       "canvas": {
@@ -2421,29 +2337,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 278.8,
-        "y": 171.6,
-        "width": 762.4,
-        "height": 457
+        "x": 105.6,
+        "y": 184,
+        "width": 798.7,
+        "height": 338
       },
       "card": {
-        "x": 79.2,
-        "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
-      },
-      "chip": {
-        "x": 488.8,
-        "y": 2440,
-        "width": 625.2,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 105.6,
+        "y": 673.2,
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "66429e2862de8e291df5802dea9910b6a564975ca7f187346df656576244d130"
+      "sha256": "929ad5443c5096b1e6876e4d1a3828eefe77dfe26ee5b0df35a71a307448b0b4"
     },
     "ios/iphone-6.9/en/03-tasks.jpg": {
       "canvas": {
@@ -2452,22 +2361,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 154.3,
-        "y": 171.6,
-        "width": 1011.3,
-        "height": 457
+        "x": 79.5,
+        "y": 166,
+        "width": 1161,
+        "height": 369
       },
       "card": {
         "x": 79.2,
-        "y": 818.4,
+        "y": 712.8,
         "width": 1161.6,
         "height": 2523.8
       },
       "headline": {
-        "fontSize": 158,
+        "fontSize": 156,
         "lines": 2
       },
-      "sha256": "b72681e8e69d06f048c3e2619d7871856de2631c34504b7db6b00aa0cecde6ab"
+      "sha256": "ca44f2e4ea98dddf284753a57a8d2ed69ccddf9b7fbe7e32de215c283693a5e1"
     },
     "ios/iphone-6.9/en/04-calendar.jpg": {
       "canvas": {
@@ -2476,22 +2385,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 275.1,
-        "y": 171.6,
-        "width": 769.7,
-        "height": 457
+        "x": 105.6,
+        "y": 166,
+        "width": 896.3,
+        "height": 374
       },
       "card": {
-        "x": 79.2,
+        "x": 105.6,
         "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "7539c8abb36097a5564f51a1056577ca4b562aad5240e68f0c953c762cff386d"
+      "sha256": "8d9690efdae70e427deb5747e131de8a1696c6429b44236614727e7a40d81ecc"
     },
     "ios/iphone-6.9/en/05-time-tracker.jpg": {
       "canvas": {
@@ -2500,14 +2409,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 135.7,
-        "y": 171.6,
-        "width": 1048.5,
-        "height": 457
+        "x": 147.5,
+        "y": 166,
+        "width": 1024.9,
+        "height": 374
       },
       "card": {
         "x": 79.2,
-        "y": 818.4,
+        "y": 712.8,
         "width": 1161.6,
         "height": 2523.8
       },
@@ -2515,7 +2424,7 @@
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "66d0f44903ce9a2dafadd481af621b0edb369b89ba14c1ce1b96171a5701ebfb"
+      "sha256": "b469022d39589e56608e50eeabcdae0edd8dd840da38db682bdebf9dd2e95860"
     },
     "ios/iphone-6.9/en/06-finance.jpg": {
       "canvas": {
@@ -2524,22 +2433,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 114.2,
-        "y": 171.6,
-        "width": 1091.6,
-        "height": 457
+        "x": 105.6,
+        "y": 166,
+        "width": 1097.7,
+        "height": 374
       },
       "card": {
-        "x": 79.2,
+        "x": 105.6,
         "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "8bec391b710e94781e2be98c3a6401b2c6d8a8e70af5ae9f4a16f41214e6afb5"
+      "sha256": "ad539c708eb8e8013fd43e018bc9e84366ba8f4c33cec9ce1f3d2a90fd169165"
     },
     "ios/iphone-6.9/en/07-habits.jpg": {
       "canvas": {
@@ -2548,14 +2457,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 237.3,
-        "y": 171.6,
-        "width": 845.5,
-        "height": 457
+        "x": 253.3,
+        "y": 166,
+        "width": 813.3,
+        "height": 374
       },
       "card": {
         "x": 79.2,
-        "y": 818.4,
+        "y": 712.8,
         "width": 1161.6,
         "height": 2523.8
       },
@@ -2563,7 +2472,7 @@
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "217d1293b6e4afefc5ca3305c6490d4ff5b0e3513038e8b4aad4ed955602e0de"
+      "sha256": "14085bc5c8a338a859979d74ba1df8e10cf4d675fbcece29954eebecaf65352e"
     },
     "ios/iphone-6.9/en/08-notes.jpg": {
       "canvas": {
@@ -2572,22 +2481,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 82.8,
-        "y": 171.6,
-        "width": 1154.4,
-        "height": 454
+        "x": 105.6,
+        "y": 184,
+        "width": 806.8,
+        "height": 338
       },
       "card": {
-        "x": 79.2,
+        "x": 105.6,
         "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
-        "fontSize": 157,
+        "fontSize": 158,
         "lines": 2
       },
-      "sha256": "b1c4e2ba54c9295c7a1738a3434954768bcf95e7cbc5ac5ad40829d4019b021f"
+      "sha256": "8be897667cb1e637e0db0d08cfd29d3228235a1792f09e090598320d027f89b3"
     },
     "ios/iphone-6.9/vi/01-dashboard.jpg": {
       "canvas": {
@@ -2596,22 +2505,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 79.6,
-        "y": 171.6,
-        "width": 1160.8,
-        "height": 417
+        "x": 171.1,
+        "y": 184,
+        "width": 977.7,
+        "height": 338
       },
       "card": {
-        "x": 277.2,
-        "y": 924,
-        "width": 765.6,
-        "height": 1663.4
+        "x": 79.2,
+        "y": 712.8,
+        "width": 1161.6,
+        "height": 2523.8
       },
       "headline": {
-        "fontSize": 140,
+        "fontSize": 158,
         "lines": 2
       },
-      "sha256": "64d5e9a9441c415aeac9100dd1976e712fb8d5ec7a8aac34bc04e17d60de58f5"
+      "sha256": "7f4a5eae49914c25fae6bb3fdc3a26b1428856e5fe24d8af84aae719218fdad8"
     },
     "ios/iphone-6.9/vi/02-assistant.jpg": {
       "canvas": {
@@ -2620,29 +2529,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 241,
-        "y": 171.6,
-        "width": 837.9,
-        "height": 457
+        "x": 105.6,
+        "y": 184,
+        "width": 768.1,
+        "height": 338
       },
       "card": {
-        "x": 79.2,
-        "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
-      },
-      "chip": {
-        "x": 535.4,
-        "y": 2426.8,
-        "width": 578.7,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 105.6,
+        "y": 673.2,
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "edb41a43f21029d7ac72861ab9061a59e41ef80ff3e119d7f1072e0ba5de19bd"
+      "sha256": "ca9c39ceb8139c999f2a8f91b0bed503a1027c4acbac02fded17d4c5a5c12bdc"
     },
     "ios/iphone-6.9/vi/03-tasks.jpg": {
       "canvas": {
@@ -2651,14 +2553,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 90.5,
-        "y": 171.6,
-        "width": 1138.9,
-        "height": 457
+        "x": 195.7,
+        "y": 166,
+        "width": 928.6,
+        "height": 374
       },
       "card": {
         "x": 79.2,
-        "y": 818.4,
+        "y": 712.8,
         "width": 1161.6,
         "height": 2523.8
       },
@@ -2666,7 +2568,7 @@
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "61aeed9bdecc56a2f97934ce2d815b4aa71279980883f4098bee72c60bdf4129"
+      "sha256": "ef6dfd2f5c6ac013ab440f9f0e925f9793961a1cbcbb5642d1d719acdb470f3d"
     },
     "ios/iphone-6.9/vi/04-calendar.jpg": {
       "canvas": {
@@ -2675,22 +2577,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 113.9,
-        "y": 171.6,
-        "width": 1092.1,
-        "height": 457
+        "x": 105.6,
+        "y": 166,
+        "width": 605.4,
+        "height": 374
       },
       "card": {
-        "x": 79.2,
+        "x": 105.6,
         "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "004a643fbb590501cf9126bfa53eb63325c166246504df1c9019ff0b6dbf6b36"
+      "sha256": "3451c3d54e04dd6ed22e7483e37f2d4a4f1d43863825548bec2e088eabff2895"
     },
     "ios/iphone-6.9/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -2699,14 +2601,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 186.8,
-        "y": 171.6,
-        "width": 946.4,
-        "height": 457
+        "x": 200.6,
+        "y": 166,
+        "width": 918.8,
+        "height": 374
       },
       "card": {
         "x": 79.2,
-        "y": 818.4,
+        "y": 712.8,
         "width": 1161.6,
         "height": 2523.8
       },
@@ -2714,7 +2616,7 @@
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "ba4e152ee8bf2cf19f841dbc946c7fe847fbceb774c29b09c41d8692e9342a9f"
+      "sha256": "148eff4ff8bfe82212ed735d7faa14a9719a64e8b984b7f1df915c8e1e22825c"
     },
     "ios/iphone-6.9/vi/06-finance.jpg": {
       "canvas": {
@@ -2723,22 +2625,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 152.3,
-        "y": 171.6,
-        "width": 1015.4,
-        "height": 457
+        "x": 105.6,
+        "y": 166,
+        "width": 845.8,
+        "height": 374
       },
       "card": {
-        "x": 79.2,
+        "x": 105.6,
         "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "2666242bf70a6b89adcda17a146d65b8679babd97b28568345be763a32201d63"
+      "sha256": "96b1fafaac500324c3d26991dc7d5ba49bf34f8dedb560a0b4cacf1d3cca45d4"
     },
     "ios/iphone-6.9/vi/07-habits.jpg": {
       "canvas": {
@@ -2747,14 +2649,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 160.2,
-        "y": 171.6,
-        "width": 999.6,
-        "height": 457
+        "x": 141.7,
+        "y": 166,
+        "width": 1036.6,
+        "height": 374
       },
       "card": {
         "x": 79.2,
-        "y": 818.4,
+        "y": 712.8,
         "width": 1161.6,
         "height": 2523.8
       },
@@ -2762,7 +2664,7 @@
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "9a55f20df326355031964667e37180e6b7b433705a560a97c516d12154df89d4"
+      "sha256": "9bfc20b99e071019ea26d9640e35598a3074f37af8f3302e6263fd7a58bbf552"
     },
     "ios/iphone-6.9/vi/08-notes.jpg": {
       "canvas": {
@@ -2771,22 +2673,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 153.8,
-        "y": 171.6,
-        "width": 1012.5,
-        "height": 457
+        "x": 105.6,
+        "y": 184,
+        "width": 1103.7,
+        "height": 338
       },
       "card": {
-        "x": 79.2,
+        "x": 105.6,
         "y": 818.4,
-        "width": 1161.6,
-        "height": 2523.8
+        "width": 1135.2,
+        "height": 2466.5
       },
       "headline": {
         "fontSize": 158,
         "lines": 2
       },
-      "sha256": "50f20d9415a81cbb6d77e7b8139bff622d1b8b59f0987de126c275bf6653c70c"
+      "sha256": "b3807b63ee2b9e04679f5c5fa940a54f5e5aff709fb6b03fe4c0b79b33d9167c"
     },
     "ios/iphone-duo-inner/en/01-dashboard.jpg": {
       "canvas": {
@@ -2796,9 +2698,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 815.2,
-        "width": 707.4,
-        "height": 398.6
+        "y": 870.5,
+        "width": 940.1,
+        "height": 265
       },
       "card": {
         "x": 1226.8,
@@ -2807,10 +2709,10 @@
         "height": 1184.1
       },
       "headline": {
-        "fontSize": 126,
+        "fontSize": 124,
         "lines": 2
       },
-      "sha256": "9c3ff005b102318f0d3182725c1ee5f357ea4e538f7d50b26338bb3f2e3ecefc"
+      "sha256": "6c45518b46a4fd8e96cef41378249b873627663aac26e7c1b1e415f97ea701ab"
     },
     "ios/iphone-duo-inner/en/02-assistant.jpg": {
       "canvas": {
@@ -2820,9 +2722,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 815.2,
-        "width": 608,
-        "height": 398.6
+        "y": 868.5,
+        "width": 636.9,
+        "height": 270
       },
       "card": {
         "x": 1226.8,
@@ -2830,18 +2732,11 @@
         "width": 1683.3,
         "height": 1184.1
       },
-      "chip": {
-        "x": 1629.3,
-        "y": 1059.4,
-        "width": 836.5,
-        "height": 157.4,
-        "fontSize": 74.2
-      },
       "headline": {
         "fontSize": 126,
         "lines": 2
       },
-      "sha256": "d6a4e78b9db106467acccf184ea7135613b1d64f84464d439ee23b39372e1257"
+      "sha256": "c7ab7cf8902f8a30917ccf866b408835b5c673be1263d9e2c98805f28cc95b3a"
     },
     "ios/iphone-duo-inner/en/03-tasks.jpg": {
       "canvas": {
@@ -2851,9 +2746,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 815.2,
-        "width": 806.5,
-        "height": 398.6
+        "y": 854.5,
+        "width": 937.8,
+        "height": 297
       },
       "card": {
         "x": 1226.8,
@@ -2865,7 +2760,7 @@
         "fontSize": 126,
         "lines": 2
       },
-      "sha256": "7a1214b39ae7e49e2d31d49125938c66855203042603cc899539d82e2ee67151"
+      "sha256": "00f36dff7b061575ca6e20f113e637db902a3bd81cdb3577a9a28108731509f7"
     },
     "ios/iphone-duo-inner/en/04-calendar.jpg": {
       "canvas": {
@@ -2875,9 +2770,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 815.2,
-        "width": 613.8,
-        "height": 398.6
+        "y": 854.5,
+        "width": 714.8,
+        "height": 297
       },
       "card": {
         "x": 1226.8,
@@ -2889,7 +2784,7 @@
         "fontSize": 126,
         "lines": 2
       },
-      "sha256": "c4788e29858cfd1b2e7a6830407ad0061107b625912de83621e6ca343d13a5a9"
+      "sha256": "fc137911cf2db866fd49a24de3dd76a85564c8df1f42748cc5d62da17266cceb"
     },
     "ios/iphone-duo-inner/vi/01-dashboard.jpg": {
       "canvas": {
@@ -2899,9 +2794,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 828.2,
-        "width": 937,
-        "height": 370.6
+        "y": 868.5,
+        "width": 779.7,
+        "height": 270
       },
       "card": {
         "x": 1226.8,
@@ -2910,10 +2805,10 @@
         "height": 1184.1
       },
       "headline": {
-        "fontSize": 113,
+        "fontSize": 126,
         "lines": 2
       },
-      "sha256": "089a1b01685d8bfe78231a5ecea38c3e78a37b5dac98ad9e9f684903f081eec6"
+      "sha256": "aa5f8a421a988199348e4b840c2881338b088a2520c1e7e08e2fd7de4f2f6a70"
     },
     "ios/iphone-duo-inner/vi/02-assistant.jpg": {
       "canvas": {
@@ -2923,9 +2818,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 815.2,
-        "width": 668.2,
-        "height": 398.6
+        "y": 868.5,
+        "width": 612.5,
+        "height": 270
       },
       "card": {
         "x": 1226.8,
@@ -2933,18 +2828,11 @@
         "width": 1683.3,
         "height": 1184.1
       },
-      "chip": {
-        "x": 1691.6,
-        "y": 1059.4,
-        "width": 774.2,
-        "height": 157.4,
-        "fontSize": 74.2
-      },
       "headline": {
         "fontSize": 126,
         "lines": 2
       },
-      "sha256": "9c39d9d7f711abdf4e50e4fcd95afca31d98a35096d75e00076ba328e87383c7"
+      "sha256": "123aafdc12a334c3f21f3572771d2c2589f67554108260b5cc8c1175936cd4f4"
     },
     "ios/iphone-duo-inner/vi/03-tasks.jpg": {
       "canvas": {
@@ -2954,9 +2842,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 815.2,
-        "width": 908.2,
-        "height": 398.6
+        "y": 854.5,
+        "width": 740.5,
+        "height": 297
       },
       "card": {
         "x": 1226.8,
@@ -2968,7 +2856,7 @@
         "fontSize": 126,
         "lines": 2
       },
-      "sha256": "9efae2270d27e58e274e7f5c9418e0d7716a657d0e4e52a9a9a529922384cf8b"
+      "sha256": "5a028f6bfc94037d8b7fd69ee496ff48fa224d79c2b8622403d2e17de5442b82"
     },
     "ios/iphone-duo-inner/vi/04-calendar.jpg": {
       "canvas": {
@@ -2978,9 +2866,9 @@
       "layout": "side",
       "caption": {
         "x": 171.2,
-        "y": 815.2,
-        "width": 870.9,
-        "height": 398.6
+        "y": 917.5,
+        "width": 924.5,
+        "height": 171
       },
       "card": {
         "x": 1226.8,
@@ -2990,9 +2878,9 @@
       },
       "headline": {
         "fontSize": 126,
-        "lines": 2
+        "lines": 1
       },
-      "sha256": "ca9a2d8c67faadc7239373b1abeda2c7c28b0a9d5afc9a87eab2eb306eadf03f"
+      "sha256": "a72c74593ea1df21d4d61f0f12206739db74618629304be579e19a8389e35dae"
     },
     "ios/iphone-duo-outer/en/01-dashboard.jpg": {
       "canvas": {
@@ -3001,22 +2889,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 227.4,
-        "y": 181.7,
-        "width": 943.2,
-        "height": 484.5
+        "x": 84.9,
+        "y": 169.7,
+        "width": 1228.2,
+        "height": 347
       },
       "card": {
-        "x": 293.6,
-        "y": 978.6,
-        "width": 810.8,
-        "height": 1179.7
+        "x": 83.9,
+        "y": 754.9,
+        "width": 1230.2,
+        "height": 1789.9
       },
       "headline": {
-        "fontSize": 168,
+        "fontSize": 162,
         "lines": 2
       },
-      "sha256": "45d534f731715b6c78c91e63b6228ccbcb5d8a7046a7fbe53034735987db1518"
+      "sha256": "fb51d11b3e0f73fcfc8018bbe5abfab6f3041cdbbd56e1e295507ac34c0df2c8"
     },
     "ios/iphone-duo-outer/en/02-assistant.jpg": {
       "canvas": {
@@ -3025,29 +2913,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 293.6,
-        "y": 181.7,
-        "width": 810.7,
-        "height": 484.5
+        "x": 111.8,
+        "y": 169.7,
+        "width": 849.3,
+        "height": 359
       },
       "card": {
-        "x": 83.9,
-        "y": 866.8,
-        "width": 1230.2,
-        "height": 1789.9
-      },
-      "chip": {
-        "x": 562.2,
-        "y": 1770.3,
-        "width": 625.2,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 111.8,
+        "y": 713,
+        "width": 1202.3,
+        "height": 1749.2
       },
       "headline": {
         "fontSize": 168,
         "lines": 2
       },
-      "sha256": "3a873a4514a47224c9f16b1d3a0a6b217f7eb5196860c6320b1601e7bf5ccc78"
+      "sha256": "551905dc22f8df3962096617a49e6c3d6b42eb8f4205f871f0f2c57328f5567c"
     },
     "ios/iphone-duo-outer/en/03-tasks.jpg": {
       "canvas": {
@@ -3056,22 +2937,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 161.3,
-        "y": 181.7,
-        "width": 1075.3,
-        "height": 484.5
+        "x": 85,
+        "y": 151.7,
+        "width": 1228,
+        "height": 390
       },
       "card": {
         "x": 83.9,
-        "y": 866.8,
+        "y": 754.9,
         "width": 1230.2,
         "height": 1789.9
       },
       "headline": {
-        "fontSize": 168,
+        "fontSize": 165,
         "lines": 2
       },
-      "sha256": "f5781374ea52771384a004a96b421a45876891921c644e5426b80ee8a0bd080f"
+      "sha256": "7e5cc43e88a6a7fbb0ac53d1737114b7b46e8064c26e615a3b86c611a8ac940b"
     },
     "ios/iphone-duo-outer/en/04-calendar.jpg": {
       "canvas": {
@@ -3080,22 +2961,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 289.8,
-        "y": 181.7,
-        "width": 818.4,
-        "height": 484.5
+        "x": 111.8,
+        "y": 150.7,
+        "width": 953,
+        "height": 397
       },
       "card": {
-        "x": 83.9,
+        "x": 111.8,
         "y": 866.8,
-        "width": 1230.2,
-        "height": 1789.9
+        "width": 1202.3,
+        "height": 1749.2
       },
       "headline": {
         "fontSize": 168,
         "lines": 2
       },
-      "sha256": "af1a8ab6501e4f5f7108412f9db50dbaa3b372cedb10dcfe2880491fa0afacb4"
+      "sha256": "6d4ca7d57858f47caaacf9c130aacef02e04d80032e83c8d36e2aace9b2f1f02"
     },
     "ios/iphone-duo-outer/vi/01-dashboard.jpg": {
       "canvas": {
@@ -3104,22 +2985,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 85.4,
-        "y": 181.7,
-        "width": 1227.2,
-        "height": 441.5
+        "x": 179.2,
+        "y": 169.7,
+        "width": 1039.6,
+        "height": 359
       },
       "card": {
-        "x": 293.6,
-        "y": 978.6,
-        "width": 810.8,
-        "height": 1179.7
+        "x": 83.9,
+        "y": 754.9,
+        "width": 1230.2,
+        "height": 1789.9
       },
       "headline": {
-        "fontSize": 148,
+        "fontSize": 168,
         "lines": 2
       },
-      "sha256": "f3b2428b5d3ecabfebde38e56fa7f733e7ac6fdabe68c1417e9b861fb9f23749"
+      "sha256": "f4113b331c6cbf1db33678a597b5249174f7f05dd8d01390b7edc7ab05d9d353"
     },
     "ios/iphone-duo-outer/vi/02-assistant.jpg": {
       "canvas": {
@@ -3128,29 +3009,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 253.5,
-        "y": 181.7,
-        "width": 890.9,
-        "height": 484.5
+        "x": 111.8,
+        "y": 169.7,
+        "width": 816.7,
+        "height": 359
       },
       "card": {
-        "x": 83.9,
-        "y": 866.8,
-        "width": 1230.2,
-        "height": 1789.9
-      },
-      "chip": {
-        "x": 608.7,
-        "y": 1770.3,
-        "width": 578.7,
-        "height": 118.1,
-        "fontSize": 55.4
+        "x": 111.8,
+        "y": 713,
+        "width": 1202.3,
+        "height": 1749.2
       },
       "headline": {
         "fontSize": 168,
         "lines": 2
       },
-      "sha256": "8bac6624911323ece5491481745fca92ec410a49cd52ea45f0b8b4f6fbe6aacd"
+      "sha256": "af73c08aaf8d3f798ac82cfba70ec38c235bf103365cea2a13b6fef51b57aad9"
     },
     "ios/iphone-duo-outer/vi/03-tasks.jpg": {
       "canvas": {
@@ -3159,14 +3033,14 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 93.5,
-        "y": 181.7,
-        "width": 1211,
-        "height": 484.5
+        "x": 205.3,
+        "y": 150.7,
+        "width": 987.3,
+        "height": 397
       },
       "card": {
         "x": 83.9,
-        "y": 866.8,
+        "y": 754.9,
         "width": 1230.2,
         "height": 1789.9
       },
@@ -3174,7 +3048,7 @@
         "fontSize": 168,
         "lines": 2
       },
-      "sha256": "8dafbe2814a7a01640f15a8690f78b8d0c076710a5b538d1f5c4904be9fcfc1f"
+      "sha256": "8b821ff338e549dea759ab49814daa3ff598bb032d6838a3d48686abb5f05bd1"
     },
     "ios/iphone-duo-outer/vi/04-calendar.jpg": {
       "canvas": {
@@ -3183,22 +3057,22 @@
       },
       "layout": "stack",
       "caption": {
-        "x": 118.4,
-        "y": 181.7,
-        "width": 1161.2,
-        "height": 484.5
+        "x": 111.8,
+        "y": 150.7,
+        "width": 643.7,
+        "height": 397
       },
       "card": {
-        "x": 83.9,
+        "x": 111.8,
         "y": 866.8,
-        "width": 1230.2,
-        "height": 1789.9
+        "width": 1202.3,
+        "height": 1749.2
       },
       "headline": {
         "fontSize": 168,
         "lines": 2
       },
-      "sha256": "46ff07bfb09e43f2b475a29360a76dcac6de72845d69dca5ae733dcae7e44583"
+      "sha256": "0fb2efe48af4dbadefd2fb95d52707d1fb8086c1882ba5e27c156d8721f8df33"
     },
     "macos/mac/en/01-dashboard.jpg": {
       "canvas": {
@@ -3208,9 +3082,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 679.3,
-        "height": 382.5
+        "y": 710,
+        "width": 833.9,
+        "height": 235
       },
       "card": {
         "x": 1036.8,
@@ -3219,10 +3093,10 @@
         "height": 1271.6
       },
       "headline": {
-        "fontSize": 121,
+        "fontSize": 110,
         "lines": 2
       },
-      "sha256": "f210e61455f038c4d00fbea705d219f42eb6890fafeba28bb0aa572a6083dac7"
+      "sha256": "2f789aea047cb8f1845978a738f166d7ec7f70736594f4a52a688627d3b39299"
     },
     "macos/mac/en/02-assistant.jpg": {
       "canvas": {
@@ -3232,9 +3106,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 583.9,
-        "height": 382.5
+        "y": 698,
+        "width": 611.7,
+        "height": 259
       },
       "card": {
         "x": 1036.8,
@@ -3242,18 +3116,11 @@
         "width": 1929.6,
         "height": 1271.6
       },
-      "chip": {
-        "x": 1570.2,
-        "y": 1499.2,
-        "width": 619,
-        "height": 115.7,
-        "fontSize": 54.9
-      },
       "headline": {
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "95f57ad85fb74617ebd9cef5e001044bde7a4899d824203d219a0dcad622f424"
+      "sha256": "645e4509c5a097dae0f4b1ed07808dc105fa6ed4e4afdb06cb537eb6ed464014"
     },
     "macos/mac/en/03-tasks.jpg": {
       "canvas": {
@@ -3263,9 +3130,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 774.5,
-        "height": 382.5
+        "y": 695,
+        "width": 833.6,
+        "height": 265
       },
       "card": {
         "x": 1036.8,
@@ -3274,10 +3141,10 @@
         "height": 1271.6
       },
       "headline": {
-        "fontSize": 121,
+        "fontSize": 112,
         "lines": 2
       },
-      "sha256": "d09f22b83fee9a5872d6f99bdc6712b4a18fc7ddaee5ddd9e2cedfea4e1bf6d3"
+      "sha256": "eb51df19f3b68a441c02547376df099e2f10ac499b948a42a8c8a4e332946690"
     },
     "macos/mac/en/04-calendar.jpg": {
       "canvas": {
@@ -3287,9 +3154,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 589.5,
-        "height": 382.5
+        "y": 685,
+        "width": 686.4,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3301,7 +3168,7 @@
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "3ca6dfb2d8f1c8e302bc1625aa1abeaae77b7172c611b213ea4ba44b54ce9c80"
+      "sha256": "984d93b9041745fa8cb1c47afdff756fcf9f4f93124418d11c1116ca77ee6c55"
     },
     "macos/mac/en/05-time-tracker.jpg": {
       "canvas": {
@@ -3311,9 +3178,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 803,
-        "height": 382.5
+        "y": 685,
+        "width": 784.9,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3325,7 +3192,7 @@
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "98490581e8f93e2e414551df1c170a8b58b1050f90dccf723a2433567570d299"
+      "sha256": "0ad023853568b56a64d06f5211fd7e4fbdbdbbe2462dc5f9809c0f688dab6ca2"
     },
     "macos/mac/en/06-finance.jpg": {
       "canvas": {
@@ -3335,9 +3202,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 648.8,
-        "width": 829,
-        "height": 379.5
+        "y": 686,
+        "width": 833.7,
+        "height": 283
       },
       "card": {
         "x": 1036.8,
@@ -3349,7 +3216,7 @@
         "fontSize": 120,
         "lines": 2
       },
-      "sha256": "ce1d3c5ac293c317b32656d5a3c248b98d21728c793a3491cd4bdc761bedbde0"
+      "sha256": "234e0d2132732c8e60bdef9dc6e8003b2264d518691fd16872a5e14167ec60dd"
     },
     "macos/mac/en/07-habits.jpg": {
       "canvas": {
@@ -3359,9 +3226,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 647.5,
-        "height": 382.5
+        "y": 685,
+        "width": 622.9,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3373,7 +3240,7 @@
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "f7ea3d31c7461d858dfb2c664070df2855520dcf14331e5705ca9081e29a30d5"
+      "sha256": "031d7615036ecc7df61bae9a969afc1893f276d5c4082fbc88188303e126c827"
     },
     "macos/mac/en/08-notes.jpg": {
       "canvas": {
@@ -3383,9 +3250,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 655.8,
-        "width": 830.9,
-        "height": 364.5
+        "y": 698,
+        "width": 617.9,
+        "height": 259
       },
       "card": {
         "x": 1036.8,
@@ -3394,10 +3261,10 @@
         "height": 1271.6
       },
       "headline": {
-        "fontSize": 113,
+        "fontSize": 121,
         "lines": 2
       },
-      "sha256": "2fe8714da1ceba1a9e015f1e48c7ad4a9174ef00fe515cf07218885af02913c7"
+      "sha256": "bc7a72121c3bb3d5ca1e5a7da6122c5f82c6c04f3b838280bb10be88d95ca303"
     },
     "macos/mac/vi/01-dashboard.jpg": {
       "canvas": {
@@ -3407,9 +3274,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 668.8,
-        "width": 829.2,
-        "height": 336.5
+        "y": 698,
+        "width": 748.8,
+        "height": 259
       },
       "card": {
         "x": 1036.8,
@@ -3418,10 +3285,10 @@
         "height": 1271.6
       },
       "headline": {
-        "fontSize": 100,
+        "fontSize": 121,
         "lines": 2
       },
-      "sha256": "71d18f2c47ee14a4c5191eb97f059176d37846cefbc2677f28470a928191bed3"
+      "sha256": "08501c2bfae3b5de847a4f8e1e6221a94a8cf10d3dc83613800ec013448d6fc7"
     },
     "macos/mac/vi/02-assistant.jpg": {
       "canvas": {
@@ -3431,9 +3298,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 641.7,
-        "height": 382.5
+        "y": 698,
+        "width": 588.2,
+        "height": 259
       },
       "card": {
         "x": 1036.8,
@@ -3441,18 +3308,11 @@
         "width": 1929.6,
         "height": 1271.6
       },
-      "chip": {
-        "x": 1599.2,
-        "y": 1495,
-        "width": 590,
-        "height": 119.9,
-        "fontSize": 56.5
-      },
       "headline": {
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "1ba61b2e97b165bfb56ec23a809d52dd94ed4f1bc73c77dea71179e480e7fec2"
+      "sha256": "ed12865f90adc280c1d46c837a8a5f4ada4845cc7432b57e952b8263fdd1c842"
     },
     "macos/mac/vi/03-tasks.jpg": {
       "canvas": {
@@ -3462,9 +3322,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 653.8,
-        "width": 828.9,
-        "height": 369.5
+        "y": 685,
+        "width": 711.1,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3473,10 +3333,10 @@
         "height": 1271.6
       },
       "headline": {
-        "fontSize": 115,
+        "fontSize": 121,
         "lines": 2
       },
-      "sha256": "9ad35f5cf0e574f8df4a4e26dfeb4ac45baafb4453851d09c397c5dbc8a09fdc"
+      "sha256": "3137c5ade9075d1d553f8b80bb1b42afaeb41a80ce21c8570772ed75e735c7ba"
     },
     "macos/mac/vi/04-calendar.jpg": {
       "canvas": {
@@ -3486,9 +3346,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 648.8,
-        "width": 829.5,
-        "height": 379.5
+        "y": 685,
+        "width": 463.6,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3497,10 +3357,10 @@
         "height": 1271.6
       },
       "headline": {
-        "fontSize": 120,
+        "fontSize": 121,
         "lines": 2
       },
-      "sha256": "0c5af659051f58792511f928f15e0c1f7ae0a05b1a7ed48016cc96f488e43983"
+      "sha256": "8185b315c6124cf629a768474af947cd7c459ba768a9549178fe849db7c223d4"
     },
     "macos/mac/vi/05-time-tracker.jpg": {
       "canvas": {
@@ -3510,9 +3370,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 724.8,
-        "height": 382.5
+        "y": 685,
+        "width": 703.6,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3524,7 +3384,7 @@
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "da97e7a4b9d20d21f77c89938802a96b83b2922ec4b37c6578f5c4dfa99fd14b"
+      "sha256": "f1cc8e8811b332833c4cef4bfe8e52d40febd2c592450d6108ea03a4804f96d7"
     },
     "macos/mac/vi/06-finance.jpg": {
       "canvas": {
@@ -3534,9 +3394,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 777.6,
-        "height": 382.5
+        "y": 685,
+        "width": 647.7,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3548,7 +3408,7 @@
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "0d1e407d9fe518054e01057351b5cbe708bf83db7fbfe009576101e6b0b501e7"
+      "sha256": "a9ce0eb04f424b8d8d30f01ed623fd5a5dd8f580ce1f8f7d15de714927a40351"
     },
     "macos/mac/vi/07-habits.jpg": {
       "canvas": {
@@ -3558,9 +3418,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 765.5,
-        "height": 382.5
+        "y": 685,
+        "width": 793.8,
+        "height": 286
       },
       "card": {
         "x": 1036.8,
@@ -3572,7 +3432,7 @@
         "fontSize": 121,
         "lines": 2
       },
-      "sha256": "faa141ba9a8766f1139954b0e0f81d662704d6adc083f56bcf091e7a8fcc3e10"
+      "sha256": "cf0b4a14dba4d6a0c3ba002665406c9decebfb6eb64de1dce2dc140c6c4c687e"
     },
     "macos/mac/vi/08-notes.jpg": {
       "canvas": {
@@ -3582,9 +3442,9 @@
       "layout": "window",
       "caption": {
         "x": 172.8,
-        "y": 647.8,
-        "width": 775.4,
-        "height": 382.5
+        "y": 701,
+        "width": 831.3,
+        "height": 254
       },
       "card": {
         "x": 1036.8,
@@ -3593,10 +3453,10 @@
         "height": 1271.6
       },
       "headline": {
-        "fontSize": 121,
+        "fontSize": 119,
         "lines": 2
       },
-      "sha256": "6ebc6265ac91417f897dce2f53b89b279a2def7715ed3229d8545682610565e0"
+      "sha256": "279e39fea6601f7be56ce32f797ce23de8150092caa49a8348b4611091a8dee9"
     },
     "windows/desktop/en/01-dashboard.png": {
       "canvas": {
@@ -3606,9 +3466,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 454.8,
-        "height": 255.9
+        "y": 418.8,
+        "width": 553.4,
+        "height": 156
       },
       "card": {
         "x": 691.2,
@@ -3617,10 +3477,10 @@
         "height": 767.3
       },
       "headline": {
-        "fontSize": 81,
+        "fontSize": 73,
         "lines": 2
       },
-      "sha256": "5914c60e7f6fb80fc030b9b9b5e4ee6163a2502292b98e5dfe48a62901a33e22"
+      "sha256": "16d3752dcd7cb0b23311b1db203e57693f96d17a8482d94a66f911d992f7600b"
     },
     "windows/desktop/en/02-assistant.png": {
       "canvas": {
@@ -3630,9 +3490,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 390.9,
-        "height": 255.9
+        "y": 409.8,
+        "width": 409.5,
+        "height": 173
       },
       "card": {
         "x": 691.2,
@@ -3640,18 +3500,11 @@
         "width": 1286.4,
         "height": 767.3
       },
-      "chip": {
-        "x": 1046.8,
-        "y": 877.3,
-        "width": 412.6,
-        "height": 77.8,
-        "fontSize": 36.6
-      },
       "headline": {
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "c706a12147acb2445405a97c5b4e8c4a07035d122b9b547abaea76ef2c63b44e"
+      "sha256": "06d214072266d6ed92eaa22be73e1d309ca3a790069b3385a1c76e046737970a"
     },
     "windows/desktop/en/03-tasks.png": {
       "canvas": {
@@ -3661,9 +3514,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 518.5,
-        "height": 255.9
+        "y": 408.8,
+        "width": 550.8,
+        "height": 175
       },
       "card": {
         "x": 691.2,
@@ -3672,10 +3525,10 @@
         "height": 767.3
       },
       "headline": {
-        "fontSize": 81,
+        "fontSize": 74,
         "lines": 2
       },
-      "sha256": "9801bb876cb0bbd798ba0f6ee5a774ba133bd57b34c0ab557fc84f85419613fb"
+      "sha256": "5d5f233c39537704bd8408374032c86783fe00b29983c5624bc48d34dea42acd"
     },
     "windows/desktop/en/04-calendar.png": {
       "canvas": {
@@ -3685,9 +3538,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 394.6,
-        "height": 255.9
+        "y": 400.8,
+        "width": 459.5,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3699,7 +3552,7 @@
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "b9bcf85492bbae35f65c14a5fdb2dad519a564cb1d0b49a07a871213314ab539"
+      "sha256": "f06c57ffdadf2a3634b31ee5c54f588812296397a236bbd7c50b47909b07b534"
     },
     "windows/desktop/en/05-time-tracker.png": {
       "canvas": {
@@ -3709,9 +3562,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 537.5,
-        "height": 255.9
+        "y": 400.8,
+        "width": 525.4,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3723,7 +3576,7 @@
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "119baba50d9025f05906ee0146f3517ed8a87ad0313cb0a5398060df0ca06a47"
+      "sha256": "397e7ede424368797e8151aa87f678cc7b653f78b41bb1c4a9add4a761690f71"
     },
     "windows/desktop/en/06-finance.png": {
       "canvas": {
@@ -3733,9 +3586,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 377.3,
-        "width": 552.7,
-        "height": 252.9
+        "y": 401.8,
+        "width": 555.8,
+        "height": 189
       },
       "card": {
         "x": 691.2,
@@ -3747,7 +3600,7 @@
         "fontSize": 80,
         "lines": 2
       },
-      "sha256": "50e0a48c2014502e0c95de7421335f09fd53cb3b533c03154370f96a6407dccf"
+      "sha256": "5cb039728a0bf999f5d60a47931c51075a47f93a6129f5584836ba11521e2db1"
     },
     "windows/desktop/en/07-habits.png": {
       "canvas": {
@@ -3757,9 +3610,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 433.4,
-        "height": 255.9
+        "y": 400.8,
+        "width": 417,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3771,7 +3624,7 @@
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "c8524da2defff0eb98bb735a3552daa41d8d8411a38f6cac68c012100c835495"
+      "sha256": "172fe8f489a99c12009b10c62db3a649972ed6c94f895d6ddb94993ee04cc5b7"
     },
     "windows/desktop/en/08-notes.png": {
       "canvas": {
@@ -3781,9 +3634,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 382.3,
-        "width": 551.5,
-        "height": 241.9
+        "y": 409.8,
+        "width": 413.6,
+        "height": 173
       },
       "card": {
         "x": 691.2,
@@ -3792,10 +3645,10 @@
         "height": 767.3
       },
       "headline": {
-        "fontSize": 75,
+        "fontSize": 81,
         "lines": 2
       },
-      "sha256": "5a307b532a1c6d6fcce9f79531714374794d9d710b55e2eb78e519b38b728b14"
+      "sha256": "c39603e93f8dcc50c64c50ddaa6dc4e11703248de1058e8973889ad9fc20cb0a"
     },
     "windows/desktop/vi/01-dashboard.png": {
       "canvas": {
@@ -3805,9 +3658,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 390.3,
-        "width": 555.5,
-        "height": 224.9
+        "y": 409.8,
+        "width": 501.2,
+        "height": 173
       },
       "card": {
         "x": 691.2,
@@ -3816,10 +3669,10 @@
         "height": 767.3
       },
       "headline": {
-        "fontSize": 67,
+        "fontSize": 81,
         "lines": 2
       },
-      "sha256": "0754e61a95858e2b7683e14412974f3ceeec3ff876ac04f8f78ddc8afcfd74e4"
+      "sha256": "d632131b3f54f3e2b7ddda58450ac43c0c062f28edcc3f02d4be9f0963db1f0c"
     },
     "windows/desktop/vi/02-assistant.png": {
       "canvas": {
@@ -3829,9 +3682,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 429.6,
-        "height": 255.9
+        "y": 409.8,
+        "width": 393.8,
+        "height": 173
       },
       "card": {
         "x": 691.2,
@@ -3839,18 +3692,11 @@
         "width": 1286.4,
         "height": 767.3
       },
-      "chip": {
-        "x": 1066.2,
-        "y": 875.5,
-        "width": 393.3,
-        "height": 79.6,
-        "fontSize": 37.7
-      },
       "headline": {
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "43ad31ab6ab1b3e2b0b73a621bd155545025931b6d859d95941d803870e2c060"
+      "sha256": "45c057369bb1a04619e6f700a01e59378f8755a202cbf7a9d739621bbd5c77df"
     },
     "windows/desktop/vi/03-tasks.png": {
       "canvas": {
@@ -3860,9 +3706,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 380.3,
-        "width": 555,
-        "height": 246.9
+        "y": 400.8,
+        "width": 476,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3871,10 +3717,10 @@
         "height": 767.3
       },
       "headline": {
-        "fontSize": 77,
+        "fontSize": 81,
         "lines": 2
       },
-      "sha256": "f86aa580d962cece1299b063c66f5935673f0b4c78fd9ab0e141015e32df55ef"
+      "sha256": "e61b6f6dbf29d94d14dad9364f38b32661cd2d8d6a4602934974ae7421cf62f7"
     },
     "windows/desktop/vi/04-calendar.png": {
       "canvas": {
@@ -3884,9 +3730,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 377.3,
-        "width": 553,
-        "height": 252.9
+        "y": 400.8,
+        "width": 310.4,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3895,10 +3741,10 @@
         "height": 767.3
       },
       "headline": {
-        "fontSize": 80,
+        "fontSize": 81,
         "lines": 2
       },
-      "sha256": "3d7f57f5a9047415cba76176ecde91133f9ab559b4a364475f5e8515350cc699"
+      "sha256": "a0d7ef6eccb6db5d30c4961cae9e80bd3b8e4edf779a7c572fc2903271a7c84e"
     },
     "windows/desktop/vi/05-time-tracker.png": {
       "canvas": {
@@ -3908,9 +3754,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 485.2,
-        "height": 255.9
+        "y": 400.8,
+        "width": 471,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3922,7 +3768,7 @@
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "03a8803fa493286d3b9cb623510f6b2c0dc298fea960b6ccfec83314114ab641"
+      "sha256": "f7f5b0a5312bf1b8e336b4ffe971b6a5fddb41ec1b5b18c53ebef89386156aa0"
     },
     "windows/desktop/vi/06-finance.png": {
       "canvas": {
@@ -3932,9 +3778,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 520.6,
-        "height": 255.9
+        "y": 400.8,
+        "width": 433.6,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3946,7 +3792,7 @@
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "9519f1b7352afd36ef3e25f6712a60d191728190ea67f9e642b5a5eb13b06872"
+      "sha256": "61813e6f5ccbf47012ead2f74647b2050927fb6262b7712997a5459944ecdd1b"
     },
     "windows/desktop/vi/07-habits.png": {
       "canvas": {
@@ -3956,9 +3802,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 512.5,
-        "height": 255.9
+        "y": 400.8,
+        "width": 531.4,
+        "height": 192
       },
       "card": {
         "x": 691.2,
@@ -3970,7 +3816,7 @@
         "fontSize": 81,
         "lines": 2
       },
-      "sha256": "0b3a8155257e01451cf94301978e3963f6cf130e6a50686a3d286453484efd88"
+      "sha256": "dd3bbdb9a0cf07a7a743b0870635827550d39025dfaad882d460077bef3032ad"
     },
     "windows/desktop/vi/08-notes.png": {
       "canvas": {
@@ -3980,9 +3826,9 @@
       "layout": "window",
       "caption": {
         "x": 115.2,
-        "y": 376.3,
-        "width": 519,
-        "height": 255.9
+        "y": 412.8,
+        "width": 551.9,
+        "height": 168
       },
       "card": {
         "x": 691.2,
@@ -3991,10 +3837,10 @@
         "height": 767.3
       },
       "headline": {
-        "fontSize": 81,
+        "fontSize": 79,
         "lines": 2
       },
-      "sha256": "9f5654a01812ec26eca711b17419f591f4cb8003fed61b53853d29153012d507"
+      "sha256": "a01c8339f6ffa12bf6a113928f67f19baea4104f974a3a15528f4c14e814d2fe"
     }
   }
 }

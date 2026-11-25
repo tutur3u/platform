@@ -267,35 +267,35 @@ test('every target has a layout slot and its caption starts in the safe area', (
   );
 });
 
-test('draws no status bar', () => {
+test('uses one headline and no decorative overlays or status bar', () => {
   for (const target of SCREENSHOT_TARGETS) {
     const { html } = screenshotHtml({
       target,
       headline: 'Headline',
-      overline: 'Label',
+      feature: 'assistant',
       rawUrl: 'data:image/png;base64,AAAA',
     });
-    assert.doesNotMatch(html, /9:41|status|clock|<svg/);
+    assert.match(html, /data-feature="assistant"/);
+    assert.equal((html.match(/<h1/g) ?? []).length, 1);
+    assert.doesNotMatch(
+      html,
+      /class="(?:overline|chip)"|9:41|status|clock|<svg/
+    );
   }
 });
 
-test('fans three cards on the stack frames and two on the tablet frames', () => {
-  const urls = {
-    stack: { left: 'data:l', right: 'data:r' },
-    tablet: { right: 'data:r' },
-  };
-  const expected = { stack: 3, tablet: 2 };
+test('fans two cards only on the tablet frames', () => {
+  const fanUrls = { left: 'data:l', right: 'data:r' };
   for (const target of SCREENSHOT_TARGETS) {
     const { html, spec } = screenshotHtml({
       target,
       headline: 'H',
-      overline: 'O',
       rawUrl: 'data:c',
-      fanUrls: urls[target.layout] ?? urls.stack,
+      fanUrls,
     });
     const cards = html.match(/class="card/g).length;
-    const fanned = target.layout in expected;
-    assert.equal(cards, fanned ? expected[target.layout] : 1, target.device);
+    const fanned = target.layout === 'tablet';
+    assert.equal(cards, fanned ? 2 : 1, target.device);
     assert.equal(Boolean(spec.fan), fanned);
   }
 });
@@ -312,7 +312,6 @@ test('a cropped tablet card is wider and carries its crop', () => {
   const { html } = screenshotHtml({
     target,
     headline: 'H',
-    overline: 'O',
     rawUrl: 'data:c',
     crop: 0.62,
   });

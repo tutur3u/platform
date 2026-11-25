@@ -2,16 +2,16 @@
   "$comment": "Image captions for the store screenshots, keyed by screen id: the headline in each locale, the short product label (overline) above it and, for the assistant, the chip that repeats the state its capture shows. compose.mjs reads these; apps/mobile/store/metadata/*.json carries the same headline text for stores that list captions.",
   "screens": {
     "dashboard": {
-      "en": "Your whole day, one app",
-      "vi": "Cả ngày gọn trong một ứng dụng",
+      "en": "Tasks and events for today",
+      "vi": "Việc và lịch hẹn hôm nay",
       "overline": {
         "en": "Tuturuuu",
         "vi": "Tuturuuu"
       }
     },
     "assistant": {
-      "en": "Ask Mira, get it done",
-      "vi": "Cứ hỏi Mira, để Mira lo",
+      "en": "Make time with Mira",
+      "vi": "Xếp lịch cùng Mira",
       "overline": {
         "en": "Mira",
         "vi": "Mira"
@@ -22,48 +22,48 @@
       }
     },
     "tasks": {
-      "en": "Plan the week in minutes",
-      "vi": "Lên kế hoạch tuần thật nhanh",
+      "en": "Move work across the board",
+      "vi": "Theo dõi việc trên bảng",
       "overline": {
         "en": "Tasks",
         "vi": "Công việc"
       }
     },
     "calendar": {
-      "en": "Your week at a glance",
-      "vi": "Xem cả tuần trong nháy mắt",
+      "en": "See what’s on this week",
+      "vi": "Xem lịch cả tuần",
       "overline": {
         "en": "Calendar",
         "vi": "Lịch trình"
       }
     },
     "time-tracker": {
-      "en": "See where your time goes",
-      "vi": "Biết thời gian đi về đâu",
+      "en": "See what took your time",
+      "vi": "Xem thời gian đã dùng",
       "overline": {
         "en": "Time tracker",
         "vi": "Bấm giờ"
       }
     },
     "finance": {
-      "en": "Spending, clear and simple",
-      "vi": "Chi tiêu rõ ràng, đơn giản",
+      "en": "See where your money went",
+      "vi": "Xem tiền đã chi vào đâu",
       "overline": {
         "en": "Finance",
         "vi": "Tài chính"
       }
     },
     "habits": {
-      "en": "Build habits that stick",
-      "vi": "Thói quen tốt, giữ thật lâu",
+      "en": "Check off daily habits",
+      "vi": "Đánh dấu thói quen mỗi ngày",
       "overline": {
         "en": "Habits",
         "vi": "Thói quen"
       }
     },
     "notes": {
-      "en": "Catch ideas before they fade",
-      "vi": "Ghi ý tưởng trước khi quên",
+      "en": "Keep your ideas close",
+      "vi": "Ghi lại ý tưởng của bạn",
       "overline": {
         "en": "Notes",
         "vi": "Ghi chú"

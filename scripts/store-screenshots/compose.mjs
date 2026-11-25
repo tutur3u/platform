@@ -85,11 +85,11 @@ function fanUrls(target, fan) {
 /** Renders [html] and runs the page layout pass; returns what it measured. */
 async function render(page, { html, spec }) {
   await page.setViewportSize({ width: spec.width, height: spec.height });
-  await page.setContent(html, { waitUntil: 'networkidle' });
+  await page.setContent(html, { waitUntil: 'load' });
   const result = await page.evaluate((s) => window.__layout(s), spec);
   if (!result.fontsLoaded)
     throw new Error(
-      'Nunito or JetBrains Mono did not load; check network access to Google Fonts.'
+      'Nunito did not load; check network access to Google Fonts.'
     );
   return result;
 }
@@ -153,19 +153,14 @@ async function main() {
             target.layout === 'tablet' && anchors?.content
               ? Math.min(1, anchors.content.y + anchors.content.h)
               : null;
-          const anchor =
-            anchors?.done && anchors.details
-              ? { done: anchors.done, details: anchors.details }
-              : null;
           const composed = screenshotHtml({
             target,
             index,
             headline: screen.headline,
-            overline: screen.overline,
+            feature: screen.id,
             rawUrl: dataUrl(raw),
             fanUrls: fanUrls(target, fan),
             crop,
-            chip: screen.chip && anchor ? { text: screen.chip, anchor } : null,
           });
           const measured = await render(page, composed);
           const out = path.join(values.out, screen.file);

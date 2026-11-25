@@ -6,42 +6,42 @@
       "file": "apps/mobile/store/screenshots/macos/web/01-dashboard.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 28682
+      "bytes": 30388
     },
     {
       "id": "assistant",
       "file": "apps/mobile/store/screenshots/macos/web/02-assistant.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 26380
+      "bytes": 27856
     },
     {
       "id": "tasks",
       "file": "apps/mobile/store/screenshots/macos/web/03-tasks.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 38962
+      "bytes": 41362
     },
     {
       "id": "calendar",
       "file": "apps/mobile/store/screenshots/macos/web/04-calendar.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 38868
+      "bytes": 53056
     },
     {
       "id": "time-tracker",
       "file": "apps/mobile/store/screenshots/macos/web/05-time-tracker.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 21686
+      "bytes": 21270
     },
     {
       "id": "notes",
       "file": "apps/mobile/store/screenshots/macos/web/06-notes.webp",
       "width": 1280,
       "height": 800,
-      "bytes": 37432
+      "bytes": 43916
     }
   ]
 }

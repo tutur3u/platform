@@ -72,8 +72,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your whole day, one app",
-          "vi": "Cả ngày gọn trong một ứng dụng"
+          "en": "Tasks and events for today",
+          "vi": "Việc và lịch hẹn hôm nay"
         }
       },
       {
@@ -83,8 +83,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira, get it done",
-          "vi": "Cứ hỏi Mira, để Mira lo"
+          "en": "Make time with Mira",
+          "vi": "Xếp lịch cùng Mira"
         }
       },
       {
@@ -94,8 +94,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/03-tasks.jpg"
         },
         "caption": {
-          "en": "Plan the week in minutes",
-          "vi": "Lên kế hoạch tuần thật nhanh"
+          "en": "Move work across the board",
+          "vi": "Theo dõi việc trên bảng"
         }
       },
       {
@@ -105,8 +105,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/04-calendar.jpg"
         },
         "caption": {
-          "en": "Your week at a glance",
-          "vi": "Xem cả tuần trong nháy mắt"
+          "en": "See what’s on this week",
+          "vi": "Xem lịch cả tuần"
         }
       },
       {
@@ -116,8 +116,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/05-time-tracker.jpg"
         },
         "caption": {
-          "en": "See where your time goes",
-          "vi": "Biết thời gian đi về đâu"
+          "en": "See what took your time",
+          "vi": "Xem thời gian đã dùng"
         }
       },
       {
@@ -127,8 +127,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/06-finance.jpg"
         },
         "caption": {
-          "en": "Spending, clear and simple",
-          "vi": "Chi tiêu rõ ràng, đơn giản"
+          "en": "See where your money went",
+          "vi": "Xem tiền đã chi vào đâu"
         }
       },
       {
@@ -138,8 +138,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/07-habits.jpg"
         },
         "caption": {
-          "en": "Build habits that stick",
-          "vi": "Thói quen tốt, giữ thật lâu"
+          "en": "Check off daily habits",
+          "vi": "Đánh dấu thói quen mỗi ngày"
         }
       },
       {
@@ -149,8 +149,8 @@
           "vi": "apps/mobile/store/screenshots/android/phone/vi/08-notes.jpg"
         },
         "caption": {
-          "en": "Catch ideas before they fade",
-          "vi": "Ghi ý tưởng trước khi quên"
+          "en": "Keep your ideas close",
+          "vi": "Ghi lại ý tưởng của bạn"
         }
       }
     ],
@@ -162,8 +162,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your whole day, one app",
-          "vi": "Cả ngày gọn trong một ứng dụng"
+          "en": "Tasks and events for today",
+          "vi": "Việc và lịch hẹn hôm nay"
         }
       },
       {
@@ -173,8 +173,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira, get it done",
-          "vi": "Cứ hỏi Mira, để Mira lo"
+          "en": "Make time with Mira",
+          "vi": "Xếp lịch cùng Mira"
         }
       },
       {
@@ -184,8 +184,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/03-tasks.jpg"
         },
         "caption": {
-          "en": "Plan the week in minutes",
-          "vi": "Lên kế hoạch tuần thật nhanh"
+          "en": "Move work across the board",
+          "vi": "Theo dõi việc trên bảng"
         }
       },
       {
@@ -195,8 +195,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/04-calendar.jpg"
         },
         "caption": {
-          "en": "Your week at a glance",
-          "vi": "Xem cả tuần trong nháy mắt"
+          "en": "See what’s on this week",
+          "vi": "Xem lịch cả tuần"
         }
       },
       {
@@ -206,8 +206,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/05-time-tracker.jpg"
         },
         "caption": {
-          "en": "See where your time goes",
-          "vi": "Biết thời gian đi về đâu"
+          "en": "See what took your time",
+          "vi": "Xem thời gian đã dùng"
         }
       },
       {
@@ -217,8 +217,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/06-finance.jpg"
         },
         "caption": {
-          "en": "Spending, clear and simple",
-          "vi": "Chi tiêu rõ ràng, đơn giản"
+          "en": "See where your money went",
+          "vi": "Xem tiền đã chi vào đâu"
         }
       },
       {
@@ -228,8 +228,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/07-habits.jpg"
         },
         "caption": {
-          "en": "Build habits that stick",
-          "vi": "Thói quen tốt, giữ thật lâu"
+          "en": "Check off daily habits",
+          "vi": "Đánh dấu thói quen mỗi ngày"
         }
       },
       {
@@ -239,8 +239,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet7/vi/08-notes.jpg"
         },
         "caption": {
-          "en": "Catch ideas before they fade",
-          "vi": "Ghi ý tưởng trước khi quên"
+          "en": "Keep your ideas close",
+          "vi": "Ghi lại ý tưởng của bạn"
         }
       }
     ],
@@ -252,8 +252,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/01-dashboard.jpg"
         },
         "caption": {
-          "en": "Your whole day, one app",
-          "vi": "Cả ngày gọn trong một ứng dụng"
+          "en": "Tasks and events for today",
+          "vi": "Việc và lịch hẹn hôm nay"
         }
       },
       {
@@ -263,8 +263,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/02-assistant.jpg"
         },
         "caption": {
-          "en": "Ask Mira, get it done",
-          "vi": "Cứ hỏi Mira, để Mira lo"
+          "en": "Make time with Mira",
+          "vi": "Xếp lịch cùng Mira"
         }
       },
       {
@@ -274,8 +274,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/03-tasks.jpg"
         },
         "caption": {
-          "en": "Plan the week in minutes",
-          "vi": "Lên kế hoạch tuần thật nhanh"
+          "en": "Move work across the board",
+          "vi": "Theo dõi việc trên bảng"
         }
       },
       {
@@ -285,8 +285,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/04-calendar.jpg"
         },
         "caption": {
-          "en": "Your week at a glance",
-          "vi": "Xem cả tuần trong nháy mắt"
+          "en": "See what’s on this week",
+          "vi": "Xem lịch cả tuần"
         }
       },
       {
@@ -296,8 +296,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/05-time-tracker.jpg"
         },
         "caption": {
-          "en": "See where your time goes",
-          "vi": "Biết thời gian đi về đâu"
+          "en": "See what took your time",
+          "vi": "Xem thời gian đã dùng"
         }
       },
       {
@@ -307,8 +307,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/06-finance.jpg"
         },
         "caption": {
-          "en": "Spending, clear and simple",
-          "vi": "Chi tiêu rõ ràng, đơn giản"
+          "en": "See where your money went",
+          "vi": "Xem tiền đã chi vào đâu"
         }
       },
       {
@@ -318,8 +318,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/07-habits.jpg"
         },
         "caption": {
-          "en": "Build habits that stick",
-          "vi": "Thói quen tốt, giữ thật lâu"
+          "en": "Check off daily habits",
+          "vi": "Đánh dấu thói quen mỗi ngày"
         }
       },
       {
@@ -329,8 +329,8 @@
           "vi": "apps/mobile/store/screenshots/android/tablet10/vi/08-notes.jpg"
         },
         "caption": {
-          "en": "Catch ideas before they fade",
-          "vi": "Ghi ý tưởng trước khi quên"
+          "en": "Keep your ideas close",
+          "vi": "Ghi lại ý tưởng của bạn"
         }
       }
     ]

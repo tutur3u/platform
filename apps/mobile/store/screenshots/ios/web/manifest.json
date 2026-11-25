@@ -6,42 +6,42 @@
       "file": "apps/mobile/store/screenshots/ios/web/01-dashboard.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 55524
+      "bytes": 47344
     },
     {
       "id": "assistant",
       "file": "apps/mobile/store/screenshots/ios/web/02-assistant.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 48050
+      "bytes": 47794
     },
     {
       "id": "tasks",
       "file": "apps/mobile/store/screenshots/ios/web/03-tasks.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 41614
+      "bytes": 46106
     },
     {
       "id": "calendar",
       "file": "apps/mobile/store/screenshots/ios/web/04-calendar.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 46168
+      "bytes": 49898
     },
     {
       "id": "time-tracker",
       "file": "apps/mobile/store/screenshots/ios/web/05-time-tracker.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 32748
+      "bytes": 34948
     },
     {
       "id": "notes",
       "file": "apps/mobile/store/screenshots/ios/web/06-notes.webp",
       "width": 589,
       "height": 1280,
-      "bytes": 47632
+      "bytes": 48526
     }
   ]
 }

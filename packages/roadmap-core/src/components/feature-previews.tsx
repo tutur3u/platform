@@ -90,9 +90,6 @@ export function FeaturePreviews({ features, lang, t }: Props) {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_80%_at_0%_0%,var(--rm-wash-1),transparent_60%),radial-gradient(100%_80%_at_100%_100%,var(--rm-wash-2),transparent_60%)] opacity-80"
       />
       <header className="relative grid gap-1.5">
-        <p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-          {t.eyebrow}
-        </p>
         <h2
           id="feature-previews-title"
           className="text-balance font-semibold text-2xl tracking-tight"
@@ -162,9 +159,6 @@ export function FeaturePreviews({ features, lang, t }: Props) {
           )}
         </div>
         <div className="grid content-center gap-3">
-          <p className="w-fit rounded-full bg-muted px-2.5 py-0.5 font-medium text-xs">
-            {feature.product}
-          </p>
           {/* Only the feature is announced; device and theme switches are
               already announced by their toggles. */}
           <div className="grid gap-3" aria-live="polite">

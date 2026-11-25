@@ -195,12 +195,12 @@ test('flattens alpha into an opaque RGB PNG', () => {
 
 test('reads headlines and overlines from store-captions.json', () => {
   assert.deepEqual(captionFor('en', 'assistant'), {
-    headline: 'Ask Mira, get it done',
+    headline: 'Make time with Mira',
     overline: 'Mira',
     chip: 'Calendar updated',
   });
   assert.deepEqual(captionFor('vi', 'time-tracker'), {
-    headline: 'Biết thời gian đi về đâu',
+    headline: 'Xem thời gian đã dùng',
     overline: 'Bấm giờ',
     chip: null,
   });
@@ -213,7 +213,7 @@ test('reads headlines and overlines from store-captions.json', () => {
     planned[4].file,
     'apps/mobile/store/screenshots/windows/desktop/vi/05-time-tracker.png'
   );
-  assert.equal(planned[1].headline, 'Cứ hỏi Mira, để Mira lo');
+  assert.equal(planned[1].headline, 'Xếp lịch cùng Mira');
   const metadata = {
     screenshots: {
       desktop: [
@@ -229,7 +229,7 @@ test('reads headlines and overlines from store-captions.json', () => {
     {
       id: 'notes',
       file: 'x/vi/notes.png',
-      headline: 'Ghi ý tưởng trước khi quên',
+      headline: 'Ghi lại ý tưởng của bạn',
       overline: 'Ghi chú',
       chip: null,
     },
