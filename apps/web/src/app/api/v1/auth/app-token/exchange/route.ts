@@ -38,7 +38,10 @@ import {
 } from '@/lib/app-coordination/refresh-binding';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { isExternalAppStrictBinding } from '@/lib/app-coordination/strict-binding';
-import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
+import {
+  authorizeWorkspaceSessionAppTokenExchange,
+  confirmRefreshNotAMember,
+} from '@/lib/app-coordination/workspace-session';
 import { PKCE_CODE_VERIFIER_PATTERN } from '@/lib/auth/cross-app-pkce';
 import {
   type AuthUserIdentity,
@@ -421,13 +424,20 @@ async function exchangeAppToken(request: NextRequest) {
         { status: 503, headers: { 'Retry-After': '30' } }
       );
     }
-    // A valid, unreplayed refresh whose user is proven not to be a direct
-    // MEMBER of its bound workspace (the family is revoked as before).
-    if (refreshResult === 'not_a_member') {
-      return NextResponse.json(
-        { code: 'NOT_A_MEMBER', error: 'Forbidden' },
-        { status: 403 }
-      );
+    // The family is already revoked. Report NOT_A_MEMBER only when the full
+    // workspace-session check confirms it for the token's own workspace.
+    if (refreshResult && 'denied' in refreshResult) {
+      return (await confirmRefreshNotAMember({
+        admin: sbAdmin,
+        allowedWorkspaceIds: resolvedTarget.allowedWorkspaceIds,
+        claims: refreshResult.claims,
+        requestedWorkspaceId: workspaceId,
+      }))
+        ? NextResponse.json(
+            { code: 'NOT_A_MEMBER', error: 'Forbidden' },
+            { status: 403 }
+          )
+        : failed('Invalid or expired refresh token', 'token');
     }
     if (!refreshResult)
       return failed('Invalid or expired refresh token', 'token');

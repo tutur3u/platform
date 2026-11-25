@@ -594,10 +594,15 @@ exchange, a pending MEMBER invite to a non-member still wins
 non-member whose invite check sees a concurrent join gets a plain `403`. A
 `GUEST` gets `NOT_A_MEMBER` (even with a pending upgrade invite) only if a second
 read still finds them a `GUEST`. On a silent refresh, the refresh-grant check
-runs first: a valid, unreplayed refresh token bound to a workspace where the
-user is no longer a direct `MEMBER` returns `403` `NOT_A_MEMBER` (instead of the
-earlier `401`) and still revokes its refresh family. Later uses of that family,
-expired or replayed tokens, and every other refusal stay `401`. Bad credentials, missing scopes,
+runs first and revokes the refresh family of a workspace-bound token whose user
+is no longer a direct `MEMBER`. The exchange then re-runs the full
+workspace-session check above (link, pending invite, concurrent join, GUEST
+re-read) for the token's own bound workspace, and answers `403` `NOT_A_MEMBER`
+only if that check confirms it and the request names no other workspace. Every
+other outcome stays the generic `401`, as do later uses of the revoked family and
+expired or replayed tokens. The code always refers to the refresh token's bound
+workspace. In a non-production runtime without a replay store, nothing is revoked,
+so repeated uses keep answering `403`. Bad credentials, missing scopes,
 unlinked or mismatched workspaces and failed lookups keep their generic bodies
 without that code. An app may treat `NOT_A_MEMBER` as authoritative grounds to
 revoke its own grants. It must not treat any other `403` that way.

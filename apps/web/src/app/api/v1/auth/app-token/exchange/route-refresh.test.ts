@@ -106,6 +106,46 @@ describe('app token exchange route', () => {
       code: 'NOT_A_MEMBER',
       error: 'Forbidden',
     });
+    // The refresh family is still revoked.
+    expect(mocks.redisSet).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /^app-token:refresh:family-revoked:workspace-app:/u
+      ),
+      expect.any(String),
+      expect.anything()
+    );
+  });
+
+  it('keeps a removed member refresh for another workspace generic', async () => {
+    mockRegisteredApp([], 'workspace-app', [workspaceId]);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ workspaceMember: false })
+    );
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        email: 'victim@example.com',
+        expiresInSeconds: 86_400,
+        originApp: 'web',
+        scopes: ['app-token:refresh'],
+        targetApp: 'workspace-app',
+        userId: victimUserId,
+        workspaceId,
+      },
+      { secret: 'test-secret' }
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'workspace-app',
+        appSecret: 'ttr_app_secret_test',
+        refreshToken,
+        requestedScopes: ['workspace:session'],
+        workspaceId: '44444444-4444-4444-8444-444444444444',
+      })
+    );
+
+    expect(response.status).not.toBe(200);
+    expect(await response.json()).not.toHaveProperty('code', 'NOT_A_MEMBER');
   });
 
   it('refreshes registered app tokens without a fresh cross-app token', async () => {

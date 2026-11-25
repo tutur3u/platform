@@ -191,3 +191,39 @@ export async function authorizeWorkspaceSessionAppTokenExchange({
     status: 403,
   };
 }
+
+/**
+ * Confirms a refresh-grant membership refusal before the exchange reports
+ * `NOT_A_MEMBER`. The grant check reads membership once; this re-runs the full
+ * workspace-session authorization (link check, pending invite, concurrent
+ * join, GUEST re-read) for the refresh token's own bound workspace, and only
+ * when the request names no other workspace.
+ */
+export async function confirmRefreshNotAMember({
+  admin,
+  allowedWorkspaceIds,
+  claims,
+  requestedWorkspaceId,
+}: {
+  admin: AdminDb;
+  allowedWorkspaceIds: string[];
+  claims: { email?: string | null; sub: string; workspace_id?: string };
+  requestedWorkspaceId?: string;
+}) {
+  const bound = claims.workspace_id?.trim();
+  const requested = requestedWorkspaceId?.trim();
+  if (!bound) return false;
+  if (requested && requested.toLowerCase() !== bound.toLowerCase()) {
+    return false;
+  }
+
+  const authorization = await authorizeWorkspaceSessionAppTokenExchange({
+    admin,
+    allowedWorkspaceIds,
+    authEmail: claims.email ?? null,
+    userId: claims.sub,
+    workspaceId: bound,
+  });
+
+  return !authorization.ok && authorization.code === 'NOT_A_MEMBER';
+}

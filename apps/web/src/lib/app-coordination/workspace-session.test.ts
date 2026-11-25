@@ -14,7 +14,10 @@ vi.mock('@/lib/workspace-invitations/status', () => ({
   getWorkspaceInviteStatus: mocks.getWorkspaceInviteStatus,
 }));
 
-import { authorizeWorkspaceSessionAppTokenExchange } from './workspace-session';
+import {
+  authorizeWorkspaceSessionAppTokenExchange,
+  confirmRefreshNotAMember,
+} from './workspace-session';
 
 function authorize() {
   return authorizeWorkspaceSessionAppTokenExchange({
@@ -118,5 +121,80 @@ describe('authorizeWorkspaceSessionAppTokenExchange', () => {
       ok: false,
       status: 403,
     });
+  });
+});
+
+describe('confirmRefreshNotAMember', () => {
+  const claims = { email: 'a@example.com', sub: 'user-1', workspace_id: WS };
+  function confirm(overrides: Record<string, unknown> = {}) {
+    return confirmRefreshNotAMember({
+      admin: {} as never,
+      allowedWorkspaceIds: [WS],
+      claims,
+      ...overrides,
+    });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({ status: 'none' });
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: 'membership_missing',
+      ok: false,
+    });
+  });
+
+  it('confirms a removed member of the token workspace', async () => {
+    expect(await confirm()).toBe(true);
+    expect(await confirm({ requestedWorkspaceId: WS.toUpperCase() })).toBe(
+      true
+    );
+  });
+
+  it('refuses to confirm for another requested workspace', async () => {
+    expect(
+      await confirm({
+        requestedWorkspaceId: '44444444-4444-4444-8444-444444444444',
+      })
+    ).toBe(false);
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+  });
+
+  it('refuses to confirm without a bound workspace', async () => {
+    expect(await confirm({ claims: { sub: 'user-1' } })).toBe(false);
+  });
+
+  it('refuses to confirm for an unlinked workspace', async () => {
+    expect(await confirm({ allowedWorkspaceIds: [] })).toBe(false);
+  });
+
+  it('refuses to confirm with a pending invite or a concurrent join', async () => {
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({
+      invitation: { id: 'invite-1' },
+      status: 'pending_invite',
+    });
+    expect(await confirm()).toBe(false);
+
+    mocks.getWorkspaceInviteStatus.mockResolvedValue({ status: 'member' });
+    expect(await confirm()).toBe(false);
+  });
+
+  it('refuses to confirm a guest upgraded during the check', async () => {
+    mocks.verifyWorkspaceMembershipType
+      .mockResolvedValueOnce({
+        error: 'membership_type_mismatch',
+        membershipType: 'GUEST',
+        ok: false,
+      })
+      .mockResolvedValueOnce({ membershipType: 'MEMBER', ok: true });
+    expect(await confirm()).toBe(false);
+  });
+
+  it('refuses to confirm when the lookup fails', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      error: 'membership_lookup_failed',
+      ok: false,
+    });
+    expect(await confirm()).toBe(false);
   });
 });

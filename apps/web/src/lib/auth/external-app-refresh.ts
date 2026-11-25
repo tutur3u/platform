@@ -31,8 +31,11 @@ export type ExternalAppRefreshResult =
       graceReplay: boolean;
     }
   | 'limited'
-  /** The grant ended because the user is no longer a direct MEMBER. */
-  | 'not_a_member'
+  /**
+   * The grant ended because one membership read found no direct MEMBER row.
+   * A candidate only: the caller must confirm it before telling the app.
+   */
+  | { claims: AppCoordinationTokenClaims; denied: 'not_a_member' }
   | 'unavailable'
   | null;
 
@@ -148,7 +151,7 @@ export async function verifyExternalAppRefreshToken({
   // Only a membership denial proven by this request's own grant check is
   // reported; a family revoked earlier stays an indistinct refusal.
   if (consumeResult === 'revoked' && grant === 'not_a_member') {
-    return 'not_a_member';
+    return { claims, denied: 'not_a_member' };
   }
   if (consumeResult === 'replayed' || consumeResult === 'revoked') {
     return null;
@@ -162,7 +165,7 @@ export async function verifyExternalAppRefreshToken({
     if (grant !== undefined || !mayRefreshWithoutFence()) return 'unavailable';
     // The exempt runtime has no fence store, so the grant runs on its own.
     grant = await checkRefreshGrant(admin, app, claims);
-    if (grant === 'not_a_member') return 'not_a_member';
+    if (grant === 'not_a_member') return { claims, denied: 'not_a_member' };
     if (grant !== 'live') return grant === 'revoked' ? null : 'unavailable';
   }
 

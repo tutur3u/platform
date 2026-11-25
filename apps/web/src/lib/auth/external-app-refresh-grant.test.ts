@@ -214,7 +214,9 @@ describe('external app refresh grant', () => {
     async (_label, results) => {
       const { admin, queries } = adminWith(results);
 
-      expect(await refresh(refreshToken(), admin)).toBe('not_a_member');
+      expect(await refresh(refreshToken(), admin)).toMatchObject({
+        denied: 'not_a_member',
+      });
       expect(queries).toEqual(['workspace_members']);
       expectFamilyRevoked();
     }
@@ -223,7 +225,9 @@ describe('external app refresh grant', () => {
   it('reports a later use of a family revoked for membership as a plain refusal', async () => {
     const results = { workspace_members: { data: null, error: null } };
     const token = refreshToken();
-    expect(await refresh(token, adminWith(results).admin)).toBe('not_a_member');
+    expect(await refresh(token, adminWith(results).admin)).toMatchObject({
+      denied: 'not_a_member',
+    });
 
     // The family fence is now set; the next attempt never reaches the grant.
     mocks.get.mockResolvedValue(String(Math.floor(Date.now() / 1000)));
@@ -408,8 +412,8 @@ describe('external app refresh grant', () => {
 
     expect(await refresh(refreshToken(), admin)).not.toBeNull();
     // The grant check still runs and still refuses a removed member.
-    expect(await refresh(refreshToken(), adminWith().admin)).toBe(
-      'not_a_member'
-    );
+    expect(await refresh(refreshToken(), adminWith().admin)).toMatchObject({
+      denied: 'not_a_member',
+    });
   });
 });
