@@ -194,7 +194,10 @@ export function withHstsResponsePolicy<Args extends unknown[]>(
     try {
       response = await fetch(...args);
     } catch (error) {
-      console.error('[start-bridge] worker failed', safeErrorFields(error));
+      console.error(
+        '[start-bridge] worker failed',
+        safeErrorFields(error, { message: true })
+      );
       response = new Response('Internal Server Error', {
         status: 500,
         headers: {

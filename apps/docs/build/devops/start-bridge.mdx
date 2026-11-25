@@ -1,7 +1,7 @@
 ---
 title: "Start bridge (@tuturuuu/start-bridge)"
 description: "The frozen v0 contract for running Next App Router satellites on TanStack Start + Vite+ on Cloudflare, including the basePath and per-app session cookie rules."
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-25"
 audience: developers
 ---
 
@@ -114,9 +114,15 @@ gate (`decideOneOriginRequest`, #6746).
 The shared request handler and final HSTS wrapper return a generic 500 for
 escaped failures. Their console errors include a fixed prefix and fields from
 `safeErrorFields` in `@tuturuuu/utils/log-safety`. The helper allows known names
-and codes and HTTP statuses from 100 through 599. Route values, error messages,
-stacks, and provider or database payloads stay out of Worker logs. Validate IDs
-with `safeLogUuid` before logging them. Email Service uses the same helper and
+and codes and HTTP statuses from 100 through 599. These two top-level catches
+also pass `{ message: true }`, which adds the error's own message so an escaped
+500 stays diagnosable. The message is read only when it is already a string
+(no `toString`, `valueOf` or getter runs), cut to 200 characters on one line,
+and scrubbed of JWTs, `sb_*_` keys, Bearer and Basic credentials, credential
+assignments, URLs with credentials or a query string, email addresses, and long
+hex or base64 runs. Stacks, causes, route values, and provider or database
+payloads stay out of Worker logs, and every other call site logs no message.
+Validate IDs with `safeLogUuid` before logging them. Email Service uses the same helper and
 records recipient counts and the audit ID when development mode skips delivery.
 Mail's `log-safety-guard.test.ts` scans these server log sites, and Start
 Bridge's request-handler and response-policy tests assert the emitted fields.

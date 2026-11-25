@@ -431,7 +431,10 @@ export function createBridgeHandler<
       // A failure in the proxy, an endpoint or Start still answers through
       // the app's response policy (no-store, robots, framing), never with
       // its details.
-      console.error('[start-bridge] request failed', safeErrorFields(error));
+      console.error(
+        '[start-bridge] request failed',
+        safeErrorFields(error, { message: true })
+      );
       return bridgeErrorResponse();
     }
   };

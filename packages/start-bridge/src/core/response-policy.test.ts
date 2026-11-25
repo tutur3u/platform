@@ -520,7 +520,7 @@ describe('Worker HSTS final boundary', () => {
       );
     }
   );
-  it('finalizes a thrown handler failure and logs only safe fields', async () => {
+  it('finalizes a thrown handler failure and logs only safe fields and a scrubbed message', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     const response = await withHstsResponsePolicy(async () => {
       throw {
@@ -534,7 +534,12 @@ describe('Worker HSTS final boundary', () => {
     expect(log.mock.calls).toEqual([
       [
         '[start-bridge] worker failed',
-        { name: 'PostgrestError', code: 'PGRST116', status: 406 },
+        {
+          name: 'PostgrestError',
+          code: 'PGRST116',
+          status: 406,
+          message: 'lookup failed for [redacted-email]',
+        },
       ],
     ]);
     expect(response.status).toBe(500);

@@ -4,7 +4,7 @@ import { createBridgeHandler } from './handler';
 
 afterEach(() => vi.restoreAllMocks());
 
-it('logs only safe fields when an app endpoint throws a PostgREST error', async () => {
+it('logs only safe fields and a scrubbed message when an app endpoint throws a PostgREST error', async () => {
   const log = vi.spyOn(console, 'error').mockImplementation(() => {});
   const handle = createBridgeHandler({
     mounts: { app: 'mail', rootHosts: ['mail.tuturuuu.com'] },
@@ -42,7 +42,12 @@ it('logs only safe fields when an app endpoint throws a PostgREST error', async 
   expect(log.mock.calls).toEqual([
     [
       '[start-bridge] request failed',
-      { name: 'PostgrestError', code: '22P02', status: 400 },
+      {
+        name: 'PostgrestError',
+        code: '22P02',
+        status: 400,
+        message: 'invalid UUID: [redacted-email]',
+      },
     ],
   ]);
 });
