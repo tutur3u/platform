@@ -75,6 +75,24 @@ const call = async (path, { method = 'GET', body, auth = true } = {}) => {
   }
 };
 
+// The Vite-hosted runtime can reload workerd shortly after a restart, once
+// the restarted Worker has served its first mutations; a request in flight
+// then fails inside Vite ("fetch failed") with an HTML 500 that never reached
+// the Worker. CI hit this on the read after resume (runs 45446364346 and
+// 45626910191). Retry only idempotent reads, only on that non-JSON answer,
+// and boundedly, so a real Worker failure still fails the test.
+const read = async (path) => {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await call(path);
+    } catch (caught) {
+      if (attempt === 10 || !/answered 5\d\d: /.test(String(caught?.message)))
+        throw caught;
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+};
+
 const sql = async (query, params = []) => {
   try {
     return await worker.durableObjectSql(
@@ -208,7 +226,7 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
   );
   await worker.restart();
   await waitReady();
-  const snapshot = await call(PROD);
+  const snapshot = await read(PROD);
   assert.equal(snapshot.body.meta.stopped, true);
   assert.equal(snapshot.body.meta.stopRevision, 1);
   assert.equal(snapshot.body.lanes[0].lockDeploymentId, id);
@@ -233,7 +251,7 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
   const day = new Date().toISOString().slice(0, 10);
   // The Local Explorer answers only once the restarted runtime has served a
   // request, so read the environment before writing through it.
-  assert.equal((await call(PROD)).status, 200);
+  assert.equal((await read(PROD)).status, 200);
   await sql('DELETE FROM budget');
   await sql('INSERT INTO budget (day, used) VALUES (?, 500)', [day]);
   await worker.restart();
@@ -250,7 +268,7 @@ test('lane lock, stop fence and budget survive workerd restarts', async () => {
       .status,
     200
   );
-  assert.equal((await call(PROD)).status, 200);
+  assert.equal((await read(PROD)).status, 200);
   const [{ used }] = await sql('SELECT used FROM budget');
   assert.ok(used >= 500);
 });
