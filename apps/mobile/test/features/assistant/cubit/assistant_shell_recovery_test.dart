@@ -7,6 +7,7 @@ import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
+import 'package:mobile/features/assistant/data/assistant_settings_selection.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,24 +78,84 @@ void main() {
     addTearDown(cubit.close);
   });
 
-  test('stored Fast is migrated and cannot change native Thinking', () async {
+  // A missing Calendar resolves asynchronously, as it does on a device, so
+  // the workspace still loads.
+  void calendarMissing() =>
+      when(
+        () => repository.fetchCalendarInsight(
+          '22222222-2222-4222-8222-222222222222',
+        ),
+      ).thenAnswer((_) async {
+        throw const ApiException(message: 'Not found', statusCode: 404);
+      });
+
+  test('a new workspace defaults to Fast', () async {
+    calendarMissing();
+    await cubit.loadWorkspace(workspace);
+    expect(cubit.state.status, AssistantShellStatus.loaded);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
+  });
+
+  test('the stored mode loads and a selection persists it', () async {
+    calendarMissing();
     final preferences = AssistantPreferences(
       currentUserId: () => '33333333-3333-4333-8333-333333333333',
     );
     await preferences.saveThinkingMode(
       '22222222-2222-4222-8222-222222222222',
-      AssistantThinkingMode.fast,
+      AssistantThinkingMode.thinking,
     );
     await cubit.loadWorkspace(workspace);
     expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
-    await cubit.setThinkingMode(AssistantThinkingMode.fast);
-    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+    expect(await cubit.setThinkingMode(AssistantThinkingMode.fast), isTrue);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
     expect(
       await preferences.loadThinkingMode(
         '22222222-2222-4222-8222-222222222222',
       ),
-      AssistantThinkingMode.thinking,
+      AssistantThinkingMode.fast,
     );
+  });
+
+  test('a mode selection travels in the settings selection', () async {
+    calendarMissing();
+    final selections = <AssistantSettingsSelection>[];
+    final selecting = AssistantShellCubit(
+      repository: repository,
+      preferences: AssistantPreferences(
+        currentUserId: () => '33333333-3333-4333-8333-333333333333',
+      ),
+      selectSettings: (selection, _) async {
+        selections.add(selection);
+        return AssistantSettingsDisposition.acknowledged;
+      },
+    );
+    addTearDown(selecting.close);
+    await selecting.loadWorkspace(workspace);
+    expect(
+      await selecting.setThinkingMode(AssistantThinkingMode.thinking),
+      isTrue,
+    );
+    expect(selections.single.thinkingMode, AssistantThinkingMode.thinking);
+    expect(selections.single.toJson()['thinkingMode'], 'thinking');
+    expect(selecting.state.thinkingMode, AssistantThinkingMode.thinking);
+  });
+
+  test('subscription models keep their provider defaults', () async {
+    calendarMissing();
+    await cubit.loadWorkspace(workspace);
+    cubit.restoreSelectedModel(
+      const AssistantGatewayModel(
+        value: 'chatgpt/gpt-5',
+        label: 'ChatGPT',
+        provider: 'chatgpt',
+      ),
+    );
+    expect(
+      await cubit.setThinkingMode(AssistantThinkingMode.thinking),
+      isFalse,
+    );
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
   });
 
   test('missing optional Calendar does not erase Pro balances', () async {

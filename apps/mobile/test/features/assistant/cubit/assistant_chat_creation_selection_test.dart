@@ -149,12 +149,14 @@ void main() {
         expect(h.chat.state.messages.single.parts.single.text, 'Known history');
         expect(h.chat.state.composerAttachments, [currentAttachment]);
         expect(h.sends, isEmpty);
+        // Matches the opened conversation's saved Thinking settings.
         const shell = AssistantShellState(
           selectedModel: AssistantGatewayModel(
             value: 'model',
             label: 'fixture',
             provider: 'synthetic',
           ),
+          thinkingMode: AssistantThinkingMode.thinking,
           workspaceContextId: ws,
         );
         expect(

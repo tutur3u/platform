@@ -1824,6 +1824,7 @@
   "assistantMicrophoneUnavailable": "Microphone unavailable. Check microphone access or reconnect your headset, then try again.",
   "assistantModeFast": "Fast",
   "assistantModeThinking": "Thinking",
+  "assistantResponseModeLabel": "Response mode",
   "assistantModelAll": "All",
   "assistantModelEmpty": "No models match these filters",
   "assistantModelFavorite": "Add to favorites",

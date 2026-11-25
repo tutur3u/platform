@@ -10,3 +10,8 @@ bool isAssistantModelAllowed(
     (allowedModels.isEmpty ||
         allowedModels.contains(model.value) ||
         allowedModels.contains(model.value.split('/').last));
+
+/// Subscription models (`chatgpt/…`) run with their provider's defaults, so
+/// they ignore the response mode, matching the web composer.
+bool assistantModelUsesProviderDefaults(AssistantGatewayModel model) =>
+    model.value.startsWith('chatgpt/');

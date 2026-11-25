@@ -109,4 +109,51 @@ void main() {
       verifyNever(() => api.patchJson(any(), any()));
     },
   );
+
+  for (final mode in AssistantThinkingMode.values) {
+    test('legacy stream sends the selected ${mode.name} mode', () async {
+      final api = _Api();
+      when(
+        () => api.sendJsonStream(
+          'POST',
+          '/api/ai/chat',
+          any(),
+          accept: 'text/event-stream',
+        ),
+      ).thenAnswer(
+        (_) async => http.StreamedResponse(
+          Stream.value(utf8.encode('data: [DONE]\n\n')),
+          200,
+        ),
+      );
+      final repository = AssistantRepository(
+        apiClient: api,
+        tasksApiClient: api,
+        chatRepository: ChatRepository(apiClient: api),
+      );
+      await repository
+          .streamChat(
+            chatId: 'ai-chat-11111111-1111-4111-8111-111111111111',
+            wsId: 'ws',
+            workspaceContextId: 'context',
+            modelId: 'model',
+            messages: const [],
+            thinkingMode: mode,
+            creditSource: AssistantCreditSource.workspace,
+            timezone: 'UTC',
+          )
+          .toList();
+      final payload =
+          verify(
+                () => api.sendJsonStream(
+                  'POST',
+                  '/api/ai/chat',
+                  captureAny(),
+                  accept: 'text/event-stream',
+                ),
+              ).captured.single
+              as Map<String, dynamic>;
+      expect(payload['thinkingMode'], mode.name);
+    });
+  }
 }

@@ -98,6 +98,13 @@ extension _AssistantPageComposer on _AssistantPageState {
                       repository: _repository,
                       onModelSelected: _selectRemoteModel,
                     ),
+              onThinkingModeChanged:
+                  localLane ||
+                      assistantModelUsesProviderDefaults(
+                        shellState.selectedModel,
+                      )
+                  ? null
+                  : _selectThinkingMode,
             )
           : null,
       child: composer,
@@ -145,5 +152,17 @@ extension _AssistantPageComposer on _AssistantPageState {
         ),
       ),
     );
+  }
+
+  /// Switches the response mode for later sends. A reply in flight stops,
+  /// as on web, so the next send uses the new mode; the switch never waits
+  /// for that reply to wind down.
+  Future<void> _selectThinkingMode(AssistantThinkingMode mode) async {
+    if (mode == _shellCubit.state.thinkingMode) return;
+    final stopping = _chatCubit.state.isBusy
+        ? _chatCubit.stopStreaming()
+        : null;
+    await _shellCubit.setThinkingMode(mode);
+    await stopping;
   }
 }

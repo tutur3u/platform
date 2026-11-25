@@ -12,6 +12,7 @@ import '../data/assistant_preferences.dart';
 import '../data/assistant_repository.dart';
 import '../data/assistant_reset_preferences.dart';
 import '../data/assistant_settings_selection.dart';
+import '../models/assistant_model_eligibility.dart';
 import '../models/assistant_models.dart';
 import '../models/assistant_soul_snapshot.dart';
 
@@ -78,7 +79,9 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
 
     try {
       final storedModel = await _preferences.loadModel(workspace.id);
-      const storedThinkingMode = AssistantThinkingMode.thinking;
+      final storedThinkingMode =
+          await _preferences.loadThinkingMode(workspace.id) ??
+          AssistantThinkingMode.fast;
       final storedCreditSource =
           await _preferences.loadCreditSource(workspace.id) ??
           AssistantCreditSource.workspace;
@@ -255,16 +258,11 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     if (!isClosed) emit(state.copyWith(selectedModel: model));
   }
 
-  Future<void> setThinkingMode(AssistantThinkingMode mode) async {
-    _settingsRequestVersion++;
-    final workspace = state.workspace;
-    if (workspace == null) return;
-    emit(state.copyWith(thinkingMode: AssistantThinkingMode.thinking));
-    await _preferences.saveThinkingMode(
-      workspace.id,
-      AssistantThinkingMode.thinking,
-    );
-  }
+  /// Selects the response mode for later sends and keeps it for the
+  /// workspace. Subscription models use their provider's defaults, so they
+  /// keep the current mode.
+  Future<bool> setThinkingMode(AssistantThinkingMode mode) =>
+      _selectThinkingMode(mode);
 
   Future<bool> setCreditSource(AssistantCreditSource source) =>
       _selectCreditSource(source);

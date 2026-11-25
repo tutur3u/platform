@@ -19,7 +19,7 @@ class AssistantShellState extends Equatable {
     this.availableModels = const [],
     this.selectedModel = _defaultAssistantModel,
     this.conversationSettings,
-    this.thinkingMode = AssistantThinkingMode.thinking,
+    this.thinkingMode = AssistantThinkingMode.fast,
     this.creditSource = AssistantCreditSource.workspace,
     this.workspaceContextId = 'personal',
     this.workspaceCreditLocked = false,

@@ -1091,6 +1091,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantModeThinking => 'Thinking';
 
   @override
+  String get assistantResponseModeLabel => 'Response mode';
+
+  @override
   String get assistantModelAll => 'All';
 
   @override

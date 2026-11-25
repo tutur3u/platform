@@ -1649,6 +1649,7 @@
   "assistantMicrophoneUnavailable": "Không thể sử dụng micrô. Hãy kiểm tra quyền truy cập hoặc kết nối lại tai nghe rồi thử lại.",
   "assistantModeFast": "Nhanh",
   "assistantModeThinking": "Suy nghĩ",
+  "assistantResponseModeLabel": "Chế độ phản hồi",
   "assistantModelAll": "Tất cả",
   "assistantModelEmpty": "Không có mô hình phù hợp",
   "assistantModelFavorite": "Thêm vào yêu thích",

@@ -129,8 +129,8 @@ void main() {
           'Summarize my calendar for today',
         );
 
-        // One prompt surface: no starter chips, only the model control, and
-        // no response-mode chip whatever mode a restored chat carries.
+        // One prompt surface: no starter chips; the model control and the
+        // response mode, which defaults to Fast and switches to Thinking.
         expect(
           find.byKey(const ValueKey('assistant-starter-prompts')),
           findsNothing,
@@ -139,9 +139,16 @@ void main() {
           find.byKey(const ValueKey('assistant-composer-model')),
           findsOneWidget,
         );
+        final mode = find.byKey(const ValueKey('assistant-composer-mode'));
         expect(
-          find.byKey(const ValueKey('assistant-composer-mode')),
-          findsNothing,
+          find.descendant(of: mode, matching: find.text('Fast')),
+          findsOneWidget,
+        );
+        await tester.tap(mode);
+        await tester.pumpAndSettle();
+        expect(
+          find.descendant(of: mode, matching: find.text('Thinking')),
+          findsOneWidget,
         );
         final composer = tester.getRect(
           find.descendant(

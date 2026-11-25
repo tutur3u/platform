@@ -741,16 +741,24 @@ coverage is in `assistant_morphing_dock_test.dart` and
 `assistant_composer_dock_test.dart`; installed-device appearance/keyboard checks
 remain part of release verification.
 
-Native mobile text sends and regeneration always use Thinking, including chats
-restored from older Fast preferences and the legacy transport fallback. The mode
-selector is intentionally absent; web and Live behavior are unchanged. Model
+Decision (2026-11-25), under the owner's mobile-web parity directive: native
+mobile text chat offers web's Fast/Thinking response-mode selector beside the
+model control. It defaults to Fast for a workspace without a saved choice, keeps
+the choice per workspace, and is absent for on-device models and for `chatgpt/`
+subscription models, which use their provider's defaults. An open conversation
+acknowledges the mode through its AI settings, a new chat carries it in its
+creation receipt, and the legacy transport sends it in the request body.
+Changing the mode stops a reply in flight. Live keeps its own model choice.
+Regression coverage: `assistant_shell_recovery_test.dart`,
+`assistant_legacy_chat_test.dart`, `assistant_thinking_mode_switch_test.dart`
+and `assistant_home_render_test.dart`. Model
 selection defaults to hiding locked or disabled models; users can reveal them
 for inspection but cannot select them. Model and attachment sheets use the dock
 glass material. Add attachments offers Files, Photos & Videos Library, and
 Capture & Record. Camera photo/video capture appears on Android and iOS only;
 recorded audio uses the existing microphone permission/recording flow. Cancelling
 a system picker adds nothing. Regression coverage includes the native request
-payload, stored preference migration, model default filter and source availability.
+payload, model default filter and source availability.
 
 Root mobile destinations and Assistant share 12px horizontal insets, an 8px
 bottom gap, and fixed 52px primary-action columns. A second column is reserved

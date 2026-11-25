@@ -47,6 +47,7 @@ import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
+import 'package:mobile/features/assistant/models/assistant_model_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_preferences.dart';

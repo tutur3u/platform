@@ -66,6 +66,46 @@ extension _AssistantShellSettings on AssistantShellCubit {
     }
   }
 
+  /// Response mode follows the model's settings path: an open conversation
+  /// acknowledges it, a new chat carries it in its creation receipt.
+  Future<bool> _selectThinkingMode(AssistantThinkingMode mode) async {
+    final workspace = state.workspace;
+    if (workspace == null ||
+        _settingsSelectionPending ||
+        mode == state.thinkingMode ||
+        assistantModelUsesProviderDefaults(state.selectedModel)) {
+      return false;
+    }
+    final creditWsId = state.creditSource == AssistantCreditSource.personal
+        ? state.personalWorkspaceId
+        : workspace.id;
+    if (creditWsId == null) return false;
+    final current = _settingsLease();
+    _settingsSelectionPending = true;
+    try {
+      final selection = AssistantSettingsSelection(
+        modelId: state.selectedModel.value,
+        creditSource: state.creditSource,
+        creditWsId: creditWsId,
+        thinkingMode: mode,
+      );
+      if (!await _acceptSettings(selection, current)) return false;
+      await _preferences.saveThinkingMode(workspace.id, mode);
+      if (!current()) return false;
+      _emitIfOpen(
+        state.copyWith(thinkingMode: mode, conversationSettings: null),
+      );
+      return true;
+    } on Object {
+      if (current()) {
+        _onSettingsSelectionFailure?.call(AssistantSettingsDisposition.unknown);
+      }
+      return false;
+    } finally {
+      _settingsSelectionPending = false;
+    }
+  }
+
   Future<bool> _selectCreditSource(AssistantCreditSource source) async {
     final workspace = state.workspace;
     if (workspace == null || _settingsSelectionPending) return false;

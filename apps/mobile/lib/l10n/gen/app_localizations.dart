@@ -2155,6 +2155,12 @@ abstract class AppLocalizations {
   /// **'Thinking'**
   String get assistantModeThinking;
 
+  /// No description provided for @assistantResponseModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Response mode'**
+  String get assistantResponseModeLabel;
+
   /// No description provided for @assistantModelAll.
   ///
   /// In en, this message translates to:

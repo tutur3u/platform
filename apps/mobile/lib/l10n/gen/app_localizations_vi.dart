@@ -1091,6 +1091,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantModeThinking => 'Suy nghĩ';
 
   @override
+  String get assistantResponseModeLabel => 'Chế độ phản hồi';
+
+  @override
   String get assistantModelAll => 'Tất cả';
 
   @override

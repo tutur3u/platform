@@ -95,7 +95,7 @@ Stream<AssistantStreamEvent> _streamAssistantLegacyChat({
       'messages': messages.map((m) => m.toJson()).toList(),
       'isMiraMode': true,
       'timezone': timezone,
-      'thinkingMode': AssistantThinkingMode.thinking.name,
+      'thinkingMode': thinkingMode.name,
       'creditSource': creditSource.name,
       if (creditWsId != null) 'creditWsId': creditWsId,
       if (requestId != null) 'persistenceRequestId': requestId,
