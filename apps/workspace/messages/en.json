@@ -13774,6 +13774,9 @@
       },
       "track": {
         "description": "Time tracking and work records"
+      },
+      "whiteboards": {
+        "description": "Real-time whiteboards for sketching and diagramming with your team"
       }
     },
     "ecosystem": "One ecosystem. Many ways in.",

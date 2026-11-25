@@ -14518,6 +14518,9 @@
       },
       "track": {
         "description": "Theo dõi thời gian và hoạt động"
+      },
+      "whiteboards": {
+        "description": "Bảng trắng thời gian thực để phác thảo và vẽ sơ đồ cùng nhóm"
       }
     },
     "ecosystem": "Một hệ sinh thái. Nhiều điểm bắt đầu.",
