@@ -8,6 +8,19 @@ import {
   PLAYGROUND_EXPORT_SCRIPT,
 } from './devbox-playground-files';
 
+function exportProject(directory: string) {
+  // Use an isolated fixture in place of the container's project directory.
+  const script = PLAYGROUND_EXPORT_SCRIPT.replaceAll(
+    "'/project'",
+    JSON.stringify(directory)
+  );
+  return spawnSync('python3', ['-I', '-S', '-B', '-c', script], {
+    encoding: 'utf8',
+    maxBuffer: PLAYGROUND_EXPORT_BYTES,
+    timeout: 5000,
+  });
+}
+
 it.each(['\u0080'.repeat(131072), '\u0001'.repeat(262144)])(
   'exports a valid two MiB project within the transport bound',
   async (content) => {
@@ -16,17 +29,7 @@ it.each(['\u0080'.repeat(131072), '\u0001'.repeat(262144)])(
       for (let index = 0; index < 8; index++) {
         await writeFile(join(directory, `${index}.txt`), content);
       }
-      // Only synthetic files are used. Replace the container path for this isolated
-      // Python contract test; production still resolves paths exclusively inside Docker.
-      const script = PLAYGROUND_EXPORT_SCRIPT.replaceAll(
-        "'/project'",
-        JSON.stringify(directory)
-      );
-      const exported = spawnSync('python3', ['-I', '-S', '-B', '-c', script], {
-        encoding: 'utf8',
-        maxBuffer: PLAYGROUND_EXPORT_BYTES,
-        timeout: 5000,
-      });
+      const exported = exportProject(directory);
       expect(exported.error).toBeUndefined();
       expect(exported.status).toBe(0);
       expect(Buffer.byteLength(exported.stdout)).toBeLessThan(
@@ -44,7 +47,27 @@ it.each(['\u0080'.repeat(131072), '\u0001'.repeat(262144)])(
   }
 );
 
-it.each(['my file.txt', 'large.log'])(
+it('exports Java source alongside ignored binary class files', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'ttr-playground-export-'));
+  const content = 'class Main { static class Inner {} }\n';
+  try {
+    await writeFile(join(directory, 'Main.java'), content);
+    await writeFile(
+      join(directory, 'Main$Inner.class'),
+      Buffer.from([0xca, 0xfe, 0xba, 0xbe])
+    );
+    await writeFile(join(directory, 'Main$Other.class'), Buffer.from([0, 1]));
+
+    const exported = exportProject(directory);
+    expect(exported.error).toBeUndefined();
+    expect(exported.status).toBe(0);
+    expect(JSON.parse(exported.stdout)).toEqual([{ path: 'Main.java', content }]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+it.each(['my file.txt', 'Main$Inner.class', 'large.log'])(
   'identifies unsupported export file %s',
   async (name) => {
     const directory = await mkdtemp(join(tmpdir(), 'ttr-playground-export-'));
@@ -53,14 +76,7 @@ it.each(['my file.txt', 'large.log'])(
         join(directory, name),
         name === 'large.log' ? 'x'.repeat(262145) : 'x'
       );
-      const script = PLAYGROUND_EXPORT_SCRIPT.replaceAll(
-        "'/project'",
-        JSON.stringify(directory)
-      );
-      const exported = spawnSync('python3', ['-I', '-S', '-B', '-c', script], {
-        encoding: 'utf8',
-        timeout: 5000,
-      });
+      const exported = exportProject(directory);
       expect(exported.status).not.toBe(0);
       expect(exported.stderr).toContain(name);
       expect(exported.stderr).toContain(

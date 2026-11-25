@@ -41,8 +41,6 @@ for directory, folders, names in os.walk('/project',followlinks=False):
         info=os.lstat(path)
         if not stat.S_ISREG(info.st_mode): continue
         relative=os.path.relpath(path,'/project')
-        if len(relative)>240 or any(not re.fullmatch(r'[a-zA-Z0-9_.@+-]+', p) or p in ('.','..') for p in relative.split('/')):
-            raise ValueError('Unsupported Drive file path: '+relative)
         if info.st_size>262144: raise ValueError('File exceeds Drive save limit: '+relative)
         fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
         with os.fdopen(fd,'rb') as handle: data=handle.read(262145)
@@ -50,9 +48,11 @@ for directory, folders, names in os.walk('/project',followlinks=False):
         try: content=data.decode('utf-8')
         except UnicodeDecodeError: continue
         if chr(0) in content: continue
+        if len(relative)>240 or any(not re.fullmatch(r'[a-zA-Z0-9_.@+-]+', p) or p in ('.','..') for p in relative.split('/')):
+            raise ValueError('Unsupported Drive file path: '+relative)
         total+=len(data)
         if total>2097152 or len(files)>=128: raise ValueError('Project exceeds Drive save limit')
-        files.append({'path':os.path.relpath(path,'/project'),'content':content})
+        files.append({'path':relative,'content':content})
 print(json.dumps(files,ensure_ascii=False))
 `;
 
