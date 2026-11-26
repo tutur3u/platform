@@ -7,9 +7,11 @@ import 'package:mobile/features/assistant/widgets/assistant_conversation_row.dar
 import 'package:mobile/l10n/l10n.dart';
 
 /// Body width from which Mira keeps its history beside the thread: an
-/// 834dp tablet in portrait and wider windows. Narrower windows open the
-/// routed Conversations page instead.
-const double assistantHistorySidebarMinWidth = 820;
+/// 800dp or wider portrait tablet beside the 80dp navigation rail, such as
+/// an 820dp or 834dp iPad, and wider windows. Narrower bodies, such as a
+/// 768dp portrait tablet's 688dp, open the routed Conversations page
+/// instead.
+const double assistantHistorySidebarMinWidth = 720;
 
 /// Width of the history sidebar for a body of [bodyWidth].
 double assistantHistorySidebarWidth(double bodyWidth) =>

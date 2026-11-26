@@ -12,17 +12,19 @@ SidebarBehavior defaultSidebarBehaviorFor(Size size) =>
 
 /// How the shell presents its primary navigation for the current width.
 enum ShellNavigationMode {
-  /// Floating bottom dock (phones and portrait tablets).
+  /// Floating bottom dock (phones, in either orientation).
   dock,
 
-  /// Leading vertical rail (landscape tablets, laptops and desktops).
+  /// Leading vertical rail (tablets in either orientation, laptops and
+  /// desktops).
   rail,
 }
 
 /// Picks the shell navigation mode for a window [size].
 ///
-/// The rail needs an expanded width (>= 840dp) on a tablet-or-larger window
-/// (shortest side >= 600dp). Phones keep the floating dock in landscape too.
+/// The rail needs web's `md` width (>= 768dp) on a tablet-or-larger window
+/// (shortest side >= 600dp), so portrait tablets match web. Phones keep the
+/// floating dock in landscape too.
 ShellNavigationMode shellNavigationModeFor(Size size) =>
     size.width >= AppLayout.navigationRailMinWidth &&
         size.shortestSide >= Breakpoints.mediumMin

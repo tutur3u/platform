@@ -9,7 +9,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
@@ -88,6 +92,10 @@ Future<RailShell> pumpRailShell(
   ThemeCubit? theme,
   LocaleCubit? locale,
   shad.ThemeData? appTheme,
+  // Renders through the app's design pipeline (classic or [sorbet]) at
+  // [brightness], as the design goldens do.
+  Brightness? brightness,
+  SorbetTheme? sorbet,
 }) async {
   SharedPreferences.setMockInitialValues({
     if (sidebarBehavior != null) 'sidebar-behavior:device': sidebarBehavior,
@@ -154,17 +162,31 @@ Future<RailShell> pumpRailShell(
         ],
         child: shad.ShadcnApp.router(
           debugShowCheckedModeBanner: false,
-          theme: appTheme ?? MobileShadTheme.light,
+          theme: brightness != null
+              ? AppearanceTheme.shadThemeFor(
+                  const AppearanceSettings(),
+                  sorbet,
+                  brightness,
+                )
+              : appTheme ?? MobileShadTheme.light,
           localizationsDelegates: const [
             ...AppLocalizations.localizationsDelegates,
             shad.ShadcnLocalizations.delegate,
           ],
           supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) {
-            Widget app = ColoredBox(
+            var app = ShadcnMaterialBridge.appBuilder(context, child);
+            if (brightness != null) {
+              app = SorbetAppearanceHost(
+                appearance: const AppearanceSettings(),
+                sorbet: sorbet,
+                child: app,
+              );
+            }
+            app = ColoredBox(
               // Captures include the page colour behind transparent chrome.
               color: shad.Theme.of(context).colorScheme.background,
-              child: ShadcnMaterialBridge.appBuilder(context, child),
+              child: app,
             );
             if (textDirection != null) {
               app = Directionality(textDirection: textDirection, child: app);

@@ -11,10 +11,13 @@ TaskListInfo _list(String board, String list) => TaskListInfo(
 );
 
 /// Home sizes: the shared phone, portrait tablet and laptop, plus a
-/// landscape iPad (icon rail) and a wide desktop (sidebar, capped canvas).
+/// landscape iPad and a 768dp portrait tablet (icon rail) and a wide desktop
+/// (sidebar, capped canvas).
 final _homeRenderSizes = <String, Size>{
   ...renderSizes,
   'tablet-landscape': const Size(1180, 820),
+  // The narrowest portrait tablet with the rail (web md).
+  'tablet-md': const Size(768, 1024),
   'wide': const Size(1920, 1080),
 };
 
@@ -23,7 +26,7 @@ final _homeRenderSizes = <String, Size>{
 /// the rail or sidebar.
 int _homeColumns(String size) => switch (size) {
   'phone' => 1,
-  'tablet' => 2,
+  'tablet' || 'tablet-md' => 2,
   _ => 3,
 };
 

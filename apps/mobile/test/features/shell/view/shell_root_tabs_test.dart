@@ -191,13 +191,14 @@ void main() {
     });
   }
 
-  for (final width in [390.0, 834.0]) {
+  // 700dp is a tablet dock layout: from 768dp, tablets get the rail.
+  for (final width in [390.0, 700.0]) {
     testWidgets('root shows five accessible icons at ${width}dp', (
       tester,
     ) async {
       final router = await _pumpShell(
         tester,
-        size: Size(width, 1194),
+        size: Size(width, 1000),
         savedTabs: ['tasks', 'calendar'],
       );
       final dock = find.byType(MorphingNavigationBar);
@@ -396,7 +397,7 @@ void main() {
     expect(tester.getRect(picker), bounds);
   });
 
-  for (final size in [const Size(390, 844), const Size(834, 1194)]) {
+  for (final size in [const Size(390, 844), const Size(700, 1000)]) {
     testWidgets(
       'dock keeps three fixed slots across routed screens at ${size.width}dp',
       (tester) async {

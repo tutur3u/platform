@@ -31,7 +31,7 @@ export 'package:mobile/features/shell/view/shell_sidebar_geometry.dart';
 /// Full-height leading navigation for wide layouts, with Back and a
 /// persistent brand header and account footer.
 ///
-/// The icon rail (landscape tablets) shows each destination's label as a
+/// The icon rail (tablets from 768dp) shows each destination's label as a
 /// tooltip; the [extended] sidebar (laptops and desktops) shows it beside
 /// the icon. Both start at the top, like the web sidebar, and end at a
 /// hairline against the page.

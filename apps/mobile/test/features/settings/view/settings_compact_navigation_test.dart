@@ -273,6 +273,7 @@ void main() {
   testWidgets(
     'system Back dismisses a choice without leaving Settings or writing',
     (tester) async {
+      _viewport(tester, const Size(390, 844));
       final h = _SettingsHarness();
       addTearDown(() async {
         await tester.pumpWidget(const SizedBox.shrink());

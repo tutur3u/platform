@@ -172,11 +172,15 @@ coverage lives in `test/core/cache/offline_preparer_registry_test.dart`.
 ## Shell and offline expectations
 
 Screens inherit the app shell's background and single top title/actions bar.
-On phones and portrait tablets the floating bottom navbar owns in-app Back
-navigation and scroll clearance. On landscape tablets, laptops, and desktops
-(width >= 840dp, shortest side >= 600dp) the same destinations, including Back,
-move to a full-height leading rail and the dock keeps only composers and page
-actions. Below 1280dp the rail is 80dp of icons with tooltips, matching the
+On phones, including phones in landscape, the floating bottom navbar owns
+in-app Back navigation and scroll clearance. On tablets in either orientation,
+laptops, and desktops (width >= 768dp, matching the web's `md` breakpoint, and
+shortest side >= 600dp) the same destinations, including Back, move to a
+full-height leading rail and the dock keeps only composers and page actions.
+A 768–834dp portrait tablet therefore shows the rail like the web, and its
+body beside the rail is about 690–750dp wide. Mira keeps its conversation history beside the thread
+from a 720dp body, so portrait tablets 800dp and wider (such as 820dp and
+834dp iPads) keep the sidebar and a 768dp portrait tablet opens the Conversations page. Below 1280dp the rail is 80dp of icons with tooltips, matching the
 web's collapsed sidebar; from 1280dp (13-inch laptops and wider) it is a 240dp
 sidebar with each destination's label.
 Full-screen/system forms have their own shell rules. These conventions keep
@@ -227,7 +231,10 @@ shell on every platform; on phones it opens as a drawer.
 - **Modes.** Expanded, Collapsed, Expand on hover and Minimal, as on web.
   Default: Expanded from 1280dp, Collapsed (icon rail) below. The choice syncs
   per account. With a keyboard, Ctrl/Cmd+B toggles Expanded and Collapsed and
-  Ctrl/Cmd+Alt+B picks Minimal.
+  Ctrl/Cmd+Alt+B picks Minimal. A synced Expanded choice applies on portrait
+  tablets too, as on web at md: the 240dp sidebar leaves a 528–594dp body, so
+  Home shows one column and Mira and master-detail pages keep their pushed
+  routes.
 - **Workspace switcher.** Shows the current workspace's avatar and name. It
   opens the workspace list with its search field always visible, plus Create
   and Manage workspaces. It appears on root pages, where the top bar also
@@ -293,8 +300,9 @@ Home dashboard on every platform; other root pages share the wider root canvas
 
 - **Columns.** Cards flow into balanced columns: each card goes to the shortest
   column, so a short card never leaves one side empty. Columns are at least
-  320dp: one on phones, two on portrait tablets, three beside the rail or the
-  laptop sidebar, four on wide desktops. Today and Up next are separate cards.
+  308dp: one on phones, two on portrait tablets beside the rail (768dp
+  included), three on landscape tablets or beside the laptop sidebar, four on
+  wide desktops. Today and Up next are separate cards.
 - **Scale.** The greeting, date and Today at a glance numbers step up with the
   width Home receives, and so does the gap between cards.
 - **Today at a glance.** On tablets and wider it is a KPI strip under the

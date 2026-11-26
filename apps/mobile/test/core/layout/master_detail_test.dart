@@ -62,6 +62,14 @@ void main() {
     expect(AppMasterDetailLayout.listWidth(1366), 400);
   });
 
+  test('portrait tablet bodies beside the 80dp rail', () {
+    // 834dp iPad: a 754dp body splits with a 320dp list and a 434dp pane.
+    expect(AppMasterDetailLayout.isSplit(834 - 80), isTrue);
+    expect(AppMasterDetailLayout.listWidth(834 - 80), 320);
+    // 768dp tablet: a 688dp body keeps the pushed detail.
+    expect(AppMasterDetailLayout.isSplit(768 - 80), isFalse);
+  });
+
   testWidgets('compact bodies show only the master', (tester) async {
     final modes = <bool>[];
     await _pump(

@@ -10,8 +10,9 @@ export 'package:mobile/core/layout/master_detail_split.dart';
 /// Split policy for list/detail screens. Decisions use the body width the
 /// screen receives (after the shell rail), never the window.
 abstract final class AppMasterDetailLayout {
-  /// Smallest body width that shows list and detail side by side. A tablet
-  /// in portrait (about 768-834dp) fits a 320dp list beside a readable pane.
+  /// Smallest body width that shows list and detail side by side. Beside the
+  /// 80dp rail an 834dp portrait tablet (754dp body) fits a 320dp list and a
+  /// readable pane; a 768dp one (688dp body) keeps the pushed detail.
   static const double splitMinWidth = 720;
 
   static const double listMinWidth = 320;

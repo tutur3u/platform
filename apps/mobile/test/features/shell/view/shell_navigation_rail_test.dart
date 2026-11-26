@@ -146,9 +146,11 @@ void main() {
     expect(shellNavigationExtentFor(const Size(1180, 820)), 80);
     expect(shellNavigationExtendedFor(const Size(1280, 800)), isTrue);
     expect(shellNavigationExtentFor(const Size(1470, 956)), 240);
-    // Phones in landscape and portrait tablets keep the dock.
+    // Phones in landscape keep the dock; portrait tablets get the icon rail.
     expect(shellNavigationExtentFor(const Size(1400, 430)), 0);
-    expect(shellNavigationExtentFor(const Size(820, 1180)), 0);
+    expect(shellNavigationExtentFor(const Size(760, 1180)), 0);
+    expect(shellNavigationExtentFor(const Size(820, 1180)), 80);
+    expect(shellNavigationExtendedFor(const Size(834, 1194)), isFalse);
   });
 
   testWidgets('frame keeps the body mounted when the rail comes and goes', (

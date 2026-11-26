@@ -59,14 +59,15 @@ void main() {
   });
   tearDownAll(() => supa.Supabase.instance.dispose());
 
-  // Phones and portrait tablets use the floating dock; expanded tablet and
-  // desktop windows move destinations to the leading rail and keep the dock
-  // only for the composer. Neither mode uses the disabled compact footer.
+  // Phones and windows narrower than 768dp use the floating dock; tablet
+  // and desktop windows from 768dp move destinations to the leading rail
+  // and keep the dock only for the composer. Neither mode uses the disabled
+  // compact footer.
   for (final width in [320.0, 600.0, 1024.0]) {
     testWidgets('Assistant composer follows the keyboard at width $width', (
       tester,
     ) async {
-      final rail = width >= 840;
+      final rail = width >= AppLayout.navigationRailMinWidth;
       const railKey = ValueKey('shell-navigation-rail');
       tester.view.physicalSize = Size(width, 900);
       tester.view.devicePixelRatio = 1;

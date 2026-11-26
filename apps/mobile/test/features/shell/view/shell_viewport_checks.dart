@@ -162,34 +162,40 @@ void registerShellViewportChecks(
     );
   }
 
-  testWidgets('landscape phones keep the dock; tablets switch to the rail', (
-    tester,
-  ) async {
-    expect(
-      shellNavigationModeFor(const Size(844, 390)),
-      ShellNavigationMode.dock,
-    );
-    expect(
-      shellNavigationModeFor(const Size(932, 430)),
-      ShellNavigationMode.dock,
-    );
-    expect(
-      shellNavigationModeFor(const Size(768, 1024)),
-      ShellNavigationMode.dock,
-    );
-    expect(
-      shellNavigationModeFor(const Size(839, 1000)),
-      ShellNavigationMode.dock,
-    );
-    expect(
-      shellNavigationModeFor(const Size(840, 600)),
-      ShellNavigationMode.rail,
-    );
-    expect(
-      shellNavigationModeFor(const Size(1440, 900)),
-      ShellNavigationMode.rail,
-    );
-  });
+  testWidgets(
+    'phones keep the dock; tablets get the rail in both orientations',
+    (tester) async {
+      expect(
+        shellNavigationModeFor(const Size(844, 390)),
+        ShellNavigationMode.dock,
+      );
+      expect(
+        shellNavigationModeFor(const Size(932, 430)),
+        ShellNavigationMode.dock,
+      );
+      // Portrait tablets get the rail from web's md breakpoint (768dp).
+      expect(
+        shellNavigationModeFor(const Size(767, 1024)),
+        ShellNavigationMode.dock,
+      );
+      expect(
+        shellNavigationModeFor(const Size(768, 1024)),
+        ShellNavigationMode.rail,
+      );
+      expect(
+        shellNavigationModeFor(const Size(834, 1194)),
+        ShellNavigationMode.rail,
+      );
+      expect(
+        shellNavigationModeFor(const Size(840, 600)),
+        ShellNavigationMode.rail,
+      );
+      expect(
+        shellNavigationModeFor(const Size(1440, 900)),
+        ShellNavigationMode.rail,
+      );
+    },
+  );
 
   testWidgets('root content clears the floating header and status bar', (
     tester,

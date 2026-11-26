@@ -119,6 +119,7 @@ abstract final class AppLayout {
   static const double rowDividerInset =
       rowHorizontalPadding + rowLeadingSize + rowLeadingGap;
 
-  /// Width at which the shell swaps the bottom dock for a leading rail.
-  static const double navigationRailMinWidth = Breakpoints.expandedMin;
+  /// Width at which the shell swaps the bottom dock for a leading rail: web's
+  /// `md` breakpoint, so portrait tablets (about 768-834dp) get the rail too.
+  static const double navigationRailMinWidth = 768;
 }

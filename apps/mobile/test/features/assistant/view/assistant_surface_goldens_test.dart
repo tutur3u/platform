@@ -11,6 +11,7 @@ import 'package:mobile/features/assistant/widgets/assistant_action_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_conversations.dart';
 
 import '../../../helpers/golden_tolerance.dart';
+import '../../../helpers/precache_images.dart';
 import 'assistant_s5_shell_harness.dart';
 
 void main() {
@@ -18,9 +19,9 @@ void main() {
   final original = goldenFileComparator;
   setUpAll(() {
     goldenFileComparator = GoldenTolerance(
-      File(
-        'test/features/assistant/view/assistant_surface_goldens_test.dart',
-      ).absolute.uri,
+      File('test/features/assistant/view/assistant_surface_goldens_test.dart')
+          .absolute
+          .uri,
     );
   });
   tearDownAll(() => goldenFileComparator = original);
@@ -59,6 +60,7 @@ void main() {
                   : find.byType(AssistantConversations),
               findsOneWidget,
             );
+            await precacheVisibleImages(tester);
             // Linux owns the raster baselines.
             if (Platform.isLinux) {
               await expectLater(

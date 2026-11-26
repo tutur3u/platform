@@ -29,6 +29,9 @@ void main() {
   for (final (size, extended) in [
     (const Size(1280, 800), true),
     (const Size(1180, 820), false),
+    // Portrait tablets get the icon rail from web's md breakpoint.
+    (const Size(834, 1194), false),
+    (const Size(768, 1024), false),
   ]) {
     testWidgets('wide shell places brand and account at ${size.width}dp', (
       tester,
@@ -119,6 +122,10 @@ void main() {
       ]) {
         expect(find.text(label), findsOneWidget);
       }
+      // The menu opens beside the rail and stays inside the window.
+      final logOut = tester.getRect(find.text(l10n.authLogOut));
+      expect(logOut.left, greaterThan(tester.getRect(rail).right));
+      expect(logOut.right, lessThanOrEqualTo(size.width));
 
       await tester.binding.handlePopRoute();
       await settleShell(tester);

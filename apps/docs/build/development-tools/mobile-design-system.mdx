@@ -360,10 +360,11 @@ should still use the gutter token.
 `shellNavigationModeFor(size)` in
 `features/shell/view/shell_navigation_rail.dart` picks the navigation mode:
 
-- **Dock**: phones, including landscape phones, and portrait tablets. The
-  floating bottom dock owns destinations and in-app Back.
-- **Rail**: width >= 840dp and shortest side >= 600dp (landscape tablets,
-  laptops, desktops). `ShellNavigationRail` shows the same destinations on
+- **Dock**: phones, including landscape phones. The floating bottom dock
+  owns destinations and in-app Back.
+- **Rail**: width >= 768dp (`AppLayout.navigationRailMinWidth`, the web's
+  `md` breakpoint) and shortest side >= 600dp: tablets in either
+  orientation, laptops, desktops. `ShellNavigationRail` shows the same destinations on
   the leading edge, including the mini-app Back item. It is full height,
   top-aligned and ends at a hairline. Below `shellSidebarMinWidth` (1280dp)
   it is the 80dp icon rail; from 1280dp it extends into the 240dp labelled
@@ -401,8 +402,11 @@ never the window:
 | < 720dp | List only. The feature keeps its pushed detail route. |
 | >= 720dp | List pane beside the detail pane, split by a 1dp divider. |
 
-The list pane is about a third of the body, clamped to 320–400dp. Portrait
-tablets (about 768–834dp) therefore split as well. Each pane resolves its own
+The list pane is about a third of the body, clamped to 320–400dp. The
+decision reads the body beside the rail: a portrait tablet from about 800dp
+(an 834dp iPad leaves a 754dp body) splits, while a 768dp portrait tablet
+(688dp body) keeps the pushed detail so neither pane drops below a readable
+width. Each pane resolves its own
 gutters and page-kind width, so a 360dp list uses compact gutters and the
 detail pane centres `reading` content at its own width.
 

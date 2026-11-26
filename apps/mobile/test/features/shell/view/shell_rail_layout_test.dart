@@ -9,7 +9,8 @@ import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
 import 'shell_rail_harness.dart';
 
-const _portrait = Size(820, 1180);
+// Just below web's md breakpoint (768dp), so portrait keeps the dock.
+const _portrait = Size(760, 1180);
 const _landscape = Size(1180, 820);
 
 final Finder _routedProbe = find.byWidgetPredicate(
@@ -70,9 +71,9 @@ void main() {
     expect(find.byType(ShellNavigationRail), findsOneWidget);
     final probe = tester.state(_routedProbe);
     final dock = tester.state(find.byType(FloatingShellDock));
-    // Width below 840, then shortest side below 600, then back to the rail.
+    // Width below 768, then shortest side below 600, then back to the rail.
     for (final size in [
-      const Size(800, 700),
+      const Size(760, 700),
       const Size(1000, 560),
       const Size(1000, 700),
     ]) {

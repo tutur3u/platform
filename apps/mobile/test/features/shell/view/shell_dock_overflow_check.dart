@@ -6,12 +6,13 @@ void _registerDockOverflowCheck(
   WorkspaceCubit Function() workspaceCubit,
   ShellProfileCubit Function() shellProfileCubit,
 ) {
-  for (final width in [360.0, 834.0]) {
+  // 700dp is a tablet dock layout: from 768dp, tablets get the rail.
+  for (final width in [360.0, 700.0]) {
     testWidgets(
       'inventory More lists hidden sections and navigates at ${width}dp',
       (tester) async {
         tester.view.devicePixelRatio = 1;
-        tester.view.physicalSize = Size(width, 1194);
+        tester.view.physicalSize = Size(width, 1000);
         addTearDown(() {
           tester.view.resetPhysicalSize();
           tester.view.resetDevicePixelRatio();

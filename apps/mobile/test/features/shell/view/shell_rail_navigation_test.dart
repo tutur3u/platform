@@ -15,9 +15,8 @@ Widget _primitivePage(String route) => Builder(
       Text(
         'Documents',
         key: const ValueKey('primitive-title'),
-        style: Theme.of(
-          context,
-        ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+        style: Theme.of(context).textTheme.headlineMedium
+            ?.copyWith(fontWeight: FontWeight.w700),
       ),
       const SizedBox(height: AppLayout.sectionGap),
       for (final (caption, rows) in [
@@ -47,7 +46,8 @@ void main() {
 
   for (final (name, size, gutter) in [
     ('phone', const Size(390, 844), 16.0),
-    ('tablet-portrait', const Size(768, 1024), 24.0 + 84),
+    // Beside the 80dp rail the 688dp body centres the same 552dp column.
+    ('tablet-portrait', const Size(768, 1024), 24.0 + 44),
     // Beside the 240dp sidebar the 1040dp body fits the 1120dp detail width.
     ('desktop', const Size(1280, 800), 36.0),
   ]) {

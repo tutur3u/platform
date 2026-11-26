@@ -56,8 +56,8 @@ void main() {
       expect(AppLayout.rowCompactMinHeight, greaterThanOrEqualTo(48));
     });
 
-    test('the rail starts at the expanded breakpoint', () {
-      expect(AppLayout.navigationRailMinWidth, Breakpoints.expandedMin);
+    test('the rail starts at the web md breakpoint', () {
+      expect(AppLayout.navigationRailMinWidth, 768);
     });
   });
 

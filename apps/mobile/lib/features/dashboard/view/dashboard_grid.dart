@@ -62,7 +62,9 @@ class _HomeScale {
   final bool strip;
 
   /// Minimum column width for the content-sized phone and tablet layout.
-  static const double minColumnWidth = 320;
+  /// Two columns fit beside the 80dp rail on a 768dp portrait tablet: a
+  /// 688dp body leaves 640dp inside 24dp gutters, split by a 24dp gap.
+  static const double minColumnWidth = 308;
 
   /// Widest grid: four columns on large laptop and desktop windows.
   static const int maxColumns = 4;

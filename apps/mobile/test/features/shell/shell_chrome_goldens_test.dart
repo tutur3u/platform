@@ -24,6 +24,7 @@ import 'package:mocktail/mocktail.dart';
 
 import '../../helpers/design_render_harness.dart';
 import '../../helpers/golden_tolerance.dart';
+import '../../helpers/precache_images.dart';
 import '../../helpers/pump_app.dart';
 import 'shell_chrome_scenes.dart';
 import 'view/shell_rail_harness.dart';
@@ -79,6 +80,52 @@ void main() {
       matchesGoldenFile('goldens/rail_detail_classic_light_tablet.png'),
     );
   });
+
+  // Portrait tablets from web's md breakpoint (768dp) get the rail, not the
+  // dock; tablet_md is the narrowest rail window.
+  for (final (design, sorbet) in [
+    ('classic', null),
+    ('sorbet', const SorbetTheme()),
+  ]) {
+    for (final brightness in Brightness.values) {
+      for (final (device, size) in [
+        ('tablet', const Size(834, 1194)),
+        ('tablet_md', const Size(768, 1024)),
+      ]) {
+        final name = 'rail_portrait_${design}_${brightness.name}_$device';
+        testWidgets(name, (tester) async {
+          tester.view
+            ..physicalSize = size
+            ..devicePixelRatio = 1
+            ..padding = const FakeViewPadding(top: 24, bottom: 20)
+            ..viewPadding = const FakeViewPadding(top: 24, bottom: 20);
+          addTearDown(tester.view.reset);
+          mockShellBackChannel();
+          await pumpRailShell(
+            tester,
+            Routes.apps,
+            brightness: brightness,
+            sorbet: sorbet,
+          );
+          expect(
+            find.byKey(const ValueKey('shell-navigation-rail')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const ValueKey('persistent-shell-dock-material')),
+            findsNothing,
+          );
+          await precacheVisibleImages(tester);
+          await captureRailShell(tester, name);
+          await expectLater(
+            find.byKey(railRenderKey),
+            matchesGoldenFile('goldens/$name.png'),
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+  }
 
   for (final (design, sorbet) in [
     ('classic', null),

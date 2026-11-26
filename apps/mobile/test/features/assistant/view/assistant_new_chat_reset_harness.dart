@@ -188,6 +188,12 @@ class _ResetHarness {
   Future<void>? lockWork;
   bool lockCompleted = false;
   Future<void> mount(WidgetTester tester) async {
+    // A phone window: history opens the routed Conversations page there,
+    // while tablet-class bodies keep it in the sidebar beside the thread.
+    tester.view
+      ..physicalSize = const Size(390, 844)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     AssistantCreationHoldBanner.resetDismissals();
     SharedPreferences.resetStatic();
     SharedPreferencesStorePlatform.instance = host;

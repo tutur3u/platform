@@ -11,8 +11,8 @@ void main() {
   for (final (name, window, railWidth, dock, maxPanelWidth) in [
     ('compact dock', const Size(390, 844), 0.0, true, 390.0),
     ('compact without dock', const Size(390, 844), 0.0, false, 390.0),
-    ('medium dock', const Size(768, 1024), 0.0, true, 768.0),
-    ('medium without dock', const Size(768, 1024), 0.0, false, 768.0),
+    ('medium dock', const Size(700, 1000), 0.0, true, 700.0),
+    ('medium without dock', const Size(700, 1000), 0.0, false, 700.0),
     ('phone landscape dock', const Size(844, 390), 0.0, true, 844.0),
     ('wide phone landscape dock', const Size(1024, 390), 0.0, true, 1024.0),
     ('landscape rail', const Size(1024, 768), 80.0, false, 792.0),
@@ -111,9 +111,9 @@ void main() {
             expect(panelRect.center.dx, closeTo(viewportRect.center.dx, 0.01));
             expect(panelRect.width, closeTo(maxPanelWidth, 0.01));
             expect(cardRect.center.dx, closeTo(panelRect.center.dx, 0.01));
-            if (window == const Size(768, 1024)) {
+            if (window == const Size(700, 1000)) {
               expect(cardRect.left, 24);
-              expect(cardRect.right, 744);
+              expect(cardRect.right, 676);
             }
             expect(measuredHeight, closeTo(panelRect.height, 0.01));
             expect(
