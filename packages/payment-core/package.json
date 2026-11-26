@@ -8,6 +8,8 @@
     ".": "./src/index.ts",
     "./ai-credits-helper": "./src/ai-credits-helper.ts",
     "./billing-helper": "./src/billing-helper.ts",
+    "./billing-provider": "./src/billing-provider.ts",
+    "./polar-shadow": "./src/polar-shadow.ts",
     "./customer-helper": "./src/customer-helper.ts",
     "./migrations-helper": "./src/migrations-helper.ts",
     "./polar-order-helper": "./src/polar-order-helper.ts",
