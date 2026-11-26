@@ -8,6 +8,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { getCurrencyLocale } from '@tuturuuu/utils/format';
 import { getCurrencyFractionDigits } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
+import { inventoryProductImageSrc } from '@/lib/inventory-product-image';
 import { currency } from './operator-format';
 
 export type SaleStockOption = {
@@ -214,7 +215,11 @@ export function getSaleStockOptions(
         categoryId: product.category_id ?? null,
         categoryName: product.category ?? null,
         financeCategoryId: product.finance_category_id ?? null,
-        imageUrl: product.avatar_url ?? null,
+        imageUrl: inventoryProductImageSrc({
+          avatarUrl: product.avatar_url,
+          productId: product.id,
+          wsId: product.ws_id,
+        }),
         key,
         price: typeof raw.price === 'number' ? raw.price : 0,
         productId: product.id,

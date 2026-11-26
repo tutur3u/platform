@@ -3,6 +3,7 @@
 import type { CheckCircle2 } from '@tuturuuu/icons';
 import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
+import { inventoryProductImageSrc } from '@/lib/inventory-product-image';
 import { numberOrZero } from './operator-stock';
 
 type BadgeTone = 'danger' | 'missing' | 'ready';
@@ -28,7 +29,13 @@ export function ProductIdentity({
           <img
             alt={product.name}
             className="h-full w-full object-cover"
-            src={product.avatar_url}
+            src={
+              inventoryProductImageSrc({
+                avatarUrl: product.avatar_url,
+                productId: product.id,
+                wsId: product.ws_id,
+              }) ?? undefined
+            }
           />
         ) : (
           <span className="font-semibold text-muted-foreground text-xs">

@@ -323,6 +323,7 @@ export function ProductEditDialog({
                         onChange={(avatarUrl) =>
                           setDetails((current) => ({ ...current, avatarUrl }))
                         }
+                        productId={row.id}
                         target="product-featured-image"
                         value={details.avatarUrl}
                         wsId={wsId}

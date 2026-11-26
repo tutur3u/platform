@@ -1060,8 +1060,8 @@ export type InventoryProductSummary = {
   unit?: string | null;
   usage?: string | null;
   warehouse?: string | null;
+  ws_id?: string | null;
 };
-
 export type InventoryManufacturer = {
   id: string;
   ws_id: string;

@@ -11,6 +11,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import { WEB_APP_URL } from '@/constants/common';
+import {
+  inventoryProductImageSrc,
+  inventoryUploadStoredValue,
+} from '@/lib/inventory-product-image';
 
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
@@ -18,6 +23,7 @@ export function InventoryImageUploadField({
   description,
   label,
   onChange,
+  productId,
   target,
   value,
   wsId,
@@ -25,6 +31,8 @@ export function InventoryImageUploadField({
   description?: string;
   label: string;
   onChange: (value: string) => void;
+  /** The saved product whose image this edits; previews read through it. */
+  productId?: string;
   target: InventoryMediaUploadTarget;
   value: string;
   wsId: string;
@@ -32,6 +40,9 @@ export function InventoryImageUploadField({
   const t = useTranslations('inventory.operator.forms');
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploadPath, setUploadPath] = useState('');
+  // The fresh signed read URL previews an upload until the form saves.
+  const [previewUrl, setPreviewUrl] = useState('');
+  const productImage = target === 'product-featured-image';
   const [progress, setProgress] = useState(0);
   const upload = useMutation({
     mutationFn: (file: File) =>
@@ -47,7 +58,16 @@ export function InventoryImageUploadField({
       setUploadPath('');
     },
     onSuccess: (result) => {
-      onChange(result.url);
+      onChange(
+        inventoryUploadStoredValue({
+          path: result.path,
+          platformOrigin: WEB_APP_URL,
+          readUrl: result.url,
+          target,
+          wsId,
+        })
+      );
+      setPreviewUrl(result.url);
       setUploadPath(result.path);
       setProgress(100);
       toast.success(t('imageUploadSuccess'));
@@ -74,6 +94,7 @@ export function InventoryImageUploadField({
             disabled={upload.isPending}
             onClick={() => {
               onChange('');
+              setPreviewUrl('');
               setUploadPath('');
               setProgress(0);
             }}
@@ -97,7 +118,16 @@ export function InventoryImageUploadField({
             <img
               alt={label}
               className="h-full w-full object-cover"
-              src={value}
+              src={
+                previewUrl ||
+                (productImage
+                  ? (inventoryProductImageSrc({
+                      avatarUrl: value,
+                      productId,
+                      wsId,
+                    }) ?? value)
+                  : value)
+              }
             />
           ) : (
             <div className="grid place-items-center gap-2 text-muted-foreground text-sm">
