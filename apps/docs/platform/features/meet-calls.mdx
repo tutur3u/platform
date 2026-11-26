@@ -570,8 +570,10 @@ known), so:
   renews for 75 seconds is treated as free, and each new page removes such
   expired claims.
 - **After a crash or a killed tab** the page cannot drop its claim, so the claim
-  stays live for up to 75 seconds. A reload within that window joins as a new
-  device; the old device leaves when the room's presence grace ends.
+  stays live for up to 75 seconds. A reload within that window gets a new id;
+  while the old device's presence grace lasts, the page offers **Switch to this
+  device** or **Join as another device**, and the old device leaves when the
+  grace ends.
 - **The server render** has no tab storage; it uses a throwaway id and keeps
   nothing, and the session is requested only from the browser.
 - **Without storage** (denied or unavailable) every load gets a fresh random
