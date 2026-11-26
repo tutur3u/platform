@@ -4068,19 +4068,6 @@
       "title": "Less time running your life. More time living it."
     },
     "pricing": {
-      "versionedComparison": {
-        "title": "Plan allowances",
-        "feature": "Allowance",
-        "credits": "AI credits",
-        "voice": "Private Mira voice minutes",
-        "boards": "Task boards per workspace",
-        "storage": "Drive storage (GiB)",
-        "meetings": "Meet participant-minutes",
-        "transcription": "Transcribed audio minutes",
-        "forms": "Form responses",
-        "automation": "Standard automation runs",
-        "allowance": "Usage allowances reset monthly, including on annual plans. Paid usage and storage pool per paid seat where applicable. Free AI is per person. Voice also uses AI credits. No automatic overage."
-      },
       "compare": "Compare all features",
       "eyebrow": "Pricing",
       "faq": {
@@ -4226,6 +4213,19 @@
         "monthly": "Monthly",
         "save": "Save 17%",
         "yearly": "Yearly"
+      },
+      "versionedComparison": {
+        "allowance": "Usage allowances reset monthly, including on annual plans. Paid usage and storage pool per paid seat where applicable. Free AI is per person. Voice also uses AI credits. No automatic overage.",
+        "automation": "Standard automation runs",
+        "boards": "Task boards per workspace",
+        "credits": "AI credits",
+        "feature": "Allowance",
+        "forms": "Form responses",
+        "meetings": "Meet participant-minutes",
+        "storage": "Drive storage (GiB)",
+        "title": "Plan allowances",
+        "transcription": "Transcribed audio minutes",
+        "voice": "Private Mira voice minutes"
       }
     },
     "problem": {
