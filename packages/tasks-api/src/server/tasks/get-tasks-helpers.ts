@@ -333,3 +333,23 @@ export async function buildTaskRelationshipSummary(
 
   return relationshipSummaryByTaskId;
 }
+
+/**
+ * Starts a workspace's `personal` flag lookup so it can overlap the caller's
+ * access checks. The rejection is observed here so an early return never
+ * leaves it unhandled; awaiting the result still surfaces it.
+ */
+export function lookupWorkspacePersonal(
+  sbAdmin: TypedSupabaseClient,
+  workspaceId: string
+) {
+  const lookup = Promise.resolve(
+    sbAdmin
+      .from('workspaces')
+      .select('personal')
+      .eq('id', workspaceId)
+      .maybeSingle()
+  );
+  lookup.catch(() => {});
+  return lookup;
+}

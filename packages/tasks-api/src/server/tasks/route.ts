@@ -44,6 +44,7 @@ import { insertWorkspaceTask } from './insert-workspace-task';
 import { generateTaskEmbedding } from './generate-task-embedding';
 import {
   buildTaskRelationshipSummary,
+  lookupWorkspacePersonal,
   normalizeTask,
   redactWorkspaceTaskMetadata,
   type TaskRecord,
@@ -636,6 +637,8 @@ export async function handleTaskRouteGET(
     const url = new URL(request.url);
     const boardId = url.searchParams.get('boardId');
     const listId = url.searchParams.get('listId');
+    // Loads alongside the access checks; read only once access is granted.
+    const wsLookup = lookupWorkspacePersonal(sbAdmin, normalizedWorkspaceId);
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWorkspaceId,
@@ -842,11 +845,7 @@ export async function handleTaskRouteGET(
       );
     }
 
-    const { data: workspaceRow, error: workspaceError } = await sbAdmin
-      .from('workspaces')
-      .select('personal')
-      .eq('id', normalizedWorkspaceId)
-      .maybeSingle();
+    const { data: workspaceRow, error: workspaceError } = await wsLookup;
 
     if (workspaceError) {
       logTaskRouteError(

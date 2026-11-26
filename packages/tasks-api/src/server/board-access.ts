@@ -482,6 +482,11 @@ export async function resolveTaskBoardAccess({
   // `membership_missing`. Production proved it: this check reported
   // membership_missing for the same user the admin-side RPC reports as
   // is_creator with type MEMBER.
+  // Permissions load alongside it and are read only for a confirmed member.
+  const permissionsLookup = Promise.resolve().then(() =>
+    getPermissions({ wsId: context.wsId, user })
+  );
+  permissionsLookup.catch(() => {});
   const memberCheck = await verifyWorkspaceMembershipType({
     wsId: context.wsId,
     userId: user.id,
@@ -501,10 +506,7 @@ export async function resolveTaskBoardAccess({
   let manageProjectsGranted: boolean | null = null;
 
   if (memberCheck.ok) {
-    const permissions = await getPermissions({
-      wsId: context.wsId,
-      user,
-    });
+    const permissions = await permissionsLookup;
     const canManageProjects =
       permissions?.containsPermission('manage_projects') === true;
     permissionsResolved = permissions !== null;
