@@ -51,6 +51,30 @@ const skip = (on: boolean, requestId?: string) =>
     ...(requestId ? { requestId } : {}),
   }) satisfies MeetRealtimeClientMessage;
 
+it('preserves verified and manual guest admission when event mode is off', () => {
+  const room = run(hosted(), {
+    type: 'room.settings.update',
+    settings: { allowAnonymousGuests: true, skipLobby: true },
+  }).state;
+  expect(room.settings?.eventModeExpiresAt).toBeUndefined();
+
+  const verified = token(5, { guest: true, guestTurnstileVerified: true });
+  const afterVerified = admitOrHold(room, verified, now).state;
+  expect(afterVerified.presence[verified.userId]).toBeDefined();
+
+  const afterUnverified = admitOrHold(afterVerified, guest, now).state;
+  expect(afterUnverified.presence[guest.userId]).toBeUndefined();
+  expect(afterUnverified.waiting[guest.userId]).toBeDefined();
+
+  const afterApproval = run(afterUnverified, {
+    type: 'admission.decideAll',
+    admit: true,
+  }).state;
+  expect(afterApproval.presence[guest.userId]).toBeDefined();
+  expect(afterApproval.waiting[guest.userId]).toBeUndefined();
+  expect(afterApproval.eventAdmissionAudit).toBeUndefined();
+});
+
 describe('automatic admission of signed-in people', () => {
   it('admits a signed-in person who arrives after the host turned it on', () => {
     const on = run(hosted(), skip(true)).state;
