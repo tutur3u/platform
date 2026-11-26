@@ -181,6 +181,7 @@ describe('boardModel', () => {
         board: { id: boardId, ws_id: wsId, access_type: 'member' },
         listPages: { 'list-1': { tasks: [], count: 0 } },
         preferences: { userConfigs: {}, workspaceConfigs: {} },
+        capturedAt: 1,
       })
     );
   });

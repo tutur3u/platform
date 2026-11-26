@@ -34,6 +34,7 @@ export default forwardRef<HTMLAnchorElement, Props>(function BridgeLink(
     scroll,
     prefetch,
     locale: _locale,
+    onBlur,
     onClick,
     onFocus,
     onMouseEnter,
@@ -91,6 +92,10 @@ export default forwardRef<HTMLAnchorElement, Props>(function BridgeLink(
       onFocus={(event) => {
         onFocus?.(event);
         schedulePreload();
+      }}
+      onBlur={(event) => {
+        onBlur?.(event);
+        cancelPreload();
       }}
       onTouchStart={(event) => {
         onTouchStart?.(event);

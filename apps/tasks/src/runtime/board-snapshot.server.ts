@@ -32,6 +32,8 @@ export interface BoardSnapshot {
   board: BoardSnapshotBoard;
   listPages: Record<string, BoardSnapshotListPage>;
   preferences: BoardPreferenceSeed;
+  /** When the reads started (ms), so the browser keeps newer local edits. */
+  capturedAt: number;
 }
 
 const DENIED_STATUSES = new Set([400, 401, 403, 404]);
@@ -152,6 +154,7 @@ export async function loadBoardSnapshot({
   wsId: string;
   boardId: string;
 }): Promise<BoardSnapshot | null> {
+  const capturedAt = Date.now();
   const suspended = isSuspended(user.id);
   const admin = (await createAdminClient({
     noCookie: true,
@@ -184,5 +187,5 @@ export async function loadBoardSnapshot({
     const page = pages[index];
     if (page) listPages[list.id] = page;
   });
-  return { board, listPages, preferences };
+  return { board, listPages, preferences, capturedAt };
 }

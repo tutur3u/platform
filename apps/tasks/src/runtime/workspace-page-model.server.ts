@@ -92,6 +92,7 @@ export async function boardModel(
     board: model.board,
     listPages: loaded.listPages,
     preferences: loaded.preferences,
+    snapshotAt: loaded.capturedAt,
     workspace,
     currentUserId: model.currentUserId,
   };

@@ -54,6 +54,13 @@ describe('isIPBlockedReusingRecentClear', () => {
     );
   });
 
+  it('always reads the shared unknown bucket', async () => {
+    isIPBlocked.mockResolvedValue(null);
+    await isIPBlockedReusingRecentClear('unknown');
+    await isIPBlockedReusingRecentClear('unknown');
+    expect(isIPBlocked).toHaveBeenCalledTimes(2);
+  });
+
   it('never reuses a block', async () => {
     isIPBlocked.mockResolvedValue(block);
     await expect(isIPBlockedReusingRecentClear('203.0.113.4')).resolves.toEqual(

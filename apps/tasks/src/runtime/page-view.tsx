@@ -82,6 +82,7 @@ function WorkspacePageContent({ page }: { page: WorkspacePage }) {
           initialBoard={page.board}
           initialListPages={page.listPages}
           initialPreferences={page.preferences}
+          initialSnapshotAt={page.snapshotAt}
           workspace={page.workspace}
           workspaceTier={page.workspace.tier ?? null}
           currentUserId={page.currentUserId}

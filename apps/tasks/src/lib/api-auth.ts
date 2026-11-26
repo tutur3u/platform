@@ -694,8 +694,7 @@ export function withSessionAuth<T = unknown>(
     // 2. Check persistent IP block
     // An undetermined client IP resolves to the shared 'unknown' bucket,
     // which is still block-checked and rate-limited rather than skipped.
-    // The API proxy checked this IP's block key in Redis on this request;
-    // only a clean database fallback is reused for a few seconds.
+    // A clean result is reused for a few seconds; a found block never is.
     const blockInfo = await isIPBlockedReusingRecentClear(ipAddress, {
       route: endpoint,
       source: 'api-auth',

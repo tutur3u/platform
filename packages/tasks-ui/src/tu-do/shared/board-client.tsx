@@ -19,6 +19,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -72,6 +73,8 @@ interface Props {
   initialListPages?: Record<string, BoardFirstListPage>;
   /** Board preferences read with `initialBoard` during the server render. */
   initialPreferences?: BoardPreferenceSeed;
+  /** Server time (ms) the initial pages and preferences were read at. */
+  initialSnapshotAt?: number;
   workspace: Pick<Workspace, 'id' | 'personal'>;
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
@@ -83,28 +86,45 @@ interface Props {
   instantSyncEnabled?: boolean;
 }
 
-/** Primes the preference queries the kanban waits for before its first paint. */
-function seedBoardPreferences(
-  queryClient: ReturnType<typeof useQueryClient>,
+type SeedEntry = { key: readonly unknown[]; data: unknown };
+
+/** The preference queries the kanban waits for before its first paint. */
+function preferenceSeedEntries(
   workspaceId: string,
   seed: BoardPreferenceSeed
-) {
+): SeedEntry[] {
+  const entries: SeedEntry[] = [];
   for (const [configId, fallback] of Object.entries(
     BOARD_USER_CONFIG_DEFAULTS
   )) {
     if (!Object.hasOwn(seed.userConfigs, configId)) continue;
-    queryClient.setQueryData(
-      ['user-config', configId],
-      seed.userConfigs[configId] ?? fallback
-    );
+    entries.push({
+      key: ['user-config', configId],
+      data: seed.userConfigs[configId] ?? fallback,
+    });
   }
   for (const configId of BOARD_WORKSPACE_CONFIG_IDS) {
     if (!Object.hasOwn(seed.workspaceConfigs, configId)) continue;
-    queryClient.setQueryData(
-      getUserWorkspaceConfigQueryKey(workspaceId, configId),
-      seed.workspaceConfigs[configId] ?? null
-    );
+    entries.push({
+      key: getUserWorkspaceConfigQueryKey(workspaceId, configId),
+      data: seed.workspaceConfigs[configId] ?? null,
+    });
   }
+  return entries;
+}
+
+/**
+ * Whether a server copy read at `snapshotAt` is newer than the cached query.
+ * A preloaded or back-navigated page model can be older than edits made in
+ * this tab since, and must not replace them.
+ */
+function isServerCopyNewer(
+  queryClient: ReturnType<typeof useQueryClient>,
+  key: readonly unknown[],
+  snapshotAt: number
+) {
+  const state = queryClient.getQueryState(key);
+  return state?.data === undefined || state.dataUpdatedAt < snapshotAt;
 }
 
 export function BoardClient({
@@ -112,6 +132,7 @@ export function BoardClient({
   initialBoard,
   initialListPages,
   initialPreferences,
+  initialSnapshotAt = 0,
   defaultView,
   idleBottomIsland,
   workspace,
@@ -132,29 +153,51 @@ export function BoardClient({
   const [cachedSnapshot, setCachedSnapshot] = useState<ReturnType<
     typeof readTaskBoardCache
   > | null>(null);
-  // Server-read first pages are fresher than any cached copy of this board, so
-  // they replace it before the first render and the columns skip their
-  // initial browser request.
+  // Server-read pages and preferences replace older cached copies, so the
+  // columns skip their initial browser request. Rendering only creates
+  // queries nothing observes yet; replacing an older cached copy waits for the
+  // layout effect below, before paint.
   const [serverSeed] = useState(() => {
     if (initialBoard?.id !== boardId) return null;
-    if (initialPreferences) {
-      seedBoardPreferences(
-        queryClient,
-        initialBoard.ws_id ?? workspace.id,
-        initialPreferences
-      );
+    const preferences = initialPreferences
+      ? preferenceSeedEntries(
+          initialBoard.ws_id ?? workspace.id,
+          initialPreferences
+        )
+      : [];
+    for (const { key, data } of preferences) {
+      if (queryClient.getQueryState(key)?.data !== undefined) continue;
+      queryClient.setQueryData(key, data, { updatedAt: initialSnapshotAt });
     }
-    if (!initialListPages) return null;
-    const seed = seedFromFirstListPages(initialListPages);
-    queryClient.setQueryData(['tasks', boardId], seed.tasks);
-    return seed;
+    const tasks =
+      initialListPages &&
+      isServerCopyNewer(queryClient, ['tasks', boardId], initialSnapshotAt)
+        ? seedFromFirstListPages(initialListPages)
+        : null;
+    return { preferences, tasks };
   });
+  useLayoutEffect(() => {
+    if (!serverSeed) return;
+    for (const { key, data } of serverSeed.preferences) {
+      if (isServerCopyNewer(queryClient, key, initialSnapshotAt))
+        queryClient.setQueryData(key, data, { updatedAt: initialSnapshotAt });
+    }
+    const tasksKey = ['tasks', boardId];
+    if (
+      serverSeed.tasks &&
+      isServerCopyNewer(queryClient, tasksKey, initialSnapshotAt)
+    ) {
+      queryClient.setQueryData(tasksKey, serverSeed.tasks.tasks, {
+        updatedAt: initialSnapshotAt,
+      });
+    }
+  }, [boardId, initialSnapshotAt, queryClient, serverSeed]);
 
   useEffect(() => {
     // A shared browser keeps only the signed-in user's board snapshots.
     bindTaskBoardCacheSessionEnd();
     if (currentUserId) purgeOtherUserTaskBoardCaches(currentUserId);
-    if (serverSeed) return;
+    if (serverSeed?.tasks) return;
     const snapshot = readTaskBoardCache(cacheScopeId, boardId);
     if (!snapshot) return;
 
@@ -214,7 +257,7 @@ export function BoardClient({
   const progressiveLoader = useProgressiveBoardLoader(
     boardWorkspaceId,
     boardId,
-    serverSeed?.pagination ?? cachedSnapshot?.pagination
+    serverSeed?.tasks?.pagination ?? cachedSnapshot?.pagination
   );
 
   // Tasks start empty and are populated progressively per-list.
@@ -227,7 +270,8 @@ export function BoardClient({
       return queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
     },
     gcTime: 7 * 24 * 60 * 60_000,
-    initialData: serverSeed?.tasks ?? cachedSnapshot?.tasks ?? [],
+    initialData: serverSeed?.tasks?.tasks ?? cachedSnapshot?.tasks ?? [],
+    initialDataUpdatedAt: serverSeed?.tasks ? initialSnapshotAt : undefined,
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

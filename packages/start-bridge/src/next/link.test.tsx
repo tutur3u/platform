@@ -50,6 +50,17 @@ describe('bridge Link intent preloading', () => {
     expect(router.preloadRoute).not.toHaveBeenCalled();
   });
 
+  it('does not preload a link tabbed past quickly', () => {
+    render(<Link href="/ws/boards">Boards</Link>);
+    const link = screen.getByText('Boards');
+    fireEvent.focus(link);
+    fireEvent.blur(link);
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(router.preloadRoute).not.toHaveBeenCalled();
+  });
+
   it('preloads immediately on touch', () => {
     render(<Link href="/ws/calendar">Calendar</Link>);
     fireEvent.touchStart(screen.getByText('Calendar'));
