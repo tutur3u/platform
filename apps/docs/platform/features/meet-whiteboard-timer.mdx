@@ -90,6 +90,15 @@ the pen board in class instead. While it is off:
   connection opened before the switch went off cannot write either, and a
   ticket refresh cannot raise a guest to edit. Cursors and selections, which
   change nothing on the board, still relay.
+- The client never sends element writes while the session is view-only. The
+  room's own `sync` and `role` messages decide, and before the room speaks the
+  ticket's role does. Local element changes on a view-only board are dropped,
+  not queued, so reopening a board (a reload, or **All boards** then **Open**)
+  replays nothing. A connection the room closes as `Read-only board` (code
+  1008) keeps the session view-only until the room itself grants edit; the
+  client reconnects once with a fresh ticket, and a second read-only close in
+  a row ends the connection instead of reconnecting again. Regression
+  coverage: `socket-transport.test.ts` ("a view-only session").
 - Hosts see **Can draw** as **Can draw (view only for now)** ("Được vẽ (tạm
   thời chỉ xem)"). The stored guest access is unchanged, so turning the switch
   on later lets those boards' guests draw without relinking.

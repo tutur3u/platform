@@ -7,7 +7,8 @@ class FakeSocket {
   sent: any[] = [];
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: string }) => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((event?: { code?: number; reason?: string }) => void) | null =
+    null;
   onerror: (() => void) | null = null;
   constructor(
     public url: string,
@@ -28,9 +29,9 @@ class FakeSocket {
   receive(message: unknown) {
     this.onmessage?.({ data: JSON.stringify(message) });
   }
-  drop() {
+  drop(code?: number, reason?: string) {
     this.readyState = 3;
-    this.onclose?.();
+    this.onclose?.({ code, reason });
   }
 }
 
@@ -350,5 +351,116 @@ describe('board socket transport', () => {
     await vi.advanceTimersByTimeAsync(100);
     FakeSocket.all[1]!.drop();
     expect(onFailed).toHaveBeenCalledTimes(1);
+  });
+
+  describe('a view-only session', () => {
+    const insert = (transport: ReturnType<typeof setup>['transport']) =>
+      transport.sendElementChanges({
+        senderId: 'u',
+        changes: [{ type: 'update', element: rect as never }],
+        timestamp: 1,
+      });
+    const viewTicket = (token = 't1') => ({
+      ...session(token),
+      role: 'view' as const,
+    });
+
+    it('never sends element writes on a view-only ticket', async () => {
+      const { transport, calls } = setup(vi.fn(async () => viewTicket()));
+      await tick();
+      const socket = FakeSocket.all[0]!;
+      socket.open();
+      // Dropped, not refused: the editor has nothing to queue and replay.
+      await expect(insert(transport)).resolves.toBeUndefined();
+      expect(socket.sent).toEqual([]);
+      expect(calls.role).toHaveBeenLastCalledWith('view');
+    });
+
+    it('follows the role the room honours over the ticket', async () => {
+      const { transport } = setup();
+      await tick();
+      const socket = FakeSocket.all[0]!;
+      socket.open();
+      socket.receive({
+        type: 'sync',
+        elements: [],
+        chunk: 0,
+        chunks: 1,
+        role: 'view',
+      });
+      await insert(transport);
+      expect(socket.sent).toEqual([]);
+      socket.receive({ type: 'role', role: 'edit' });
+      await insert(transport);
+      expect(socket.sent.map((message) => message.type)).toEqual(['elements']);
+    });
+
+    it('stays view-only after a read-only close and drops pending writes', async () => {
+      const join = vi.fn(async () => session(`t${join.mock.calls.length}`));
+      const { transport, calls } = setup(join);
+      await tick();
+      const first = FakeSocket.all[0]!;
+      first.open();
+      await insert(transport);
+      expect(first.sent).toHaveLength(1);
+      first.drop(1008, 'Read-only board');
+      expect(calls.role).toHaveBeenLastCalledWith('view');
+      await vi.advanceTimersByTimeAsync(100);
+      // One fresh ticket; the edit ticket does not lift the fence.
+      expect(join).toHaveBeenCalledTimes(2);
+      const second = FakeSocket.all.at(-1)!;
+      expect(second).not.toBe(first);
+      second.open();
+      await insert(transport);
+      expect(second.sent).toEqual([]);
+      expect(calls.role).toHaveBeenLastCalledWith('view');
+      // The room itself saying edit lifts it.
+      second.receive({ type: 'role', role: 'edit' });
+      await insert(transport);
+      expect(second.sent).toHaveLength(1);
+    });
+
+    it('stops instead of looping when the room refuses again', async () => {
+      const join = vi.fn(async () => session());
+      const onFailed = vi.fn();
+      const transport = createBoardSocketTransport({
+        join,
+        onRole: vi.fn(),
+        onClosed: vi.fn(),
+        onFailed,
+        createSocket: (url, protocols) =>
+          new FakeSocket(url, protocols) as unknown as WebSocket,
+        retryDelaysMs: [100, 200, 400],
+      });
+      transport.connect({
+        user: { id: 'u', displayName: 'U' },
+        onStatus: vi.fn(),
+        onElementChanges: vi.fn(),
+        onCursor: vi.fn(),
+        onSelection: vi.fn(),
+      });
+      await tick();
+      FakeSocket.all.at(-1)!.open();
+      FakeSocket.all.at(-1)!.drop(1008, 'Read-only board');
+      await vi.advanceTimersByTimeAsync(100);
+      FakeSocket.all.at(-1)!.open();
+      FakeSocket.all.at(-1)!.drop(1008, 'Read-only board');
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(join).toHaveBeenCalledTimes(2);
+      expect(onFailed).toHaveBeenCalledOnce();
+    });
+
+    it('reconnects normally after another policy close', async () => {
+      const { transport, join } = setup();
+      await tick();
+      FakeSocket.all[0]!.open();
+      FakeSocket.all[0]!.drop(1008, 'Ticket expired');
+      await vi.advanceTimersByTimeAsync(100);
+      expect(join).toHaveBeenCalledTimes(2);
+      const second = FakeSocket.all.at(-1)!;
+      second.open();
+      await insert(transport);
+      expect(second.sent).toHaveLength(1);
+    });
   });
 });

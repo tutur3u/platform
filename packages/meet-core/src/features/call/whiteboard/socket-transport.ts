@@ -41,6 +41,9 @@ export interface BoardTransport extends WhiteboardTransport {
 
 const OPEN = 1;
 const DEFAULT_RETRY = [1000, 2000, 5000, 10_000, 20_000] as const;
+/** The room closes a socket that writes to a board it may only view. */
+const POLICY_VIOLATION = 1008;
+const READ_ONLY_REASON = 'Read-only board';
 
 /**
  * Excalidraw adds a line or arrow with a single point on pointer-down. The
@@ -73,6 +76,14 @@ function isUnsentNewLine(
  * Whiteboard transport over the room's whiteboard socket. It keeps one socket,
  * refreshes its ticket before expiry, and reconnects a bounded number of times
  * with growing delays; after that it reports an error and stays closed.
+ *
+ * Element writes go out only while the session may edit: the room's own
+ * `sync` and `role` messages decide, and before the room speaks the server
+ * issued ticket does. A view-only session drops local element changes instead
+ * of sending or queueing them, so nothing is replayed after a reconnect. When
+ * the room closes the socket as read-only, the session stays view-only until
+ * the room itself says it may edit; a second read-only close in a row ends the
+ * transport instead of reconnecting again.
  */
 export function createBoardSocketTransport(
   options: BoardTransportOptions
@@ -100,6 +111,16 @@ export function createBoardSocketTransport(
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
   let attempts = 0;
   let generation = 0;
+  /** What this session may do now; element writes need `edit`. */
+  let role: BoardRole = 'view';
+  /** Set by a read-only close; only the room saying `edit` clears it. */
+  let readOnlyFence = false;
+  let readOnlyCloses = 0;
+  const setRole = (next: BoardRole, fromRoom: boolean) => {
+    if (fromRoom && next === 'edit') readOnlyFence = false;
+    role = readOnlyFence ? 'view' : next;
+    options.onRole(role);
+  };
 
   const status = (value: WhiteboardConnectionStatus, error?: Error) =>
     error ? handlers?.onStatus(value, error) : handlers?.onStatus(value);
@@ -124,7 +145,7 @@ export function createBoardSocketTransport(
     const message = parsed.data;
     switch (message.type) {
       case 'sync':
-        options.onRole(message.role);
+        setRole(message.role, true);
         remember(message.elements);
         if (message.elements.length > 0)
           handlers.onElementChanges({
@@ -163,7 +184,7 @@ export function createBoardSocketTransport(
         for (const listener of listeners) listener(message.members);
         return;
       case 'role':
-        options.onRole(message.role);
+        setRole(message.role, true);
         return;
       case 'saved':
         options.onSaved?.();
@@ -199,7 +220,7 @@ export function createBoardSocketTransport(
       return scheduleRetry(error instanceof Error ? error : new Error('join'));
     }
     if (mine !== generation) return;
-    options.onRole(session.role);
+    setRole(session.role, false);
     // The ticket travels as a subprotocol so it never lands in a URL log.
     let next: WebSocket;
     try {
@@ -227,13 +248,26 @@ export function createBoardSocketTransport(
         // A malformed frame is dropped; the socket stays open.
       }
     };
-    next.onclose = () => {
+    next.onclose = (event?: { code?: number; reason?: string }) => {
       if (mine !== generation) return;
       if (refresh) clearInterval(refresh);
       refresh = null;
       socket = null;
       known.clear();
       status('disconnected');
+      if (
+        event?.code === POLICY_VIOLATION &&
+        event.reason === READ_ONLY_REASON
+      ) {
+        // The ticket is spent and the board is view-only for this session.
+        readOnlyFence = true;
+        setRole('view', false);
+        if (++readOnlyCloses > 1) {
+          status('error', new Error('Whiteboard is view-only'));
+          options.onFailed?.();
+          return;
+        }
+      }
       scheduleRetry(new Error('Whiteboard connection closed'));
     };
     next.onerror = () => status('error', new Error('Whiteboard socket error'));
@@ -242,10 +276,13 @@ export function createBoardSocketTransport(
   async function renew() {
     try {
       const session = await options.join();
-      if (socket?.readyState === OPEN)
+      if (socket?.readyState === OPEN) {
         socket.send(
           JSON.stringify({ type: 'authenticate', token: session.token })
         );
+        // The session outlived a ticket period, so earlier refusals are over.
+        readOnlyCloses = 0;
+      }
     } catch (error) {
       const code = (error as { status?: number }).status;
       if (code === 403 || code === 404 || code === 410) {
@@ -283,6 +320,9 @@ export function createBoardSocketTransport(
       };
     },
     async sendElementChanges(batch) {
+      // A view-only session never writes; its local changes are dropped, not
+      // queued, so the room never refuses them and nothing is replayed.
+      if (role !== 'edit') return;
       const changes = batch.changes.filter(
         (change) => !isUnsentNewLine(change, known)
       );
