@@ -1,10 +1,15 @@
-import {
-  getBearerAppCoordinationToken,
-  verifyAppCoordinationToken,
-} from '@tuturuuu/auth/app-coordination';
 import type { NextRequest } from 'next/server';
 
 type ProxyRequest = Pick<NextRequest, 'headers' | 'method' | 'nextUrl'>;
+
+/**
+ * The shape of an app-coordination bearer: `ttr_app_<header>.<claims>.<sig>`,
+ * each base64url, with an HMAC-SHA256 signature (43 characters). The prefix is
+ * case-sensitive like the verifier's. Structural only: the proxy never
+ * verifies or trusts it.
+ */
+const APP_BEARER_SHAPE =
+  /^[Bb]earer ttr_app_[A-Za-z0-9_-]{16,256}\.[A-Za-z0-9_-]{16,4096}\.[A-Za-z0-9_-]{43}$/u;
 
 /** Server-to-server app-token exchange; its app secret travels in the body. */
 export const APP_TOKEN_EXCHANGE_PATH = '/api/v1/auth/app-token/exchange';
@@ -74,13 +79,17 @@ export function hasMalformedAuthorizationHeader(
 /**
  * A server-to-server external-app call that may omit a User-Agent: Workers'
  * `fetch` sends none. Only these shapes qualify, and only for the missing-UA
- * heuristic; rate limits and every route check still apply:
+ * heuristic, which any caller can already pass by sending a User-Agent. It
+ * grants no authentication or scope: rate limits, the query/scanner rules and
+ * every route check still apply.
  * - a JSON POST to the app-token exchange, which verifies the app secret with
  *   paced failures before doing anything;
  * - a well-formed Basic credential on an exact Upskii app-credential route;
- * - a request carrying a validly signed, unexpired `ttr_app_` bearer. The
- *   signature check is local and cheap; the route still re-checks the app
- *   registry, scopes, workspace binding and membership.
+ * - a bearer shaped like an app-coordination token. Shape only: verifying it
+ *   here would add a token consumer (see the reviewed list in
+ *   `packages/utils/src/app-coordination-token-consumers.test.ts`) without
+ *   protecting anything, and each route verifies it, including the link-only
+ *   bearers only `/integrations/upskii/link` accepts.
  */
 export function isServerToServerAppCall(req: ProxyRequest): boolean {
   if (req.nextUrl.pathname === APP_TOKEN_EXCHANGE_PATH) {
@@ -94,12 +103,5 @@ export function isServerToServerAppCall(req: ProxyRequest): boolean {
 
   if (isUpskiiAppCredentialCall(req)) return true;
 
-  const token = getBearerAppCoordinationToken(req);
-  if (!token) return false;
-
-  try {
-    return verifyAppCoordinationToken(token).ok;
-  } catch {
-    return false;
-  }
+  return APP_BEARER_SHAPE.test(req.headers.get('authorization')?.trim() ?? '');
 }

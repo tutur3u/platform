@@ -528,12 +528,23 @@ signed, five-minute transfer token bound to the user and target app (token type
 `session_assurance_transfer`, which `verifyAppCoordinationToken` and every app
 session, bearer and refresh consumer reject; only `readSessionAssuranceTransfer`
 accepts it, enforced by
-`packages/utils/src/app-coordination-token-consumers.test.ts`),
+`packages/utils/src/app-coordination-token-consumers.test.ts`; see the note
+below),
 then as signed `aal`/`amr` claims on the issued access and refresh tokens, so a
 refresh reports the original session's level. Request bodies and caller-written
 handoff session data are never trusted. When the level is unknown (for example
 a handoff or refresh token issued before this field existed) both fields are
 omitted.
+
+Token call sites are reviewed by allowlist tests. A change that adds, moves or
+removes a `verifyAppCoordinationToken` call, or names a link-only scope, must run
+`packages/utils/src/app-coordination-token-consumers.test.ts` and
+`apps/web/src/lib/app-coordination/link-only-scopes.test.ts`, which the full
+`packages/utils` and `apps/web` suites include. Proxy-only gates miss them.
+Prefer a structural check where a heuristic only needs a token's shape. The
+API proxy waives its missing-User-Agent rule for an app-coordination-shaped
+bearer without verifying it, so it adds no consumer. Non-test helpers, such as
+`__tests__/*-cases.ts`, count as sources for the link-only scan.
 
 Apps must treat a missing `aal` as `aal1`. An app that requires MFA must check
 `aal === "aal2"` and otherwise send the user back through central login.

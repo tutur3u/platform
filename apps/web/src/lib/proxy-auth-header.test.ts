@@ -35,7 +35,17 @@ describe('isServerToServerAppCall', () => {
     ).token;
   }
 
-  it('accepts a validly signed ttr_app_ bearer on any API path', () => {
+  it('matches the shape createAppCoordinationToken mints', () => {
+    const [header, claims, signature, ...rest] = appBearer()
+      .slice('ttr_app_'.length)
+      .split('.');
+    expect(rest).toEqual([]);
+    expect(header?.length).toBeGreaterThanOrEqual(16);
+    expect(claims?.length).toBeGreaterThanOrEqual(16);
+    expect(signature).toHaveLength(43);
+  });
+
+  it('accepts an app-coordination-shaped bearer on any API path', () => {
     expect(
       isServerToServerAppCall(
         req('/api/v1/workspaces/ws/external-apps/members', {
@@ -46,12 +56,34 @@ describe('isServerToServerAppCall', () => {
     ).toBe(true);
   });
 
-  it('refuses a forged, expired or non-app bearer', () => {
+  it('checks the shape only: a forged or expired token still qualifies', () => {
+    // Shape only by design: the exemption waives just the missing-UA
+    // heuristic, and every route verifies the bearer itself.
     for (const authorization of [
       `Bearer ${appBearer('wrong-secret')}`,
       `Bearer ${appBearer('test-secret', -60)}`,
+    ]) {
+      expect(
+        isServerToServerAppCall(
+          req('/api/v1/users/me', { headers: { authorization }, method: 'GET' })
+        )
+      ).toBe(true);
+    }
+  });
+
+  it('refuses anything not shaped like an app-coordination bearer', () => {
+    const token = appBearer();
+    for (const authorization of [
       'Bearer ttr_app_not.a-token',
       'Bearer aaa.bbb.ccc',
+      `Bearer ${token}.extra`,
+      `Bearer ${token.replace('.', '')}`,
+      `Bearer ttr_app_${'a'.repeat(36)}.${'b'.repeat(43)}`,
+      `Bearer ${token.slice(0, -1)}`,
+      `Bearer ${token.replace('ttr_app_', 'TTR_APP_')}`,
+      `Bearer ${token} trailing`,
+      `Basic ${token}`,
+      token,
     ]) {
       expect(
         isServerToServerAppCall(

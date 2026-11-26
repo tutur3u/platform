@@ -1,6 +1,6 @@
 import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import { NextRequest } from 'next/server';
-import { expect, it, type Mock, vi } from 'vitest';
+import { expect, it, type Mock } from 'vitest';
 
 export function registerAnonymousApiProxyCases(mocks: {
   guardApiProxyRequest: Mock;
@@ -218,44 +218,44 @@ export function registerAnonymousApiProxyCases(mocks: {
   );
 
   it.each([
-    ['test-secret', true],
-    ['forged-secret', false],
+    ['an app-coordination-shaped bearer', true],
+    ['a bearer of another shape', false],
   ])(
-    'treats a UA-less ttr_app_ bearer signed with %s as server-to-server: %s',
-    async (secret, admitted) => {
-      vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
-      try {
-        const { token } = createAppCoordinationToken(
+    'treats a UA-less request with %s as server-to-server: %s',
+    async (_label, admitted) => {
+      const { token } = createAppCoordinationToken(
+        {
+          expiresInSeconds: 300,
+          originApp: 'web',
+          scopes: ['workspace:members:read'],
+          targetApp: 'edufest',
+          userId: '11111111-1111-4111-8111-111111111111',
+        },
+        { secret: 'unrelated-test-secret' }
+      );
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest(
+          'http://localhost/api/v1/workspaces/ws-1/external-apps/members',
           {
-            expiresInSeconds: 300,
-            originApp: 'web',
-            scopes: ['upskii-link:write'],
-            targetApp: 'upskii',
-            userId: '11111111-1111-4111-8111-111111111111',
-          },
-          { secret }
-        );
-        const { proxy } = await import('../proxy');
-        const response = await proxy(
-          new NextRequest('http://localhost/api/v1/integrations/upskii/link', {
-            body: '{}',
-            headers: { Authorization: `Bearer ${token}` },
-            method: 'POST',
-          })
-        );
+            headers: {
+              Authorization: admitted
+                ? `Bearer ${token}`
+                : 'Bearer ttr_app_not-a-token',
+            },
+          }
+        )
+      );
 
-        expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
-          admitted ? null : 'suspicious-anonymous-request'
-        );
-        expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(
-          admitted ? 1 : 0
-        );
-        expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledTimes(
-          admitted ? 0 : 1
-        );
-      } finally {
-        vi.unstubAllEnvs();
-      }
+      expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+        admitted ? null : 'suspicious-anonymous-request'
+      );
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(
+        admitted ? 1 : 0
+      );
+      expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledTimes(
+        admitted ? 0 : 1
+      );
     }
   );
 }
