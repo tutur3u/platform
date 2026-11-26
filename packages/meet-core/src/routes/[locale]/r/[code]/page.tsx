@@ -77,7 +77,6 @@ export default async function RoomPage({
           const guest = await getMeetGuestCallAccess(
             meetingId,
             (await cookies()).get(MEET_GUEST_COOKIE)?.value,
-            undefined,
             await headers()
           );
           if (guest) return guest;

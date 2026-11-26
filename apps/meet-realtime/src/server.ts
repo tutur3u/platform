@@ -1,5 +1,6 @@
 import {
   accountRoomTime,
+  activeMeetEvent,
   admitOrHold,
   CloudflareSfuClient,
   closeBudgetPublications,
@@ -250,6 +251,22 @@ export function createMeetRealtimeServer(
           new Date().toISOString()
         );
         room.snapshot = outcome.state;
+        if (
+          token.guest &&
+          activeMeetEvent(room.snapshot.settings?.eventModeExpiresAt) &&
+          !outcome.disconnect.includes(token.userId)
+        ) {
+          const accountId = token.accountId ?? token.userId;
+          for (const client of room.clients) {
+            const prior = client.data.token;
+            if (
+              client !== ws &&
+              prior.guest &&
+              (prior.accountId ?? prior.userId) === accountId
+            )
+              client.close(1000, 'guest connection replaced');
+          }
+        }
 
         for (const message of outcome.reply) send(ws, message);
         broadcast(token.roomId, outcome.broadcast);

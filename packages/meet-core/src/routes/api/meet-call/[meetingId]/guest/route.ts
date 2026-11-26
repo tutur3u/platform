@@ -109,11 +109,27 @@ export async function POST(
       { error: 'Invalid verification' },
       { status: 400, headers }
     );
-  const legacyNetwork = extractTurnstileRemoteIp(request);
-  const trustedNetwork = meetEventClientIp(request.headers);
+  const state = await resolveMeetGuestJoin(meetingId);
+  if (state.kind !== 'available')
+    return Response.json(
+      { error: 'Guest join is unavailable', code: 'MEET_GUEST_UNAVAILABLE' },
+      { status: 403, headers }
+    );
+  const event = state.eventExpiresAt;
+  const network = event
+    ? meetEventClientIp(request.headers)
+    : extractTurnstileRemoteIp(request);
+  if (event && !network)
+    return Response.json(
+      {
+        error: 'Verification required',
+        code: 'MEET_GUEST_VERIFICATION_REQUIRED',
+      },
+      { status: 403, headers }
+    );
   const limiter = await guestJoinLimiter();
   const limit = await checkMeetGuestJoinLimit(
-    { meetingId, network: legacyNetwork },
+    { meetingId, network, ...(event ? { requireSharedStore: true } : {}) },
     limiter
   );
   if (!limit.ok)
@@ -127,22 +143,6 @@ export async function POST(
         },
       }
     );
-  const state = await resolveMeetGuestJoin(meetingId);
-  if (state.kind !== 'available')
-    return Response.json(
-      { error: 'Guest join is unavailable', code: 'MEET_GUEST_UNAVAILABLE' },
-      { status: 403, headers }
-    );
-  const event = state.eventExpiresAt;
-  const network = event ? trustedNetwork : legacyNetwork;
-  if (event && !network)
-    return Response.json(
-      {
-        error: 'Verification required',
-        code: 'MEET_GUEST_VERIFICATION_REQUIRED',
-      },
-      { status: 403, headers }
-    );
   const requestWork =
     beginEventWork ||
     (hostApproval &&
@@ -151,24 +151,6 @@ export async function POST(
   let manualProof: number | undefined;
   let difficulty: 19 | 20 | 22 = 19;
   if (event) {
-    const trustedBudget =
-      network === legacyNetwork
-        ? limit
-        : await checkMeetGuestJoinLimit(
-            { meetingId, network, requireSharedStore: true },
-            limiter
-          );
-    if (!trustedBudget.ok)
-      return Response.json(
-        { error: 'Too many join attempts', code: 'MEET_GUEST_RATE_LIMITED' },
-        {
-          status: 429,
-          headers: {
-            ...headers,
-            'Retry-After': String(trustedBudget.retryAfterSeconds),
-          },
-        }
-      );
     const eventLimit = await checkMeetGuestJoinLimit(
       {
         meetingId,

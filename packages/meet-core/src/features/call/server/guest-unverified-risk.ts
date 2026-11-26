@@ -43,12 +43,13 @@ type RiskSources = {
  * budget: the rate limits and the host's lobby approval still apply.
  */
 export async function assessMeetGuestUnverifiedJoin(
-  request: Request,
+  request: Pick<Request, 'headers'>,
   input: {
     meetingId: string;
     network: string | undefined;
     kind?: MeetGuestRiskKind;
     event?: true;
+    recheck?: true;
   },
   sources: RiskSources = {}
 ): Promise<MeetGuestUnverifiedRisk> {
@@ -70,12 +71,14 @@ export async function assessMeetGuestUnverifiedJoin(
       isRead: false,
       method: 'POST',
       route,
+      ...(input.event ? { requireServerDecision: true } : {}),
     });
   } catch (error) {
     console.warn('Meet unverified guest risk check unavailable', {
       kind: error instanceof Error ? error.name : 'unknown',
     });
   }
+  if (input.event && !decision) return { allowed: false, decision: null };
   const hardBlocked =
     input.event &&
     (classifyPotentialSpamUserAgent(
@@ -88,7 +91,7 @@ export async function assessMeetGuestUnverifiedJoin(
     !!hardBlocked ||
     decision?.tier === 'restricted' ||
     (decision?.tier === 'challenge_required' && !input.event);
-  if (decision?.subjects.length) {
+  if (decision?.subjects.length && !input.recheck) {
     await record({
       ipAddress: input.network ?? null,
       method: 'POST',

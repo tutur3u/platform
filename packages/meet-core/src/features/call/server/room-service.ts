@@ -21,6 +21,7 @@ export type MeetCallRouteAccess =
 
 export async function resolveMeetCallRouteAccess(
   meetingId: string,
+  requestHeaders: Headers,
   guestCookie?: string | null,
   allowGuest = false
 ): Promise<MeetCallRouteAccess> {
@@ -33,7 +34,11 @@ export async function resolveMeetCallRouteAccess(
       error instanceof MeetCallAccessError &&
       error.status === 401
     ) {
-      const guest = await getMeetGuestCallAccess(meetingId, guestCookie);
+      const guest = await getMeetGuestCallAccess(
+        meetingId,
+        guestCookie,
+        requestHeaders
+      );
       if (guest) return guest;
     }
     throw error;
@@ -270,6 +275,7 @@ export async function meetCallRoomRoute(
     const cookieStore = await cookies();
     const access = await resolveMeetCallRouteAccess(
       meetingId,
+      request.headers,
       cookieStore.get(MEET_GUEST_COOKIE)?.value,
       allowGuest
     );

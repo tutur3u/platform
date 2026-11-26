@@ -1319,7 +1319,14 @@ through the realtime room-state endpoint with `eventAudit=1` and a current
 room bearer token. Records identify the room, meeting, workspace, actor,
 timestamp and event expiry. Bulk admission records include the admitted count.
 Event guest access requires a trusted proxy IP and an available proxy block
-store and persisted block lookup. Each guest identity has one event slot. See `room-skip-lobby.test.ts` and
+store, persisted block lookup and authoritative reputation response. An
+explicit standard decision is valid. An unavailable or malformed decision
+refuses event access. Each guest identity has one event slot.
+
+Before enabling events on a target, verify the trusted-proxy mode at ingress,
+the proxy and Meet guard bindings and their key pepper, service access to
+both reputation and block RPCs, and the Turnstile and jigsaw configuration.
+Use the target's staging route to verify these dependencies before release. See `room-skip-lobby.test.ts` and
 `guest-unverified-risk.test.ts` for admission and risk-tier regression coverage.
 
 ### Who can read transcripts and notes

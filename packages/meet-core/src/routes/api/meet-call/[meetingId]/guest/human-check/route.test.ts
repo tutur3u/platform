@@ -9,6 +9,9 @@ const mocks = vi.hoisted(() => ({
   place: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('../../../../../../features/call/server/guest-event-network', () => ({
+  meetEventClientIp: () => '2001:db8::abcd',
+}));
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
   resolveMeetGuestJoin: mocks.resolve,
 }));
@@ -95,12 +98,12 @@ it('issues a puzzle with images and an opaque token only', async () => {
   });
 });
 
-it('charges the puzzle budget before any database lookup and cools down', async () => {
+it('resolves room policy before charging the puzzle budget', async () => {
   mocks.charge.mockResolvedValue({ ok: false, retryAfterSeconds: 90 });
   const response = await issue(post(base, {}), params);
   expect(response.status).toBe(429);
   expect(response.headers.get('Retry-After')).toBe('90');
-  expect(mocks.resolve).not.toHaveBeenCalled();
+  expect(mocks.resolve).toHaveBeenCalledBefore(mocks.charge);
   expect(mocks.risk).not.toHaveBeenCalled();
 });
 
@@ -188,4 +191,52 @@ it('does not record forged tokens', async () => {
   );
   expect(await response.json()).toEqual({ ok: false, retry: false });
   expect(mocks.record).not.toHaveBeenCalled();
+});
+
+it('keys event issuance and placement on the trusted IPv6 prefix only', async () => {
+  mocks.resolve.mockResolvedValue({
+    kind: 'available',
+    eventExpiresAt: Date.now() + 120_000,
+  });
+  mocks.risk.mockResolvedValue({
+    allowed: true,
+    decision: { tier: 'standard' },
+  });
+  await issue(post(base, {}), params);
+  await verify(
+    post(`${base}/verify`, {
+      token: 'fixture',
+      x: 10,
+      mode: 'pointer',
+      trajectory: [],
+    }),
+    params
+  );
+  expect(mocks.charge).toHaveBeenCalledExactlyOnceWith(
+    { meetingId, network: '2001:db8:0:0::/64', event: true },
+    null
+  );
+  expect(mocks.place).toHaveBeenCalledExactlyOnceWith(
+    '2001:db8:0:0::/64',
+    null,
+    Date.now,
+    true
+  );
+  for (const [, input] of mocks.risk.mock.calls)
+    expect(input).toMatchObject({ network: '2001:db8::abcd', event: true });
+});
+
+it('refuses placement when room policy is unavailable before charging', async () => {
+  mocks.resolve.mockResolvedValue({ kind: 'unavailable' });
+  const result = await verify(
+    post(`${base}/verify`, {
+      token: 'fixture',
+      x: 10,
+      mode: 'pointer',
+      trajectory: [],
+    }),
+    params
+  );
+  expect(result.status).toBe(403);
+  expect(mocks.place).not.toHaveBeenCalled();
 });

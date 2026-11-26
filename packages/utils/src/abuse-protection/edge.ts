@@ -71,10 +71,9 @@ async function getEdgeRedisClient() {
 
   try {
     edgeRedisClient = await getUpstashRestRedisClient();
-    edgeRedisInitialized = true;
+    edgeRedisInitialized = edgeRedisClient !== null;
     return edgeRedisClient;
   } catch {
-    edgeRedisInitialized = true;
     return null;
   }
 }

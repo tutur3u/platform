@@ -98,7 +98,7 @@ it('requires a display name', async () => {
   expect(mocks.limit).not.toHaveBeenCalled();
 });
 
-it('counts the attempt before checking gates and Turnstile', async () => {
+it('counts the attempt after resolving room policy and before Turnstile', async () => {
   mocks.limit.mockResolvedValue({ ok: false, retryAfterSeconds: 42 });
   const response = await POST(
     request({ displayName: 'An', turnstileToken: 't' }),
@@ -106,7 +106,7 @@ it('counts the attempt before checking gates and Turnstile', async () => {
   );
   expect(response.status).toBe(429);
   expect(response.headers.get('Retry-After')).toBe('42');
-  expect(mocks.resolve).not.toHaveBeenCalled();
+  expect(mocks.resolve).toHaveBeenCalledBefore(mocks.limit);
   expect(mocks.verify).not.toHaveBeenCalled();
 });
 

@@ -99,3 +99,16 @@ it('leaves an unverified guest unverified', async () => {
     'guestTurnstileVerified'
   );
 });
+
+it('passes the exact request headers to the guest access boundary before minting', async () => {
+  mocks.guestAccess.mockResolvedValue(null);
+  const req = request();
+  const result = await POST(req, params);
+  expect(result.status).toBe(401);
+  expect(mocks.guestAccess).toHaveBeenCalledWith(
+    meetingId,
+    'signed-guest',
+    req.headers
+  );
+  expect(mocks.session).not.toHaveBeenCalled();
+});

@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const eventRpc = vi.hoisted(() => vi.fn());
 vi.mock('server-only', () => ({}));
+vi.mock('../server/guest-event-network', () => ({
+  meetEventClientIp: (headers: Headers) =>
+    headers.get('fixture-ip') ?? undefined,
+  meetEventNetworkAllowed: async (ip: string | undefined) => Boolean(ip),
+}));
 vi.mock('@tuturuuu/meet-core/runtime', () => ({ MEETING_APP: 'meet' }));
 vi.mock('@tuturuuu/meet-core/parley/repository', () => ({
   isParleySession: vi.fn(),
@@ -9,7 +15,7 @@ vi.mock('@tuturuuu/meet-core/features/meeting-ai/server/room-access', () => ({
   readMeetingRoomPolicy: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(),
+  createAdminClient: async () => ({ rpc: eventRpc }),
 }));
 vi.mock('@tuturuuu/utils/meet-hosting', () => ({
   canVerifiedAccountHostMeeting: vi.fn(),
@@ -110,7 +116,7 @@ describe('getMeetGuestCallAccess', () => {
       secret
     );
     await expect(
-      getMeetGuestCallAccess(meetingId, cookie, sources())
+      getMeetGuestCallAccess(meetingId, cookie, new Headers(), sources())
     ).resolves.toMatchObject({
       guest: true,
       isHost: false,
@@ -118,6 +124,60 @@ describe('getMeetGuestCallAccess', () => {
       canReadWorkspace: false,
       displayName: 'Hà My',
       user: { id: '33333333-3333-4333-8333-333333333333' },
+    });
+  });
+
+  it('refuses event cookies when the real reputation resolver cannot obtain its authoritative row', async () => {
+    const eventExpiresAt = Date.now() + 120_000;
+    const cookie = await signMeetGuestSession(
+      {
+        guestId: '33333333-3333-4333-8333-333333333333',
+        meetingId,
+        displayName: 'Guest',
+        exp: Math.floor(Date.now() / 1000) + 600,
+        eventProof: eventExpiresAt,
+      },
+      secret
+    );
+    const policy = sources({
+      settings: {
+        allowAnonymousGuests: true,
+        eventModeExpiresAt: eventExpiresAt,
+      },
+    });
+    const requestHeaders = new Headers({
+      'fixture-ip': '203.0.113.4',
+      'user-agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
+    });
+    eventRpc.mockResolvedValueOnce({
+      data: null,
+      error: new Error('Unavailable'),
+    });
+    await expect(
+      getMeetGuestCallAccess(meetingId, cookie, requestHeaders, policy)
+    ).resolves.toBeNull();
+    expect(eventRpc).toHaveBeenCalledWith(
+      'get_rate_limit_trust_decision',
+      expect.objectContaining({ p_ip_address: '203.0.113.4' })
+    );
+    eventRpc.mockResolvedValueOnce({
+      data: [
+        {
+          tier: 'challenge_required',
+          trust_multiplier: 1,
+          decision_source: 'reputation',
+          subject_key: 'ip:203.0.113.4',
+          limit_mode: 'inherit_multiplier',
+        },
+      ],
+      error: null,
+    });
+    await expect(
+      getMeetGuestCallAccess(meetingId, cookie, requestHeaders, policy)
+    ).resolves.toMatchObject({
+      eventProof: eventExpiresAt,
+      admission: 'lobby',
     });
   });
 
@@ -132,10 +192,20 @@ describe('getMeetGuestCallAccess', () => {
       secret
     );
     await expect(
-      getMeetGuestCallAccess(meetingId, cookie, sources({ settings: {} }))
+      getMeetGuestCallAccess(
+        meetingId,
+        cookie,
+        new Headers(),
+        sources({ settings: {} })
+      )
     ).resolves.toBeNull();
     await expect(
-      getMeetGuestCallAccess(meetingId, 'forged.cookie', sources())
+      getMeetGuestCallAccess(
+        meetingId,
+        'forged.cookie',
+        new Headers(),
+        sources()
+      )
     ).resolves.toBeNull();
   });
 });

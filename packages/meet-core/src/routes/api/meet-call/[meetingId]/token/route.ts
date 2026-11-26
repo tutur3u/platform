@@ -1,5 +1,3 @@
-import { meetEventClientIp } from '../../../../../features/call/server/guest-event-network';
-import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
@@ -49,7 +47,8 @@ export async function POST(
           throw error;
         const access = await getMeetGuestCallAccess(
           meetingId,
-          cookieStore.get(MEET_GUEST_COOKIE)?.value
+          cookieStore.get(MEET_GUEST_COOKIE)?.value,
+          request.headers
         );
         if (!access) throw error;
         return access;
@@ -58,26 +57,6 @@ export async function POST(
       resolved;
     const eventGuest = resolved.guest && Boolean(resolved.eventExpiresAt);
     const deviceId = eventGuest ? undefined : requestedDeviceId;
-    if (resolved.guest && resolved.eventExpiresAt) {
-      const risk = await assessMeetGuestUnverifiedJoin(request, {
-        meetingId,
-        network: meetEventClientIp(request.headers),
-        event: true,
-      });
-      if (
-        !risk.allowed ||
-        !risk.decision ||
-        (risk.decision.tier === 'challenge_required' &&
-          resolved.eventProof !== resolved.eventExpiresAt)
-      )
-        return Response.json(
-          {
-            error: 'Verification required',
-            code: 'MEET_GUEST_VERIFICATION_REQUIRED',
-          },
-          { status: 403, headers }
-        );
-    }
     const classRole = await resolveMeetClassRole(resolved);
     // Both plan lookups run together; the participant's is bounded.
     const [maxRoomDurationSeconds, streamTier] = await Promise.all([

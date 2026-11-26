@@ -149,8 +149,8 @@ export type MeetGuestCallAccess = {
 export async function getMeetGuestCallAccess(
   meetingId: string,
   cookieValue: string | undefined | null,
-  sources: MeetGuestJoinSources = {},
-  requestHeaders?: Headers
+  requestHeaders: Headers,
+  sources: MeetGuestJoinSources = {}
 ): Promise<MeetGuestCallAccess | null> {
   const session = await verifyMeetGuestSession(
     cookieValue,
@@ -168,10 +168,16 @@ export async function getMeetGuestCallAccess(
     )
   )
     return null;
-  if (state.eventExpiresAt && requestHeaders) {
+  if (state.eventExpiresAt) {
+    if (!requestHeaders) return null;
     const risk = await assessMeetGuestUnverifiedJoin(
-      new Request('https://meet.invalid', { headers: requestHeaders }),
-      { meetingId, network: meetEventClientIp(requestHeaders), event: true }
+      { headers: requestHeaders },
+      {
+        meetingId,
+        network: meetEventClientIp(requestHeaders),
+        event: true,
+        recheck: true,
+      }
     );
     if (
       !risk.allowed ||

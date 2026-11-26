@@ -248,6 +248,25 @@ describe('event room admission', () => {
     expect(
       admitOrHold(stored, guestToken, now).state.waiting[guest.userId]
     ).toBeDefined();
+    const ordinary = { ...guest, guestTurnstileVerified: true as const };
+    const previouslyPresent = admitOrHold(
+      {
+        ...stored,
+        settings: {
+          ...stored.settings,
+          skipLobby: true,
+          allowAnonymousGuests: true,
+          shareNotes: false,
+        },
+      },
+      ordinary,
+      now
+    ).state;
+    expect(previouslyPresent.presence[guest.userId]).toBeDefined();
+    const downgraded = admitOrHold(previouslyPresent, guestToken, now);
+    expect(downgraded.state.presence[guest.userId]).toBeUndefined();
+    expect(downgraded.state.waiting[guest.userId]?.eventProof).toBe(eventProof);
+    expect(downgraded.disconnect).not.toContain(guest.userId);
     const admitted = run(
       waiting,
       { type: 'admission.decide', userId: guest.userId, admit: true },

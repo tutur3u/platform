@@ -80,6 +80,7 @@ export interface ResolveAbuseRiskDecisionInput {
   isRead: boolean;
   method: string;
   route: string;
+  requireServerDecision?: boolean;
   userCreatedAt?: string | null;
   userId?: string | null;
   /**
@@ -345,9 +346,14 @@ async function loadServerTrustDecision({
   apiKeyId,
   ipAddress,
   userId,
-}: Pick<ResolveAbuseRiskDecisionInput, 'apiKeyId' | 'ipAddress' | 'userId'>) {
+  requireServerDecision,
+}: Pick<
+  ResolveAbuseRiskDecisionInput,
+  'apiKeyId' | 'ipAddress' | 'userId' | 'requireServerDecision'
+>) {
   const supabase = await getSupabaseAdmin();
   if (!supabase) {
+    if (requireServerDecision) throw new Error('Abuse reputation unavailable');
     return null;
   }
 
@@ -361,14 +367,32 @@ async function loadServerTrustDecision({
       }
     );
 
-    if (error) {
-      return null;
+    if (requireServerDecision) {
+      const row =
+        Array.isArray(data) && data.length === 1 ? data[0] : undefined;
+      if (
+        error ||
+        !row ||
+        !ABUSE_RISK_TIERS.includes(row.tier) ||
+        !['default', 'override', 'reputation'].includes(row.decision_source) ||
+        !RATE_LIMIT_MODES.includes(row.limit_mode) ||
+        (row.subject_key !== null && typeof row.subject_key !== 'string') ||
+        !['number', 'string'].includes(typeof row.trust_multiplier) ||
+        !Number.isFinite(Number(row.trust_multiplier)) ||
+        Number(row.trust_multiplier) <= 0
+      )
+        throw new Error('Invalid authoritative abuse reputation');
+      return normalizeTrustDecisionRow(
+        row.limit_mode === 'blocked' ? { ...row, tier: 'restricted' } : row
+      );
     }
+    if (error) return null;
 
     return normalizeTrustDecisionRow(
       Array.isArray(data) ? (data[0] as TrustDecisionRow | undefined) : null
     );
-  } catch {
+  } catch (error) {
+    if (requireServerDecision) throw error;
     return null;
   }
 }

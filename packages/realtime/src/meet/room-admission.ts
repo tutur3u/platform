@@ -40,6 +40,7 @@ import {
   meetAdmissionPendingMessage,
   meetPresenceMessage,
   remoteMeetTracks,
+  releaseParticipant,
 } from './room';
 import {
   accountRoomTime,
@@ -112,6 +113,7 @@ export function admitOrHold(
       reply: [{ type: 'error', error: 'permission_denied' }],
       disconnect: [token.userId],
     });
+  let released: MeetRoomOutcome | undefined;
   if (event && token.guest) {
     const accountId = token.accountId ?? token.userId;
     if (
@@ -119,10 +121,13 @@ export function admitOrHold(
       state.presence[token.userId] &&
       state.approved?.[accountId]?.eventProof !== token.guestEventProof
     )
-      return outcome(state, {
-        reply: [{ type: 'error', error: 'awaiting_admission' }],
-        disconnect: [token.userId],
-      });
+      released = releaseParticipant(
+        state,
+        token.userId,
+        token.roomId,
+        now,
+        features
+      );
     const occupied = [
       ...Object.values(state.presence),
       ...Object.values(state.waiting),
@@ -153,6 +158,7 @@ export function admitOrHold(
       reply: [{ type: 'error', error: 'participant_limit_reached' }],
       disconnect: [token.userId],
     });
+  if (released) state = released.state;
   if (
     token.role !== 'host' &&
     state.settings?.admissionClosed &&
@@ -162,6 +168,7 @@ export function admitOrHold(
   )
     return outcome(state, {
       reply: [{ type: 'error', error: 'admission_closed' }],
+      broadcast: released?.broadcast ?? [],
       disconnect: [token.userId],
     });
   if (
@@ -180,6 +187,7 @@ export function admitOrHold(
     )
       return outcome(state, {
         reply: [{ type: 'error', error: 'participant_limit_reached' }],
+        broadcast: released?.broadcast ?? [],
         disconnect: [token.userId],
       });
     const next: MeetRoomSnapshot = {
@@ -222,6 +230,7 @@ export function admitOrHold(
 
     return outcome(next, {
       reply: [buildReady(next, token, 'waiting', now, features)],
+      broadcast: released?.broadcast ?? [],
       toManagers: [meetAdmissionPendingMessage(next)],
     });
   }
