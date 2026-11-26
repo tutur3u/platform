@@ -18,6 +18,7 @@ import {
 
 /** Signed URLs from this route stay short-lived; readers ask again. */
 const SIGNED_READ_TTL_SECONDS = 60 * 60;
+const REDIRECT_CACHE_CONTROL = 'private, max-age=300';
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -83,7 +84,6 @@ export async function GET(request: Request, { params }: Params) {
     const signedUrl = await createWorkspaceStorageSignedReadUrl(wsId, path, {
       expiresIn: SIGNED_READ_TTL_SECONDS,
     });
-    const headers = { 'Cache-Control': 'private, no-store' };
     if (new URL(request.url).searchParams.get('format') === 'json') {
       return NextResponse.json(
         {
@@ -92,10 +92,15 @@ export async function GET(request: Request, { params }: Params) {
           ).toISOString(),
           signedUrl,
         },
-        { headers }
+        { headers: { 'Cache-Control': 'private, no-store' } }
       );
     }
-    return NextResponse.redirect(signedUrl, { headers, status: 302 });
+    // The browser may reuse the redirect well inside the signed URL's hour,
+    // so tables do not re-sign on every mount.
+    return NextResponse.redirect(signedUrl, {
+      headers: { 'Cache-Control': REDIRECT_CACHE_CONTROL },
+      status: 302,
+    });
   } catch (signError) {
     if (signError instanceof WorkspaceStorageError) {
       return NextResponse.json(

@@ -157,7 +157,8 @@ describe('inventory product image route', () => {
     expect(response.headers.get('location')).toBe(
       'https://storage.example.com/signed'
     );
-    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    // Reused well inside the signed URL's hour, never by shared caches.
+    expect(response.headers.get('cache-control')).toBe('private, max-age=300');
     expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
       WS,
       IMAGE,
@@ -174,6 +175,7 @@ describe('inventory product image route', () => {
     const body = await response.json();
     expect(body.signedUrl).toBe('https://storage.example.com/signed');
     expect(typeof body.expiresAt).toBe('string');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 
   it('lets create-sales readers in without drive access', async () => {

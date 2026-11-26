@@ -11,8 +11,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
-import { WEB_APP_URL } from '@/constants/common';
-import { inventoryUploadStoredValue } from '@/lib/inventory-product-image';
 import { inventoryProductImageSrc } from '@/lib/inventory-product-image-src';
 
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
@@ -38,7 +36,8 @@ export function InventoryImageUploadField({
   const t = useTranslations('inventory.operator.forms');
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploadPath, setUploadPath] = useState('');
-  // The fresh signed read URL previews an upload until the form saves.
+  // A new upload previews from its own URL; the product route would sign
+  // the image saved before this form.
   const [previewUrl, setPreviewUrl] = useState('');
   const productImage = target === 'product-featured-image';
   const [progress, setProgress] = useState(0);
@@ -56,15 +55,10 @@ export function InventoryImageUploadField({
       setUploadPath('');
     },
     onSuccess: (result) => {
-      onChange(
-        inventoryUploadStoredValue({
-          fullPath: result.fullPath,
-          path: result.path,
-          platformOrigin: WEB_APP_URL,
-          readUrl: result.url,
-          target,
-        })
-      );
+      // Product images keep the signed read URL: database triggers copy a
+      // product's image to its storefront listings, which anonymous shoppers
+      // load directly, so an auth-only share URL would break the storefront.
+      onChange(result.url);
       setPreviewUrl(result.url);
       setUploadPath(result.path);
       setProgress(100);

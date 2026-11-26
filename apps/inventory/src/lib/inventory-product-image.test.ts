@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  inventoryUploadStoredValue,
   isInventoryProductImagePath,
   parseStoredInventoryProductImage,
   resolveInventoryProductImagePath,
@@ -68,62 +67,15 @@ describe('inventory product image paths', () => {
     });
   });
 
-  it('stores product uploads as share URLs and other media as uploaded', () => {
-    const stored = inventoryUploadStoredValue({
-      fullPath: `${WS}/${IMAGE}`,
-      path: IMAGE,
-      platformOrigin: 'https://tuturuuu.com',
-      readUrl: 'https://storage.example/signed',
-      target: 'product-featured-image',
-    });
-    expect(stored).toBe(
-      `https://tuturuuu.com/api/v1/workspaces/${WS}/storage/share?path=${encodeURIComponent(IMAGE)}`
-    );
-    expect(resolveInventoryProductImagePath(stored, WS)).toBe(IMAGE);
+  it('parses http share URLs from a local platform origin', () => {
+    const local = `http://localhost:7803/api/v1/workspaces/${WS}/storage/share?path=${encodeURIComponent(IMAGE)}`;
+    expect(resolveInventoryProductImagePath(local, WS)).toBe(IMAGE);
+    // Signed object URLs stay https only.
     expect(
-      inventoryUploadStoredValue({
-        fullPath: `${WS}/inventory/media/storefront-banner/a.png`,
-        path: 'inventory/media/storefront-banner/a.png',
-        platformOrigin: 'https://tuturuuu.com',
-        readUrl: 'https://storage.example/banner',
-        target: 'storefront-banner',
-      })
-    ).toBe('https://storage.example/banner');
-  });
-
-  it.each(['personal', 'internal'])(
-    'names the workspace by UUID when the page uses the %s slug',
-    (slug) => {
-      // The page's slug never reaches the stored URL; the server's storage
-      // key carries the UUID.
-      const stored = inventoryUploadStoredValue({
-        fullPath: `${WS}/${IMAGE}`,
-        path: IMAGE,
-        platformOrigin: 'https://tuturuuu.com',
-        readUrl: 'https://storage.example/signed',
-        target: 'product-featured-image',
-      });
-      expect(stored).not.toContain(`/workspaces/${slug}/`);
-      expect(resolveInventoryProductImagePath(stored, WS)).toBe(IMAGE);
-    }
-  );
-
-  it('keeps the signed URL when the storage key has no workspace UUID', () => {
-    for (const fullPath of [
-      null,
-      IMAGE,
-      `personal/${IMAGE}`,
-      `${WS}/other.png`,
-    ]) {
-      expect(
-        inventoryUploadStoredValue({
-          fullPath,
-          path: IMAGE,
-          platformOrigin: 'https://tuturuuu.com',
-          readUrl: 'https://storage.example/signed',
-          target: 'product-featured-image',
-        })
-      ).toBe('https://storage.example/signed');
-    }
+      resolveInventoryProductImagePath(
+        `http://x.supabase.co/storage/v1/object/sign/workspaces/${WS}/${IMAGE}?token=t`,
+        WS
+      )
+    ).toBeNull();
   });
 });

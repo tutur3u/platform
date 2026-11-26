@@ -1,15 +1,14 @@
 /**
  * Product images live under one inventory media prefix in their workspace.
- * A product stores a stable share URL (or, for older uploads, a signed read
- * URL) as `avatar_url`; readers load it through the product image route,
- * which signs a fresh read URL after checking inventory access. These
- * helpers are pure so the route and client components share them.
+ * A product's `avatar_url` holds a signed read URL (web uploads, which the
+ * public storefront shows directly) or a stable share URL (mobile uploads).
+ * Operators load either through the product image route, which signs a
+ * fresh read URL after checking inventory access. These helpers are pure so
+ * the route and client components share them.
  */
 
 export const INVENTORY_PRODUCT_IMAGE_PREFIX =
   'inventory/media/product-featured-image/';
-
-import { buildWorkspaceStorageShareUrl } from '@tuturuuu/storage-core/signed-url-policy';
 
 const PARSE_BASE = 'https://inventory-product-image.invalid';
 
@@ -24,9 +23,6 @@ export function isInventoryProductImagePath(path: string): boolean {
     parts[3]!.trim().length > 0
   );
 }
-
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Route slugs that may stand for a workspace in stored URLs. */
 export const INVENTORY_WORKSPACE_SLUGS = ['personal', 'internal'] as const;
@@ -60,7 +56,9 @@ export function parseStoredInventoryProductImage(
   } catch {
     return null;
   }
-  if (url.protocol !== 'https:') return null;
+  // Share URLs may be http on a local platform origin; signed object URLs
+  // are always https.
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
   // Reject dot segments before URL normalization can erase them.
   const rawPath = value.split(/[?#]/)[0] ?? '';
   if (/(?:^|\/)(?:\.|%2e){1,2}(?=\/|$)/i.test(rawPath)) return null;
@@ -89,6 +87,7 @@ export function parseStoredInventoryProductImage(
       : null;
   }
 
+  if (url.protocol !== 'https:') return null;
   const mediaIndex = segments.findIndex(
     (segment, index) =>
       index > 0 && segment === 'inventory' && segments[index + 1] === 'media'
@@ -116,43 +115,4 @@ export function resolveInventoryProductImagePath(
   return stored && sameWorkspace(stored.workspace, wsId, aliases)
     ? stored.path
     : null;
-}
-
-/**
- * The value an upload stores. Product images keep the stable share URL on
- * the platform origin, because signed read URLs expire; other inventory
- * media (storefront and listing images) are shown publicly and keep the
- * signed read URL.
- *
- * The share URL names the workspace by the UUID the server stored the
- * object under (the first segment of `fullPath`), never the page's route
- * slug such as `personal`, which only resolves for the signed-in user.
- */
-export function inventoryUploadStoredValue({
-  fullPath,
-  path,
-  platformOrigin,
-  readUrl,
-  target,
-}: {
-  fullPath: string | null | undefined;
-  path: string;
-  platformOrigin: string;
-  readUrl: string;
-  target: string;
-}): string {
-  if (
-    target !== 'product-featured-image' ||
-    !isInventoryProductImagePath(path)
-  ) {
-    return readUrl;
-  }
-  const wsId = fullPath?.endsWith(`/${path}`)
-    ? fullPath.slice(0, -(path.length + 1))
-    : null;
-  if (!wsId || !UUID_PATTERN.test(wsId)) return readUrl;
-  return new URL(
-    buildWorkspaceStorageShareUrl(wsId, path),
-    platformOrigin
-  ).toString();
 }
