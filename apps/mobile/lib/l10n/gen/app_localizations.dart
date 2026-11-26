@@ -40248,6 +40248,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saving…'**
   String get calendarRecurrenceSaving;
+
+  /// No description provided for @tasksProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get tasksProgress;
+
+  /// No description provided for @tasksProgressGoals.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get tasksProgressGoals;
+
+  /// No description provided for @tasksProgressLeaderboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaderboard'**
+  String get tasksProgressLeaderboard;
+
+  /// No description provided for @tasksProgressQuickLog.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick log'**
+  String get tasksProgressQuickLog;
+
+  /// No description provided for @tasksProgressMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace member'**
+  String get tasksProgressMember;
+
+  /// No description provided for @tasksProgressEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No results yet'**
+  String get tasksProgressEmpty;
+
+  /// No description provided for @tasksProgressUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Task progress is unavailable in this workspace'**
+  String get tasksProgressUnavailable;
+
+  /// No description provided for @tasksProgressLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load task progress'**
+  String get tasksProgressLoadFailed;
+
+  /// No description provided for @tasksProgressMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Metric'**
+  String get tasksProgressMetric;
+
+  /// No description provided for @tasksProgressAmountHint.
+  ///
+  /// In en, this message translates to:
+  /// **'For example, 1.5'**
+  String get tasksProgressAmountHint;
+
+  /// No description provided for @tasksProgressAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get tasksProgressAmount;
+
+  /// No description provided for @tasksProgressInvalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid number'**
+  String get tasksProgressInvalidAmount;
+
+  /// No description provided for @tasksProgressNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get tasksProgressNoteHint;
+
+  /// No description provided for @tasksProgressNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get tasksProgressNote;
+
+  /// No description provided for @tasksProgressSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm the entry. Refresh before recording it again.'**
+  String get tasksProgressSaveFailed;
+
+  /// No description provided for @calendarGuests.
+  ///
+  /// In en, this message translates to:
+  /// **'Guests'**
+  String get calendarGuests;
+
+  /// No description provided for @calendarGuestInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite guest'**
+  String get calendarGuestInvite;
+
+  /// No description provided for @calendarGuestRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove guest'**
+  String get calendarGuestRemove;
+
+  /// No description provided for @calendarGuestSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people or enter email'**
+  String get calendarGuestSearch;
+
+  /// No description provided for @calendarGuestGoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Going'**
+  String get calendarGuestGoing;
+
+  /// No description provided for @calendarGuestMaybe.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe'**
+  String get calendarGuestMaybe;
+
+  /// No description provided for @calendarGuestDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Declined'**
+  String get calendarGuestDeclined;
+
+  /// No description provided for @calendarGuestPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting reply'**
+  String get calendarGuestPending;
+
+  /// No description provided for @calendarGuestEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get calendarGuestEmpty;
+
+  /// No description provided for @calendarGuestOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to manage invitations'**
+  String get calendarGuestOffline;
+
+  /// No description provided for @calendarGuestLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'The invitation limit was reached'**
+  String get calendarGuestLimit;
+
+  /// No description provided for @calendarGuestUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest information is unavailable'**
+  String get calendarGuestUnavailable;
+
+  /// No description provided for @calendarGuestFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not complete the request'**
+  String get calendarGuestFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

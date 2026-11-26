@@ -65,7 +65,29 @@ extension _CalendarPageActions on _CalendarViewState {
     for (final item in cubit.state.events) {
       if (item.id == event.id) rawEvent = item;
     }
-    final action = await showEventDetailSheet(context, event: event);
+    final eventWorkspaceId =
+        rawEvent?.wsId ?? event.wsId ?? originalWorkspaceId;
+    final workspaceCubit = context.read<WorkspaceCubit>();
+    final action = await showEventDetailSheet(
+      context,
+      event: event,
+      guests:
+          isUuid(event.id) &&
+              eventWorkspaceId != null &&
+              originalWorkspaceId != null &&
+              originalUserId != null
+          ? EventGuestsPanel(
+              event: rawEvent ?? event,
+              workspaceId: eventWorkspaceId,
+              scopeIsCurrent: () =>
+                  mounted &&
+                  context.mounted &&
+                  currentCacheUserId() == originalUserId &&
+                  workspaceCubit.state.currentWorkspace?.id ==
+                      originalWorkspaceId,
+            )
+          : null,
+    );
 
     if (!mounted ||
         !context.mounted ||

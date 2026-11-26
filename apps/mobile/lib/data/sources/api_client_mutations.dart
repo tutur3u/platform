@@ -256,23 +256,25 @@ extension _ApiClientMutations on ApiClient {
     String path, {
     Map<String, dynamic>? body,
     bool requiresAuth = true,
+    Future<void> Function()? beforeDispatch,
   }) async {
     final url = _url(path);
 
-    final response = await _performRequest(
-      () async => await _client
+    final response = await _performRequest(() async {
+      final headers = await _getHeaders(
+        path: path,
+        contentType: body == null ? null : 'application/json',
+        requiresAuth: requiresAuth,
+      );
+      if (beforeDispatch != null) await beforeDispatch();
+      return await _client
           .delete(
             url,
-            headers: await _getHeaders(
-              path: path,
-              contentType: body == null ? null : 'application/json',
-              requiresAuth: requiresAuth,
-            ),
+            headers: headers,
             body: body == null ? null : jsonEncode(body),
           )
-          .timeout(_requestTimeout),
-      requiresAuth: requiresAuth,
-    );
+          .timeout(_requestTimeout);
+    }, requiresAuth: requiresAuth);
 
     return _handleResponse(response);
   }

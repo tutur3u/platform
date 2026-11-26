@@ -96,7 +96,12 @@ export async function GET(
     });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Calendar attendee snapshot is unavailable' },
+      {
+        error: 'Calendar attendee snapshot is unavailable',
+        ...(error instanceof AttendeeSnapshotError && error.code
+          ? { code: error.code }
+          : {}),
+      },
       {
         headers: { 'Cache-Control': 'private, no-store' },
         status:

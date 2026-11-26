@@ -135,7 +135,7 @@ class ApiOrigins {
     if (RegExp(r'^/api/v1/users/me/tasks(?:/|$)').hasMatch(path) ||
         _matchesWorkspaceV1(
           path,
-          r'(?:tasks|task-boards|boards|labels|task-projects|task-initiatives|habit-trackers|habits)(?:/|$)',
+          r'(?:tasks|task-boards|task-progress|boards|labels|task-projects|task-initiatives|habit-trackers|habits)(?:/|$)',
         )) {
       return ApiOrigin.tasks;
     }

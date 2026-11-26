@@ -14,6 +14,7 @@ import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/ui.dart'
     show AppSheetAction, showAppActionSheet, showAppConfirmDialog;
 import 'package:mobile/core/utils/timezone.dart';
+import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/calendar_recurrence.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
@@ -32,6 +33,7 @@ import 'package:mobile/features/calendar/widgets/calendar_minute_clock.dart';
 import 'package:mobile/features/calendar/widgets/calendar_zoom_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
+import 'package:mobile/features/calendar/widgets/event_guests_panel.dart';
 import 'package:mobile/features/calendar/widgets/event_recurrence_rows.dart';
 import 'package:mobile/features/calendar/widgets/month_strip.dart';
 import 'package:mobile/features/calendar/widgets/month_view.dart';

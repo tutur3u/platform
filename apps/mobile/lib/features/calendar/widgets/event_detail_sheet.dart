@@ -23,6 +23,7 @@ Future<String?> showEventDetailSheet(
   bool readOnly = false,
   String? recurrence,
   String? notice,
+  Widget? guests,
 }) => showAdaptiveSheet<String>(
   context: context,
   useRootNavigator: true,
@@ -32,6 +33,7 @@ Future<String?> showEventDetailSheet(
     readOnly: readOnly,
     recurrence: recurrence,
     notice: notice,
+    guests: guests,
   ),
 );
 
@@ -42,10 +44,12 @@ class EventDetailContent extends StatelessWidget {
     this.readOnly = false,
     this.recurrence,
     this.notice,
+    this.guests,
     super.key,
   });
   final CalendarEvent event;
   final bool readOnly;
+  final Widget? guests;
 
   /// Repeat summary of a recurring occurrence.
   final String? recurrence;
@@ -174,6 +178,7 @@ class EventDetailContent extends StatelessWidget {
             const SizedBox(height: 24),
             CalendarDescriptionBody(description: event.description!),
           ],
+          if (guests case final panel?) ...[const SizedBox(height: 16), panel],
           if (!readOnly) ...[
             const SizedBox(height: 24),
             TextButton.icon(

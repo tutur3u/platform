@@ -127,6 +127,7 @@ void main() {
         '/api/v1/workspaces/ws/inventory/overview': ApiOrigin.inventory,
         '/api/v1/workspaces/ws/products/options': ApiOrigin.inventory,
         '/api/v1/workspaces/ws/task-boards?page=1': ApiOrigin.tasks,
+        '/api/v1/workspaces/ws/task-progress/stats': ApiOrigin.tasks,
         '/api/v1/users/me/tasks': ApiOrigin.tasks,
         '/api/v1/workspaces/ws/users/database': ApiOrigin.platform,
         '/api/v1/workspaces/ws/habits/access': ApiOrigin.tasks,

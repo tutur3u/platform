@@ -715,6 +715,30 @@ Time Tracking and CRM user mobile calls stay on the live platform origin: Track 
 app-session credentials, while mobile currently uses Supabase Bearer sessions.
 Do not move those paths to their satellites until mobile supports that authentication contract.
 
+### Calendar invitations and Tasks Progress
+
+In Calendar event details, users with permission on the event's workspace can
+list native event guests, invite a workspace member, contact, or email address,
+and remove guests. Invitations and cancellations are sent when those changes
+are accepted. On supported Google and Microsoft events, organizers can read an
+attendee snapshot. The response controls appear only when the provider confirms
+that the connected account is an invitee. It can then submit Going, Maybe, or
+Declined. Guest
+changes and RSVP require a connection and never use the offline queue.
+Calendar authenticates the original caller and limits guest additions to
+20 requests per minute per caller before handling the event.
+
+Tasks Progress reads metrics, recent entries, goals, and leaderboards from the
+Tasks app for the active workspace. Quick log records a metric entry for the
+local calendar date. The metric's aggregation decides whether the value is an
+increment or a new total. An uncertain save requires a refresh before another
+attempt so users can check whether the entry already exists. The screen clears
+when the active account or workspace changes.
+
+Regression coverage includes `calendar_guests_repository_test.dart`,
+`gateway-event-guests.test.ts`, `task_progress_repository_test.dart`, and
+`api_origins_test.dart`.
+
 ### Native API requests and hosting challenges
 
 An HTTP 429 HTML response with `x-vercel-mitigated: challenge` is a Vercel browser
@@ -724,23 +748,23 @@ cannot complete that challenge.
 Production mobile Calendar requests use the infrastructure app's
 `/api/v1/mobile-calendar/api/v1/…` gateway. Development uses the local Calendar
 app directly. The gateway validates the Bearer session with Supabase before
-reading any forwarding credential. It forwards only event CRUD, native recurring
-series reads and scoped writes, connected-account list/disconnect, calendar
+reading any forwarding credential. It forwards only event CRUD, RSVP, event
+guests, native recurring series, connected-account list/disconnect, calendar
 connection list/toggle, and OAuth URL discovery to the fixed
-`https://calendar.tuturuuu.com` origin. The recurring series entries are exact:
-`/api/v1/workspaces/{wsId}/calendar/series` allows `GET` (series list, or
-occurrences with `from`/`to`) and `POST` (create), and
-`/api/v1/workspaces/{wsId}/calendar/series/{seriesId}` allows `GET`, `PUT` and
-`DELETE` for a UUID series id. Provider series operations, trailing segments,
-encoded slashes and dot segments stay blocked. Calendar validates the original
-session again and enforces workspace permissions. Incoming cookies, forwarding
+`https://calendar.tuturuuu.com` origin. Under `/api/v1/workspaces/{wsId}/calendar`,
+the guest and series entries are exact and need UUID ids: `events/{id}/attendees`
+`GET`; `events/{id}/guests` `GET`, `POST`; `events/{id}/guests/{guestId}`
+`DELETE`; `series` `GET`, `POST`; `series/{id}` `GET`, `PUT`, `DELETE`. Guest
+settings, the optional flag, `guests/notify`, provider series operations,
+trailing segments, encoded slashes and dot segments stay blocked. Calendar
+validates the original session again and enforces workspace permissions. Incoming cookies, forwarding
 headers, and client-supplied gateway credentials are never relayed. Redirects and
 non-JSON upstream responses are rejected; mutations are never automatically retried.
 Authenticated requests preserve `x-tuturuuu-offline-download` and
 `x-tuturuuu-turnstile-token` when supplied, so Calendar applies the same bulk-read
 protection and verification flow. Ordinary reads stay unmarked. Regression coverage
-lives in `apps/admin/src/lib/mobile-calendar/gateway.test.ts` and
-`gateway-series.test.ts`.
+lives in `apps/admin/src/lib/mobile-calendar/gateway.test.ts`,
+`gateway-series.test.ts` and `gateway-event-guests.test.ts`.
 
 Provision the server credential as the Infrastructure Worker secret
 `MOBILE_CALENDAR_GATEWAY_SECRET`. When that binding is absent, the gateway reads

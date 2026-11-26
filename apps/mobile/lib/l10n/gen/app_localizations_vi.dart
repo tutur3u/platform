@@ -21851,4 +21851,88 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get calendarRecurrenceSaving => 'Đang lưu…';
+
+  @override
+  String get tasksProgress => 'Tiến độ';
+
+  @override
+  String get tasksProgressGoals => 'Mục tiêu';
+
+  @override
+  String get tasksProgressLeaderboard => 'Bảng xếp hạng';
+
+  @override
+  String get tasksProgressQuickLog => 'Ghi nhanh';
+
+  @override
+  String get tasksProgressMember => 'Thành viên không gian làm việc';
+
+  @override
+  String get tasksProgressEmpty => 'Chưa có kết quả';
+
+  @override
+  String get tasksProgressUnavailable => 'Tiến độ công việc chưa khả dụng trong không gian này';
+
+  @override
+  String get tasksProgressLoadFailed => 'Không thể tải tiến độ công việc';
+
+  @override
+  String get tasksProgressMetric => 'Chỉ số';
+
+  @override
+  String get tasksProgressAmountHint => 'Ví dụ: 1,5';
+
+  @override
+  String get tasksProgressAmount => 'Giá trị';
+
+  @override
+  String get tasksProgressInvalidAmount => 'Nhập một số hợp lệ';
+
+  @override
+  String get tasksProgressNoteHint => 'Không bắt buộc';
+
+  @override
+  String get tasksProgressNote => 'Ghi chú';
+
+  @override
+  String get tasksProgressSaveFailed => 'Không thể xác nhận mục đã ghi. Hãy làm mới trước khi ghi lại.';
+
+  @override
+  String get calendarGuests => 'Khách mời';
+
+  @override
+  String get calendarGuestInvite => 'Mời khách';
+
+  @override
+  String get calendarGuestRemove => 'Xóa khách mời';
+
+  @override
+  String get calendarGuestSearch => 'Tìm người hoặc nhập email';
+
+  @override
+  String get calendarGuestGoing => 'Tham gia';
+
+  @override
+  String get calendarGuestMaybe => 'Có thể';
+
+  @override
+  String get calendarGuestDeclined => 'Từ chối';
+
+  @override
+  String get calendarGuestPending => 'Đang chờ phản hồi';
+
+  @override
+  String get calendarGuestEmpty => 'Không có kết quả';
+
+  @override
+  String get calendarGuestOffline => 'Kết nối Internet để quản lý lời mời';
+
+  @override
+  String get calendarGuestLimit => 'Đã đạt giới hạn lời mời';
+
+  @override
+  String get calendarGuestUnavailable => 'Thông tin khách mời chưa khả dụng';
+
+  @override
+  String get calendarGuestFailed => 'Không thể hoàn tất yêu cầu';
 }

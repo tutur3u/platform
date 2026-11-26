@@ -11081,5 +11081,33 @@
         "type": "int"
       }
     }
-  }
+  },
+  "tasksProgress": "Progress",
+  "tasksProgressGoals": "Goals",
+  "tasksProgressLeaderboard": "Leaderboard",
+  "tasksProgressQuickLog": "Quick log",
+  "tasksProgressMember": "Workspace member",
+  "tasksProgressEmpty": "No results yet",
+  "tasksProgressUnavailable": "Task progress is unavailable in this workspace",
+  "tasksProgressLoadFailed": "Could not load task progress",
+  "tasksProgressMetric": "Metric",
+  "tasksProgressAmountHint": "For example, 1.5",
+  "tasksProgressAmount": "Amount",
+  "tasksProgressInvalidAmount": "Enter a valid number",
+  "tasksProgressNoteHint": "Optional",
+  "tasksProgressNote": "Note",
+  "tasksProgressSaveFailed": "Could not confirm the entry. Refresh before recording it again.",
+  "calendarGuests": "Guests",
+  "calendarGuestInvite": "Invite guest",
+  "calendarGuestRemove": "Remove guest",
+  "calendarGuestSearch": "Search people or enter email",
+  "calendarGuestGoing": "Going",
+  "calendarGuestMaybe": "Maybe",
+  "calendarGuestDeclined": "Declined",
+  "calendarGuestPending": "Awaiting reply",
+  "calendarGuestEmpty": "No results",
+  "calendarGuestOffline": "Connect to the internet to manage invitations",
+  "calendarGuestLimit": "The invitation limit was reached",
+  "calendarGuestUnavailable": "Guest information is unavailable",
+  "calendarGuestFailed": "Could not complete the request"
 }

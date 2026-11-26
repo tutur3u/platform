@@ -126,6 +126,50 @@ it.each([
     )
   ).toThrow('unavailable');
 });
+it.each(['google', 'microsoft'] as const)(
+  'reports only a verified %s invitee as eligible to respond',
+  (provider) => {
+    const invite =
+      provider === 'google'
+        ? {
+            ...googleEvent,
+            organizer: { self: false, email: 'organizer@example.invalid' },
+            attendees: [{ email: 'host@example.invalid', self: true }],
+          }
+        : {
+            ...graphEvent,
+            isOrganizer: false,
+            organizer: {
+              emailAddress: { address: 'organizer@example.invalid' },
+            },
+            attendees: [
+              {
+                emailAddress: { address: 'host@example.invalid' },
+                type: 'required',
+                status: { response: 'notResponded' },
+              },
+            ],
+          };
+    expect(() =>
+      parseAttendeeSnapshot(
+        { ...source, provider },
+        'local-event',
+        'event',
+        invite
+      )
+    ).toThrow(
+      expect.objectContaining({ status: 409, code: 'invited_account' })
+    );
+    expect(() =>
+      parseAttendeeSnapshot(
+        { ...source, provider, accountEmail: 'uninvited@example.invalid' },
+        'local-event',
+        'event',
+        invite
+      )
+    ).toThrow(expect.objectContaining({ status: 409, code: undefined }));
+  }
+);
 it('bounds Google reads without retry and uses only verified provider IDs', async () => {
   mocks.get.mockResolvedValue({ data: googleEvent });
   expect(

@@ -339,6 +339,12 @@ class ApiClient {
     bool requiresAuth = true,
   }) => _deleteJson(path, body: body, requiresAuth: requiresAuth);
 
+  /// DELETE with a scope check immediately before every dispatch.
+  Future<Map<String, dynamic>> deleteJsonGuarded(
+    String path, {
+    required Future<void> Function() beforeDispatch,
+  }) => _deleteJson(path, beforeDispatch: beforeDispatch);
+
   /// PUT JSON to [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].

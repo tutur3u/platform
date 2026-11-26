@@ -22110,4 +22110,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarRecurrenceSaving => 'Saving…';
+
+  @override
+  String get tasksProgress => 'Progress';
+
+  @override
+  String get tasksProgressGoals => 'Goals';
+
+  @override
+  String get tasksProgressLeaderboard => 'Leaderboard';
+
+  @override
+  String get tasksProgressQuickLog => 'Quick log';
+
+  @override
+  String get tasksProgressMember => 'Workspace member';
+
+  @override
+  String get tasksProgressEmpty => 'No results yet';
+
+  @override
+  String get tasksProgressUnavailable => 'Task progress is unavailable in this workspace';
+
+  @override
+  String get tasksProgressLoadFailed => 'Could not load task progress';
+
+  @override
+  String get tasksProgressMetric => 'Metric';
+
+  @override
+  String get tasksProgressAmountHint => 'For example, 1.5';
+
+  @override
+  String get tasksProgressAmount => 'Amount';
+
+  @override
+  String get tasksProgressInvalidAmount => 'Enter a valid number';
+
+  @override
+  String get tasksProgressNoteHint => 'Optional';
+
+  @override
+  String get tasksProgressNote => 'Note';
+
+  @override
+  String get tasksProgressSaveFailed => 'Could not confirm the entry. Refresh before recording it again.';
+
+  @override
+  String get calendarGuests => 'Guests';
+
+  @override
+  String get calendarGuestInvite => 'Invite guest';
+
+  @override
+  String get calendarGuestRemove => 'Remove guest';
+
+  @override
+  String get calendarGuestSearch => 'Search people or enter email';
+
+  @override
+  String get calendarGuestGoing => 'Going';
+
+  @override
+  String get calendarGuestMaybe => 'Maybe';
+
+  @override
+  String get calendarGuestDeclined => 'Declined';
+
+  @override
+  String get calendarGuestPending => 'Awaiting reply';
+
+  @override
+  String get calendarGuestEmpty => 'No results';
+
+  @override
+  String get calendarGuestOffline => 'Connect to the internet to manage invitations';
+
+  @override
+  String get calendarGuestLimit => 'The invitation limit was reached';
+
+  @override
+  String get calendarGuestUnavailable => 'Guest information is unavailable';
+
+  @override
+  String get calendarGuestFailed => 'Could not complete the request';
 }

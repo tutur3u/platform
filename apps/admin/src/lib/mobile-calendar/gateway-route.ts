@@ -41,6 +41,30 @@ function allowedMethods(path: string): string[] {
   ) {
     return ['POST'];
   }
+  // Read-only attendee snapshot of an organized provider event.
+  if (
+    new RegExp(
+      `^/api/v1/workspaces/${id}/calendar/events/${uuid}/attendees$`
+    ).test(path)
+  ) {
+    return ['GET'];
+  }
+  // Tuturuuu event guests: list and invite, then remove one guest. Guest
+  // settings, the optional flag and "Send update" stay web-only.
+  if (
+    new RegExp(
+      `^/api/v1/workspaces/${id}/calendar/events/${uuid}/guests$`
+    ).test(path)
+  ) {
+    return ['GET', 'POST'];
+  }
+  if (
+    new RegExp(
+      `^/api/v1/workspaces/${id}/calendar/events/${uuid}/guests/${uuid}$`
+    ).test(path)
+  ) {
+    return ['DELETE'];
+  }
   // Native recurring series: the list/occurrence read and create, then one
   // series read, scoped update and scoped delete. Series ids are UUIDs, which
   // also keeps sibling routes such as `series/provider-operations` out.

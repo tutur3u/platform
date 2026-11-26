@@ -5,7 +5,10 @@ import { createGoogleAuthClient } from './provider-writes';
 import type { ResolvedCalendarSource } from './source-resolver';
 
 export class AttendeeSnapshotError extends Error {
-  constructor(readonly status: number) {
+  constructor(
+    readonly status: number,
+    readonly code?: 'invited_account'
+  ) {
     super('Calendar attendee snapshot is unavailable');
   }
 }
@@ -23,6 +26,7 @@ const googleSnapshot = z.object({
       z.object({
         email: address,
         displayName: z.string().max(512).optional(),
+        self: z.boolean().optional(),
         responseStatus: z.string().max(64).optional(),
         resource: z.boolean().optional(),
         optional: z.boolean().optional(),
@@ -56,6 +60,16 @@ const graphSnapshot = z.object({
     )
     .max(100),
 });
+const googleInvitation = googleSnapshot.extend({
+  organizer: z.object({
+    self: z.literal(false).optional(),
+    email: address,
+  }),
+});
+const graphInvitation = graphSnapshot.extend({
+  isOrganizer: z.literal(false),
+});
+
 export function parseAttendeeSnapshot(
   source: ResolvedCalendarSource,
   eventId: string,
@@ -64,6 +78,7 @@ export function parseAttendeeSnapshot(
 ): CalendarAttendeeSnapshot {
   if (source.provider === 'tuturuuu' || !source.accountEmail)
     throw new AttendeeSnapshotError(409);
+  const email = source.accountEmail.trim().toLowerCase();
   const common = {
     eventId,
     provider: source.provider,
@@ -76,10 +91,21 @@ export function parseAttendeeSnapshot(
     if (
       !result.success ||
       result.data.id !== providerEventId ||
-      result.data.organizer.email.toLowerCase() !==
-        source.accountEmail.trim().toLowerCase()
-    )
+      result.data.organizer.email.toLowerCase() !== email
+    ) {
+      const invitation = googleInvitation.safeParse(input);
+      if (
+        invitation.success &&
+        invitation.data.id === providerEventId &&
+        invitation.data.organizer.email.toLowerCase() !== email &&
+        invitation.data.attendees.some(
+          (guest) => guest.self && guest.email.toLowerCase() === email
+        )
+      ) {
+        throw new AttendeeSnapshotError(409, 'invited_account');
+      }
       throw new AttendeeSnapshotError(409);
+    }
     return {
       ...common,
       revision: result.data.etag,
@@ -96,10 +122,21 @@ export function parseAttendeeSnapshot(
   if (
     !result.success ||
     result.data.id !== providerEventId ||
-    result.data.organizer.emailAddress.address.toLowerCase() !==
-      source.accountEmail.trim().toLowerCase()
-  )
+    result.data.organizer.emailAddress.address.toLowerCase() !== email
+  ) {
+    const invitation = graphInvitation.safeParse(input);
+    if (
+      invitation.success &&
+      invitation.data.id === providerEventId &&
+      invitation.data.organizer.emailAddress.address.toLowerCase() !== email &&
+      invitation.data.attendees.some(
+        (guest) => guest.emailAddress.address.toLowerCase() === email
+      )
+    ) {
+      throw new AttendeeSnapshotError(409, 'invited_account');
+    }
     throw new AttendeeSnapshotError(409);
+  }
   return {
     ...common,
     revision: result.data.changeKey,
