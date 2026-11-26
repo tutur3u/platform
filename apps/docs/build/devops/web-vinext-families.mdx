@@ -350,7 +350,17 @@ nothing populates the R2 store yet.
 - Workers send no User-Agent on subrequests, and the proxy answers 400 to a
   sessionless API request without one. `@tuturuuu/internal-api` therefore
   sends `User-Agent: tuturuuu-<service>/1.0` on server requests that set none,
-  with the service from `TUTURUUU_SERVICE_NAME`.
+  with the service from `TUTURUUU_SERVICE_NAME`. External apps on Workers are
+  exempt from that one rule only for server-to-server calls the route itself
+  authenticates (`apps/web/src/lib/proxy-auth-header.ts`): a JSON `POST` to
+  `/api/v1/auth/app-token/exchange`, a validly signed and unexpired `ttr_app_`
+  bearer, or `Authorization: Basic` on `POST` to exactly
+  `/api/v1/integrations/upskii/{introspect,link-status,unlink}`. Those three
+  routes are also the only place a `Basic` header is not a
+  `malformed-auth-header` 401. Neither exemption is counted as abuse, and rate
+  limits, the query/scanner rules and route authentication still apply. Other
+  paths, methods, trailing slashes and encoded variants keep both blocks.
+  Clients should still send a User-Agent.
 
 ## Local check
 

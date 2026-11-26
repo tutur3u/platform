@@ -69,6 +69,13 @@ import {
   legacySettingsTab,
 } from './lib/legacy-settings-redirect';
 import { handleLocale } from './lib/locale-proxy';
+import {
+  hasMalformedAuthorizationHeader,
+  isServerToServerAppCall,
+  isUpskiiAppCredentialCall,
+  looksLikeSupabaseJwt,
+  looksLikeWorkspaceApiKey,
+} from './lib/proxy-auth-header';
 import { webProxyPayloadLimit } from './lib/proxy-payload-limit';
 import {
   isRoadmapPublicPath,
@@ -356,21 +363,6 @@ async function hasWorkspaceEmailRateLimitOverrides(
   }
 }
 
-function looksLikeSupabaseJwt(token: string): boolean {
-  const parts = token.split('.');
-  if (parts.length !== 3) {
-    return false;
-  }
-
-  return parts.every(
-    (part) => /^[A-Za-z0-9_-]+$/.test(part) && part.length > 0
-  );
-}
-
-function looksLikeWorkspaceApiKey(token: string): boolean {
-  return /^ttr_[A-Za-z0-9_-]+$/.test(token);
-}
-
 function getBearerToken(headers: Headers) {
   const authHeader = headers.get('authorization')?.trim();
   if (!authHeader?.toLowerCase().startsWith('bearer ')) {
@@ -503,25 +495,6 @@ function hasLikelyAuthenticatedApiCredential(req: NextRequest): boolean {
 
   const token = trimmedHeader.slice(7).trim();
   return looksLikeSupabaseJwt(token) || looksLikeWorkspaceApiKey(token);
-}
-
-function hasMalformedAuthorizationHeader(req: NextRequest): boolean {
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader) {
-    return false;
-  }
-
-  const trimmedHeader = authHeader.trim();
-  if (looksLikeWorkspaceApiKey(trimmedHeader)) {
-    return false;
-  }
-
-  if (!trimmedHeader.toLowerCase().startsWith('bearer ')) {
-    return true;
-  }
-
-  const token = trimmedHeader.slice(7).trim();
-  return token.length === 0 || /\s/.test(token);
 }
 
 function isLikelyBrowserRequest(req: NextRequest): boolean {
@@ -659,14 +632,17 @@ function getSuspiciousAnonymousApiSignal(req: NextRequest): {
     return null;
   }
 
-  if (hasMalformedAuthorizationHeader(req)) {
+  if (hasMalformedAuthorizationHeader(req) && !isUpskiiAppCredentialCall(req)) {
     return {
       reason: 'malformed-auth-header',
       status: 401,
     };
   }
 
-  if ((req.headers.get('user-agent') ?? '').trim().length === 0) {
+  if (
+    (req.headers.get('user-agent') ?? '').trim().length === 0 &&
+    !isServerToServerAppCall(req)
+  ) {
     return {
       reason: 'suspicious-anonymous-request',
       status: 400,

@@ -96,4 +96,120 @@ export function registerAnonymousApiProxyCases(mocks: {
     expect(response.headers.get('Retry-After')).not.toBeNull();
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
+
+  const UPSKII_BASIC = `Basic ${btoa('upskii:fake-test-secret')}`;
+
+  it.each([
+    '/api/v1/integrations/upskii/introspect',
+    '/api/v1/integrations/upskii/link-status',
+    '/api/v1/integrations/upskii/unlink',
+  ])(
+    'lets Upskii Basic credentials reach the guard on POST %s, without a UA and uncounted',
+    async (path) => {
+      const { proxy } = await import('../proxy');
+      for (const headers of [
+        { Authorization: UPSKII_BASIC, 'content-type': 'application/json' },
+        {
+          Authorization: UPSKII_BASIC,
+          'content-type': 'application/json',
+          'user-agent': 'upskii-server/1.0',
+        },
+      ]) {
+        mocks.guardApiProxyRequest.mockClear();
+        const response = await proxy(
+          new NextRequest(`http://localhost${path}`, {
+            body: '{}',
+            headers,
+            method: 'POST',
+          })
+        );
+
+        expect(response.headers.get('X-Proxy-Block-Reason')).toBeNull();
+        expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+      }
+      expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['GET', '/api/v1/integrations/upskii/link-status'],
+    ['PUT', '/api/v1/integrations/upskii/unlink'],
+    ['POST', '/api/v1/integrations/upskii/link'],
+    ['POST', '/api/v1/integrations/upskii/link-status/'],
+    ['POST', '/api/v1/integrations/upskii/introspect/extra'],
+    ['POST', '/api/v1/integrations/upskii%2Funlink'],
+    ['POST', '/api/v1/integrations/upskiiintrospect'],
+    ['POST', '/api/v1/users/me/configs/demo'],
+  ])('keeps Basic credentials malformed for %s %s', async (method, path) => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(`http://localhost${path}`, {
+        ...(method === 'GET' ? {} : { body: '{}' }),
+        headers: { Authorization: UPSKII_BASIC, 'user-agent': 'curl/8.0' },
+        method,
+      })
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+      'malformed-auth-header'
+    );
+    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('keeps a non-Basic or empty scheme malformed on the Upskii paths', async () => {
+    const { proxy } = await import('../proxy');
+    for (const authorization of ['Basic ', 'Basic a b', 'Token abc']) {
+      const response = await proxy(
+        new NextRequest('http://localhost/api/v1/integrations/upskii/unlink', {
+          body: '{}',
+          headers: { Authorization: authorization, 'user-agent': 'curl/8.0' },
+          method: 'POST',
+        })
+      );
+      expect(response.status).toBe(401);
+    }
+    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('lets a JSON app-token exchange through without a UA', async () => {
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/api/v1/auth/app-token/exchange', {
+        body: '{}',
+        headers: { 'content-type': 'application/json' },
+        method: 'POST',
+      })
+    );
+
+    expect(response.headers.get('X-Proxy-Block-Reason')).toBeNull();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+    expect(mocks.recordSuspiciousApiRequestEdge).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['GET', '/api/v1/auth/app-token/exchange', undefined],
+    ['POST', '/api/v1/auth/app-token/exchange', 'text/plain'],
+    ['POST', '/api/v1/auth/app-token/exchange/x', 'application/json'],
+    ['POST', '/api/v1/users/me/configs/demo', 'application/json'],
+  ])(
+    'still refuses a UA-less %s %s (%s)',
+    async (method, path, contentType) => {
+      const { proxy } = await import('../proxy');
+      const response = await proxy(
+        new NextRequest(`http://localhost${path}`, {
+          ...(method === 'GET' ? {} : { body: '{}' }),
+          headers: contentType ? { 'content-type': contentType } : {},
+          method,
+        })
+      );
+
+      expect(response.status).toBe(400);
+      expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+        'suspicious-anonymous-request'
+      );
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    }
+  );
 }
