@@ -16,7 +16,35 @@ export type CreateFreeSubscriptionResult =
       subscription: Subscription;
     }
   | { status: 'already_active'; subscription: Subscription }
-  | { status: 'error'; message: string };
+  | { status: 'error'; message: string; reason?: 'qa_managed' };
+
+/** Provider id prefix of the local tier grants `ttr qa users create --tier` makes. */
+export const QA_TEST_SUBSCRIPTION_PREFIX = 'qa_test_';
+
+/**
+ * Whether a QA test run's tier grant manages this workspace. Those grants
+ * exist only in `workspace_subscriptions` (no Polar record), so the Polar
+ * check above cannot see them; a Free subscription created on top would be
+ * newer and replace the QA tier in every plan lookup. A failed lookup counts
+ * as unknown so provisioning fails closed, like the Polar check.
+ */
+async function qaTestSubscriptionState(
+  supabase: TypedSupabaseClient,
+  wsId: string
+): Promise<'none' | 'qa_managed' | 'unknown'> {
+  const { data, error } = await supabase
+    .from('workspace_subscriptions')
+    .select('polar_subscription_id')
+    .eq('ws_id', wsId)
+    .eq('status', 'active');
+
+  if (error) return 'unknown';
+  return (data ?? []).some((row) =>
+    row.polar_subscription_id?.startsWith(QA_TEST_SUBSCRIPTION_PREFIX)
+  )
+    ? 'qa_managed'
+    : 'none';
+}
 
 async function findFreeSubscriptionProduct(supabase: TypedSupabaseClient) {
   const freeProductResult = await privateSchema(supabase)
@@ -182,6 +210,25 @@ export async function createFreeSubscription(
     return {
       status: 'error',
       message: 'No active free-tier product configured',
+    };
+  }
+
+  const qaState = await qaTestSubscriptionState(supabase, wsId);
+  if (qaState === 'qa_managed') {
+    console.log(
+      `Workspace ${sanitizeLogValue(wsId)} has a QA test tier grant, skipping free subscription creation`
+    );
+    return {
+      status: 'error',
+      message: 'A QA test subscription manages this workspace',
+      reason: 'qa_managed',
+    };
+  }
+  if (qaState === 'unknown') {
+    return {
+      status: 'error',
+      message:
+        'Subscription status is unavailable. Please retry before creating a subscription.',
     };
   }
 

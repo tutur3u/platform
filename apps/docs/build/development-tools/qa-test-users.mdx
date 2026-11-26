@@ -55,6 +55,17 @@ billing provider object exists, so checkout, invoices, seat billing and revenue
 reporting never include it. Billing tools that reconcile with the provider skip
 `qa_test_` rows. Deleting the account cancels its test subscriptions.
 
+Plan checks (`_resolve_workspace_tier`, used by AI credit admission such as
+Meet transcription) read the newest active subscription. Free provisioning
+(`createFreeSubscription`) asks the billing provider whether a subscription
+exists, and the provider never sees `qa_test_` grants, so it used to add a newer
+Free row that masked the test tier (Meet then answered `402
+MEET_AI_MODEL_NOT_ON_PLAN`). It now skips any workspace with an active
+`qa_test_` subscription and returns `reason: "qa_managed"`. Workspaces from
+runs created before that fix may already carry the newer Free row; start a new
+run instead of reusing one. Coverage:
+`packages/payment-core/src/subscription-helper.qa.test.ts`.
+
 ### Run workspace
 
 `--workspace` creates one shared workspace for the run, named
