@@ -72,6 +72,47 @@ scope filters and ticket searches use the sorted, offset-paged source query and
 load every matching page. Hide empty lists and auto-collapse wait for every
 board page, because a partly loaded board cannot show that a list is empty.
 
+### Kanban first paint
+
+The native Tasks board page reads everything the kanban waits for in the same
+server request, in-process, as the verified actor, after the same request
+decisions for a suspended actor or an IP block from either the edge or
+persistent store. A matching temporary appeal lets the verified session read
+through an `api_abuse` block. The snapshot contains the board, the first
+50-task page of every list, and the actor's list preferences (persist
+collapsed, hide empty, auto-collapse, pinned special lists). The browser seeds
+these into its query cache before the first render, so columns skip their
+first request and the board shows tasks as soon as it hydrates. The browser
+records when it starts a snapshot request, using hydration time for the
+initial server-rendered snapshot. A cached query is replaced only when it
+was last written no later than that time, so a preloaded or
+cached route never overwrites edits made in the tab since; lists the server
+could not read keep their cached tasks. Task pages seed once per mounted
+board, and a snapshot older than five seconds at mount, or one skipped for a
+newer cache, triggers one background revalidation of the loaded lists. The
+older browser copy (`readTaskBoardCache`) is not used when server pages were
+supplied. The snapshot starts
+alongside the workspace guard and is used only after the guard admits the same
+actor. A list whose page cannot be read loads in the browser as before. The
+shell profile (user menu) is one direct database read for the verified actor
+rather than a call to Web.
+
+Sidebar links preload their destination's page model on hover, focus or touch
+in every native app whose router sets `defaultPreload: 'intent'`, so a tab
+switch usually finds its data ready.
+
+The board is the only page in the native page chunk. Calendar, cycles,
+progress, shared task views and the plan composer load as their own chunks
+(`apps/tasks/src/runtime/lazy-pages.tsx`). The task editor and the settings
+dialog load when first opened; the editor chunk is warmed while the browser is
+idle so the first opened task does not wait on it.
+
+| Budget | Limit | Regression coverage |
+| --- | --- | --- |
+| Browser requests before kanban tasks show | 0 (board, first pages and preferences ship with the page) | `packages/tasks-ui/src/tu-do/shared/__tests__/board-client.test.tsx` |
+| Cross-app requests in the board page model | 0 | `apps/tasks/src/runtime/workspace-model.test.ts` |
+| Intent preload delay on sidebar links | 50 ms hover, immediate on touch | `packages/start-bridge/src/next/link.test.tsx` |
+
 ## My Tasks and Kanban on mobile
 
 My Tasks groups assigned work into **Overdue**, **Today**, **Upcoming** and
@@ -1852,7 +1893,8 @@ matching model arrives, including board and workspace switches and back/forward
 navigation. The URL/model boundary compares pathnames only; query-only changes
 do not invalidate the board identity. Board state remounts
 for each actor, workspace and board; workspace providers remount for each actor
-and workspace. A retained board snapshot cannot supply another board's body.
+and workspace. A retained board snapshot cannot supply another board's body. Workspace task
+and board entrypoints provision a board only on navigation.
 
 Regression coverage: `apps/tasks/src/runtime/page-transition.test.tsx` and
 `page-transition-router.test.tsx` cover retained models, late responses and

@@ -74,11 +74,12 @@ export default async function TaskBoardServerPage({
   const user = sessionUser ?? (await getCurrentUser());
   if (!user) redirect('/login');
 
+  const auth = withForwardedInternalApiAuth(await headers());
   const model = await loadTaskBoardPageModel({
     boardId,
     user,
-    auth: withForwardedInternalApiAuth(await headers()),
-    getBoard: (_actor, auth) => getAuthorizedBoard(id, boardId, auth),
+    auth,
+    getBoard: () => getAuthorizedBoard(id, boardId, auth),
     getWorkspace: (wsId, actor) =>
       getWorkspace(wsId, { useAdmin: true, user: actor }),
   });

@@ -1,6 +1,7 @@
 'use client';
 
 import { useUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import { BOARD_USER_CONFIG_DEFAULTS } from './board-preference-seed';
 import {
   TASK_AUTO_COLLAPSE_EMPTY_LISTS_CONFIG_ID,
   TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
@@ -11,16 +12,20 @@ export function useTaskBoardListPreferences(localTaskState: boolean) {
   const options = { enabled: !localTaskState };
   const { data: persistRaw, isPending: persistPending } = useUserConfig(
     TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID,
-    'true',
+    BOARD_USER_CONFIG_DEFAULTS[TASK_PERSIST_COLLAPSED_LISTS_CONFIG_ID],
     options
   );
   const { data: hideEmptyRaw, isPending: hideEmptyPending } = useUserConfig(
     TASK_HIDE_EMPTY_LISTS_CONFIG_ID,
-    'false',
+    BOARD_USER_CONFIG_DEFAULTS[TASK_HIDE_EMPTY_LISTS_CONFIG_ID],
     options
   );
   const { data: autoCollapseRaw, isPending: autoCollapsePending } =
-    useUserConfig(TASK_AUTO_COLLAPSE_EMPTY_LISTS_CONFIG_ID, 'false', options);
+    useUserConfig(
+      TASK_AUTO_COLLAPSE_EMPTY_LISTS_CONFIG_ID,
+      BOARD_USER_CONFIG_DEFAULTS[TASK_AUTO_COLLAPSE_EMPTY_LISTS_CONFIG_ID],
+      options
+    );
 
   return {
     persistCollapsedTaskLists: !localTaskState && persistRaw !== 'false',

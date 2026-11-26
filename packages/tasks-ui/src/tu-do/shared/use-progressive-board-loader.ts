@@ -5,6 +5,10 @@ import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  BOARD_LIST_PAGE_SIZE,
+  type BoardFirstListPage,
+} from './board-first-page';
+import {
   confirmMissingBoardTasks,
   MISSING_TASK_CHECK_LIMIT,
 } from './confirm-missing-board-tasks';
@@ -14,7 +18,7 @@ import type {
   ProgressiveLoadListPageOptions,
 } from './progressive-loader-context';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = BOARD_LIST_PAGE_SIZE;
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 const REVALIDATE_LIST_CONCURRENCY = 2;
 const EMPTY_PAGINATION: Record<string, ListPaginationState> = {};
@@ -42,6 +46,48 @@ function hasLocallyProtectedMoveDifference(task: Task, incomingTask: Task) {
     current.completed_at !== incoming.completed_at ||
     current.closed_at !== incoming.closed_at
   );
+}
+
+/** `hasMore`/`totalCount` for a list after loading `page` with `count`. */
+export function deriveListPageState(
+  page: number,
+  pageTaskCount: number,
+  count: number | null | undefined
+) {
+  const loadedThrough = page * PAGE_SIZE + pageTaskCount;
+  return typeof count === 'number'
+    ? {
+        hasMore: loadedThrough < count,
+        totalCount: Math.max(count, loadedThrough),
+      }
+    : {
+        hasMore: pageTaskCount === PAGE_SIZE,
+        totalCount: loadedThrough + (pageTaskCount === PAGE_SIZE ? 1 : 0),
+      };
+}
+
+export type { BoardFirstListPage } from './board-first-page';
+
+/**
+ * The shared tasks cache and per-list pagination for first pages read during
+ * the server render, in the shape `loadListPage(listId, 0)` leaves them.
+ */
+export function seedFromFirstListPages(
+  listPages: Record<string, BoardFirstListPage>
+) {
+  const tasksById = new Map<string, Task>();
+  const pagination: Record<string, ListPaginationState> = {};
+  for (const [listId, { tasks, count }] of Object.entries(listPages)) {
+    for (const task of tasks) tasksById.set(task.id, task);
+    pagination[listId] = {
+      page: 0,
+      ...deriveListPageState(0, tasks.length, count),
+      firstPageTaskCount: tasks.length,
+      isLoading: false,
+      isInitialLoad: false,
+    };
+  }
+  return { tasks: [...tasksById.values()], pagination };
 }
 
 /**
@@ -131,19 +177,9 @@ export function useProgressiveBoardLoader(
           includeRelationshipSummary: false,
         });
         const tasks = payload.tasks ?? [];
-        const loadedThrough = page * PAGE_SIZE + tasks.length;
-        const totalCount =
-          typeof payload.count === 'number'
-            ? Math.max(payload.count, loadedThrough)
-            : loadedThrough + (tasks.length === PAGE_SIZE ? 1 : 0);
-        const hasMore =
-          typeof payload.count === 'number'
-            ? loadedThrough < payload.count
-            : tasks.length === PAGE_SIZE;
         const result = {
           tasks,
-          hasMore,
-          totalCount,
+          ...deriveListPageState(page, tasks.length, payload.count),
         };
 
         // Merge into the shared ['tasks', boardId] cache (dedup by task ID)

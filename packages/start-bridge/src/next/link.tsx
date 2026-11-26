@@ -5,6 +5,7 @@ import { formatUrl } from 'next/dist/shared/lib/router/utils/format-url';
 import type { LinkProps } from 'next/link';
 import { type AnchorHTMLAttributes, forwardRef } from 'react';
 import { withAppBase } from '../start/base-path';
+import { useIntentPreload } from './use-intent-preload';
 
 type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
   href: LinkProps['href'];
@@ -14,26 +15,46 @@ type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
   locale?: string | false;
 };
 
-/** `next/link` on the TanStack router: same-app clicks navigate client-side. */
+/**
+ * `next/link` on the TanStack router: same-app clicks navigate client-side,
+ * and when the app's router opts into `defaultPreload: 'intent'` a hover,
+ * focus or touch preloads the destination's loader, like TanStack `<Link>`.
+ */
 export default forwardRef<HTMLAnchorElement, Props>(function BridgeLink(
   {
     href,
     replace,
     scroll,
-    prefetch: _prefetch,
+    prefetch,
     locale: _locale,
+    onBlur,
     onClick,
+    onFocus,
+    onMouseEnter,
+    onMouseLeave,
+    onTouchStart,
     ...props
   },
   ref
 ) {
   const router = useRouter();
   const path = withAppBase(typeof href === 'string' ? href : formatUrl(href));
+  const intentHandlers = useIntentPreload(
+    path,
+    prefetch !== false &&
+      router.options.defaultPreload === 'intent' &&
+      props.download === undefined &&
+      (!props.target || props.target === '_self') &&
+      path.startsWith('/') &&
+      !path.startsWith('//'),
+    { onBlur, onFocus, onMouseEnter, onMouseLeave, onTouchStart }
+  );
   return (
     <a
       {...props}
       ref={ref}
       href={path}
+      {...intentHandlers}
       onClick={(event) => {
         onClick?.(event);
         if (

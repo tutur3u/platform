@@ -39,7 +39,8 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
-vi.mock('../use-progressive-board-loader', () => ({
+vi.mock('../use-progressive-board-loader', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../use-progressive-board-loader')>()),
   useProgressiveBoardLoader: (...args: unknown[]) => {
     useProgressiveBoardLoaderMock(...args);
     return {

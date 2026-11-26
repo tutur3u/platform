@@ -6,9 +6,9 @@ const mocks = vi.hoisted(() => ({
   getPermissions: vi.fn(),
   getRequestWorkspace: vi.fn(),
   getSatelliteAppSessionUser: vi.fn(),
-  getSatelliteCurrentUser: vi.fn(),
   getWorkspace: vi.fn(),
-  getWorkspaceTaskBoard: vi.fn(),
+  loadBoardSnapshot: vi.fn(),
+  readShellProfile: vi.fn(),
   headers: vi.fn(),
   notFound: vi.fn(),
   redirect: vi.fn(),
@@ -17,7 +17,12 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.getSatelliteAppSessionUser,
-  getSatelliteCurrentUser: mocks.getSatelliteCurrentUser,
+}));
+vi.mock('./shell-profile.server', () => ({
+  readShellProfile: mocks.readShellProfile,
+}));
+vi.mock('./board-snapshot.server', () => ({
+  loadBoardSnapshot: mocks.loadBoardSnapshot,
 }));
 vi.mock('@tuturuuu/satellite/workspace-invitation', () => ({
   getPendingWorkspaceInvitation: mocks.getPendingWorkspaceInvitation,
@@ -47,10 +52,6 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getWorkspace: mocks.getWorkspace,
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
-  getWorkspaceTaskBoard: mocks.getWorkspaceTaskBoard,
-  InternalApiError: class InternalApiError extends Error {
-    status = 500;
-  },
   withForwardedInternalApiAuth: () => ({}),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -94,9 +95,10 @@ describe('workspaceModel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getSatelliteAppSessionUser.mockResolvedValue(user);
-    mocks.getSatelliteCurrentUser.mockResolvedValue({ id: 'user-1' });
+    mocks.readShellProfile.mockResolvedValue({ id: 'user-1' });
     mocks.getRequestWorkspace.mockResolvedValue(workspace);
     mocks.getPermissions.mockResolvedValue({
+      wsId: workspace.id,
       containsPermission: () => true,
     });
     mocks.cookies.mockResolvedValue({ get: () => undefined });
@@ -115,9 +117,12 @@ describe('workspaceModel', () => {
     const model = workspaceModel('personal');
 
     await vi.waitFor(() =>
-      expect(mocks.getSatelliteCurrentUser).toHaveBeenCalledWith('tasks')
+      expect(mocks.readShellProfile).toHaveBeenCalledWith(user)
     );
-    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      user,
+      wsId: 'personal',
+    });
     finishWorkspace?.(workspace);
 
     await expect(model).resolves.toMatchObject({
@@ -128,8 +133,42 @@ describe('workspaceModel', () => {
     });
   });
 
+  it('falls back to the resolved workspace id for permissions', async () => {
+    mocks.getPermissions
+      .mockResolvedValueOnce({
+        wsId: 'other-workspace',
+        containsPermission: () => true,
+      })
+      .mockResolvedValueOnce({
+        wsId: workspace.id,
+        containsPermission: () => false,
+      });
+
+    await expect(workspaceModel('personal')).resolves.toMatchObject({
+      canManageCycles: false,
+    });
+    expect(mocks.getPermissions).toHaveBeenLastCalledWith({
+      user,
+      wsId: 'ws-1',
+    });
+  });
+
+  it('does not use early permissions when the guard rejects', async () => {
+    mocks.getPermissions.mockRejectedValueOnce(new Error('offline'));
+    mocks.getRequestWorkspace.mockResolvedValueOnce({
+      ...workspace,
+      joined: false,
+    });
+    mocks.getPendingWorkspaceInvitation.mockResolvedValueOnce(null);
+    mocks.redirect.mockImplementationOnce(() => {
+      throw new Error('REDIRECT');
+    });
+
+    await expect(workspaceModel('ws-1')).rejects.toThrow('REDIRECT');
+  });
+
   it('keeps the guard decision when the early profile read fails', async () => {
-    mocks.getSatelliteCurrentUser.mockRejectedValueOnce(new Error('offline'));
+    mocks.readShellProfile.mockRejectedValueOnce(new Error('offline'));
     mocks.getRequestWorkspace.mockResolvedValueOnce(null);
     mocks.getPendingWorkspaceInvitation.mockResolvedValueOnce(null);
     mocks.notFound.mockImplementationOnce(() => {
@@ -144,9 +183,11 @@ describe('boardModel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.headers.mockResolvedValue(new Headers());
-    mocks.getWorkspaceTaskBoard.mockImplementation(
-      async (wsId: string, boardId: string) => ({
+    mocks.loadBoardSnapshot.mockImplementation(
+      async ({ wsId, boardId }: { wsId: string; boardId: string }) => ({
         board: { id: boardId, ws_id: wsId, access_type: 'member' },
+        listPages: { 'list-1': { tasks: [], count: 0 } },
+        preferences: { userConfigs: {}, workspaceConfigs: {} },
       })
     );
   });
@@ -159,15 +200,22 @@ describe('boardModel', () => {
     await expect(boardModel(scope, 'board-1')).resolves.toMatchObject({
       kind: 'board',
       boardId: 'board-1',
+      listPages: { 'list-1': { tasks: [], count: 0 } },
       workspace,
+    });
+    expect(mocks.loadBoardSnapshot).toHaveBeenCalledWith({
+      user,
+      wsId: 'ws-1',
+      boardId: 'board-1',
     });
     expect(mocks.getWorkspace).not.toHaveBeenCalled();
   });
 
   it('reads the board workspace when the board belongs to another workspace', async () => {
     const otherWorkspace = { ...workspace, id: 'ws-2', personal: false };
-    mocks.getWorkspaceTaskBoard.mockResolvedValueOnce({
+    mocks.loadBoardSnapshot.mockResolvedValueOnce({
       board: { id: 'board-2', ws_id: 'ws-2', access_type: 'member' },
+      listPages: {},
     });
     mocks.getWorkspace.mockResolvedValueOnce(otherWorkspace);
     const scope = { workspace, user, slug: 'personal' } as Parameters<
@@ -181,5 +229,32 @@ describe('boardModel', () => {
       useAdmin: true,
       user,
     });
+  });
+
+  it('does not render a board the actor may not read', async () => {
+    mocks.loadBoardSnapshot.mockResolvedValueOnce(null);
+    mocks.notFound.mockImplementationOnce(() => {
+      throw new Error('NOT_FOUND');
+    });
+    const scope = { workspace, user, slug: 'personal' } as Parameters<
+      typeof boardModel
+    >[0];
+
+    await expect(boardModel(scope, 'board-3')).rejects.toThrow('NOT_FOUND');
+  });
+
+  it('uses a snapshot started before the guard settled', async () => {
+    const scope = { workspace, user, slug: 'personal' } as Parameters<
+      typeof boardModel
+    >[0];
+    const early = Promise.resolve({
+      board: { id: 'board-4', ws_id: 'ws-1', access_type: 'member' as const },
+      listPages: {},
+    });
+
+    await expect(
+      boardModel(scope, 'board-4', early as Parameters<typeof boardModel>[2])
+    ).resolves.toMatchObject({ boardId: 'board-4' });
+    expect(mocks.loadBoardSnapshot).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,5 @@
 import '@tanstack/react-start/server-only';
-import {
-  getSatelliteAppSessionUser,
-  getSatelliteCurrentUser,
-} from '@tuturuuu/satellite/auth';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { getPendingWorkspaceInvitation } from '@tuturuuu/satellite/workspace-invitation';
 import {
   getSidebarBehaviorUpdatedAt,
@@ -14,6 +11,7 @@ import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getRequestWorkspace } from '@tuturuuu/utils/request-workspace';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { readShellProfile } from './shell-profile.server';
 
 /**
  * The `[wsId]` layout's guards as data: an app session, then membership or a
@@ -25,8 +23,12 @@ export async function workspaceModel(id: string) {
   // The profile read does not depend on the workspace guards, so it overlaps
   // them instead of running after them. A guard that redirects leaves it
   // settled and unused.
-  const profilePromise = getSatelliteCurrentUser('tasks');
+  const profilePromise = readShellProfile(user);
   profilePromise.catch(() => {});
+  // Permissions resolve the route id and authorize the actor on their own, so
+  // they overlap the workspace guard too and are read only once it passes.
+  const permissionsPromise = getPermissions({ user, wsId: id });
+  permissionsPromise.catch(() => {});
   const workspace = await getRequestWorkspace(id, { useAdmin: true, user });
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, await headers());
@@ -36,10 +38,18 @@ export async function workspaceModel(id: string) {
   if (!workspace.joined) redirect('/');
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
-  const [permissions, profile] = await Promise.all([
-    getPermissions({ user, wsId: workspace.id }),
+  const [routePermissions, profile] = await Promise.all([
+    permissionsPromise,
     profilePromise,
   ]);
+  // A route id the permission resolver does not know falls back to the
+  // workspace id the guard resolved.
+  const permissions =
+    routePermissions?.wsId === workspace.id
+      ? routePermissions
+      : id === workspace.id && !routePermissions
+        ? null
+        : await getPermissions({ user, wsId: workspace.id });
   return {
     kind: 'workspace' as const,
     workspace,

@@ -19,7 +19,6 @@ import {
   type BlockInfo,
   buildAbuseRiskSubjects,
   extractIPFromHeaders,
-  isIPBlocked,
   recordApiAuthFailure,
 } from '@tuturuuu/utils/abuse-protection';
 import {
@@ -27,6 +26,7 @@ import {
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { writeVerifiedSessionCacheForSubjects } from '@tuturuuu/utils/abuse-protection/edge-trust';
+import { isIPBlockedReusingRecentClear } from '@tuturuuu/utils/abuse-protection/recent-ip-block';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
@@ -37,11 +37,14 @@ import {
   enforceAdaptiveStepUpChallenge,
   getAdaptiveRateLimitConfig,
   recordResponseAbuseSignal,
-  resolveWebAbuseDecision,
 } from './abuse-risk';
 import { setLogDrainUserContext } from './infrastructure/log-drain';
 import { withPlanningSessionAudience } from './planning-session-audience';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
+import {
+  startSessionSecurityLookups,
+  type WebAbuseDecision,
+} from './session-security-lookups';
 
 export type AuthorizedRequest = {
   user: SupabaseUser;
@@ -493,8 +496,6 @@ interface SessionAuthOptions {
   skipAppSessionStepUpChallenge?: boolean;
 }
 
-type SessionAdaptiveAuthKind = 'app-session' | 'session' | 'temp';
-
 function isCliAppSessionClaims(claims: {
   origin_app?: string | null;
   scopes?: readonly string[];
@@ -522,12 +523,8 @@ export function shouldSkipAppSessionStepUpChallenge(
   );
 }
 
-function getUserCreatedAt(user: SupabaseUser) {
-  return (user as SupabaseUser & { created_at?: string | null }).created_at;
-}
-
 async function applyAdaptiveSessionControls({
-  authKind,
+  decision: pendingDecision,
   endpoint,
   ipAddress,
   isRead,
@@ -536,7 +533,7 @@ async function applyAdaptiveSessionControls({
   skipStepUpChallenge = false,
   user,
 }: {
-  authKind: SessionAdaptiveAuthKind;
+  decision: Promise<WebAbuseDecision>;
   endpoint: string;
   ipAddress: string;
   isRead: boolean;
@@ -545,20 +542,11 @@ async function applyAdaptiveSessionControls({
   skipStepUpChallenge?: boolean;
   user: SupabaseUser;
 }): Promise<{
-  decision: Awaited<ReturnType<typeof resolveWebAbuseDecision>>;
+  decision: WebAbuseDecision;
   headers: Record<string, string>;
   response: NextResponse | null;
 }> {
-  const decision = await resolveWebAbuseDecision({
-    authKind,
-    ipAddress,
-    isRead,
-    method: request.method,
-    request,
-    route: endpoint,
-    userCreatedAt: getUserCreatedAt(user),
-    userId: user.id,
-  });
+  const decision = await pendingDecision;
 
   if (!skipStepUpChallenge) {
     const challengeResponse = await enforceAdaptiveStepUpChallenge({
@@ -673,12 +661,41 @@ export function withSessionAuth<T = unknown>(
     // 1. Extract IP
     const ipAddress = extractIPFromHeaders(request.headers);
 
+    // A configured app-session token verifies locally, so its user's
+    // suspension and abuse-risk lookups can overlap the IP block check. They
+    // are applied only after the block, rate-limit and temp-auth checks below.
+    // Temp auth takes precedence, so routes that allow it start them lazily.
+    const appSessionVerification =
+      options?.allowAppSessionAuth && getAppSessionTokenFromRequest(request)
+        ? verifyConfiguredAppSessionRequest(
+            request,
+            options.allowAppSessionAuth
+          )
+        : null;
+    const appSessionUser = appSessionVerification
+      ? createAppSessionUser(appSessionVerification.claims)
+      : null;
+    const startAppSessionLookups = (user: SupabaseUser) =>
+      startSessionSecurityLookups({
+        authKind: 'app-session',
+        endpoint,
+        ipAddress,
+        isRead,
+        request,
+        user,
+      });
+    const earlyAppSessionLookups =
+      appSessionUser && !options?.allowAiTempAuth
+        ? startAppSessionLookups(appSessionUser)
+        : null;
+
     let deferredApiAbuseBlock: BlockInfo | null = null;
 
     // 2. Check persistent IP block
     // An undetermined client IP resolves to the shared 'unknown' bucket,
     // which is still block-checked and rate-limited rather than skipped.
-    const blockInfo = await isIPBlocked(ipAddress, {
+    // A clean result is reused for a few seconds; a found block never is.
+    const blockInfo = await isIPBlockedReusingRecentClear(ipAddress, {
       route: endpoint,
       source: 'api-auth',
     });
@@ -728,25 +745,21 @@ export function withSessionAuth<T = unknown>(
         userId: tempUser.id,
       });
 
-      try {
-        const { checkUserSuspension } =
-          await import('@tuturuuu/utils/abuse-protection/user-suspension');
-        const suspension = await checkUserSuspension(tempUser.id);
-        if (suspension.suspended) {
-          return NextResponse.json(
-            {
-              error: 'Forbidden',
-              message: suspension.reason ?? 'Account suspended',
-            },
-            { status: 403 }
-          );
-        }
-      } catch {
-        // User suspension module not yet available or failed — fail-open
+      const tempLookups = startSessionSecurityLookups({
+        authKind: 'temp',
+        endpoint,
+        ipAddress,
+        isRead,
+        request,
+        user: tempUser,
+      });
+      const tempSuspensionResponse = await tempLookups.suspension;
+      if (tempSuspensionResponse) {
+        return tempSuspensionResponse;
       }
 
       const adaptiveControls = await applyAdaptiveSessionControls({
-        authKind: 'temp',
+        decision: tempLookups.decision,
         endpoint,
         ipAddress,
         isRead,
@@ -793,101 +806,77 @@ export function withSessionAuth<T = unknown>(
       return response;
     }
 
-    if (options?.allowAppSessionAuth) {
-      const appSessionToken = getAppSessionTokenFromRequest(request);
+    if (appSessionVerification && appSessionUser) {
+      setLogDrainUserContext({
+        userEmail: appSessionUser.email,
+        userId: appSessionUser.id,
+      });
 
-      if (appSessionToken) {
-        const appSessionVerification = verifyConfiguredAppSessionRequest(
-          request,
-          options.allowAppSessionAuth
-        );
-
-        if (appSessionVerification) {
-          const appSessionUser = createAppSessionUser(
-            appSessionVerification.claims
-          );
-          setLogDrainUserContext({
-            userEmail: appSessionUser.email,
-            userId: appSessionUser.id,
-          });
-
-          try {
-            const { checkUserSuspension } =
-              await import('@tuturuuu/utils/abuse-protection/user-suspension');
-            const suspension = await checkUserSuspension(appSessionUser.id);
-            if (suspension.suspended) {
-              return NextResponse.json(
-                {
-                  error: 'Forbidden',
-                  message: suspension.reason ?? 'Account suspended',
-                },
-                { status: 403 }
-              );
-            }
-          } catch {
-            // User suspension module not yet available or failed — fail-open
-          }
-
-          const adminSupabase = (await createAdminClient({
-            noCookie: true,
-          })) as TypedSupabaseClient;
-          const appSessionSupabase = attachSupabaseAuthUser(
-            adminSupabase,
-            appSessionUser
-          );
-          const params = routeContext?.params
-            ? await Promise.resolve(routeContext.params)
-            : ({} as T);
-          const adaptiveControls = await applyAdaptiveSessionControls({
-            authKind: 'app-session',
-            endpoint,
-            ipAddress,
-            isRead,
-            rateLimit: options?.rateLimit,
-            request,
-            skipStepUpChallenge: shouldSkipAppSessionStepUpChallenge(
-              appSessionVerification.claims,
-              options?.skipAppSessionStepUpChallenge === true
-            ),
-            user: appSessionUser,
-          });
-          if (adaptiveControls.response) {
-            return adaptiveControls.response;
-          }
-
-          const response = await handler(
-            request,
-            { user: appSessionUser, supabase: appSessionSupabase },
-            params
-          );
-
-          if (
-            options?.cache &&
-            request.method === 'GET' &&
-            response.status >= 200 &&
-            response.status < 300
-          ) {
-            const { maxAge, swr } = options.cache;
-            const directives = [`private`, `max-age=${maxAge}`];
-            if (swr !== undefined) {
-              directives.push(`stale-while-revalidate=${swr}`);
-            }
-            response.headers.set('Cache-Control', directives.join(', '));
-          }
-
-          applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
-          recordResponseAbuseSignal({
-            decision: adaptiveControls.decision,
-            ipAddress,
-            method: request.method,
-            response,
-            route: endpoint,
-            userId: appSessionUser.id,
-          });
-
-          return response;
-        }
+      const appSessionLookups =
+        earlyAppSessionLookups ?? startAppSessionLookups(appSessionUser);
+      const appSessionSuspensionResponse = await appSessionLookups.suspension;
+      if (appSessionSuspensionResponse) {
+        return appSessionSuspensionResponse;
       }
+
+      const adminSupabase = (await createAdminClient({
+        noCookie: true,
+      })) as TypedSupabaseClient;
+      const appSessionSupabase = attachSupabaseAuthUser(
+        adminSupabase,
+        appSessionUser
+      );
+      const params = routeContext?.params
+        ? await Promise.resolve(routeContext.params)
+        : ({} as T);
+      const adaptiveControls = await applyAdaptiveSessionControls({
+        decision: appSessionLookups.decision,
+        endpoint,
+        ipAddress,
+        isRead,
+        rateLimit: options?.rateLimit,
+        request,
+        skipStepUpChallenge: shouldSkipAppSessionStepUpChallenge(
+          appSessionVerification.claims,
+          options?.skipAppSessionStepUpChallenge === true
+        ),
+        user: appSessionUser,
+      });
+      if (adaptiveControls.response) {
+        return adaptiveControls.response;
+      }
+
+      const response = await handler(
+        request,
+        { user: appSessionUser, supabase: appSessionSupabase },
+        params
+      );
+
+      if (
+        options?.cache &&
+        request.method === 'GET' &&
+        response.status >= 200 &&
+        response.status < 300
+      ) {
+        const { maxAge, swr } = options.cache;
+        const directives = [`private`, `max-age=${maxAge}`];
+        if (swr !== undefined) {
+          directives.push(`stale-while-revalidate=${swr}`);
+        }
+        response.headers.set('Cache-Control', directives.join(', '));
+      }
+
+      applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
+      recordResponseAbuseSignal({
+        decision: adaptiveControls.decision,
+        ipAddress,
+        method: request.method,
+        response,
+        route: endpoint,
+        userId: appSessionUser.id,
+      });
+
+      return response;
     }
 
     const supabase = (await createClient(request)) as TypedSupabaseClient;
@@ -930,22 +919,18 @@ export function withSessionAuth<T = unknown>(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 5. Check user suspension
-    try {
-      const { checkUserSuspension } =
-        await import('@tuturuuu/utils/abuse-protection/user-suspension');
-      const suspension = await checkUserSuspension(user.id);
-      if (suspension.suspended) {
-        return NextResponse.json(
-          {
-            error: 'Forbidden',
-            message: suspension.reason ?? 'Account suspended',
-          },
-          { status: 403 }
-        );
-      }
-    } catch {
-      // User suspension module not yet available or failed — fail-open
+    // 5. Check user suspension (its abuse-risk decision loads alongside)
+    const sessionLookups = startSessionSecurityLookups({
+      authKind: 'session',
+      endpoint,
+      ipAddress,
+      isRead,
+      request,
+      user,
+    });
+    const suspensionResponse = await sessionLookups.suspension;
+    if (suspensionResponse) {
+      return suspensionResponse;
     }
 
     // 6. Resolve route params and call handler
@@ -954,7 +939,7 @@ export function withSessionAuth<T = unknown>(
       : ({} as T);
 
     const adaptiveControls = await applyAdaptiveSessionControls({
-      authKind: 'session',
+      decision: sessionLookups.decision,
       endpoint,
       ipAddress,
       isRead,

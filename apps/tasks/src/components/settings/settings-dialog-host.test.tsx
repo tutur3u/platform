@@ -74,7 +74,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('Tasks settings dialog host', () => {
-  it('opens a bare settingsTab deep link with its board context', () => {
+  it('opens a bare settingsTab deep link with its board context', async () => {
     mocks.query = {
       settingsBoardId: 'board-1',
       settingsDialog: null,
@@ -82,9 +82,10 @@ describe('Tasks settings dialog host', () => {
     };
     render(<SettingsDialogHost user={user} wsId="personal" />);
 
-    expect(screen.getByTestId('settings-content').textContent).toContain(
-      'task_board:board-1'
-    );
+    // The dialog body is its own chunk and renders once it has loaded.
+    expect(
+      (await screen.findByTestId('settings-content')).textContent
+    ).toContain('task_board:board-1');
   });
 
   it('pushes board settings intents with the board id', () => {

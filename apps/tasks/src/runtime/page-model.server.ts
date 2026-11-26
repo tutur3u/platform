@@ -2,9 +2,10 @@ import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { matchPage } from '@tuturuuu/start-bridge/pages';
 import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
-import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { PAGE_REWRITE_HEADER } from '../lib/page-rewrite';
+import { startBoardSnapshot } from './board-snapshot.server';
 import { resolvePathLocale } from './locale';
+import { appPathname, isTaskBoardEntrypoint } from './page-path';
 import { type PagePattern, pages } from './page-registry.bridge.gen';
 import {
   loginModel,
@@ -49,8 +50,13 @@ const loaders = {
   '/verify-token': async () => ({ kind: 'verify-token' as const }),
   '/[wsId]/analytics': (ctx: PageContext) =>
     inWorkspace(ctx, () => progressModel(ctx.params.wsId ?? '', 'stats')),
-  '/[wsId]/boards/[boardId]': (ctx: PageContext) =>
-    inWorkspace(ctx, (scope) => boardModel(scope, ctx.params.boardId ?? '')),
+  '/[wsId]/boards/[boardId]': (ctx: PageContext) => {
+    const boardId = ctx.params.boardId ?? '';
+    const snapshot = startBoardSnapshot(ctx.params.wsId ?? '', boardId);
+    return inWorkspace(ctx, (scope) =>
+      boardModel(scope, boardId, snapshot.forActor(scope))
+    );
+  },
   '/[wsId]/boards': (ctx: PageContext) => inWorkspace(ctx, entrypointRedirect),
   '/[wsId]/calendar': (ctx: PageContext) => inWorkspace(ctx, calendarModel),
   '/[wsId]/cycles/planning': (ctx: PageContext) =>
@@ -98,17 +104,7 @@ export type TasksPage = Awaited<
   ReturnType<(typeof loaders)[keyof typeof loaders]>
 >;
 
-/** The app-relative pathname of a router path, without its locale prefix. */
-function appPathname(path: string) {
-  const base = runtimeAppBase();
-  let pathname = new URL(path, 'http://app.invalid').pathname;
-  if (base && (pathname === base || pathname.startsWith(`${base}/`)))
-    pathname = pathname.slice(base.length) || '/';
-  const localeless = pathname.replace(/^\/(?:en|vi)(?=\/|$)/u, '') || '/';
-  return { pathname: localeless, localePrefixed: localeless !== pathname };
-}
-
-export async function loadPageModel(path: string) {
+export async function loadPageModel(path: string, preload = false) {
   // A proxy rewrite (crawler preview, root fallback) names the page to load.
   const rewrite = bridgeRequest().request.headers.get(PAGE_REWRITE_HEADER);
   const target =
@@ -116,6 +112,7 @@ export async function loadPageModel(path: string) {
   const url = new URL(target, 'http://app.invalid');
   const locale = resolvePathLocale(target);
   let { pathname, localePrefixed } = appPathname(target);
+  if (preload && isTaskBoardEntrypoint(pathname)) notFound();
   if (pathname === '/') {
     const entry = await rootEntry({
       locale,

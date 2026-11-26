@@ -12,7 +12,7 @@ import {
 import { getTasksAppUrl } from '@tuturuuu/ui/lib/tasks-app-url';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import {
   useOptionalWorkspacePresenceContext,
@@ -23,10 +23,16 @@ import {
   readTaskOpenMode,
   TASK_OPEN_MODE_CONFIG_ID,
 } from './task-dialog-presentation';
-import { TaskEditDialog } from './task-edit-dialog';
 import type { TaskDialogCurrentUser } from './task-edit-dialog/user-display';
 import { buildStandaloneTaskUrl, buildWorkspaceTaskUrl } from './task-url';
 import { useTaskDialogPresentationPreferences } from './use-task-dialog-presentation-preferences';
+
+// The editor (TipTap, Yjs, ProseMirror) loads with the first opened task, not
+// with every page; it is warmed while the browser is idle.
+const loadTaskEditDialog = () => import('./task-edit-dialog');
+const TaskEditDialog = lazy(() =>
+  loadTaskEditDialog().then((module) => ({ default: module.TaskEditDialog }))
+);
 
 /**
  * Manager component that renders the centralized task dialog
@@ -72,6 +78,17 @@ export function TaskDialogManager({
   const pageNavigationRef = useRef<string | null>(null);
   const previousStandaloneTaskIdRef = useRef(standaloneTaskId);
   const fullPage = openMode === 'page' && state.mode === 'edit';
+
+  useEffect(() => {
+    // Code warm-up, not data: the first opened task should not wait on it.
+    const warm = () => void loadTaskEditDialog().catch(() => {});
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(warm, { timeout: 5_000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(warm, 2_000);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     const leftStandalonePage =
@@ -603,48 +620,50 @@ export function TaskDialogManager({
   }
 
   const dialog = (
-    <TaskEditDialog
-      wsId={wsId}
-      taskWsId={state.taskWsId}
-      task={state.task}
-      boardId={state.boardId || ''}
-      visibleBoardId={state.visibleBoardId}
-      visibleTaskSnapshot={state.visibleTaskSnapshot}
-      isOpen={state.isOpen}
-      availableLists={state.availableLists}
-      sharedContext={
-        state.isHydratingTask || state.taskLoadError
-          ? state.initialSharedContext
-          : undefined
-      }
-      filters={state.filters}
-      mode={state.mode}
-      collaborationMode={state.collaborationMode}
-      realtimeEnabled={state.realtimeEnabled}
-      isHydratingTask={state.isHydratingTask}
-      taskLoadError={state.taskLoadError}
-      taskHydrationVersion={state.taskHydrationVersion}
-      isPersonalWorkspace={isPersonalWorkspace}
-      canUseBoardAssignees={state.canUseBoardAssignees}
-      assigneeMemberSource={state.assigneeMemberSource}
-      parentTaskId={state.parentTaskId}
-      parentTaskName={state.parentTaskName}
-      pendingRelationship={state.pendingRelationship}
-      currentUser={currentUser?.id ? currentUser : undefined}
-      openMode={openMode}
-      draftModeEnabled={draftModeEnabled}
-      presentationPreferences={presentationPreferences}
-      draftId={state.draftId}
-      onClose={handleClose}
-      onUpdate={triggerUpdate}
-      onNavigateToTask={handleNavigateToTask}
-      onAddSubtask={handleAddSubtask}
-      onAddParentTask={handleAddParentTask}
-      onAddBlockingTask={handleAddBlockingTask}
-      onAddBlockedByTask={handleAddBlockedByTask}
-      onAddRelatedTask={handleAddRelatedTask}
-      onRetryTaskLoad={handleRetryTaskLoad}
-    />
+    <Suspense fallback={null}>
+      <TaskEditDialog
+        wsId={wsId}
+        taskWsId={state.taskWsId}
+        task={state.task}
+        boardId={state.boardId || ''}
+        visibleBoardId={state.visibleBoardId}
+        visibleTaskSnapshot={state.visibleTaskSnapshot}
+        isOpen={state.isOpen}
+        availableLists={state.availableLists}
+        sharedContext={
+          state.isHydratingTask || state.taskLoadError
+            ? state.initialSharedContext
+            : undefined
+        }
+        filters={state.filters}
+        mode={state.mode}
+        collaborationMode={state.collaborationMode}
+        realtimeEnabled={state.realtimeEnabled}
+        isHydratingTask={state.isHydratingTask}
+        taskLoadError={state.taskLoadError}
+        taskHydrationVersion={state.taskHydrationVersion}
+        isPersonalWorkspace={isPersonalWorkspace}
+        canUseBoardAssignees={state.canUseBoardAssignees}
+        assigneeMemberSource={state.assigneeMemberSource}
+        parentTaskId={state.parentTaskId}
+        parentTaskName={state.parentTaskName}
+        pendingRelationship={state.pendingRelationship}
+        currentUser={currentUser?.id ? currentUser : undefined}
+        openMode={openMode}
+        draftModeEnabled={draftModeEnabled}
+        presentationPreferences={presentationPreferences}
+        draftId={state.draftId}
+        onClose={handleClose}
+        onUpdate={triggerUpdate}
+        onNavigateToTask={handleNavigateToTask}
+        onAddSubtask={handleAddSubtask}
+        onAddParentTask={handleAddParentTask}
+        onAddBlockingTask={handleAddBlockingTask}
+        onAddBlockedByTask={handleAddBlockedByTask}
+        onAddRelatedTask={handleAddRelatedTask}
+        onRetryTaskLoad={handleRetryTaskLoad}
+      />
+    </Suspense>
   );
 
   return (

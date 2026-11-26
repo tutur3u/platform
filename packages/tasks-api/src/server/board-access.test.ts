@@ -356,4 +356,79 @@ describe('task board direct share access', () => {
       error: expect.objectContaining({ status: 403 }),
     });
   });
+
+  it('loads permissions while membership is still resolving', async () => {
+    let resolveMembership!: (value: { ok: boolean }) => void;
+    verifyWorkspaceMembershipTypeMock.mockReturnValue(
+      new Promise((resolve) => {
+        resolveMembership = resolve;
+      })
+    );
+    const sbAdmin = createSupabaseMock({
+      workspace_boards: [
+        {
+          data: {
+            id: '00000000-0000-4000-8000-000000000010',
+            ws_id: '00000000-0000-4000-8000-000000000020',
+          },
+          error: null,
+        },
+      ],
+    });
+
+    const pending = resolveTaskBoardAccess({
+      boardId: '00000000-0000-4000-8000-000000000010',
+      sbAdmin,
+      supabase: createSupabaseMock({}),
+      user,
+      wsId: '00000000-0000-4000-8000-000000000020',
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(getPermissionsMock).toHaveBeenCalledWith({
+      wsId: '00000000-0000-4000-8000-000000000020',
+      user,
+    });
+
+    resolveMembership({ ok: true });
+    await expect(pending).resolves.toMatchObject({
+      access: { mode: 'member', permission: 'edit' },
+    });
+  });
+
+  it('ignores a failed permissions lookup for a non-member', async () => {
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    getPermissionsMock.mockRejectedValue(new Error('permissions unavailable'));
+    const sbAdmin = createSupabaseMock({
+      workspace_boards: [
+        {
+          data: {
+            id: '00000000-0000-4000-8000-000000000010',
+            ws_id: '00000000-0000-4000-8000-000000000020',
+          },
+          error: null,
+        },
+      ],
+      task_board_shares: [{ data: [], error: null }],
+    });
+
+    try {
+      const result = await resolveTaskBoardAccess({
+        boardId: '00000000-0000-4000-8000-000000000010',
+        sbAdmin,
+        supabase: createSupabaseMock({}),
+        user,
+        wsId: '00000000-0000-4000-8000-000000000020',
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(result).toMatchObject({
+        error: expect.objectContaining({ status: 403 }),
+      });
+      expect(unhandled).not.toHaveBeenCalled();
+    } finally {
+      process.off('unhandledRejection', unhandled);
+    }
+  });
 });

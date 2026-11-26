@@ -370,12 +370,7 @@ jobs:
           test -d apps/nova/dist/client
       - name: Pre-seal doctor on the production Host header
         timeout-minutes: 3
-        run: |
-          if [ "$TRUSTED" = true ]; then
-            node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA" --expect-location https://tuturuuu.com/nova
-          else
-            node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA"
-          fi
+        run: node scripts/ci/pre-seal-doctor.mjs nova apps/nova nova.tuturuuu.com "$SOURCE_SHA" --expect-location https://tuturuuu.com/nova
       - name: Validate and seal the final production output
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"

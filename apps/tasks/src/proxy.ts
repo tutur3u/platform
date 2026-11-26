@@ -23,7 +23,6 @@ import {
 } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getAllowedFirstPartyCorsOrigin } from '@tuturuuu/utils/first-party-cors';
-import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -39,6 +38,7 @@ import {
   mountedTasksAuth,
   resolveMountedTasksSession,
 } from './lib/mounted-auth';
+import { isActorPersonalWorkspace } from './lib/personal-workspace-check';
 import { PAGE_REWRITE_HEADER } from './lib/page-rewrite';
 import { proxyAppUrl } from './lib/proxy-app-url';
 import {
@@ -374,7 +374,10 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   if (potentialWorkspaceId) {
     try {
       if (hasSatelliteSession) {
-        const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
+        const isPersonal = await isActorPersonalWorkspace(
+          appSession?.sub,
+          potentialWorkspaceId
+        );
 
         if (isPersonal) {
           // Construct the redirect URL replacing the workspace ID with 'personal'

@@ -11,9 +11,15 @@ import {
 } from '@tuturuuu/ui/hooks/use-settings-dialog-focus-return';
 import { useSettingsDialogShortcut } from '@tuturuuu/ui/hooks/use-settings-dialog-shortcut';
 import { useSettingsDialogUrlState } from '@tuturuuu/ui/hooks/use-settings-dialog-url-state';
-import { useCallback, useEffect } from 'react';
+import { lazy, Suspense, useCallback, useEffect } from 'react';
 import { TTR_URL } from '@/constants/common';
-import { SettingsDialog } from './settings-dialog';
+
+// Settings load when the dialog first opens, not with every page.
+const SettingsDialog = lazy(() =>
+  import('./settings-dialog').then((module) => ({
+    default: module.SettingsDialog,
+  }))
+);
 
 interface SettingsDialogHostProps {
   wsId?: string;
@@ -105,15 +111,17 @@ export function SettingsDialogHost({
     <SettingsDialogFocusContext value={restoreFocus}>
       <Dialog open={settingsOpen} onOpenChange={handleOpenChange}>
         {settingsOpen && (
-          <SettingsDialog
-            centralUrl={TTR_URL}
-            boardId={extras.settingsBoardId ?? undefined}
-            defaultTab={tab ?? undefined}
-            onBoardSettingsOpen={handleBoardSettingsOpen}
-            user={user}
-            workspace={workspace}
-            wsId={wsId}
-          />
+          <Suspense fallback={null}>
+            <SettingsDialog
+              centralUrl={TTR_URL}
+              boardId={extras.settingsBoardId ?? undefined}
+              defaultTab={tab ?? undefined}
+              onBoardSettingsOpen={handleBoardSettingsOpen}
+              user={user}
+              workspace={workspace}
+              wsId={wsId}
+            />
+          </Suspense>
         )}
       </Dialog>
     </SettingsDialogFocusContext>

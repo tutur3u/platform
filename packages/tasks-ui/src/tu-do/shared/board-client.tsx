@@ -28,6 +28,7 @@ import {
   setActiveBoardRefresh,
   setActiveBroadcast,
 } from './board-broadcast-context';
+import type { BoardPreferenceSeed } from './board-preference-seed';
 import { getBoardSprintsQueryKey } from './board-sprints/use-board-sprints';
 import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
@@ -43,6 +44,8 @@ import {
 } from './task-board-cache-scheduler';
 import { TaskBoardLoadingState } from './task-board-loading-state';
 import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
+import { useBoardServerSeed } from './use-board-server-seed';
+import type { BoardFirstListPage } from './board-first-page';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 // Pilot (default off): TanStack DB board sync ships in its own chunk so boards
@@ -58,6 +61,12 @@ const RELATION_REVALIDATE_DELAY_MS = 5_000;
 interface Props {
   boardId: string;
   initialBoard?: WorkspaceTaskBoard;
+  /** First task page per list, read with `initialBoard` during the server render. */
+  initialListPages?: Record<string, BoardFirstListPage>;
+  /** Board preferences read with `initialBoard` during the server render. */
+  initialPreferences?: BoardPreferenceSeed;
+  /** Server time (ms) the initial pages and preferences were read at. */
+  initialSnapshotAt?: number;
   workspace: Pick<Workspace, 'id' | 'personal'>;
   workspaceTier?: WorkspaceProductTier | null;
   currentUserId?: string;
@@ -69,9 +78,26 @@ interface Props {
   instantSyncEnabled?: boolean;
 }
 
-export function BoardClient({
+/**
+ * One mounted body per user, workspace and board, so board-scoped state (the
+ * server seed, the browser copy, per-list pagination) never carries over when
+ * a caller reuses the component for another board.
+ */
+export function BoardClient(props: Props) {
+  return (
+    <BoardClientBody
+      key={`${props.currentUserId ?? ''}:${props.workspace.id}:${props.boardId}`}
+      {...props}
+    />
+  );
+}
+
+function BoardClientBody({
   boardId,
   initialBoard,
+  initialListPages,
+  initialPreferences,
+  initialSnapshotAt = 0,
   defaultView,
   idleBottomIsland,
   workspace,
@@ -92,11 +118,33 @@ export function BoardClient({
   const [cachedSnapshot, setCachedSnapshot] = useState<ReturnType<
     typeof readTaskBoardCache
   > | null>(null);
+  const boardQueryKey = useMemo(
+    () => ['task-board', workspace.id, boardId] as const,
+    [boardId, workspace.id]
+  );
+  const initialBoardForQuery =
+    initialBoard?.id === boardId && initialBoard.ws_id === workspace.id
+      ? initialBoard
+      : undefined;
+  // Server-read board, first pages and preferences replace older cached
+  // copies, so the columns skip their initial browser request.
+  const seed = useBoardServerSeed({
+    boardId,
+    boardQueryKey,
+    seedBoardQuery: initialBoardForQuery !== undefined,
+    initialBoard,
+    initialListPages,
+    initialPreferences,
+    snapshotAt: initialSnapshotAt,
+  });
 
   useEffect(() => {
     // A shared browser keeps only the signed-in user's board snapshots.
     bindTaskBoardCacheSessionEnd();
     if (currentUserId) purgeOtherUserTaskBoardCaches(currentUserId);
+    // Server pages were either seeded or skipped for a newer live cache; the
+    // browser copy is older than both.
+    if (seed.hasServerPages) return;
     const snapshot = readTaskBoardCache(cacheScopeId, boardId);
     if (!snapshot) return;
 
@@ -110,23 +158,31 @@ export function BoardClient({
       (current: typeof snapshot.tasks | undefined) =>
         current?.length ? current : snapshot.tasks
     );
-  }, [boardId, cacheScopeId, currentUserId, queryClient, workspace.id]);
+  }, [
+    boardId,
+    cacheScopeId,
+    currentUserId,
+    queryClient,
+    seed.hasServerPages,
+    workspace.id,
+  ]);
 
   const {
     data: board,
     error: boardError,
     isLoading: boardLoading,
   } = useQuery({
-    queryKey: ['task-board', workspace.id, boardId],
+    queryKey: boardQueryKey,
     queryFn: async () => {
       const result = await getWorkspaceTaskBoard(workspace.id, boardId);
       return result.board as WorkspaceTaskBoard;
     },
     // The server already authorized this exact board for the current request.
     // Reuse it through hydration instead of paying for the same API read twice.
-    initialData:
-      initialBoard?.id === boardId && initialBoard.ws_id === workspace.id
-        ? initialBoard
+    initialData: initialBoardForQuery,
+    initialDataUpdatedAt:
+      initialBoardForQuery && initialSnapshotAt > 0
+        ? initialSnapshotAt
         : undefined,
     refetchOnMount: true,
     staleTime: initialBoard ? 30_000 : 0,
@@ -149,7 +205,7 @@ export function BoardClient({
   const progressiveLoader = useProgressiveBoardLoader(
     boardWorkspaceId,
     boardId,
-    cachedSnapshot?.pagination
+    seed.pagination ?? cachedSnapshot?.pagination
   );
 
   // Tasks start empty and are populated progressively per-list.
@@ -162,7 +218,8 @@ export function BoardClient({
       return queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
     },
     gcTime: 7 * 24 * 60 * 60_000,
-    initialData: cachedSnapshot?.tasks ?? [],
+    initialData: seed.initialTasks ?? cachedSnapshot?.tasks ?? [],
+    initialDataUpdatedAt: seed.initialTasksUpdatedAt,
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -235,7 +292,7 @@ export function BoardClient({
     window.addEventListener('online', onOnline);
     window.addEventListener('pageshow', onPageShow);
     document.addEventListener('visibilitychange', onVisibilityChange);
-    if (cachedSnapshot) revalidateLoadedLists();
+    if (cachedSnapshot || seed.revalidateOnMount) revalidateLoadedLists();
 
     return () => {
       window.removeEventListener('focus', onFocus);
@@ -248,6 +305,7 @@ export function BoardClient({
     cachedSnapshot,
     progressiveLoader.revalidateLoadedLists,
     queryClient,
+    seed.revalidateOnMount,
     workspace.id,
   ]);
 

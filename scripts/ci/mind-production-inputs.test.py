@@ -1,4 +1,4 @@
-"""Mind cutover public inputs: empty vars fail, fixtures stay on qualification."""
+"""Mind cutover public inputs: empty vars fail, fixtures stay on build-only qualification."""
 import hashlib
 import importlib.util
 import json
@@ -70,7 +70,8 @@ class MindProductionInputsTest(unittest.TestCase):
     def setUpClass(cls):
         cls.workflow = WORKFLOW.read_text()
         cls.native = job_slice(cls.workflow, "native", "mind-cutover-artifact")
-        cls.cutover = job_slice(cls.workflow, "mind-cutover-artifact", None)
+        cls.cutover = job_slice(cls.workflow, "mind-cutover-artifact", "mind-cutover-fixture")
+        cls.fixture = job_slice(cls.workflow, "mind-cutover-fixture", None)
         cls.script = guard_script(cls.cutover)
 
     def test_native_qualification_keeps_its_fixture_inputs(self):
@@ -81,6 +82,24 @@ class MindProductionInputsTest(unittest.TestCase):
         self.assertIn("vars.PRODUCTION_SUPABASE_URL", self.cutover)
         self.assertIn("vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY", self.cutover)
         self.assertNotIn("|| 'https://", self.cutover)
+
+    def test_fixture_build_cannot_seal_or_upload_a_production_artifact(self):
+        trusted = (
+            "github.ref == 'refs/heads/main' && "
+            "(github.event_name == 'push' || github.event_name == 'workflow_dispatch')"
+        )
+        production_if = next(line for line in self.cutover.splitlines() if line.lstrip().startswith("if:"))
+        fixture_if = next(line for line in self.fixture.splitlines() if line.lstrip().startswith("if:"))
+        self.assertIn(f"&& ({trusted})", production_if)
+        self.assertIn(f"&& !({trusted})", fixture_if)
+        self.assertIn(MIND_FIXTURE_URL, self.fixture)
+        self.assertIn(MIND_FIXTURE_KEY, self.fixture)
+        self.assertIn("bun run build:cloudflare", self.fixture)
+        for forbidden in (
+            "vars.", "secrets.", "mind-native-artifact.py", " seal ", " pack ",
+            "upload-artifact", " deploy ", " publish ", "PLATFORM_BUILD_ENVIRONMENT: production",
+        ):
+            self.assertNotIn(forbidden, self.fixture)
 
     def test_cutover_bakes_the_apex_app_url(self):
         self.assertEqual(self.cutover.count("https://tuturuuu.com/mind"), 2)
