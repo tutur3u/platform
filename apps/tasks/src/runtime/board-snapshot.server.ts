@@ -15,6 +15,8 @@ import {
 } from '@tuturuuu/tasks-ui/tu-do/shared/board-preference-seed';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
+import { abuseSubject } from '@tuturuuu/utils/abuse-protection/abuse-subject';
+import { isIPBlockedEdge } from '@tuturuuu/utils/abuse-protection/edge';
 import { isIPBlockedReusingRecentClear } from '@tuturuuu/utils/abuse-protection/recent-ip-block';
 import { NextRequest } from '@tuturuuu/start-bridge/next/server';
 import { readTaskBoardDetail } from '../app/api/v1/workspaces/[wsId]/task-boards/[boardId]/board-detail';
@@ -77,22 +79,25 @@ async function readFirstListPage(
 }
 
 /**
- * Whether the request's IP is blocked or the actor is suspended. The board
- * and task API routes deny every IP block end to end (the API proxy guard
- * runs before `withSessionAuth`), and a direct page load does not pass that
- * guard, so any active block denies here, `api_abuse` included. Both lookups
- * fail open, as on the API routes.
+ * Whether the request is blocked or the actor is suspended, as the board and
+ * task API routes decide end to end: the API proxy guard's edge block check
+ * on the request's abuse subject (where `api_abuse` and Worker-subject
+ * blocks live), the wrapper's persistent IP block check, and the suspension
+ * check. A direct page load does not pass the proxy guard, so any block from
+ * either store denies here. All lookups fail open, as on the API routes.
  */
 async function isDeniedBeforeRead(userId: string) {
-  const ipAddress = extractIPFromHeaders(await headers());
-  const [block, suspension] = await Promise.all([
+  const requestHeaders = await headers();
+  const ipAddress = extractIPFromHeaders(requestHeaders);
+  const [edgeBlock, block, suspension] = await Promise.all([
+    isIPBlockedEdge(abuseSubject(requestHeaders, ipAddress)),
     isIPBlockedReusingRecentClear(ipAddress, {
       route: '/[wsId]/boards/[boardId]',
       source: 'tasks-board-page',
     }),
     readUserSuspension(userId),
   ]);
-  return Boolean(suspension) || block !== null;
+  return Boolean(suspension) || edgeBlock !== null || block !== null;
 }
 
 /** Stored values by id, with `null` for ids the user never stored. */

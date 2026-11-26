@@ -76,8 +76,9 @@ board page, because a partly loaded board cannot show that a list is empty.
 
 The native Tasks board page reads everything the kanban waits for in the same
 server request, in-process, as the verified actor, after the same request
-decisions the API routes make end to end (any IP block, `api_abuse` included,
-or a suspended actor gets no board): the board, the first
+decisions the API routes make end to end (a block in the API proxy's edge
+store or the persistent IP block store, `api_abuse` included, or a suspended
+actor gets no board): the board, the first
 50-task page of every list, and the actor's list preferences (persist
 collapsed, hide empty, auto-collapse, pinned special lists). The browser seeds
 these into its query cache before the first render, so columns skip their

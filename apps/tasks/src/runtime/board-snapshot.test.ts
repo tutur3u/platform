@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   handleTaskRouteGET: vi.fn(),
   headers: vi.fn(),
   isIPBlocked: vi.fn(),
+  isIPBlockedEdge: vi.fn(),
   readTaskBoardDetail: vi.fn(),
   readUserSuspension: vi.fn(),
 }));
@@ -32,6 +33,12 @@ vi.mock('@tuturuuu/tasks-api/server/tasks/route', () => ({
 }));
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
   extractIPFromHeaders: () => '203.0.113.9',
+}));
+vi.mock('@tuturuuu/utils/abuse-protection/abuse-subject', () => ({
+  abuseSubject: (_headers: unknown, ip: string) => `subject:${ip}`,
+}));
+vi.mock('@tuturuuu/utils/abuse-protection/edge', () => ({
+  isIPBlockedEdge: mocks.isIPBlockedEdge,
 }));
 vi.mock('@tuturuuu/utils/abuse-protection/recent-ip-block', () => ({
   isIPBlockedReusingRecentClear: mocks.isIPBlocked,
@@ -64,6 +71,7 @@ describe('loadBoardSnapshot request decisions', () => {
     vi.clearAllMocks();
     mocks.headers.mockResolvedValue(new Headers());
     mocks.isIPBlocked.mockResolvedValue(null);
+    mocks.isIPBlockedEdge.mockResolvedValue(null);
     mocks.readUserSuspension.mockResolvedValue(null);
     mocks.createAdminClient.mockResolvedValue({
       from: () => ({
@@ -117,6 +125,14 @@ describe('loadBoardSnapshot request decisions', () => {
 
     await expect(load()).resolves.toBeNull();
     expect(mocks.readTaskBoardDetail).not.toHaveBeenCalled();
+  });
+
+  it('reads nothing for a block only the edge proxy store holds', async () => {
+    mocks.isIPBlockedEdge.mockResolvedValue(block('api_abuse'));
+
+    await expect(load()).resolves.toBeNull();
+    expect(mocks.isIPBlockedEdge).toHaveBeenCalledWith('subject:203.0.113.9');
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('reads the board when neither decision denies', async () => {
