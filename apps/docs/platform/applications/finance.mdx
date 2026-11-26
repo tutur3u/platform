@@ -606,6 +606,12 @@ shared Finance UI in web and Finance, and have no data side effects. Regression
 coverage: `pending-invoice-coverage.test.ts`, `pending-columns.test.ts`,
 `standard-invoice-tuition-warning.test.tsx` and `use-prepaid-month-count.test.tsx`
 under `packages/ui/src/components/ui/finance/invoices`.
+The mobile app applies the same rules. Opening a pending row pre-selects the
+earliest owed month and the unbroken run of owed months after it; choosing
+another owed month re-selects the run from that month. A new standard invoice
+for a customer with pending tuition lists the owed classes with a class-invoice
+action. Regression coverage: `pending_tuition_coverage_test.dart` and
+`finance_invoices_test.dart` under `apps/mobile/test/features/finance`.
 
 Pending tuition begins no earlier than the student's recorded class membership
 date or the class start date, whichever is later. A class's earlier scheduled

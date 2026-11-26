@@ -17679,6 +17679,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeInvoicePrepaidMonths => 'Số tháng trả trước';
 
   @override
+  String get financeInvoiceTuitionOwedTitle => 'Khách hàng này còn nợ học phí';
+
+  @override
+  String get financeInvoiceTuitionOwedDescription => 'Hóa đơn thông thường không gắn với lớp hay tháng học phí nên sẽ không tất toán học phí này. Hãy dùng hóa đơn theo lớp.';
+
+  @override
+  String get financeInvoiceTuitionOwedAction => 'Hóa đơn theo lớp';
+
+  @override
   String financeInvoiceMonths(int count) {
     return '$count tháng';
   }

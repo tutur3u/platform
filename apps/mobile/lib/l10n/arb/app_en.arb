@@ -8705,6 +8705,9 @@
   "financeInvoiceNoStockRows": "This product has no available stock variants",
   "financeInvoiceCoverage": "Coverage month",
   "financeInvoicePrepaidMonths": "Prepaid months",
+  "financeInvoiceTuitionOwedTitle": "This customer still owes tuition",
+  "financeInvoiceTuitionOwedDescription": "A standard invoice is not linked to a class or tuition months, so it will not settle this tuition. Use a class invoice instead.",
+  "financeInvoiceTuitionOwedAction": "Class invoice",
   "@financeInvoiceMonths": {
     "placeholders": {
       "count": {

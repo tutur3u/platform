@@ -13,10 +13,12 @@ import 'package:mobile/data/repositories/finance_promotions_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/utils/pending_tuition_coverage.dart';
 import 'package:mobile/features/finance/view/finance_invoice_subscription_sheet.dart';
 import 'package:mobile/features/finance/view/finance_promotions_page.dart';
 import 'package:mobile/features/finance/widgets/finance_directory_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
+import 'package:mobile/features/finance/widgets/finance_tuition_owed_warning.dart';
 import 'package:mobile/features/finance/widgets/finance_workspace_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -69,8 +71,10 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
   String? _promotionId;
   CrmUser? _customer;
   String? _categoryId;
-  late String? _month = widget.pending?.months.firstOrNull;
-  int _months = 1;
+  late final PendingTuitionCoverage _coverage = _coverageFrom(null);
+  late String? _month = _coverage.month;
+  late int _months = _coverage.count;
+  Future<List<FinancePendingInvoice>>? _owedTuition;
   bool _busy = false;
   bool _uncertain = false;
   bool _failed = false;
@@ -82,12 +86,47 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
     super.dispose();
   }
 
+  /// The default coverage of a pending row: the unbroken run of owed months
+  /// from [from] (the earliest owed month when `null`).
+  PendingTuitionCoverage _coverageFrom(String? from) {
+    final pending = widget.pending;
+    if (pending == null) return (month: null, count: 1, last: null);
+    return pendingTuitionCoverage([
+      for (final month in pending.months)
+        if (from == null || month.compareTo(from) >= 0) month,
+    ], singleMonth: pending.groups.length > 1);
+  }
+
   Future<void> _selectCustomer() async {
     final customer = await selectFinanceInvoiceCustomer(
       context,
       widget.session,
     );
-    if (mounted && customer != null) setState(() => _customer = customer);
+    if (!mounted || customer == null) return;
+    setState(() {
+      _customer = customer;
+      _owedTuition = widget.repository
+          .getCustomerPendingInvoices(_wsId, customer.id)
+          .catchError((Object _) => <FinancePendingInvoice>[]);
+    });
+  }
+
+  Future<void> _createClassInvoice(FinancePendingInvoice row) async {
+    if (row.customerId != _customer?.id) return;
+    final created = await widget.session.open<bool>(
+      context,
+      (_) => FinanceInvoiceEditor(
+        session: widget.session,
+        repository: widget.repository,
+        wallets: widget.wallets,
+        currency: widget.currency,
+        pending: row,
+        promotionsRepository: widget._promotionsRepository,
+      ),
+    );
+    if (created == true && mounted && widget.session.active) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   Future<void> _addLine() async {
@@ -253,6 +292,28 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
               onPressed: _busy ? null : _selectCustomer,
               child: Text(_customer?.label ?? l10n.financeInvoiceCustomer),
             ),
+          if (pending == null && _owedTuition != null)
+            FutureBuilder<List<FinancePendingInvoice>>(
+              future: _owedTuition,
+              builder: (context, snapshot) {
+                // A customer change starts a new read; never show the
+                // previous customer's rows while it is in flight.
+                final customerId = _customer?.id;
+                final rows = <FinancePendingInvoice>[
+                  if (snapshot.connectionState == ConnectionState.done)
+                    for (final row
+                        in snapshot.data ?? const <FinancePendingInvoice>[])
+                      if (row.customerId == customerId) row,
+                ];
+                if (rows.isEmpty) return const SizedBox.shrink();
+                return FinanceTuitionOwedWarning(
+                  rows: rows,
+                  onCreate: _busy || !widget.session.allows('create_invoices')
+                      ? null
+                      : _createClassInvoice,
+                );
+              },
+            ),
           if (pending != null) ...[
             AppSelect<String>(
               title: l10n.financeInvoiceCoverage,
@@ -271,7 +332,13 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
               ],
               value: _month,
               onChanged: (value) {
-                if (mounted) setState(() => _month = value);
+                if (!mounted) return;
+                setState(() {
+                  _month = value;
+                  if (!widget.manualSubscription) {
+                    _months = _coverageFrom(value).count;
+                  }
+                });
               },
             ),
             AppSelect<int>(

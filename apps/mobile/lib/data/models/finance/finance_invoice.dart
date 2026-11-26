@@ -64,6 +64,7 @@ class FinancePendingInvoice {
     required this.customer,
     required this.groups,
     required this.months,
+    this.groupName,
     this.total,
   });
 
@@ -85,6 +86,11 @@ class FinancePendingInvoice {
               .toList(),
         _ => const [],
       },
+      groupName: switch (json['group_names']) {
+        final List<Object?> names when names.isNotEmpty =>
+          names.whereType<String>().join(', '),
+        _ => json['group_name'] as String?,
+      },
       total: _amount(json['potential_total']),
     );
   }
@@ -93,6 +99,9 @@ class FinancePendingInvoice {
   final String customer;
   final List<String> groups;
   final List<String> months;
+
+  /// Every linked class name, comma-separated, for rows spanning classes.
+  final String? groupName;
   final double? total;
 }
 

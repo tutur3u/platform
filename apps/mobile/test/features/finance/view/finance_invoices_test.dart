@@ -7,6 +7,7 @@ import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/view/finance_invoices_sheet.dart';
+import 'package:mobile/features/finance/widgets/finance_tuition_owed_warning.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -93,7 +94,56 @@ void main() {
     await tester.tap(find.text('Morgan'));
     await tester.pumpAndSettle();
     expect(find.text('Collect subscription payment'), findsOneWidget);
+    // The default invoice settles the whole unbroken owed range.
+    expect(find.text('September 2026'), findsOneWidget);
+    expect(find.text('3 months'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  test('pending rows name every linked class', () {
+    final row = FinancePendingInvoice.fromJson(const {
+      'user_id': 'member',
+      'group_ids': ['a', 'b'],
+      'group_names': ['Morning', 'Evening'],
+      'group_name': 'Morning',
+      'months_owed': '2026-10, 2026-11',
+    });
+    expect(row.groupName, 'Morning, Evening');
+    expect(row.months, ['2026-10', '2026-11']);
+    expect(
+      FinancePendingInvoice.fromJson(const {
+        'user_id': 'member',
+        'group_id': 'a',
+        'group_name': 'Morning',
+      }).groupName,
+      'Morning',
+    );
+  });
+
+  testWidgets('a standard invoice warns about owed tuition', (tester) async {
+    FinancePendingInvoice? opened;
+    await tester.pumpThemedHome(
+      Scaffold(
+        body: FinanceTuitionOwedWarning(
+          rows: const [
+            FinancePendingInvoice(
+              customerId: 'member',
+              customer: 'Morgan',
+              groupName: 'Evening class',
+              groups: ['class'],
+              months: ['2026-10', '2026-11'],
+            ),
+          ],
+          onCreate: (row) => opened = row,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('This customer still owes tuition'), findsOneWidget);
+    expect(find.text('Evening class'), findsOneWidget);
+    expect(find.text('Oct 2026 – Nov 2026'), findsOneWidget);
+    await tester.tap(find.text('Class invoice'));
+    expect(opened?.groups, ['class']);
   });
 }
 
@@ -182,7 +232,7 @@ class _InvoiceRepository extends FinanceSceneRepository {
         customerId: 'member',
         customer: 'Morgan',
         groups: ['class'],
-        months: ['2026-11'],
+        months: ['2026-09', '2026-10', '2026-11'],
       ),
     ],
     count: 1,

@@ -32905,6 +32905,24 @@ abstract class AppLocalizations {
   /// **'Prepaid months'**
   String get financeInvoicePrepaidMonths;
 
+  /// No description provided for @financeInvoiceTuitionOwedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This customer still owes tuition'**
+  String get financeInvoiceTuitionOwedTitle;
+
+  /// No description provided for @financeInvoiceTuitionOwedDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A standard invoice is not linked to a class or tuition months, so it will not settle this tuition. Use a class invoice instead.'**
+  String get financeInvoiceTuitionOwedDescription;
+
+  /// No description provided for @financeInvoiceTuitionOwedAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Class invoice'**
+  String get financeInvoiceTuitionOwedAction;
+
   /// No description provided for @financeInvoiceMonths.
   ///
   /// In en, this message translates to:

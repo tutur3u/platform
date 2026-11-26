@@ -26,6 +26,29 @@ mixin FinanceRepositoryInvoices {
     pending: true,
   );
 
+  /// The customer's owed tuition rows, one per class.
+  Future<List<FinancePendingInvoice>> getCustomerPendingInvoices(
+    String workspace,
+    String customerId,
+  ) async {
+    final result = await _invoicePage(
+      workspace,
+      '',
+      1,
+      FinancePendingInvoice.fromJson,
+      pending: true,
+      pageSize: 5,
+      userId: customerId,
+    );
+    return [
+      for (final row in result.items)
+        if (row.customerId == customerId &&
+            row.groups.isNotEmpty &&
+            row.months.isNotEmpty)
+          row,
+    ];
+  }
+
   Future<FinancePageResult<T>> _invoicePage<T>(
     String workspace,
     String query,
@@ -33,6 +56,7 @@ mixin FinanceRepositoryInvoices {
     T Function(Map<String, dynamic>) decode, {
     bool pending = false,
     int pageSize = 25,
+    String? userId,
   }) async {
     final params = Uri(
       queryParameters: {
@@ -40,6 +64,7 @@ mixin FinanceRepositoryInvoices {
         'pageSize': '$pageSize',
         if (query.isNotEmpty) 'q': query,
         if (pending) 'groupByUser': 'false',
+        'userIds': ?userId,
       },
     ).query;
     final path =

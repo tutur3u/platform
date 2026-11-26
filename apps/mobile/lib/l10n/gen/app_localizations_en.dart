@@ -17899,6 +17899,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeInvoicePrepaidMonths => 'Prepaid months';
 
   @override
+  String get financeInvoiceTuitionOwedTitle => 'This customer still owes tuition';
+
+  @override
+  String get financeInvoiceTuitionOwedDescription => 'A standard invoice is not linked to a class or tuition months, so it will not settle this tuition. Use a class invoice instead.';
+
+  @override
+  String get financeInvoiceTuitionOwedAction => 'Class invoice';
+
+  @override
   String financeInvoiceMonths(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
