@@ -19,9 +19,9 @@ void main() {
   final original = goldenFileComparator;
   setUpAll(() {
     goldenFileComparator = GoldenTolerance(
-      File('test/features/assistant/view/assistant_surface_goldens_test.dart')
-          .absolute
-          .uri,
+      File(
+        'test/features/assistant/view/assistant_surface_goldens_test.dart',
+      ).absolute.uri,
     );
   });
   tearDownAll(() => goldenFileComparator = original);

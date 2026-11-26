@@ -15,8 +15,9 @@ Widget _primitivePage(String route) => Builder(
       Text(
         'Documents',
         key: const ValueKey('primitive-title'),
-        style: Theme.of(context).textTheme.headlineMedium
-            ?.copyWith(fontWeight: FontWeight.w700),
+        style: Theme.of(
+          context,
+        ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
       ),
       const SizedBox(height: AppLayout.sectionGap),
       for (final (caption, rows) in [
