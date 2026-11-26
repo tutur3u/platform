@@ -29,13 +29,27 @@ type PolarShadowResult =
   | { kind: 'exception'; reason: 'unknown_status' | 'ambiguous_price' }
   | { kind: 'observed'; observation: PolarShadowObservation };
 
+type PolarShadowSubscription = Pick<
+  Subscription,
+  | 'id'
+  | 'prices'
+  | 'status'
+  | 'modifiedAt'
+  | 'createdAt'
+  | 'currentPeriodStart'
+  | 'currentPeriodEnd'
+  | 'cancelAtPeriodEnd'
+  | 'canceledAt'
+  | 'seats'
+> & { product: Pick<Subscription['product'], 'id' | 'metadata'> };
+
 export function observePolarSubscription({
   subscription,
   scope,
   observedAt,
   eventId = null,
 }: {
-  subscription: Subscription;
+  subscription: PolarShadowSubscription;
   scope: BillingProviderScope<'polar'>;
   observedAt: string;
   eventId?: string | null;

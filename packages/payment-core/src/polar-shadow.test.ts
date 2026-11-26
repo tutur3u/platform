@@ -1,4 +1,3 @@
-import type { Subscription } from '@tuturuuu/payment/polar';
 import { expect, it } from 'vitest';
 import {
   comparePolarLegacySnapshot,
@@ -13,12 +12,14 @@ it('reports a period-end cancellation mismatch even while Polar is active', () =
     product: { id: 'product', metadata: {} },
     prices: [],
     status: 'active',
+    modifiedAt: null,
     createdAt: periodStart,
     currentPeriodStart: periodStart,
     currentPeriodEnd: periodEnd,
     cancelAtPeriodEnd: true,
+    canceledAt: null,
     seats: 1,
-  } as Subscription;
+  } satisfies Parameters<typeof observePolarSubscription>[0]['subscription'];
   const result = observePolarSubscription({
     subscription: polar,
     scope: { provider: 'polar', environment: 'sandbox', application: 'test' },
