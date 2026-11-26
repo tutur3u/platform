@@ -206,6 +206,32 @@ describe('event room admission', () => {
     ).toBeDefined();
   });
 
+  it('ends event admission when the default two-hour room ends', () => {
+    const state = run(hosted(), enable, staff).state;
+    const roomEndsAt = Date.parse(now) + 2 * 60 * 60_000;
+    expect(state.budget?.expiresAt).toBe(roomEndsAt);
+    expect(state.settings?.eventModeExpiresAt).toBe(
+      Date.parse(now) + 6 * 60 * 60_000
+    );
+    const eventGuest = {
+      ...guest,
+      guestEventProof: state.settings?.eventModeExpiresAt,
+    };
+    const waiting = admitOrHold(state, eventGuest, now).state;
+    expect(waiting.waiting[guest.userId]).toBeDefined();
+
+    const roomEnd = new Date(roomEndsAt).toISOString();
+    const closed = admitOrHold(waiting, eventGuest, roomEnd);
+    expect(closed.state.endedAt).toBe(roomEnd);
+    expect(closed.state.waiting).toEqual({});
+    expect(closed.disconnect).toContain(guest.userId);
+    expect(admitOrHold(closed.state, eventGuest, roomEnd).reply).toContainEqual(
+      {
+        type: 'room.ended',
+      }
+    );
+  });
+
   it('requires current proof for manual admission and preserves verified skip-lobby', () => {
     const event = eventRoom();
     const state = run(
