@@ -12,8 +12,12 @@ export function appPathname(path: string) {
 }
 
 export function isTaskBoardEntrypoint(pathname: string) {
-  const normalized = pathname.replace(/\/+$/u, '') || '/';
-  return normalized === '/' || /^\/[^/]+\/(?:tasks|boards)$/u.test(normalized);
+  const segments = pathname.split('/').filter(Boolean);
+  return (
+    segments.length === 0 ||
+    (segments.length === 2 &&
+      (segments[1] === 'tasks' || segments[1] === 'boards'))
+  );
 }
 
 /** Skip provisioning routes before the router can share a preload with a click. */

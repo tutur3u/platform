@@ -6,7 +6,7 @@ import {
   Outlet,
   RouterProvider,
 } from '@tanstack/react-router';
-import { APP_BASE_GLOBAL } from '@tuturuuu/start-bridge/start/base-path';
+import { APP_BASE_GLOBAL } from '@tuturuuu/start-bridge/app-url';
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { skipTaskBoardEntrypointPreload } from './page-path';
@@ -106,3 +106,17 @@ it.each([false, true])(
     expect(loads).toEqual([false]);
   }
 );
+
+it.each([
+  '/tasks/vi/ws-a//tasks',
+  '/tasks/en//ws-a/boards',
+  '/tasks//ws-a/tasks',
+])('treats repeated slashes as entrypoint separators in %s', (pathname) => {
+  vi.stubGlobal(APP_BASE_GLOBAL, '/tasks');
+  expect(() =>
+    skipTaskBoardEntrypointPreload({ location: { pathname }, preload: true })
+  ).toThrow();
+  expect(() =>
+    skipTaskBoardEntrypointPreload({ location: { pathname }, preload: false })
+  ).not.toThrow();
+});
