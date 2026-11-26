@@ -74,3 +74,14 @@ export function limitVerifiedAccountLinkRequest({
       : []),
   ]);
 }
+
+/** Bounds status work for one class across all callers and app instances. */
+export function limitLiveClassStatus(classId: string) {
+  return consume([
+    {
+      bucket: 'liveClassStatus',
+      failClosed: true,
+      key: `${prefix('live-class')}:class:${keyPart(classId)}`,
+    },
+  ]);
+}

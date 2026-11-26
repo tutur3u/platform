@@ -1,3 +1,11 @@
+-- Apply off-peak. Foreign keys briefly take SHARE ROW EXCLUSIVE locks on
+-- their referenced tables. The 5-second lock timeout bounds the wait.
+--
+-- The Upskii service attests class authority. An authorized operator can
+-- release a mistaken binding by deleting its exact class_id as service_role.
+-- This leaves the existing Meet room and sessions intact. The next eligible
+-- teacher start can establish a new mapping.
+
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
@@ -25,7 +33,7 @@ alter table private.upskii_live_class_rooms enable row level security;
 revoke all on private.upskii_live_class_grants, private.upskii_live_class_rooms
 from public, anon, authenticated, service_role;
 grant select, insert, update, delete on private.upskii_live_class_grants to service_role;
-grant select, insert, update on private.upskii_live_class_rooms to service_role;
+grant select, insert, update, delete on private.upskii_live_class_rooms to service_role;
 
 create function public.open_upskii_live_class_room(
   p_class_id text,

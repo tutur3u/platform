@@ -8,6 +8,7 @@ const fixtures = vi.hoisted(() => ({
   openRoom: vi.fn(),
   initializeRoom: vi.fn(),
   isLive: vi.fn(),
+  limitStatus: vi.fn(),
   credentials: vi.fn(),
   canHost: vi.fn(),
 }));
@@ -28,6 +29,7 @@ vi.mock('@/lib/integrations/upskii/live-class-meet', () => ({
   isLiveClassRoomOpen: fixtures.isLive,
 }));
 vi.mock('@/lib/integrations/upskii/rate-limit', () => ({
+  limitLiveClassStatus: fixtures.limitStatus,
   limitVerifiedAccountLinkRequest: async () => null,
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
@@ -137,6 +139,16 @@ describe('Upskii live class integration', () => {
       .mockResolvedValueOnce(link)
       .mockResolvedValueOnce({ ...link, revoked_at: 'now' });
     expect(await (await send(status)).json()).toEqual({ live: false });
+  });
+
+  it('limits class status before reading mappings or contacting Meet', async () => {
+    fixtures.limitStatus.mockResolvedValueOnce(
+      new NextResponse(null, { status: 429 })
+    );
+    expect((await send(status)).status).toBe(429);
+    expect(fixtures.limitStatus).toHaveBeenCalledWith('class-1');
+    expect(fixtures.findRoom).not.toHaveBeenCalled();
+    expect(fixtures.isLive).not.toHaveBeenCalled();
   });
 
   it('refuses start retry by a different teacher', async () => {

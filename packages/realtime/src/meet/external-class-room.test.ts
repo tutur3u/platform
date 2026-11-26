@@ -50,6 +50,36 @@ describe('external class room service', () => {
     ).toBe(edited);
   });
 
+  it('recovers when the host joined before initialization completed', () => {
+    const snapshot = createMeetRoomSnapshot();
+    const state = {
+      ...snapshot,
+      lifecycle: { version: 1, ownerAccountId: owner, hadConnection: true },
+      presence: {
+        [device]: createMeetPresence(
+          { ...token, userId: device },
+          '2026-11-26T13:00:00Z'
+        ),
+      },
+      settings: {
+        allowAnonymousGuests: false,
+        skipLobby: false,
+        shareNotes: false,
+      },
+    };
+    const connected = new Set([device]);
+    expect(
+      applyExternalClassRoom(state, token, status, connected)?.body
+    ).toEqual({ live: true });
+    const result = applyExternalClassRoom(state, token, initialize, connected);
+    expect(result?.body).toEqual({ ready: true });
+    expect(result?.state.settings).toBe(state.settings);
+    if (!result) throw new Error('Initializer did not respond');
+    expect(
+      applyExternalClassRoom(result.state, token, status, connected)?.body
+    ).toEqual({ live: true });
+  });
+
   it('requires the dedicated service scope', () => {
     const state = createMeetRoomSnapshot();
     for (const scopes of [[], ['meet:server'], [MEET_EXTERNAL_CLASS_SCOPE]]) {

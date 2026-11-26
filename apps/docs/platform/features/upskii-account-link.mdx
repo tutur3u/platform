@@ -46,7 +46,9 @@ class** in Upskii while the admitted host is connected and the session is open.
 Revoking permission or disconnecting the link stops new starts and join actions
 through Upskii. An in-progress Meet call continues under its own guest and
 admission controls. For the workshop fallback, use the canonical Meet link and
-its QR code.
+its QR code. The link can admit anonymous guests in every future session
+while the host keeps guest join and automatic admission enabled. Share it
+with that audience in mind.
 
 The Supabase room initializer serializes starts per class and binds the mapping
 to the original teacher. The Meet realtime Worker owns first-use settings and

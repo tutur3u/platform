@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(14);
+select plan(15);
 
 select ok(
   not exists (
@@ -120,6 +120,12 @@ select is(
     (select id from public.workspaces where personal is true and creator_id = '00000000-0000-4000-8000-000000009711'),
     'Live class'
   )->>'kind', 'denied', 'revoking E3 blocks reuse even if a separate grant row remains'
+);
+delete from private.upskii_live_class_rooms where class_id = 's4-test-class';
+select ok(
+  not exists (select 1 from private.upskii_live_class_rooms where class_id = 's4-test-class')
+  and exists (select 1 from public.workspace_meetings where id = :'meeting_id'),
+  'service role can release the mapping while preserving the Meet room'
 );
 reset role;
 

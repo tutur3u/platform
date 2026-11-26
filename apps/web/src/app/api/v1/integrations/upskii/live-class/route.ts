@@ -24,7 +24,10 @@ import {
   isLiveClassRoomOpen,
 } from '@/lib/integrations/upskii/live-class-meet';
 import { liveClassStore } from '@/lib/integrations/upskii/live-class-store';
-import { limitVerifiedAccountLinkRequest } from '@/lib/integrations/upskii/rate-limit';
+import {
+  limitLiveClassStatus,
+  limitVerifiedAccountLinkRequest,
+} from '@/lib/integrations/upskii/rate-limit';
 import { getMeetAppOrigin } from '@/lib/meet-app-url';
 
 const linkIdentity = {
@@ -79,6 +82,8 @@ async function canHost(
 }
 
 async function statusForClass(admin: TypedSupabaseClient, id: string) {
+  const limited = await limitLiveClassStatus(id);
+  if (limited) return limited;
   const closed = () => jsonNoStore({ live: false });
   const store = liveClassStore(admin);
   const mapping = await store.findRoom(id);

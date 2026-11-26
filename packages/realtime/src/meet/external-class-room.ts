@@ -30,7 +30,6 @@ export function applyExternalClassRoom(
 
   if (parsed.data.action === 'external-class.status') {
     const live =
-      state.externalClassInitialized === true &&
       !state.ended &&
       Object.entries(state.presence).some(
         ([id, person]) =>
@@ -43,7 +42,10 @@ export function applyExternalClassRoom(
 
   if (state.externalClassInitialized) return { state, body: { ready: true } };
   if (state.ended || state.lifecycle?.hadConnection || state.budget) {
-    return { state, status: 409, body: { error: 'Room already used' } };
+    return {
+      state: { ...state, externalClassInitialized: true },
+      body: { ready: true },
+    };
   }
 
   return {
