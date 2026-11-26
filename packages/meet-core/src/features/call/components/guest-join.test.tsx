@@ -215,6 +215,36 @@ it('starts the Mira box unticked and keeps the revision seen on the page', async
   forgetMiraJoinChoice(meetingId);
 });
 
+it.each([false, true])('keeps the optional Mira choice through V2 guest prejoin', async (ticked) => {
+  const meetingId = '7f2a528e-3bff-40ee-bfda-5b944ad03ed8';
+  forgetMiraJoinChoice(meetingId);
+  render(
+    <MeetGuestJoin
+      meetingId={meetingId}
+      returnTo="/r/abc"
+      siteKey="site-key"
+      meetUxV2
+      miraAcceptanceRevision={4}
+    />
+  );
+  fireEvent.change(screen.getByRole('textbox'), {
+    target: { value: 'Safari guest' },
+  });
+  const box = screen.getByRole('checkbox');
+  expect(box.getAttribute('aria-checked')).toBe('false');
+  if (ticked) fireEvent.click(box);
+  act(() => widget().onSuccess('one-use'));
+  fireEvent.click(screen.getByRole('button', { name: 'ask_to_join' }));
+  await waitFor(() => expect(mocks.join).toHaveBeenCalled());
+  await waitFor(() =>
+    expect(peekMiraJoinChoice(meetingId)).toMatchObject({
+      ticked,
+      seenRevision: 4,
+    })
+  );
+  forgetMiraJoinChoice(meetingId);
+});
+
 it('offers the host at once and explains a slow check after the watchdog without replacing the widget', async () => {
   setup();
   const askHost = screen.getByRole('button', {

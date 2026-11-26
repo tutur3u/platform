@@ -754,7 +754,10 @@ The Meet Worker var `MEET_UX_V2` (default `false`) gives Meet a shared pre-join
 stage for device setup, profile names and guest requests. Signed-in participants
 see **Join now**. Anonymous guests enter a display name, complete the human
 check when they can, and select **Ask to join**. The fallback still sends an
-unverified request to the host.
+unverified request to the host. Guests can leave the optional Mira consent
+checkbox unchecked and still join. Both guest layouts retain the choice and the
+notice revision shown at pre-join for the existing consent flow after admission.
+The guest join regression tests cover both choices in the V2 layout.
 
 | Guest state | What Meet shows |
 | --- | --- |

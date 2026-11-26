@@ -64,6 +64,7 @@ function show(
       <GuestPrejoin
         canAskHost={extra.canAskHost ?? true}
         meetingId="m-1"
+        miraConsent={null}
         name={extra.name ?? 'Minh'}
         nameRef={null}
         onAskHost={onAskHost}
@@ -92,7 +93,6 @@ it('lays out the name, human check and a held Ask to join', () => {
   show({ kind: 'verifying' });
   expect(screen.getByRole('textbox', { name: guest.name_label })).toBeTruthy();
   expect(screen.getByTestId('human-check')).toBeTruthy();
-  expect(screen.queryByRole('checkbox')).toBeNull();
   expect(
     screen.getByRole('button', { name: guest.ask_to_join })
   ).toHaveProperty('disabled', true);

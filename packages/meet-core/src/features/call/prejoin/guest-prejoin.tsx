@@ -45,6 +45,7 @@ export function GuestPrejoin({
   onAskHost,
   returnTo,
   script,
+  miraConsent,
 }: {
   title: string;
   meetingId: string;
@@ -67,6 +68,7 @@ export function GuestPrejoin({
   returnTo: string;
   /** The early Turnstile script the server rendered under the response nonce. */
   script?: ReactNode;
+  miraConsent: ReactNode;
 }) {
   const t = useTranslations('meet.call.guest_join');
   const capture = usePrejoinCapture();
@@ -129,6 +131,7 @@ export function GuestPrejoin({
                 {statusLabel}
               </p>
             </div>
+            {miraConsent}
           </>
         }
         name={name}
