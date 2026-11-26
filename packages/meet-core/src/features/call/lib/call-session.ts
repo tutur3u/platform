@@ -13,21 +13,10 @@ import {
 import { MEET_CLASSROOM_TOOLS_SCOPE } from '@tuturuuu/realtime/meet/classroom-tools-schema';
 import { signMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
 
+export { getMeetRealtimeTokenSecret } from './realtime-token-secret';
+import { getMeetRealtimeTokenSecret } from './realtime-token-secret';
+
 const TOKEN_TTL_MS = 10 * 60_000;
-
-export function getMeetRealtimeTokenSecret() {
-  const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
-
-  if (secret?.trim()) return secret.trim();
-
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'Meet call tokens require MEET_REALTIME_TOKEN_SECRET in production'
-    );
-  }
-
-  return 'meet-local-development-token-secret';
-}
 
 export function getMeetRealtimeUrl() {
   return resolveMeetRealtimeUrl(

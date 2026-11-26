@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { BoardError, boardErrorStatus } from './board-error';
 import { BoardManage } from './board-manage';
 import { BoardPicker } from './board-picker';
+import { BOARD_LIST_REFRESH_MS } from './board-refresh';
 import { BoardRoom } from './board-room';
 
 /**
@@ -36,7 +37,7 @@ export function BoardPanel({
     queryFn: () => listMeetWhiteboards(meetingId),
     enabled: admitted,
     // The list follows a bounded poll only while it is on screen.
-    refetchInterval: activeId ? false : 15_000,
+    refetchInterval: activeId ? false : BOARD_LIST_REFRESH_MS,
     refetchIntervalInBackground: false,
     retry: false,
   });

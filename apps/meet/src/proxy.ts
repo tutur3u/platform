@@ -23,6 +23,7 @@ import {
   toNextRequest,
 } from '@tuturuuu/start-bridge/proxy-bridge';
 import { MEET_CANONICAL_ORIGIN } from '@tuturuuu/utils/meet-url';
+import { resolveMeetGuestRateLimitActor } from '@tuturuuu/meet-core/features/call/lib/guest-rate-limit-actor';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { isTrustedMeetSelfOutboxRequest } from '@tuturuuu/utils/realtime-service-ticket';
 import Negotiator from 'negotiator';
@@ -278,6 +279,8 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       prefixBase: 'proxy:meet:api',
       // The web app session is the shared-origin platform session.
       sessionActorTargetApps: ['meet', 'web'],
+      // A verified guest cookie gives that guest its own bounded budget.
+      resolveGuestActor: resolveMeetGuestRateLimitActor,
     });
     if (guardResponse) {
       if (appSessionRefresh) {

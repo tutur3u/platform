@@ -26,6 +26,9 @@ function isWhiteboard(view?: View[ClassroomTool]): view is View['whiteboard'] {
   return !!view && 'revision' in view;
 }
 
+/** A visible classroom pane (pen board, breakouts) refreshes this often. */
+export const CLASSROOM_REFRESH_MS = 3000;
+
 export function useClassroomTool(
   tool: ClassroomTool,
   meetingId: string,
@@ -60,7 +63,7 @@ export function useClassroomTool(
       (state.error instanceof InternalApiError &&
         [401, 403, 404].includes(state.error.status))
         ? false
-        : 3000,
+        : CLASSROOM_REFRESH_MS,
     gcTime: 0,
     retry: false,
   });

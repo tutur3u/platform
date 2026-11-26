@@ -27,6 +27,15 @@ import {
   sharedEgressSubjects,
 } from './api-proxy-limiter-subjects';
 import {
+  enforceGuestBudget,
+  type GuestActorResolver,
+  resolveGuestActor,
+} from './api-proxy-guest-budget';
+import {
+  getCidrSubjectKeyEdge,
+  getWorkspaceSubjectKey,
+} from './api-proxy-identity-keys';
+import {
   isFinanceInvoiceCreateSupportRead,
   isFinanceRead,
 } from './api-proxy-read-policy';
@@ -88,6 +97,8 @@ export type GuardOptions = {
   trustedBypassRules?: TrustedProxyBypassRule[];
   /** App-token `target_app` values that may supply the session rate-limit actor. */
   sessionActorTargetApps?: readonly string[];
+  /** Verifies a server-signed guest session; see `api-proxy-guest-budget`. */
+  resolveGuestActor?: GuestActorResolver;
 };
 
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
@@ -705,31 +716,6 @@ export async function getProxySessionSubjectKeyFromCookieHeader(
   return cookie ? buildProxySessionSubjectKey(cookie.name, cookie.value) : null;
 }
 
-/**
- * Mirrors `reputation.ts getCidrSubjectKey` so the edge cidr subject key matches
- * the DB-side trusted-location key.
- */
-function getCidrSubjectKeyEdge(ipAddress: string | null): string | null {
-  if (!ipAddress) {
-    return null;
-  }
-
-  const ipv4Parts = ipAddress.split('.');
-  if (
-    ipv4Parts.length === 4 &&
-    ipv4Parts.every((part) => /^\d{1,3}$/.test(part))
-  ) {
-    return `cidr:${ipv4Parts.slice(0, 3).join('.')}.0/24`;
-  }
-
-  const ipv6Parts = ipAddress.split(':').filter(Boolean);
-  if (ipv6Parts.length >= 4) {
-    return `cidr:${ipv6Parts.slice(0, 4).join(':')}::/64`;
-  }
-
-  return null;
-}
-
 export type ProxyIdentity = {
   /** `ip:<ip>` subject key, or null when the IP is unknown. */
   ipKey: string | null;
@@ -742,14 +728,6 @@ export type ProxyIdentity = {
    * null. Lets an admin workspace rule uplift reads for the whole workspace. */
   workspaceKey: string | null;
 };
-
-const WORKSPACE_PATH_PATTERN =
-  /^\/api(?:\/v1)?\/workspaces\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(?:\/|$)/u;
-
-function getWorkspaceSubjectKey(pathname: string): string | null {
-  const match = WORKSPACE_PATH_PATTERN.exec(pathname);
-  return match ? `workspace:${match[1]!.toLowerCase()}` : null;
-}
 
 /**
  * Resolves the trust/keying subject keys for a request. Limited to
@@ -1072,11 +1050,30 @@ export async function guardApiProxyRequest(
       }
     }
 
-    const limiterId = authenticatedActor
-      ? `user:${authenticatedActor}`
-      : sessionScoped && identity.sessionKey
-        ? identity.sessionKey
-        : identity.ipKey;
+    // A verified guest has its own budget; every other caller is unchanged.
+    const guest = await resolveGuestActor(req, options.resolveGuestActor, {
+      routeKey: routePolicy.key,
+      hasActor: !!authenticatedActor || sessionScoped,
+    });
+    if (abuseProtectionControls.rateLimitsEnabled && guest) {
+      const rejection = await enforceGuestBudget(req, guest, {
+        prefixBase: options.prefixBase,
+        routeKey: routePolicy.key,
+        ipKey: identity.ipKey,
+        isDev,
+        isRead,
+        policyName: options.diagnosticPolicyName ?? routePolicy.key,
+      });
+      if (rejection) return rejection;
+    }
+
+    const limiterId = guest
+      ? null
+      : authenticatedActor
+        ? `user:${authenticatedActor}`
+        : sessionScoped && identity.sessionKey
+          ? identity.sessionKey
+          : identity.ipKey;
 
     if (abuseProtectionControls.rateLimitsEnabled && limiterId) {
       const effectiveCallerClass: CallerClass =

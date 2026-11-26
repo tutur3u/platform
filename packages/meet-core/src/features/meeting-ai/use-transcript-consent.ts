@@ -43,6 +43,10 @@ export const CONSENT_READ_BACKOFF_MS = [
 ];
 /** After the backoff, a slow read keeps going so the notice can recover. */
 export const CONSENT_READ_SLOW_MS = 60_000;
+/** While a transcript runs or the caller still has to choose. */
+export const CONSENT_FAST_REFRESH_MS = 5000;
+/** After the caller chose and no transcript runs. */
+export const CONSENT_SLOW_REFRESH_MS = 20_000;
 
 const isConsentView = (value: unknown): value is MeetTranscriptConsent =>
   typeof value === 'object' &&
@@ -74,7 +78,9 @@ export function useTranscriptConsent(
           CONSENT_READ_SLOW_MS
         );
       if (!data?.available) return false;
-      return data.active || data.choice === null ? 5000 : 20_000;
+      return data.active || data.choice === null
+        ? CONSENT_FAST_REFRESH_MS
+        : CONSENT_SLOW_REFRESH_MS;
     },
     retry: false,
   });

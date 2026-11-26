@@ -2181,6 +2181,35 @@ Operating requirements:
   other-project cookies stay on the anonymous per-IP budget (240 reads an
   hour), which an open room's polling uses up in a few minutes. Regression
   coverage: `packages/utils/src/__tests__/api-proxy-meet-session-actor.test.ts`.
+- A guest whose signed guest cookie (`__Host-meet-guest`) the Meet proxy
+  verifies for the meeting in the request path gets its own guest budget
+  (`X-RateLimit-Caller-Class: guest`), keyed by that meeting and the guest id
+  the server minted into the cookie. The signature, meeting binding and expiry
+  are checked as the call routes check them. A client header, a display name,
+  or an unsigned, expired or other-meeting cookie stays on the anonymous
+  per-IP budget. Each guest read is charged three times, and the first
+  exhausted window refuses it:
+  - the guest: 120 reads a minute, 4,000 an hour, 30,000 a day, and 30
+    writes a minute, 300 an hour, 1,500 a day
+    (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`);
+  - the meeting: 100 guests' minute and hour budget combined, so minting
+    guest sessions for one meeting cannot multiply its traffic;
+  - the address: 40 guests' minute and hour budget combined, so a classroom
+    behind one school NAT keeps working while many sessions from one address
+    stay bounded.
+
+  Only the default route policy takes the guest budget; sign-in, OTP and
+  appeal routes keep their own limits, and an account actor keeps its user
+  budget. Regression coverage:
+  `packages/utils/src/__tests__/api-proxy-guest-budget.test.ts`,
+  `packages/meet-core/src/features/call/lib/guest-rate-limit-actor.test.ts` and
+  `guest-polling-budget.test.ts` (two guests behind one address through a
+  60-minute class at the call's polling intervals).
+- In-call polling intervals: polls every 15 seconds, or every 3 seconds while
+  the polls panel is open or a poll runs; transcript consent every 5 seconds
+  while a transcript runs or a choice is needed, else every 20 seconds; Room
+  Mira every 10 seconds; the board list every 15 seconds while it is on screen;
+  a visible classroom pane every 3 seconds. Hidden tabs do not poll.
 - `tuturuuu-meet-realtime` has no `MEET_AI_ALL_WORKSPACES` secret, so its
   room settings gate admits only allowlisted workspaces. Turning on post-call
   note sharing stays denied for other workspaces until that secret is

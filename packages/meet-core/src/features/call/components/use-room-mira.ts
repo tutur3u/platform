@@ -43,6 +43,9 @@ import { useMiraNoticeMode } from './use-mira-notice-mode';
 
 export { roomMiraConsentKey };
 
+/** How often a caller in the room re-reads the room Mira state. */
+export const ROOM_MIRA_REFRESH_MS = 10_000;
+
 /** How often a caller still outside the room re-reads what Mira is doing. */
 const JOIN_SEED_REFRESH_MS = 20_000;
 
@@ -55,7 +58,7 @@ export function useRoomMiraConsent(meetingId: string, enabled = true) {
     // A pending opt-out settles within the in-flight request.
     refetchInterval: (current) => {
       const data = current.state.data;
-      return data?.available && data.pausing ? 2000 : 10_000;
+      return data?.available && data.pausing ? 2000 : ROOM_MIRA_REFRESH_MS;
     },
     retry: false,
   });

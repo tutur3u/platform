@@ -57,6 +57,14 @@ export function notifyPollMutation(meetingId: string) {
   channel?.close();
 }
 
+/** While the panel is open or a poll runs, votes and results stay current. */
+export const POLLS_LIVE_REFRESH_MS = 3000;
+/**
+ * Otherwise a new poll shows within this delay; a poll started in this
+ * browser shows at once through the poll channel.
+ */
+export const POLLS_IDLE_REFRESH_MS = 15_000;
+
 export function useCallPolls(
   meetingId: string,
   accountId: string,
@@ -86,8 +94,8 @@ export function useCallPolls(
       query.state.data?.polls.some(
         (poll: ProjectedPoll) => poll.status === 'active'
       )
-        ? 2000
-        : 5000,
+        ? POLLS_LIVE_REFRESH_MS
+        : POLLS_IDLE_REFRESH_MS,
     retry: false,
   });
 }

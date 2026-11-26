@@ -1,3 +1,4 @@
+import { resolveMeetGuestRateLimitActor } from '@tuturuuu/meet-core/features/call/lib/guest-rate-limit-actor';
 import { encodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { NextRequest, NextResponse } from 'next/server';
 import { createHmac } from 'node:crypto';
@@ -459,6 +460,8 @@ describe('Meet public build identity boundary', () => {
       expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
       expect(mocks.guardApiProxyRequest.mock.calls[0]?.[1]).toMatchObject({
         sessionActorTargetApps: ['meet', 'web'],
+        // Verified guests get their own budget through the signed cookie.
+        resolveGuestActor: resolveMeetGuestRateLimitActor,
       });
       const identity = createBuildInfoHandler('meet')();
       expect(identity.status).toBe(200);
