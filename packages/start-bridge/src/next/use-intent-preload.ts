@@ -66,7 +66,15 @@ export function useIntentPreload(
     cancel();
     if (enabled) timer.current = setTimeout(preload, INTENT_PRELOAD_DELAY_MS);
   };
-  useEffect(() => cancel, []);
+  // A timer scheduled for an older href or while preloading was allowed must
+  // not fire after either changes, nor after unmount.
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
+    },
+    [enabled, href]
+  );
   return {
     onMouseEnter: chain(handlers.onMouseEnter, schedule),
     onMouseLeave: chain(handlers.onMouseLeave, cancel),

@@ -61,6 +61,25 @@ describe('bridge Link intent preloading', () => {
     expect(router.preloadRoute).not.toHaveBeenCalled();
   });
 
+  it('drops a pending preload when the destination or prefetch changes', () => {
+    const { rerender } = render(<Link href="/ws/a">Board</Link>);
+    fireEvent.mouseEnter(screen.getByText('Board'));
+    rerender(<Link href="/ws/b">Board</Link>);
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    fireEvent.mouseEnter(screen.getByText('Board'));
+    rerender(
+      <Link href="/ws/b" prefetch={false}>
+        Board
+      </Link>
+    );
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(router.preloadRoute).not.toHaveBeenCalled();
+  });
+
   it('preloads immediately on touch', () => {
     render(<Link href="/ws/calendar">Calendar</Link>);
     fireEvent.touchStart(screen.getByText('Calendar'));
