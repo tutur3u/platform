@@ -100,6 +100,21 @@ describe('project catalog', () => {
           expect(read(`${project.id}-cloudflare.yaml`), project.id).toContain(
             `uses: ./.github/workflows/${rule.reusable}`
           );
+        } else if (rule.caller === 'serving-workers-production.yaml') {
+          // The planner supplies one publish matrix entry per selected app.
+          const publish = /^ {2}publish:\n((?: {4,}[^\n]*\n|\n)*)/m.exec(
+            caller
+          )?.[1];
+          expect(caller, project.id).toContain(`  build-${project.id}:\n`);
+          expect(publish, project.id).toContain(
+            `    uses: ./.github/workflows/${rule.reusable}\n`
+          );
+          expect(publish, project.id).toContain(
+            'include: ${{ fromJSON(needs.plan.outputs.matrix) }}'
+          );
+          expect(publish, project.id).toContain(
+            '      app: ${{ matrix.app }}\n'
+          );
         } else {
           expect(caller, project.id).toMatch(
             new RegExp(
