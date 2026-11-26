@@ -45,7 +45,14 @@ type PolarShadowResult =
 
 type PolarShadowSubscription = Pick<
   Subscription,
-  'id' | 'prices' | 'metadata' | 'status' | 'cancelAtPeriodEnd' | 'seats'
+  | 'id'
+  | 'amount'
+  | 'currency'
+  | 'prices'
+  | 'metadata'
+  | 'status'
+  | 'cancelAtPeriodEnd'
+  | 'seats'
 > & {
   product: Pick<Subscription['product'], 'id' | 'metadata' | 'organizationId'>;
   modifiedAt?: Date | string | null;
