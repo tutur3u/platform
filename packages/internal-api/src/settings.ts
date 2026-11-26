@@ -2,6 +2,7 @@ import type {
   WorkspaceDefaultPermissionMemberType,
   WorkspaceDefaultPermissionsRole,
   WorkspaceRole,
+  WorkspaceProductTier,
 } from '@tuturuuu/types';
 import {
   encodePathSegment,
@@ -115,7 +116,7 @@ export interface WorkspaceSettingsAiCreditStatus {
   };
   percentUsed: number;
   remaining: number;
-  tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+  tier: WorkspaceProductTier;
   totalAllocated: number;
   totalUsed: number;
 }

@@ -20,6 +20,7 @@ import type {
   InternalApiWorkspaceSummary,
   TaskProjectWithRelations,
   WorkspaceTaskBoardRow,
+  WorkspaceProductTier,
 } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -371,7 +372,7 @@ export interface WorkspaceTaskResponse {
   task: WorkspaceTaskApiTask;
   taskWsId?: string;
   taskWorkspacePersonal?: boolean;
-  taskWorkspaceTier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+  taskWorkspaceTier?: WorkspaceProductTier;
 }
 
 export interface CurrentUserTaskDialogResponse {
@@ -379,13 +380,13 @@ export interface CurrentUserTaskDialogResponse {
   availableLists: TaskList[];
   taskWsId: string;
   taskWorkspacePersonal: boolean;
-  taskWorkspaceTier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+  taskWorkspaceTier: WorkspaceProductTier;
 }
 
 export interface TaskDialogHydrationOptions {
   taskWsId?: string;
   taskWorkspacePersonal?: boolean;
-  taskWorkspaceTier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+  taskWorkspaceTier?: WorkspaceProductTier;
 }
 
 export interface WorkspaceTaskListCount {

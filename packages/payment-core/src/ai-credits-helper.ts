@@ -1,3 +1,4 @@
+import type { WorkspaceProductTier } from '@tuturuuu/types/db';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { writeAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
@@ -9,8 +10,6 @@ import {
   isWorkspaceUuidLiteral,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-
-type ProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
 
 type AllocationDefaults = {
   allowed_features: string[];
@@ -31,7 +30,7 @@ export class AiCreditsStatusError extends Error {
   }
 }
 
-function getFallbackDefaultModels(tier: ProductTier) {
+function getFallbackDefaultModels(tier: WorkspaceProductTier) {
   return {
     defaultImageModel:
       tier === 'FREE'
@@ -121,7 +120,7 @@ export async function getAiCreditsStatus({
   const { data: resolvedTier } = await sbAdmin.rpc('_resolve_workspace_tier', {
     p_ws_id: normalizedWsId,
   });
-  const tier = (resolvedTier ?? 'FREE') as ProductTier;
+  const tier = (resolvedTier ?? 'FREE') as WorkspaceProductTier;
   const balanceScope: 'user' | 'workspace' =
     tier === 'FREE' ? 'user' : 'workspace';
 

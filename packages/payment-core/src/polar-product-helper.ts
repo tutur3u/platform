@@ -7,7 +7,10 @@ import {
   parseCreditPackTokens,
   parseWorkspaceProductTier,
 } from './polar-product-metadata';
-import { getVersionedWorkspaceProductPrices } from './workspace-catalog';
+import {
+  activeWorkspaceCatalog,
+  getVersionedWorkspaceProductPrices,
+} from './workspace-catalog';
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 
@@ -181,6 +184,15 @@ export async function syncProductToDatabase(
   if (versioned) {
     const tier = parseWorkspaceProductTier(product.metadata);
     if (!tier) throw new Error('Invalid versioned workspace catalog tier');
+    const published =
+      !product.isArchived &&
+      product.visibility === 'public' &&
+      activeWorkspaceCatalog()?.some(
+        (offer) =>
+          offer.productId === product.id &&
+          offer.priceId === versioned.usd.price.id &&
+          offer.vndPriceId === versioned.vnd.price.id
+      ) === true;
     const { data, error } = await supabase.rpc(
       'sync_versioned_workspace_subscription_product',
       {
@@ -189,7 +201,7 @@ export async function syncProductToDatabase(
         p_description: product.description ?? '',
         p_tier: tier,
         p_interval: versioned.offer.term,
-        p_archived: product.isArchived,
+        p_archived: !published,
         p_provider_updated_at: new Date(
           product.modifiedAt ?? product.createdAt
         ).toISOString(),
