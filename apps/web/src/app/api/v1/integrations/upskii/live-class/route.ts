@@ -170,6 +170,7 @@ async function linkedAction(
     wsId,
   });
   if (!ready) return refusal('ROOM_CLOSED', 409);
+  // Restore can finish before revocation, but this check withholds the URL.
   if (
     !(await activeLink(admin, link.id, link.external_subject)) ||
     !(await store.hasGrant(link.id))

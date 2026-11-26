@@ -40,7 +40,7 @@ export const EXTERNAL_APP_RATE_LIMITS = {
   accountLinkApp: { windowMs: MINUTE_MS, maxRequests: 600 },
   accountLinkUser: { windowMs: MINUTE_MS, maxRequests: 10 },
   liveClassStatusApp: { windowMs: MINUTE_MS, maxRequests: 2400 },
-  liveClassStatus: { windowMs: MINUTE_MS, maxRequests: 120 },
+  liveClassStatus: { windowMs: MINUTE_MS, maxRequests: 240 },
   // Failed Upskii Basic credential checks: per source and client id (past it
   // the pair is locked out of those routes for the window), and per client
   // id across all sources (past it each failure alerts; never a lockout).

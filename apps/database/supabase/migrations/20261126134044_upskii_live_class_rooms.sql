@@ -3,7 +3,7 @@
 --
 -- The Upskii service attests class authority. An authorized operator can
 -- release a mistaken binding with private.release_external_class_room as
--- service_role. It records the reason and preserves the existing Meet room.
+-- service_role. It records the actor and reason and preserves the existing Meet room.
 -- The next eligible teacher start can establish a new mapping.
 
 begin;
@@ -32,20 +32,21 @@ create table private.upskii_live_class_releases (
   id uuid primary key default gen_random_uuid(),
   class_id text not null,
   meeting_id uuid,
+  actor text not null check (char_length(btrim(actor)) between 1 and 128),
   reason text not null check (char_length(btrim(reason)) between 1 and 240),
   released_at timestamptz not null default now()
 );
 alter table private.upskii_live_class_releases enable row level security;
 revoke all on private.upskii_live_class_releases
 from public, anon, authenticated, service_role;
-grant select, insert on private.upskii_live_class_releases to service_role;
+grant select on private.upskii_live_class_releases to service_role;
 
 alter table private.upskii_live_class_grants enable row level security;
 alter table private.upskii_live_class_rooms enable row level security;
 revoke all on private.upskii_live_class_grants, private.upskii_live_class_rooms
 from public, anon, authenticated, service_role;
 grant select, insert, update, delete on private.upskii_live_class_grants to service_role;
-grant select, insert, update, delete on private.upskii_live_class_rooms to service_role;
+grant select, insert, update on private.upskii_live_class_rooms to service_role;
 
 create function public.open_upskii_live_class_room(
   p_class_id text,
@@ -113,19 +114,21 @@ from public, anon, authenticated;
 grant execute on function public.open_upskii_live_class_room(text, uuid, text, uuid, uuid, text)
 to service_role;
 
-create function private.release_external_class_room(p_class_id text, p_reason text)
+create function private.release_external_class_room(p_class_id text, p_reason text, p_actor text)
 returns boolean
 language plpgsql
-security invoker
+security definer
 set search_path = pg_catalog, pg_temp
 as $$
 declare
   room_id uuid;
+  actor_text text := btrim(p_actor);
   reason_text text := btrim(p_reason);
 begin
   if p_class_id is null or p_class_id !~ '^[A-Za-z0-9_-]{1,128}$'
+    or actor_text is null or char_length(actor_text) not between 1 and 128
     or reason_text is null or char_length(reason_text) not between 1 and 240 then
-    raise exception 'An exact class ID and a release reason are required' using errcode = '22023';
+    raise exception 'An exact class ID, release reason and operator ID are required' using errcode = '22023';
   end if;
 
   perform pg_advisory_xact_lock(hashtextextended('upskii-live-class:' || p_class_id, 0));
@@ -136,15 +139,15 @@ begin
     return false;
   end if;
 
-  insert into private.upskii_live_class_releases (class_id, meeting_id, reason)
-  values (p_class_id, room_id, reason_text);
+  insert into private.upskii_live_class_releases (class_id, meeting_id, reason, actor)
+  values (p_class_id, room_id, reason_text, actor_text);
   return true;
 end;
 $$;
 
-revoke all on function private.release_external_class_room(text, text)
+revoke all on function private.release_external_class_room(text, text, text)
 from public, anon, authenticated, service_role;
-grant execute on function private.release_external_class_room(text, text)
+grant execute on function private.release_external_class_room(text, text, text)
 to service_role;
 
 commit;

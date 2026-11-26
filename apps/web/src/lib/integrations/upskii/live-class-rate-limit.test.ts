@@ -32,7 +32,7 @@ const beforeCredentials = (route: AccountLinkRoute) =>
   });
 
 describe('live class budgets', () => {
-  it('admits 100 classmates and another class from shared egress while preserving the teacher lane', async () => {
+  it('admits 240 class requests and another class from shared egress while preserving the teacher lane', async () => {
     const status = async (classId: string) =>
       (await beforeCredentials('live-class-status')) ??
       (await limitVerifiedAccountLinkRequest({
@@ -42,11 +42,12 @@ describe('live class budgets', () => {
       (await limitLiveClassStatus(classId));
 
     const students = await Promise.all(
-      Array.from({ length: 150 }, (_, index) =>
-        status(index < 100 ? 'class-a' : 'class-b')
+      Array.from({ length: 290 }, (_, index) =>
+        status(index < 240 ? 'class-a' : 'class-b')
       )
     );
     expect(students.every((response) => response === null)).toBe(true);
+    expect((await status('class-a'))?.status).toBe(429);
     expect(await beforeCredentials('live-class')).toBeNull();
     for (let call = 0; call < 10; call++) {
       expect(

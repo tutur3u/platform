@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(20);
+select plan(23);
 
 select ok(
   not exists (
@@ -26,9 +26,9 @@ select ok(
 );
 
 select ok(
-  not has_function_privilege('anon', 'private.release_external_class_room(text,text)', 'execute')
-  and not has_function_privilege('authenticated', 'private.release_external_class_room(text,text)', 'execute')
-  and has_function_privilege('service_role', 'private.release_external_class_room(text,text)', 'execute'),
+  not has_function_privilege('anon', 'private.release_external_class_room(text,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'private.release_external_class_room(text,text,text)', 'execute')
+  and has_function_privilege('service_role', 'private.release_external_class_room(text,text,text)', 'execute'),
   'only the service role can release a room binding'
 );
 
@@ -119,22 +119,35 @@ select is(
   )->>'kind', 'denied', 'revoking E3 blocks reuse even if a separate grant row remains'
 );
 select throws_ok(
-  $$select private.release_external_class_room('s4-test-class', ' ')$$,
+  $$delete from private.upskii_live_class_rooms where class_id = 's4-test-class'$$,
+  '42501', null, 'service role cannot bypass the audited release'
+);
+select throws_ok(
+  $$insert into private.upskii_live_class_releases (class_id, reason, actor)
+    values ('s4-test-class', 'False release', 'operator-s4')$$,
+  '42501', null, 'service role cannot forge the audit row directly'
+);
+select throws_ok(
+  $$select private.release_external_class_room('s4-test-class', 'Correct class', ' ')$$,
+  '22023', null, 'release requires an operator ID'
+);
+select throws_ok(
+  $$select private.release_external_class_room('s4-test-class', ' ', 'operator-s4')$$,
   '22023', null, 'release requires a reason'
 );
 select ok(
-  private.release_external_class_room('s4-test-class', 'Correct workshop class binding'),
+  private.release_external_class_room('s4-test-class', 'Correct workshop class binding', 'operator-s4'),
   'service role can release an existing binding'
 );
 select ok(
-  not private.release_external_class_room('s4-test-class', 'Retry after success'),
+  not private.release_external_class_room('s4-test-class', 'Retry after success', 'operator-s4'),
   'repeating an already released mapping is a no-op'
 );
 select is(
   (select count(*) from private.upskii_live_class_releases
    where class_id = 's4-test-class' and meeting_id = :'meeting_id'::uuid
-     and reason = 'Correct workshop class binding'),
-  1::bigint, 'successful release records its class, room and reason'
+     and reason = 'Correct workshop class binding' and actor = 'operator-s4'),
+  1::bigint, 'successful release records its class, room, reason and actor'
 );
 select ok(
   not exists (select 1 from private.upskii_live_class_rooms where class_id = 's4-test-class')
