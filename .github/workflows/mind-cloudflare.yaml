@@ -194,7 +194,7 @@ jobs:
 
   mind-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ ((needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) && (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -310,3 +310,50 @@ jobs:
       - name: Anonymous smoke on the sealed output in workerd
         working-directory: apps/mind
         run: node --test cloudflare/anonymous-smoke.runtime.mjs
+
+  mind-cutover-fixture:
+    needs: [check-ci, affected-gate]
+    if: ${{ ((needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) && !(github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: https://mind-ci.supabase.invalid
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_mind_ci_placeholder
+      NEXT_PUBLIC_APP_URL: https://tuturuuu.com/mind
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      VITE_MIND_NATIVE_PROFILE: production
+      WRANGLER_SEND_METRICS: 'false'
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - name: Generate build metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: preview
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build shared dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/mind^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Build the Start Worker with fixture inputs
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/mind && bun run build:cloudflare
+          token: ''
+          team: ''
