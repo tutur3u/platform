@@ -85,6 +85,7 @@ export type MeetApprovedParticipant = {
   userId: string;
   displayName: string;
   eventProof?: number;
+  admissionEventExpiresAt?: number;
   avatarUrl?: string;
   classMediaRole?: 'viewer' | 'speaker' | 'promoted';
   /** Anonymous guest without a Tuturuuu account. Labelling only. */

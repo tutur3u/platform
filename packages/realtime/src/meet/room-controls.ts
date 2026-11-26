@@ -305,11 +305,13 @@ export function rememberAdmission(
   state: MeetRoomSnapshot,
   person: MeetRealtimePresence,
   promotion?: 'promoted',
-  eventProof?: number
+  admission?: { eventProof?: number; admissionEventExpiresAt?: number }
 ) {
   if (person.role === 'host') return state.approved;
   const accountId = person.accountId ?? person.userId;
-  const priorRole = state.approved?.[accountId]?.classMediaRole;
+  const prior = state.approved?.[accountId];
+  const { eventProof, admissionEventExpiresAt } = admission ?? prior ?? {};
+  const priorRole = prior?.classMediaRole;
   const classMediaRole: MeetApprovedParticipant['classMediaRole'] =
     promotion ??
     priorRole ??
@@ -323,6 +325,7 @@ export function rememberAdmission(
       ...(classMediaRole ? { classMediaRole } : {}),
       ...(person.guest ? { guest: true as const } : {}),
       ...(eventProof ? { eventProof } : {}),
+      ...(admissionEventExpiresAt ? { admissionEventExpiresAt } : {}),
       ...(person.external ? { external: true as const } : {}),
     },
   };

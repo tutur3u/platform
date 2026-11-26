@@ -104,21 +104,31 @@ export function admitOrHold(
       reply: [{ type: 'error', error: 'permission_denied' }],
       disconnect: [token.userId],
     });
+  const accountId = token.accountId ?? token.userId;
+  const approved = state.approved?.[accountId];
+  const approvalEvent =
+    approved?.admissionEventExpiresAt ?? approved?.eventProof;
+  const matchesApproval =
+    approved !== undefined &&
+    (!token.guest ||
+      (approvalEvent === event &&
+        approved.eventProof === token.guestEventProof));
   let released: MeetRoomOutcome | undefined;
+  if (
+    token.guest &&
+    state.presence[token.userId] &&
+    !matchesApproval &&
+    (approvalEvent !== undefined || event !== undefined)
+  )
+    released = releaseParticipant(
+      state,
+      token.userId,
+      token.roomId,
+      now,
+      features
+    );
+
   if (event && token.guest) {
-    const accountId = token.accountId ?? token.userId;
-    if (
-      token.guestEventProof !== undefined &&
-      state.presence[token.userId] &&
-      state.approved?.[accountId]?.eventProof !== token.guestEventProof
-    )
-      released = releaseParticipant(
-        state,
-        token.userId,
-        token.roomId,
-        now,
-        features
-      );
     const occupied = [
       ...Object.values(state.presence),
       ...Object.values(state.waiting),
@@ -165,10 +175,7 @@ export function admitOrHold(
   if (
     (token.guest || token.admission === 'lobby') &&
     !state.presence[token.userId] &&
-    (token.guestEventProof !== undefined
-      ? state.approved?.[token.accountId ?? token.userId]?.eventProof !==
-        token.guestEventProof
-      : !state.approved?.[token.accountId ?? token.userId]) &&
+    !matchesApproval &&
     !(!token.guest && skipsLobby(state, token.accountId ?? token.userId)) &&
     !skipsLobbyAsVerifiedGuest(state, token, Date.parse(now))
   ) {
@@ -262,12 +269,10 @@ export function admitOrHold(
     ...state,
     ...(attendance ? attendancePatch(state, attendance) : {}),
     waiting,
-    approved: rememberAdmission(
-      state,
-      person,
-      undefined,
-      token.guestEventProof
-    ),
+    approved: rememberAdmission(state, person, undefined, {
+      eventProof: token.guestEventProof,
+      admissionEventExpiresAt: token.guest ? event : undefined,
+    }),
     presence: {
       ...state.presence,
       [token.userId]: person,
@@ -275,7 +280,10 @@ export function admitOrHold(
   };
 
   return outcome(next, {
-    broadcast: [meetPresenceMessage(next, token.roomId)],
+    broadcast: [
+      ...(released?.broadcast ?? []),
+      meetPresenceMessage(next, token.roomId),
+    ],
     toManagers: [
       approvedParticipantsMessage(next),
       ...(state.waiting[token.userId]
@@ -430,7 +438,12 @@ function decideParticipant(
               : 0),
         }
       : undefined,
-    approved: rememberAdmission(state, person, undefined, pending.eventProof),
+    approved: rememberAdmission(state, person, undefined, {
+      eventProof: pending.eventProof,
+      admissionEventExpiresAt: pending.guest
+        ? (event ?? pending.eventProof)
+        : undefined,
+    }),
   };
 
   return outcome(next, {
