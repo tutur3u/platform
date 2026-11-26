@@ -77,10 +77,11 @@ async function readFirstListPage(
 }
 
 /**
- * Whether the request's IP is blocked or the actor is suspended, decided as
- * `withSessionAuth` decides for the board and task API routes: an
- * `api_abuse` IP block is waived for a verified session, any other block and
- * any suspension deny. Both lookups fail open, as there.
+ * Whether the request's IP is blocked or the actor is suspended. The board
+ * and task API routes deny every IP block end to end (the API proxy guard
+ * runs before `withSessionAuth`), and a direct page load does not pass that
+ * guard, so any active block denies here, `api_abuse` included. Both lookups
+ * fail open, as on the API routes.
  */
 async function isDeniedBeforeRead(userId: string) {
   const ipAddress = extractIPFromHeaders(await headers());
@@ -91,9 +92,7 @@ async function isDeniedBeforeRead(userId: string) {
     }),
     readUserSuspension(userId),
   ]);
-  return (
-    Boolean(suspension) || (block !== null && block.reason !== 'api_abuse')
-  );
+  return Boolean(suspension) || block !== null;
 }
 
 /** Stored values by id, with `null` for ids the user never stored. */

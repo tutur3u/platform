@@ -102,9 +102,14 @@ describe('loadBoardSnapshot request decisions', () => {
     expect(mocks.readTaskBoardDetail).not.toHaveBeenCalled();
   });
 
-  it('waives an api_abuse block for the verified actor, as the API wrapper does', async () => {
+  it('denies an api_abuse block too, as the API proxy guard does', async () => {
     mocks.isIPBlocked.mockResolvedValue(block('api_abuse'));
 
+    await expect(load()).resolves.toBeNull();
+    expect(mocks.readTaskBoardDetail).not.toHaveBeenCalled();
+  });
+
+  it('reads the board when neither decision denies', async () => {
     await expect(load()).resolves.toMatchObject({
       board: { id: 'board-1' },
     });
