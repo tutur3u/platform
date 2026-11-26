@@ -30,6 +30,7 @@ beforeEach(() => guestAccess.mockReset());
 it.each([
   'whiteboard',
   'polls',
+  'quiz-arena',
   'mira-room',
   'transcript-consent',
   'classroom-tools',
