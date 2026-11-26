@@ -62,17 +62,15 @@ function callsWorkflow(caller: string, workflow: string): boolean {
 
 function hasServingWorkerPublisher(workflow: string, app: string): boolean {
   const jobs = workflow.split('\njobs:\n')[1] ?? '';
-  const publish = /^  publish:\n((?: {4}[^\n]*\n|\n)+)/m.exec(
-    jobs + '\n'
-  )?.[1];
+  const publish = /^  publish:\n((?: {4}[^\n]*\n|\n)+)/m.exec(jobs + '\n')?.[1];
   if (!publish) return false;
   const needs = /^    needs: \[([^\]]+)\]$/m.exec(publish)?.[1];
   return Boolean(
     new RegExp(`^  build-${app}:$`, 'm').test(jobs) &&
-      needs?.split(/,\s*/).includes(`build-${app}`) &&
-      callsWorkflow(publish, 'serving-worker-publish.yaml') &&
-      publish.includes('fromJSON(needs.plan.outputs.matrix)') &&
-      publish.includes('app: ${{ matrix.app }}')
+    needs?.split(/,\s*/).includes(`build-${app}`) &&
+    callsWorkflow(publish, 'serving-worker-publish.yaml') &&
+    publish.includes('fromJSON(needs.plan.outputs.matrix)') &&
+    publish.includes('app: ${{ matrix.app }}')
   );
 }
 

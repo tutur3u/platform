@@ -56,7 +56,9 @@ test('one publish matrix needs every build and hands the token over', () => {
   assert.match(publish, /^ {4}secrets: inherit$/m);
   assert.match(publish, /^ {6}id-token: write$/m);
   assert.ok(
-    publish.includes("build-ready: ${{ needs[format('build-{0}', matrix.app)].result == 'success' }}")
+    publish.includes(
+      "build-ready: ${{ needs[format('build-{0}', matrix.app)].result == 'success' }}"
+    )
   );
   assert.match(jobs(publisher).publish, /&& inputs\.build-ready/);
   assert.match(
@@ -79,10 +81,7 @@ test('planning waits for no approval and reads no secret', () => {
   assert.doesNotMatch(caller.plan, /secrets\./);
   assert.match(caller.plan, /fleet-freshness\.mjs gate/);
   // Only full publish rounds are gated.
-  assert.match(
-    caller.plan,
-    /\(inputs\.app \|\| 'all'\) == 'all'/
-  );
+  assert.match(caller.plan, /\(inputs\.app \|\| 'all'\) == 'all'/);
 });
 
 test('only a full publish round names its summary fleet-summary', () => {
