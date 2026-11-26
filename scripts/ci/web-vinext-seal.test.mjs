@@ -20,6 +20,7 @@ import {
   writeReceipt,
 } from './web-vinext-seal.mjs';
 import {
+  assertVinextModuleClosure,
   EXIT,
   familyDirsUnder,
   main as verifyMain,
@@ -49,6 +50,41 @@ function assertCode(fn, code, pattern) {
     return true;
   });
 }
+
+test('closure admits only declared WASM from the published bundle', (t) => {
+  const { app } = fixtureApp(t, { chunk: 'import wasm from "./known.wasm";' });
+  const bundle = join(app, BUNDLE);
+  const path = 'ssr/known.wasm';
+  const bytes = Buffer.from([0, 97, 115, 109, 1, 0, 0, 0]);
+  writeFileSync(join(bundle, path), bytes);
+  const prior = { [path]: createHash('sha256').update(bytes).digest('hex') };
+  const manifest = { modules: { [path]: { type: 'wasm' } } };
+  assert.deepEqual(assertVinextModuleClosure(bundle, manifest, prior), {
+    names: ['index.mjs', 'ssr/index.js', path],
+    esm: ['index.mjs', 'ssr/index.js'],
+  });
+  assertCode(() => assertVinextModuleClosure(bundle, {}, prior), EXIT.closure);
+  assertCode(
+    () =>
+      assertVinextModuleClosure(
+        bundle,
+        { modules: { [path]: { type: 'data' } } },
+        prior
+      ),
+    EXIT.closure,
+    /unsupported/u
+  );
+  assertCode(
+    () => assertVinextModuleClosure(bundle, manifest, {}),
+    EXIT.closure
+  );
+  writeFileSync(join(bundle, path), Buffer.concat([bytes, Buffer.from([1])]));
+  assertCode(
+    () => assertVinextModuleClosure(bundle, manifest, prior),
+    EXIT.closure,
+    /differs from the published closure/u
+  );
+});
 
 test('a sealed family verifies with sorted per-file and per-module hashes', (t) => {
   const { out } = sealed(t);

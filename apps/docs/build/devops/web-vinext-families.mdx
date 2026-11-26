@@ -164,6 +164,12 @@ The workflow:
    `contents: read` only, so their runners never get an OIDC token.
 
 The run title is `Web vinext families <sha>`, which ties a run to its pin.
+The seal and verifier include compiled WASM in the hashed module set only when
+the emitted Worker manifest declares it as `wasm` and its referenced paths
+and hashes match the last published family inventory in
+`scripts/ci/fixtures/web-vinext-published-wasm.json`. Other non-ESM imports
+fail closure. Review any inventory changes against production evidence before
+updating the baseline.
 
 ### Build environment
 

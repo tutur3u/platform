@@ -186,6 +186,7 @@ jobs:
             /scripts/ci/web-vinext-bundle-check.mjs
             /scripts/ci/web-vinext-seal.mjs
             /scripts/ci/web-vinext-sealed-artifact.mjs
+            /scripts/ci/fixtures/web-vinext-published-wasm.json
           sparse-checkout-cone-mode: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:

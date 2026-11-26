@@ -7,14 +7,12 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertModuleClosure } from './cf-build-output-publisher.mjs';
 import { assertAssetHeadersStamp } from './web-vinext-bundle-check.mjs';
 import {
   BUNDLE_DIR,
   MAIN_MODULE,
   assertFamilyId,
   assertSha,
-  bundleModules,
   EXIT,
   hashFiles,
   listFiles,
@@ -27,6 +25,7 @@ import {
   sha256,
   stampModules,
   verifySealedFamily,
+  vinextModuleClosure,
 } from './web-vinext-sealed-artifact.mjs';
 
 // CI side of the vinext family seal (web-vinext-families-build.yaml):
@@ -208,16 +207,8 @@ export function sealFamily({
   if (!existsSync(join(bundleRoot, MAIN_MODULE))) {
     fail(EXIT.missing, `main module ${MAIN_MODULE} missing from the bundle`);
   }
-  const modules = bundleModules(bundleRoot);
-  try {
-    assertModuleClosure(
-      bundleRoot,
-      Object.fromEntries(modules.map((name) => [name, { type: 'esm' }]))
-    );
-  } catch (error) {
-    fail(EXIT.closure, error instanceof Error ? error.message : String(error));
-  }
-  const stamped = stampModules(bundleRoot, modules, sha);
+  const { names: modules, esm } = vinextModuleClosure(bundleRoot, family);
+  const stamped = stampModules(bundleRoot, esm, sha);
   if (stamped.length === 0) {
     fail(EXIT.stamp, 'no module carries x-tuturuuu-build and the quoted sha');
   }

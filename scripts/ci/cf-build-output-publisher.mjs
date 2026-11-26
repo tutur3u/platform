@@ -278,12 +278,17 @@ function referenceState(bundleRoot, target) {
  * reject the import on every request that reaches it. A non-ESM target
  * (wasm, text, data) inside the root fails as unsupported by this emit.
  * Missing paths, directories and non-ESM files outside the root pass, since
- * specifier text also appears in comments and strings.
+ * specifier text also appears in comments and strings. Callers that include
+ * typed binary targets pass only their JavaScript modules as sources.
  */
-export function assertModuleClosure(bundleRoot, modules) {
+export function assertModuleClosure(
+  bundleRoot,
+  modules,
+  sources = Object.keys(modules)
+) {
   const dropped = [];
   const unsupported = [];
-  for (const rel of Object.keys(modules)) {
+  for (const rel of sources) {
     for (const target of relativeReferences(bundleRoot, rel)) {
       if (Object.hasOwn(modules, target)) continue;
       const state = referenceState(bundleRoot, target);

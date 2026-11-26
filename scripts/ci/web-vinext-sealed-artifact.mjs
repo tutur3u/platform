@@ -2,7 +2,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { join, posix, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { assertModuleClosure } from './cf-build-output-publisher.mjs';
+import {
+  assertModuleClosure,
+  relativeReferences,
+} from './cf-build-output-publisher.mjs';
 import { assertAssetHeadersStamp } from './web-vinext-bundle-check.mjs';
 
 // Verifier for one sealed vinext family directory, as uploaded by
@@ -116,6 +119,74 @@ export function bundleModules(bundleRoot) {
       MODULE.test(path) &&
       !path.split('/').some((segment) => segment.startsWith('.'))
   );
+}
+
+// Hashes from the last assigned production bundle, independently checked
+// against its reviewed inventory. New WASM requires a reviewed baseline change.
+const publishedWasm = JSON.parse(
+  readFileSync(
+    new URL('./fixtures/web-vinext-published-wasm.json', import.meta.url)
+  )
+).families;
+
+export function assertVinextModuleClosure(bundleRoot, manifest, priorWasm) {
+  const esm = bundleModules(bundleRoot);
+  const wasm = listFiles(bundleRoot).filter((path) => path.endsWith('.wasm'));
+  const declared = Object.entries(manifest?.modules ?? {});
+  for (const [path, entry] of declared) {
+    if (entry?.type !== 'wasm' || !wasm.includes(path))
+      fail(EXIT.closure, `unsupported or missing declared module: ${path}`);
+  }
+  if (
+    wasm.length !== declared.length ||
+    wasm.length !== Object.keys(priorWasm).length
+  ) {
+    fail(EXIT.closure, 'WASM files, declarations and published closure differ');
+  }
+  for (const path of wasm) {
+    if (
+      !Object.hasOwn(priorWasm, path) ||
+      sha256(readFileSync(join(bundleRoot, path))) !== priorWasm[path]
+    ) {
+      fail(EXIT.closure, `WASM differs from the published closure: ${path}`);
+    }
+  }
+
+  const wasmSet = new Set(wasm);
+  const referencedWasm = new Set();
+  for (const path of esm) {
+    for (const target of relativeReferences(bundleRoot, path)) {
+      if (!target.endsWith('.wasm')) continue;
+      if (!wasmSet.has(target))
+        fail(EXIT.closure, `undeclared WASM reference: ${target}`);
+      referencedWasm.add(target);
+    }
+  }
+  if (referencedWasm.size !== wasm.length)
+    fail(EXIT.closure, 'WASM reference set differs from the published closure');
+
+  const modules = Object.fromEntries([
+    ...esm.map((path) => [path, { type: 'esm' }]),
+    ...wasm.map((path) => [path, { type: 'compiled-wasm' }]),
+  ]);
+  try {
+    assertModuleClosure(bundleRoot, modules, esm);
+  } catch (error) {
+    fail(EXIT.closure, error instanceof Error ? error.message : String(error));
+  }
+  return { names: Object.keys(modules).sort(), esm };
+}
+
+export function vinextModuleClosure(bundleRoot, family) {
+  const config = readJson(
+    join(bundleRoot, '../worker.config.json'),
+    EXIT.closure,
+    'worker.config.json'
+  );
+  const prior = Object.hasOwn(publishedWasm, family)
+    ? publishedWasm[family]
+    : {};
+  return assertVinextModuleClosure(bundleRoot, config.manifest, prior);
 }
 
 /** Bundle-relative modules carrying the header name and the quoted sha. */
@@ -294,7 +365,7 @@ export function verifySealedFamily(dir, expectedSha, { expectedFamily } = {}) {
   if (!Object.hasOwn(modules, seal.mainModule)) {
     fail(EXIT.missing, 'main module is not sealed');
   }
-  const present = bundleModules(bundleRoot);
+  const { names: present, esm } = vinextModuleClosure(bundleRoot, seal.family);
   const absent = names.filter((name) => !present.includes(name));
   if (absent.length > 0) {
     fail(
@@ -349,22 +420,12 @@ export function verifySealedFamily(dir, expectedSha, { expectedFamily } = {}) {
   } catch (error) {
     fail(EXIT.stamp, error instanceof Error ? error.message : String(error));
   }
-  const stamped = stampModules(bundleRoot, names, expectedSha);
+  const stamped = stampModules(bundleRoot, esm, expectedSha);
   if (stamped.length === 0) {
     fail(EXIT.stamp, `no module carries ${STAMP_HEADER} and the quoted sha`);
   }
   if (!stamped.includes(seal.stampModule)) {
     fail(EXIT.stamp, 'seal stampModule does not carry the stamp');
-  }
-
-  // Closure: no module imports an unsealed module.
-  try {
-    assertModuleClosure(
-      bundleRoot,
-      Object.fromEntries(names.map((name) => [name, { type: 'esm' }]))
-    );
-  } catch (error) {
-    fail(EXIT.closure, error instanceof Error ? error.message : String(error));
   }
 
   const findings = scanForSecrets(root, onDisk);
