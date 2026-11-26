@@ -20,10 +20,14 @@ const statuses: Readonly<Partial<Record<string, BillingStatus>>> = {
   paused: 'paused',
 };
 
+type PolarShadowObservation = BillingObservation<'polar'> & {
+  cancelAtPeriodEnd: boolean;
+};
+
 type PolarShadowResult =
   | { kind: 'excluded' }
   | { kind: 'exception'; reason: 'unknown_status' | 'ambiguous_price' }
-  | { kind: 'observed'; observation: BillingObservation<'polar'> };
+  | { kind: 'observed'; observation: PolarShadowObservation };
 
 export function observePolarSubscription({
   subscription,
@@ -73,6 +77,7 @@ export function observePolarSubscription({
       periodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
       accessUntil: null,
       graceUntil: null,
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       canceledAt: subscription.canceledAt?.toISOString() ?? null,
       revokedAt: null,
       autoRenews:
@@ -92,6 +97,7 @@ interface PolarLegacySnapshot {
   current_period_start: string | null;
   current_period_end: string | null;
   seat_count: number | null;
+  cancel_at_period_end: boolean;
 }
 
 export function comparePolarLegacySnapshot({
@@ -100,7 +106,7 @@ export function comparePolarLegacySnapshot({
   seatBased,
 }: {
   legacy: PolarLegacySnapshot;
-  observation: BillingObservation<'polar'>;
+  observation: PolarShadowObservation;
   seatBased: boolean;
 }) {
   const expected = {
@@ -109,6 +115,7 @@ export function comparePolarLegacySnapshot({
     status: observation.nativeStatus,
     current_period_start: observation.periodStart,
     current_period_end: observation.periodEnd,
+    cancel_at_period_end: observation.cancelAtPeriodEnd,
     seat_count: seatBased ? observation.quantity : null,
   } satisfies PolarLegacySnapshot;
 
