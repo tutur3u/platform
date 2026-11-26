@@ -180,13 +180,16 @@ Future<Uint8List> fetchInventoryProductImage(
         try {
           final route = InventoryEndpoints.productImage(workspaceId, productId);
           final body = await client.getJson('$route?format=json');
-          signedUrl = body['signedUrl'] as String?;
+          final value = body['signedUrl'];
+          if (value is String) signedUrl = value;
         } on ApiException catch (error) {
-          if (const {401, 403}.contains(error.statusCode)) {
+          // A slug-named URL has no fallback, so its 404 is final too.
+          if (const {401, 403}.contains(error.statusCode) ||
+              (slugNamed && error.statusCode == 404)) {
             _refusedImages.add(refusalKey);
             return await refused();
           }
-          // A missing route or image falls through to the share route.
+          // Any other failure falls through to the share route.
         }
       }
       // The share route trusts the workspace in its own path, so a
@@ -200,7 +203,8 @@ Future<Uint8List> fetchInventoryProductImage(
             DriveEndpoints.share(workspaceId),
             {'path': path},
           );
-          signedUrl = signed['signedUrl'] as String?;
+          final value = signed['signedUrl'];
+          if (value is String) signedUrl = value;
         } on ApiException catch (error) {
           if (const {401, 403, 404}.contains(error.statusCode)) {
             _refusedImages.add(refusalKey);

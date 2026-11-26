@@ -293,25 +293,57 @@ void main() {
         expect(fetched, ['https://storage.example/s']);
       });
 
-      test('a slug-named URL never falls back to the share route', () async {
+      test('a slug-named URL never falls back and its 404 is final', () async {
         final api = _Api();
         when(
           () => api.getJson(route),
         ).thenThrow(const ApiException(message: 'Not found', statusCode: 404));
+        final slugged = inventoryImageShareUrl(
+          'personal',
+          'inventory/media/slug.png',
+          origin: origin,
+        );
+        for (var attempt = 0; attempt < 2; attempt++) {
+          await expectLater(
+            load(slugged, api, productId: product, userId: 'u1'),
+            throwsA(isA<InventoryImageUnavailable>()),
+          );
+        }
+        // Remembered after the first miss, so cache misses do not retry.
+        verify(() => api.getJson(route)).called(1);
+        verifyNever(() => api.postJson(any(), any()));
+      });
+
+      test('a non-string signed URL falls back instead of throwing', () async {
+        final api = _Api();
+        when(
+          () => api.getJson(route),
+        ).thenAnswer((_) async => {'signedUrl': 42});
+        when(
+          () => api.postJson(any(), any()),
+        ).thenAnswer((_) async => {'signedUrl': 'https://storage.example/f'});
+        expect(
+          await load(
+            inventoryImageShareUrl(ws, 'inventory/media/n.png', origin: origin),
+            api,
+            productId: product,
+            userId: 'u1',
+          ),
+          ['https://storage.example/f'],
+        );
+        // A malformed share response leaves the placeholder.
+        when(
+          () => api.postJson(any(), any()),
+        ).thenAnswer((_) async => {'signedUrl': false});
         await expectLater(
           load(
-            inventoryImageShareUrl(
-              'personal',
-              'inventory/media/slug.png',
-              origin: origin,
-            ),
+            inventoryImageShareUrl(ws, 'inventory/media/m.png', origin: origin),
             api,
             productId: product,
             userId: 'u1',
           ),
           throwsA(isA<InventoryImageUnavailable>()),
         );
-        verifyNever(() => api.postJson(any(), any()));
       });
 
       test('a refusal is remembered per account', () async {
