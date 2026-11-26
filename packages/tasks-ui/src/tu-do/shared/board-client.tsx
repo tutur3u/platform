@@ -45,10 +45,8 @@ import {
 import { TaskBoardLoadingState } from './task-board-loading-state';
 import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
 import { useBoardServerSeed } from './use-board-server-seed';
-import {
-  type BoardFirstListPage,
-  useProgressiveBoardLoader,
-} from './use-progressive-board-loader';
+import type { BoardFirstListPage } from './board-first-page';
+import { useProgressiveBoardLoader } from './use-progressive-board-loader';
 
 // Pilot (default off): TanStack DB board sync ships in its own chunk so boards
 // without the flag never download it.

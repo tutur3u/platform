@@ -77,7 +77,6 @@ function WorkspacePageContent({ page }: { page: WorkspacePage }) {
     case 'board':
       return (
         <BoardClient
-          key={`${page.currentUserId}:${page.workspace.id}:${page.boardId}`}
           boardId={page.boardId}
           initialBoard={page.board}
           initialListPages={page.listPages}

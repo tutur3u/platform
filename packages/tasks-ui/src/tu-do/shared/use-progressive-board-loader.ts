@@ -5,6 +5,10 @@ import { listWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  BOARD_LIST_PAGE_SIZE,
+  type BoardFirstListPage,
+} from './board-first-page';
+import {
   confirmMissingBoardTasks,
   MISSING_TASK_CHECK_LIMIT,
 } from './confirm-missing-board-tasks';
@@ -14,7 +18,7 @@ import type {
   ProgressiveLoadListPageOptions,
 } from './progressive-loader-context';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = BOARD_LIST_PAGE_SIZE;
 const LOCAL_MUTATION_MARKER_TTL_MS = 30_000;
 const REVALIDATE_LIST_CONCURRENCY = 2;
 const EMPTY_PAGINATION: Record<string, ListPaginationState> = {};
@@ -62,10 +66,7 @@ export function deriveListPageState(
       };
 }
 
-export interface BoardFirstListPage {
-  tasks: Task[];
-  count: number | null;
-}
+export type { BoardFirstListPage } from './board-first-page';
 
 /**
  * The shared tasks cache and per-list pagination for first pages read during

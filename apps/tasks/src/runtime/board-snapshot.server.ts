@@ -1,22 +1,21 @@
 import '@tanstack/react-start/server-only';
 import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { WorkspaceTasksResponse } from '@tuturuuu/internal-api';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { handleTaskRouteGET } from '@tuturuuu/tasks-api/server/tasks/route';
+import { BOARD_LIST_PAGE_SIZE } from '@tuturuuu/tasks-ui/tu-do/shared/board-first-page';
 import {
   BOARD_USER_CONFIG_DEFAULTS,
   BOARD_WORKSPACE_CONFIG_IDS,
   type BoardPreferenceSeed,
 } from '@tuturuuu/tasks-ui/tu-do/shared/board-preference-seed';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
-import { checkUserSuspension } from '@tuturuuu/utils/abuse-protection/user-suspension';
 import { NextRequest } from '@tuturuuu/start-bridge/next/server';
 import { readTaskBoardDetail } from '../app/api/v1/workspaces/[wsId]/task-boards/[boardId]/board-detail';
-
-/** Matches the board column's first progressive page. */
-export const BOARD_SNAPSHOT_PAGE_SIZE = 50;
+import { readUserSuspension } from '../lib/session-security-lookups';
 
 export type BoardSnapshotBoard = WorkspaceTaskBoard & {
   access_type?: 'member' | 'guest';
@@ -39,15 +38,6 @@ export interface BoardSnapshot {
 
 const DENIED_STATUSES = new Set([400, 401, 403, 404]);
 
-async function isSuspended(userId: string) {
-  try {
-    return (await checkUserSuspension(userId)).suspended;
-  } catch {
-    // The API wrapper fails open when the suspension lookup is unavailable.
-    return false;
-  }
-}
-
 async function readFirstListPage(
   auth: { supabase: TypedSupabaseClient; user: SupabaseUser },
   wsId: string,
@@ -60,7 +50,7 @@ async function readFirstListPage(
   );
   url.searchParams.set('boardId', boardId);
   url.searchParams.set('listId', listId);
-  url.searchParams.set('limit', String(BOARD_SNAPSHOT_PAGE_SIZE));
+  url.searchParams.set('limit', String(BOARD_LIST_PAGE_SIZE));
   url.searchParams.set('offset', '0');
   url.searchParams.set('includeCount', 'true');
   url.searchParams.set('includeRelationshipSummary', 'false');
@@ -156,7 +146,7 @@ export async function loadBoardSnapshot({
   boardId: string;
 }): Promise<BoardSnapshot | null> {
   const capturedAt = Date.now();
-  const suspended = isSuspended(user.id);
+  const suspension = readUserSuspension(user.id);
   const admin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
@@ -172,16 +162,16 @@ export async function loadBoardSnapshot({
   };
 
   const lists = (board.task_lists ?? []).filter((list) => !list.deleted);
-  const [pages, preferences, isActorSuspended] = await Promise.all([
+  const [pages, preferences, actorSuspension] = await Promise.all([
     Promise.all(
       lists.map((list) =>
         readFirstListPage(auth, board.ws_id, board.id, list.id)
       )
     ),
     readBoardPreferences(admin, user.id, board),
-    suspended,
+    suspension,
   ]);
-  if (isActorSuspended) return null;
+  if (actorSuspension) return null;
 
   const listPages: Record<string, BoardSnapshotListPage> = {};
   lists.forEach((list, index) => {
@@ -196,5 +186,37 @@ export async function loadBoardSnapshot({
     listPages: anyPageRead ? listPages : undefined,
     preferences,
     capturedAt,
+  };
+}
+
+/**
+ * Starts the board snapshot for the request's actor alongside the workspace
+ * guard. The snapshot authorizes the board on its own; `forActor` hands it
+ * out only for the actor the guard admitted and otherwise reads again for
+ * that actor.
+ */
+export function startBoardSnapshot(wsId: string, boardId: string) {
+  const started = (async () => {
+    const user = await getSatelliteAppSessionUser('tasks');
+    if (!user?.id) return null;
+    return {
+      actorId: user.id,
+      snapshot: await loadBoardSnapshot({ user, wsId, boardId }),
+    };
+  })();
+  // A guard redirect can settle the page before this read is awaited.
+  started.catch(() => {});
+  return {
+    forActor(scope: { user: SupabaseUser; workspace: { id: string } }) {
+      return started.then((early) =>
+        early && early.actorId === scope.user.id
+          ? early.snapshot
+          : loadBoardSnapshot({
+              user: scope.user,
+              wsId: scope.workspace.id,
+              boardId,
+            })
+      );
+    },
   };
 }

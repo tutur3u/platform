@@ -3,13 +3,9 @@
 import { useRouter } from '@tanstack/react-router';
 import { formatUrl } from 'next/dist/shared/lib/router/utils/format-url';
 import type { LinkProps } from 'next/link';
-import {
-  type AnchorHTMLAttributes,
-  forwardRef,
-  useEffect,
-  useRef,
-} from 'react';
+import { type AnchorHTMLAttributes, forwardRef } from 'react';
 import { withAppBase } from '../start/base-path';
+import { useIntentPreload } from './use-intent-preload';
 
 type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
   href: LinkProps['href'];
@@ -18,9 +14,6 @@ type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> & {
   prefetch?: boolean | null;
   locale?: string | false;
 };
-
-/** Matches TanStack Router's default `preloadDelay` for intent preloading. */
-const INTENT_PRELOAD_DELAY_MS = 50;
 
 /**
  * `next/link` on the TanStack router: same-app clicks navigate client-side,
@@ -46,61 +39,22 @@ export default forwardRef<HTMLAnchorElement, Props>(function BridgeLink(
 ) {
   const router = useRouter();
   const path = withAppBase(typeof href === 'string' ? href : formatUrl(href));
-  const preloadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const canPreload =
+  const intentHandlers = useIntentPreload(
+    path,
     prefetch !== false &&
-    router.options.defaultPreload === 'intent' &&
-    props.download === undefined &&
-    (!props.target || props.target === '_self') &&
-    path.startsWith('/') &&
-    !path.startsWith('//');
-  const cancelPreload = () => {
-    if (preloadTimer.current) clearTimeout(preloadTimer.current);
-    preloadTimer.current = null;
-  };
-  const preload = () => {
-    cancelPreload();
-    if (!canPreload) return;
-    // `href` carries the app base, which the router strips through its
-    // rewrite exactly as for `navigate`; the preload types only name `to`.
-    // A failed or redirecting preload leaves the click to navigate normally.
-    void router
-      .preloadRoute({ href: path } as unknown as Parameters<
-        typeof router.preloadRoute
-      >[0])
-      .catch(() => {});
-  };
-  const schedulePreload = () => {
-    cancelPreload();
-    if (canPreload)
-      preloadTimer.current = setTimeout(preload, INTENT_PRELOAD_DELAY_MS);
-  };
-  useEffect(() => cancelPreload, []);
+      router.options.defaultPreload === 'intent' &&
+      props.download === undefined &&
+      (!props.target || props.target === '_self') &&
+      path.startsWith('/') &&
+      !path.startsWith('//'),
+    { onBlur, onFocus, onMouseEnter, onMouseLeave, onTouchStart }
+  );
   return (
     <a
       {...props}
       ref={ref}
       href={path}
-      onMouseEnter={(event) => {
-        onMouseEnter?.(event);
-        schedulePreload();
-      }}
-      onMouseLeave={(event) => {
-        onMouseLeave?.(event);
-        cancelPreload();
-      }}
-      onFocus={(event) => {
-        onFocus?.(event);
-        schedulePreload();
-      }}
-      onBlur={(event) => {
-        onBlur?.(event);
-        cancelPreload();
-      }}
-      onTouchStart={(event) => {
-        onTouchStart?.(event);
-        preload();
-      }}
+      {...intentHandlers}
       onClick={(event) => {
         onClick?.(event);
         if (

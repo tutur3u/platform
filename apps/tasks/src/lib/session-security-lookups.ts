@@ -17,27 +17,37 @@ function getUserCreatedAt(user: SupabaseUser) {
   return (user as SupabaseUser & { created_at?: string | null }).created_at;
 }
 
-/** The suspension 403 for a suspended user, or null. Fails open. */
-export async function checkSuspensionResponse(
+/**
+ * The actor's active suspension, or null. Fails open: an unavailable or
+ * failed lookup counts as not suspended.
+ */
+export async function readUserSuspension(
   userId: string
-): Promise<NextResponse | null> {
+): Promise<{ reason?: string } | null> {
   try {
     const { checkUserSuspension } =
       await import('@tuturuuu/utils/abuse-protection/user-suspension');
     const suspension = await checkUserSuspension(userId);
-    if (suspension.suspended) {
-      return NextResponse.json(
+    return suspension.suspended ? { reason: suspension.reason } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The suspension 403 for a suspended user, or null. Fails open. */
+export async function checkSuspensionResponse(
+  userId: string
+): Promise<NextResponse | null> {
+  const suspension = await readUserSuspension(userId);
+  return suspension
+    ? NextResponse.json(
         {
           error: 'Forbidden',
           message: suspension.reason ?? 'Account suspended',
         },
         { status: 403 }
-      );
-    }
-  } catch {
-    // User suspension module not yet available or failed — fail-open
-  }
-  return null;
+      )
+    : null;
 }
 
 /**

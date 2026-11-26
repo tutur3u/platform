@@ -1,11 +1,10 @@
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { matchPage } from '@tuturuuu/start-bridge/pages';
 import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { PAGE_REWRITE_HEADER } from '../lib/page-rewrite';
-import { loadBoardSnapshot } from './board-snapshot.server';
+import { startBoardSnapshot } from './board-snapshot.server';
 import { resolvePathLocale } from './locale';
 import { type PagePattern, pages } from './page-registry.bridge.gen';
 import {
@@ -36,25 +35,6 @@ interface PageContext {
   locale: 'en' | 'vi';
 }
 
-/**
- * Starts the board snapshot alongside the workspace guard. The snapshot
- * authorizes the board on its own; the board model uses it only after the
- * guard admitted the same actor.
- */
-function startBoardSnapshot(wsId: string, boardId: string) {
-  const started = (async () => {
-    const user = await getSatelliteAppSessionUser('tasks');
-    if (!user?.id) return null;
-    return {
-      actorId: user.id,
-      snapshot: await loadBoardSnapshot({ user, wsId, boardId }),
-    };
-  })();
-  // A guard redirect can settle the page before this read is awaited.
-  started.catch(() => {});
-  return started;
-}
-
 /** The `[wsId]` layout around a page: invitation, or shell plus page. */
 async function inWorkspace<Page>(
   { params }: PageContext,
@@ -72,21 +52,9 @@ const loaders = {
     inWorkspace(ctx, () => progressModel(ctx.params.wsId ?? '', 'stats')),
   '/[wsId]/boards/[boardId]': (ctx: PageContext) => {
     const boardId = ctx.params.boardId ?? '';
-    const early = startBoardSnapshot(ctx.params.wsId ?? '', boardId);
+    const snapshot = startBoardSnapshot(ctx.params.wsId ?? '', boardId);
     return inWorkspace(ctx, (scope) =>
-      boardModel(
-        scope,
-        boardId,
-        early.then((started) =>
-          started && started.actorId === scope.user.id
-            ? started.snapshot
-            : loadBoardSnapshot({
-                user: scope.user,
-                wsId: scope.workspace.id,
-                boardId,
-              })
-        )
-      )
+      boardModel(scope, boardId, snapshot.forActor(scope))
     );
   },
   '/[wsId]/boards': (ctx: PageContext) => inWorkspace(ctx, entrypointRedirect),

@@ -10,10 +10,8 @@ import {
   BOARD_WORKSPACE_CONFIG_IDS,
   type BoardPreferenceSeed,
 } from './board-preference-seed';
-import {
-  type BoardFirstListPage,
-  seedFromFirstListPages,
-} from './use-progressive-board-loader';
+import type { BoardFirstListPage } from './board-first-page';
+import { seedFromFirstListPages } from './use-progressive-board-loader';
 
 /** A server snapshot this old at mount is revalidated in the background. */
 export const STALE_BOARD_SNAPSHOT_MS = 5_000;
