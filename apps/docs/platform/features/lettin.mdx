@@ -165,6 +165,31 @@ All content APIs live in `apps/lettin/src/app/api/v1`. Shared client access uses
 platform API fallbacks. The public health route
 `/api/v1/lettin/health` checks D1 schema and R2 access and reports the Worker version.
 
+The Worker entry `apps/lettin/cloudflare/worker.ts` wraps the OpenNext Worker
+with `withSettledResponse` from `@tuturuuu/utils/worker-settled-fetch`.
+
+- Requests no route can serve answer an uncached (`no-store`) 404 before the
+  Node bridge: non-HTTP-standard methods, invalid percent-encoding and decoded
+  control characters on any path, and any dotted path outside `/_next/` and
+  `/api/` (`src/request-gate.ts`). No Lettin-owned route contains a dot.
+  `/api` and `/api/*` are exempt from the dot rule because `next.config.ts`
+  forwards unowned `/api` paths to Web, which serves dotted routes. The
+  exemption matches OpenNext's fallback match: the raw, undecoded, case-sensitive
+  `/api/` prefix, so `/API/` and `/%61pi/` stay fenced.
+- A throw before the request reaches the OpenNext server handler answers a fast
+  500. An error thrown inside the OpenNext server handler (it runs inside
+  `ctx.waitUntil`, so the Worker never sees it) leaves the response pending
+  until the 60-second header backstop answers 504.
+- The 60-second backstop also applies to `/api` calls forwarded to Web.
+- The long-running workspace routes `/api/v1/workspaces/<wsId>/lettin/import`,
+  `/exocorpse`, `/export` and `/media` have no header backstop, so long
+  legitimate work is never cut off.
+- Response bodies pass through untouched. Logs carry `[worker-settle]` with the
+  outcome, method and safe error fields only.
+
+Regression coverage: `packages/utils/src/worker-settled-fetch.test.ts` and
+`apps/lettin/src/request-gate.test.ts`.
+
 D1 schema migrations live in `apps/lettin/migrations`. Writes use parameterized
 statements with revision and role predicates; invitation acceptance uses an atomic
 D1 batch. Request-scoped D1 sessions start on the primary so access decisions see
