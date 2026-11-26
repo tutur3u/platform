@@ -78,7 +78,13 @@ export function useCallActivities({
     activity === 'forms' ? formsOpen : stage.isOpen(stageIdOf(activity));
   const canUseForms = enabled && formsEnabled && !requiresAccount;
   const classroomAvailable = enabled && classroomToolsEnabled;
-  const polls = useCallPolls(meetingId, accountId, enabled, isOpen('polls'));
+  const polls = useCallPolls(
+    meetingId,
+    accountId,
+    enabled,
+    isOpen('polls'),
+    requiresAccount
+  );
   // Guests start polling when they open the quiz tool.
   const arena = useCallQuizArena(
     meetingId,

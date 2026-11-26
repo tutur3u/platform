@@ -1,11 +1,16 @@
 import { z } from 'zod';
+import { takeActorRateLimitWindow } from './actor-rate-limit';
+import type { MeetRealtimeServerMessage } from './messages';
 import { canMeetRealtimeManageParticipants } from './permissions';
 import type { MeetRealtimeTokenPayload } from './primitives';
-import type { RoomServiceState } from './room-service';
+import { isGuestRemovalBlocked } from './room-removed-guests';
+import type { RoomServiceResult, RoomServiceState } from './room-service';
 
 const MAX_POLLS = 50;
 const MAX_RESPONSES = 500;
 const MAX_POLL_BYTES = 256 * 1024;
+export const MEET_POLL_VOTE_LIMIT = 20;
+export const MEET_POLL_VOTE_WINDOW_MS = 60_000;
 const optionIds = z.array(z.uuid()).min(1).max(10);
 const options = z
   .array(z.string().trim().min(1).max(120))
@@ -327,17 +332,26 @@ export function exportPollCsv(poll: RoomPoll) {
 export function applyRoomPolls(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
-  command: PollCommand
-) {
+  command: PollCommand,
+  now = Date.now()
+): RoomServiceResult {
   const accountId = token.accountId ?? token.userId;
-  const canManage = canMeetRealtimeManageParticipants(token);
-  const present = Object.values(snapshot.presence).some(
+  const canManage = !token.guest && canMeetRealtimeManageParticipants(token);
+  const present = Object.values(snapshot.presence).find(
     (person) => (person.accountId ?? person.userId) === accountId
   );
-  const fail = (error: string, status: number) => ({
+  const fail = (
+    error: string,
+    status: number,
+    retryAfterSeconds?: number
+  ): RoomServiceResult => ({
     state: snapshot,
-    body: { error },
+    body:
+      retryAfterSeconds === undefined
+        ? { error }
+        : { error, retryAfterSeconds },
     status,
+    ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
   });
   if (
     token.guest &&
@@ -345,6 +359,14 @@ export function applyRoomPolls(
     command.action !== 'poll.vote'
   )
     return fail('Sign in required', 403);
+  if (
+    token.guest &&
+    (!token.accountId ||
+      !present ||
+      snapshot.ended ||
+      isGuestRemovalBlocked(snapshot, accountId, now).blocked)
+  )
+    return fail('Forbidden', 403);
   if (
     !canManage &&
     ((!present && !snapshot.approved?.[accountId]) ||
@@ -357,22 +379,31 @@ export function applyRoomPolls(
     canManage,
     polls: projectPollsForUser(polls, accountId, canManage),
   });
-  const save = (next: RoomPoll[], body: unknown = { ok: true }) => {
+  const save = (
+    next: RoomPoll[],
+    body: unknown = { ok: true },
+    messages?: MeetRealtimeServerMessage[]
+  ) => {
     if (
       new TextEncoder().encode(JSON.stringify(next)).byteLength > MAX_POLL_BYTES
     )
       return fail('Room poll storage is full', 409);
-    return { state: { ...snapshot, polls: next }, body };
+    return {
+      state: { ...snapshot, polls: next },
+      body,
+      ...(messages?.length ? { messages } : {}),
+    };
   };
-  if (command.action === 'poll.list') return { state: snapshot, body: view() };
   if (
     snapshot.ended &&
-    (command.action === 'poll.authorize' ||
+    (command.action === 'poll.list' ||
+      command.action === 'poll.authorize' ||
       command.action === 'poll.create' ||
       command.action === 'poll.launch' ||
       command.action === 'poll.vote')
   )
     return fail('Meeting has ended', 409);
+  if (command.action === 'poll.list') return { state: snapshot, body: view() };
   if (command.action === 'poll.authorize')
     return { state: snapshot, body: { ok: true } };
   if (command.action === 'poll.create') {
@@ -409,25 +440,55 @@ export function applyRoomPolls(
   const poll = polls.find(({ id }) => id === command.pollId);
   if (!poll || (!canManage && poll.status === 'draft'))
     return fail('Poll not found', 404);
-  const update = (next: RoomPoll) =>
-    save(polls.map((item) => (item === poll ? next : item)));
+  const update = (next: RoomPoll, messages?: MeetRealtimeServerMessage[]) =>
+    save(
+      polls.map((item) => (item === poll ? next : item)),
+      { ok: true },
+      messages
+    );
   switch (command.action) {
     case 'poll.launch':
       if (poll.status === 'active')
         return { state: snapshot, body: { ok: true } };
       return poll.status === 'draft'
-        ? update({ ...poll, status: 'active' })
+        ? update({ ...poll, status: 'active' }, [
+            { type: 'polls.changed', pollId: poll.id, status: 'active' },
+          ])
         : fail('Only drafts can be launched', 409);
     case 'poll.close':
       if (poll.status === 'closed')
         return { state: snapshot, body: { ok: true } };
       return poll.status === 'active'
-        ? update({ ...poll, status: 'closed' })
+        ? update({ ...poll, status: 'closed' }, [
+            { type: 'polls.changed', pollId: poll.id, status: 'closed' },
+          ])
         : fail('Only active polls can be closed', 409);
     case 'poll.visibility':
-      return update({ ...poll, resultsVisible: command.resultsVisible });
+      if (
+        poll.status === 'closed' ||
+        poll.resultsVisible === command.resultsVisible
+      )
+        return { state: snapshot, body: { ok: true } };
+      return update(
+        { ...poll, resultsVisible: command.resultsVisible },
+        poll.status === 'draft'
+          ? undefined
+          : [
+              {
+                type: 'polls.changed',
+                pollId: poll.id,
+                resultsVisible: command.resultsVisible,
+              },
+            ]
+      );
     case 'poll.delete':
-      return save(polls.filter((item) => item !== poll));
+      return save(
+        polls.filter((item) => item !== poll),
+        { ok: true },
+        poll.status === 'draft'
+          ? undefined
+          : [{ type: 'polls.changed', pollId: poll.id, deleted: true }]
+      );
     case 'poll.export':
       return {
         state: snapshot,
@@ -441,8 +502,14 @@ export function applyRoomPolls(
         body: { question: poll.question, results: pollResults(poll) },
       };
     case 'poll.vote': {
-      if (token.guest && (!token.guestTurnstileVerified || !token.accountId))
-        return fail('Guest verification required', 403);
+      const voteLimit = takeActorRateLimitWindow(
+        `poll-vote:${token.roomId}:${accountId}`,
+        MEET_POLL_VOTE_LIMIT,
+        MEET_POLL_VOTE_WINDOW_MS,
+        now
+      );
+      if (!voteLimit.ok)
+        return fail('Too many poll votes', 429, voteLimit.retryAfterSeconds);
       if (poll.status !== 'active') return fail('Poll is closed', 409);
       if (!responseFits(poll, command.response))
         return fail('Invalid poll response', 400);
@@ -462,9 +529,11 @@ export function applyRoomPolls(
           ...poll.responses.filter((entry) => entry.userId !== accountId),
           {
             userId: accountId,
-            displayName: poll.anonymous ? '' : (token.displayName ?? ''),
+            displayName: poll.anonymous
+              ? ''
+              : (present?.displayName ?? token.displayName ?? ''),
             response: command.response,
-            submittedAt: Date.now(),
+            submittedAt: now,
           },
         ],
       });

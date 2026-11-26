@@ -2,6 +2,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
+  guestAccess: vi.fn(),
+  guestCookie: vi.fn(),
   session: vi.fn(),
   fetch: vi.fn(),
   action: vi.fn(),
@@ -9,10 +11,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
 vi.mock('next/headers', () => ({
-  cookies: async () => ({ get: () => undefined }),
+  cookies: async () => ({ get: mocks.guestCookie }),
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
-  getMeetGuestCallAccess: vi.fn(),
+  getMeetGuestCallAccess: mocks.guestAccess,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
@@ -146,4 +148,72 @@ it('blocks cross-origin mutations and validates request bodies before dispatch',
   expect((await post(vote)).status).toBe(200);
   expect(mocks.action).toHaveBeenCalledOnce();
   expect(mocks.action.mock.calls[0]?.[1]).toEqual(vote);
+});
+
+it('allows an admitted unverified anonymous guest cookie to list and vote while rejecting guests without room access', async () => {
+  const guestId = '33333333-3333-4333-8333-333333333333';
+  mocks.access.mockRejectedValue(
+    new MeetCallAccessError(401, 'Sign in to join')
+  );
+  mocks.guestCookie.mockReturnValue({ value: 'signed-guest-cookie' });
+  mocks.guestAccess.mockResolvedValue({
+    guest: true,
+    user: { id: guestId },
+    meeting: { id, ws_id: 'workspace' },
+    isHost: false,
+    displayName: 'Guest One',
+    avatarUrl: undefined,
+    needsDisplayName: false,
+    suggestedDisplayName: 'Guest One',
+    admission: 'lobby',
+    canReadWorkspace: false,
+    workspaceSlug: null,
+  });
+  mocks.fetch.mockResolvedValue(Response.json({ canManage: false, polls: [] }));
+
+  const listed = await GET(new Request(url), params);
+  expect(listed.status).toBe(200);
+  expect(mocks.guestAccess.mock.calls[0]?.slice(0, 2)).toEqual([
+    id,
+    'signed-guest-cookie',
+  ]);
+  expect(mocks.session).toHaveBeenCalledWith(
+    expect.objectContaining({
+      guest: true,
+      guestTurnstileVerified: undefined,
+      userId: guestId,
+      meetingId: id,
+    })
+  );
+
+  const vote = {
+    action: 'vote',
+    pollId: id,
+    response: { type: 'single_choice', optionId: guestId },
+  };
+  mocks.action.mockResolvedValue({ ok: true });
+  const voted = await POST(
+    new Request(url, {
+      method: 'POST',
+      headers: { origin: 'https://meet.test' },
+      body: JSON.stringify(vote),
+    }),
+    params
+  );
+  expect(voted.status).toBe(200);
+  expect(mocks.action).toHaveBeenCalledWith(
+    expect.objectContaining({ guest: true, user: { id: guestId } }),
+    vote
+  );
+
+  mocks.guestAccess.mockResolvedValue(null);
+  const denied = await POST(
+    new Request(url, {
+      method: 'POST',
+      headers: { origin: 'https://meet.test' },
+      body: JSON.stringify(vote),
+    }),
+    params
+  );
+  expect(denied.status).toBe(401);
 });

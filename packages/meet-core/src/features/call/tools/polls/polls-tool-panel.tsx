@@ -19,8 +19,15 @@ import { PollCard } from './poll-card';
 import { PollComposer } from './poll-composer';
 
 export function PollsToolPanel() {
-  const { meetingId, accountId, enabled, close } = useMeetTool();
-  const query = useCallPolls(meetingId, accountId, enabled, true);
+  const { meetingId, accountId, requiresAccount, enabled, close } =
+    useMeetTool();
+  const query = useCallPolls(
+    meetingId,
+    accountId,
+    enabled,
+    true,
+    requiresAccount
+  );
   const t = useTranslations('meet.call.polls');
   const locale = useLocale() === 'vi' ? 'vi' : 'en';
   const queryClient = useQueryClient();

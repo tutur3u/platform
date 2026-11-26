@@ -1,14 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { meetRealtimeTokenPayloadSchema } from './primitives';
-import { createMeetRoomSnapshot } from './room';
+import { createMeetRoomSnapshot, createMeetRoomSocketDelivery } from './room';
 import {
   applyRoomPolls,
   exportPollCsv,
   exportPollJson,
+  MEET_POLL_VOTE_LIMIT,
+  MEET_POLL_VOTE_WINDOW_MS,
   pollDefinitionSchema,
   projectPollsForUser,
   type RoomPoll,
 } from './room-polls';
+import { recordRemovedGuest } from './room-removed-guests';
+import type { RoomServiceState } from './room-service';
 
 const poll = {
   id: 'poll',
@@ -217,27 +221,309 @@ describe('anonymous guest poll voting', () => {
       expect.objectContaining({ userId: guestId }),
     ]);
   });
-  it('requires a verified session and counts one response across devices', () => {
+  it('lets a host-admitted unverified guest vote once across devices while still requiring a bound guest identity', () => {
+    const vote = {
+      action: 'poll.vote',
+      pollId: poll.id,
+      response: { type: 'single_choice', optionId: poll.options[0]!.id },
+    } as const;
+    const unverifiedGuest = {
+      ...token,
+      guestTurnstileVerified: undefined,
+      roomId: 'room-unverified',
+    };
+    const first = applyRoomPolls(
+      {
+        ...snapshot,
+        presence: {
+          [guestId]: {
+            ...snapshot.presence[guestId]!,
+            displayName: 'Renamed Guest',
+          },
+        },
+      },
+      { ...unverifiedGuest, displayName: 'Old Guest Name' },
+      vote,
+      10_000
+    );
+    expect(first.status).toBeUndefined();
+    expect(first.state.polls?.[0]?.responses).toMatchObject([
+      {
+        userId: guestId,
+        displayName: 'Renamed Guest',
+        response: { optionId: poll.options[0]!.id },
+      },
+    ]);
+    const second = applyRoomPolls(
+      first.state,
+      { ...unverifiedGuest, userId: '44444444-4444-4444-8444-444444444444' },
+      {
+        ...vote,
+        response: { ...vote.response, optionId: poll.options[1]!.id },
+      },
+      10_100
+    );
+    expect(second.status).toBeUndefined();
+    expect(second.state.polls?.[0]?.responses).toMatchObject([
+      { userId: guestId, response: { optionId: poll.options[1]!.id } },
+    ]);
+    expect(
+      applyRoomPolls(
+        snapshot,
+        { ...unverifiedGuest, accountId: undefined },
+        { action: 'poll.list' },
+        10_200
+      )
+    ).toMatchObject({ status: 403 });
+    expect(
+      applyRoomPolls(
+        snapshot,
+        { ...unverifiedGuest, accountId: undefined },
+        vote,
+        10_200
+      )
+    ).toMatchObject({ status: 403 });
+  });
+
+  it('rejects disconnected, unadmitted, waiting, removed, and ended-room guests from listing or voting', () => {
+    const outsiderId = '88888888-8888-4888-8888-888888888888';
+    const outsider = {
+      ...token,
+      guestTurnstileVerified: undefined,
+      userId: outsiderId,
+      accountId: outsiderId,
+      roomId: 'room-outsider',
+    };
+    const waitingRoom = {
+      ...snapshot,
+      waiting: {
+        [outsiderId]: {
+          guest: true as const,
+          unverified: true as const,
+          accountId: outsiderId,
+          displayName: 'Waiting Guest',
+          requestedAt: '2026-11-19T00:00:00.000Z',
+          userId: outsiderId,
+        },
+      },
+    };
     const vote = {
       action: 'poll.vote',
       pollId: poll.id,
       response: { type: 'single_choice', optionId: poll.options[0]!.id },
     } as const;
     expect(
+      applyRoomPolls(waitingRoom, outsider, { action: 'poll.list' }, 10_000)
+    ).toMatchObject({ status: 403 });
+    expect(applyRoomPolls(waitingRoom, outsider, vote, 10_000)).toMatchObject({
+      status: 403,
+    });
+
+    // Disconnected guest still in `approved` must not list or vote.
+    const disconnectedApproved = { ...snapshot, presence: {} };
+    expect(
       applyRoomPolls(
-        snapshot,
-        { ...token, guestTurnstileVerified: undefined },
-        vote
+        disconnectedApproved,
+        token,
+        { action: 'poll.list' },
+        10_000
       )
     ).toMatchObject({ status: 403 });
-    const first = applyRoomPolls(snapshot, token, vote);
-    const second = applyRoomPolls(
-      first.state,
-      { ...token, userId: '44444444-4444-4444-8444-444444444444' },
-      { ...vote, response: { ...vote.response, optionId: poll.options[1]!.id } }
-    );
-    expect(second.state.polls?.[0]?.responses).toMatchObject([
-      { userId: guestId, response: { optionId: poll.options[1]!.id } },
+    expect(
+      applyRoomPolls(disconnectedApproved, token, vote, 10_000)
+    ).toMatchObject({ status: 403 });
+
+    // Ended room refuses poll.list for both guests (403) and managers (409).
+    const ended = { ...snapshot, ended: true };
+    expect(
+      applyRoomPolls(ended, token, { action: 'poll.list' }, 10_000)
+    ).toMatchObject({ status: 403 });
+    const host = meetRealtimeTokenPayloadSchema.parse({
+      ...token,
+      guest: undefined,
+      guestTurnstileVerified: undefined,
+      admission: 'open',
+      role: 'host',
+      userId: '11111111-1111-4111-8111-111111111111',
+      accountId: '11111111-1111-4111-8111-111111111111',
+    });
+    expect(
+      applyRoomPolls(ended, host, { action: 'poll.list' }, 10_000)
+    ).toMatchObject({ status: 409 });
+
+    const removed = {
+      ...snapshot,
+      ...recordRemovedGuest(snapshot, guestId, 10_000, true),
+    };
+    expect(
+      applyRoomPolls(removed, token, { action: 'poll.list' }, 10_500)
+    ).toMatchObject({ status: 403 });
+    expect(applyRoomPolls(removed, token, vote, 10_500)).toMatchObject({
+      status: 403,
+    });
+  });
+
+  it('rate-limits repeated guest poll votes per actor with Retry-After and recovers after the window', () => {
+    const rateGuest = {
+      ...token,
+      guestTurnstileVerified: undefined,
+      roomId: 'room-rate-limit',
+    };
+    let state: RoomServiceState = snapshot;
+    const baseTime = 1_000_000;
+    for (let index = 0; index < MEET_POLL_VOTE_LIMIT; index++) {
+      const result = applyRoomPolls(
+        state,
+        rateGuest,
+        {
+          action: 'poll.vote',
+          pollId: poll.id,
+          response: {
+            type: 'single_choice',
+            optionId: poll.options[index % 2]!.id,
+          },
+        },
+        baseTime + index * 10
+      );
+      expect(result.status).toBeUndefined();
+      state = result.state;
+    }
+    expect(
+      applyRoomPolls(
+        state,
+        rateGuest,
+        {
+          action: 'poll.vote',
+          pollId: poll.id,
+          response: { type: 'single_choice', optionId: poll.options[0]!.id },
+        },
+        baseTime + 500
+      )
+    ).toMatchObject({
+      status: 429,
+      retryAfterSeconds: 60,
+      body: { error: 'Too many poll votes', retryAfterSeconds: 60 },
+    });
+    expect(
+      applyRoomPolls(
+        state,
+        rateGuest,
+        {
+          action: 'poll.vote',
+          pollId: poll.id,
+          response: { type: 'single_choice', optionId: poll.options[0]!.id },
+        },
+        baseTime + MEET_POLL_VOTE_WINDOW_MS + 1
+      ).status
+    ).toBeUndefined();
+  });
+
+  it('broadcasts polls.changed on lifecycle transitions to admitted guests only and short-circuits idempotent or closed visibility writes', () => {
+    const hostId = '11111111-1111-4111-8111-111111111111';
+    const host = meetRealtimeTokenPayloadSchema.parse({
+      ...token,
+      guest: undefined,
+      guestTurnstileVerified: undefined,
+      admission: 'open',
+      role: 'host',
+      userId: hostId,
+      accountId: hostId,
+    });
+    const created = applyRoomPolls(snapshot, host, {
+      action: 'poll.create',
+      definition: {
+        type: 'single_choice',
+        question: 'Draft?',
+        options: ['Yes', 'No'],
+      },
+      anonymous: true,
+    });
+    expect(created.messages).toBeUndefined();
+    const draftId = (created.body as { pollId: string }).pollId;
+    const launched = applyRoomPolls(created.state, host, {
+      action: 'poll.launch',
+      pollId: draftId,
+    });
+    expect(launched.messages).toEqual([
+      { type: 'polls.changed', pollId: draftId, status: 'active' },
     ]);
+    const revealed = applyRoomPolls(launched.state, host, {
+      action: 'poll.visibility',
+      pollId: draftId,
+      resultsVisible: true,
+    });
+    expect(revealed.messages).toEqual([
+      { type: 'polls.changed', pollId: draftId, resultsVisible: true },
+    ]);
+    // Idempotent visibility write is a no-op with no broadcast.
+    const sameVisibility = applyRoomPolls(revealed.state, host, {
+      action: 'poll.visibility',
+      pollId: draftId,
+      resultsVisible: true,
+    });
+    expect(sameVisibility.state).toBe(revealed.state);
+    expect(sameVisibility.messages).toBeUndefined();
+    const voted = applyRoomPolls(
+      revealed.state,
+      { ...token, guestTurnstileVerified: undefined, roomId: 'room-lifecycle' },
+      {
+        action: 'poll.vote',
+        pollId: poll.id,
+        response: { type: 'single_choice', optionId: poll.options[0]!.id },
+      }
+    );
+    expect(voted.messages).toBeUndefined();
+    const closed = applyRoomPolls(voted.state, host, {
+      action: 'poll.close',
+      pollId: draftId,
+    });
+    expect(closed.messages).toEqual([
+      { type: 'polls.changed', pollId: draftId, status: 'closed' },
+    ]);
+    // Visibility toggle on a closed poll is a no-op with no broadcast.
+    const closedVisibility = applyRoomPolls(closed.state, host, {
+      action: 'poll.visibility',
+      pollId: draftId,
+      resultsVisible: false,
+    });
+    expect(closedVisibility.state).toBe(closed.state);
+    expect(closedVisibility.messages).toBeUndefined();
+    const deleted = applyRoomPolls(closed.state, host, {
+      action: 'poll.delete',
+      pollId: draftId,
+    });
+    expect(deleted.messages).toEqual([
+      { type: 'polls.changed', pollId: draftId, deleted: true },
+    ]);
+
+    const waitingId = '99999999-9999-4999-8999-999999999999';
+    const waitingToken = { ...token, userId: waitingId, accountId: waitingId };
+    const sent = new Map<string, string[]>();
+    const makeSocket = (sockToken: typeof token) => {
+      const frames: string[] = [];
+      sent.set(sockToken.userId, frames);
+      return {
+        readyState: 1,
+        send: (data: string) => frames.push(data),
+        close: vi.fn(),
+        deserializeAttachment: () => ({ token: sockToken }),
+        serializeAttachment: vi.fn(),
+      };
+    };
+    const delivery = createMeetRoomSocketDelivery({
+      sockets: () => [makeSocket(token), makeSocket(waitingToken)],
+      read: () => closed.state,
+      fullPresence: (roomId) => ({ type: 'presence', roomId, presence: [] }),
+      announcements: () => [],
+    });
+    delivery.broadcast(closed.messages ?? []);
+    expect(sent.get(guestId)).toEqual([
+      JSON.stringify({
+        type: 'polls.changed',
+        pollId: draftId,
+        status: 'closed',
+      }),
+    ]);
+    expect(sent.get(waitingId)).toEqual([]);
   });
 });

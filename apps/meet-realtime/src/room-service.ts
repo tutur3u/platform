@@ -77,6 +77,18 @@ export function roomService(
   );
 }
 
+export function roomServiceResponse(result: RoomServiceResult) {
+  return Response.json(result.body, {
+    status: result.status ?? 200,
+    headers: {
+      'Cache-Control': 'private, no-store',
+      ...(result.retryAfterSeconds === undefined
+        ? {}
+        : { 'Retry-After': String(result.retryAfterSeconds) }),
+    },
+  });
+}
+
 function roomCommands(
   state: RoomServiceState,
   token: MeetRealtimeTokenPayload,

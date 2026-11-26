@@ -367,6 +367,13 @@ export type MeetRealtimeServerMessage =
     }
   | { type: 'room.title.changed'; title: string; requestId?: string }
   | { type: 'room.ended'; by?: string; requestId?: string }
+  | {
+      type: 'polls.changed';
+      pollId: string;
+      status?: 'active' | 'closed';
+      resultsVisible?: boolean;
+      deleted?: true;
+    }
   | { type: 'admission.approved'; participants: MeetApprovedParticipant[] }
   | {
       admission: 'admitted' | 'waiting';

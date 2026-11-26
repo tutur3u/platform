@@ -52,7 +52,11 @@ import { handleMeetRoomDevice } from './room-device-request';
 import { MiraShareStorage } from './mira-share-storage';
 import { privateRoomStorage } from './private-room-storage';
 import { restoreRoomSnapshot } from './restore-room-snapshot';
-import { type RoomServiceState, roomService } from './room-service';
+import {
+  type RoomServiceState,
+  roomService,
+  roomServiceResponse,
+} from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { MeetRoomEnv } from './room-env';
 import { selfOutbox } from './room-self-outbox';
@@ -281,10 +285,7 @@ export class MeetRoomDurableObject implements DurableObject {
             expiryDeadline(this.snapshot.liveAssistant.expiresAt, Date.now())
           );
       }
-      return Response.json(result.body, {
-        status: result.status ?? 200,
-        headers: { 'Cache-Control': 'private, no-store' },
-      });
+      return roomServiceResponse(result);
     }
     if (url.pathname === '/room-device') {
       const body = (await request.json().catch(() => null)) as {

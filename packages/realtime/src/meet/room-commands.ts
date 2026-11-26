@@ -412,23 +412,69 @@ function dispatchMeetRoomCommand(
       if (accountId) delete approved[accountId];
       const removedPerson =
         state.presence[message.userId] ?? state.waiting[message.userId];
-      const released = releaseParticipant(
-        blockAutoAdmission({ ...state, approved }, accountId ?? message.userId),
+      const targetAccountId = accountId ?? message.userId;
+      const removedIds = [
         message.userId,
+        ...(removedPerson?.guest
+          ? [
+              ...Object.values(state.presence)
+                .filter(
+                  (person) =>
+                    person.userId !== message.userId &&
+                    person.userId !== userId &&
+                    (person.accountId ?? person.userId) === targetAccountId
+                )
+                .map((person) => person.userId),
+              ...Object.values(state.waiting)
+                .filter(
+                  (person) =>
+                    person.userId !== message.userId &&
+                    person.userId !== userId &&
+                    (person.accountId ?? person.userId) === targetAccountId
+                )
+                .map((person) => person.userId),
+            ]
+          : []),
+      ];
+      const uniqueRemovedIds = [...new Set(removedIds)];
+      let current = blockAutoAdmission({ ...state, approved }, targetAccountId);
+      let released = releaseParticipant(
+        current,
+        uniqueRemovedIds[0]!,
         roomId,
         now,
         classFeatures
+      );
+      const closedTracks = released.broadcast.filter(
+        (frame) => frame.type === 'track.closed'
+      );
+      current = released.state;
+      for (const extraId of uniqueRemovedIds.slice(1)) {
+        released = releaseParticipant(
+          current,
+          extraId,
+          roomId,
+          now,
+          classFeatures
+        );
+        closedTracks.push(
+          ...released.broadcast.filter((frame) => frame.type === 'track.closed')
+        );
+        current = released.state;
+      }
+      const trailingBroadcast = released.broadcast.filter(
+        (frame) => frame.type !== 'track.closed'
       );
       const removedAt = Date.parse(now);
       // Removal revokes the account's per-speaker upload grant.
       const nextState = revokeSelfCapture(
         recordRemovedGuest(
           released.state,
-          accountId ?? message.userId,
+          targetAccountId,
           removedAt,
           !!removedPerson?.guest
         ),
-        accountId ?? message.userId,
+        targetAccountId,
         removedAt
       );
       return {
@@ -439,15 +485,18 @@ function dispatchMeetRoomCommand(
           approvedParticipantsMessage(nextState),
         ],
         broadcast: [
-          ...released.broadcast,
-          {
+          ...closedTracks,
+          ...trailingBroadcast,
+          ...uniqueRemovedIds.map((removedId) => ({
             by: userId,
-            requestId: message.requestId,
-            type: 'participant.removed',
-            userId: message.userId,
-          },
+            ...(removedId === message.userId
+              ? { requestId: message.requestId }
+              : {}),
+            type: 'participant.removed' as const,
+            userId: removedId,
+          })),
         ],
-        disconnect: [message.userId],
+        disconnect: uniqueRemovedIds,
       };
     }
 

@@ -1260,10 +1260,19 @@ next token.
   verified, so the guest always waits in the lobby, and hosts see an
   **Unverified** badge next to **Guest** before deciding. A meeting with no host
   present keeps the guest waiting; there is no automatic admission.
-- Guests can vote in live polls while they are admitted to the call. The server
-  binds one response per poll to the verified guest session across devices;
-  unverified guests cannot vote.
-  Guests cannot create or manage polls.
+- Guests can vote in live polls while they are live (`present`) in the call
+  (whether verified by Turnstile/puzzle or manually admitted by a host from the
+  lobby). The server binds one response per poll to the server-signed guest
+  session across devices and enforces an in-memory per-actor DO vote rate limit
+  (returning `429` with `Retry-After`), backed by the proxy guest mutate budget
+  across isolates and restarts. Waiting-room guests, disconnected guests,
+  removed guests (across all devices for that guest session), and callers not
+  admitted to the room cannot list or vote in polls; guests cannot create or
+  manage polls. Host poll lifecycle changes (`launch`, `visibility`, `close`,
+  `delete`) broadcast `polls.changed` to admitted participants so guest and
+  participant UIs reflect poll closure immediately and refetch with 0–750 ms
+  jitter; guests keep a 15-second fallback poll interval rather than 3-second
+  polling.
 - Admitted guests can play Quiz Arena, including boards imported from Teach.
   Their signed guest session identifies them across devices. Their first answer
   per question counts toward the leaderboard under their room display name.
@@ -1289,7 +1298,7 @@ Regression coverage: `guest-session.test.ts`, `guest-access.test.ts`,
 `guest-lobby-upgrade.test.tsx`, the verified-guest admission case in
 `attendance-ledger.test.ts`, the token route `route.test.ts`,
 `guest-join.test.tsx`, the unverified lobby flag in `attendance-ledger.test.ts`, `guest-admission.ts`, the guest `route.test.ts`,
-`room-guest.test.ts`, `room-removed-guests.test.ts`, `room-polls` guest voting,
+`room-guest.test.ts`, `room-removed-guests.test.ts`, `room-polls.test.ts`, `polls-client.test.tsx`,
 the guest cases in the Meet `page-model.server.test.ts` and room `page.test.ts`.
 
 ### Event-room admission

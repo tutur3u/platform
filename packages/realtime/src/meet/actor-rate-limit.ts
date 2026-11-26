@@ -4,21 +4,35 @@ export const MEET_ACTOR_LIMIT_WINDOW_MS = 60_000;
 export const MEET_ATTENDANCE_READ_LIMIT = 30;
 export const MEET_TIMER_COMMAND_LIMIT = 20;
 
+export function takeActorRateLimitWindow(
+  key: string,
+  limit: number,
+  windowMs: number,
+  now = Date.now()
+): { ok: true } | { ok: false; retryAfterSeconds: number } {
+  const current = buckets.get(key);
+  if (!current || now >= current.resetAt) {
+    buckets.set(key, { resetAt: now + windowMs, count: 1 });
+    pruneActorRateLimits(now);
+    return { ok: true };
+  }
+  if (current.count >= limit) {
+    return {
+      ok: false,
+      retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+    };
+  }
+  current.count += 1;
+  return { ok: true };
+}
+
 export function takeActorRateLimit(
   key: string,
   limit: number,
   windowMs: number,
   now = Date.now()
 ) {
-  const current = buckets.get(key);
-  if (!current || now >= current.resetAt) {
-    buckets.set(key, { resetAt: now + windowMs, count: 1 });
-    pruneActorRateLimits(now);
-    return true;
-  }
-  if (current.count >= limit) return false;
-  current.count += 1;
-  return true;
+  return takeActorRateLimitWindow(key, limit, windowMs, now).ok;
 }
 
 function pruneActorRateLimits(now: number) {

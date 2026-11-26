@@ -1,8 +1,9 @@
 import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import type { MeetRealtimeServerMessage } from '@tuturuuu/realtime/meet';
+import { handleRoomPollsMessage } from '../lib/polls-client';
 import {
-  setArenaAnnouncement,
   clearArenaAnnouncement,
+  setArenaAnnouncement,
 } from '../lib/quiz-arena-announcement';
 import type { createRoomActions } from '../lib/room-actions';
 import type { MeetSignaling, MeetSignalingStatus } from '../lib/signaling';
@@ -32,6 +33,7 @@ function handleMeetToolMessage(
   )
     clearArenaAnnouncement(meetingId);
   deliverRoomAssistantAudio(meetingId, message);
+  handleRoomPollsMessage(meetingId, message);
   handleLiveQaMessage(meetingId, message, actions.sendLiveQa);
   handleLiveActivitiesMessage(meetingId, message, actions.sendSharedTool);
   handlePenboardMessage(meetingId, message, actions.sendSharedTool);

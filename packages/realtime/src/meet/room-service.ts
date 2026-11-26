@@ -163,6 +163,7 @@ export type RoomServiceResult = {
   state: RoomServiceState;
   body: unknown;
   status?: number;
+  retryAfterSeconds?: number;
   messages?: MeetRealtimeServerMessage[];
 };
 
