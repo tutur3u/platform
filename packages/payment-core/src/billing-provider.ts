@@ -1,4 +1,4 @@
-export type BillingProviderId = 'polar' | 'apple' | 'google';
+export type BillingProviderId = 'polar' | 'apple' | 'play';
 
 export interface BillingProviderScope<P extends BillingProviderId> {
   provider: P;

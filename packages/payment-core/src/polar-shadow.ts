@@ -36,25 +36,22 @@ type PolarShadowResult =
         | 'invalid_scope'
         | 'missing_workspace'
         | 'unknown_workspace_product'
-        | 'invalid_seats';
+        | 'invalid_seats'
+        | 'invalid_timestamp'
+        | 'unsupported_price';
     }
   | { kind: 'observed'; observation: PolarShadowObservation };
 
 type PolarShadowSubscription = Pick<
   Subscription,
-  | 'id'
-  | 'prices'
-  | 'metadata'
-  | 'status'
-  | 'modifiedAt'
-  | 'createdAt'
-  | 'currentPeriodStart'
-  | 'currentPeriodEnd'
-  | 'cancelAtPeriodEnd'
-  | 'canceledAt'
-  | 'seats'
+  'id' | 'prices' | 'metadata' | 'status' | 'cancelAtPeriodEnd' | 'seats'
 > & {
   product: Pick<Subscription['product'], 'id' | 'metadata' | 'organizationId'>;
+  modifiedAt?: Date | string | null;
+  createdAt: Date | string;
+  currentPeriodStart: Date | string;
+  currentPeriodEnd?: Date | string | null;
+  canceledAt?: Date | string | null;
 };
 
 export function observePolarSubscription({
@@ -68,11 +65,6 @@ export function observePolarSubscription({
   observedAt: string;
   eventId?: string | null;
 }): PolarShadowResult {
-  const { metadata } = subscription.product;
-  if (isAiCreditPackProduct(metadata) || isCustomDomainAddonProduct(metadata)) {
-    return { kind: 'excluded' };
-  }
-
   if (
     scope.provider !== 'polar' ||
     (scope.environment !== 'sandbox' && scope.environment !== 'production') ||
@@ -82,6 +74,10 @@ export function observePolarSubscription({
     !subscription.product.id.trim()
   ) {
     return { kind: 'exception', reason: 'invalid_scope' };
+  }
+  const { metadata } = subscription.product;
+  if (isAiCreditPackProduct(metadata) || isCustomDomainAddonProduct(metadata)) {
+    return { kind: 'excluded' };
   }
   const workspaceId = subscription.metadata?.wsId;
   if (typeof workspaceId !== 'string' || !workspaceId.trim()) {
@@ -100,11 +96,31 @@ export function observePolarSubscription({
   }
 
   const price = subscription.prices[0];
+  if (price && !['seat_based', 'fixed', 'free'].includes(price.amountType)) {
+    return { kind: 'exception', reason: 'unsupported_price' };
+  }
+  const seats = subscription.seats ?? null;
   if (
-    price?.amountType === 'seat_based' &&
-    !isValidSeatCount(subscription.seats)
+    (seats !== null || price?.amountType === 'seat_based') &&
+    !isValidSeatCount(seats)
   ) {
     return { kind: 'exception', reason: 'invalid_seats' };
+  }
+  const providerUpdatedAt = toIsoTimestamp(
+    subscription.modifiedAt ?? subscription.createdAt
+  );
+  const observed = toIsoTimestamp(observedAt);
+  const periodStart = toIsoTimestamp(subscription.currentPeriodStart);
+  const periodEnd = toIsoTimestamp(subscription.currentPeriodEnd);
+  const canceledAt = toIsoTimestamp(subscription.canceledAt);
+  if (
+    !providerUpdatedAt ||
+    !observed ||
+    !periodStart ||
+    (subscription.currentPeriodEnd != null && !periodEnd) ||
+    (subscription.canceledAt != null && !canceledAt)
+  ) {
+    return { kind: 'exception', reason: 'invalid_timestamp' };
   }
 
   return {
@@ -120,27 +136,31 @@ export function observePolarSubscription({
       status,
       nativeStatus: subscription.status,
       ordering: {
-        providerUpdatedAt: (
-          subscription.modifiedAt ?? subscription.createdAt
-        ).toISOString(),
-        observedAt,
+        providerUpdatedAt,
+        observedAt: observed,
         eventId,
         transactionId: null,
       },
-      periodStart: subscription.currentPeriodStart.toISOString(),
-      periodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
+      periodStart,
+      periodEnd,
       accessUntil: null,
       graceUntil: null,
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-      canceledAt: subscription.canceledAt?.toISOString() ?? null,
+      canceledAt,
       revokedAt: null,
       autoRenews: subscription.cancelAtPeriodEnd ? false : null,
       pendingReplacement: null,
-      quantity: subscription.seats ?? null,
+      quantity: price && price.amountType !== 'seat_based' ? null : seats,
       bindingKey: workspaceId,
       pricingModel: price?.amountType ?? null,
     },
   };
+}
+
+function toIsoTimestamp(value: Date | string | null | undefined) {
+  if (value == null) return null;
+  const timestamp = value instanceof Date ? value : new Date(value);
+  return Number.isFinite(timestamp.getTime()) ? timestamp.toISOString() : null;
 }
 
 function isValidSeatCount(value: number | null | undefined): value is number {
@@ -151,12 +171,12 @@ interface PolarLegacySnapshot {
   ws_id: string;
   updated_at: string | null;
   polar_subscription_id: string | null;
-  product_id: string;
-  status: string;
+  product_id: string | null;
+  status: string | null;
   current_period_start: string | null;
   current_period_end: string | null;
   seat_count: number | null;
-  cancel_at_period_end: boolean;
+  cancel_at_period_end: boolean | null;
 }
 
 export function comparePolarLegacySnapshot({

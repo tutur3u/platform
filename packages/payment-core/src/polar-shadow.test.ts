@@ -4,32 +4,32 @@ import {
   observePolarSubscription,
 } from './polar-shadow';
 
+const periodStart = new Date('2026-11-01T00:00:00Z');
+const periodEnd = new Date('2026-12-01T00:00:00Z');
+const polar = {
+  id: 'subscription',
+  metadata: { wsId: 'workspace' },
+  product: {
+    id: 'product',
+    metadata: { product_tier: 'PLUS' },
+    organizationId: 'test',
+  },
+  prices: [],
+  status: 'active',
+  modifiedAt: null,
+  createdAt: periodStart,
+  currentPeriodStart: periodStart,
+  currentPeriodEnd: periodEnd,
+  cancelAtPeriodEnd: true,
+  canceledAt: null,
+  seats: 1,
+} satisfies Parameters<typeof observePolarSubscription>[0]['subscription'];
+const scope = {
+  provider: 'polar',
+  environment: 'sandbox',
+  application: 'test',
+} as const;
 it('reports a period-end cancellation mismatch even while Polar is active', () => {
-  const periodStart = new Date('2026-11-01T00:00:00Z');
-  const periodEnd = new Date('2026-12-01T00:00:00Z');
-  const polar = {
-    id: 'subscription',
-    metadata: { wsId: 'workspace' },
-    product: {
-      id: 'product',
-      metadata: { product_tier: 'PLUS' },
-      organizationId: 'test',
-    },
-    prices: [],
-    status: 'active',
-    modifiedAt: null,
-    createdAt: periodStart,
-    currentPeriodStart: periodStart,
-    currentPeriodEnd: periodEnd,
-    cancelAtPeriodEnd: true,
-    canceledAt: null,
-    seats: 1,
-  } satisfies Parameters<typeof observePolarSubscription>[0]['subscription'];
-  const scope = {
-    provider: 'polar',
-    environment: 'sandbox',
-    application: 'test',
-  } as const;
   const result = observePolarSubscription({
     subscription: polar,
     scope,
@@ -77,4 +77,46 @@ it('reports a period-end cancellation mismatch even while Polar is active', () =
       seatBased: true,
     })
   ).toEqual(['environment', 'ws_id', 'updated_at', 'seat_count']);
+});
+
+it('does not exclude products before validating provider scope', () => {
+  expect(
+    observePolarSubscription({
+      subscription: {
+        ...polar,
+        product: {
+          ...polar.product,
+          organizationId: 'wrong-org',
+          metadata: { product_type: 'ai_credit_pack' },
+        },
+      },
+      scope,
+      observedAt: periodStart.toISOString(),
+    })
+  ).toEqual({ kind: 'exception', reason: 'invalid_scope' });
+});
+
+it('rejects invalid seats and malformed timestamps without throwing', () => {
+  const observedAt = periodStart.toISOString();
+  expect(
+    observePolarSubscription({
+      subscription: { ...polar, seats: 0 },
+      scope,
+      observedAt,
+    })
+  ).toEqual({ kind: 'exception', reason: 'invalid_seats' });
+  expect(
+    observePolarSubscription({
+      subscription: { ...polar, currentPeriodEnd: new Date('invalid') },
+      scope,
+      observedAt,
+    })
+  ).toEqual({ kind: 'exception', reason: 'invalid_timestamp' });
+  expect(
+    observePolarSubscription({
+      subscription: { ...polar, currentPeriodStart: observedAt },
+      scope,
+      observedAt,
+    }).kind
+  ).toBe('observed');
 });
