@@ -73,7 +73,11 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   hint, or with an existing session (the landing after the provider round
   trip, which carries no hint), shows one card with one decision per step
   and no other providers or email form:
-  - a session: `Continue as <name>`, or a "Use another account" link, which
+  - a session: `Continue as <name>`, where `<name>` is the profile name, else
+    the auth metadata name, else `@handle`, else a masked email such as
+    `p•••@example.com` (the login view never carries the full email), and
+    "unknown account" only when none exist (`account-name.test.ts`). Or a
+    "Use another account" link, which
     signs out locally and starts the hinted provider (without a hint it
     opens the full sign-in form instead, so a failed sign-in never loops
     through the provider).

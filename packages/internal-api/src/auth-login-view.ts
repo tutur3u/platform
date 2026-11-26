@@ -1,7 +1,10 @@
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
 import type { WebAccountSummary } from './auth';
 
-/** Server-resolved login view; carries no email or token of the session. */
+/**
+ * Server-resolved login view; carries no full email or token of the session.
+ * A nameless account's label may be its handle or a masked email.
+ */
 export interface LoginViewResponse {
   hasSession: boolean;
   /**

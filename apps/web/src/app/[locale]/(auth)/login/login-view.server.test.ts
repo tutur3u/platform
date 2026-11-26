@@ -145,6 +145,32 @@ describe('resolveLoginView', () => {
     expect(JSON.stringify(view)).not.toContain('active@example.com');
   });
 
+  it.each([
+    [{ handle: 'nameless' }, '@nameless'],
+    [{ handle: null }, 'a•••@example.com'],
+  ])(
+    'labels an account without a profile name (%o)',
+    async (profile, expected) => {
+      mocks.getUser.mockResolvedValue({
+        data: {
+          user: {
+            email: 'active@example.com',
+            id: 'user-1',
+            user_metadata: {},
+          },
+        },
+      });
+      mocks.profile.mockResolvedValue({
+        data: { avatar_url: null, display_name: null, ...profile },
+      });
+
+      const view = await resolveLoginView(request({}));
+
+      expect(view.session?.name).toBe(expected);
+      expect(JSON.stringify(view)).not.toContain('active@example.com');
+    }
+  );
+
   describe('auto-continue gate', () => {
     const CHALLENGE = 'E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM';
     const strictApp = {

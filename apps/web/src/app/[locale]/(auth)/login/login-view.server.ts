@@ -9,6 +9,7 @@ import {
   parseCrossAppPkceChallenge,
 } from '@/lib/auth/cross-app-pkce';
 import { peekWebAccounts } from '@/lib/auth/multi-account/vault';
+import { resolveSessionAccountName } from './account-name';
 import { readProviderHint } from './login-view';
 
 type RequestLike = Pick<Request, 'headers' | 'url'>;
@@ -42,7 +43,7 @@ async function readSession(): Promise<SessionRead> {
 
     const { data: profile } = await supabase
       .from('users')
-      .select('display_name, avatar_url')
+      .select('display_name, avatar_url, handle')
       .eq('id', user.id)
       .maybeSingle();
     const metadata = user.user_metadata ?? {};
@@ -55,10 +56,12 @@ async function readSession(): Promise<SessionRead> {
           readString(profile?.avatar_url) ??
           readString(metadata.avatar_url) ??
           readString(metadata.picture),
-        name:
-          readString(profile?.display_name) ??
-          readString(metadata.full_name) ??
-          readString(metadata.name),
+        name: resolveSessionAccountName({
+          displayName: profile?.display_name,
+          email: user.email,
+          handle: profile?.handle,
+          metadata,
+        }),
       },
     };
   } catch (error) {
