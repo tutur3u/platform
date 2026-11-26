@@ -21271,4 +21271,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String inventoryFilterShowingFrom(Object count) {
     return 'Đang hiện kết quả trong $count sản phẩm đầu tiên';
   }
+
+  @override
+  String get inventoryProductWholeNumber => 'Nhập số nguyên';
 }

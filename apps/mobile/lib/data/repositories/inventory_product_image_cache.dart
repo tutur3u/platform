@@ -89,6 +89,8 @@ class InventoryProductImageCache {
                 fetchInventoryProductImage(
                   product.avatarUrl!,
                   workspaceId: product.wsId,
+                  productId: product.id,
+                  userId: user,
                 ),
           );
           checkScope();

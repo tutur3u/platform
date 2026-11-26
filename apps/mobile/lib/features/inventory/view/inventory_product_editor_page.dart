@@ -118,6 +118,7 @@ class _InventoryProductEditorPageState
   /// Stored stock rows read fresh for Adjust stock, compared with the
   /// server before writing; null until they load.
   List<InventoryStockRow>? _baseline;
+  bool _baselineLoading = false;
 
   String? _formError;
   bool _hasUnavailableOptions = false;

@@ -39276,6 +39276,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Showing matches from the first {count} products'**
   String inventoryFilterShowingFrom(Object count);
+
+  /// No description provided for @inventoryProductWholeNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number'**
+  String get inventoryProductWholeNumber;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

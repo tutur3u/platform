@@ -234,12 +234,12 @@ abstract final class InventoryEndpoints {
       '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}/inventory';
   static String productStockHistory(String wsId, String productId) =>
       '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}/inventory/history';
-
+  static String productImage(String wsId, String productId) =>
+      '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}/image';
   static String mediaUploadUrl(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/media/upload-url';
   static String mediaReadUrl(String wsId) =>
       '/api/v1/workspaces/$wsId/inventory/media/read-url';
-
   static String product(String wsId, String productId) =>
       '/api/v1/workspaces/$wsId/products/${Uri.encodeComponent(productId)}';
 

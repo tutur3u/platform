@@ -124,6 +124,39 @@ void main() {
     expect(find.text('No products match these filters'), findsNothing);
   });
 
+  testWidgets('a failed reload during a fill keeps its retry state', (
+    tester,
+  ) async {
+    final (:inventory, shell: _) = await pumpItemsPage(
+      tester,
+      catalog: _catalog(100, 80),
+      configure: (repo) => repo
+        ..holdWhen = ((call) => call.status == 'active' && call.page == 2)
+        ..failWhen = ((call) => call.status == 'all'),
+    );
+    await tester.ensureVisible(find.text('Stock'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Stock'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Out of stock').last);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.text('All').first);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    inventory.release();
+    await tester.pumpAndSettle();
+    // The unwinding fill does not start pages for the failed request.
+    expect(
+      [
+        for (final call in inventory.calls)
+          if (call.status == 'all') call.page,
+      ],
+      [1],
+    );
+    expect(find.text("Couldn't load products"), findsOneWidget);
+  });
+
   testWidgets('a spent budget with matches says where they come from', (
     tester,
   ) async {

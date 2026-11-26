@@ -18,8 +18,12 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
               row: _rows[index],
               units: _units,
               warehouses: _warehouses,
-              onPickUnit: () => _pickRowUnit(_rows[index]),
-              onPickWarehouse: () => _pickRowWarehouse(_rows[index]),
+              onPickUnit: _rows[index].consigned
+                  ? null
+                  : () => _pickRowUnit(_rows[index]),
+              onPickWarehouse: _rows[index].consigned
+                  ? null
+                  : () => _pickRowWarehouse(_rows[index]),
               onChanged: () => _update(() => _formError = null),
               onDelete: _rows.length == 1
                   ? null
@@ -46,7 +50,11 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
           ? l10n.inventoryCreateProduct
           : l10n.inventorySaveProduct,
       isSaving: _saving,
-      onPrimaryPressed: _saving || _refreshing ? null : _save,
+      // Adjust stock saves only once the stored rows it compares against
+      // have loaded.
+      onPrimaryPressed: _saving || _refreshing || _baselineLoading
+          ? null
+          : _save,
       child: _loading
           ? const AppLoadingIndicator.page()
           : ListView(

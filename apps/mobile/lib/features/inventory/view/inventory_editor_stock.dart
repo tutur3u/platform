@@ -33,6 +33,7 @@ extension _InventoryEditorStock on _InventoryProductEditorPageState {
     final productId = widget.productId;
     if (wsId == null || productId == null) return false;
     final scope = _scope;
+    _update(() => _baselineLoading = true);
     try {
       final rows = await _inventoryRepository.getProductStockRows(
         wsId,
@@ -43,6 +44,8 @@ extension _InventoryEditorStock on _InventoryProductEditorPageState {
       return true;
     } on Object {
       return false;
+    } finally {
+      if (mounted) _update(() => _baselineLoading = false);
     }
   }
 
@@ -114,6 +117,7 @@ extension _InventoryEditorStock on _InventoryProductEditorPageState {
                 amount: row.amount?.toString() ?? '',
                 minAmount: row.minAmount.toString(),
                 price: row.price.toString(),
+                consigned: row.revenueSharePartnerId != null,
               ),
           ];
   }

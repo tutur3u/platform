@@ -42,6 +42,7 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
     try {
       while (mounted &&
           token == _requestToken &&
+          _error == null &&
           _clientFiltered &&
           _hasMore &&
           !_loadMoreFailed &&
@@ -60,7 +61,11 @@ extension _InventoryProductsActions on _InventoryProductsPageState {
       if (mounted) {
         _set(() {});
         // A request that settled while this loop held the flag still fills.
-        if (token != _requestToken && !_filling && !_isLoadingInitial) {
+        // A reload that failed keeps its retry state instead of filling.
+        if (token != _requestToken &&
+            !_filling &&
+            !_isLoadingInitial &&
+            _error == null) {
           unawaited(_fillClientFilter());
         }
       }

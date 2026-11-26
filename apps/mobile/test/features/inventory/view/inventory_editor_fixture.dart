@@ -160,7 +160,13 @@ class FailingFinanceRepository extends FinanceRepository {
   }
 }
 
-Future<GlobalKey> mountEditorModal(WidgetTester tester, Widget editor) async {
+/// Opens [editor] in the full-screen modal. [settle] false stops after the
+/// open transition, for editors that keep a progress animation running.
+Future<GlobalKey> mountEditorModal(
+  WidgetTester tester,
+  Widget editor, {
+  bool settle = true,
+}) async {
   final key = GlobalKey();
   await tester.pumpApp(
     Builder(
@@ -185,7 +191,12 @@ Future<GlobalKey> mountEditorModal(WidgetTester tester, Widget editor) async {
     ),
   );
   await tester.tap(find.text('Open synthetic editor'));
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+  }
   return key;
 }
 

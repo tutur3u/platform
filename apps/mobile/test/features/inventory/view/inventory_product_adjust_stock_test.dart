@@ -266,5 +266,134 @@ void main() {
         );
       }
     });
+    Future<EditorApiClient> pumpAdjust(
+      WidgetTester tester, {
+      required Future<Map<String, dynamic>> Function() stockRows,
+      bool settle = true,
+    }) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 1200);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final api = EditorApiClient();
+      final cache = EditorCacheStore();
+      when(
+        () =>
+            cache.invalidateTags(any(), workspaceId: any(named: 'workspaceId')),
+      ).thenAnswer((_) async {});
+      when(
+        () => api.getJson(
+          '/api/v1/workspaces/ws_1/products/synthetic-product/inventory',
+        ),
+      ).thenAnswer((_) => stockRows());
+      when(
+        () => api.patchJson(any(), any()),
+      ).thenAnswer((_) async => <String, dynamic>{});
+      await mountEditorModal(
+        settle: settle,
+        tester,
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            editorActorProvider(),
+          ],
+          child: InventoryProductEditorPage(
+            productId: 'synthetic-product',
+            stockFirst: true,
+            canAdjustStock: true,
+            inventoryRepository: ExistingProductRepository(
+              apiClient: api,
+              cacheStore: cache,
+              amount: 7.5,
+              networkAvailable: () async => true,
+            ),
+            financeRepository: financeRepository,
+            settingsRepository: settingsRepository,
+          ),
+        ),
+      );
+      return api;
+    }
+
+    testWidgets('Adjust stock saves only after the stored rows load', (
+      tester,
+    ) async {
+      final rows = Completer<Map<String, dynamic>>();
+      final api = await pumpAdjust(
+        tester,
+        stockRows: () => rows.future,
+        settle: false,
+      );
+      await tester.tap(find.text('Save product'), warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 500));
+      verifyNever(() => api.patchJson(any(), any()));
+      rows.complete({
+        'data': [storedRow()],
+      });
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save product').hitTestable());
+      await tester.pumpAndSettle();
+      verify(
+        () => api.patchJson(
+          '/api/v1/workspaces/ws_1/products/synthetic-product/inventory',
+          any(),
+        ),
+      ).called(1);
+      await tester.drainShadToastTimers();
+    });
+
+    testWidgets('a consignment row keeps its warehouse and unit', (
+      tester,
+    ) async {
+      await pumpAdjust(
+        tester,
+        stockRows: () async => {
+          'data': [storedRow()],
+        },
+      );
+      await tester.pumpAndSettle();
+      // The unit card shows the row's unit; a picker would list it again.
+      expect(find.text('Cup'), findsOneWidget);
+      await tester.tap(find.text('Cup'));
+      await tester.pumpAndSettle();
+      expect(find.text('Cup'), findsOneWidget);
+      await tester.tap(find.text('Front booth'));
+      await tester.pumpAndSettle();
+      expect(find.text('Front booth'), findsOneWidget);
+    });
+
+    testWidgets('creating asks for whole stock numbers', (tester) async {
+      tester.view
+        ..devicePixelRatio = 1
+        ..physicalSize = const Size(390, 1200);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            editorActorProvider(),
+          ],
+          child: InventoryProductEditorPage(
+            canAdjustStock: true,
+            inventoryRepository: inventoryRepository,
+            financeRepository: financeRepository,
+            settingsRepository: settingsRepository,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await scrollToEditorAmount(tester);
+      await tester.enterText(editorAmountField(), '2.5');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Create product').last.hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.text('Enter a whole number'), findsOneWidget);
+    });
   });
 }

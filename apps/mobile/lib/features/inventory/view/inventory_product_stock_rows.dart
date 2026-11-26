@@ -16,8 +16,10 @@ class _InventoryStockRowCard extends StatelessWidget {
   final _InventoryRowDraft row;
   final List<InventoryLookupItem> units;
   final List<InventoryLookupItem> warehouses;
-  final VoidCallback onPickUnit;
-  final VoidCallback onPickWarehouse;
+
+  /// Null keeps the location fixed, as for a consignment row.
+  final VoidCallback? onPickUnit;
+  final VoidCallback? onPickWarehouse;
   final VoidCallback onChanged;
   final VoidCallback? onDelete;
 
@@ -169,6 +171,7 @@ class _InventoryRowDraft {
     required String amount,
     required String minAmount,
     required String price,
+    this.consigned = false,
   }) : amountController = TextEditingController(text: amount),
        minAmountController = TextEditingController(text: minAmount),
        priceController = TextEditingController(text: price);
@@ -186,6 +189,10 @@ class _InventoryRowDraft {
 
   String? unitId;
   String? warehouseId;
+
+  /// A stored row with a revenue-share partner. Its share is tied to this
+  /// warehouse and unit, so Adjust stock keeps the location fixed.
+  final bool consigned;
   String? unitError;
   String? warehouseError;
   String? amountError;

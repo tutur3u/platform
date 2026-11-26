@@ -8932,5 +8932,6 @@
   "inventoryFilterNoLoadedMatch": "Không có kết quả trong {count} sản phẩm đầu tiên",
   "inventoryFilterSearchMore": "Tìm thêm sản phẩm",
   "inventoryFilterSearching": "Đang tìm thêm sản phẩm…",
-  "inventoryFilterShowingFrom": "Đang hiện kết quả trong {count} sản phẩm đầu tiên"
+  "inventoryFilterShowingFrom": "Đang hiện kết quả trong {count} sản phẩm đầu tiên",
+  "inventoryProductWholeNumber": "Nhập số nguyên"
 }

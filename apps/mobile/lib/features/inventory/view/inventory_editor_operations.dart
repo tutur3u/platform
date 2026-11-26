@@ -465,6 +465,8 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
       hasError = true;
     }
 
+    // Creating takes whole stock numbers; Adjust stock accepts fractions.
+    final creating = widget.productId == null;
     for (final row in _showStock ? _rows : const <_InventoryRowDraft>[]) {
       row.clearErrors();
 
@@ -494,9 +496,13 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
             amountText.isNotEmpty &&
                 (amount == null || !amount.isFinite || amount < 0)
             ? l10n.inventoryProductNumberInvalid
+            : creating && amount != null && amount != amount.roundToDouble()
+            ? l10n.inventoryProductWholeNumber
             : null
         ..minAmountError = minAmount == null
             ? l10n.inventoryProductNumberInvalid
+            : creating && minAmount != minAmount.roundToDouble()
+            ? l10n.inventoryProductWholeNumber
             : null
         ..priceError = priceText.isEmpty
             ? l10n.inventoryProductPriceRequired

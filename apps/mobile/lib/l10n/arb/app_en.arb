@@ -10901,5 +10901,6 @@
   "inventoryFilterNoLoadedMatch": "No matches in the first {count} products",
   "inventoryFilterSearchMore": "Search more products",
   "inventoryFilterSearching": "Searching more products…",
-  "inventoryFilterShowingFrom": "Showing matches from the first {count} products"
+  "inventoryFilterShowingFrom": "Showing matches from the first {count} products",
+  "inventoryProductWholeNumber": "Enter a whole number"
 }

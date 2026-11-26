@@ -113,18 +113,23 @@ class InventoryImageUnavailable implements Exception {
   const InventoryImageUnavailable();
 }
 
-/// Share paths the server refused this session, so a reader without access
-/// is not asked again on every rebuild.
-final Set<String> _refusedShares = {};
+/// Images the server refused this session, keyed by account, workspace and
+/// path, so a reader without access is not asked again on every rebuild and
+/// one account's refusal never hides another account's image.
+final Set<String> _refusedImages = {};
 
-/// Loads a product image of [workspaceId]. Workspace objects get a fresh
-/// signed URL from the share route with the session; the media request
-/// itself never carries the session token. When the share route refuses
-/// (it needs drive or finance media access), a legacy signed URL is read
-/// as stored and anything else throws [InventoryImageUnavailable].
+/// Loads the image of product [productId] in [workspaceId]. Workspace
+/// objects get a fresh signed URL with the session, first from the product
+/// image route (inventory read access is enough), then from the storage
+/// share route when the product route is unavailable; the media request
+/// itself never carries the session token. When access is refused, a
+/// legacy signed URL is read as stored and anything else throws
+/// [InventoryImageUnavailable].
 Future<Uint8List> fetchInventoryProductImage(
   String url, {
   required String workspaceId,
+  String? productId,
+  String? userId,
   ApiClient? api,
   Future<Uint8List> Function(String url)? download,
   Set<String>? platformHosts,
@@ -143,27 +148,43 @@ Future<Uint8List> fetchInventoryProductImage(
     case InventoryImageDirect():
       return await fetch(url);
     case InventoryImageObject(:final path, :final legacy):
-      final refusalKey = '$workspaceId/$path';
+      final refusalKey = '${userId ?? ''}/$workspaceId/$path';
       Future<Uint8List> refused() async {
         if (legacy) return await fetch(url);
         throw const InventoryImageUnavailable();
       }
 
-      if (_refusedShares.contains(refusalKey)) return await refused();
-      final Map<String, dynamic> signed;
-      try {
-        signed = await (api ?? ApiClient()).postJson(
-          DriveEndpoints.share(workspaceId),
-          {'path': path},
-        );
-      } on ApiException catch (error) {
-        if (const {401, 403, 404}.contains(error.statusCode)) {
-          _refusedShares.add(refusalKey);
+      if (_refusedImages.contains(refusalKey)) return await refused();
+      final client = api ?? ApiClient();
+      String? signedUrl;
+      if (productId != null && productId.isNotEmpty) {
+        try {
+          final route = InventoryEndpoints.productImage(workspaceId, productId);
+          final body = await client.getJson('$route?format=json');
+          signedUrl = body['signedUrl'] as String?;
+        } on ApiException catch (error) {
+          if (const {401, 403}.contains(error.statusCode)) {
+            _refusedImages.add(refusalKey);
+            return await refused();
+          }
+          // A missing route or image falls through to the share route.
         }
-        return await refused();
       }
-      final signedUrl = signed['signedUrl'];
-      if (signedUrl is! String || signedUrl.isEmpty) return await refused();
+      if (signedUrl == null || signedUrl.isEmpty) {
+        try {
+          final signed = await client.postJson(
+            DriveEndpoints.share(workspaceId),
+            {'path': path},
+          );
+          signedUrl = signed['signedUrl'] as String?;
+        } on ApiException catch (error) {
+          if (const {401, 403, 404}.contains(error.statusCode)) {
+            _refusedImages.add(refusalKey);
+          }
+          return await refused();
+        }
+      }
+      if (signedUrl == null || signedUrl.isEmpty) return await refused();
       return await fetch(signedUrl);
   }
 }

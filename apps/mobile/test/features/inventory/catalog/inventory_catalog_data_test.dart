@@ -225,11 +225,15 @@ void main() {
       String url,
       _Api api, {
       String workspaceId = ws,
+      String? productId,
+      String? userId,
     }) async {
       final fetched = <String>[];
       await fetchInventoryProductImage(
         url,
         workspaceId: workspaceId,
+        productId: productId,
+        userId: userId,
         api: api,
         platformHosts: platform,
         storageHosts: storage,
@@ -240,6 +244,70 @@ void main() {
       );
       return fetched;
     }
+
+    group('product image route', () {
+      const product = '0b6f1d2e-3c4a-4b5c-8d6e-7f8091a2b3c4';
+      const route =
+          '/api/v1/workspaces/$ws/products/$product/image?format=json';
+
+      test('signs through the product route first', () async {
+        final api = _Api();
+        when(
+          () => api.getJson(route),
+        ).thenAnswer((_) async => {'signedUrl': 'https://storage.example/p'});
+        final fetched = await load(
+          inventoryImageShareUrl(ws, 'inventory/media/a.png', origin: origin),
+          api,
+          productId: product,
+          userId: 'u1',
+        );
+        expect(fetched, ['https://storage.example/p']);
+        verifyNever(() => api.postJson(any(), any()));
+      });
+
+      test('a missing route falls back to the share route', () async {
+        final api = _Api();
+        when(
+          () => api.getJson(route),
+        ).thenThrow(const ApiException(message: 'Not found', statusCode: 404));
+        when(
+          () => api.postJson(any(), any()),
+        ).thenAnswer((_) async => {'signedUrl': 'https://storage.example/s'});
+        final fetched = await load(
+          inventoryImageShareUrl(ws, 'inventory/media/b.png', origin: origin),
+          api,
+          productId: product,
+          userId: 'u1',
+        );
+        expect(fetched, ['https://storage.example/s']);
+      });
+
+      test('a refusal is remembered per account', () async {
+        final api = _Api();
+        when(
+          () => api.getJson(route),
+        ).thenThrow(const ApiException(message: 'Forbidden', statusCode: 403));
+        final share = inventoryImageShareUrl(
+          ws,
+          'inventory/media/c.png',
+          origin: origin,
+        );
+        for (var attempt = 0; attempt < 2; attempt++) {
+          await expectLater(
+            load(share, api, productId: product, userId: 'u1'),
+            throwsA(isA<InventoryImageUnavailable>()),
+          );
+        }
+        verify(() => api.getJson(route)).called(1);
+        // Another account on the device is asked on its own.
+        await expectLater(
+          load(share, api, productId: product, userId: 'u2'),
+          throwsA(isA<InventoryImageUnavailable>()),
+        );
+        verify(() => api.getJson(route)).called(1);
+        verifyNever(() => api.postJson(any(), any()));
+      });
+    });
 
     test('loads workspace objects through a fresh signed URL', () async {
       final api = _Api();

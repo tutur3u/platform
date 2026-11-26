@@ -21530,4 +21530,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String inventoryFilterShowingFrom(Object count) {
     return 'Showing matches from the first $count products';
   }
+
+  @override
+  String get inventoryProductWholeNumber => 'Enter a whole number';
 }
