@@ -14,7 +14,9 @@ export async function handleMeetRoomState(
   env: MeetRoomEnv,
   state: {
     read: () => RoomServiceState;
-    commit: (updated: ReturnType<typeof applyMeetRoomSettings>) => Promise<void>;
+    commit: (
+      updated: ReturnType<typeof applyMeetRoomSettings>
+    ) => Promise<void>;
   }
 ) {
   const headers = { 'Cache-Control': 'private, no-store' };

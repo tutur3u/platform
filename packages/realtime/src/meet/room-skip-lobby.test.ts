@@ -167,12 +167,17 @@ describe('automatic admission of signed-in people', () => {
 });
 
 describe('event room admission', () => {
-  const staff = token(1, { eventHost: true });
+  const staff = token(1, {
+    eventHost: true,
+    limits: { maxRoomDurationSeconds: 8 * 60 * 60 },
+  });
   const enable = {
     type: 'room.settings.update',
     settings: { eventMode: true },
   } satisfies MeetRealtimeClientMessage;
-  const eventRoom = () => run(hosted(), enable, staff).state;
+  const eventRoom = () =>
+    run(admitOrHold(createMeetRoomSnapshot(), staff, now).state, enable, staff)
+      .state;
 
   it('requires explicit staff-host enablement and records the six-hour expiry', () => {
     expect(

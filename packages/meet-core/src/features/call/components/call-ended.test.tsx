@@ -198,7 +198,9 @@ it('opens available notes and transcript directly from the ended screen', () => 
   withAi('both');
   renderEnded();
   expect(screen.queryByTestId('session-notes')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: 'View notes & transcript' }));
+  fireEvent.click(
+    screen.getByRole('button', { name: 'View notes & transcript' })
+  );
   expect(screen.getByTestId('session-notes')).toBeTruthy();
 });
 
@@ -206,13 +208,16 @@ it.each([
   ['notes', 'Show notes'],
   ['transcript', 'Show transcript'],
   ['both', 'View notes & transcript'],
-] as const)('names the ended-screen reader when %s is available', (available, label) => {
-  withAi(available);
-  renderEnded();
-  expect(screen.getByRole('button', { name: label })).toBeTruthy();
-  openMore();
-  expect(item(label)).toBeNull();
-});
+] as const)(
+  'names the ended-screen reader when %s is available',
+  (available, label) => {
+    withAi(available);
+    renderEnded();
+    expect(screen.getByRole('button', { name: label })).toBeTruthy();
+    openMore();
+    expect(item(label)).toBeNull();
+  }
+);
 
 it('keeps the host task action in the overflow when there is no reader', () => {
   withAi('none');

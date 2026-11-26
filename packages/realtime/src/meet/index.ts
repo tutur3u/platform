@@ -124,10 +124,7 @@ export {
 } from './actor-rate-limit';
 export { applyMeetClassService } from './class-service';
 export { spreadsheetCsvCell } from './csv-cell';
-export type {
-  MeetClassFeatureEnv,
-  MeetClassFeatures,
-} from './class-features';
+export type { MeetClassFeatureEnv, MeetClassFeatures } from './class-features';
 export {
   MEET_ATTENDANCE_RETENTION_CRON,
   MEET_ATTENDANCE_RETENTION_ENV,

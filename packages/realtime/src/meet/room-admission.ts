@@ -10,10 +10,7 @@ import {
   renameOpenAttendance,
 } from './attendance-ledger';
 import { type MeetClassFeatures, meetClassFeatures } from './class-features';
-import {
-  classTimerServerMessage,
-  presentClassTimer,
-} from './class-timer';
+import { classTimerServerMessage, presentClassTimer } from './class-timer';
 import type { MeetRealtimeClientMessage } from './messages';
 import {
   canMeetRealtimeManageParticipants,
