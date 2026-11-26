@@ -1,3 +1,8 @@
+import { isIPBlocked } from '@tuturuuu/utils/abuse-protection';
+import {
+  classifyPotentialSpamUserAgent,
+  extractUserAgentFromHeaders,
+} from '@tuturuuu/utils/abuse-protection/user-agent';
 import {
   type AbuseRiskDecision,
   applyRateLimitDecision,
@@ -13,8 +18,12 @@ export const MEET_GUEST_HUMAN_CHECK_ROUTE = '/api/meet-call/guest/human-check';
 export type MeetGuestRiskKind = 'unverified' | 'human-check';
 
 export type MeetGuestUnverifiedRisk =
-  | { allowed: true; networkLimit: number; decision: AbuseRiskDecision | null }
-  | { allowed: false; decision: AbuseRiskDecision };
+  | {
+      allowed: true;
+      networkLimit: number;
+      decision: AbuseRiskDecision | null;
+    }
+  | { allowed: false; decision: AbuseRiskDecision | null };
 
 type RiskSources = {
   resolve?: typeof resolveAbuseRiskDecision;
@@ -37,6 +46,7 @@ export async function assessMeetGuestUnverifiedJoin(
     meetingId: string;
     network: string | undefined;
     kind?: MeetGuestRiskKind;
+    event?: true;
   },
   sources: RiskSources = {}
 ): Promise<MeetGuestUnverifiedRisk> {
@@ -64,8 +74,16 @@ export async function assessMeetGuestUnverifiedJoin(
       kind: error instanceof Error ? error.name : 'unknown',
     });
   }
+  const hardBlocked =
+    input.event &&
+    (classifyPotentialSpamUserAgent(
+      extractUserAgentFromHeaders(request.headers)
+    ).riskLevel === 'block' ||
+      (input.network && (await isIPBlocked(input.network))));
   const refused =
-    decision?.tier === 'restricted' || decision?.tier === 'challenge_required';
+    !!hardBlocked ||
+    decision?.tier === 'restricted' ||
+    (decision?.tier === 'challenge_required' && !input.event);
   if (decision?.subjects.length) {
     await record({
       ipAddress: input.network ?? null,
@@ -82,7 +100,7 @@ export async function assessMeetGuestUnverifiedJoin(
       subjects: decision.subjects,
     }).catch(() => undefined);
   }
-  if (decision && refused) return { allowed: false, decision };
+  if (refused) return { allowed: false, decision };
   return {
     allowed: true,
     decision,

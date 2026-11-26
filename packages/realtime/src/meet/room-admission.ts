@@ -1,3 +1,4 @@
+import { activeMeetEvent, MEET_EVENT_GUEST_LIMIT } from './event-admission';
 import { MEET_MEDIA_CAPABILITIES } from './simulcast-layers';
 import { resolveMeetStreamEntitlement } from './stream-tiers';
 import {
@@ -91,6 +92,33 @@ export function admitOrHold(
         disconnect: [token.userId],
       });
   }
+  const event = activeMeetEvent(
+    state.settings?.eventModeExpiresAt,
+    Date.parse(now)
+  );
+  if (
+    event &&
+    token.guest &&
+    !token.guestTurnstileVerified &&
+    token.guestEventProof !== event
+  )
+    return outcome(state, {
+      reply: [{ type: 'error', error: 'permission_denied' }],
+      disconnect: [token.userId],
+    });
+  if (
+    event &&
+    token.guest &&
+    !state.presence[token.userId] &&
+    !state.waiting[token.userId] &&
+    Object.values(state.presence).filter((person) => person.guest).length +
+      Object.values(state.waiting).filter((person) => person.guest).length >=
+      MEET_EVENT_GUEST_LIMIT
+  )
+    return outcome(state, {
+      reply: [{ type: 'error', error: 'participant_limit_reached' }],
+      disconnect: [token.userId],
+    });
   if (
     token.role !== 'host' &&
     state.settings?.admissionClosed &&
@@ -129,12 +157,15 @@ export function admitOrHold(
           ...(isMeetExternalParticipant(token)
             ? { external: true as const }
             : {}),
-          // Asked to join without passing Turnstile; the host decides.
+          // Manual admission can be required even with a browser proof.
           ...(token.guest && !token.guestTurnstileVerified
             ? { unverified: true as const }
             : {}),
           // Positive proof for bulk admission: entries written before this
           // flag existed lack it and so wait for a manual decision.
+          ...(token.guestEventProof
+            ? { eventProof: token.guestEventProof }
+            : {}),
           ...(token.guest && token.guestTurnstileVerified
             ? { verified: true as const }
             : {}),
@@ -184,7 +215,10 @@ export function admitOrHold(
       : openAttendanceInterval(state.attendance, {
           deviceUserId: token.userId,
           joinedAt: person.joinedAt,
-          ...attendanceIdentity({ ...token, displayName: person.displayName }),
+          ...attendanceIdentity({
+            ...token,
+            displayName: person.displayName,
+          }),
         })
     : undefined;
   const next: MeetRoomSnapshot = {
@@ -236,6 +270,7 @@ function buildReady(
   return {
     admission,
     canManageParticipants: canMeetRealtimeManageParticipants(token),
+    ...(token.eventHost ? { eventHost: true as const } : {}),
     classRole: meetClassRole(token),
     ...(canEnableMeetClassViewers(token)
       ? { classViewersAvailable: true }
@@ -283,6 +318,18 @@ function decideParticipant(
     return denied(state, 'participant_not_waiting', requestId);
   }
 
+  const event = activeMeetEvent(
+    state.settings?.eventModeExpiresAt,
+    Date.parse(now)
+  );
+  if (
+    admit &&
+    event &&
+    pending.guest &&
+    !pending.verified &&
+    pending.eventProof !== event
+  )
+    return denied(state, 'permission_denied', requestId);
   const waiting = { ...state.waiting };
   delete waiting[targetId];
 
@@ -440,7 +487,15 @@ export function decideRoomAdmission(
   now: string,
   features: MeetClassFeatures = meetClassFeatures()
 ): MeetRoomOutcome {
+  const event = activeMeetEvent(
+    state.settings?.eventModeExpiresAt,
+    Date.parse(now)
+  );
   if (
+    (event &&
+      message.type === 'admission.decideAll' &&
+      message.admit &&
+      token.role !== 'host') ||
     !canMeetRealtimeManageParticipants(token) ||
     (message.type === 'admission.decideAll' && !state.presence[token.userId])
   )
@@ -484,6 +539,21 @@ export function decideRoomAdmission(
     denied: message.admit ? 0 : decided,
     remaining: waiting.length - decided,
   });
+  if (event && message.admit) {
+    result.state = {
+      ...result.state,
+      eventAdmissionAudit: [
+        ...(result.state.eventAdmissionAudit ?? []).slice(-255),
+        {
+          action: 'admit_all_waiting',
+          actorId: token.accountId ?? token.userId,
+          at: now,
+          expiresAt: event,
+          admitted: decided,
+        },
+      ],
+    };
+  }
   if (decided) {
     if (message.admit)
       result.broadcast.push(meetPresenceMessage(result.state, token.roomId));

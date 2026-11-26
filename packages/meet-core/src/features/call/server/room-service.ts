@@ -149,6 +149,7 @@ export async function callRoomService<T>(
   const anonymousGuest = 'guest' in access && access.guest === true;
   const session = await getMeetCallSession({
     guest: anonymousGuest,
+    guestEventProof: anonymousGuest ? access.eventProof : undefined,
     guestTurnstileVerified: anonymousGuest
       ? access.turnstileVerified
       : undefined,
@@ -302,7 +303,10 @@ export async function meetCallRoomRoute(
       status === 400
         ? { code: 'invalid_request', message: 'Invalid room request' }
         : status === 503
-          ? { code: 'room_unavailable', message: 'Room action is unavailable' }
+          ? {
+              code: 'room_unavailable',
+              message: 'Room action is unavailable',
+            }
           : undefined;
     return Response.json(
       {

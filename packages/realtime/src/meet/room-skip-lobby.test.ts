@@ -37,7 +37,12 @@ const run = (
   message: MeetRealtimeClientMessage,
   as = host
 ) =>
-  applyMeetRoomCommand(state, { message, token: as, now, notesEligible: true });
+  applyMeetRoomCommand(state, {
+    message,
+    token: as,
+    now,
+    notesEligible: true,
+  });
 const hosted = () => admitOrHold(createMeetRoomSnapshot(), host, now).state;
 const skip = (on: boolean, requestId?: string) =>
   ({
@@ -134,5 +139,93 @@ describe('automatic admission of signed-in people', () => {
     expect(refused.reply).toEqual([
       { type: 'error', error: 'permission_denied', requestId: 'req-2' },
     ]);
+  });
+});
+
+describe('event room admission', () => {
+  const staff = token(1, { eventHost: true });
+  const enable = {
+    type: 'room.settings.update',
+    settings: { eventMode: true },
+  } satisfies MeetRealtimeClientMessage;
+  const eventRoom = () => run(hosted(), enable, staff).state;
+
+  it('requires explicit staff-host enablement and records the six-hour expiry', () => {
+    expect(
+      run(hosted(), enable).state.settings?.eventModeExpiresAt
+    ).toBeUndefined();
+    const state = eventRoom();
+    const expiresAt = Date.parse(now) + 6 * 60 * 60_000;
+    expect(state.settings?.eventModeExpiresAt).toBe(expiresAt);
+    expect(state.eventAdmissionAudit).toEqual([
+      { action: 'event_enabled', actorId: staff.userId, at: now, expiresAt },
+    ]);
+    expect(run(state, enable, staff).state.eventAdmissionAudit).toHaveLength(1);
+    expect(
+      admitOrHold(state, guest, new Date(expiresAt).toISOString()).state
+        .waiting[guest.userId]
+    ).toBeDefined();
+  });
+
+  it('requires current proof for manual admission and preserves verified skip-lobby', () => {
+    const event = eventRoom();
+    const state = run(
+      event,
+      {
+        type: 'room.settings.update',
+        settings: { skipLobby: true, allowAnonymousGuests: true },
+      },
+      staff
+    ).state;
+    expect(admitOrHold(state, guest, now).disconnect).toContain(guest.userId);
+    const manual = {
+      ...guest,
+      guestEventProof: state.settings?.eventModeExpiresAt,
+    };
+    const waiting = admitOrHold(state, manual, now).state;
+    expect(waiting.presence[guest.userId]).toBeUndefined();
+    expect(waiting.waiting[guest.userId]).toBeDefined();
+    const optedIn = token(5, { guest: true, guestTurnstileVerified: true });
+    expect(
+      admitOrHold(waiting, optedIn, now).state.presence[optedIn.userId]
+    ).toBeDefined();
+    expect(
+      admitOrHold(waiting, member, now).state.presence[member.userId]
+    ).toBeDefined();
+    const admitted = run(
+      waiting,
+      { type: 'admission.decideAll', admit: true },
+      staff
+    ).state;
+    expect(admitted.presence[guest.userId]).toBeDefined();
+    expect(admitted.eventAdmissionAudit?.at(-1)).toMatchObject({
+      action: 'admit_all_waiting',
+      actorId: staff.userId,
+      admitted: 1,
+    });
+  });
+
+  it('caps simultaneous waiting and admitted guest connections only during the event', () => {
+    let state = eventRoom();
+    for (let n = 10; n < 90; n++) {
+      const candidate = token(n, {
+        guest: true,
+        guestEventProof: state.settings?.eventModeExpiresAt,
+      });
+      state = admitOrHold(state, candidate, now).state;
+    }
+    expect(Object.keys(state.waiting)).toHaveLength(80);
+    const last = token(90, {
+      guest: true,
+      guestEventProof: state.settings?.eventModeExpiresAt,
+    });
+    expect(admitOrHold(state, last, now).disconnect).toContain(last.userId);
+    expect(
+      admitOrHold(
+        state,
+        last,
+        new Date(state.settings!.eventModeExpiresAt!).toISOString()
+      ).state.waiting[last.userId]
+    ).toBeDefined();
   });
 });

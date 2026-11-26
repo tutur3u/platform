@@ -25,6 +25,7 @@ import {
 } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
 import { meetAiUsageGuard } from '@tuturuuu/meet-core/features/meeting-ai/server/usage-limit';
+import { MEET_EVENT_GUEST_LIMIT } from '@tuturuuu/realtime/meet';
 import { redeemPassToken } from '@tuturuuu/human-check';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
@@ -83,16 +84,20 @@ export async function POST(
       { error: 'Enter a display name', code: 'MEET_GUEST_NAME_REQUIRED' },
       { status: 400, headers }
     );
+  const limiter = await guestJoinLimiter();
   const limit = await checkMeetGuestJoinLimit(
     { meetingId, network: extractTurnstileRemoteIp(request) },
-    await guestJoinLimiter()
+    limiter
   );
   if (!limit.ok)
     return Response.json(
       { error: 'Too many join attempts', code: 'MEET_GUEST_RATE_LIMITED' },
       {
         status: 429,
-        headers: { ...headers, 'Retry-After': String(limit.retryAfterSeconds) },
+        headers: {
+          ...headers,
+          'Retry-After': String(limit.retryAfterSeconds),
+        },
       }
     );
   const state = await resolveMeetGuestJoin(meetingId);
@@ -101,13 +106,50 @@ export async function POST(
       { error: 'Guest join is unavailable', code: 'MEET_GUEST_UNAVAILABLE' },
       { status: 403, headers }
     );
+  const event = state.eventExpiresAt;
+  let manualProof: number | undefined;
+  if (event) {
+    const network = extractTurnstileRemoteIp(request);
+    const eventLimit = await checkMeetGuestJoinLimit(
+      { meetingId, network, eventLimit: MEET_EVENT_GUEST_LIMIT },
+      limiter
+    );
+    if (!eventLimit.ok)
+      return Response.json(
+        { error: 'Too many join attempts', code: 'MEET_GUEST_RATE_LIMITED' },
+        {
+          status: 429,
+          headers: {
+            ...headers,
+            'Retry-After': String(eventLimit.retryAfterSeconds),
+          },
+        }
+      );
+    const risk = await assessMeetGuestUnverifiedJoin(request, {
+      meetingId,
+      network,
+      event: true,
+    });
+    if (!risk.allowed || !risk.decision)
+      return Response.json(
+        {
+          error: 'Verification required',
+          code: 'MEET_GUEST_VERIFICATION_REQUIRED',
+        },
+        { status: 403, headers }
+      );
+    if (risk.decision.tier === 'challenge_required') manualProof = event;
+  }
   const tokenSecret = getMeetRealtimeTokenSecret();
   const existing = await verifyMeetGuestSession(
     (await cookies()).get(MEET_GUEST_COOKIE)?.value,
     meetingId,
     tokenSecret
   );
-  if (existing?.turnstileVerified)
+  if (
+    (!manualProof && existing?.turnstileVerified) ||
+    (event && existing?.eventProof === event)
+  )
     return Response.json({ ok: true }, { headers });
   const turnstileToken = parsed.data.turnstileToken?.trim();
   const devMode = process.env.NODE_ENV === 'development';
@@ -136,9 +178,18 @@ export async function POST(
       meetingId,
       displayName,
       secret: tokenSecret,
-      verified: true,
+      verified: !manualProof,
+      eventProof: manualProof,
     });
   }
+  if (event && (!turnstileToken || devMode))
+    return Response.json(
+      {
+        error: 'Verification required',
+        code: 'MEET_GUEST_VERIFICATION_REQUIRED',
+      },
+      { status: 403, headers }
+    );
   if (!turnstileToken && parsed.data.hostApproval === true) {
     const network = extractTurnstileRemoteIp(request);
     const risk = await assessMeetGuestUnverifiedJoin(request, {
@@ -198,7 +249,8 @@ export async function POST(
     meetingId,
     displayName,
     secret: tokenSecret,
-    verified,
+    verified: verified && !manualProof,
+    eventProof: verified ? manualProof : undefined,
   });
 }
 
@@ -208,12 +260,14 @@ async function guestSessionResponse({
   displayName,
   secret,
   verified,
+  eventProof,
 }: {
   guestId: string;
   meetingId: string;
   displayName: string;
   secret: string;
   verified: boolean;
+  eventProof?: number;
 }) {
   const exp = Math.floor(Date.now() / 1000) + MEET_GUEST_TTL_SECONDS;
   const cookie = await signMeetGuestSession(
@@ -222,6 +276,7 @@ async function guestSessionResponse({
       meetingId,
       displayName,
       exp,
+      ...(eventProof ? { eventProof } : {}),
       ...(verified ? { turnstileVerified: true } : {}),
     },
     secret

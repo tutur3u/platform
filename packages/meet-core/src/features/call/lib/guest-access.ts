@@ -1,4 +1,5 @@
 import 'server-only';
+import { activeMeetEvent } from '@tuturuuu/realtime/meet';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
@@ -27,7 +28,7 @@ export type MeetGuestJoinSources = {
 };
 
 export type MeetGuestJoinState =
-  | { kind: 'available'; meeting: GuestMeeting }
+  | { kind: 'available'; meeting: GuestMeeting; eventExpiresAt?: number }
   | { kind: 'unavailable' };
 
 /** Production needs both keys; local development runs Turnstile in test mode. */
@@ -37,7 +38,7 @@ export function isMeetGuestTurnstileConfigured(
   if (env.NODE_ENV === 'development') return true;
   return Boolean(
     env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() &&
-    env.TURNSTILE_SECRET_KEY?.trim()
+      env.TURNSTILE_SECRET_KEY?.trim()
   );
 }
 
@@ -79,9 +80,7 @@ export async function resolveMeetGuestJoin(
     if (parley) return { kind: 'unavailable' };
     const { data: meeting, error } = sources.meeting
       ? await sources.meeting()
-      : await (
-          await createAdminClient({ noCookie: true })
-        )
+      : await (await createAdminClient({ noCookie: true }))
           .from('workspace_meetings')
           .select('id, name, creator_id, ws_id')
           .eq('id', meetingId)
@@ -101,10 +100,15 @@ export async function resolveMeetGuestJoin(
     ]);
     if (policy.ended || !canHost) return { kind: 'unavailable' };
     const settings = policy.settings as
-      | { allowAnonymousGuests?: boolean }
+      | { allowAnonymousGuests?: boolean; eventModeExpiresAt?: number }
       | undefined;
     if (settings?.allowAnonymousGuests !== true) return { kind: 'unavailable' };
-    return { kind: 'available', meeting };
+    const eventExpiresAt = activeMeetEvent(settings.eventModeExpiresAt);
+    return {
+      kind: 'available',
+      meeting,
+      ...(eventExpiresAt ? { eventExpiresAt } : {}),
+    };
   } catch (error) {
     console.warn('Meet guest join check failed; keeping guests out', {
       kind: error instanceof Error ? error.name : 'unknown',
@@ -116,6 +120,8 @@ export async function resolveMeetGuestJoin(
 export type MeetGuestCallAccess = {
   guest: true;
   turnstileVerified?: true;
+  eventProof?: number;
+  eventExpiresAt?: number;
   user: { id: string };
   meeting: GuestMeeting;
   isHost: false;
@@ -146,8 +152,16 @@ export async function getMeetGuestCallAccess(
   if (!session) return null;
   const state = await resolveMeetGuestJoin(meetingId, sources);
   if (state.kind !== 'available') return null;
+  if (
+    state.eventExpiresAt &&
+    !session.turnstileVerified &&
+    session.eventProof !== state.eventExpiresAt
+  )
+    return null;
   const access: MeetGuestCallAccess = {
     guest: true,
+    ...(state.eventExpiresAt ? { eventExpiresAt: state.eventExpiresAt } : {}),
+    ...(session.eventProof ? { eventProof: session.eventProof } : {}),
     ...(session.turnstileVerified ? { turnstileVerified: true } : {}),
     user: { id: session.guestId },
     meeting: state.meeting,

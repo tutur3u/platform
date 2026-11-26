@@ -1283,6 +1283,31 @@ Regression coverage: `guest-session.test.ts`, `guest-access.test.ts`,
 `room-guest.test.ts`, `room-removed-guests.test.ts`, `room-polls` guest voting,
 the guest cases in the Meet `page-model.server.test.ts` and room `page.test.ts`.
 
+### Event-room admission
+
+Meet event mode defaults to off, including in S4 classroom rooms. A meeting
+creator with a current verified Tuturuuu staff identity can enable it from
+call permissions. The setting expires six hours after activation. Classroom
+initialization does not set it.
+
+During that window, a guest in the challenge-required tier must complete a
+server-verified browser check and wait for manual admission. Meet accepts
+Turnstile or its existing single-use jigsaw pass. The signed session carries
+event-scoped proof separately from eligibility for automatic admission.
+Restricted and hard-blocked guests remain refused. Signed-in participants and
+ordinary verified guests retain the room's existing automatic admission rules.
+
+The event adds an 80-attempt limit per network per room every ten minutes and
+caps simultaneous waiting and admitted guest connections at 80. Existing
+cross-room limits, browser-check budgets and room capacity rules still apply.
+Event-specific limits stop applying at expiry.
+
+A host can confirm **Admit all waiting**. Per-person approval and denial remain
+available. The room's durable snapshot retains the latest 256 event activation
+and bulk admission audit entries, including the actor, timestamp, event expiry
+and admitted count where applicable. See `room-skip-lobby.test.ts` and
+`guest-unverified-risk.test.ts` for admission and risk-tier regression coverage.
+
 ### Who can read transcripts and notes
 
 Product decision (30 October 2026): a meeting's transcript and AI notes are

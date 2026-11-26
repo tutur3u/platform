@@ -124,7 +124,10 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     type: z.literal('assistant.preferences'),
     audio: meetAssistantAudioSchema,
   }),
-  z.object({ type: z.literal('reaction.send'), reaction: meetReactionSchema }),
+  z.object({
+    type: z.literal('reaction.send'),
+    reaction: meetReactionSchema,
+  }),
   z.object({
     type: z.literal('room.settings.update'),
     settings: meetRoomSettingsPatchSchema,
@@ -366,6 +369,7 @@ export type MeetRealtimeServerMessage =
   | {
       admission: 'admitted' | 'waiting';
       canManageParticipants?: boolean;
+      eventHost?: true;
       expiresAt: string;
       roomExpiresAt?: string;
       limits: MeetRealtimeTokenPayload['limits'];
@@ -428,7 +432,11 @@ export type MeetRealtimeServerMessage =
        * A room Mira system line; clients show it in their own locale and
        * show one line per acceptance `revision`.
        */
-      notice?: { kind: 'mira.on' | 'mira.off'; by?: string; revision?: number };
+      notice?: {
+        kind: 'mira.on' | 'mira.off';
+        by?: string;
+        revision?: number;
+      };
       requestId?: string;
       type: 'chat.message';
       replayed?: boolean;

@@ -4519,6 +4519,9 @@
       "fullscreen_feed": "Xem toàn màn hình",
       "guest": "Khách",
       "guest_join": {
+        "event_admit_all": "Cho tất cả người đang chờ vào",
+        "event_admit_all_description": "Cho tất cả người đang chờ đủ điều kiện vào phòng?",
+        "event_mode_enable": "Bật chế độ sự kiện trong sáu giờ",
         "admission_hint": "Người chủ trì quyết định ai được vào. Khách chỉ thấy cuộc gọi này.",
         "ask_host_without_verification": "Nhờ người chủ trì cho vào",
         "ask_host_without_verification_hint": "Bạn sẽ chờ trong phòng chờ, được đánh dấu là chưa xác minh, cho đến khi người chủ trì cho vào.",

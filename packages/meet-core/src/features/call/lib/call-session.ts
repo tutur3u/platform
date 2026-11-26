@@ -42,6 +42,8 @@ export async function getMeetCallSession({
   admission = 'open',
   guest = false,
   guestTurnstileVerified,
+  guestEventProof,
+  eventHost,
   coHost = false,
   participantKind,
   isHost,
@@ -61,6 +63,8 @@ export async function getMeetCallSession({
   /** Anonymous guests always wait in the lobby and never host. */
   guest?: boolean;
   guestTurnstileVerified?: true;
+  guestEventProof?: number;
+  eventHost?: true;
   /** Workspace admins who are not the meeting creator. */
   coHost?: boolean;
   participantKind?: 'member' | 'guest';
@@ -79,7 +83,8 @@ export async function getMeetCallSession({
   const role: MeetRealtimeRole = isHost && !guest ? 'host' : 'speaker';
   const payload = meetRealtimeTokenPayloadSchema.parse({
     admission: role === 'host' ? 'open' : guest ? 'lobby' : admission,
-    ...(guest ? { guest: true, guestTurnstileVerified } : {}),
+    ...(guest ? { guest: true, guestTurnstileVerified, guestEventProof } : {}),
+    ...(role === 'host' && eventHost ? { eventHost } : {}),
     ...(participantKind ? { participantKind } : {}),
     avatarUrl,
     displayName,

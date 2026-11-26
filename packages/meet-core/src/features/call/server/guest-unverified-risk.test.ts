@@ -108,8 +108,33 @@ describe('assessMeetGuestUnverifiedJoin', () => {
       { meetingId, network: undefined },
       { resolve: vi.fn().mockRejectedValue(new Error('down')), record }
     );
-    expect(result).toEqual({ allowed: true, decision: null, networkLimit: 3 });
+    expect(result).toEqual({
+      allowed: true,
+      decision: null,
+      networkLimit: 3,
+    });
     expect(record).not.toHaveBeenCalled();
     warn.mockRestore();
   });
+});
+
+it.each([
+  ['challenge_required', true],
+  ['restricted', false],
+] as const)('scores event guests in tier %s', async (tier, allowed) => {
+  const browser = request();
+  browser.headers.set(
+    'user-agent',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+  );
+  await expect(
+    assessMeetGuestUnverifiedJoin(
+      browser,
+      { meetingId, network: undefined, event: true },
+      {
+        resolve: vi.fn().mockResolvedValue(decision(tier)),
+        record: vi.fn().mockResolvedValue(undefined),
+      }
+    )
+  ).resolves.toMatchObject({ allowed });
 });

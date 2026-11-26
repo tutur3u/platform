@@ -15,6 +15,7 @@ export const MEET_GUEST_NAME_MAX = 60;
 export type MeetGuestSession = {
   guestId: string;
   turnstileVerified?: true;
+  eventProof?: number;
   meetingId: string;
   displayName: string;
   /** Expiry in Unix seconds. */
@@ -90,6 +91,7 @@ export async function signMeetGuestSession(
         m: session.meetingId,
         n: session.displayName,
         e: session.exp,
+        ...(session.eventProof ? { p: session.eventProof } : {}),
         ...(session.turnstileVerified ? { t: true } : {}),
       })
     )
@@ -129,6 +131,7 @@ export async function verifyMeetGuestSession(
       n?: unknown;
       e?: unknown;
       t?: unknown;
+      p?: unknown;
     };
     const displayName = normalizeMeetGuestName(parsed.n);
     if (
@@ -148,6 +151,11 @@ export async function verifyMeetGuestSession(
       meetingId,
       displayName,
       exp: parsed.e,
+      ...(typeof parsed.p === 'number' &&
+      Number.isSafeInteger(parsed.p) &&
+      parsed.p > 0
+        ? { eventProof: parsed.p }
+        : {}),
       ...(parsed.t === true ? { turnstileVerified: true } : {}),
     };
   } catch {

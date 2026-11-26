@@ -12,6 +12,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Input } from '@tuturuuu/ui/input';
@@ -77,6 +88,7 @@ export function ParticipantsPanel({
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
+  const event = (settings?.eventModeExpiresAt ?? 0) > Date.now();
   const presenceOnly = settings?.transport === 'presence';
   const [search, setSearch] = useState('');
   const query = participants.length > 8 ? search.trim().toLowerCase() : '';
@@ -106,7 +118,32 @@ export function ParticipantsPanel({
             <AccordionContent>
               {(onAdmitAll || onDenyAll) && (
                 <div className="mb-2 flex flex-wrap gap-2">
-                  {onAdmitAll && (
+                  {onAdmitAll && event && isHost && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm">
+                          {t('guest_join.event_admit_all')}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            {t('guest_join.event_admit_all')}
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {t('guest_join.event_admit_all_description')}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                          <AlertDialogAction onClick={onAdmitAll}>
+                            {t('guest_join.event_admit_all')}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                  {onAdmitAll && !event && (
                     <Button size="sm" onClick={onAdmitAll}>
                       {labels('admit_all', { count: waiting.length })}
                     </Button>

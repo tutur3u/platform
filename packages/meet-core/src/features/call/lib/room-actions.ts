@@ -114,7 +114,11 @@ export function createRoomActions(
       userId: string,
       override: NonNullable<MeetRoomSettings['mediaOverrides']>[string] | null
     ) =>
-      signaling.current?.send({ type: 'room.mediaOverride', userId, override }),
+      signaling.current?.send({
+        type: 'room.mediaOverride',
+        userId,
+        override,
+      }),
     setDisplayName: (displayName: string, media?: MeetMediaState) => {
       const trimmed = prepareParticipantName(displayName);
       if (!trimmed) return;
@@ -201,15 +205,21 @@ export function createRoomActions(
         if (settingsFailed === handler) settingsFailed = undefined;
       };
     },
-    updateSettings: async (settings: Partial<MeetRoomSettings>) => {
+    updateSettings: async ({
+      eventMode,
+      ...settings
+    }: Partial<MeetRoomSettings> & { eventMode?: true }) => {
       try {
         const connection = signaling.current;
         if (!connection?.isOpen) throw new Error('signaling_closed');
         const held = await connection.request<MeetRoomSettings>({
           type: 'room.settings.update',
-          settings,
+          settings: { ...settings, ...(eventMode ? { eventMode } : {}) },
         });
-        if (!settingsApplied(settings, held))
+        if (
+          !settingsApplied(settings, held) ||
+          (eventMode && (held.eventModeExpiresAt ?? 0) <= Date.now())
+        )
           throw new Error('settings_not_applied');
       } catch (error) {
         settingsFailed?.(
@@ -357,7 +367,11 @@ export function useRoomControlBridge(
       canManage: state.canManageParticipants ?? state.role === 'host',
       isHost: state.role === 'host',
       classViewersAvailable: state.classViewersAvailable,
-      locked: { audio: locks.audio, video: locks.video, screen: locks.screen },
+      locked: {
+        audio: locks.audio,
+        video: locks.video,
+        screen: locks.screen,
+      },
       bulkAdmission: state.bulkAdmission,
     });
     return () => removeRoomControls(actions);

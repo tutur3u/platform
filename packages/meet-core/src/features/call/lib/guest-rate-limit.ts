@@ -55,26 +55,36 @@ export type MeetGuestJoinLimiter = {
 
 export function meetGuestJoinWindows(
   meetingId: string,
-  network: string
+  network: string,
+  eventLimit?: number
 ): GuardWindowSubject[] {
   const limits = meetGuestJoinLimits();
   return [
     {
       partition: `meet-guest-ip:${network}`,
-      windows: [
-        {
-          key: `join:${meetingId}:10m`,
-          limit: limits.meeting,
-          windowMs: MEET_GUEST_JOIN_WINDOW_MS,
-          algo: 'fixed',
-        },
-        {
-          key: 'join:all-meetings:1h',
-          limit: limits.network,
-          windowMs: MEET_GUEST_JOIN_NETWORK_WINDOW_MS,
-          algo: 'fixed',
-        },
-      ],
+      windows: eventLimit
+        ? [
+            {
+              key: `event-join:${meetingId}:10m`,
+              limit: eventLimit,
+              windowMs: MEET_GUEST_JOIN_WINDOW_MS,
+              algo: 'fixed',
+            },
+          ]
+        : [
+            {
+              key: `join:${meetingId}:10m`,
+              limit: limits.meeting,
+              windowMs: MEET_GUEST_JOIN_WINDOW_MS,
+              algo: 'fixed',
+            },
+            {
+              key: 'join:all-meetings:1h',
+              limit: limits.network,
+              windowMs: MEET_GUEST_JOIN_NETWORK_WINDOW_MS,
+              algo: 'fixed',
+            },
+          ],
     },
   ];
 }
@@ -99,7 +109,11 @@ function retryAfter(resetAt: number, now: number) {
  * being let through uncounted.
  */
 export async function checkMeetGuestJoinLimit(
-  input: { meetingId: string; network: string | undefined },
+  input: {
+    meetingId: string;
+    network: string | undefined;
+    eventLimit?: number;
+  },
   limiter: MeetGuestJoinLimiter | null,
   now: () => number = Date.now
 ): Promise<MeetGuestJoinLimitDecision> {
@@ -108,11 +122,14 @@ export async function checkMeetGuestJoinLimit(
   if (limiter) {
     try {
       const outcome = await limiter.hitWindows(
-        meetGuestJoinWindows(input.meetingId, network)
+        meetGuestJoinWindows(input.meetingId, network, input.eventLimit)
       );
       return outcome.ok
         ? { ok: true }
-        : { ok: false, retryAfterSeconds: retryAfter(outcome.resetAt, now()) };
+        : {
+            ok: false,
+            retryAfterSeconds: retryAfter(outcome.resetAt, now()),
+          };
     } catch (error) {
       console.warn('Meet guest join limiter unavailable; counting locally', {
         kind: error instanceof Error ? error.name : 'unknown',
@@ -123,13 +140,15 @@ export async function checkMeetGuestJoinLimit(
   // in neither.
   const at = now();
   const denied = localAttempts.hit(
-    meetGuestJoinWindows(input.meetingId, network)[0]!.windows.map(
-      (window) => ({
-        key: `${network}:${window.key}`,
-        limit: window.limit,
-        windowMs: window.windowMs,
-      })
-    ),
+    meetGuestJoinWindows(
+      input.meetingId,
+      network,
+      input.eventLimit
+    )[0]!.windows.map((window) => ({
+      key: `${network}:${window.key}`,
+      limit: window.limit,
+      windowMs: window.windowMs,
+    })),
     at
   );
   return denied

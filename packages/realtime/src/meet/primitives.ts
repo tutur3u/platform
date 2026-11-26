@@ -107,7 +107,10 @@ export const meetRealtimeTokenPayloadSchema = z.object({
   accountId: z.uuid().optional(),
   /** An anonymous guest without a Tuturuuu account. */
   guest: z.literal(true).optional(),
-  /** Set on room-service tokens issued from a verified guest cookie. */
+  /** Issued only to a meeting creator with a current verified staff identity. */
+  eventHost: z.literal(true).optional(),
+  /** Browser proof bound to the event expiry. It carries no auto-admit authority. */
+  guestEventProof: z.number().int().positive().optional(),
   guestTurnstileVerified: z.literal(true).optional(),
   admission: meetRealtimeAdmissionSchema.default('open'),
   avatarUrl: z
@@ -172,7 +175,8 @@ export const meetRealtimeWaitingParticipantSchema = z.object({
   external: z.literal(true).optional(),
   /** An anonymous guest whose join request did not pass Turnstile. */
   unverified: z.literal(true).optional(),
-  /** An anonymous guest whose join request passed a human check. */
+  eventProof: z.number().int().positive().optional(),
+  /** An anonymous guest eligible for automatic admission. */
   verified: z.literal(true).optional(),
   avatarUrl: z
     .url()

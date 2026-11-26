@@ -46,6 +46,7 @@ export const meetRoomSettingsPatchSchema = z.object({
   participantNavigation,
   defaultActivity,
   ...meetJoinQrPatchSettings,
+  eventMode: z.literal(true).optional(),
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),
@@ -67,6 +68,7 @@ export const meetRoomSettingsSchema = z.object({
   participantNavigation,
   defaultActivity,
   ...meetJoinQrSettings,
+  eventModeExpiresAt: z.number().int().positive().optional(),
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),

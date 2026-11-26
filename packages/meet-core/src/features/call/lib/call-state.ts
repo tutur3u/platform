@@ -72,6 +72,7 @@ export interface CallState {
   roomExpiresAt?: string;
   maxParticipants?: number;
   classViewersAvailable?: boolean;
+  eventHost?: true;
   /** Media protocol features the room server advertised on join. */
   mediaCapabilities?: readonly string[];
   /** Signed stream ceilings for this participant's plan. */
@@ -210,11 +211,17 @@ export function reduceCallState(
     case 'admission.approved':
       return { ...state, approved: message.participants };
     case 'reaction':
-      return { ...state, reactions: [...state.reactions, message].slice(-24) };
+      return {
+        ...state,
+        reactions: [...state.reactions, message].slice(-24),
+      };
     case 'navigation': {
       const event = { ...message, id: navigationEventId(message) };
       if (state.navigation.some((entry) => entry.id === event.id)) return state;
-      return { ...state, navigation: [...state.navigation, event].slice(-12) };
+      return {
+        ...state,
+        navigation: [...state.navigation, event].slice(-12),
+      };
     }
     case 'ready':
       return {
@@ -225,6 +232,7 @@ export function reduceCallState(
         roomExpiresAt: message.roomExpiresAt,
         maxParticipants: message.limits?.maxParticipants,
         classViewersAvailable: message.classViewersAvailable,
+        eventHost: message.eventHost,
         mediaCapabilities: message.mediaCapabilities ?? [],
         streamLimits: message.streamLimits,
         error: null,

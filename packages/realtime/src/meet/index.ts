@@ -124,7 +124,10 @@ export {
 } from './actor-rate-limit';
 export { applyMeetClassService } from './class-service';
 export { spreadsheetCsvCell } from './csv-cell';
-export type { MeetClassFeatureEnv, MeetClassFeatures } from './class-features';
+export type {
+  MeetClassFeatureEnv,
+  MeetClassFeatures,
+} from './class-features';
 export {
   MEET_ATTENDANCE_RETENTION_CRON,
   MEET_ATTENDANCE_RETENTION_ENV,
@@ -273,6 +276,7 @@ export type {
   MeetReaction,
   MeetRoomSettings,
 } from './room-options';
+export { activeMeetEvent, MEET_EVENT_GUEST_LIMIT } from './event-admission';
 export { meetReactionSchema, meetRoomSettingsSchema } from './room-options';
 export {
   type MeetingProgramming,

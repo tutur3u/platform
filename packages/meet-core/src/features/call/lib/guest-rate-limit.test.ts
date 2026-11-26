@@ -40,6 +40,19 @@ describe('meet guest join limit', () => {
     ]);
   });
 
+  it('isolates the 80-attempt event window from ordinary join counters', async () => {
+    const input = { meetingId, network: '203.0.113.4' };
+    for (let i = 0; i < 80; i++) {
+      expect(
+        await checkMeetGuestJoinLimit({ ...input, eventLimit: 80 }, null)
+      ).toEqual({ ok: true });
+    }
+    expect(
+      (await checkMeetGuestJoinLimit({ ...input, eventLimit: 80 }, null)).ok
+    ).toBe(false);
+    expect((await checkMeetGuestJoinLimit(input, null)).ok).toBe(true);
+  });
+
   it('follows the shared store decision', async () => {
     const limiter = {
       hitWindows: vi.fn().mockResolvedValue({

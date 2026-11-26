@@ -1,3 +1,4 @@
+import { activeMeetEvent, MEET_EVENT_DURATION_MS } from './event-admission';
 import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
@@ -58,14 +59,14 @@ export function canReadRoomNotes(
       (state.ended
         ? state.settings?.shareNotesAfterMeeting
         : state.settings?.shareNotes) &&
-      (state.presence[token.userId] ||
-        Object.values(state.presence).some(
-          (person) =>
-            (person.accountId ?? person.userId) ===
-            (token.accountId ?? token.userId)
-        ) ||
-        state.approved?.[token.accountId ?? token.userId] ||
-        state.approved?.[token.userId])
+        (state.presence[token.userId] ||
+          Object.values(state.presence).some(
+            (person) =>
+              (person.accountId ?? person.userId) ===
+              (token.accountId ?? token.userId)
+          ) ||
+          state.approved?.[token.accountId ?? token.userId] ||
+          state.approved?.[token.userId])
     )
   );
 }
@@ -191,6 +192,14 @@ export function applyRoomControl(
     );
   }
   if (message.type === 'room.settings.update') {
+    const { eventMode, ...patch } = message.settings;
+    if (eventMode && (!token.eventHost || !state.presence[token.userId]))
+      return denied(state, 'permission_denied', message.requestId);
+    const nowMs = Date.parse(now);
+    const eventModeExpiresAt =
+      eventMode && !activeMeetEvent(state.settings?.eventModeExpiresAt, nowMs)
+        ? nowMs + MEET_EVENT_DURATION_MS
+        : undefined;
     if (
       message.settings.viewersByDefault !== undefined &&
       (!state.presence[token.userId] || !canEnableMeetClassViewers(token))
@@ -215,9 +224,27 @@ export function applyRoomControl(
         'requestId' in message ? message.requestId : undefined
       );
     const applied = applyMeetRoomSettings(
-      state,
+      eventModeExpiresAt
+        ? {
+            ...state,
+            eventAdmissionAudit: [
+              ...(state.eventAdmissionAudit ?? []).slice(-255),
+              {
+                action: 'event_enabled',
+                actorId: token.accountId ?? token.userId,
+                at: now,
+                expiresAt: eventModeExpiresAt,
+              },
+            ],
+          }
+        : state,
       stampMeetJoinQr(
-        { shareNotes: false, ...state.settings, ...message.settings },
+        {
+          shareNotes: false,
+          ...state.settings,
+          ...patch,
+          ...(eventModeExpiresAt ? { eventModeExpiresAt } : {}),
+        },
         message.settings,
         now
       ),

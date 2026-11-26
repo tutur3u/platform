@@ -335,6 +335,17 @@ export function CallSettings({
                 onSettingsChange={room.updateSettings}
                 isHost={isHost}
               />
+              {room.state.eventHost && (
+                <Button
+                  variant="outline"
+                  onClick={() => room.updateSettings({ eventMode: true })}
+                  disabled={
+                    (room.state.settings?.eventModeExpiresAt ?? 0) > Date.now()
+                  }
+                >
+                  {t('guest_join.event_mode_enable')}
+                </Button>
+              )}
             </SettingsSection>
             <ClassroomSettings room={room} />
           </MeetSettingsStack>

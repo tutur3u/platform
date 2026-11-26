@@ -45,9 +45,12 @@ export function resolveRoomSettingsPatch(
     enablesNoteSharing(body as Parameters<typeof enablesNoteSharing>[0]) &&
     !isMeetAiEnabledForWorkspace(token.wsId, env)
   )
-    return new Response('Meet AI is temporarily unavailable', { status: 403 });
+    return new Response('Meet AI is temporarily unavailable', {
+      status: 403,
+    });
+  const { eventMode: _, ...settings } = patch.data;
   return stampMeetJoinQr(
-    patch.data,
+    settings,
     body as { joinQrHidden?: boolean; joinQrAutoHide?: unknown },
     new Date().toISOString()
   );

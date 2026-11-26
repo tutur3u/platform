@@ -52,7 +52,8 @@ export async function POST(
         },
       }
     );
-  if ((await resolveMeetGuestJoin(meetingId)).kind !== 'available')
+  const state = await resolveMeetGuestJoin(meetingId);
+  if (state.kind !== 'available')
     return Response.json(
       { error: 'Guest join is unavailable', code: 'MEET_GUEST_UNAVAILABLE' },
       { status: 403, headers }
@@ -61,6 +62,7 @@ export async function POST(
     meetingId,
     network,
     kind: 'human-check',
+    ...(state.eventExpiresAt ? { event: true } : {}),
   });
   if (!risk.allowed)
     return Response.json(

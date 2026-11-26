@@ -1,3 +1,8 @@
+import { extractTurnstileRemoteIp } from '@tuturuuu/cloudflare/turnstile/server';
+import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import {
   getMeetCallAccess,
   MeetCallAccessError,
@@ -51,14 +56,53 @@ export async function POST(
       });
     const { user, meeting, isHost, admission, displayName, avatarUrl, guest } =
       resolved;
+    if (resolved.guest && resolved.eventExpiresAt) {
+      const risk = await assessMeetGuestUnverifiedJoin(request, {
+        meetingId,
+        network: extractTurnstileRemoteIp(request),
+        event: true,
+      });
+      if (
+        !risk.allowed ||
+        !risk.decision ||
+        (risk.decision.tier === 'challenge_required' &&
+          resolved.eventProof !== resolved.eventExpiresAt)
+      )
+        return Response.json(
+          {
+            error: 'Verification required',
+            code: 'MEET_GUEST_VERIFICATION_REQUIRED',
+          },
+          { status: 403, headers }
+        );
+    }
     const classRole = await resolveMeetClassRole(resolved);
     // Both plan lookups run together; the participant's is bounded.
     const [maxRoomDurationSeconds, streamTier] = await Promise.all([
       getHostMeetingDurationSeconds(meeting.creator_id),
       guest ? ('free' as const) : getParticipantStreamTier(user.id),
     ]);
+    const eventHost =
+      !resolved.guest &&
+      isHost &&
+      MEETING_APP === 'meet' &&
+      'email' in resolved.user &&
+      typeof resolved.user.email === 'string' &&
+      resolved.user.email.endsWith('@tuturuuu.com')
+        ? await (async () => {
+            const admin = await createAdminClient({ noCookie: true });
+            const { data, error } = await admin.auth.admin.getUserById(user.id);
+            return (
+              !error &&
+              data.user?.id === user.id &&
+              isVerifiedTuturuuuStaffSession(data.user)
+            );
+          })().catch(() => false)
+        : false;
     const session = await getMeetCallSession({
       guest,
+      ...(eventHost ? { eventHost: true as const } : {}),
+      ...(resolved.guest ? { guestEventProof: resolved.eventProof } : {}),
       // A guest verified by Turnstile or the human check carries it into the
       // realtime token, so the host's lobby shows no Unverified badge.
       ...(guest && 'turnstileVerified' in resolved && resolved.turnstileVerified
