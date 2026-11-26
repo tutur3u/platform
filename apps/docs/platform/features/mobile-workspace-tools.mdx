@@ -724,16 +724,23 @@ cannot complete that challenge.
 Production mobile Calendar requests use the infrastructure app's
 `/api/v1/mobile-calendar/api/v1/…` gateway. Development uses the local Calendar
 app directly. The gateway validates the Bearer session with Supabase before
-reading any forwarding credential. It forwards only event CRUD, connected-account
-list/disconnect, calendar connection list/toggle, and OAuth URL discovery to the
-fixed `https://calendar.tuturuuu.com` origin. Calendar validates the original
+reading any forwarding credential. It forwards only event CRUD, native recurring
+series reads and scoped writes, connected-account list/disconnect, calendar
+connection list/toggle, and OAuth URL discovery to the fixed
+`https://calendar.tuturuuu.com` origin. The recurring series entries are exact:
+`/api/v1/workspaces/{wsId}/calendar/series` allows `GET` (series list, or
+occurrences with `from`/`to`) and `POST` (create), and
+`/api/v1/workspaces/{wsId}/calendar/series/{seriesId}` allows `GET`, `PUT` and
+`DELETE` for a UUID series id. Provider series operations, trailing segments,
+encoded slashes and dot segments stay blocked. Calendar validates the original
 session again and enforces workspace permissions. Incoming cookies, forwarding
 headers, and client-supplied gateway credentials are never relayed. Redirects and
 non-JSON upstream responses are rejected; mutations are never automatically retried.
 Authenticated requests preserve `x-tuturuuu-offline-download` and
 `x-tuturuuu-turnstile-token` when supplied, so Calendar applies the same bulk-read
 protection and verification flow. Ordinary reads stay unmarked. Regression coverage
-lives in `apps/admin/src/lib/mobile-calendar/gateway.test.ts`.
+lives in `apps/admin/src/lib/mobile-calendar/gateway.test.ts` and
+`gateway-series.test.ts`.
 
 Provision the server credential as the Infrastructure Worker secret
 `MOBILE_CALENDAR_GATEWAY_SECRET`. When that binding is absent, the gateway reads

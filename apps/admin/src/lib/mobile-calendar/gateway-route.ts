@@ -11,6 +11,8 @@ export function calendarGatewayRoute(pathname: string) {
 // callbacks, media, AI endpoints, cron routes and arbitrary URLs are excluded.
 function allowedMethods(path: string): string[] {
   const id = '[a-zA-Z0-9_-]+';
+  const uuid =
+    '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}';
   if (
     new RegExp(
       `^/api/v1/workspaces/${id}/calendar/(?:colors|default-source)$`
@@ -38,6 +40,17 @@ function allowedMethods(path: string): string[] {
     ).test(path)
   ) {
     return ['POST'];
+  }
+  // Native recurring series: the list/occurrence read and create, then one
+  // series read, scoped update and scoped delete. Series ids are UUIDs, which
+  // also keeps sibling routes such as `series/provider-operations` out.
+  if (new RegExp(`^/api/v1/workspaces/${id}/calendar/series$`).test(path)) {
+    return ['GET', 'POST'];
+  }
+  if (
+    new RegExp(`^/api/v1/workspaces/${id}/calendar/series/${uuid}$`).test(path)
+  ) {
+    return ['GET', 'PUT', 'DELETE'];
   }
   if (path === '/api/v1/calendar/auth/accounts') return ['GET', 'DELETE'];
   if (path === '/api/v1/calendar/connections') return ['GET', 'PATCH'];
