@@ -43,7 +43,13 @@ export const MEET_STREAM_TIERS: Record<
 };
 
 /** Workspace product tiers that unlock paid stream quality. */
-const PAID_PRODUCT_TIERS = new Set(['PLUS', 'PRO', 'ENTERPRISE']);
+const PAID_PRODUCT_TIERS = new Set([
+  'PLUS',
+  'PRO',
+  'MAX',
+  'ULTRA',
+  'ENTERPRISE',
+]);
 
 export function meetStreamTierForProduct(
   productTier: string | null | undefined

@@ -1,6 +1,7 @@
 import { resolvePlanModel } from '@tuturuuu/ai/credits/resolve-plan-model';
 import type { AiCreditStatus } from '@tuturuuu/ai/credits/types';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { writeAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
 import {
   PERSONAL_WORKSPACE_SLUG,
@@ -10,8 +11,6 @@ import {
   getWorkspaceTier,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-
-type ProductTier = 'ENTERPRISE' | 'FREE' | 'PLUS' | 'PRO';
 
 type AllocationDefaults = {
   allowed_features: string[];
@@ -43,7 +42,7 @@ export class HiveAiAccessError extends Error {
   }
 }
 
-function getFallbackDefaultModels(tier: ProductTier) {
+function getFallbackDefaultModels(tier: WorkspaceProductTier) {
   return {
     defaultImageModel:
       tier === 'FREE'
@@ -53,12 +52,14 @@ function getFallbackDefaultModels(tier: ProductTier) {
   };
 }
 
-function normalizeTier(value: string | null | undefined): ProductTier {
+function normalizeTier(value: string | null | undefined): WorkspaceProductTier {
   switch (value) {
     case 'ENTERPRISE':
     case 'FREE':
     case 'PLUS':
     case 'PRO':
+    case 'MAX':
+    case 'ULTRA':
       return value;
     default:
       return 'FREE';

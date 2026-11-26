@@ -222,6 +222,8 @@ extension AssistantLiveBlockCopy on AssistantLiveEligibility {
 String _planName(String tier) => switch (tier.toUpperCase()) {
   'PLUS' => 'Plus',
   'PRO' => 'Pro',
+  'MAX' => 'Max',
+  'ULTRA' => 'Ultra',
   'ENTERPRISE' => 'Enterprise',
   _ => tier,
 };

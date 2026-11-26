@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
 import {
   matchesAllowedModel,
@@ -7,8 +8,6 @@ import {
 } from './model-mapping';
 
 export type PlanModelCapability = 'image' | 'language';
-
-type WorkspaceProductTier = 'ENTERPRISE' | 'FREE' | 'PLUS' | 'PRO';
 
 type AllocationRow = {
   allowed_models: string[];
@@ -64,6 +63,8 @@ function getFallbackPlanModelId(
       return 'google/imagen-4.0-fast-generate-001';
     case 'PLUS':
     case 'PRO':
+    case 'MAX':
+    case 'ULTRA':
     case 'ENTERPRISE':
       return 'google/imagen-4.0-generate-001';
   }

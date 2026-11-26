@@ -8,6 +8,18 @@ export const WORKSPACE_TIER_ORDER = [
   'ENTERPRISE',
 ] as const satisfies readonly WorkspaceProductTier[];
 
+export const WORKSPACE_REALTIME_LIMITS = {
+  FREE: { maxPresencePerBoard: 10 },
+  PLUS: { maxPresencePerBoard: 50 },
+  PRO: { maxPresencePerBoard: 50 },
+  MAX: { maxPresencePerBoard: 75 },
+  ULTRA: { maxPresencePerBoard: 100 },
+  ENTERPRISE: { maxPresencePerBoard: 50 },
+} as const satisfies Record<
+  WorkspaceProductTier,
+  { maxPresencePerBoard: number }
+>;
+
 export function workspaceTierRank(tier: string | null | undefined) {
   return WORKSPACE_TIER_ORDER.findIndex((entry) => entry === tier);
 }

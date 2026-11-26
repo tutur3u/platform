@@ -56,7 +56,7 @@ describe('stream tiers', () => {
   it('maps workspace products to tiers and defaults to free', () => {
     expect(meetStreamTierForProduct('FREE')).toBe('free');
     expect(meetStreamTierForProduct(undefined)).toBe('free');
-    for (const tier of ['PLUS', 'PRO', 'ENTERPRISE'])
+    for (const tier of ['PLUS', 'PRO', 'MAX', 'ULTRA', 'ENTERPRISE'])
       expect(meetStreamTierForProduct(tier)).toBe('paid');
     expect(resolveMeetStreamEntitlement(undefined).tier).toBe('free');
   });

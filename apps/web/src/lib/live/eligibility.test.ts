@@ -9,6 +9,7 @@ import {
   type LiveEligibilityDeps,
   liveBlockedResponse,
   liveReservationAdmits,
+  isLivePaidTier,
   resolveLiveEligibility,
 } from './eligibility';
 import { readLiveMintConfig } from './mint-cap';
@@ -334,4 +335,8 @@ describe('default lookups', () => {
       'FREE'
     );
   });
+});
+
+it.each(['MAX', 'ULTRA'])('recognizes %s as a paid Live tier', (tier) => {
+  expect(isLivePaidTier(tier)).toBe(true);
 });

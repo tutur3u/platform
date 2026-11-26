@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 const workspaceTierFree = 'FREE';
 const workspaceTierPlus = 'PLUS';
 const workspaceTierPro = 'PRO';
+const workspaceTierMax = 'MAX';
+const workspaceTierUltra = 'ULTRA';
 const workspaceTierEnterprise = 'ENTERPRISE';
 
 String normalizeWorkspaceTier(String? value) {
@@ -11,6 +13,10 @@ String normalizeWorkspaceTier(String? value) {
       return workspaceTierPlus;
     case workspaceTierPro:
       return workspaceTierPro;
+    case workspaceTierMax:
+      return workspaceTierMax;
+    case workspaceTierUltra:
+      return workspaceTierUltra;
     case workspaceTierEnterprise:
       return workspaceTierEnterprise;
     case workspaceTierFree:

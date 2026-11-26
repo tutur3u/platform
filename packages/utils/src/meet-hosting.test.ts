@@ -52,7 +52,7 @@ describe('paid-tier hosting flag', () => {
   );
 });
 
-it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+it.each(['PLUS', 'PRO', 'MAX', 'ULTRA', 'ENTERPRISE'])(
   'denies verified external %s accounts while the flag is off',
   async (value) => {
     vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', undefined);
@@ -83,7 +83,7 @@ it.each([undefined, 'true'])(
     expect(await canVerifiedAccountHostMeeting('actor', external)).toBe(false);
   }
 );
-it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+it.each(['PLUS', 'PRO', 'MAX', 'ULTRA', 'ENTERPRISE'])(
   'unlocks verified %s accounts when the flag is on',
   async (value) => {
     tier.mockResolvedValue(value);
@@ -97,7 +97,7 @@ it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
     expect(tier).toHaveBeenCalledWith('actor');
   }
 );
-it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+it.each(['PLUS', 'PRO', 'MAX', 'ULTRA', 'ENTERPRISE'])(
   'denies unverified %s accounts even with paid hosting enabled',
   async (value) => {
     vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'true');

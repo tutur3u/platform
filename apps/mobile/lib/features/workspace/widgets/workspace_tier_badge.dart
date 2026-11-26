@@ -84,6 +84,8 @@ class WorkspaceTierBadge extends StatelessWidget {
       case workspaceTierPlus:
         return Icons.add_circle_rounded;
       case workspaceTierPro:
+      case workspaceTierMax:
+      case workspaceTierUltra:
         return Icons.auto_awesome_rounded;
       case workspaceTierEnterprise:
         return Icons.apartment_rounded;
@@ -98,6 +100,8 @@ class WorkspaceTierBadge extends StatelessWidget {
       case workspaceTierPlus:
         return const Color(0xFF3D84F5);
       case workspaceTierPro:
+      case workspaceTierMax:
+      case workspaceTierUltra:
         return const Color(0xFFE25CB4);
       case workspaceTierEnterprise:
         return const Color(0xFFF0A43A);

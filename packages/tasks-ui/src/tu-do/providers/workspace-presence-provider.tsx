@@ -6,17 +6,8 @@ import {
   useWorkspacePresence,
 } from '@tuturuuu/ui/hooks/use-workspace-presence';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { WORKSPACE_REALTIME_LIMITS } from '@tuturuuu/utils/feature-tier-policy';
 import { createContext, type ReactNode, useContext, useMemo } from 'react';
-
-const REALTIME_LIMITS: Record<
-  WorkspaceProductTier,
-  { maxPresencePerBoard: number }
-> = {
-  FREE: { maxPresencePerBoard: 10 },
-  PLUS: { maxPresencePerBoard: 50 },
-  PRO: { maxPresencePerBoard: 50 },
-  ENTERPRISE: { maxPresencePerBoard: 50 },
-};
 
 interface WorkspacePresenceContextValue extends UseWorkspacePresenceResult {
   tier: WorkspaceProductTier;
@@ -59,7 +50,8 @@ export function WorkspacePresenceProvider({
   const parentContext = useOptionalWorkspacePresenceContext();
   const shouldInherit = inherit && parentContext !== null;
   const tier = tierProp || 'FREE';
-  const maxPresencePerBoard = REALTIME_LIMITS[tier]?.maxPresencePerBoard ?? 10;
+  const maxPresencePerBoard =
+    WORKSPACE_REALTIME_LIMITS[tier]?.maxPresencePerBoard ?? 10;
   const cursorsEnabled = DEV_MODE || tier !== 'FREE';
   // Only one channel at a time: while inheriting, this provider stays idle and
   // the surrounding one keeps serving the subtree.

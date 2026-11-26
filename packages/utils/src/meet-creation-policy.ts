@@ -7,6 +7,6 @@ export function canCreateOnlineMeeting(
     return false;
   return (
     /^[^\s@]+@tuturuuu\.com$/iu.test(email) ||
-    ['PLUS', 'PRO', 'ENTERPRISE'].includes(tier)
+    ['PLUS', 'PRO', 'MAX', 'ULTRA', 'ENTERPRISE'].includes(tier)
   );
 }

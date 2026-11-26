@@ -34,6 +34,8 @@ function tierBadgeVariant(tier: string) {
       return 'secondary' as const;
     case 'PLUS':
     case 'PRO':
+    case 'MAX':
+    case 'ULTRA':
       return 'default' as const;
     case 'ENTERPRISE':
       return 'destructive' as const;

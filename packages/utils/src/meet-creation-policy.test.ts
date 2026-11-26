@@ -20,7 +20,7 @@ describe('online meeting creator domain', () => {
   });
 });
 
-it.each(['PLUS', 'PRO', 'ENTERPRISE'])(
+it.each(['PLUS', 'PRO', 'MAX', 'ULTRA', 'ENTERPRISE'])(
   'allows verified external %s eligibility',
   (tier) => {
     expect(canCreateOnlineMeeting('host@example.test', tier)).toBe(true);

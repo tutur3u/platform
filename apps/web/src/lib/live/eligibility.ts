@@ -2,8 +2,14 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type LiveMintConfig, readLiveMintConfig } from './mint-cap';
 
-/** Plans that include Live voice. */
+/** Plans currently available through the Live upgrade flow. */
 export const LIVE_PAID_TIERS = ['PLUS', 'PRO', 'ENTERPRISE'] as const;
+
+const ELIGIBLE_LIVE_TIERS: readonly string[] = [
+  ...LIVE_PAID_TIERS,
+  'MAX',
+  'ULTRA',
+];
 
 /** `private.begin_ai_live_session` refuses a reservation below this. */
 export const LIVE_MIN_CREDITS = 500;
@@ -185,7 +191,7 @@ export const defaultLiveEligibilityDeps: LiveEligibilityDeps = {
 };
 
 export function isLivePaidTier(tier: string | null | undefined) {
-  return (LIVE_PAID_TIERS as readonly string[]).includes(tier ?? '');
+  return ELIGIBLE_LIVE_TIERS.includes(tier ?? '');
 }
 
 /**

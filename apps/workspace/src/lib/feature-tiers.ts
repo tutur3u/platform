@@ -1,15 +1,14 @@
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
-import { FEATURE_TIERS } from '@tuturuuu/utils/feature-tier-policy';
+import {
+  FEATURE_TIERS,
+  WORKSPACE_TIER_ORDER,
+} from '@tuturuuu/utils/feature-tier-policy';
 
 /**
  * Tier hierarchy for comparison (higher index = higher tier)
  */
-export const TIER_HIERARCHY: readonly WorkspaceProductTier[] = [
-  'FREE',
-  'PLUS',
-  'PRO',
-  'ENTERPRISE',
-] as const;
+export const TIER_HIERARCHY: readonly WorkspaceProductTier[] =
+  WORKSPACE_TIER_ORDER;
 
 /**
  * Feature identifiers for the platform
@@ -42,15 +41,7 @@ export { FEATURE_TIERS } from '@tuturuuu/utils/feature-tier-policy';
 /**
  * Per-board realtime concurrency limits by tier
  */
-export const REALTIME_LIMITS = {
-  FREE: { maxPresencePerBoard: 10 },
-  PLUS: { maxPresencePerBoard: 50 },
-  PRO: { maxPresencePerBoard: 50 },
-  ENTERPRISE: { maxPresencePerBoard: 50 },
-} as const satisfies Record<
-  WorkspaceProductTier,
-  { maxPresencePerBoard: number }
->;
+export { WORKSPACE_REALTIME_LIMITS as REALTIME_LIMITS } from '@tuturuuu/utils/feature-tier-policy';
 
 /**
  * Get the tier index for comparison

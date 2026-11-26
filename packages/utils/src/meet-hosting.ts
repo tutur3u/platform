@@ -3,7 +3,7 @@ import 'server-only';
 import { getHostMeetingTier } from './meet-duration';
 import { isActiveQaStaffHost } from './qa-test-account';
 
-const PAID_HOSTING_TIERS = ['PLUS', 'PRO', 'ENTERPRISE'];
+const PAID_HOSTING_TIERS = ['PLUS', 'PRO', 'MAX', 'ULTRA', 'ENTERPRISE'];
 
 /**
  * Server-only switch for opening Meet hosting to paid tiers. It fails closed:

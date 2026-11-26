@@ -34,6 +34,8 @@ function normalizeWorkspaceTier(
     case 'FREE':
     case 'PLUS':
     case 'PRO':
+    case 'MAX':
+    case 'ULTRA':
     case 'ENTERPRISE':
       return tier;
     default:
