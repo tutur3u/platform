@@ -92,6 +92,36 @@ describe('inventory product image src', () => {
     expect(after).not.toBe(before);
   });
 
+  it('changes the src when a web upload replaces a signed image', () => {
+    // Web uploads store signed read URLs; each upload has a unique name.
+    const signed = (path: string) =>
+      `https://project.supabase.co/storage/v1/object/sign/workspaces/${WS}/${path}?token=t`;
+    const before = inventoryProductImageSrc({
+      avatarUrl: signed(OLD),
+      productId: 'p-1',
+      wsId: WS,
+    });
+    const after = inventoryProductImageSrc({
+      avatarUrl: signed(IMAGE),
+      productId: 'p-1',
+      wsId: WS,
+    });
+    expect(before).toBe(
+      `/api/v1/workspaces/${WS}/products/p-1/image?v=upload-id-old.png`
+    );
+    expect(after).toBe(
+      `/api/v1/workspaces/${WS}/products/p-1/image?v=upload-id-a.png`
+    );
+    // A re-signed URL for the same file keeps the same src.
+    expect(
+      inventoryProductImageSrc({
+        avatarUrl: signed(IMAGE).replace('token=t', 'token=u'),
+        productId: 'p-1',
+        wsId: WS,
+      })
+    ).toBe(after);
+  });
+
   it('shows a sale line with the image it was sold with', () => {
     const route = `/api/v1/workspaces/${WS}/products/p-1/image?v=upload-id-a.png`;
     // The current image is signed through the product route.

@@ -250,6 +250,27 @@ describe('inventory product image route', () => {
   it('answers 404 for a product outside the workspace', async () => {
     mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
     expect((await get()).status).toBe(404);
+    // The lookup is scoped to the authorized workspace.
+    expect(mocks.eq).toHaveBeenCalledWith('ws_id', WS);
+    expect(mocks.eq).toHaveBeenCalledWith('id', PRODUCT);
+  });
+
+  it('answers storage failures with a fixed message', async () => {
+    const { WorkspaceStorageError } =
+      await import('@tuturuuu/storage-core/workspace-storage-provider');
+    for (const [status, message] of [
+      [404, 'Image not found'],
+      [503, 'Error loading product image'],
+    ] as const) {
+      mocks.createWorkspaceStorageSignedReadUrl.mockRejectedValueOnce(
+        new WorkspaceStorageError('bucket r2-internal-7 key missing', status)
+      );
+      const response = await get();
+      expect(response.status).toBe(status);
+      const body = await response.json();
+      expect(body).toEqual({ message });
+      expect(JSON.stringify(body)).not.toContain('r2-internal');
+    }
   });
 
   it('rejects malformed product ids before any lookup', async () => {

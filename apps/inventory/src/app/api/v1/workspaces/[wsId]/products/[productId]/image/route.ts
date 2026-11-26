@@ -104,8 +104,16 @@ export async function GET(request: Request, { params }: Params) {
     });
   } catch (signError) {
     if (signError instanceof WorkspaceStorageError) {
+      // Storage messages can name provider internals; readers get a fixed
+      // message with the storage status.
+      console.error('Error signing inventory product image', signError);
       return NextResponse.json(
-        { message: signError.message },
+        {
+          message:
+            signError.status === 404
+              ? 'Image not found'
+              : 'Error loading product image',
+        },
         { status: signError.status }
       );
     }
