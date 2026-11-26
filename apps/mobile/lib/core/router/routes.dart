@@ -135,6 +135,9 @@ abstract final class Routes {
 
   /// A lane detail is pushed over the filtered Work list, so Back pops to it
   /// rather than going to the unfiltered tab root.
+  static bool isMastermindProjectThreadLocation(String location) =>
+      normalizeLocation(location).startsWith('$mastermindWork/thread/');
+
   static bool isMastermindLaneLocation(String location) =>
       normalizeLocation(location).startsWith('$mastermindWork/lane/');
   static const timer = '/timer';

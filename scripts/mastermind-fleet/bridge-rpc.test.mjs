@@ -175,10 +175,10 @@ test('pages and searches threads with only read tools, titles scrubbed', async (
   ]);
 });
 
-test('returns user and assistant messages only, redacted and capped', async () => {
+test('returns bounded, redacted conversation and typed activity', async () => {
   const { answer, calls } = await ask(
     'transcript',
-    { threadId: THREAD, before: 40, limit: 3 },
+    { threadId: THREAD, before: 40, limit: 8, activity: true },
     {
       t3_thread_read: () => ({
         thread: { title: 'Fix the build', status: 'failed', itemCount: 44 },
@@ -187,11 +187,13 @@ test('returns user and assistant messages only, redacted and capped', async () =
             position: 30,
             type: 'user_message',
             text: 'run it\nplease',
+            senderThreadId: 'thread:synthetic-agent',
             updatedAt: 't1',
           },
           {
             position: 31,
             type: 'command_execution',
+            status: 'completed',
             text: 'cat .env',
             updatedAt: 't2',
           },
@@ -200,6 +202,23 @@ test('returns user and assistant messages only, redacted and capped', async () =
             type: 'reasoning',
             text: 'thinking',
             updatedAt: 't3',
+          },
+          {
+            position: 32,
+            type: 'secret_request',
+            subagentId: 'subagent:synthetic',
+            title: 'Internal card',
+            text: 'Sensitive details never projected',
+            updatedAt: 't3',
+          },
+          {
+            position: 36,
+            type: 'subagent',
+            itemId: 'synthetic-delegation',
+            status: 'waiting',
+            title: 'Verify the fixture',
+            text: 'Raw delegated output',
+            updatedAt: 't7',
           },
           {
             position: 33,
@@ -230,8 +249,9 @@ test('returns user and assistant messages only, redacted and capped', async () =
   );
   assert.deepEqual(calls[0].args, {
     threadId: THREAD,
-    limit: 3,
+    limit: 8,
     maxCharsPerItem: 4000,
+    view: 'activity',
     beforePosition: 40,
   });
   // Without a position T3 would start at the oldest item.
@@ -254,18 +274,68 @@ test('returns user and assistant messages only, redacted and capped', async () =
     answer.data.messages.map((m) => [m.position, m.role, m.truncated]),
     [
       [30, 'user', false],
+      [31, 'assistant', false],
       [33, 'assistant', false],
       [34, 'assistant', true],
+      [36, 'assistant', false],
     ]
   );
   // Layout, paths and links stay; the credential does not.
   assert.equal(answer.data.messages[0].text, 'run it\nplease');
+  assert.equal(answer.data.messages[0].kind, 'interAgent');
+  assert.deepEqual(answer.data.messages[1], {
+    position: 31,
+    role: 'assistant',
+    kind: 'operation',
+    activityStatus: 'completed',
+    text: '',
+    truncated: false,
+    at: 't2',
+  });
   assert.equal(
-    answer.data.messages[1].text,
+    answer.data.messages[2].text,
     'Edited ./apps/web/.env.local, see https://example.com/x\nAPI_KEY=[redacted]'
   );
-  assert.equal(answer.data.messages[2].text.length, 4000);
+  assert.equal(answer.data.messages[3].text.length, 4000);
+  const task = answer.data.messages[4];
+  assert.equal(task.kind, 'delegatedTask');
+  assert.equal(task.activityStatus, 'waiting');
+  assert.equal(task.text, 'Verify the fixture');
+  assert.match(task.identity, /^[0-9a-f]{64}$/u);
   assert.equal(answer.data.earlierPosition, 29);
+});
+
+test('keeps legacy native transcript pages conversation-only', async () => {
+  const { answer, calls } = await ask(
+    'transcript',
+    { threadId: THREAD, environmentId: 'env-1' },
+    {
+      t3_thread_read: () => ({
+        thread: {},
+        items: [
+          { position: 10, type: 'command_execution', status: 'completed' },
+          {
+            position: 11,
+            type: 'user_message',
+            senderThreadId: 'thread:synthetic',
+            text: 'Legacy message',
+            updatedAt: 't1',
+          },
+        ],
+        earlierPosition: null,
+      }),
+    }
+  );
+  assert.equal(calls[0].args.view, undefined);
+  assert.deepEqual(answer.data.messages, [
+    {
+      position: 11,
+      role: 'user',
+      text: 'Legacy message',
+      truncated: false,
+      at: 't1',
+    },
+  ]);
 });
 
 test('drops the oldest messages when a page would not fit one frame', async () => {

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 import 'package:mobile/features/mastermind/projects/data/fixture_projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
+import 'package:mobile/features/mastermind/projects/data/thread_models.dart';
 import 'package:mobile/features/mastermind/projects/projects_location.dart';
 import 'package:mobile/features/mastermind/projects/view/project_thread_page.dart';
 import 'package:mobile/features/mastermind/projects/view/projects_labels.dart';
 import 'package:mobile/features/mastermind/projects/view/projects_page.dart';
 import 'package:mobile/features/mastermind/projects/view/reply_receipt_line.dart';
+import 'package:mobile/features/mastermind/projects/view/thread_bubbles.dart';
 
 import '../../../helpers/pump_app.dart';
 
@@ -179,6 +182,49 @@ void main() {
     expect(find.text('Sent'), findsOneWidget);
     expect(find.text('Keep going'), findsOneWidget);
   });
+
+  testWidgets(
+    'provenance collapses agent activity and preserves legacy prose',
+    (tester) async {
+      await tester.pumpApp(
+        Column(
+          children: [
+            ThreadMessageBubble(
+              message: ThreadMessage(
+                position: 1,
+                role: ThreadMessageRole.user,
+                text: 'Human message',
+                at: _now,
+              ),
+            ),
+            ThreadMessageBubble(
+              message: ThreadMessage(
+                position: 2,
+                role: ThreadMessageRole.user,
+                kind: FleetTranscriptKind.interAgent,
+                text:
+                    'Agent detail [redacted]\n\n'
+                    '[redacted]: https://example.test',
+                at: _now,
+              ),
+            ),
+          ],
+        ),
+      );
+      expect(find.text('Human message', findRichText: true), findsOneWidget);
+      expect(find.text('Agent message'), findsOneWidget);
+      expect(
+        find.textContaining('Agent detail', findRichText: true),
+        findsNothing,
+      );
+      await tester.tap(find.text('Agent message'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Agent detail [redacted]', findRichText: true),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('receipt lines say each delivery state', (tester) async {
     await tester.pumpApp(

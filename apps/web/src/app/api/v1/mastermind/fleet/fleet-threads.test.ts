@@ -581,6 +581,40 @@ describe('thread history and machines', () => {
       expect((await messages(query)).status).toBe(422);
   });
 
+  it('requests typed activity only when the client opts in', async () => {
+    mocks.answer = {
+      ok: true,
+      data: {
+        thread: thread(),
+        messages: [
+          {
+            position: 1,
+            role: 'assistant',
+            kind: 'operation',
+            activityStatus: 'completed',
+            text: '',
+            truncated: false,
+            at: 't1',
+          },
+        ],
+        earlierPosition: null,
+      },
+    };
+    const result = await messages(
+      `machineId=skr-m4&threadId=${encodeURIComponent(THREAD)}&activity=1`
+    );
+    expect(result.status).toBe(200);
+    expect(result.body.messages[0]).toMatchObject({
+      kind: 'operation',
+      activityStatus: 'completed',
+    });
+    expect(openArgs(mocks.sent[0] as Sent)).toEqual({
+      threadId: THREAD,
+      activity: true,
+      limit: 30,
+    });
+  });
+
   it('lists the machines reachable through a bridge machine', async () => {
     mocks.answer = {
       ok: true,

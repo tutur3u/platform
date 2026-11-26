@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_reply_attachment.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_thread_repository.dart';
 import 'package:mocktail/mocktail.dart';
@@ -37,6 +40,69 @@ void main() {
 
   String captured() =>
       verify(() => api.getJson(captureAny())).captured.single as String;
+
+  test(
+    'reconciles an interrupted upload and sends one attachment-only reply',
+    () async {
+      const upload = '6d3c2f1e-4b5a-4c6d-8e7f-9a0b1c2d3e4f';
+      const reservePath = '/api/v1/mastermind/fleet/reply-attachments';
+      const uploadPath = '$reservePath/$upload';
+      const replyPath = '/api/v1/mastermind/fleet/replies';
+      final file = FleetReplyAttachment(
+        name: 'readme.txt',
+        kind: FleetReplyAttachmentKind.text,
+        bytes: Uint8List.fromList([72, 105]),
+      );
+      final batch = FleetReplyAttachmentBatch([file]);
+      final reserve = {
+        'machineId': 'skr-m4',
+        'threadId': _thread,
+        'replyId': _reply,
+        'kind': 'text',
+        'name': file.name,
+        'size': 2,
+      };
+      final reply = {
+        'machineId': 'skr-m4',
+        'threadId': _thread,
+        'text': '',
+        'idempotencyKey': _reply,
+        'attachments': [upload],
+      };
+      when(() => api.postJson(reservePath, reserve))
+          .thenAnswer((_) async => {'uploadId': upload});
+      when(() => api.putBytes(uploadPath, file.bytes))
+          .thenThrow(const ApiException.transport(message: 'timeout'));
+      when(() => api.getJson(uploadPath))
+          .thenAnswer((_) async => {'uploadId': upload, 'state': 'ready'});
+      when(() => api.postJson(replyPath, reply)).thenAnswer(
+        (_) async => {
+          'id': _reply,
+          'machineId': 'skr-m4',
+          'threadId': _thread,
+          'state': 'sent',
+        },
+      );
+
+      Future<FleetThreadReply> send() => repository.replyWithAttachments(
+        userId: 'synthetic-owner',
+        machineId: 'skr-m4',
+        threadId: _thread,
+        text: '',
+        idempotencyKey: _reply,
+        batch: batch,
+      );
+      await expectLater(send(), throwsA(isA<FleetThreadException>()));
+      expect((await send()).state, FleetReplyState.sent);
+      verifyInOrder([
+        () => api.postJson(reservePath, reserve),
+        () => api.putBytes(uploadPath, file.bytes),
+        () => api.getJson(uploadPath),
+        () => api.postJson(replyPath, reply),
+      ]);
+      verifyNoMoreInteractions(api);
+    },
+  );
 
   test('lists threads with every filter in the query, encoded', () async {
     when(() => api.getJson(any())).thenAnswer(
@@ -102,9 +168,10 @@ void main() {
 
   test('reads projects, machines and history', () async {
     when(() => api.getJson(any())).thenAnswer((invocation) async {
-      final path = Uri.parse(
-        invocation.positionalArguments.first as String,
-      ).path.split('/').last;
+      final path = Uri.parse(invocation.positionalArguments.first as String)
+          .path
+          .split('/')
+          .last;
       return switch (path) {
         'projects' => {
           'machineId': 'skr-m4',
@@ -178,6 +245,7 @@ void main() {
       'machineId': 'skr-m4',
       'threadId': _thread,
       'before': '120',
+      'activity': '1',
       'limit': '30',
     });
   });
@@ -234,9 +302,8 @@ void main() {
   );
 
   test('records a read marker', () async {
-    when(
-      () => api.postJson(any(), any()),
-    ).thenAnswer((_) async => {'saved': true});
+    when(() => api.postJson(any(), any()))
+        .thenAnswer((_) async => {'saved': true});
     final marker = repository.markRead(
       machineId: 'skr-m4',
       environmentId: 'env-2',
@@ -262,9 +329,8 @@ void main() {
       itemCount: 12,
     );
     // Web lost a race with another marker: the badge must stay.
-    when(
-      () => api.postJson(any(), any()),
-    ).thenAnswer((_) async => {'saved': false});
+    when(() => api.postJson(any(), any()))
+        .thenAnswer((_) async => {'saved': false});
     expect(await mark(), isFalse);
     when(() => api.postJson(any(), any())).thenAnswer((_) async => {});
     await expectLater(

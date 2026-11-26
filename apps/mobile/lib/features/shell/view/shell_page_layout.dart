@@ -154,10 +154,11 @@ extension _ShellPageLayout on _ShellPageState {
     // Chat input and Live call controls share the only dock/exit surface,
     // including immersive mode. Other pages retain their existing policy.
     final showBottomNav =
-        assistantDock ||
-        ((!widget.matchedLocation.startsWith(Routes.assistant) ||
-                !assistantChrome.isFullscreen) &&
-            !immersive);
+        !Routes.isMastermindProjectThreadLocation(widget.matchedLocation) &&
+        (assistantDock ||
+            ((!widget.matchedLocation.startsWith(Routes.assistant) ||
+                    !assistantChrome.isFullscreen) &&
+                !immersive));
     final injectedBack = injectedMiniNavRegistration?.items
         .where((item) => item.isBack)
         .firstOrNull;

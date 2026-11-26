@@ -1,4 +1,5 @@
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_reply_attachment.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 
 /// Why a thread call failed, as a state a screen shows; never a server
@@ -140,7 +141,19 @@ abstract interface class FleetThreadSource {
   Future<FleetThreadReply> receipt(String replyId);
 }
 
-class FleetThreadRepository implements FleetThreadSource {
+abstract interface class FleetThreadAttachmentSource
+    implements FleetThreadSource {
+  Future<FleetThreadReply> replyWithAttachments({
+    required String userId,
+    required String machineId,
+    required String threadId,
+    required String text,
+    required String idempotencyKey,
+    required FleetReplyAttachmentBatch batch,
+  });
+}
+
+class FleetThreadRepository implements FleetThreadAttachmentSource {
   FleetThreadRepository({ApiClient? api}) : _api = api ?? ApiClient();
 
   static const _base = '/api/v1/mastermind/fleet';
@@ -213,6 +226,7 @@ class FleetThreadRepository implements FleetThreadSource {
   }) => _read(
     path('threads/messages', {
       'machineId': machineId,
+      'activity': '1',
       'environmentId': environmentId,
       'threadId': threadId,
       'before': before,
@@ -266,6 +280,86 @@ class FleetThreadRepository implements FleetThreadSource {
       throw FleetThreadException.from(error);
     }
   }
+
+  @override
+  Future<FleetThreadReply> replyWithAttachments({
+    required String userId,
+    required String machineId,
+    required String threadId,
+    required String text,
+    required String idempotencyKey,
+    required FleetReplyAttachmentBatch batch,
+  }) => ApiClient.runForUser(userId, () async {
+    try {
+      final ids = <String>[];
+      for (final (index, file) in batch.files.indexed) {
+        var id = batch.reservations[index];
+        if (id == null) {
+          final reservation = await _api.postJson(path('reply-attachments'), {
+            'machineId': machineId,
+            'threadId': threadId,
+            'replyId': idempotencyKey,
+            'kind': file.kind.name,
+            'name': file.name,
+            'size': file.bytes.length,
+          });
+          final value = reservation['uploadId'];
+          if (value is! String || !_uploadId.hasMatch(value)) {
+            throw const FormatException('Invalid upload identifier');
+          }
+          id = value;
+          batch.reservations[index] = id;
+        } else if (!batch.ready.contains(index)) {
+          final status = await _api.getJson(path('reply-attachments/$id'));
+          if (status['uploadId'] != id) {
+            throw const FormatException('Invalid upload status');
+          }
+          switch (status['state']) {
+            case 'ready':
+              batch.ready.add(index);
+            case 'reserved':
+              break;
+            default:
+              throw const FormatException('Invalid upload status');
+          }
+        }
+        if (!batch.ready.contains(index)) {
+          final result = await _api.putBytes(
+            path('reply-attachments/$id'),
+            file.bytes,
+          );
+          if (result['uploadId'] != id || result['kind'] != file.kind.name) {
+            throw const FormatException('Invalid upload receipt');
+          }
+          batch.ready.add(index);
+        }
+        ids.add(id);
+      }
+      return FleetThreadReply.parse(
+        await _api.postJson(path('replies'), {
+          'machineId': machineId,
+          'threadId': threadId,
+          'text': text,
+          'idempotencyKey': idempotencyKey,
+          'attachments': ids,
+        }),
+      );
+    } on ApiException catch (error) {
+      if (error.statusCode == 404 && batch.reservations.isEmpty) {
+        throw const FleetThreadException(
+          FleetThreadFailure.rejected,
+          code: 'attachments_unsupported',
+        );
+      }
+      throw FleetThreadException.from(error);
+    } on Object catch (error) {
+      throw FleetThreadException.from(error);
+    }
+  });
+
+  static final _uploadId = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  );
 
   @override
   Future<FleetThreadReply> receipt(String replyId) => _read(

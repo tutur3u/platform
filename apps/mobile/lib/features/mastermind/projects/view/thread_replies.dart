@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_thread_reply_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_reply_attachment.dart';
 
 /// Every reply sent from one thread screen, one `FleetThreadReplyCubit` each,
 /// so a reply held for the machine keeps its bubble and its receipt after
@@ -35,9 +36,9 @@ class ThreadReplies extends ChangeNotifier {
   /// cannot make two replies: while one is sending, a send is ignored. Text
   /// that matches any reply still waiting to be resent (needs MFA, or a
   /// retryable failure) is that reply again, under its key.
-  void send(String text) {
+  void send(String text, {List<FleetReplyAttachment> attachments = const []}) {
     final trimmed = text.trim();
-    if (trimmed.isEmpty ||
+    if ((trimmed.isEmpty && attachments.isEmpty) ||
         replies.any((r) => r.state.phase == FleetReplyPhase.sending)) {
       return;
     }
@@ -46,15 +47,15 @@ class ThreadReplies extends ChangeNotifier {
       final waiting =
           phase == FleetReplyPhase.needsMfa ||
           (phase == FleetReplyPhase.failed && retryable);
-      if (waiting && sent == trimmed) {
-        unawaited(reply.submit(trimmed));
+      if (waiting && sent == trimmed && reply.matchesAttachments(attachments)) {
+        unawaited(reply.submit(trimmed, attachments: attachments));
         return;
       }
     }
     if (!composerEnabled) return;
     final current = _current;
     if (current != null && current.state.phase == FleetReplyPhase.idle) {
-      unawaited(current.submit(trimmed));
+      unawaited(current.submit(trimmed, attachments: attachments));
       return;
     }
     _writingAnother = false;
@@ -70,7 +71,7 @@ class ThreadReplies extends ChangeNotifier {
     );
     replies.add(next);
     notifyListeners();
-    unawaited(next.submit(trimmed));
+    unawaited(next.submit(trimmed, attachments: attachments));
   }
 
   /// Frees the composer while the current reply is held; that reply still

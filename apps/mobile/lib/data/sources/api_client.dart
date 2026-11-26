@@ -273,6 +273,10 @@ class ApiClient {
     }
   }
 
+  /// PUT bytes to a relative authenticated endpoint.
+  Future<Map<String, dynamic>> putBytes(String path, Uint8List bytes) =>
+      _putBytes(path, bytes);
+
   /// POST JSON to [path] (relative to [_baseUrl]).
   ///
   /// Returns the decoded JSON body on success, or throws [ApiException].

@@ -11,6 +11,7 @@ import 'package:mobile/l10n/l10n.dart';
 class ProjectsControls extends StatelessWidget {
   const ProjectsControls({
     required this.state,
+    required this.horizontalInsets,
     required this.search,
     required this.onSearch,
     required this.onFilter,
@@ -19,6 +20,7 @@ class ProjectsControls extends StatelessWidget {
   });
 
   final ProjectsState state;
+  final EdgeInsets horizontalInsets;
   final TextEditingController search;
   final ValueChanged<String> onSearch;
   final ValueChanged<ProjectThreadState?> onFilter;
@@ -32,16 +34,24 @@ class ProjectsControls extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (state.machines.length > 1) ...[
-          _MachineChips(state: state, onMachine: onMachine),
+          _MachineChips(
+            state: state,
+            onMachine: onMachine,
+            padding: horizontalInsets,
+          ),
           const SizedBox(height: AppSpacing.md),
         ],
-        AppSearchField(
-          controller: search,
-          placeholder: l10n.mastermindProjectsSearch,
-          onChanged: onSearch,
+        Padding(
+          padding: horizontalInsets,
+          child: AppSearchField(
+            controller: search,
+            placeholder: l10n.mastermindProjectsSearch,
+            onChanged: onSearch,
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         AppFilterBar<ProjectThreadState?>(
+          scrollPadding: horizontalInsets,
           options: [
             AppFilterOption(value: null, label: l10n.commonAll),
             for (final s in ProjectThreadState.values)
@@ -55,11 +65,14 @@ class ProjectsControls extends StatelessWidget {
           onSelected: onFilter,
         ),
         if (state.busy)
-          const Padding(
-            padding: EdgeInsets.only(top: AppSpacing.sm),
-            child: LinearProgressIndicator(minHeight: 2),
+          Padding(
+            padding: horizontalInsets.copyWith(top: AppSpacing.sm),
+            child: const LinearProgressIndicator(minHeight: 2),
           ),
-        _StatusLine(state: state),
+        Padding(
+          padding: horizontalInsets,
+          child: _StatusLine(state: state),
+        ),
         const SizedBox(height: AppSpacing.md),
       ],
     );
@@ -67,16 +80,22 @@ class ProjectsControls extends StatelessWidget {
 }
 
 class _MachineChips extends StatelessWidget {
-  const _MachineChips({required this.state, required this.onMachine});
+  const _MachineChips({
+    required this.state,
+    required this.onMachine,
+    required this.padding,
+  });
 
   final ProjectsState state;
   final ValueChanged<ProjectsMachine> onMachine;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      padding: padding,
       child: Row(
         children: [
           for (final (index, machine) in state.machines.indexed) ...[
@@ -139,9 +158,8 @@ class _StatusLine extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: colors.mutedForeground),
             ),
           ),
         ],

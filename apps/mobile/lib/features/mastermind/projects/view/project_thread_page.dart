@@ -8,26 +8,31 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_thread_reply_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_owner_live.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_reply_attachment.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_reply_step_up.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_repository.dart';
 import 'package:mobile/features/mastermind/projects/cubit/thread_cubit.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_live.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_repository.dart';
 import 'package:mobile/features/mastermind/projects/view/posted_reply_bubble.dart';
 import 'package:mobile/features/mastermind/projects/view/project_thread_transcript.dart';
+import 'package:mobile/features/mastermind/projects/view/thread_attachment_picker.dart';
 import 'package:mobile/features/mastermind/projects/view/thread_composer.dart';
 import 'package:mobile/features/mastermind/projects/view/thread_replies.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 /// `/mastermind/work/thread/:threadId`: one thread's recent messages and a
-/// steered composer above the dock. The dock's Back returns to Projects.
+/// steered composer with its own Back control.
 class ProjectThreadPage extends StatefulWidget {
   const ProjectThreadPage({
     required this.machine,
     required this.threadId,
     this.repository,
+    this.attachmentPicker = pickThreadAttachment,
     this.stepUp,
     this.live = true,
     super.key,
@@ -36,6 +41,8 @@ class ProjectThreadPage extends StatefulWidget {
   final ProjectsMachine machine;
   final String threadId;
   final ProjectsRepository? repository;
+  final Future<FleetReplyAttachment?> Function(int remainingBytes)
+  attachmentPicker;
 
   /// Renews the second factor for a reply; built over the app's
   /// [AuthRepository] when not given.
@@ -64,6 +71,7 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
       machineId: widget.machine.machineId,
       threadId: widget.threadId,
       environmentId: widget.machine.environmentId,
+      userId: _ownerId,
     ),
     onPhase: _onReply,
   );
@@ -75,7 +83,56 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
         final auth? => FleetReplyStepUp(auth: auth),
         null => null,
       };
+  late final String? _ownerId = context
+      .read<MastermindRuntime?>()
+      ?.userId
+      ?.call();
   final _draft = TextEditingController();
+  final _files = <FleetReplyAttachment>[];
+  bool _picking = false;
+
+  bool get _attachmentsAllowed =>
+      widget.machine.environmentId == null &&
+      _ownerId != null &&
+      _repository.replySource is FleetThreadAttachmentSource;
+
+  Future<void> _pickAttachment() async {
+    if (_picking || !_replies.composerEnabled || !_attachmentsAllowed) return;
+    setState(() => _picking = true);
+    try {
+      final remaining = _files.fold(
+        fleetReplyMaxAttachmentBytes,
+        (remaining, file) => remaining - file.bytes.length,
+      );
+      final file = await widget.attachmentPicker(remaining);
+      if (!mounted ||
+          file == null ||
+          _ownerId != context.read<MastermindRuntime?>()?.userId?.call()) {
+        return;
+      }
+      setState(() => _files.add(file));
+    } on Object catch (error) {
+      if (!mounted) return;
+      final l10n = context.l10n;
+      final message = switch (error) {
+        ThreadAttachmentException(problem: ThreadAttachmentProblem.tooLarge) =>
+          l10n.mastermindTranscriptAttachmentLimit,
+        ThreadAttachmentException(
+          problem: ThreadAttachmentProblem.unsupported,
+        ) =>
+          l10n.mastermindTranscriptAttachmentUnsupported,
+        _ => l10n.mastermindTranscriptAttachmentUnreadable,
+      };
+      showAppToast(
+        context,
+        message: message,
+        variant: AppAlertVariant.destructive,
+      );
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
+  }
+
   StreamSubscription<FleetOwnerFrame>? _frames;
 
   @override
@@ -103,6 +160,7 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
         (status.phase == FleetReplyPhase.sent ||
             status.phase == FleetReplyPhase.delivered)) {
       _draft.clear();
+      _files.clear();
     }
     if (status.phase == FleetReplyPhase.delivered) unawaited(_cubit.load());
   }
@@ -128,16 +186,16 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
 
   @override
   Widget build(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    final padding = MediaQuery.paddingOf(context);
+    final location = GoRouterState.of(context).uri.path;
+    final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final composerBottom =
-        (keyboard > padding.bottom ? keyboard : padding.bottom) + AppSpacing.sm;
+        (keyboard > safeBottom ? keyboard : safeBottom) + AppSpacing.sm;
     return ListenableBuilder(
       listenable: _replies,
       builder: (context, _) => BlocBuilder<ThreadCubit, ThreadState>(
         bloc: _cubit,
-        builder: (context, state) => Stack(
+        builder: (context, state) => Column(
           children: [
             ShellChromeActions(
               ownerId: 'mastermind-project-thread',
@@ -151,20 +209,19 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
                 title: thread.title,
                 showLeadingBrand: false,
               ),
-            MediaQuery.removePadding(
-              context: context,
-              removeBottom: true,
+            Expanded(
               child: ProjectThreadTranscript(
                 state: state,
                 cubit: _cubit,
                 machine: widget.machine,
-                bottomGap: composerBottom + 64,
+                bottomGap: AppSpacing.sm,
                 replies: [
                   for (final reply in _replies.replies)
                     BlocBuilder<FleetThreadReplyCubit, FleetReplyStatus>(
                       bloc: reply,
                       builder: (context, status) => PostedReplyBubble(
                         status: status,
+                        attachmentNames: reply.attachmentNames,
                         onRetry: () => unawaited(reply.retry()),
                         stepUp: _stepUp,
                         onWriteAnother: _replies.isCurrent(reply)
@@ -175,14 +232,32 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
                 ],
               ),
             ),
-            Positioned(
-              left: AppSpacing.md,
-              right: AppSpacing.md,
-              bottom: composerBottom,
-              child: ThreadComposer(
-                controller: _draft,
-                enabled: _replies.composerEnabled,
-                onSend: _replies.send,
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                composerBottom,
+              ),
+              child: Row(
+                children: [
+                  BackButton(onPressed: () => unawaited(_back())),
+                  Expanded(
+                    child: ThreadComposer(
+                      controller: _draft,
+                      enabled: _replies.composerEnabled && !_picking,
+                      attachments: _files,
+                      onPick:
+                          _attachmentsAllowed &&
+                              _files.length < fleetReplyMaxAttachments
+                          ? () => unawaited(_pickAttachment())
+                          : null,
+                      onRemove: (file) => setState(() => _files.remove(file)),
+                      onSend: (text) =>
+                          _replies.send(text, attachments: _files),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

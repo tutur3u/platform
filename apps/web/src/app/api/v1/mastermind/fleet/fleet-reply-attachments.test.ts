@@ -266,6 +266,31 @@ describe('POST /api/v1/mastermind/fleet/reply-attachments', () => {
   });
 });
 
+describe('GET /api/v1/mastermind/fleet/reply-attachments/[uploadId]', () => {
+  it('reports readiness only to the owner and session that reserved it', async () => {
+    const { GET } = await uploadRoute();
+    const ready = record({ state: 'ready' });
+    const foreign = record({ credential: credential('session-2') });
+    mocks.records.set(ready.id, ready);
+    mocks.records.set(foreign.id, foreign);
+    const status = (id: string) =>
+      GET(
+        new NextRequest(
+          `https://tuturuuu.com/api/v1/mastermind/fleet/reply-attachments/${id}`
+        ),
+        params({ uploadId: id })
+      );
+    const result = await status(ready.id);
+    expect(result.status).toBe(200);
+    expect(await result.json()).toEqual({ uploadId: ready.id, state: 'ready' });
+    expect((await status(foreign.id)).status).toBe(404);
+    expect((await status(randomUUID())).status).toBe(404);
+    vi.stubEnv('MASTERMIND_REPLY_ATTACHMENTS_ENABLED', '');
+    expect((await status(ready.id)).status).toBe(404);
+    expect(mocks.bridge!.finalizeAttachment).not.toHaveBeenCalled();
+  });
+});
+
 describe('PUT /api/v1/mastermind/fleet/reply-attachments/[uploadId]', () => {
   it('enforces the reserved size at ingress before reading or storing anything', async () => {
     const { PUT } = await uploadRoute();

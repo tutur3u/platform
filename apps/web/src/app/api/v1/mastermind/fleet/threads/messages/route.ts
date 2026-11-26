@@ -14,9 +14,9 @@ import {
 
 /**
  * Owner read of one page of a thread's history, newest messages last;
- * `before` pages back from `earlierPosition`. The machine returns user and
- * assistant messages only, with credentials redacted and each message
- * capped, and the page is not stored anywhere on the way.
+ * `before` pages back from `earlierPosition`. The machine returns redacted,
+ * capped conversation and a safe subset of typed activity. The page is
+ * transient.
  */
 export const GET = withSessionAuth(
   async (request, { appSessionToken, user, supabase }) => {
@@ -30,6 +30,7 @@ export const GET = withSessionAuth(
     const machineId = query.get('machineId') ?? '';
     const environmentId = query.get('environmentId') ?? undefined;
     const threadId = query.get('threadId') ?? '';
+    const activity = query.get('activity') === '1';
     const before = queryInt(query.get('before'), 100_000_000);
     const limit = queryInt(query.get('limit'), 30);
     if (
@@ -44,6 +45,7 @@ export const GET = withSessionAuth(
 
     const read = await readFromMachine('transcript', machineId, {
       threadId,
+      ...(activity ? { activity: true } : {}),
       ...(environmentId ? { environmentId } : {}),
       ...(before === undefined ? {} : { before }),
       ...(limit === undefined ? {} : { limit }),

@@ -59,7 +59,9 @@ class ProjectThreadTranscript extends StatelessWidget {
         ),
       for (final message in state.messages)
         ThreadMessageBubble(
-          key: ValueKey('projects-message-${message.position}'),
+          key: ValueKey(
+            'projects-message-${message.identity ?? message.position}',
+          ),
           message: message,
         ),
       ...replies,

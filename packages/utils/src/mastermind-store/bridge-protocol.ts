@@ -525,6 +525,31 @@ export const bridgeRpcAnswerSchemas = {
         z.object({
           position: z.number().int().min(0),
           role: z.enum(['user', 'assistant']),
+          identity: z
+            .string()
+            .regex(/^[0-9a-f]{64}$/u)
+            .optional(),
+          kind: z
+            .enum([
+              'human',
+              'assistant',
+              'interAgent',
+              'delegatedTask',
+              'operation',
+            ])
+            .optional(),
+          activityStatus: z
+            .enum([
+              'idle',
+              'pending',
+              'running',
+              'waiting',
+              'completed',
+              'failed',
+              'cancelled',
+              'interrupted',
+            ])
+            .optional(),
           text: z.string().max(8000),
           truncated: z.boolean(),
           at: z.string().max(40),
@@ -555,6 +580,7 @@ export const bridgeRpcArgsSchemas = {
     .object({
       environmentId: environmentId.optional(),
       threadId,
+      activity: z.boolean().optional(),
       before: z.number().int().min(0).optional(),
       limit: z.number().int().min(1).max(30).default(30),
     })

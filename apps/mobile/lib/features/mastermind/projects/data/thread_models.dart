@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
 
 enum ThreadMessageRole { user, assistant }
@@ -13,6 +14,9 @@ class ThreadMessage {
     required this.text,
     required this.at,
     this.truncated = false,
+    this.kind,
+    this.identity,
+    this.activityStatus,
   });
 
   factory ThreadMessage.fromJson(Map<String, dynamic> json) => ThreadMessage(
@@ -27,6 +31,9 @@ class ThreadMessage {
         DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
   );
 
+  final String? identity;
+  final FleetTranscriptKind? kind;
+  final FleetActivityStatus? activityStatus;
   final int position;
   final ThreadMessageRole role;
   final String text;

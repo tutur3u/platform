@@ -316,3 +316,31 @@ extension _ApiClientMutations on ApiClient {
     return _handleResponse(response);
   }
 }
+
+/// Raw authenticated uploads on the same client and redirect policy.
+extension _ApiClientByteUploads on ApiClient {
+  /// PUT an in-memory payload to a relative authenticated endpoint.
+  Future<Map<String, dynamic>> _putBytes(String path, Uint8List bytes) async {
+    final userId = _auth.currentUser?.id;
+    _checkRequestUser(userId);
+    final response = await _performStreamedRequest(() async {
+      final headers = await _getHeaders(
+        path: path,
+        contentType: 'application/octet-stream',
+      );
+      _checkRequestUser(userId);
+      final request = http.Request('PUT', _url(path))
+        ..followRedirects = false
+        ..headers.addAll(headers)
+        ..bodyBytes = bytes;
+      return await _client.send(request).timeout(_requestTimeout);
+    });
+    final decoded = await http.Response.fromStream(response).timeout(
+      _requestTimeout,
+      onTimeout: () =>
+          throw const ApiException.transport(message: 'Request timed out'),
+    );
+    _checkRequestUser(userId);
+    return _handleResponse(decoded);
+  }
+}

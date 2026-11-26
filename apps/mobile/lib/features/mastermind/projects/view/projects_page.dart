@@ -168,24 +168,43 @@ class _ProjectsBodyState extends State<_ProjectsBody>
           bloc: _cubit,
           builder: (context, state) => NovaRefreshIndicator(
             onRefresh: _cubit.refresh,
-            child: AppPageScrollView(
+            child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               slivers: [
-                SliverToBoxAdapter(
-                  child: ProjectsControls(
-                    state: state,
-                    search: _search,
-                    onSearch: _onSearch,
-                    onFilter: (f) => unawaited(_cubit.setFilter(f)),
-                    onMachine: (m) => unawaited(_cubit.selectMachine(m)),
-                  ),
+                SliverLayoutBuilder(
+                  builder: (context, constraints) {
+                    final insets = AppPageInsets.of(
+                      context,
+                      width: constraints.crossAxisExtent,
+                      consumeBottomClearance: false,
+                    );
+                    return SliverPadding(
+                      padding: EdgeInsets.only(top: insets.top),
+                      sliver: SliverToBoxAdapter(
+                        child: ProjectsControls(
+                          state: state,
+                          horizontalInsets: EdgeInsets.only(
+                            left: insets.left,
+                            right: insets.right,
+                          ),
+                          search: _search,
+                          onSearch: _onSearch,
+                          onFilter: (f) => unawaited(_cubit.setFilter(f)),
+                          onMachine: (m) => unawaited(_cubit.selectMachine(m)),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                SliverToBoxAdapter(
-                  child: ProjectsListView(
-                    state: state,
-                    cubit: _cubit,
-                    now: (widget.page.now ?? DateTime.now)().toUtc(),
+                SliverAppPage(
+                  includeTop: false,
+                  sliver: SliverToBoxAdapter(
+                    child: ProjectsListView(
+                      state: state,
+                      cubit: _cubit,
+                      now: (widget.page.now ?? DateTime.now)().toUtc(),
+                    ),
                   ),
                 ),
               ],

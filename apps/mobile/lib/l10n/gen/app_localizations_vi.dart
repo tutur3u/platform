@@ -20042,6 +20042,54 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindProjectsThisMachine => 'Máy này';
 
   @override
+  String get mastermindTranscriptIdle => 'Không hoạt động';
+
+  @override
+  String get mastermindTranscriptPending => 'Đang chờ xử lý';
+
+  @override
+  String get mastermindTranscriptRunning => 'Đang chạy';
+
+  @override
+  String get mastermindTranscriptWaiting => 'Đang chờ';
+
+  @override
+  String get mastermindTranscriptCompleted => 'Đã hoàn tất';
+
+  @override
+  String get mastermindTranscriptFailed => 'Thất bại';
+
+  @override
+  String get mastermindTranscriptCancelled => 'Đã hủy';
+
+  @override
+  String get mastermindTranscriptInterrupted => 'Đã gián đoạn';
+
+  @override
+  String get mastermindTranscriptInterAgent => 'Tin nhắn giữa các tác tử';
+
+  @override
+  String get mastermindTranscriptDelegated => 'Tác vụ được giao';
+
+  @override
+  String get mastermindTranscriptOperation => 'Sự kiện vận hành';
+
+  @override
+  String get mastermindTranscriptAttachmentsUnavailable => 'Máy này hiện không thể nhận tệp đính kèm.';
+
+  @override
+  String get mastermindTranscriptAttachmentLimit => 'Chọn tối đa 6 tệp, 10 MB mỗi tệp và tổng cộng 25 MB.';
+
+  @override
+  String get mastermindTranscriptAttachmentUnsupported => 'Chọn tệp PNG, JPEG, WebP, GIF hoặc văn bản UTF-8.';
+
+  @override
+  String get mastermindTranscriptAttachmentUnreadable => 'Không đọc được tệp đã chọn.';
+
+  @override
+  String get mastermindTranscriptRemoveAttachment => 'Gỡ tệp đính kèm';
+
+  @override
   String get mastermindProjectsSearch => 'Tìm luồng';
 
   @override

@@ -1,7 +1,7 @@
 ---
 title: Mastermind thread replies
 description: How the owner reads fleet threads and how a message from Mastermind reaches a T3 thread on the orchestrator Mac steered, never queued, with sign-in, idempotency, limits, install and rollback.
-updatedAt: "2026-11-24"
+updatedAt: "2026-11-25"
 audience: developers
 ---
 
@@ -15,8 +15,8 @@ Scope: owner answers relayed by the orchestrator's ask tool (`iris-ask`) and
 replies the owner posts into a thread from Mastermind web or the mobile app.
 Out of scope: commands and new threads. Only an existing thread is ever
 addressed. Attachments on owner thread replies are built behind the
-`mastermind_reply_attachments` flag, which is off; no client offers them yet
-(see [Attachments](#attachments)).
+`mastermind_reply_attachments` flag, which is off by default. The mobile Projects composer supports them on
+the bridge machine (see [Attachments](#attachments)).
 
 ## Steered delivery
 
@@ -195,8 +195,8 @@ owner tap -> Web POST /api/v1/mastermind/fleet/replies
 Status: the contract, the Web routes, the store and the machine bridge exist;
 the `mastermind_reply_attachments` flag (`MASTERMIND_REPLY_ATTACHMENTS_ENABLED`
 on Web, `MASTERMIND_BRIDGE_ATTACHMENTS=on` on the store Worker; both off by
-default) keeps every attachment route at 404, and no reply box shows an
-attach control. Scope when it is turned on: owner replies into a thread on
+default) keeps every attachment route at 404 until enabled. The mobile
+Projects composer accepts files for owner replies into a thread on
 the bridge machine itself (no linked environment); raster images (PNG, JPEG,
 WebP, GIF first frame) and plain UTF-8 text; 10 MB per file, 6 files and
 25 MB per reply. Inbox ask replies and review notes use the decision-answer
@@ -225,7 +225,13 @@ Contract: `packages/utils/src/mastermind-store/reply-attachments.ts`.
   control characters or bidirectional overrides. Only the derived bytes are stored, in 512 KB chunk rows
   of the FleetBridge Durable Object, and the record is finalized once, by the
   session that reserved it, with the one type its kind allows (WebP for an
-  image, plain text for text); the store computes the digest itself.
+  image, plain text for text); the store computes the digest itself. If a
+  mobile upload loses its response, the app checks the reservation with
+  `GET /api/v1/mastermind/fleet/reply-attachments/<id>` before retrying.
+  This read returns only whether the reservation awaits bytes or is ready,
+  under the same owner and session checks. The file selection stays in
+  memory for the reply and is cleared when the machine receives the reply
+  or the app leaves the thread.
 - **Envelope v2.** A reply that names upload ids is sealed with the manifest
   (names, kinds, sizes, digests) and signed under
   `mastermind-fleet-reply-v2`. The bundle digest, under its own key (never

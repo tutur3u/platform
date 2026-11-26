@@ -302,6 +302,25 @@ class FleetThreadMachines {
   final List<FleetThreadMachine> machines;
 }
 
+enum FleetTranscriptKind {
+  human,
+  assistant,
+  interAgent,
+  delegatedTask,
+  operation,
+}
+
+enum FleetActivityStatus {
+  idle,
+  pending,
+  running,
+  waiting,
+  completed,
+  failed,
+  cancelled,
+  interrupted,
+}
+
 class FleetThreadMessage {
   const FleetThreadMessage({
     required this.position,
@@ -309,6 +328,9 @@ class FleetThreadMessage {
     required this.text,
     required this.truncated,
     this.at,
+    this.kind,
+    this.identity,
+    this.activityStatus,
   });
 
   factory FleetThreadMessage.parse(Object? raw) {
@@ -319,9 +341,21 @@ class FleetThreadMessage {
       text: _text(json['text'], 'message text', 8000),
       truncated: _flag(json['truncated'], 'truncated'),
       at: _time(json['at']),
+      identity: _optionalId(json['identity'], _identity, 'message identity'),
+      kind: FleetTranscriptKind.values
+          .where((kind) => kind.name == json['kind'])
+          .firstOrNull,
+      activityStatus: FleetActivityStatus.values
+          .where((status) => status.name == json['activityStatus'])
+          .firstOrNull,
     );
   }
 
+  static final _identity = RegExp(r'^[0-9a-f]{64}$');
+
+  final String? identity;
+  final FleetTranscriptKind? kind;
+  final FleetActivityStatus? activityStatus;
   final int position;
   final FleetMessageRole role;
 

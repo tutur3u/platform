@@ -1,9 +1,15 @@
 ---
 title: Mastermind Projects
 description: Every fleet T3 thread, grouped by project, with the transcript and steered replies, on Mastermind web and the mobile Work tab.
-updatedAt: "2026-11-22"
+updatedAt: "2026-11-25"
 audience: developers
 ---
+
+The mobile conversation displays selectable Markdown. Messages with native
+T3 provenance for delegated tasks, inter-agent messages, or operational events
+appear in collapsed disclosures. Older conversation without that provenance
+remains in the transcript. Operational details show status without command
+arguments, tool output, or reasoning.
 
 Projects lists every T3 thread on every machine the owner's fleet bridge can
 reach. It is owner-only: web `/{locale}/projects` (sidebar "Projects"), and on
@@ -44,9 +50,13 @@ existing links keep working; a thread opens at
   ago". With nothing to show, each refusal (`504`, `404`, `429`, `401
   mfa_required`) has its own message and a retry.
 - **Thread view**: the newest page of messages, with "Load earlier" until the
-  start of the thread. Credentials redacted by the machine appear as a muted
+  start of the thread. Credentials redacted by the machine appear as a literal
   `[redacted]` token. A cut message says "Truncated". User-role messages carry
-  no "You" label, because other agents write with that role too.
+  no "You" label, because other agents write with that role too. The bridge
+  reads native T3 activity positions on both local and linked machines when
+  the mobile app requests activity. Clients that omit the request keep their
+  conversation-only pages. The local projection reader applies structured
+  provenance when it serves an activity request without a native reader.
 - **A reply still held for the machine** offers "Check again" (it reads the
   receipt) and "Write another"; a reply left that way is still delivered
   when the machine takes it.

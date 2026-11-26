@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
+import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 import 'package:mobile/features/mastermind/projects/data/thread_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// A transcript message. User-role messages sit on the right, assistant
-/// messages on the left; neither names an author, since a user message can
-/// come from another agent.
+/// A conversation bubble or a collapsed, typed activity entry.
 class ThreadMessageBubble extends StatelessWidget {
   const ThreadMessageBubble({required this.message, super.key});
 
@@ -14,21 +18,63 @@ class ThreadMessageBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final mine = message.role == ThreadMessageRole.user;
-    return ThreadBubbleFrame(
-      user: mine,
-      time: message.at,
-      children: [
-        RedactedText(message.text),
-        if (message.truncated)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: ThreadMutedText(
-              l10n.mastermindProjectsTruncated,
-              italic: true,
-            ),
+    final details = [
+      if (message.text.isNotEmpty) ThreadMarkdown(message.text),
+      if (message.activityStatus case final status?)
+        Text(switch (status) {
+          FleetActivityStatus.idle => l10n.mastermindTranscriptIdle,
+          FleetActivityStatus.pending => l10n.mastermindTranscriptPending,
+          FleetActivityStatus.running => l10n.mastermindTranscriptRunning,
+          FleetActivityStatus.waiting => l10n.mastermindTranscriptWaiting,
+          FleetActivityStatus.completed => l10n.mastermindTranscriptCompleted,
+          FleetActivityStatus.failed => l10n.mastermindTranscriptFailed,
+          FleetActivityStatus.cancelled => l10n.mastermindTranscriptCancelled,
+          FleetActivityStatus.interrupted =>
+            l10n.mastermindTranscriptInterrupted,
+        }),
+      if (message.truncated)
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: ThreadMutedText(
+            l10n.mastermindProjectsTruncated,
+            italic: true,
           ),
-      ],
+        ),
+    ];
+    final label = switch (message.kind) {
+      FleetTranscriptKind.interAgent => l10n.mastermindTranscriptInterAgent,
+      FleetTranscriptKind.delegatedTask => l10n.mastermindTranscriptDelegated,
+      FleetTranscriptKind.operation => l10n.mastermindTranscriptOperation,
+      _ => null,
+    };
+    if (label != null) {
+      final storage = PageStorage.maybeOf(context);
+      final identity = (
+        'mastermind-activity',
+        message.identity ?? message.position,
+      );
+      return AppDisclosure(
+        title: Row(
+          children: [
+            Expanded(child: Text(label)),
+            ThreadMutedText(
+              TimeOfDay.fromDateTime(message.at.toLocal()).format(context),
+            ),
+          ],
+        ),
+        initiallyExpanded:
+            storage?.readState(context, identifier: identity) == true,
+        onExpansionChanged: (expanded) =>
+            storage?.writeState(context, expanded, identifier: identity),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        childrenPadding: const EdgeInsets.all(AppSpacing.md),
+        children: details,
+      );
+    }
+    return ThreadBubbleFrame(
+      user: message.role == ThreadMessageRole.user,
+      time: message.at,
+      children: details,
     );
   }
 }
@@ -91,34 +137,47 @@ class ThreadBubbleFrame extends StatelessWidget {
   }
 }
 
-/// Message text with every `[redacted]` marker muted.
-class RedactedText extends StatelessWidget {
-  const RedactedText(this.text, {super.key});
+/// Selectable transcript text with no remote image requests.
+class ThreadMarkdown extends StatelessWidget {
+  const ThreadMarkdown(this.text, {super.key});
 
-  static const marker = '[redacted]';
   final String text;
+  static final _markerSyntax = _RedactedMarkerSyntax();
+  static final _redactedLink = RegExp(
+    r'(?:\[|%5b)redacted(?:\]|%5d)',
+    caseSensitive: false,
+  );
 
   @override
-  Widget build(BuildContext context) {
-    final colors = AppTokens.of(context).colorScheme;
-    final parts = text.split(marker);
-    return Text.rich(
-      TextSpan(
-        children: [
-          for (final (index, part) in parts.indexed) ...[
-            if (index > 0)
-              TextSpan(
-                text: marker,
-                style: TextStyle(
-                  color: colors.mutedForeground,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            TextSpan(text: part),
-          ],
-        ],
-      ),
-    );
+  Widget build(BuildContext context) => MarkdownBody(
+    data: text,
+    selectable: true,
+    inlineSyntaxes: [_markerSyntax],
+    softLineBreak: true,
+    imageBuilder: (_, _, alt) => Text(alt ?? ''),
+    onTapLink: (_, href, _) {
+      if (href == null || _redactedLink.hasMatch(href)) return;
+      final uri = Uri.tryParse(href);
+      if (uri == null ||
+          (uri.scheme != 'https' && uri.scheme != 'http') ||
+          uri.host.isEmpty ||
+          uri.userInfo.isNotEmpty) {
+        return;
+      }
+      unawaited(openMobileLink(context, uri));
+    },
+  );
+}
+
+/// A redaction marker is literal even if the message defines a Markdown
+/// reference link with the same label.
+class _RedactedMarkerSyntax extends md.InlineSyntax {
+  _RedactedMarkerSyntax() : super(r'\[redacted\]', startCharacter: 0x5b);
+
+  @override
+  bool onMatch(md.InlineParser parser, Match match) {
+    parser.addNode(md.Text(match[0]!));
+    return true;
   }
 }
 

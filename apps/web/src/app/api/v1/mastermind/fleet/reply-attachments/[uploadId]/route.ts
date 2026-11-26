@@ -106,3 +106,40 @@ export const PUT = withSessionAuth<{ uploadId: string }>(
     stepUpExempt: (user) => isFleetOwner(user),
   }
 );
+
+/** Scoped status for reconciling a PUT whose response did not arrive. */
+export const GET = withSessionAuth<{ uploadId: string }>(
+  async (request, { appSessionToken, user, supabase }, { uploadId }) => {
+    const gate = await attachmentGate(request, {
+      user,
+      userId: user.id,
+      supabase,
+      appSessionToken,
+    });
+    if (!gate.ok) return gate.response;
+    if (!attachmentIdSchema.safeParse(uploadId).success)
+      return fleetError('not_found', 404);
+    try {
+      const [record] = await gate.bridge.attachmentRecords([uploadId]);
+      if (
+        !record ||
+        (record.state !== 'reserved' && record.state !== 'ready') ||
+        record.actorId !== user.id.toLowerCase() ||
+        record.credential !== gate.credential ||
+        record.expiresAt <= Date.now()
+      )
+        return fleetError('not_found', 404);
+      return NextResponse.json(
+        { uploadId, state: record.state },
+        { headers: FLEET_NO_STORE }
+      );
+    } catch (error) {
+      return attachmentBridgeFailure(error);
+    }
+  },
+  {
+    rateLimit: { windowMs: 60_000, maxRequests: 30 },
+    ...MASTERMIND_FLEET_SESSIONS,
+    stepUpExempt: (user) => isFleetOwner(user),
+  }
+);

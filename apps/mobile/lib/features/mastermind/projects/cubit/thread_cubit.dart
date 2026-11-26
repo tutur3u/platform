@@ -45,6 +45,7 @@ class ThreadCubit extends Cubit<ThreadState> {
       emit(
         state.copyWith(
           status: state.thread == null ? ThreadStatus.failed : null,
+          loadingEarlier: false,
           failure: () => error.kind,
         ),
       );
@@ -54,6 +55,7 @@ class ThreadCubit extends Cubit<ThreadState> {
   Future<void> loadEarlier() async {
     final before = state.earlierPosition;
     if (before == null || state.loadingEarlier) return;
+    final generation = _loads;
     emit(state.copyWith(loadingEarlier: true));
     try {
       final page = await _repository.messages(
@@ -61,22 +63,26 @@ class ThreadCubit extends Cubit<ThreadState> {
         threadId,
         before: before,
       );
-      // A load that replaced the window meanwhile makes this page belong to
-      // another window unless it still starts where this one asked.
-      if (isClosed || state.earlierPosition != before) return;
-      final known = {for (final m in state.messages) m.position};
+      if (isClosed || generation != _loads || state.earlierPosition != before) {
+        return;
+      }
+      final known = {for (final m in state.messages) m.identity ?? m.position};
       emit(
         state.copyWith(
           loadingEarlier: false,
           messages: [
-            ...page.messages.where((m) => !known.contains(m.position)),
+            ...page.messages.where(
+              (m) => !known.contains(m.identity ?? m.position),
+            ),
             ...state.messages,
           ],
           earlierPosition: () => page.earlierPosition,
         ),
       );
     } on ProjectsException catch (error) {
-      if (!isClosed && state.earlierPosition == before) {
+      if (!isClosed &&
+          generation == _loads &&
+          state.earlierPosition == before) {
         emit(state.copyWith(loadingEarlier: false, failure: () => error.kind));
       }
     }

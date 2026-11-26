@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_reply_attachment.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_thread_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_thread_repository.dart';
 import 'package:mobile/features/mastermind/replies/reply_idempotency_key.dart';
@@ -63,6 +66,7 @@ class FleetThreadReplyCubit extends Cubit<FleetReplyStatus> {
     required this.machineId,
     required this.threadId,
     this.environmentId,
+    this.userId,
     String Function()? newKey,
   }) : _source = source,
        _newKey = newKey ?? newReplyIdempotencyKey,
@@ -73,6 +77,54 @@ class FleetThreadReplyCubit extends Cubit<FleetReplyStatus> {
   final String machineId;
   final String threadId;
   final String? environmentId;
+  final String? userId;
+  FleetReplyAttachmentBatch? _batch;
+  List<String> _attachmentNames = const [];
+  List<String> get attachmentNames => _attachmentNames;
+
+  bool matchesAttachments(List<FleetReplyAttachment> files) =>
+      listEquals(_batch?.files ?? const <FleetReplyAttachment>[], files);
+
+  Future<FleetThreadReply> _send(String key, String text) {
+    final batch = _batch;
+    if (batch == null) {
+      return _source.reply(
+        machineId: machineId,
+        environmentId: environmentId,
+        threadId: threadId,
+        text: text,
+        idempotencyKey: key,
+      );
+    }
+    final source = _source;
+    final actor = userId;
+    if (source is! FleetThreadAttachmentSource ||
+        actor == null ||
+        environmentId != null) {
+      throw const FleetThreadException(
+        FleetThreadFailure.rejected,
+        code: 'attachments_unsupported',
+      );
+    }
+    return source.replyWithAttachments(
+      userId: actor,
+      machineId: machineId,
+      threadId: threadId,
+      text: text,
+      idempotencyKey: key,
+      batch: batch,
+    );
+  }
+
+  FleetThreadReply _checkedReceipt(String key, FleetThreadReply reply) {
+    if (reply.id != key ||
+        reply.machineId != machineId ||
+        reply.threadId != threadId ||
+        reply.environmentId != environmentId) {
+      throw const FormatException('Mismatched fleet reply receipt');
+    }
+    return reply;
+  }
 
   FleetReplyStatus _settled(String key, String text, FleetThreadReply reply) =>
       switch (reply.state) {
@@ -103,16 +155,11 @@ class FleetThreadReplyCubit extends Cubit<FleetReplyStatus> {
     emit(FleetReplyStatus._(FleetReplyPhase.sending, key: key, text: text));
     FleetReplyStatus next;
     try {
+      final reply = await _send(key, text);
       next = _settled(
         key,
         text,
-        await _source.reply(
-          machineId: machineId,
-          environmentId: environmentId,
-          threadId: threadId,
-          text: text,
-          idempotencyKey: key,
-        ),
+        _attachmentNames.isEmpty ? reply : _checkedReceipt(key, reply),
       );
     } on Object catch (error) {
       final refusal = FleetThreadException.from(error);
@@ -133,6 +180,11 @@ class FleetThreadReplyCubit extends Cubit<FleetReplyStatus> {
             );
     }
     if (isClosed || state.key != key) return;
+    if (next.phase == FleetReplyPhase.sent ||
+        next.phase == FleetReplyPhase.delivered ||
+        (next.phase == FleetReplyPhase.failed && !next.retryable)) {
+      _batch = null;
+    }
     emit(next);
   }
 
@@ -143,14 +195,25 @@ class FleetThreadReplyCubit extends Cubit<FleetReplyStatus> {
   /// Sends new text as a new reply. Ignored while one is being sent, or held
   /// for the machine: that reply is still on its way. The same text again,
   /// while its reply can still be resent, is that reply again, under its key.
-  Future<void> submit(String text) {
+  Future<void> submit(
+    String text, {
+    List<FleetReplyAttachment> attachments = const [],
+  }) {
     final trimmed = text.trim();
-    if (trimmed.isEmpty ||
+    if ((trimmed.isEmpty && attachments.isEmpty) ||
         state.phase == FleetReplyPhase.sending ||
         state.phase == FleetReplyPhase.sent) {
       return Future.value();
     }
-    if (_resendable && trimmed == state.text) return retry();
+    if (_resendable &&
+        trimmed == state.text &&
+        matchesAttachments(attachments)) {
+      return retry();
+    }
+    _batch = attachments.isEmpty
+        ? null
+        : FleetReplyAttachmentBatch(attachments);
+    _attachmentNames = List.unmodifiable(attachments.map((file) => file.name));
     return _deliver(_newKey(), trimmed);
   }
 
@@ -175,7 +238,13 @@ class FleetThreadReplyCubit extends Cubit<FleetReplyStatus> {
       return;
     }
     try {
-      final reply = await _source.receipt(key);
+      final actor = userId;
+      final receipt = actor == null
+          ? await _source.receipt(key)
+          : await ApiClient.runForUser(actor, () => _source.receipt(key));
+      final reply = _attachmentNames.isEmpty
+          ? receipt
+          : _checkedReceipt(key, receipt);
       if (isClosed || state.phase != FleetReplyPhase.sent || state.key != key) {
         return;
       }
@@ -189,6 +258,8 @@ class FleetThreadReplyCubit extends Cubit<FleetReplyStatus> {
   /// its outbox and is delivered when the machine takes it.
   void reset() {
     if (state.phase != FleetReplyPhase.sending) {
+      _batch = null;
+      _attachmentNames = const [];
       emit(const FleetReplyStatus.idle());
     }
   }

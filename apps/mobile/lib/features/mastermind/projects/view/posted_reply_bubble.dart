@@ -17,12 +17,14 @@ class PostedReplyBubble extends StatelessWidget {
   const PostedReplyBubble({
     required this.status,
     required this.onRetry,
+    this.attachmentNames = const [],
     this.stepUp,
     this.onWriteAnother,
     super.key,
   });
 
   final FleetReplyStatus status;
+  final List<String> attachmentNames;
 
   /// Resends a retryable failure, or a reply whose second factor was just
   /// renewed, under its key; while held, re-reads the receipt.
@@ -44,6 +46,14 @@ class PostedReplyBubble extends StatelessWidget {
     final note = switch (status.phase) {
       FleetReplyPhase.needsMfa => l10n.mastermindProjectsErrorMfa,
       FleetReplyPhase.sent => l10n.mastermindProjectsStillDelivers,
+      _ when status.code == 'attachments_unsupported' =>
+        l10n.mastermindTranscriptAttachmentsUnavailable,
+      _ when status.code == 'attachment_type_unsupported' =>
+        l10n.mastermindTranscriptAttachmentUnsupported,
+      _
+          when status.code == 'attachment_too_large' ||
+              status.code == 'attachment_limit' =>
+        l10n.mastermindTranscriptAttachmentLimit,
       _ when failure != null => projectsFailureOf(
         FleetThreadException(failure, code: status.code),
       ).message(l10n),
@@ -62,7 +72,8 @@ class PostedReplyBubble extends StatelessWidget {
       user: true,
       time: status.reply?.createdAt ?? DateTime.now(),
       children: [
-        Text(status.text ?? ''),
+        if (status.text case final text? when text.isNotEmpty) Text(text),
+        for (final name in attachmentNames) Text(name),
         if (phase != null) ...[
           const SizedBox(height: 6),
           ReplyReceiptLine(phase: phase),

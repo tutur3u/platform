@@ -52,9 +52,8 @@ class HttpProjectsRepository implements ProjectsRepository {
     final live = await _api.getJson('/api/v1/mastermind/fleet/live');
     final listed = [
       for (final raw in live['machines'] as List<dynamic>? ?? const [])
-        if (raw case {
-          'machineId': final String id,
-        } when _machineId.hasMatch(id))
+        if (raw case {'machineId': final String id}
+            when _machineId.hasMatch(id))
           (id: id, connected: raw['connected'] == true),
     ];
     final bridge =
@@ -174,6 +173,9 @@ class HttpProjectsRepository implements ProjectsRepository {
             role: m.role == FleetMessageRole.user
                 ? ThreadMessageRole.user
                 : ThreadMessageRole.assistant,
+            identity: m.identity,
+            kind: m.kind,
+            activityStatus: m.activityStatus,
             text: m.text,
             truncated: m.truncated,
             at: m.at ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),

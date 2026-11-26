@@ -106,6 +106,25 @@ export type FleetThreadPage = z.infer<typeof fleetThreadPageSchema>;
 export const fleetThreadMessageSchema = z.object({
   position: count,
   role: z.enum(['user', 'assistant']),
+  identity: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/u)
+    .optional(),
+  kind: z
+    .enum(['human', 'assistant', 'interAgent', 'delegatedTask', 'operation'])
+    .optional(),
+  activityStatus: z
+    .enum([
+      'idle',
+      'pending',
+      'running',
+      'waiting',
+      'completed',
+      'failed',
+      'cancelled',
+      'interrupted',
+    ])
+    .optional(),
   text: z.string().max(8000),
   truncated: z.boolean(),
   at: stamp,

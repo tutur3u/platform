@@ -9,11 +9,18 @@ import {
   createCipheriv,
   createDecipheriv,
   createHmac,
+  createHash,
   hkdfSync,
   randomBytes,
   timingSafeEqual,
 } from 'node:crypto';
-import { localReads, NO_PROJECT, threadState } from './bridge-local.mjs';
+import {
+  localReads,
+  NO_PROJECT,
+  threadState,
+  transcriptActivityKind,
+  transcriptKind,
+} from './bridge-local.mjs';
 import { fleetText } from './scrub.mjs';
 
 export { threadState };
@@ -342,6 +349,7 @@ const READS = {
       threadId: args.threadId,
       limit,
       maxCharsPerItem: MESSAGE_MAX_CHARS,
+      ...(args.activity ? { view: 'activity' } : {}),
       // T3 pages back from `beforePosition`; without one it starts at the
       // oldest item, so the newest page is asked for from past the end.
       beforePosition:
@@ -350,25 +358,74 @@ const READS = {
           : NEWEST_POSITION,
     });
     const messages = (read?.items ?? [])
-      .filter(
-        (item) =>
-          (item?.type === 'user_message' ||
-            item?.type === 'assistant_message') &&
-          Number.isSafeInteger(item.position) &&
-          typeof item.text === 'string' &&
-          item.text.trim()
-      )
-      .slice(-limit)
-      .map((item) => {
-        const scrubbed = scrubTranscriptText(item.text);
-        return {
-          position: item.position,
-          role: item.type === 'user_message' ? 'user' : 'assistant',
-          text: scrubbed.text,
-          truncated: scrubbed.truncated || item.textTruncated === true,
-          at: String(item.updatedAt ?? '').slice(0, 40),
-        };
-      });
+      .flatMap((item) => {
+        if (!Number.isSafeInteger(item?.position) || item.position < 0)
+          return [];
+        const chat =
+          item.type === 'user_message' || item.type === 'assistant_message';
+        const kind = args.activity
+          ? chat
+            ? transcriptKind(item)
+            : transcriptActivityKind(item.type)
+          : undefined;
+        if (!chat && !kind) return [];
+        const operational =
+          kind === 'operation' || (!chat && kind === 'delegatedTask');
+        const text = item.text;
+        if (
+          !operational &&
+          !kind &&
+          (typeof text !== 'string' || !text.trim())
+        ) {
+          return [];
+        }
+        // Tool outputs, reasoning and command arguments are never projected.
+        const scrubbed = scrubTranscriptText(
+          !operational && typeof text === 'string'
+            ? text
+            : kind === 'delegatedTask' && typeof item.title === 'string'
+              ? item.title
+              : ''
+        );
+        const activityStatus =
+          operational &&
+          [
+            'idle',
+            'pending',
+            'running',
+            'waiting',
+            'completed',
+            'failed',
+            'cancelled',
+            'interrupted',
+          ].includes(item.status)
+            ? item.status
+            : undefined;
+        return [
+          {
+            position: item.position,
+            ...(args.activity &&
+            typeof item.itemId === 'string' &&
+            item.itemId.length > 0
+              ? {
+                  identity: createHash('sha256')
+                    .update(item.itemId)
+                    .digest('hex'),
+                }
+              : {}),
+            role: item.type === 'user_message' ? 'user' : 'assistant',
+            ...(kind ? { kind } : {}),
+            ...(activityStatus ? { activityStatus } : {}),
+            text: scrubbed.text,
+            truncated:
+              scrubbed.truncated ||
+              (!operational && item.textTruncated === true),
+            at: String(item.updatedAt ?? '').slice(0, 40),
+          },
+        ];
+      })
+      .sort((a, b) => a.position - b.position)
+      .slice(-limit);
     const answer = {
       thread: threadView({ ...read?.thread, threadId: args.threadId }),
       messages,
@@ -421,6 +478,7 @@ function readLocally(kind, args, db, local) {
   if (!THREAD_ID.test(String(args.threadId ?? ''))) throw new BadRequest();
   const page = reads.transcript({
     threadId: args.threadId,
+    activity: args.activity === true,
     ...(Number.isInteger(args.before) && args.before >= 0
       ? { before: args.before }
       : {}),
@@ -466,17 +524,18 @@ function validArgs(kind, args) {
   return (
     typeof args.threadId === 'string' &&
     THREAD_ID.test(args.threadId) &&
-    optionalInt(args.before, MAX_POSITION)
+    optionalInt(args.before, MAX_POSITION) &&
+    (args.activity === undefined || typeof args.activity === 'boolean')
   );
 }
 
 /**
  * Handles one `req` frame and returns the sealed `res` frame, or null for a
- * frame that is not a valid request for this machine. Threads, projects and
- * history of this machine are answered from `openDatabase()` (T3's projection
- * database, read-only); a read of a linked machine, and the list of machines,
- * go through `call(name, args)`, an open T3 MCP session's tool call, with
- * read tools only. A linked machine's threads carry no owner-reply time.
+ * frame that is not a valid request for this machine. Project and thread lists
+ * and legacy conversation pages on this machine use `openDatabase()` (T3's
+ * read-only projection). A transcript that opts into activity uses native
+ * positions on any machine with a native reader. Linked reads and the machine
+ * roster also use MCP read tools only. A linked machine's threads carry no owner-reply time.
  * `scratchRoot` and `bridgeReplyAt` are passed on to the local reads. A database that cannot be opened, is busy or does not have the
  * expected tables answers `unavailable`, like any other failed read.
  */
@@ -517,6 +576,8 @@ export async function handleRequest(
         if (!openDatabase) throw error;
         return fromDatabase();
       });
+    } else if (request.kind === 'transcript' && args.activity && call) {
+      data = await READS.transcript(call, args);
     } else if (args.environmentId === undefined && openDatabase) {
       data = fromDatabase();
     } else if (request.kind === 'projects') {

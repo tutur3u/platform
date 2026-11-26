@@ -10,6 +10,39 @@ const TITLE_MAX = 120;
 const ENVIRONMENT_ID = /^\w[\w-]{0,99}$/;
 const RUNNING = new Set(['preparing', 'queued', 'starting', 'running']);
 
+const TRANSCRIPT_OPERATIONS = new Set([
+  'command_execution',
+  'mcp_tool_call',
+  'dynamic_tool_call',
+  'collab_agent_tool_call',
+  'file_change',
+  'web_search',
+  'image_view',
+]);
+
+export function transcriptActivityKind(type) {
+  if (type === 'subagent') return 'delegatedTask';
+  if (TRANSCRIPT_OPERATIONS.has(type)) return 'operation';
+  return undefined;
+}
+
+// Use only T3's structured provenance. Legacy text may quote or imitate any
+// sender label. Never infer a sender from message content.
+export function transcriptKind(item) {
+  if (
+    (typeof item.subagentId === 'string' && item.subagentId) ||
+    Array.isArray(item.delegatedCompletion?.taskIds)
+  )
+    return 'delegatedTask';
+  if (typeof item.senderThreadId === 'string' && item.senderThreadId)
+    return 'interAgent';
+  if (item.createdBy === 'system' || typeof item.scheduledTaskId === 'string')
+    return 'operation';
+  if (item.createdBy === 'user') return 'human';
+  if (item.createdBy === 'agent') return 'assistant';
+  return undefined;
+}
+
 /** T3's run status as one of the four states the owner sees. */
 export function threadState(status) {
   if (RUNNING.has(status)) return 'running';
@@ -308,7 +341,7 @@ export function localReads(
     },
 
     /** Null when the thread does not exist here (deleted, archived or never did). */
-    transcript({ threadId, before, limit = 30 }) {
+    transcript({ threadId, before, limit = 30, activity = false }) {
       const thread = db
         .prepare(`SELECT ${THREAD_COLUMNS} WHERE ${LIVE} AND t.thread_id = ?`)
         .get(threadId);
@@ -326,17 +359,21 @@ export function localReads(
       const page = rows.slice(0, limit).reverse();
       const messages = [];
       for (const row of page) {
-        let text = '';
+        let payload;
         try {
-          text = String(JSON.parse(row.payload_json)?.text ?? '');
+          payload = JSON.parse(row.payload_json);
         } catch {
-          // A row T3 is still writing: leave it out.
+          continue;
         }
-        if (!text.trim()) continue;
-        const scrubbed = scrub(text);
+        if (!payload || typeof payload !== 'object') continue;
+        const kind = activity ? transcriptKind(payload) : undefined;
+        const text = typeof payload.text === 'string' ? payload.text : '';
+        if (!text.trim() && !kind) continue;
+        const scrubbed = scrub(kind === 'operation' ? '' : text);
         messages.push({
           position: row.position,
           role: row.role,
+          ...(kind ? { kind } : {}),
           text: scrubbed.text,
           truncated: scrubbed.truncated,
           at: String(row.updated_at ?? '').slice(0, 40),

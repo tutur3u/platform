@@ -20289,6 +20289,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindProjectsThisMachine => 'This machine';
 
   @override
+  String get mastermindTranscriptIdle => 'Idle';
+
+  @override
+  String get mastermindTranscriptPending => 'Pending';
+
+  @override
+  String get mastermindTranscriptRunning => 'Running';
+
+  @override
+  String get mastermindTranscriptWaiting => 'Waiting';
+
+  @override
+  String get mastermindTranscriptCompleted => 'Completed';
+
+  @override
+  String get mastermindTranscriptFailed => 'Failed';
+
+  @override
+  String get mastermindTranscriptCancelled => 'Cancelled';
+
+  @override
+  String get mastermindTranscriptInterrupted => 'Interrupted';
+
+  @override
+  String get mastermindTranscriptInterAgent => 'Agent message';
+
+  @override
+  String get mastermindTranscriptDelegated => 'Delegated task';
+
+  @override
+  String get mastermindTranscriptOperation => 'Operational event';
+
+  @override
+  String get mastermindTranscriptAttachmentsUnavailable => 'This machine cannot accept attachments right now.';
+
+  @override
+  String get mastermindTranscriptAttachmentLimit => 'Use up to 6 files, 10 MB per file and 25 MB total.';
+
+  @override
+  String get mastermindTranscriptAttachmentUnsupported => 'Choose a PNG, JPEG, WebP, GIF or UTF-8 text file.';
+
+  @override
+  String get mastermindTranscriptAttachmentUnreadable => 'Could not read the selected file.';
+
+  @override
+  String get mastermindTranscriptRemoveAttachment => 'Remove attachment';
+
+  @override
   String get mastermindProjectsSearch => 'Search threads';
 
   @override

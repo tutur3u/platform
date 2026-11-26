@@ -37051,6 +37051,102 @@ abstract class AppLocalizations {
   /// **'This machine'**
   String get mastermindProjectsThisMachine;
 
+  /// No description provided for @mastermindTranscriptIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get mastermindTranscriptIdle;
+
+  /// No description provided for @mastermindTranscriptPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get mastermindTranscriptPending;
+
+  /// No description provided for @mastermindTranscriptRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get mastermindTranscriptRunning;
+
+  /// No description provided for @mastermindTranscriptWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get mastermindTranscriptWaiting;
+
+  /// No description provided for @mastermindTranscriptCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get mastermindTranscriptCompleted;
+
+  /// No description provided for @mastermindTranscriptFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get mastermindTranscriptFailed;
+
+  /// No description provided for @mastermindTranscriptCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get mastermindTranscriptCancelled;
+
+  /// No description provided for @mastermindTranscriptInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Interrupted'**
+  String get mastermindTranscriptInterrupted;
+
+  /// No description provided for @mastermindTranscriptInterAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Agent message'**
+  String get mastermindTranscriptInterAgent;
+
+  /// No description provided for @mastermindTranscriptDelegated.
+  ///
+  /// In en, this message translates to:
+  /// **'Delegated task'**
+  String get mastermindTranscriptDelegated;
+
+  /// No description provided for @mastermindTranscriptOperation.
+  ///
+  /// In en, this message translates to:
+  /// **'Operational event'**
+  String get mastermindTranscriptOperation;
+
+  /// No description provided for @mastermindTranscriptAttachmentsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine cannot accept attachments right now.'**
+  String get mastermindTranscriptAttachmentsUnavailable;
+
+  /// No description provided for @mastermindTranscriptAttachmentLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Use up to 6 files, 10 MB per file and 25 MB total.'**
+  String get mastermindTranscriptAttachmentLimit;
+
+  /// No description provided for @mastermindTranscriptAttachmentUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a PNG, JPEG, WebP, GIF or UTF-8 text file.'**
+  String get mastermindTranscriptAttachmentUnsupported;
+
+  /// No description provided for @mastermindTranscriptAttachmentUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read the selected file.'**
+  String get mastermindTranscriptAttachmentUnreadable;
+
+  /// No description provided for @mastermindTranscriptRemoveAttachment.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove attachment'**
+  String get mastermindTranscriptRemoveAttachment;
+
   /// No description provided for @mastermindProjectsSearch.
   ///
   /// In en, this message translates to:
