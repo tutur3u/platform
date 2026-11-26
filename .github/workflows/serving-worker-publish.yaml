@@ -10,6 +10,10 @@ on:
         description: Same-run sealed artifact built at the production SHA
         type: string
         required: true
+      build-ready:
+        description: Whether this app built and uploaded its sealed artifact successfully
+        type: boolean
+        required: true
       supersede:
         description: Exact live SHA an ACKed catch-up may replace when it is not an ancestor
         type: string
@@ -24,7 +28,7 @@ jobs:
     # starts. The script also refuses without the token or a policy admission.
     # Cancelling a running publisher leaves its current step as it is; the
     # receipt's rollbackVersion restores serving in one deployment.
-    if: ${{ github.ref == 'refs/heads/production' && vars.SERVING_WORKERS_PUBLICATION == 'enabled' }}
+    if: ${{ github.ref == 'refs/heads/production' && vars.SERVING_WORKERS_PUBLICATION == 'enabled' && inputs.build-ready }}
     runs-on: ubuntu-latest
     environment: cloudflare-release-production
     # Includes up to 5 minutes waiting for the coordinator's lane.
@@ -90,6 +94,7 @@ jobs:
           digest="$(cd "$RUNNER_TEMP/serving-artifact" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
           echo "ARTIFACT_SHA256=$digest" >> "$GITHUB_ENV"
       - name: Restore, verify and convert the sealed artifact
+        id: restore
         if: steps.coordinator.outputs.publish != 'false'
         env:
           NOVA_ABUSE_GUARD_FAMILIES: ${{ vars.NOVA_ABUSE_GUARD_FAMILIES }}
@@ -110,6 +115,24 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.SERVING_WORKERS_CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
         run: node scripts/ci/serving-workers.mjs publish "$APP" "$SOURCE_SHA" "$RUNNER_TEMP/serving-cf"
+      - name: Record an unpublished leg
+        if: always() && (steps.coordinator.outputs.publish == 'false' || steps.restore.outcome == 'failure')
+        env:
+          COORDINATOR_SKIPPED: ${{ steps.coordinator.outputs.publish == 'false' }}
+        run: |
+          outcome=coordinator-skipped
+          step=coordinator-skipped
+          message='The coordinator declined publication for this app.'
+          if [ "$COORDINATOR_SKIPPED" != true ]; then
+            outcome=failed
+            step=restore-failed
+            message='The sealed artifact could not be restored.'
+          fi
+          jq -n --arg app "$APP" --arg sha "$SOURCE_SHA" \
+            --argjson attempt "$GITHUB_RUN_ATTEMPT" --arg outcome "$outcome" \
+            --arg step "$step" --arg message "$message" \
+            '{schema: 2, app: $app, sourceSha: $sha, run: {attempt: $attempt}, outcome: $outcome, steps: [{step: $step, message: $message}]}' \
+            > "$RUNNER_TEMP/$APP-serving-publication.json"
       - name: Retain the publication and rollback receipt
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -55,6 +55,10 @@ test('one publish matrix needs every build and hands the token over', () => {
   );
   assert.match(publish, /^ {4}secrets: inherit$/m);
   assert.match(publish, /^ {6}id-token: write$/m);
+  assert.ok(
+    publish.includes("build-ready: ${{ needs[format('build-{0}', matrix.app)].result == 'success' }}")
+  );
+  assert.match(jobs(publisher).publish, /&& inputs\.build-ready/);
   assert.match(
     publish,
     /include: \$\{\{ fromJSON\(needs\.plan\.outputs\.matrix\) \}\}/
@@ -90,7 +94,7 @@ test('only a full publish round names its summary fleet-summary', () => {
 
 test('the fleet summary runs after publication with no environment or Cloudflare token', () => {
   const summary = caller['fleet-summary'];
-  assert.match(summary, /^ {4}needs: \[plan, publish\]$/m);
+  assert.match(summary, /^ {4}needs: \[plan, publish, build-roadmap,/m);
   assert.match(summary, /always\(\)/);
   assert.doesNotMatch(summary, /environment:/);
   assert.doesNotMatch(summary, /secrets/);

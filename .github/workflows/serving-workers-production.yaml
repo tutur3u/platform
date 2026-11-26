@@ -128,8 +128,7 @@ jobs:
 
   publish:
     needs: [plan, build-roadmap, build-learn, build-teach, build-nova, build-tools, build-lms]
-    # A skipped or failed build leaves its leg to fail at the artifact download,
-    # which the fleet summary then reports as FAILED.
+    # The called job gates each leg on that app's build result.
     if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]' }}
     strategy:
       fail-fast: false
@@ -147,13 +146,14 @@ jobs:
     with:
       app: ${{ matrix.app }}
       artifact: ${{ matrix.artifact }}
+      build-ready: ${{ needs[format('build-{0}', matrix.app)].result == 'success' }}
       supersede: ${{ inputs.supersede || '' }}
 
   fleet-summary:
     # Only a full publish round's summary is named fleet-summary, the job the
     # next round's gate reads.
     name: ${{ ((inputs.app || 'all') == 'all') && 'fleet-summary' || 'fleet-summary-partial' }}
-    needs: [plan, publish]
+    needs: [plan, publish, build-roadmap, build-learn, build-teach, build-nova, build-tools, build-lms]
     if: ${{ always() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     # The summary waits up to 10 minutes for special apps' pipelines.
@@ -184,6 +184,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           FLEET_SCOPE: ${{ inputs.app || 'all' }}
+          FLEET_PLANNED_APPS: ${{ needs.plan.outputs.apps }}
+          FLEET_NEEDS: ${{ toJSON(needs) }}
         run: node scripts/ci/fleet-freshness.mjs summary "$GITHUB_SHA" "$RUNNER_TEMP/receipts" "$RUNNER_TEMP/fleet-freshness.json"
       - name: Retain the fleet freshness report
         if: always()

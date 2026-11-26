@@ -133,6 +133,10 @@ stuck pipeline, or one whose previous production run did not succeed, is
 next round like a failure. Receipts from re-run attempts are merged by keeping
 the latest attempt per app.
 
+Each publish leg waits for its own sealed build to succeed. Failed builds
+and restore failures are RED. The summary reports a coordinator-declined
+leg as `COORDINATOR-SKIPPED` and shows the build it observed live.
+
 ## Stop, retry and roll back
 
 - **Stop.** Set the repository variable `SERVING_WORKERS_PUBLICATION` to

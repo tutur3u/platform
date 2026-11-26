@@ -197,6 +197,37 @@ test('a running special pipeline is pending only while young after a good run', 
   );
 });
 
+test('restore failures are RED even when the target SHA is serving', () => {
+  const row = verdict('a', auto, {
+    ...base,
+    live: SHA,
+    receipt: {
+      outcome: 'failed',
+      steps: [{ step: 'restore-failed', message: 'restore lost its fence' }],
+    },
+  });
+  assert.equal(row.verdict, 'FAILED');
+  assert.equal(isRed(row), true);
+  assert.equal(row.reason, 'restore lost its fence');
+});
+
+test('coordinator skips are distinct from stale and failed builds are RED', () => {
+  const skipped = verdict('a', auto, {
+    ...base,
+    live: OLD,
+    receipt: { outcome: 'coordinator-skipped' },
+  });
+  assert.equal(skipped.verdict, 'COORDINATOR-SKIPPED');
+  assert.equal(isRed(skipped), false);
+  const failed = verdict('a', auto, {
+    ...base,
+    live: OLD,
+    buildFailure: 'failure',
+  });
+  assert.equal(failed.verdict, 'FAILED');
+  assert.equal(isRed(failed), true);
+});
+
 test('serving the SHA wins over an earlier failed receipt', () => {
   const row = verdict('a', auto, {
     ...base,

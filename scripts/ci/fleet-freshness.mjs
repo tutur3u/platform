@@ -70,7 +70,17 @@ export function readReceipts(dir) {
 export function verdict(
   app,
   entry,
-  { sha, live, receipt, mode, scope, today, equivalent, running = new Map() }
+  {
+    sha,
+    live,
+    receipt,
+    buildFailure,
+    mode,
+    scope,
+    today,
+    equivalent,
+    running = new Map(),
+  }
 ) {
   const at = (name, reason) => ({
     app,
@@ -120,24 +130,26 @@ export function verdict(
         : at('STALE', `serves ${live}; ${entry.publisher}`);
     }
     case 'auto': {
+      const restoreFailed = receipt?.steps?.find(
+        (step) => step.step === 'restore-failed'
+      );
+      if (restoreFailed)
+        return at('FAILED', restoreFailed.message ?? 'restore failed');
+      if (receipt?.outcome === 'coordinator-skipped')
+        return at('COORDINATOR-SKIPPED', 'coordinator declined publication');
       if (receipt?.outcome === 'rehearsed')
         return at('REHEARSED', `candidate ${receipt.version}`);
-      // Serving the SHA wins over an earlier failed receipt: a later
-      // single-app dispatch may have published it, and a re-run summary
-      // still downloads this run's failed receipt.
-      if (live === sha) {
-        const restoreFailed = receipt?.steps?.some(
-          (step) => step.step === 'restore-failed'
-        );
+      // A later targeted publication can recover an earlier failed attempt.
+      if (live === sha)
         return at(
           'FRESH',
           receipt?.outcome === 'failed'
-            ? `serves the SHA after an earlier failed attempt${restoreFailed ? ' (that attempt also failed to restore serving)' : ''}`
+            ? 'serves the SHA after an earlier failed attempt'
             : (receipt?.outcome ?? 'already serving')
         );
-      }
       if (receipt?.outcome === 'failed' || receipt?.outcome === 'refused')
         return at('FAILED', receipt.steps?.at(-1)?.message ?? receipt.outcome);
+      if (buildFailure) return at('FAILED', `sealed build: ${buildFailure}`);
       const inScope = scope === 'all' || scope === app;
       if (mode === 'rehearse' || !inScope)
         return at('NOT-IN-SCOPE', `serves ${live ?? 'unknown'}`);
@@ -225,6 +237,7 @@ export async function summarize(
   {
     mode = 'publish',
     scope = 'all',
+    buildFailures = new Map(),
     today,
     readIdentity = readLive,
     equivalent,
@@ -244,6 +257,7 @@ export async function summarize(
         sha,
         live,
         receipt: receipts[app],
+        buildFailure: buildFailures.get(app),
         mode,
         scope,
         today,
@@ -262,7 +276,7 @@ export function render(sha, rows) {
     '',
     red.length
       ? `**RED: ${red.length} app(s) need action: ${red.map((row) => row.app).join(', ')}.** The next publication round is blocked until this run is fixed or acknowledged (FLEET_SUMMARY_ACK, set by the release owner).`
-      : 'Every active app in scope is fresh, equivalent, held by policy or on a dated manual path.',
+      : 'The fleet has no RED verdicts. See the rows for held, pending and coordinator-skipped apps.',
     '',
     '| App | Class | Verdict | Live | Reason |',
     '| --- | --- | --- | --- | --- |',
@@ -384,9 +398,16 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const [sha, receiptsDir, outFile] = args;
     if (!SHA.test(sha ?? ''))
       throw new Error('Supply the exact 40-hex production SHA');
+    const needs = JSON.parse(process.env.FLEET_NEEDS || '{}');
+    const buildFailures = new Map();
+    for (const app of JSON.parse(process.env.FLEET_PLANNED_APPS || '[]')) {
+      const result = needs[`build-${app}`]?.result ?? 'unknown';
+      if (result !== 'success') buildFailures.set(app, result);
+    }
     const rows = await summarize(sha, readReceipts(receiptsDir), {
       mode: process.env.FLEET_MODE || 'publish',
       scope: process.env.FLEET_SCOPE || 'all',
+      buildFailures,
       today: new Date().toISOString().slice(0, 10),
       equivalent: gitEquivalent(sha),
       running: await settledPipelines(
