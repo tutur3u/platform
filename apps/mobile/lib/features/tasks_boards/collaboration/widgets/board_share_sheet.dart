@@ -55,7 +55,7 @@ class BoardShareSheet extends StatelessWidget {
           title: l10n.boardShareTitle(boardName),
           child: switch (state.load) {
             CollabLoad.loading => const CollabStatus.loading(),
-            // Managing guests needs manage rights; say so rather than retry.
+            // Reading needs view access to the board; say so rather than retry.
             CollabLoad.failed
                 when state.loadFailure == CollabFailure.forbidden =>
               CollabStatus.empty(l10n.boardSharePermissionError),
