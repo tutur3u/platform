@@ -203,32 +203,40 @@ the product's own stored image: the path comes from that product's
 targets, traversal segments and public URLs answer 404. A stored URL that names
 the workspace by the `personal` or `internal` route slug is read only when the
 slug is that workspace (a personal workspace, or the root workspace).
-It redirects to a fresh one-hour signed URL (an `<img src>` on web) or, with
-`?format=json`, returns `{ signedUrl, expiresAt }` for native clients. Responses
-are `private, no-store`. Regression coverage: the route and
-`inventory-product-image` tests.
+It redirects to a fresh one-hour signed URL (an `<img src>` on web), cacheable
+as `private, max-age=300` so tables do not re-sign on every mount, or, with
+`?format=json`, returns `{ signedUrl, expiresAt }` as `private, no-store` for
+native clients. Regression coverage: the route and `inventory-product-image`
+tests.
 
 Web and mobile upload a product image through `POST inventory/media/upload-url`
 (target `product-featured-image`) and a `PUT` to the server-issued signed URL;
 mobile uses HTTPS only and retries once without `Content-Type`, as web does.
 `POST inventory/media/read-url` has the server validate the finished upload.
-The product stores the stable share URL,
-`https://tuturuuu.com/api/v1/workspaces/{ws}/storage/share?path={path}` (the
-absolute form of `buildWorkspaceStorageShareUrl`, on the canonical platform
-origin), not the signed read URL, which expires after at most seven days. The
-share URL names the workspace by the UUID in the upload's storage key, never the
-page's route slug.
-Storefront, listing and bundle media keep the signed read URL because they are
-shown publicly. Web renders product images through the product image route,
-resolved under the app's mount (`/inventory/api/...` on `tuturuuu.com/inventory`),
-and shows any other stored value, such as a public CDN image, as stored; the
-upload field previews a new upload from its signed read URL until the form
-saves. A sale line shows the image it was sold with: the route signs it when it
-is still the product's image, and an older image renders as stored.
+
+Web product uploads store that signed read URL as `avatar_url`. Database
+triggers copy a product's image into its storefront listings and variants, and
+the public storefront shows listing images directly to anonymous shoppers, so
+the stored value must be readable without a session; the signed URL stops
+working after at most seven days. Mobile uploads store the stable share URL,
+`https://tuturuuu.com/api/v1/workspaces/{ws}/storage/share?path={path}` on the
+canonical platform origin, which never expires but needs a signed-in reader with
+drive access; a storefront listing copied from a mobile-uploaded image therefore
+does not render for shoppers. Public storefront re-signing of product images,
+which fixes both, is tracked separately. Storefront, listing and bundle media
+always keep the signed read URL.
+
+Operators see product images through the product image route, resolved under
+the app's mount (`/inventory/api/...` on `tuturuuu.com/inventory`), for both
+stored forms; any other stored value, such as a public CDN image, renders as
+stored. The upload field previews a new upload from its own signed URL until the
+form saves. A sale line shows the image it was sold with: the route signs it when
+it is still the product's image, and an older image renders as stored.
 
 Mobile reads a stored share URL or Supabase signed `workspaces` URL through the
 product image route, falling back to the storage share route when the product
-route is missing. Storage URLs are trusted only for the product's own workspace
+route is missing; a share URL that names the workspace by a route slug never
+falls back, because only the product image route checks the slug. Storage URLs are trusted only for the product's own workspace
 and on an allow-listed host (the platform API origin for share URLs, the
 configured Supabase project for signed ones); any other storage URL shows the
 placeholder without a request. When access is refused, a legacy signed URL is
