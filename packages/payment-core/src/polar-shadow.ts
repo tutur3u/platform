@@ -7,6 +7,7 @@ import type {
 import {
   isAiCreditPackProduct,
   isCustomDomainAddonProduct,
+  parseWorkspaceProductTier,
 } from './polar-product-metadata';
 
 const statuses: Readonly<Partial<Record<string, BillingStatus>>> = {
@@ -17,22 +18,33 @@ const statuses: Readonly<Partial<Record<string, BillingStatus>>> = {
   past_due: 'billing_retry',
   canceled: 'canceled',
   unpaid: 'hold',
-  paused: 'paused',
 };
 
 type PolarShadowObservation = BillingObservation<'polar'> & {
+  bindingKey: string;
   cancelAtPeriodEnd: boolean;
+  pricingModel: string | null;
 };
 
 type PolarShadowResult =
   | { kind: 'excluded' }
-  | { kind: 'exception'; reason: 'unknown_status' | 'ambiguous_price' }
+  | {
+      kind: 'exception';
+      reason:
+        | 'unknown_status'
+        | 'ambiguous_price'
+        | 'invalid_scope'
+        | 'missing_workspace'
+        | 'unknown_workspace_product'
+        | 'invalid_seats';
+    }
   | { kind: 'observed'; observation: PolarShadowObservation };
 
 type PolarShadowSubscription = Pick<
   Subscription,
   | 'id'
   | 'prices'
+  | 'metadata'
   | 'status'
   | 'modifiedAt'
   | 'createdAt'
@@ -41,7 +53,9 @@ type PolarShadowSubscription = Pick<
   | 'cancelAtPeriodEnd'
   | 'canceledAt'
   | 'seats'
-> & { product: Pick<Subscription['product'], 'id' | 'metadata'> };
+> & {
+  product: Pick<Subscription['product'], 'id' | 'metadata' | 'organizationId'>;
+};
 
 export function observePolarSubscription({
   subscription,
@@ -59,6 +73,24 @@ export function observePolarSubscription({
     return { kind: 'excluded' };
   }
 
+  if (
+    scope.provider !== 'polar' ||
+    (scope.environment !== 'sandbox' && scope.environment !== 'production') ||
+    !scope.application.trim() ||
+    subscription.product.organizationId !== scope.application ||
+    !subscription.id.trim() ||
+    !subscription.product.id.trim()
+  ) {
+    return { kind: 'exception', reason: 'invalid_scope' };
+  }
+  const workspaceId = subscription.metadata?.wsId;
+  if (typeof workspaceId !== 'string' || !workspaceId.trim()) {
+    return { kind: 'exception', reason: 'missing_workspace' };
+  }
+  if (!parseWorkspaceProductTier(metadata)) {
+    return { kind: 'exception', reason: 'unknown_workspace_product' };
+  }
+
   const status = Object.hasOwn(statuses, subscription.status)
     ? statuses[subscription.status]
     : undefined;
@@ -67,13 +99,21 @@ export function observePolarSubscription({
     return { kind: 'exception', reason: 'ambiguous_price' };
   }
 
+  const price = subscription.prices[0];
+  if (
+    price?.amountType === 'seat_based' &&
+    !isValidSeatCount(subscription.seats)
+  ) {
+    return { kind: 'exception', reason: 'invalid_seats' };
+  }
+
   return {
     kind: 'observed',
     observation: {
       reference: { ...scope, subscriptionId: subscription.id },
       item: {
         productId: subscription.product.id,
-        priceId: subscription.prices[0]?.id ?? null,
+        priceId: price?.id ?? null,
         basePlanId: null,
         offerId: null,
       },
@@ -94,17 +134,22 @@ export function observePolarSubscription({
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       canceledAt: subscription.canceledAt?.toISOString() ?? null,
       revokedAt: null,
-      autoRenews:
-        !subscription.cancelAtPeriodEnd &&
-        (status === 'active' || status === 'billing_retry'),
+      autoRenews: subscription.cancelAtPeriodEnd ? false : null,
       pendingReplacement: null,
       quantity: subscription.seats ?? null,
-      bindingKey: null,
+      bindingKey: workspaceId,
+      pricingModel: price?.amountType ?? null,
     },
   };
 }
 
+function isValidSeatCount(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1;
+}
+
 interface PolarLegacySnapshot {
+  ws_id: string;
+  updated_at: string | null;
   polar_subscription_id: string | null;
   product_id: string;
   status: string;
@@ -116,14 +161,32 @@ interface PolarLegacySnapshot {
 
 export function comparePolarLegacySnapshot({
   legacy,
+  legacyScope,
   observation,
   seatBased,
 }: {
   legacy: PolarLegacySnapshot;
+  legacyScope: BillingProviderScope<'polar'>;
   observation: PolarShadowObservation;
   seatBased: boolean;
 }) {
+  const mismatches: Array<
+    keyof PolarLegacySnapshot | 'environment' | 'application' | 'pricing_model'
+  > = [];
+  if (legacyScope.environment !== observation.reference.environment)
+    mismatches.push('environment');
+  if (legacyScope.application !== observation.reference.application)
+    mismatches.push('application');
+  if (
+    observation.pricingModel &&
+    (observation.pricingModel === 'seat_based') !== seatBased
+  ) {
+    mismatches.push('pricing_model');
+  }
+
   const expected = {
+    ws_id: observation.bindingKey,
+    updated_at: observation.ordering.providerUpdatedAt,
     polar_subscription_id: observation.reference.subscriptionId,
     product_id: observation.item.productId,
     status: observation.nativeStatus,
@@ -133,18 +196,29 @@ export function comparePolarLegacySnapshot({
     seat_count: seatBased ? observation.quantity : null,
   } satisfies PolarLegacySnapshot;
 
-  return (Object.keys(expected) as (keyof PolarLegacySnapshot)[]).filter(
-    (field) => {
-      const actual = legacy[field];
-      const value = expected[field];
-      if (
-        (field === 'current_period_start' || field === 'current_period_end') &&
-        typeof actual === 'string' &&
-        typeof value === 'string'
-      ) {
-        return Date.parse(actual) !== Date.parse(value);
+  mismatches.push(
+    ...(Object.keys(expected) as (keyof PolarLegacySnapshot)[]).filter(
+      (field) => {
+        const actual = legacy[field];
+        const value = expected[field];
+        if (
+          field === 'seat_count' &&
+          seatBased &&
+          !isValidSeatCount(observation.quantity)
+        )
+          return true;
+        if (
+          (field === 'updated_at' ||
+            field === 'current_period_start' ||
+            field === 'current_period_end') &&
+          typeof actual === 'string' &&
+          typeof value === 'string'
+        ) {
+          return Date.parse(actual) !== Date.parse(value);
+        }
+        return actual !== value;
       }
-      return actual !== value;
-    }
+    )
   );
+  return mismatches;
 }

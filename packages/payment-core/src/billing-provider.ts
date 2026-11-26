@@ -47,6 +47,7 @@ export interface BillingObservation<P extends BillingProviderId> {
   accessUntil: string | null;
   graceUntil: string | null;
   canceledAt: string | null;
+  cancelAtPeriodEnd: boolean | null;
   revokedAt: string | null;
   autoRenews: boolean | null;
   pendingReplacement: BillingCatalogItem | null;
@@ -81,9 +82,12 @@ export interface BillingProvider<P extends BillingProviderId> {
     reference: BillingSubscriptionReference<P>
   ): Promise<BillingObservation<P>>;
   verifyPurchase(submission: BillingPurchase): Promise<BillingObservation<P>>;
-  management:
+  getManagementLink(
+    reference: BillingSubscriptionReference<P>
+  ): Promise<
     | { kind: 'provider_portal'; url: string }
-    | { kind: 'native_store'; url: string };
+    | { kind: 'native_store'; url: string }
+  >;
   createCheckout?(
     input: Omit<BillingPurchase, 'proof'> & { item: BillingCatalogItem }
   ): Promise<{ url: string }>;
