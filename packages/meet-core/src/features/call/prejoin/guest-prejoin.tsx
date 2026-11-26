@@ -35,6 +35,7 @@ export function GuestPrejoin({
   state,
   statusLabel,
   canAskHost,
+  eventMode,
   stalled,
   widget,
   onToken,
@@ -56,6 +57,7 @@ export function GuestPrejoin({
   state: GuestPrejoinState;
   statusLabel: string;
   canAskHost: boolean;
+  eventMode?: boolean;
   stalled: boolean;
   /** A single-use Turnstile token needs a fresh widget after each attempt. */
   widget: number;
@@ -157,10 +159,18 @@ export function GuestPrejoin({
                   {state.kind === 'submitting' && state.askingHost && (
                     <Loader2 aria-hidden="true" className="animate-spin" />
                   )}
-                  {t('ask_host_without_verification')}
+                  {t(
+                    eventMode
+                      ? 'event_work_start'
+                      : 'ask_host_without_verification'
+                  )}
                 </Button>
                 <p className="text-muted-foreground text-xs">
-                  {t('ask_host_without_verification_hint')}
+                  {t(
+                    eventMode
+                      ? 'event_work_hint'
+                      : 'ask_host_without_verification_hint'
+                  )}
                 </p>
               </div>
             )}

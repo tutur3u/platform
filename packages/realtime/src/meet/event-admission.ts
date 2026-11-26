@@ -7,3 +7,12 @@ export function activeMeetEvent(
 ): number | undefined {
   return expiresAt && expiresAt > now ? expiresAt : undefined;
 }
+
+export function acceptsMeetGuestProof(
+  event: number | undefined,
+  proof: number | undefined,
+  ordinarilyVerified: boolean | undefined
+) {
+  if (proof !== undefined) return proof === event;
+  return event === undefined || ordinarilyVerified === true;
+}

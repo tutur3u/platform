@@ -1292,13 +1292,23 @@ initialization does not set it.
 
 During that window, a guest in the challenge-required tier must complete a
 server-verified browser check and wait for manual admission. Meet accepts
-Turnstile or its existing single-use jigsaw pass. The signed session carries
+Turnstile, its existing single-use jigsaw pass, or a room-scoped proof-of-work
+ticket if the widget cannot complete. The work uses EduFest's SHA-256 format
+with 19 bits for standard risk, 20 for watch, and 22 for challenge-required
+recovery. Tickets bind the room, event expiry, network prefix and display
+name. They expire after two minutes, or five for recovery. A network change
+requires a fresh ticket. The durable guard consumes each accepted ticket once
+and work-based sessions always wait for the host. The signed session carries
 event-scoped proof separately from eligibility for automatic admission.
 Restricted and hard-blocked guests remain refused. Signed-in participants and
 ordinary verified guests retain the room's existing automatic admission rules.
 
-The event adds an 80-attempt limit per network per room every ten minutes and
-caps simultaneous waiting and admitted guest connections at 80. Existing
+The event allows 80 new guest sessions per network per room every ten minutes.
+Turnstile or jigsaw submissions, work-ticket issuance, and work verification
+each have a separate 80-request window at the same scope. A failed provider
+request therefore leaves the same network's work budget available. The shared
+guard must be available for event work. Event rooms also
+cap simultaneous waiting and admitted guest connections at 80. Existing
 cross-room limits, browser-check budgets and room capacity rules still apply.
 Event-specific limits stop applying at expiry.
 

@@ -27,6 +27,10 @@ import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call
 import { meetAiUsageGuard } from '@tuturuuu/meet-core/features/meeting-ai/server/usage-limit';
 import { MEET_EVENT_GUEST_LIMIT } from '@tuturuuu/realtime/meet';
 import { redeemPassToken } from '@tuturuuu/human-check';
+import {
+  issueMeetGuestWork,
+  redeemMeetGuestWork,
+} from '../../../../../features/call/server/guest-event-challenge';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 
@@ -43,6 +47,13 @@ const bodySchema = z.object({
    * lobby for a person to admit it.
    */
   hostApproval: z.literal(true).optional(),
+  beginEventWork: z.literal(true).optional(),
+  eventWork: z
+    .object({
+      ticket: z.string().min(1).max(2048),
+      nonce: z.number().int().min(0).max(0xffffffff),
+    })
+    .optional(),
 });
 
 async function guestJoinLimiter() {
@@ -84,11 +95,21 @@ export async function POST(
       { error: 'Enter a display name', code: 'MEET_GUEST_NAME_REQUIRED' },
       { status: 400, headers }
     );
+  const { beginEventWork, eventWork, hostApproval } = parsed.data;
+  if (
+    (eventWork || beginEventWork) &&
+    ((eventWork && beginEventWork) ||
+      hostApproval ||
+      parsed.data.turnstileToken ||
+      parsed.data.humanPassToken)
+  )
+    return Response.json(
+      { error: 'Invalid verification' },
+      { status: 400, headers }
+    );
+  const network = extractTurnstileRemoteIp(request);
   const limiter = await guestJoinLimiter();
-  const limit = await checkMeetGuestJoinLimit(
-    { meetingId, network: extractTurnstileRemoteIp(request) },
-    limiter
-  );
+  const limit = await checkMeetGuestJoinLimit({ meetingId, network }, limiter);
   if (!limit.ok)
     return Response.json(
       { error: 'Too many join attempts', code: 'MEET_GUEST_RATE_LIMITED' },
@@ -107,11 +128,22 @@ export async function POST(
       { status: 403, headers }
     );
   const event = state.eventExpiresAt;
+  const requestWork =
+    beginEventWork ||
+    (hostApproval &&
+      !parsed.data.turnstileToken &&
+      !parsed.data.humanPassToken);
   let manualProof: number | undefined;
+  let difficulty: 19 | 20 | 22 = 19;
   if (event) {
-    const network = extractTurnstileRemoteIp(request);
     const eventLimit = await checkMeetGuestJoinLimit(
-      { meetingId, network, eventLimit: MEET_EVENT_GUEST_LIMIT },
+      {
+        meetingId,
+        network,
+        eventLimit: MEET_EVENT_GUEST_LIMIT,
+        phase: requestWork ? 'challenge' : eventWork ? 'work' : 'verify',
+        requireSharedStore: true,
+      },
       limiter
     );
     if (!eventLimit.ok)
@@ -138,7 +170,12 @@ export async function POST(
         },
         { status: 403, headers }
       );
-    if (risk.decision.tier === 'challenge_required') manualProof = event;
+    if (risk.decision.tier === 'challenge_required') {
+      manualProof = event;
+      difficulty = 22;
+    } else if (risk.decision.tier === 'watch') {
+      difficulty = 20;
+    }
   }
   const tokenSecret = getMeetRealtimeTokenSecret();
   const existing = await verifyMeetGuestSession(
@@ -147,10 +184,89 @@ export async function POST(
     tokenSecret
   );
   if (
-    (!manualProof && existing?.turnstileVerified) ||
-    (event && existing?.eventProof === event)
+    !eventWork &&
+    ((!manualProof && existing?.turnstileVerified) ||
+      (event && existing?.eventProof === event))
   )
     return Response.json({ ok: true }, { headers });
+  const respondWithSession = async (
+    session: Parameters<typeof guestSessionResponse>[0]
+  ) => {
+    if (event) {
+      const budget = await checkMeetGuestJoinLimit(
+        {
+          meetingId,
+          network,
+          eventLimit: MEET_EVENT_GUEST_LIMIT,
+          requireSharedStore: true,
+        },
+        limiter
+      );
+      if (!budget.ok)
+        return Response.json(
+          { error: 'Too many join attempts', code: 'MEET_GUEST_RATE_LIMITED' },
+          {
+            status: 429,
+            headers: {
+              ...headers,
+              'Retry-After': String(budget.retryAfterSeconds),
+            },
+          }
+        );
+    }
+    return guestSessionResponse(session);
+  };
+  if (eventWork || beginEventWork || (event && requestWork)) {
+    if (event) {
+      const context = {
+        meetingId,
+        eventExpiresAt: event,
+        network,
+        displayName,
+      };
+      if (!eventWork)
+        return Response.json(
+          { challenge: issueMeetGuestWork(context, difficulty, tokenSecret) },
+          { headers }
+        );
+      const guard = await meetHumanCheckGuard();
+      if (guard) {
+        const redeemed = await redeemMeetGuestWork(
+          context,
+          eventWork,
+          tokenSecret,
+          async (id, ttlMs) =>
+            (
+              await guard.incr(
+                `meet-event-work:${id}`,
+                1,
+                Math.max(1_000, ttlMs)
+              )
+            ).n === 1,
+          Date.now,
+          difficulty
+        ).catch(() => null);
+        if (redeemed)
+          return respondWithSession({
+            guestId:
+              existing?.guestId ??
+              (await meetDeviceIdentity(
+                meetingId,
+                `guest-event-work:${redeemed}`
+              )),
+            meetingId,
+            displayName,
+            secret: tokenSecret,
+            verified: false,
+            eventProof: event,
+          });
+      }
+    }
+    return Response.json(
+      { error: 'Verification failed', code: 'MEET_GUEST_TURNSTILE_FAILED' },
+      { status: 403, headers }
+    );
+  }
   const turnstileToken = parsed.data.turnstileToken?.trim();
   const devMode = process.env.NODE_ENV === 'development';
   const humanPassToken = parsed.data.humanPassToken?.trim();
@@ -171,7 +287,7 @@ export async function POST(
         { error: 'Verification failed', code: 'MEET_GUEST_TURNSTILE_FAILED' },
         { status: 403, headers }
       );
-    return guestSessionResponse({
+    return respondWithSession({
       guestId:
         existing?.guestId ??
         (await meetDeviceIdentity(meetingId, `guest-human:${pass.jti}`)),
@@ -219,7 +335,7 @@ export async function POST(
           },
         }
       );
-    return guestSessionResponse({
+    return respondWithSession({
       guestId: existing?.guestId ?? crypto.randomUUID(),
       meetingId,
       displayName,
@@ -244,7 +360,7 @@ export async function POST(
     (verified
       ? await meetDeviceIdentity(meetingId, `guest-turnstile:${turnstileToken}`)
       : crypto.randomUUID());
-  return guestSessionResponse({
+  return respondWithSession({
     guestId,
     meetingId,
     displayName,

@@ -53,6 +53,70 @@ describe('meet guest join limit', () => {
     expect((await checkMeetGuestJoinLimit(input, null)).ok).toBe(true);
   });
 
+  it('supports 50 venue guests, each with a failed provider attempt, plus retry headroom', async () => {
+    const input = { meetingId, network: '203.0.113.4' };
+    const event = { ...input, eventLimit: 80 };
+    const at = () => 60_000;
+    for (let i = 0; i < 50; i++) {
+      expect((await checkMeetGuestJoinLimit(input, null, at)).ok).toBe(true);
+      expect(
+        (await checkMeetGuestJoinLimit({ ...event, phase: 'verify' }, null, at))
+          .ok
+      ).toBe(true);
+      expect((await checkMeetGuestJoinLimit(input, null, at)).ok).toBe(true);
+      expect(
+        (
+          await checkMeetGuestJoinLimit(
+            { ...event, phase: 'challenge' },
+            null,
+            at
+          )
+        ).ok
+      ).toBe(true);
+      expect((await checkMeetGuestJoinLimit(input, null, at)).ok).toBe(true);
+      expect(
+        (await checkMeetGuestJoinLimit({ ...event, phase: 'work' }, null, at))
+          .ok
+      ).toBe(true);
+      expect((await checkMeetGuestJoinLimit(event, null, at)).ok).toBe(true);
+    }
+    for (let i = 0; i < 30; i++) {
+      expect((await checkMeetGuestJoinLimit(input, null, at)).ok).toBe(true);
+      expect(
+        (await checkMeetGuestJoinLimit({ ...event, phase: 'work' }, null, at))
+          .ok
+      ).toBe(true);
+    }
+    expect(
+      (await checkMeetGuestJoinLimit({ ...event, phase: 'work' }, null, at)).ok
+    ).toBe(false);
+    expect(
+      (
+        await checkMeetGuestJoinLimit(
+          { ...event, phase: 'work', meetingId: 'other' },
+          null,
+          at
+        )
+      ).ok
+    ).toBe(true);
+  });
+
+  it('fails closed when an event requires a shared store', async () => {
+    expect(
+      (
+        await checkMeetGuestJoinLimit(
+          {
+            meetingId,
+            network: '203.0.113.4',
+            eventLimit: 80,
+            requireSharedStore: true,
+          },
+          null
+        )
+      ).ok
+    ).toBe(false);
+  });
+
   it('follows the shared store decision', async () => {
     const limiter = {
       hitWindows: vi.fn().mockResolvedValue({

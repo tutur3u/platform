@@ -56,7 +56,8 @@ export type MeetGuestJoinLimiter = {
 export function meetGuestJoinWindows(
   meetingId: string,
   network: string,
-  eventLimit?: number
+  eventLimit?: number,
+  phase?: 'challenge' | 'work' | 'verify'
 ): GuardWindowSubject[] {
   const limits = meetGuestJoinLimits();
   return [
@@ -65,7 +66,7 @@ export function meetGuestJoinWindows(
       windows: eventLimit
         ? [
             {
-              key: `event-join:${meetingId}:10m`,
+              key: `event-${phase ?? 'join'}:${meetingId}:10m`,
               limit: eventLimit,
               windowMs: MEET_GUEST_JOIN_WINDOW_MS,
               algo: 'fixed',
@@ -113,6 +114,8 @@ export async function checkMeetGuestJoinLimit(
     meetingId: string;
     network: string | undefined;
     eventLimit?: number;
+    phase?: 'challenge' | 'work' | 'verify';
+    requireSharedStore?: true;
   },
   limiter: MeetGuestJoinLimiter | null,
   now: () => number = Date.now
@@ -122,7 +125,12 @@ export async function checkMeetGuestJoinLimit(
   if (limiter) {
     try {
       const outcome = await limiter.hitWindows(
-        meetGuestJoinWindows(input.meetingId, network, input.eventLimit)
+        meetGuestJoinWindows(
+          input.meetingId,
+          network,
+          input.eventLimit,
+          input.phase
+        )
       );
       return outcome.ok
         ? { ok: true }
@@ -136,6 +144,7 @@ export async function checkMeetGuestJoinLimit(
       });
     }
   }
+  if (input.requireSharedStore) return { ok: false, retryAfterSeconds: 60 };
   // The same windows as the store, all-or-nothing: a refused attempt counts
   // in neither.
   const at = now();
@@ -143,7 +152,8 @@ export async function checkMeetGuestJoinLimit(
     meetGuestJoinWindows(
       input.meetingId,
       network,
-      input.eventLimit
+      input.eventLimit,
+      input.phase
     )[0]!.windows.map((window) => ({
       key: `${network}:${window.key}`,
       limit: window.limit,

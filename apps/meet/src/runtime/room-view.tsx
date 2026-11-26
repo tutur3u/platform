@@ -25,6 +25,7 @@ export function RoomView({
   if (model.kind === 'guest-join')
     return (
       <MeetGuestJoin
+        eventMode={model.eventMode}
         meetingId={model.meetingId}
         meetingTitle={model.meetingTitle}
         returnTo={model.returnTo}
@@ -99,7 +100,9 @@ export function RoomView({
       />
     );
   const guestVerification =
-    requiresAccount && model.formsTurnstileSiteKey
+    requiresAccount &&
+    model.formsTurnstileSiteKey &&
+    !('eventProof' in access && access.eventProof)
       ? {
           meetingId: meeting.id,
           siteKey: model.formsTurnstileSiteKey,

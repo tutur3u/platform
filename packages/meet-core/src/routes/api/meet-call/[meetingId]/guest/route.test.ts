@@ -315,3 +315,59 @@ it('refuses the join after the limit from one network with the existing rate-lim
   // Turnstile still checked every admitted attempt and never the refused one.
   expect(mocks.verify).toHaveBeenCalledTimes(actual.MEET_GUEST_JOIN_LIMIT);
 });
+
+it('issues event recovery work without creating a guest session', async () => {
+  mocks.resolve.mockResolvedValue({
+    kind: 'available',
+    eventExpiresAt: Date.now() + 360_000,
+  });
+  mocks.risk.mockResolvedValue({
+    allowed: true,
+    decision: { tier: 'challenge_required' },
+  });
+  const response = await POST(
+    request({ displayName: 'An', beginEventWork: true }),
+    params
+  );
+  expect(response.status).toBe(200);
+  expect(response.headers.get('Set-Cookie')).toBeNull();
+  expect(await response.json()).toMatchObject({
+    challenge: { difficulty: 22 },
+  });
+  expect(mocks.limit).toHaveBeenCalledWith(
+    expect.objectContaining({
+      eventLimit: 80,
+      phase: 'challenge',
+      requireSharedStore: true,
+    }),
+    null
+  );
+});
+
+it('refuses event work issuance for a blocked guest', async () => {
+  mocks.resolve.mockResolvedValue({
+    kind: 'available',
+    eventExpiresAt: Date.now() + 360_000,
+  });
+  mocks.risk.mockResolvedValue({
+    allowed: false,
+    decision: { tier: 'restricted' },
+  });
+  const response = await POST(
+    request({ displayName: 'An', beginEventWork: true }),
+    params
+  );
+  expect(response.status).toBe(403);
+  expect(response.headers.get('Set-Cookie')).toBeNull();
+  expect(await response.json()).not.toHaveProperty('challenge');
+});
+
+it('refuses event work outside an active event', async () => {
+  const response = await POST(
+    request({ displayName: 'An', beginEventWork: true }),
+    params
+  );
+  expect(response.status).toBe(403);
+  expect(response.headers.get('Set-Cookie')).toBeNull();
+  expect(mocks.unverifiedLimit).not.toHaveBeenCalled();
+});

@@ -220,12 +220,15 @@ describe('event room admission', () => {
       guestEventProof: state.settings?.eventModeExpiresAt,
     });
     expect(admitOrHold(state, last, now).disconnect).toContain(last.userId);
+    const afterExpiry = new Date(
+      state.settings!.eventModeExpiresAt!
+    ).toISOString();
+    expect(admitOrHold(state, last, afterExpiry).disconnect).toContain(
+      last.userId
+    );
+    const regularGuest = token(90, { guest: true });
     expect(
-      admitOrHold(
-        state,
-        last,
-        new Date(state.settings!.eventModeExpiresAt!).toISOString()
-      ).state.waiting[last.userId]
+      admitOrHold(state, regularGuest, afterExpiry).state.waiting[last.userId]
     ).toBeDefined();
   });
 });

@@ -130,14 +130,21 @@ async function roomModel(code: string, locale: string, url: URL) {
           const info = await infoPromise;
           const returnTo = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
           const siteKey = meetGuestTurnstileSiteKey();
-          if (
-            siteKey &&
-            (await resolveMeetGuestJoin(meetingId, guestSources)).kind ===
-              'available'
-          ) {
+          const join = siteKey
+            ? await resolveMeetGuestJoin(meetingId, guestSources)
+            : null;
+          if (siteKey && join?.kind === 'available') {
             // Guest join follows live host settings; never serve a stale copy.
             markSignedInDocument();
-            return { guestJoin: { meetingId, siteKey }, returnTo, info };
+            return {
+              guestJoin: {
+                meetingId,
+                siteKey,
+                eventMode: Boolean(join.eventExpiresAt),
+              },
+              returnTo,
+              info,
+            };
           }
           if (info) return { publicInvite: info, returnTo, info };
           return { accountRequired: true as const, returnTo };
@@ -152,6 +159,7 @@ async function roomModel(code: string, locale: string, url: URL) {
       kind: 'guest-join' as const,
       meetingId: guestJoin.meetingId,
       siteKey: guestJoin.siteKey,
+      eventMode: guestJoin.eventMode,
       // Lets the join page server-render the Turnstile script under the
       // response's CSP nonce, so it loads while the page hydrates.
       scriptNonce: globalThis.__meetCspNonce?.(),

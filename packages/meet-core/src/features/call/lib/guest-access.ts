@@ -1,5 +1,8 @@
 import 'server-only';
-import { activeMeetEvent } from '@tuturuuu/realtime/meet';
+import {
+  acceptsMeetGuestProof,
+  activeMeetEvent,
+} from '@tuturuuu/realtime/meet';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
@@ -153,9 +156,11 @@ export async function getMeetGuestCallAccess(
   const state = await resolveMeetGuestJoin(meetingId, sources);
   if (state.kind !== 'available') return null;
   if (
-    state.eventExpiresAt &&
-    !session.turnstileVerified &&
-    session.eventProof !== state.eventExpiresAt
+    !acceptsMeetGuestProof(
+      state.eventExpiresAt,
+      session.eventProof,
+      session.turnstileVerified
+    )
   )
     return null;
   const access: MeetGuestCallAccess = {

@@ -37,12 +37,17 @@ export function joinMeetCallAsGuest(
     hostApproval?: true;
     /** Single-use pass from the Tuturuuu jigsaw check. */
     humanPassToken?: string;
+    beginEventWork?: true;
+    eventWork?: { ticket: string; nonce: number };
   }
 ) {
-  return getInternalApiClient().json<{ ok: true }>(
-    `/api/meet-call/${encodePathSegment(meetingId)}/guest`,
-    { method: 'POST', body: JSON.stringify(input) }
-  );
+  return getInternalApiClient().json<
+    | { ok: true }
+    | { challenge: { ticket: string; difficulty: number; expiresAt: number } }
+  >(`/api/meet-call/${encodePathSegment(meetingId)}/guest`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }
 
 /** Forgets this browser's guest identity for the meeting. */

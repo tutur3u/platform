@@ -1,4 +1,8 @@
-import { activeMeetEvent, MEET_EVENT_GUEST_LIMIT } from './event-admission';
+import {
+  acceptsMeetGuestProof,
+  activeMeetEvent,
+  MEET_EVENT_GUEST_LIMIT,
+} from './event-admission';
 import { MEET_MEDIA_CAPABILITIES } from './simulcast-layers';
 import { resolveMeetStreamEntitlement } from './stream-tiers';
 import {
@@ -97,10 +101,12 @@ export function admitOrHold(
     Date.parse(now)
   );
   if (
-    event &&
     token.guest &&
-    !token.guestTurnstileVerified &&
-    token.guestEventProof !== event
+    !acceptsMeetGuestProof(
+      event,
+      token.guestEventProof,
+      token.guestTurnstileVerified
+    )
   )
     return outcome(state, {
       reply: [{ type: 'error', error: 'permission_denied' }],
@@ -324,10 +330,8 @@ function decideParticipant(
   );
   if (
     admit &&
-    event &&
     pending.guest &&
-    !pending.verified &&
-    pending.eventProof !== event
+    !acceptsMeetGuestProof(event, pending.eventProof, pending.verified)
   )
     return denied(state, 'permission_denied', requestId);
   const waiting = { ...state.waiting };

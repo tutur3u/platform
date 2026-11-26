@@ -276,7 +276,11 @@ export type {
   MeetReaction,
   MeetRoomSettings,
 } from './room-options';
-export { activeMeetEvent, MEET_EVENT_GUEST_LIMIT } from './event-admission';
+export {
+  acceptsMeetGuestProof,
+  activeMeetEvent,
+  MEET_EVENT_GUEST_LIMIT,
+} from './event-admission';
 export { meetReactionSchema, meetRoomSettingsSchema } from './room-options';
 export {
   type MeetingProgramming,

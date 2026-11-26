@@ -18,6 +18,7 @@ import {
   useRememberMiraJoin,
 } from '../../live-assistant/mira-join-box';
 import { prefersMiraOff } from '../../live-assistant/mira-join-choice';
+import { solveGuestWork } from '../lib/guest-event-work';
 import { MEET_GUEST_NAME_MAX } from '../lib/guest-session';
 import { GUEST_TURNSTILE_SCRIPT_SRC } from '../lib/guest-turnstile-recovery';
 import { meetingDisplayName } from '../lib/meeting-display-name';
@@ -31,6 +32,7 @@ export type GuestJoinState =
   | { kind: 'verified'; token: string; via?: 'human' }
   /** `token: null` asks the host without a Turnstile token. */
   | { kind: 'submitting'; token: string | null }
+  | { kind: 'solving' }
   | {
       kind: 'failed';
       reason:
@@ -67,6 +69,7 @@ function renderedScriptNonce() {
 
 export function MeetGuestJoin({
   meetingId,
+  eventMode = false,
   meetingTitle,
   returnTo,
   siteKey,
@@ -76,6 +79,7 @@ export function MeetGuestJoin({
   meetUxV2 = false,
 }: {
   meetingId: string;
+  eventMode?: boolean;
   /** Shows the redesigned pre-join stage instead of the guest card. */
   meetUxV2?: boolean;
   /** The workspace default for the Mira box; the same on server and client. */
@@ -124,17 +128,28 @@ export function MeetGuestJoin({
   // A Turnstile token is single-use: a fresh widget issues the next one.
   const [widget, setWidget] = useState(0);
   const [refreshing, startTransition] = useTransition();
-  const busy = state.kind === 'submitting' || refreshing;
+  const busy =
+    state.kind === 'submitting' || state.kind === 'solving' || refreshing;
   const canSubmit = state.kind === 'verified' && !!name.trim() && !busy;
   // Asking the host is always available: no browser is ever left without a
   // way in. It stays secondary to the verified join.
   const canAskHost = state.kind !== 'verified' && !!name.trim() && !busy;
   const onToken = useCallback(
-    (token: string) => setState({ kind: 'verified', token }),
+    (token: string) =>
+      setState((current) =>
+        current.kind === 'submitting' || current.kind === 'solving'
+          ? current
+          : { kind: 'verified', token }
+      ),
     []
   );
   const onHumanPass = useCallback(
-    (token: string) => setState({ kind: 'verified', token, via: 'human' }),
+    (token: string) =>
+      setState((current) =>
+        current.kind === 'submitting' || current.kind === 'solving'
+          ? current
+          : { kind: 'verified', token, via: 'human' }
+      ),
     []
   );
   const onTokenLost = useCallback(
@@ -156,14 +171,39 @@ export function MeetGuestJoin({
         miraTicked,
         miraAcceptanceRevision
       ).catch(() => undefined);
-      await joinMeetCallAsGuest(meetingId, {
-        displayName: name.trim(),
+      const displayName = name.trim();
+      const response = await joinMeetCallAsGuest(meetingId, {
+        displayName,
         ...(!token
-          ? { hostApproval: true }
+          ? eventMode
+            ? { beginEventWork: true }
+            : { hostApproval: true }
           : via === 'human'
             ? { humanPassToken: token }
             : { turnstileToken: token }),
       });
+      if (response && 'challenge' in response) {
+        const { ticket, difficulty, expiresAt } = response.challenge;
+        setState({ kind: 'solving' });
+        const nonce = await solveGuestWork(
+          ticket,
+          difficulty,
+          AbortSignal.timeout(
+            Math.max(1, Math.min(300_000, expiresAt - Date.now()))
+          ),
+          true
+        );
+        if (nonce === null) {
+          setState({ kind: 'failed', reason: 'turnstile' });
+          return;
+        }
+        const completed = await joinMeetCallAsGuest(meetingId, {
+          displayName,
+          eventWork: { ticket, nonce },
+        });
+        if (!('ok' in completed))
+          throw new Error('Guest proof was not redeemed');
+      }
       await remembered;
       startTransition(() => router.refresh());
     } catch (error) {
@@ -176,6 +216,8 @@ export function MeetGuestJoin({
     switch (state.kind) {
       case 'verifying':
         return t('verifying');
+      case 'solving':
+        return t('event_work_running');
       case 'verified':
       case 'submitting':
         return t('verified');
@@ -207,6 +249,7 @@ export function MeetGuestJoin({
     return (
       <GuestPrejoin
         canAskHost={canAskHost}
+        eventMode={eventMode}
         meetingId={meetingId}
         miraConsent={miraConsent}
         name={name}
@@ -226,8 +269,11 @@ export function MeetGuestJoin({
         siteKey={siteKey}
         stalled={stalled}
         state={
-          state.kind === 'submitting'
-            ? { kind: 'submitting', askingHost: state.token === null }
+          state.kind === 'submitting' || state.kind === 'solving'
+            ? {
+                kind: 'submitting',
+                askingHost: state.kind === 'solving' || state.token === null,
+              }
             : state.kind === 'failed'
               ? { kind: 'failed', message: status }
               : { kind: state.kind }
@@ -321,10 +367,16 @@ export function MeetGuestJoin({
               {state.kind === 'submitting' && state.token === null && (
                 <Loader2 aria-hidden="true" className="animate-spin" />
               )}
-              {t('ask_host_without_verification')}
+              {t(
+                eventMode ? 'event_work_start' : 'ask_host_without_verification'
+              )}
             </Button>
             <p className="text-muted-foreground text-xs">
-              {t('ask_host_without_verification_hint')}
+              {t(
+                eventMode
+                  ? 'event_work_hint'
+                  : 'ask_host_without_verification_hint'
+              )}
             </p>
           </div>
         ) : null}
