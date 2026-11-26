@@ -301,7 +301,7 @@ function fakeRegistration(statuses) {
   const calls = [];
   const fetch = async (url, init) => {
     calls.push({ url, init });
-    if (url.startsWith('https://token.test'))
+    if (new URL(url).origin === 'https://token.test')
       return Response.json({ value: 'oidc-token' });
     const status = statuses.shift() ?? 200;
     return Response.json(status === 200 ? { created: true } : { error: 'X' }, {
