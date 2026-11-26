@@ -184,6 +184,19 @@ test('reads persisted event audit records only for authenticated staff hosts', a
     type: 'room.settings.update',
     settings: { eventMode: true },
   });
+  const eventExpiry = snapshot().settings?.eventModeExpiresAt;
+  assert.ok(eventExpiry);
+  const disable = {
+    type: 'room.settings.update',
+    settings: { eventMode: { disable: eventExpiry } },
+  };
+  await send(host.socket, disable);
+  await send(host.socket, disable);
+  assert.equal(snapshot().settings?.eventModeExpiresAt, undefined);
+  assert.deepEqual(
+    snapshot().eventActivationAudit?.map((entry) => entry.action),
+    ['event_enabled', 'event_disabled']
+  );
   const allowed = await readEventAudit(staff);
   assert.equal(allowed.status, 200);
   assert.deepEqual(await allowed.json(), {

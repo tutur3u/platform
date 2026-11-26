@@ -4532,6 +4532,8 @@
         "error_verification_required": "Requests without verification aren't accepted from this network. Retry verification or sign in.",
         "event_admit_all": "Admit all waiting",
         "event_admit_all_description": "Admit everyone currently waiting who meets the room admission requirements?",
+        "event_mode_disable": "Turn off event mode",
+        "event_mode_disable_description": "Normal guest rules resume. You can still admit waiting guests individually before their event proof expires. Guests will need to verify again under the normal rules if they reconnect or when their access refreshes.",
         "event_mode_enable": "Enable event mode for six hours",
         "event_work_hint": "Use your browser to verify and ask the host to let you in.",
         "event_work_running": "Running the browser check…",

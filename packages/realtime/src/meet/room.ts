@@ -49,7 +49,7 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
 type MeetEventAdmissionAudit = {
-  action: 'event_enabled' | 'admit_all_waiting';
+  action: 'event_enabled' | 'event_disabled' | 'admit_all_waiting';
   roomId: string;
   meetingId: string;
   wsId: string;
@@ -70,6 +70,8 @@ export interface MeetRoomSnapshot
   mediaQuality?: import('./room-media-quality').RoomMediaQuality;
   approved?: Record<string, MeetApprovedParticipant>;
   settings?: MeetRoomSettings;
+  /** Only waiting-room decisions can use proof from an early-closed event. */
+  earlyClosedEventExpiresAt?: number;
   eventActivationAudit?: MeetEventAdmissionAudit[];
   eventAdmissionAudit?: MeetEventAdmissionAudit[];
   ended?: boolean;

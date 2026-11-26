@@ -196,9 +196,21 @@ export function applyRoomControl(
     if (eventMode && (!token.eventHost || !state.presence[token.userId]))
       return denied(state, 'permission_denied', message.requestId);
     const nowMs = Date.parse(now);
-    const eventModeExpiresAt =
-      eventMode && !activeMeetEvent(state.settings?.eventModeExpiresAt, nowMs)
-        ? nowMs + MEET_EVENT_DURATION_MS
+    const activeEvent = activeMeetEvent(
+      state.settings?.eventModeExpiresAt,
+      nowMs
+    );
+    const disabling =
+      typeof eventMode === 'object' && eventMode.disable === activeEvent;
+    const nextExpiry = nowMs + MEET_EVENT_DURATION_MS;
+    const enabling =
+      eventMode === true &&
+      !activeEvent &&
+      nextExpiry !== state.earlyClosedEventExpiresAt;
+    const changedEvent = enabling
+      ? nextExpiry
+      : disabling
+        ? activeEvent
         : undefined;
     if (
       message.settings.viewersByDefault !== undefined &&
@@ -223,37 +235,47 @@ export function applyRoomControl(
         'permission_denied',
         'requestId' in message ? message.requestId : undefined
       );
-    const applied = applyMeetRoomSettings(
-      eventModeExpiresAt
-        ? {
-            ...state,
-            eventActivationAudit: [
-              ...(state.eventActivationAudit ?? []).slice(-255),
+    const applied =
+      eventMode !== undefined &&
+      !changedEvent &&
+      Object.keys(patch).length === 0
+        ? outcome(state)
+        : applyMeetRoomSettings(
+            changedEvent
+              ? {
+                  ...state,
+                  earlyClosedEventExpiresAt: disabling
+                    ? changedEvent
+                    : undefined,
+                  eventActivationAudit: [
+                    ...(state.eventActivationAudit ?? []).slice(-255),
+                    {
+                      action: disabling ? 'event_disabled' : 'event_enabled',
+                      roomId: token.roomId,
+                      meetingId: token.meetingId,
+                      wsId: token.wsId,
+                      actorId: token.accountId ?? token.userId,
+                      at: now,
+                      expiresAt: changedEvent,
+                    },
+                  ],
+                }
+              : state,
+            stampMeetJoinQr(
               {
-                action: 'event_enabled',
-                roomId: token.roomId,
-                meetingId: token.meetingId,
-                wsId: token.wsId,
-                actorId: token.accountId ?? token.userId,
-                at: now,
-                expiresAt: eventModeExpiresAt,
+                shareNotes: false,
+                ...state.settings,
+                ...patch,
+                ...(changedEvent
+                  ? { eventModeExpiresAt: enabling ? changedEvent : undefined }
+                  : {}),
               },
-            ],
-          }
-        : state,
-      stampMeetJoinQr(
-        {
-          shareNotes: false,
-          ...state.settings,
-          ...patch,
-          ...(eventModeExpiresAt ? { eventModeExpiresAt } : {}),
-        },
-        message.settings,
-        now
-      ),
-      token,
-      now
-    );
+              message.settings,
+              now
+            ),
+            token,
+            now
+          );
     // The sender's request settles on the settings the room now holds, so a
     // value the room did not keep is visible to the sender.
     return message.requestId

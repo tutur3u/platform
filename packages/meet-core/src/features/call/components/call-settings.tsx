@@ -16,6 +16,17 @@ import {
 } from '@tuturuuu/icons';
 import { MeetMemorySettings } from '@tuturuuu/meet-core/features/live-assistant/memory-settings';
 import type { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import {
@@ -119,6 +130,12 @@ export function CallSettings({
   const bandwidthId = useId();
   const managesMedia = room.state.canManageParticipants ?? canManage;
   const isHost = room.state.role === 'host';
+  const eventExpiry = room.state.settings?.eventModeExpiresAt;
+  const activeEvent =
+    eventExpiry !== undefined &&
+    eventExpiry > Date.now() + (room.state.settingsClockSkew ?? 0)
+      ? eventExpiry
+      : undefined;
   const accountId = room.state.selfUserId
     ? room.state.participants[room.state.selfUserId]?.accountId
     : undefined;
@@ -335,18 +352,46 @@ export function CallSettings({
                 onSettingsChange={room.updateSettings}
                 isHost={isHost}
               />
-              {room.state.eventHost && (
-                <Button
-                  variant="outline"
-                  onClick={() => room.updateSettings({ eventMode: true })}
-                  disabled={
-                    (room.state.settings?.eventModeExpiresAt ?? 0) >
-                    Date.now() + (room.state.settingsClockSkew ?? 0)
-                  }
-                >
-                  {t('guest_join.event_mode_enable')}
-                </Button>
-              )}
+              {isHost &&
+                room.state.eventHost &&
+                (activeEvent ? (
+                  <AlertDialog key={activeEvent}>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline">
+                        {t('guest_join.event_mode_disable')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {t('guest_join.event_mode_disable')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('guest_join.event_mode_disable_description')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            room.updateSettings({
+                              eventMode: { disable: activeEvent },
+                            })
+                          }
+                        >
+                          {t('guest_join.event_mode_disable')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => room.updateSettings({ eventMode: true })}
+                  >
+                    {t('guest_join.event_mode_enable')}
+                  </Button>
+                ))}
             </SettingsSection>
             <ClassroomSettings room={room} />
           </MeetSettingsStack>

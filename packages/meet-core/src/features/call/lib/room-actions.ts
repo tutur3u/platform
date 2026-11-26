@@ -212,7 +212,9 @@ export function createRoomActions(
     updateSettings: async ({
       eventMode,
       ...settings
-    }: Partial<MeetRoomSettings> & { eventMode?: true }) => {
+    }: Partial<MeetRoomSettings> & {
+      eventMode?: true | { disable: number };
+    }) => {
       try {
         const connection = signaling.current;
         if (!connection?.isOpen) throw new Error('signaling_closed');
@@ -222,7 +224,9 @@ export function createRoomActions(
         });
         if (
           !settingsApplied(settings, held) ||
-          (eventMode && !held.eventModeExpiresAt)
+          (eventMode === true && !held.eventModeExpiresAt) ||
+          (typeof eventMode === 'object' &&
+            held.eventModeExpiresAt !== undefined)
         )
           throw new Error('settings_not_applied');
       } catch (error) {

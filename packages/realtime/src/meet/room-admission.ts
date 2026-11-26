@@ -330,6 +330,17 @@ function dropInvalidEventWaiter(
   });
 }
 
+function isEarlyClosedWaiter(
+  state: MeetRoomSnapshot,
+  proof: number | undefined,
+  nowMs: number
+) {
+  return (
+    proof !== undefined &&
+    proof === activeMeetEvent(state.earlyClosedEventExpiresAt, nowMs)
+  );
+}
+
 function decideParticipant(
   state: MeetRoomSnapshot,
   targetId: string,
@@ -337,7 +348,8 @@ function decideParticipant(
   token: MeetRealtimeTokenPayload,
   now: string,
   requestId?: string,
-  features: MeetClassFeatures = meetClassFeatures()
+  features: MeetClassFeatures = meetClassFeatures(),
+  individuallySelected = false
 ): MeetRoomOutcome {
   const { userId, roomId } = token;
   const pending = state.waiting[targetId];
@@ -349,8 +361,18 @@ function decideParticipant(
     state.settings?.eventModeExpiresAt,
     Date.parse(now)
   );
+  const canAdmitEarlyClosedWaiter =
+    individuallySelected &&
+    !event &&
+    isEarlyClosedWaiter(state, pending.eventProof, Date.parse(now)) &&
+    !isGuestRemovalBlocked(
+      state,
+      pending.accountId ?? targetId,
+      Date.parse(now)
+    ).blocked;
   if (
     admit &&
+    !canAdmitEarlyClosedWaiter &&
     pending.guest &&
     !acceptsMeetGuestProof(event, pending.eventProof, pending.verified)
   )
@@ -549,7 +571,8 @@ export function decideRoomAdmission(
       token,
       now,
       message.requestId,
-      features
+      features,
+      true
     );
 
   const result = outcome(state);
@@ -558,6 +581,12 @@ export function decideRoomAdmission(
     a.requestedAt.localeCompare(b.requestedAt)
   );
   for (const person of waiting) {
+    if (
+      message.admit &&
+      !event &&
+      isEarlyClosedWaiter(state, person.eventProof, Date.parse(now))
+    )
+      continue;
     const next = decideParticipant(
       result.state,
       person.userId,

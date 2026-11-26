@@ -348,6 +348,66 @@ describe('event room admission', () => {
     expect(expired.disconnect).toContain(guest.userId);
   });
 
+  it('turns off only the confirmed event and keeps event-proof waiters for individual admission', () => {
+    const room = eventRoom();
+    const expiry = room.settings?.eventModeExpiresAt;
+    if (expiry === undefined) throw new Error('Missing event expiry');
+    const proof = { ...guest, guestEventProof: expiry };
+    const waiting = admitOrHold(room, proof, now).state;
+    const disable = {
+      type: 'room.settings.update',
+      settings: { eventMode: { disable: expiry } },
+    } satisfies MeetRealtimeClientMessage;
+    expect(run(waiting, disable, host).state).toBe(waiting);
+    expect(run(waiting, disable, member).state).toBe(waiting);
+    const absentStaff = { ...waiting, presence: {} };
+    expect(run(absentStaff, disable, staff).state).toBe(absentStaff);
+    const off = run(waiting, disable, staff).state;
+    expect(off.settings?.eventModeExpiresAt).toBeUndefined();
+    expect(off.waiting).toBe(waiting.waiting);
+    expect(off.eventActivationAudit?.at(-1)).toMatchObject({
+      action: 'event_disabled',
+      actorId: staff.userId,
+      meetingId: staff.meetingId,
+      roomId: staff.roomId,
+      wsId: staff.wsId,
+      expiresAt: expiry,
+    });
+    expect(run(off, disable, staff).state).toBe(off);
+
+    const normal = token(15, { guest: true });
+    expect(
+      admitOrHold(off, normal, now).state.waiting[normal.userId]
+    ).toBeDefined();
+    const skipEnabled = run(off, skip(true), staff).state;
+    expect(skipEnabled.waiting[guest.userId]).toBeDefined();
+    const bulk = run(
+      skipEnabled,
+      { type: 'admission.decideAll', admit: true },
+      staff
+    ).state;
+    expect(bulk.waiting[guest.userId]).toBeDefined();
+    expect(admitOrHold(off, proof, now).disconnect).toContain(guest.userId);
+    const individually = run(
+      off,
+      { type: 'admission.decide', userId: guest.userId, admit: true },
+      staff
+    ).state;
+    expect(individually.presence[guest.userId]).toBeDefined();
+    expect(admitOrHold(individually, proof, now).disconnect).toContain(
+      guest.userId
+    );
+
+    const renewed = applyMeetRoomCommand(off, {
+      message: enable,
+      token: staff,
+      now: new Date(Date.parse(now) + 1).toISOString(),
+    }).state;
+    expect(renewed.settings?.eventModeExpiresAt).toBe(expiry + 1);
+    expect(run(renewed, disable, staff).state).toBe(renewed);
+    expect(admitOrHold(renewed, proof, now).disconnect).toContain(guest.userId);
+  });
+
   it('caps simultaneous waiting and admitted guest connections only during the event', () => {
     let state = eventRoom();
     for (let n = 10; n < 90; n++) {
