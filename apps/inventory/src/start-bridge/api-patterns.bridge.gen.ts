@@ -103,6 +103,7 @@ export const appApiPatterns = [
   "/api/v1/workspaces/[wsId]/product-warehouses/[warehouseId]",
   "/api/v1/workspaces/[wsId]/products",
   "/api/v1/workspaces/[wsId]/products/[productId]",
+  "/api/v1/workspaces/[wsId]/products/[productId]/image",
   "/api/v1/workspaces/[wsId]/products/[productId]/inventory",
   "/api/v1/workspaces/[wsId]/products/[productId]/inventory/history",
   "/api/v1/workspaces/[wsId]/products/count",

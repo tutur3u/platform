@@ -107,6 +107,7 @@ export const endpoints: readonly BridgeEndpoint[] = sortEndpoints([
   { pattern: "/api/v1/workspaces/[wsId]/product-units", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/product-units/route'), ["GET","POST"]) },
   { pattern: "/api/v1/workspaces/[wsId]/product-warehouses/[warehouseId]", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/product-warehouses/[warehouseId]/route'), ["PUT","DELETE"]) },
   { pattern: "/api/v1/workspaces/[wsId]/product-warehouses", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/product-warehouses/route'), ["GET","POST"]) },
+  { pattern: "/api/v1/workspaces/[wsId]/products/[productId]/image", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/products/[productId]/image/route'), ["GET"]) },
   { pattern: "/api/v1/workspaces/[wsId]/products/[productId]/inventory/history", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/products/[productId]/inventory/history/route'), ["GET"]) },
   { pattern: "/api/v1/workspaces/[wsId]/products/[productId]/inventory", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'), ["GET","POST","PATCH","DELETE"]) },
   { pattern: "/api/v1/workspaces/[wsId]/products/[productId]", module: lazyRouteModule(() => import('../app/api/v1/workspaces/[wsId]/products/[productId]/route'), ["GET","PATCH","DELETE"]) },
