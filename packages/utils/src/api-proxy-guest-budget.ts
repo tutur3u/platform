@@ -87,7 +87,7 @@ export function guestRateLimits(): RateLimitProfile {
       config('day', '1 d', 52_500, 'API_PROXY_GUEST_READ_LIMIT_DAY'),
     ],
     mutate: [
-      config('minute', '1 m', 30, 'API_PROXY_GUEST_MUTATE_LIMIT_MINUTE'),
+      config('minute', '1 m', 45, 'API_PROXY_GUEST_MUTATE_LIMIT_MINUTE'),
       config('hour', '1 h', 1200, 'API_PROXY_GUEST_MUTATE_LIMIT_HOUR'),
       config('day', '1 d', 9600, 'API_PROXY_GUEST_MUTATE_LIMIT_DAY'),
     ],

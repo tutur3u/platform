@@ -37,13 +37,8 @@ const DURATION: Record<RateLimitConfig['duration'], number> = {
   '1 h': HOUR,
   '1 d': 24 * HOUR,
 };
-/** Headroom every read budget, and the shared write caps, keep over this class. */
+/** Headroom every guest budget and shared cap keeps over this class. */
 const HEADROOM = 1.5;
-/**
- * Headroom a guest's own write minute keeps: 23 writes in the drawing peak
- * against 30. Every other budget keeps `HEADROOM`.
- */
-const OWN_WRITE_MINUTE_HEADROOM = 1.25;
 const LOBBY_MS = 5 * MINUTE;
 const CALL_START = LOBBY_MS;
 const CALL_END = CALL_START + HOUR;
@@ -176,11 +171,7 @@ describe('a 50-guest class behind one network', () => {
           `${keyOf(guestSubject!.prefix, kind, config)}|${guestSubject!.id}`
         );
         own[`${kind}:${config.window}`] = peak;
-        expect(config.limit / peak).toBeGreaterThanOrEqual(
-          kind === 'mutate' && config.window === 'minute'
-            ? OWN_WRITE_MINUTE_HEADROOM
-            : HEADROOM
-        );
+        expect(config.limit / peak).toBeGreaterThanOrEqual(HEADROOM);
       }
     expect(own).toEqual({
       'get:minute': 97,

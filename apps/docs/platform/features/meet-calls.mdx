@@ -2204,18 +2204,18 @@ Operating requirements:
   per-IP budget. Each guest read is checked against three budgets in this
   order, and the first exhausted window refuses it without charging the
   budgets after it:
-  1. the guest: 150 reads a minute, 7,000 an hour, 52,500 a day, and 30
+  1. the guest: 150 reads a minute, 7,000 an hour, 52,500 a day, and 45
      writes a minute, 1,200 an hour, 9,600 a day
      (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`), so a guest
      over it charges nothing shared;
   2. the network: 75 guests' minute and hour budget combined (11,250 reads a
-     minute, 525,000 an hour; 2,250 writes a minute, 90,000 an hour), so a
+     minute, 525,000 an hour; 3,375 writes a minute, 90,000 an hour), so a
      class of about 50 guests behind one school NAT keeps working at the
      call's worst-case polling with at least 1.5x headroom while many sessions from one
      address stay bounded. An IPv6 client counts as its /64, so rotating
      addresses inside it opens no fresh cap;
   3. the meeting: 100 guests' minute and hour budget combined (15,000 reads a
-     minute, 700,000 an hour; 3,000 writes a minute, 120,000 an hour), so minting
+     minute, 700,000 an hour; 4,500 writes a minute, 120,000 an hour), so minting
      guest sessions for one meeting cannot multiply its traffic. A network
      over its own cap never charges it, so one network adds at most 11,250
      reads a minute to a meeting and exhausting a meeting's 15,000 takes more
@@ -2241,7 +2241,7 @@ Operating requirements:
   written over HTTP) followed by one re-read, with board ticket renewals and
   votes as the other writes. One guest peaks at 97 reads a minute and 4,335
   an hour and at 23 writes a minute and 780 an hour: at least 1.5x under its
-  own budget except the write minute (30, 1.3x). The class peaks at 4,850
+  own budget. The class peaks at 4,850
   reads a minute and 216,750 an hour, 1,150 writes a minute and 39,000 an
   hour).
 - In-call polling intervals: polls every 15 seconds, or every 3 seconds while
