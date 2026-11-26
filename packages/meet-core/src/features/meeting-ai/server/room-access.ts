@@ -19,6 +19,7 @@ export async function readMeetingRoomPolicy(
 ) {
   const session = await getMeetCallSession({
     ...input,
+    readRoomState: !settings,
     displayName: 'Participant',
     isHost: input.isHost ?? false,
     admission: 'lobby',

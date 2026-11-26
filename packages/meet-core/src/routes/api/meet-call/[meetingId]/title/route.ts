@@ -1,3 +1,4 @@
+import { invalidateMeetGuestHostCache } from '@tuturuuu/utils/meet-guest-host-cache';
 import {
   getMeetCallAccess,
   MeetCallAccessError,
@@ -71,6 +72,7 @@ export async function PATCH(
         { error: 'Meeting not found' },
         { status: 404, headers }
       );
+    invalidateMeetGuestHostCache(meetingId);
     return Response.json({ name: data.name }, { headers });
   } catch (error) {
     return Response.json(

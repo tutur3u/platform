@@ -324,7 +324,7 @@ export type MeetRealtimeServerMessage =
       active: boolean;
       ownerId: string;
     }
-  | { type: 'quizArena.changed'; active: boolean }
+  | { type: 'quizArena.changed'; active: boolean; teamId?: string }
   | { type: 'assistant.share'; sessionId: string; active: boolean }
   | {
       type: 'assistant.interrupted';

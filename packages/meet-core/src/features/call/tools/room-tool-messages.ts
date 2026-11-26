@@ -25,7 +25,12 @@ function handleMeetToolMessage(
   >
 ) {
   if (message.type === 'quizArena.changed')
-    setArenaAnnouncement(meetingId, message.active);
+    setArenaAnnouncement(meetingId, message.active, message.teamId);
+  if (
+    message.type === 'room.ended' ||
+    (message.type === 'ready' && message.admission !== 'admitted')
+  )
+    clearArenaAnnouncement(meetingId);
   deliverRoomAssistantAudio(meetingId, message);
   handleLiveQaMessage(meetingId, message, actions.sendLiveQa);
   handleLiveActivitiesMessage(meetingId, message, actions.sendSharedTool);

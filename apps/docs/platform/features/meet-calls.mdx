@@ -1268,6 +1268,11 @@ next token.
   Their signed guest session identifies them across devices. Their first answer
   per question counts toward the leaderboard under their room display name.
   Board setup, imports, exports and moderator controls require a room manager.
+  Meet caches a successful host entitlement and static meeting metadata for 30
+  seconds per Worker isolate, coalescing concurrent checks for the same room.
+  Room policy and guest removal are checked on every guest quiz or poll request.
+  Cache invalidation on meeting deletion or observed guest closure is local to
+  the isolate handling it.
 - Documents, notes, recordings and other account-backed features
   show **Sign in to use this** for guests instead of failing loudly.
 - When a host removes an anonymous guest, that guest id cannot rejoin the same

@@ -26,6 +26,7 @@ vi.mock('./guest-admission', () => ({
 
 import {
   getMeetGuestCallAccess,
+  invalidateMeetGuestHostCache,
   isMeetGuestTurnstileConfigured,
   type MeetGuestJoinSources,
   resolveMeetGuestJoin,
@@ -61,6 +62,8 @@ function sources(
     ...overrides,
   };
 }
+
+beforeEach(() => invalidateMeetGuestHostCache(meetingId));
 
 describe('resolveMeetGuestJoin', () => {
   beforeEach(() => {

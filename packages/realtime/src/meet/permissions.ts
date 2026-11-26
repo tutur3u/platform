@@ -207,6 +207,7 @@ const PRIVATE_TOOL_FRAMES = new Set([
   'activity.progress',
   'penboard.snapshot',
   'penboard.stroke',
+  'quizArena.changed',
   'qa.host',
   'upskii.presentation',
 ]);

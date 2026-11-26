@@ -168,6 +168,16 @@ export function applyRoomQuizArena(
     return fail('Forbidden', 403);
 
   const arena = snapshot.quizArena;
+  if (
+    token.guest &&
+    command.action === 'arena.state' &&
+    !takeActorRateLimit(
+      `quiz-arena-read:${token.roomId}:${accountId}`,
+      60,
+      60_000
+    )
+  )
+    return fail('Too many Quiz Arena reads', 429);
   if (command.action === 'arena.state')
     return {
       state: snapshot,
@@ -202,7 +212,9 @@ export function applyRoomQuizArena(
 
   const save = (
     next: RoomQuizArenaState,
-    body: unknown = { ok: true, seq: next.seq }
+    body: unknown = { ok: true, seq: next.seq },
+    notify = canManage,
+    teamId?: string
   ): RoomServiceResult => {
     if (
       new TextEncoder().encode(JSON.stringify(next)).byteLength >
@@ -211,11 +223,6 @@ export function applyRoomQuizArena(
       return fail('Quiz Arena storage is full', 409);
     // Individual all-answer submissions refresh the sender locally. Broadcasting
     // every answer would trigger a full classroom of reads for each player.
-    const notify =
-      canManage ||
-      (next.config.answerMode === 'buzz_in' &&
-        (command.action === 'buzz' || command.action === 'answer')) ||
-      (command.action === 'wager' && next.config.playMode === 'teams');
     return {
       state: { ...snapshot, quizArena: next },
       body,
@@ -225,6 +232,7 @@ export function applyRoomQuizArena(
               {
                 type: 'quizArena.changed' as const,
                 active: next.phase !== 'ended',
+                ...(teamId ? { teamId } : {}),
               },
             ],
           }
@@ -320,7 +328,7 @@ export function applyRoomQuizArena(
         status: open ? 'answering' : 'waiting',
       });
       tile.v = state.seq;
-      return save(state);
+      return save(state, undefined, open);
     }
     case 'wager': {
       const tile = findTile(command.tileId);
@@ -339,7 +347,8 @@ export function applyRoomQuizArena(
       tile.wagers[key] = command.amount;
       tile.wagerBy = [...new Set([...(tile.wagerBy ?? []), accountId])];
       tile.v = state.seq;
-      return save(state);
+      const teamId = state.players[accountId]?.teamId;
+      return save(state, undefined, !!teamId, teamId);
     }
     case 'answer': {
       const tile = findTile(command.tileId);
@@ -389,7 +398,7 @@ export function applyRoomQuizArena(
           state.metaV = state.seq;
         }
         tile.v = state.seq;
-        return save(state);
+        return save(state, undefined, correct !== null);
       }
       markParticipation(state, tile, accountId);
       tile.submissions = [

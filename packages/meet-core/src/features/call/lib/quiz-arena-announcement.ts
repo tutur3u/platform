@@ -3,10 +3,11 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
 const activeRooms = new Set<string>();
-const listeners = new Map<string, Set<() => void>>();
+type Listener = (change?: { teamId?: string }) => void;
+const listeners = new Map<string, Set<Listener>>();
 
-export function subscribeArenaChanges(meetingId: string, listener: () => void) {
-  const room = listeners.get(meetingId) ?? new Set<() => void>();
+export function subscribeArenaChanges(meetingId: string, listener: Listener) {
+  const room = listeners.get(meetingId) ?? new Set<Listener>();
   room.add(listener);
   listeners.set(meetingId, room);
   return () => {
@@ -15,14 +16,19 @@ export function subscribeArenaChanges(meetingId: string, listener: () => void) {
   };
 }
 
-export function setArenaAnnouncement(meetingId: string, active: boolean) {
+export function setArenaAnnouncement(
+  meetingId: string,
+  active: boolean,
+  teamId?: string
+) {
   if (active) activeRooms.add(meetingId);
   else activeRooms.delete(meetingId);
-  for (const listener of listeners.get(meetingId) ?? []) listener();
+  for (const listener of listeners.get(meetingId) ?? []) listener({ teamId });
 }
 
 export function clearArenaAnnouncement(meetingId: string) {
-  activeRooms.delete(meetingId);
+  if (!activeRooms.delete(meetingId)) return;
+  for (const listener of listeners.get(meetingId) ?? []) listener();
 }
 
 export function useArenaAnnouncement(meetingId: string) {

@@ -104,8 +104,39 @@ export function useCallQuizArena(
       });
     };
     if (channel) channel.onmessage = refresh;
-    const unsubscribe = subscribeArenaChanges(meetingId, refresh);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const unsubscribe = subscribeArenaChanges(meetingId, (change) => {
+      if (!change) {
+        clearTimeout(timer);
+        timer = undefined;
+        return;
+      }
+      const view = client.getQueryData<QuizArenaClientView>(
+        quizArenaKey(meetingId, accountId)
+      );
+      if (
+        change.teamId &&
+        view?.kind === 'full' &&
+        !view.canManage &&
+        !view.players.some(
+          (p) => p.userId === accountId && p.teamId === change.teamId
+        )
+      )
+        return;
+      if (view?.kind === 'full' && view.meta.answerMode === 'buzz_in') {
+        refresh();
+      } else if (timer === undefined) {
+        timer = setTimeout(
+          () => {
+            timer = undefined;
+            refresh();
+          },
+          Math.floor(Math.random() * 751)
+        );
+      }
+    });
     return () => {
+      clearTimeout(timer);
       unsubscribe();
       channel?.close();
     };

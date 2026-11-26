@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { startRoomBudget } from './room-budget';
 import { admitOrHold } from './room-admission';
 import {
   arena,
@@ -34,6 +35,7 @@ it('requires live admission, the stable guest id and a room without a removal ba
 
 it('announces the board to joiners after admission and on host changes', () => {
   const state = setup(config);
+  state.budget = startRoomBudget(state, host, Date.now()).budget;
   const now = new Date().toISOString();
   const announce = { type: 'quizArena.changed', active: true };
   expect(admitOrHold(state, guest, now).reply).toContainEqual(announce);
@@ -75,4 +77,22 @@ it('charges refused attempts against the guest mutation budget, isolated by room
   expect(run(state, { ...token, roomId: 'another-room' }, cmd).status).not.toBe(
     429
   );
+});
+
+it('limits guest reads separately from mutations', () => {
+  const state = setup(config);
+  const token = { ...guest, roomId: 'arena-read-budget' };
+  for (let i = 0; i < 60; i++)
+    expect(run(state, token, { action: 'arena.state' }).status).toBeUndefined();
+  expect(run(state, token, { action: 'arena.state' }).status).toBe(429);
+});
+
+it('announces the first buzz and skips queue appends', () => {
+  let state = setup(config);
+  const tileId = arena(state).tiles[0]!.id;
+  state = ok(state, host, { action: 'arena.pickTile', tileId });
+  const cmd = { action: 'arena.buzz', tileId };
+  const first = run(state, guest, cmd);
+  expect(first.messages).toHaveLength(1);
+  expect(run(first.state, player(2), cmd).messages).toBeUndefined();
 });

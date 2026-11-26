@@ -35,6 +35,7 @@ export async function getMeetCallSession({
   displayName,
   deviceId,
   service = false,
+  readRoomState = false,
   classroomTools = false,
   maxRoomDurationSeconds = 7200,
   workspaceMember = false,
@@ -55,6 +56,8 @@ export async function getMeetCallSession({
   displayName: string;
   deviceId?: string;
   service?: boolean;
+  /** Internal GET /room-state only. Admission and settings writes resolve capacity. */
+  readRoomState?: boolean;
   classroomTools?: boolean;
   maxRoomDurationSeconds?: number;
   workspaceMember?: boolean;
@@ -75,8 +78,12 @@ export async function getMeetCallSession({
   userId: string;
   wsId: string;
 }) {
-  const { getMeetRoomCapacityLimits } = await import('./classroom-policy');
-  const capacity = await getMeetRoomCapacityLimits(meetingId, wsId);
+  const capacity =
+    service || readRoomState
+      ? {}
+      : await (
+          await import('./classroom-policy')
+        ).getMeetRoomCapacityLimits(meetingId, wsId);
   const deviceUserId = deviceId
     ? await meetDeviceIdentity(userId, deviceId)
     : userId;

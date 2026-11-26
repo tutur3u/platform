@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn(),
   action: vi.fn(),
 }));
+vi.mock('../../../../../features/call/server/quiz-arena-upskii', () => ({}));
+vi.mock('../../../../../features/call/server/quiz-arena-mira', () => ({}));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
 vi.mock('next/headers', () => ({

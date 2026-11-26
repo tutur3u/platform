@@ -14,12 +14,12 @@ import { getMeetRealtimeTokenSecret } from './call-session';
 import { assertMeetGuestAdmissionAllowed } from './guest-admission';
 import { verifyMeetGuestSession } from './guest-session';
 
-type GuestMeeting = {
-  id: string;
-  name: string | null;
-  creator_id: string;
-  ws_id: string;
-};
+import {
+  invalidateMeetGuestHostCache,
+  readMeetGuestHost,
+  type GuestMeeting,
+} from '@tuturuuu/utils/meet-guest-host-cache';
+export { invalidateMeetGuestHostCache } from '@tuturuuu/utils/meet-guest-host-cache';
 
 /** Reads a caller has already started; each one replaces the identical lookup. */
 export type MeetGuestJoinSources = {
@@ -79,37 +79,46 @@ export async function resolveMeetGuestJoin(
     if (MEETING_APP !== 'meet') return { kind: 'unavailable' };
     if (!(sources.turnstileConfigured ?? isMeetGuestTurnstileConfigured)())
       return { kind: 'unavailable' };
-    const parley = sources.isParleySession
-      ? await sources.isParleySession()
-      : await isParleySession(meetingId);
-    if (parley) return { kind: 'unavailable' };
-    const { data: meeting, error } = sources.meeting
-      ? await sources.meeting()
-      : await (
-          await createAdminClient({ noCookie: true })
-        )
-          .from('workspace_meetings')
-          .select('id, name, creator_id, ws_id')
-          .eq('id', meetingId)
-          .maybeSingle();
-    if (error || !meeting?.creator_id || meeting.id !== meetingId)
-      return { kind: 'unavailable' };
-    const [policy, canHost] = await Promise.all([
-      sources.hostPolicy
-        ? sources.hostPolicy(meeting)
-        : readMeetingRoomPolicy({
-            meetingId,
-            wsId: meeting.ws_id,
-            userId: meeting.creator_id,
-            isHost: true,
-          }),
-      (sources.hostCanHost ?? defaultHostCanHost)(meeting),
-    ]);
-    if (policy.ended || !canHost) return { kind: 'unavailable' };
+    const meeting = await readMeetGuestHost(meetingId, async () => {
+      const parley = sources.isParleySession
+        ? await sources.isParleySession()
+        : await isParleySession(meetingId);
+      if (parley) return null;
+      const { data, error } = sources.meeting
+        ? await sources.meeting()
+        : await (
+            await createAdminClient({ noCookie: true })
+          )
+            .from('workspace_meetings')
+            .select('id, name, creator_id, ws_id')
+            .eq('id', meetingId)
+            .maybeSingle();
+      if (error || !data?.creator_id || data.id !== meetingId) return null;
+      if (!(await (sources.hostCanHost ?? defaultHostCanHost)(data)))
+        return null;
+      return {
+        id: data.id,
+        name: data.name,
+        ws_id: data.ws_id,
+        creator_id: data.creator_id,
+      };
+    });
+    if (!meeting) return { kind: 'unavailable' };
+    const policy = await (sources.hostPolicy
+      ? sources.hostPolicy(meeting)
+      : readMeetingRoomPolicy({
+          meetingId,
+          wsId: meeting.ws_id,
+          userId: meeting.creator_id,
+          isHost: true,
+        }));
     const settings = policy.settings as
       | { allowAnonymousGuests?: boolean; eventModeExpiresAt?: number }
       | undefined;
-    if (settings?.allowAnonymousGuests !== true) return { kind: 'unavailable' };
+    if (policy.ended || settings?.allowAnonymousGuests !== true) {
+      invalidateMeetGuestHostCache(meetingId);
+      return { kind: 'unavailable' };
+    }
     const eventExpiresAt = activeMeetEvent(settings.eventModeExpiresAt);
     return {
       kind: 'available',

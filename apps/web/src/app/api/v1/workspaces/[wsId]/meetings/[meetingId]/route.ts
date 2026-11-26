@@ -1,3 +1,4 @@
+import { invalidateMeetGuestHostCache } from '@tuturuuu/utils/meet-guest-host-cache';
 import { meetClassAttendanceEnabled } from '@tuturuuu/realtime/meet';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -287,6 +288,7 @@ export async function DELETE(
           { status: 403 }
         );
       }
+      invalidateMeetGuestHostCache(meetingId);
       return NextResponse.json({ success: true });
     }
 
@@ -360,6 +362,7 @@ export async function DELETE(
       );
     }
 
+    invalidateMeetGuestHostCache(meetingId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error in meetings API:', error);
