@@ -75,6 +75,7 @@ vi.mock('./rate-limit', () => ({
     mocks.checkRateLimit(key, config),
 }));
 
+import { resetRecentIpClears } from '@tuturuuu/utils/abuse-protection/recent-ip-block';
 import { withSessionAuth } from './api-auth';
 
 const decision = { subjects: [], tier: 'standard', trustMultiplier: 1 };
@@ -111,6 +112,7 @@ describe('withSessionAuth security lookups', () => {
   const unhandled = vi.fn();
 
   beforeEach(() => {
+    resetRecentIpClears();
     vi.clearAllMocks();
     process.on('unhandledRejection', unhandled);
     mocks.appSessionToken.mockReturnValue(null);

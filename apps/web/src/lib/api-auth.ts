@@ -14,7 +14,6 @@ import {
   type BlockInfo,
   buildAbuseRiskSubjects,
   extractIPFromHeaders,
-  isIPBlocked,
   recordApiAuthFailure,
 } from '@tuturuuu/utils/abuse-protection';
 import {
@@ -22,6 +21,7 @@ import {
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { writeVerifiedSessionCacheForSubjects } from '@tuturuuu/utils/abuse-protection/edge-trust';
+import { isIPBlockedReusingRecentClear } from '@tuturuuu/utils/abuse-protection/recent-ip-block';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
@@ -491,7 +491,7 @@ export function withSessionAuth<T = unknown>(
     // 2. Check persistent IP block
     // An undetermined client IP resolves to the shared 'unknown' bucket,
     // which is still block-checked and rate-limited rather than skipped.
-    const blockInfo = await isIPBlocked(ipAddress, {
+    const blockInfo = await isIPBlockedReusingRecentClear(ipAddress, {
       route: endpoint,
       source: 'api-auth',
     });

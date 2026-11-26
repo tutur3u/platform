@@ -79,6 +79,7 @@
     "./abuse-protection/origin-ip-proof": "./src/abuse-protection/origin-ip-proof.ts",
     "./abuse-protection/edge": "./src/abuse-protection/edge.ts",
     "./abuse-protection/edge-trust": "./src/abuse-protection/edge-trust.ts",
+    "./abuse-protection/recent-ip-block": "./src/abuse-protection/recent-ip-block.ts",
     "./abuse-protection/user-suspension": "./src/abuse-protection/user-suspension.ts",
     "./currencies": "./src/currencies.ts",
     "./exchange-rates": "./src/exchange-rates.ts",

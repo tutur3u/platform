@@ -114,6 +114,7 @@ vi.mock('../lib/app-coordination/external-app-bearer', () => ({
     mockRejectStaleExternalAppBearer(admin, claims),
 }));
 
+import { resetRecentIpClears } from '@tuturuuu/utils/abuse-protection/recent-ip-block';
 import { CURRENT_USER_APP_SESSION_AUTH } from '../legacy-api-routes/v1/users/me/session-auth';
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
@@ -153,6 +154,7 @@ const fakeClaims = {
 
 describe('withSessionAuth', () => {
   beforeEach(() => {
+    resetRecentIpClears();
     vi.clearAllMocks();
     delete mockAdminClient.auth;
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');

@@ -9,7 +9,8 @@ import {
   getCachedTrustEntries,
   hasCachedIpBlockAppealRelief,
 } from './abuse-protection/edge-trust';
-import { abuseSubject, isCloudflareIp } from './abuse-protection/abuse-subject';
+import { abuseSubject } from './abuse-protection/abuse-subject';
+import { trustLookupKeys } from './api-proxy-trust-keys';
 import { guardApiProxyBody } from './api-proxy-body';
 import {
   edgeTrustEnabled,
@@ -951,6 +952,13 @@ export async function guardApiProxyRequest(
     const identity = await resolveProxyIdentity(req, ip);
     const routePolicy = getRoutePolicy(req, routePolicies);
     const abuseProtectionControls = await readEdgeAbuseProtectionControls();
+    const isRead = req.method === 'GET' || req.method === 'HEAD';
+    // The trust read overlaps the IP block check; a block discards it.
+    const pendingTrust =
+      abuseProtectionControls.rateLimitsEnabled && edgeTrustEnabled()
+        ? getCachedTrustEntries(trustLookupKeys(identity, ip, isRead))
+        : null;
+    pendingTrust?.catch(() => {});
 
     if (abuseProtectionControls.ipBlockingEnabled) {
       const blockInfo = await isIPBlockedEdge(abuseSubject(req.headers, ip));
@@ -990,22 +998,12 @@ export async function guardApiProxyRequest(
       }
     }
 
-    const isRead = req.method === 'GET' || req.method === 'HEAD';
-
     // Verified actors can be keyed before a downstream route warms session trust.
     // Cached sessions retain their own buckets; location uplift applies to reads.
     let trustEntry: CachedTrustEntry | null = null;
     let sessionScoped = false;
-    if (abuseProtectionControls.rateLimitsEnabled && edgeTrustEnabled()) {
-      // Trust granted to a shared Cloudflare address never uplifts everyone.
-      const location = isCloudflareIp(ip)
-        ? []
-        : [identity.cidrKey, identity.ipKey];
-      const lookupKeys = [
-        identity.sessionKey,
-        ...(isRead ? [...location, identity.workspaceKey] : []),
-      ].filter((key): key is string => key != null);
-      const entries = await getCachedTrustEntries(lookupKeys);
+    if (pendingTrust) {
+      const entries = await pendingTrust;
 
       const sessionEntry = identity.sessionKey
         ? entries.get(identity.sessionKey)
