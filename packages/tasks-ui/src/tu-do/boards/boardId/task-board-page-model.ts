@@ -27,10 +27,10 @@ export async function loadTaskBoardPageModel({
 }: {
   boardId: string;
   user: { id: string } | null;
-  auth: ReturnType<typeof withForwardedInternalApiAuth>;
+  auth?: ReturnType<typeof withForwardedInternalApiAuth>;
   getBoard: (
     actor: { id: string },
-    auth: ReturnType<typeof withForwardedInternalApiAuth>
+    auth?: ReturnType<typeof withForwardedInternalApiAuth>
   ) => Promise<AuthorizedBoard | null>;
   getWorkspace: (
     wsId: string,

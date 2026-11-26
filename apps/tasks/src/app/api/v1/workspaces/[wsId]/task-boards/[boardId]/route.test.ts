@@ -177,22 +177,18 @@ describe('task board GET', () => {
     expect(body.board.count_unestimated_issues).toBe(false);
     expect(body.board.name).toBe('Roadmap');
     expect(maybeSingle).toHaveBeenCalledTimes(3);
-    expect(query.select).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining('default_list_id')
-    );
-    expect(query.select).toHaveBeenNthCalledWith(
-      2,
-      expect.not.stringContaining('default_list_id')
-    );
-    expect(query.select).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining('count_unestimated_issues')
-    );
-    expect(query.select).toHaveBeenNthCalledWith(
-      3,
-      expect.not.stringContaining('count_unestimated_issues')
-    );
+    // The guest-share count runs alongside, so only the board selects count.
+    const boardSelects = query.select.mock.calls
+      .map(([columns]: [unknown]) => columns)
+      .filter(
+        (columns: unknown): columns is string =>
+          typeof columns === 'string' && columns.includes('task_lists(')
+      );
+    expect(boardSelects).toHaveLength(3);
+    expect(boardSelects[0]).toContain('default_list_id');
+    expect(boardSelects[1]).not.toContain('default_list_id');
+    expect(boardSelects[1]).toContain('count_unestimated_issues');
+    expect(boardSelects[2]).not.toContain('count_unestimated_issues');
   });
 
   it('returns 500 when the query fails for an unrelated reason', async () => {

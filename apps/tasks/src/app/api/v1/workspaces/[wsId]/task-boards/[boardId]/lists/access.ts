@@ -34,7 +34,7 @@ type BoardAccessResult =
     };
 
 export async function requireBoardAccess(
-  _request: Request,
+  _request: Request | null,
   rawParams: unknown,
   auth: SessionAuthContext,
   options: { requiredPermission?: TaskBoardGuestPermission } = {}

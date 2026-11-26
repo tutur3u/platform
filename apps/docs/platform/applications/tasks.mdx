@@ -72,6 +72,30 @@ scope filters and ticket searches use the sorted, offset-paged source query and
 load every matching page. Hide empty lists and auto-collapse wait for every
 board page, because a partly loaded board cannot show that a list is empty.
 
+### Kanban first paint
+
+The native Tasks board page reads everything the kanban waits for in the same
+server request, in-process, as the verified actor: the board, the first
+50-task page of every list, and the actor's list preferences (persist
+collapsed, hide empty, auto-collapse, pinned special lists). The browser seeds
+these into its query cache before the first render, so columns skip their
+first request and the board shows tasks as soon as it hydrates. The server
+pages replace any browser-cached copy of the board. The snapshot starts
+alongside the workspace guard and is used only after the guard admits the same
+actor. A list whose page cannot be read loads in the browser as before. The
+shell profile (user menu) is one direct database read for the verified actor
+rather than a call to Web.
+
+Sidebar links preload their destination's page model on hover, focus or touch
+in every native app whose router sets `defaultPreload: 'intent'`, so a tab
+switch usually finds its data ready.
+
+| Budget | Limit | Regression coverage |
+| --- | --- | --- |
+| Browser requests before kanban tasks show | 0 (board, first pages and preferences ship with the page) | `packages/tasks-ui/src/tu-do/shared/__tests__/board-client.test.tsx` |
+| Cross-app requests in the board page model | 0 | `apps/tasks/src/runtime/workspace-model.test.ts` |
+| Intent preload delay on sidebar links | 50 ms hover, immediate on touch | `packages/start-bridge/src/next/link.test.tsx` |
+
 ## My Tasks and Kanban on mobile
 
 My Tasks groups assigned work into **Overdue**, **Today**, **Upcoming** and

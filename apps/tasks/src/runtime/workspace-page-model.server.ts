@@ -1,9 +1,5 @@
 import '@tanstack/react-start/server-only';
-import {
-  getWorkspaceTaskBoard,
-  InternalApiError,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
 import { headers } from '@tuturuuu/start-bridge/next/headers';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -17,6 +13,7 @@ import { resolveCoMemberNames } from '@tuturuuu/utils/co-member-names';
 import { getLettinNotebookReferenceUrl } from '@tuturuuu/utils/lettin-task-reference';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { resolveTaskBoardEntrypoint } from '../lib/tasks/task-board-entrypoint';
+import { type BoardSnapshot, loadBoardSnapshot } from './board-snapshot.server';
 import type { TasksWorkspaceModel } from './workspace-model.server';
 
 type Scope = TasksWorkspaceModel;
@@ -58,24 +55,25 @@ export async function entrypointRedirect(scope: Scope): Promise<never> {
   redirect(`/${scope.slug}/boards/${boardId}`);
 }
 
-export async function boardModel(scope: Scope, boardId: string) {
-  const wsId = scope.workspace.id;
-  const snapshot = await loadTaskBoardPageModel({
+/**
+ * `/[wsId]/boards/[boardId]`: the board and each list's first task page, read
+ * in-process. `snapshot` may start before the workspace guard settles; it is
+ * only used once that guard admitted the same actor.
+ */
+export async function boardModel(
+  scope: Scope,
+  boardId: string,
+  snapshot: Promise<BoardSnapshot | null> = loadBoardSnapshot({
+    user: scope.user,
+    wsId: scope.workspace.id,
+    boardId,
+  })
+) {
+  const loaded = await snapshot;
+  const model = await loadTaskBoardPageModel({
     boardId,
     user: scope.user,
-    auth: withForwardedInternalApiAuth(await headers()),
-    getBoard: async (_actor, auth) => {
-      try {
-        return (await getWorkspaceTaskBoard(wsId, boardId, auth)).board;
-      } catch (error) {
-        if (
-          error instanceof InternalApiError &&
-          [400, 401, 403, 404].includes(error.status)
-        )
-          return null;
-        throw error;
-      }
-    },
+    getBoard: async () => loaded?.board ?? null,
     // The layout guard already loaded and membership-checked this workspace
     // for the same actor; only a board from another workspace needs a read.
     getWorkspace: (id, actor) =>
@@ -83,17 +81,19 @@ export async function boardModel(scope: Scope, boardId: string) {
         ? Promise.resolve(scope.workspace)
         : getWorkspace(id, { useAdmin: true, user: actor }),
   });
-  if (!snapshot) notFound();
+  if (!model || !loaded) notFound();
   const workspace =
-    snapshot.access === 'guest'
-      ? { ...snapshot.workspace, joined: false }
-      : snapshot.workspace;
+    model.access === 'guest'
+      ? { ...model.workspace, joined: false }
+      : model.workspace;
   return {
     kind: 'board' as const,
     boardId,
-    board: snapshot.board,
+    board: model.board,
+    listPages: loaded.listPages,
+    preferences: loaded.preferences,
     workspace,
-    currentUserId: snapshot.currentUserId,
+    currentUserId: model.currentUserId,
   };
 }
 

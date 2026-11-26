@@ -44,6 +44,51 @@ function hasLocallyProtectedMoveDifference(task: Task, incomingTask: Task) {
   );
 }
 
+/** `hasMore`/`totalCount` for a list after loading `page` with `count`. */
+export function deriveListPageState(
+  page: number,
+  pageTaskCount: number,
+  count: number | null | undefined
+) {
+  const loadedThrough = page * PAGE_SIZE + pageTaskCount;
+  return typeof count === 'number'
+    ? {
+        hasMore: loadedThrough < count,
+        totalCount: Math.max(count, loadedThrough),
+      }
+    : {
+        hasMore: pageTaskCount === PAGE_SIZE,
+        totalCount: loadedThrough + (pageTaskCount === PAGE_SIZE ? 1 : 0),
+      };
+}
+
+export interface BoardFirstListPage {
+  tasks: Task[];
+  count: number | null;
+}
+
+/**
+ * The shared tasks cache and per-list pagination for first pages read during
+ * the server render, in the shape `loadListPage(listId, 0)` leaves them.
+ */
+export function seedFromFirstListPages(
+  listPages: Record<string, BoardFirstListPage>
+) {
+  const tasksById = new Map<string, Task>();
+  const pagination: Record<string, ListPaginationState> = {};
+  for (const [listId, { tasks, count }] of Object.entries(listPages)) {
+    for (const task of tasks) tasksById.set(task.id, task);
+    pagination[listId] = {
+      page: 0,
+      ...deriveListPageState(0, tasks.length, count),
+      firstPageTaskCount: tasks.length,
+      isLoading: false,
+      isInitialLoad: false,
+    };
+  }
+  return { tasks: [...tasksById.values()], pagination };
+}
+
 /**
  * Manages per-list pagination state and merges results into the shared
  * ['tasks', boardId] TanStack Query cache. Each list loads independently;
@@ -131,19 +176,9 @@ export function useProgressiveBoardLoader(
           includeRelationshipSummary: false,
         });
         const tasks = payload.tasks ?? [];
-        const loadedThrough = page * PAGE_SIZE + tasks.length;
-        const totalCount =
-          typeof payload.count === 'number'
-            ? Math.max(payload.count, loadedThrough)
-            : loadedThrough + (tasks.length === PAGE_SIZE ? 1 : 0);
-        const hasMore =
-          typeof payload.count === 'number'
-            ? loadedThrough < payload.count
-            : tasks.length === PAGE_SIZE;
         const result = {
           tasks,
-          hasMore,
-          totalCount,
+          ...deriveListPageState(page, tasks.length, payload.count),
         };
 
         // Merge into the shared ['tasks', boardId] cache (dedup by task ID)

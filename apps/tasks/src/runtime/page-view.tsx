@@ -59,6 +59,8 @@ function WorkspacePageView({ page }: { page: WorkspacePage }) {
           key={`${page.currentUserId}:${page.workspace.id}:${page.boardId}`}
           boardId={page.boardId}
           initialBoard={page.board}
+          initialListPages={page.listPages}
+          initialPreferences={page.preferences}
           workspace={page.workspace}
           workspaceTier={page.workspace.tier ?? null}
           currentUserId={page.currentUserId}

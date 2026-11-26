@@ -1,8 +1,5 @@
 import '@tanstack/react-start/server-only';
-import {
-  getSatelliteAppSessionUser,
-  getSatelliteCurrentUser,
-} from '@tuturuuu/satellite/auth';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { getPendingWorkspaceInvitation } from '@tuturuuu/satellite/workspace-invitation';
 import {
   getSidebarBehaviorUpdatedAt,
@@ -14,6 +11,7 @@ import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getRequestWorkspace } from '@tuturuuu/utils/request-workspace';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { readShellProfile } from './shell-profile.server';
 
 /**
  * The `[wsId]` layout's guards as data: an app session, then membership or a
@@ -25,7 +23,7 @@ export async function workspaceModel(id: string) {
   // The profile read does not depend on the workspace guards, so it overlaps
   // them instead of running after them. A guard that redirects leaves it
   // settled and unused.
-  const profilePromise = getSatelliteCurrentUser('tasks');
+  const profilePromise = readShellProfile(user);
   profilePromise.catch(() => {});
   const workspace = await getRequestWorkspace(id, { useAdmin: true, user });
   if (!workspace?.joined) {

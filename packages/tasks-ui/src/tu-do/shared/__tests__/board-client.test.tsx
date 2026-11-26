@@ -39,7 +39,8 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
-vi.mock('../use-progressive-board-loader', () => ({
+vi.mock('../use-progressive-board-loader', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../use-progressive-board-loader')>()),
   useProgressiveBoardLoader: (...args: unknown[]) => {
     useProgressiveBoardLoaderMock(...args);
     return {
@@ -563,5 +564,112 @@ describe('BoardClient', () => {
     await waitFor(() =>
       expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(2)
     );
+  });
+
+  it('primes tasks, pagination and preferences from the server render', async () => {
+    writeTaskBoardCache('user-1:board-ws-uuid', 'board-1', {
+      board: {
+        id: 'board-1',
+        name: 'Cached roadmap',
+        ws_id: 'board-ws-uuid',
+        task_lists: [],
+      } as any,
+      pagination: {},
+      tasks: [{ id: 'stale', name: 'Stale', list_id: 'list-1' } as any],
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          currentUserId="user-1"
+          workspace={{ id: 'board-ws-uuid', personal: false } as any}
+          initialBoard={
+            {
+              id: 'board-1',
+              name: 'Server board',
+              ws_id: 'board-ws-uuid',
+              task_lists: [],
+              access_type: 'member',
+            } as any
+          }
+          initialListPages={{
+            'list-1': {
+              tasks: [
+                { id: 'task-1', name: 'Fresh', list_id: 'list-1' } as any,
+              ],
+              count: 1,
+            },
+            'list-2': { tasks: [], count: 0 },
+          }}
+          initialPreferences={{
+            userConfigs: {
+              TASK_PERSIST_COLLAPSED_LISTS: 'false',
+              TASK_HIDE_EMPTY_LISTS: null,
+            },
+            workspaceConfigs: {
+              TASK_BOARD_PINNED_SPECIAL_LISTS: '{"done":true}',
+            },
+          }}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([
+      { id: 'task-1', name: 'Fresh', list_id: 'list-1' },
+    ]);
+    expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
+      'board-ws-uuid',
+      'board-1',
+      {
+        'list-1': {
+          page: 0,
+          hasMore: false,
+          totalCount: 1,
+          firstPageTaskCount: 1,
+          isLoading: false,
+          isInitialLoad: false,
+        },
+        'list-2': {
+          page: 0,
+          hasMore: false,
+          totalCount: 0,
+          firstPageTaskCount: 0,
+          isLoading: false,
+          isInitialLoad: false,
+        },
+      }
+    );
+    expect(
+      queryClient.getQueryData(['user-config', 'TASK_PERSIST_COLLAPSED_LISTS'])
+    ).toBe('false');
+    expect(
+      queryClient.getQueryData(['user-config', 'TASK_HIDE_EMPTY_LISTS'])
+    ).toBe('false');
+    expect(
+      queryClient.getQueryData([
+        'user-config',
+        'TASK_AUTO_COLLAPSE_EMPTY_LISTS',
+      ])
+    ).toBeUndefined();
+    expect(
+      queryClient.getQueryData([
+        'user-workspace-config',
+        'board-ws-uuid',
+        'TASK_BOARD_PINNED_SPECIAL_LISTS',
+      ])
+    ).toBe('{"done":true}');
+
+    // The fresher server pages win over the browser snapshot, which would
+    // otherwise trigger a revalidation of every list on mount.
+    await act(async () => {});
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([
+      { id: 'task-1', name: 'Fresh', list_id: 'list-1' },
+    ]);
+    expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+    expect(listWorkspaceTasksMock).not.toHaveBeenCalled();
+    queryClient.clear();
   });
 });
