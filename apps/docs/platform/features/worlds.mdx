@@ -1,0 +1,68 @@
+---
+title: Tuturuuu Worlds
+description: Architecture for building, publishing, and exploring shared worlds.
+---
+
+## World revisions
+
+Store each map as an immutable, versioned document. A workspace can own many
+worlds, each with a mutable draft and an atomic pointer to its published revision.
+Use metres in map space, with x increasing east and z increasing south. Version 1
+describes bounds, spawns, booth and object footprints, elevation, heading, and
+asset references. Store models and images by digest and resolve them through the
+revision's asset manifest.
+
+The runtime package consumes map data independently of the editor, viewer, and
+session provider. Share collision and ground queries between the client and room
+so movement and recovery use the same geometry. Validate map limits, finite
+coordinates, identifiers, and asset references at ingestion and publication before
+accepting user-authored maps.
+
+The sample exports the B10 hall footprint, entrance, 55 booth positions and stage
+from EduFest revision `f3f20fa47fd15e57832b57ef51f55d370ae38341`.
+Booth records contain geometry only. The sample omits seating, furniture, media,
+and event-specific interactions. Worlds owns its copy of the data.
+
+## Management, editor, and generation
+
+Use `tuturuuu.com/worlds` to manage drafts, publishing, access, and domains.
+The editor uses the same map model as the viewer. Edits use revision checks and
+support undo, spawn placement, asset placement, and preview. Publishing validates
+and seals the draft, then advances the public pointer. Existing rooms retain the
+revision they joined.
+
+Prompts, images, and files create generation jobs that write editable drafts.
+After checking workspace permissions, validate upload sizes and types, ingest
+trusted formats in isolation, and normalize input into model instructions and
+asset references. Validate structured output against the map schema before
+saving it. Editors preview and explicitly publish the result. Bound job cost,
+input and output sizes, and attempts. Deduplicate by job ID, persist checkpoints,
+and fence cancellation and terminal jobs from further work.
+
+## Viewer, identity, and hosting
+
+Target TanStack Start and Vite+ on Cloudflare for the standalone viewer at
+`worlds.tuturuuu.com`. Use a Worlds satellite session to join with a Tuturuuu
+account. Resolve identity and access server-side before issuing a short-lived
+room admission grant bound to the actor, world, and revision. For custom domains,
+verify ownership, provision TLS through Cloudflare, bind the verified hostname to
+a published world, and use a top-level Tuturuuu sign-in handoff with a one-use
+code bound to the exact verified origin. Authenticate before redirecting and
+scope session cookies to the receiving host.
+
+## Multiplayer
+
+Use a Durable Object per world revision and room shard. Enforce the room cap at
+admission and direct overflow to another eligible shard. Keep movement
+authoritative in the room, and limit updates to relevant spatial cells and nearby
+players. Cap inbound message size and rate, outbound work per tick, and per-room
+tick frequency. Measure cap and cell sizes against load tests before rollout.
+
+EduFest R70 rebuilds players from hibernated WebSockets. Preserve the admission
+identity and minimal recovery state in socket attachments, restore interest
+membership after wake, and keep presence and movement ephemeral. Schedule work
+only while needed. Fence shutdown durably and exercise cancellation, restart,
+and retry operation counts before enabling billable services.
+
+Cloudflare services and DNS require exact-revision approval via Automations.
+The EduFest deployment remains separately owned through the 5 December workshop.

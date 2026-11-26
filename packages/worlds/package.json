@@ -1,0 +1,10 @@
+{
+  "name": "@tuturuuu/worlds",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/runtime.ts",
+    "./edufest-hall.json": "./src/edufest-hall.json"
+  }
+}
