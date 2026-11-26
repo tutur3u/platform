@@ -242,7 +242,7 @@ describe('the verified guest budget at the API proxy guard', () => {
   it('keeps junk overrides on the default guest budget', async () => {
     vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '1abc');
     const { guestRateLimits } = await import('../api-proxy-guest-budget.js');
-    expect(guestRateLimits().get[0]?.limit).toBe(120);
+    expect(guestRateLimits().get[0]?.limit).toBe(150);
   });
 
   /** Reads the meeting aggregate has counted in its minute window. */

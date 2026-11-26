@@ -22,8 +22,10 @@ import { POLLS_LIVE_REFRESH_MS } from './polls-client';
  * the join seed is polled, then a 60-minute session at the worst case the call
  * polls with: a poll runs the whole time with its panel open, the classroom
  * pen board and the board list are both on screen, a transcript runs, and
- * Room Mira is polled, with a 30-second Mira settling burst on top. Writes are
- * the board ticket renewals plus a vote and a pen stroke a minute. Every
+ * Room Mira is polled, with a 30-second Mira settling burst on top, and every
+ * guest draws on the classroom board for half an hour: 20 strokes a minute,
+ * each a write followed by one re-read. Other writes are the board ticket
+ * renewals and a vote a minute. Every
  * request is charged against the proxy guard's guest, network and meeting
  * budgets.
  */
@@ -37,14 +39,23 @@ const DURATION: Record<RateLimitConfig['duration'], number> = {
 };
 /** Headroom every read budget, and the shared write caps, keep over this class. */
 const HEADROOM = 1.5;
-/** Headroom a guest's own writes keep: four writes a minute against 300 an hour. */
-const OWN_WRITE_HEADROOM = 1.25;
+/**
+ * Headroom a guest's own write minute keeps: 23 writes in the drawing peak
+ * against 30. Every other budget keeps `HEADROOM`.
+ */
+const OWN_WRITE_MINUTE_HEADROOM = 1.25;
 const LOBBY_MS = 5 * MINUTE;
 const CALL_START = LOBBY_MS;
 const CALL_END = CALL_START + HOUR;
 /** Room Mira settles for 30 seconds half-way through the call. */
 const SETTLING_START = CALL_START + 30 * MINUTE;
 const SETTLING_END = SETTLING_START + 30_000;
+/** Drawing on the classroom board, around the settling burst. */
+const DRAWING_START = CALL_START + 15 * MINUTE;
+const DRAWING_END = DRAWING_START + 30 * MINUTE;
+const STROKE_MS = MINUTE / 20;
+/** Each stroke is posted, then the board is read again. */
+const REREAD_DELAY_MS = 500;
 const READ_INTERVALS_MS = [
   POLLS_LIVE_REFRESH_MS,
   CLASSROOM_REFRESH_MS,
@@ -55,8 +66,7 @@ const READ_INTERVALS_MS = [
 /** A guest's board ticket is renewed at half its lifetime. */
 const TICKET_RENEW_MS = (BOARD_GUEST_LIMITS.ticketTtlSeconds * 1000) / 2;
 const VOTE_MS = MINUTE;
-const PEN_STROKE_MS = MINUTE;
-const WRITE_INTERVALS_MS = [TICKET_RENEW_MS, VOTE_MS, PEN_STROKE_MS];
+const WRITE_INTERVALS_MS = [TICKET_RENEW_MS, VOTE_MS];
 
 type Request = { at: number; guest: number; write: boolean };
 type Poller = { every: number; from: number; to: number; write: boolean };
@@ -81,6 +91,13 @@ const POLLERS: Poller[] = [
     to: CALL_END,
     write: true,
   })),
+  { every: STROKE_MS, from: DRAWING_START, to: DRAWING_END, write: true },
+  {
+    every: STROKE_MS,
+    from: DRAWING_START + REREAD_DELAY_MS,
+    to: DRAWING_END + REREAD_DELAY_MS,
+    write: false,
+  },
 ];
 
 function schedule(): Request[] {
@@ -150,7 +167,7 @@ describe('a 50-guest class behind one network', () => {
     }
     expect(refused).toBe(0);
 
-    // Each guest's own budget keeps 1.5x over its peak reads.
+    // Each guest's own budget keeps 1.5x over its peak reads and hourly writes.
     const [guestSubject, networkSubject, meetingSubject] = limits;
     const own: Record<string, number> = {};
     for (const kind of ['get', 'mutate'] as const)
@@ -160,16 +177,18 @@ describe('a 50-guest class behind one network', () => {
         );
         own[`${kind}:${config.window}`] = peak;
         expect(config.limit / peak).toBeGreaterThanOrEqual(
-          kind === 'get' ? HEADROOM : OWN_WRITE_HEADROOM
+          kind === 'mutate' && config.window === 'minute'
+            ? OWN_WRITE_MINUTE_HEADROOM
+            : HEADROOM
         );
       }
     expect(own).toEqual({
-      'get:minute': 77,
-      'get:hour': 3735,
-      'get:day': 3750,
-      'mutate:minute': 4,
-      'mutate:hour': 240,
-      'mutate:day': 240,
+      'get:minute': 97,
+      'get:hour': 4335,
+      'get:day': 4350,
+      'mutate:minute': 23,
+      'mutate:hour': 780,
+      'mutate:day': 780,
     });
 
     // The shared caps keep at least 1.5x over the class's peak demand.
@@ -191,10 +210,10 @@ describe('a 50-guest class behind one network', () => {
         }
     // The class's peak demand, as stated in the Meet calls page.
     expect(peaks).toEqual({
-      'get:minute': 3850,
-      'get:hour': 186_750,
-      'mutate:minute': 200,
-      'mutate:hour': 12_000,
+      'get:minute': 4850,
+      'get:hour': 216_750,
+      'mutate:minute': 1150,
+      'mutate:hour': 39_000,
     });
   });
 });

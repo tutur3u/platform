@@ -63,9 +63,11 @@ export const GUEST_SCOPE_MULTIPLIER = 100;
 /**
  * One guest's budget. At the call's worst-case polling (a live poll, the
  * classroom pen board, the board list, a running transcript and Room Mira,
- * with a Mira settling burst and the lobby's polling before admission) a
- * guest keeps at least 1.5x headroom on its minute and hour reads, and the
- * day's reads cover about twelve such hours.
+ * with a Mira settling burst and the lobby's polling before admission) and
+ * half an hour of drawing on the classroom board (a write and a re-read per
+ * stroke), a guest keeps at least 1.5x headroom on its minute and hour reads
+ * and its hourly writes, and the day's budgets cover about twelve such hours.
+ * The write minute stays at 30, a third over the drawing peak.
  */
 export function guestRateLimits(): RateLimitProfile {
   const config = (
@@ -80,14 +82,14 @@ export function guestRateLimits(): RateLimitProfile {
   });
   return {
     get: [
-      config('minute', '1 m', 120, 'API_PROXY_GUEST_READ_LIMIT_MINUTE'),
-      config('hour', '1 h', 6000, 'API_PROXY_GUEST_READ_LIMIT_HOUR'),
-      config('day', '1 d', 45_000, 'API_PROXY_GUEST_READ_LIMIT_DAY'),
+      config('minute', '1 m', 150, 'API_PROXY_GUEST_READ_LIMIT_MINUTE'),
+      config('hour', '1 h', 7000, 'API_PROXY_GUEST_READ_LIMIT_HOUR'),
+      config('day', '1 d', 52_500, 'API_PROXY_GUEST_READ_LIMIT_DAY'),
     ],
     mutate: [
       config('minute', '1 m', 30, 'API_PROXY_GUEST_MUTATE_LIMIT_MINUTE'),
-      config('hour', '1 h', 300, 'API_PROXY_GUEST_MUTATE_LIMIT_HOUR'),
-      config('day', '1 d', 1500, 'API_PROXY_GUEST_MUTATE_LIMIT_DAY'),
+      config('hour', '1 h', 1200, 'API_PROXY_GUEST_MUTATE_LIMIT_HOUR'),
+      config('day', '1 d', 9600, 'API_PROXY_GUEST_MUTATE_LIMIT_DAY'),
     ],
   };
 }
