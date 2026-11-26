@@ -559,10 +559,10 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       );
     }
 
-    final embeddedMinHeight = widget.embeddedMinHeight;
-    final editorHeight = embeddedMinHeight != null && embeddedMinHeight > 0
-        ? embeddedMinHeight
-        : math.max<double>(460, MediaQuery.sizeOf(context).height - 260);
+    final h = MediaQuery.sizeOf(context).height;
+    final editorHeight = (widget.embeddedMinHeight ?? 0) > 0
+        ? widget.embeddedMinHeight!
+        : math.max<double>(math.min(460, math.max(220, h * 0.55)), h - 260);
 
     return SizedBox(
       height: editorHeight,

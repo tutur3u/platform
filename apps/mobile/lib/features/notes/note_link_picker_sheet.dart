@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/cache_context.dart';
@@ -368,120 +369,128 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          20 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: SizedBox(
-          height:
-              (MediaQuery.sizeOf(context).height * 0.65 -
-                      MediaQuery.viewInsetsOf(context).bottom)
-                  .clamp(260, 650)
-                  .toDouble(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                context.l10n.notesLinkWork,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 12),
-              AppHorizontalScrollView(
-                child: Row(
-                  children: [
-                    for (final kind in NoteLinkKind.values)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: ChoiceChip(
-                          label: Text(switch (kind) {
-                            NoteLinkKind.task => context.l10n.notesLinkTasks,
-                            NoteLinkKind.event => context.l10n.notesLinkEvents,
-                            NoteLinkKind.finance =>
-                              context.l10n.notesLinkFinance,
-                            NoteLinkKind.note => context.l10n.notesTitle,
-                            NoteLinkKind.meeting =>
-                              context.l10n.notesLinkMeetings,
-                          }),
-                          selected: _kind == kind,
-                          selectedColor: scheme.onSurface,
-                          labelStyle: TextStyle(
-                            color: _kind == kind
-                                ? scheme.surface
-                                : scheme.onSurface,
-                          ),
-                          onSelected: (_) {
-                            setState(() {
-                              _kind = kind;
-                              _options = const [];
-                            });
-                            unawaited(_load());
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _search,
-                onChanged: _onSearchChanged,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  hintText: context.l10n.notesSearchWork,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: _loading && _options.isEmpty
-                    ? const AppLoadingIndicator.page()
-                    : _failed && _options.isEmpty
-                    ? NovaRefreshIndicator.state(
-                        onRefresh: () => _load(refresh: true),
-                        child: Center(child: Text(context.l10n.notesLoadError)),
-                      )
-                    : _options.isEmpty
-                    ? NovaRefreshIndicator.state(
-                        onRefresh: () => _load(refresh: true),
-                        child: Center(
-                          child: Text(context.l10n.notesNoLinkResults),
-                        ),
-                      )
-                    : NovaRefreshIndicator(
-                        onRefresh: () => _load(refresh: true),
-                        child: ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          itemCount: _options.length,
-                          itemBuilder: (context, index) {
-                            final option = _options[index];
-                            return PendingSyncFrame(
-                              workspaceId: widget.wsId,
-                              entityId: option.id,
-                              feature: switch (option.kind) {
-                                NoteLinkKind.task => 'tasks',
-                                NoteLinkKind.event => 'calendar',
-                                NoteLinkKind.finance => 'finance',
-                                NoteLinkKind.note => 'notes',
-                                NoteLinkKind.meeting => 'meet',
-                              },
-                              child: ListTile(
-                                title: Text(
-                                  option.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                onTap: () => Navigator.of(context).pop(option),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+          final viewportHeight = MediaQuery.sizeOf(context).height;
+          final desiredHeight = (viewportHeight * 0.65 - bottomInset)
+              .clamp(180, 650)
+              .toDouble();
+          final maxAvailable = constraints.hasBoundedHeight
+              ? math.max<double>(140, constraints.maxHeight - 40 - bottomInset)
+              : math.max<double>(140, viewportHeight - 64 - bottomInset);
+          return Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+            child: SizedBox(
+              height: math.min(desiredHeight, maxAvailable),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    context.l10n.notesLinkWork,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  AppHorizontalScrollView(
+                    child: Row(
+                      children: [
+                        for (final kind in NoteLinkKind.values)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: ChoiceChip(
+                              label: Text(switch (kind) {
+                                NoteLinkKind.task =>
+                                  context.l10n.notesLinkTasks,
+                                NoteLinkKind.event =>
+                                  context.l10n.notesLinkEvents,
+                                NoteLinkKind.finance =>
+                                  context.l10n.notesLinkFinance,
+                                NoteLinkKind.note => context.l10n.notesTitle,
+                                NoteLinkKind.meeting =>
+                                  context.l10n.notesLinkMeetings,
+                              }),
+                              selected: _kind == kind,
+                              selectedColor: scheme.onSurface,
+                              labelStyle: TextStyle(
+                                color: _kind == kind
+                                    ? scheme.surface
+                                    : scheme.onSurface,
                               ),
-                            );
-                          },
-                        ),
-                      ),
+                              onSelected: (_) {
+                                setState(() {
+                                  _kind = kind;
+                                  _options = const [];
+                                });
+                                unawaited(_load());
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _search,
+                    onChanged: _onSearchChanged,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      hintText: context.l10n.notesSearchWork,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _loading && _options.isEmpty
+                        ? const AppLoadingIndicator.page()
+                        : _failed && _options.isEmpty
+                        ? NovaRefreshIndicator.state(
+                            onRefresh: () => _load(refresh: true),
+                            child: Center(
+                              child: Text(context.l10n.notesLoadError),
+                            ),
+                          )
+                        : _options.isEmpty
+                        ? NovaRefreshIndicator.state(
+                            onRefresh: () => _load(refresh: true),
+                            child: Center(
+                              child: Text(context.l10n.notesNoLinkResults),
+                            ),
+                          )
+                        : NovaRefreshIndicator(
+                            onRefresh: () => _load(refresh: true),
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: _options.length,
+                              itemBuilder: (context, index) {
+                                final option = _options[index];
+                                return PendingSyncFrame(
+                                  workspaceId: widget.wsId,
+                                  entityId: option.id,
+                                  feature: switch (option.kind) {
+                                    NoteLinkKind.task => 'tasks',
+                                    NoteLinkKind.event => 'calendar',
+                                    NoteLinkKind.finance => 'finance',
+                                    NoteLinkKind.note => 'notes',
+                                    NoteLinkKind.meeting => 'meet',
+                                  },
+                                  child: ListTile(
+                                    title: Text(
+                                      option.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    onTap: () =>
+                                        Navigator.of(context).pop(option),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

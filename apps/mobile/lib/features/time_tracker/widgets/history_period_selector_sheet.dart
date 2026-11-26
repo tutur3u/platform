@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -143,6 +145,11 @@ class _HistoryPeriodSelectorSheetState
     );
   }
 
+  double _pickerHeight(BuildContext context, double preferred) {
+    final available = MediaQuery.sizeOf(context).height - 120;
+    return math.min(preferred, math.max<double>(220, available));
+  }
+
   Widget _buildWeekPicker(BuildContext context, AppLocalizations l10n) {
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     if (_showYearPicker) {
@@ -163,7 +170,7 @@ class _HistoryPeriodSelectorSheetState
       localeTag,
     ).format(DateTime(_selectedYear, _selectedMonth));
     return SizedBox(
-      height: 480,
+      height: _pickerHeight(context, 480),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -217,7 +224,7 @@ class _HistoryPeriodSelectorSheetState
       widget.initialAnchorDate.month,
     );
     return SizedBox(
-      height: 400,
+      height: _pickerHeight(context, 400),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -273,7 +280,7 @@ class _HistoryPeriodSelectorSheetState
     final years = List.generate(12, (index) => _yearPageStart + index);
     final pageEnd = _yearPageStart + 11;
     return SizedBox(
-      height: 480,
+      height: _pickerHeight(context, 480),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

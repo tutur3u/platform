@@ -170,89 +170,97 @@ class _AgendaEventCard extends StatelessWidget {
     final theme = Theme.of(context);
     final time = formatCalendarTimeRange(context, event.startAt, event.endAt);
     final titleColor = EventColors.inContext(event, context).foreground;
-    final wide =
-        MediaQuery.sizeOf(context).width >= Breakpoints.mediumMin &&
-        MediaQuery.textScalerOf(context).scale(14) < 24;
+    final textScaleSmall = MediaQuery.textScalerOf(context).scale(14) < 24;
     final timeLabel = Text(
       time,
       style: theme.textTheme.bodySmall?.copyWith(color: titleColor),
     );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Material(
-        color: EventColors.inContext(event, context).background,
-        borderRadius: BorderRadius.circular(14),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              border: BorderDirectional(
-                start: BorderSide(
-                  color: EventColors.inContext(event, context).accent,
-                  width: 4,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide =
+            constraints.maxWidth >= Breakpoints.mediumMin && textScaleSmall;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Material(
+            color: EventColors.inContext(event, context).background,
+            borderRadius: BorderRadius.circular(14),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  border: BorderDirectional(
+                    start: BorderSide(
+                      color: EventColors.inContext(event, context).accent,
+                      width: 4,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (wide) ...[
+                      SizedBox(width: 160, child: timeLabel),
+                      const SizedBox(width: 16),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            event.title ?? '',
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: titleColor,
+                              decoration: isPast
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                          if (!wide) ...[const SizedBox(height: 4), timeLabel],
+                          if (event.place case final place?) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              place,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: titleColor,
+                              ),
+                            ),
+                          ],
+                          if (event.description?.isNotEmpty == true) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              calendarDescriptionPreview(event.description!),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: titleColor,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (isPast) ...[
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 18,
+                        color: titleColor,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (wide) ...[
-                  SizedBox(width: 160, child: timeLabel),
-                  const SizedBox(width: 16),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event.title ?? '',
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: titleColor,
-                          decoration: isPast
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                      ),
-                      if (!wide) ...[const SizedBox(height: 4), timeLabel],
-                      if (event.place case final place?) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          place,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: titleColor,
-                          ),
-                        ),
-                      ],
-                      if (event.description?.isNotEmpty == true) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          calendarDescriptionPreview(event.description!),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: titleColor,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                if (isPast) ...[
-                  const SizedBox(width: 8),
-                  Icon(Icons.check_circle_outline, size: 18, color: titleColor),
-                ],
-              ],
-            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

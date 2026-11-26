@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
@@ -86,10 +88,11 @@ class AuthHeroBand extends StatelessWidget {
     final ground = SorbetTokens.maybeOf(context)?.ground ?? c.muted;
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Short screens (and large text) give the form the room.
+        // Short screens (including landscape foldables) give the form room.
         final screen = MediaQuery.sizeOf(context).height;
-        final height = screen < 640 ? 150.0 : 230.0;
+        final height = screen < 520 ? 112.0 : (screen < 640 ? 150.0 : 230.0);
         final art = (height - 24) * 320 / 280;
+        final maxArtWidth = math.max<double>(0, constraints.maxWidth - 32);
         return Container(
           height: height,
           decoration: BoxDecoration(
@@ -101,7 +104,7 @@ class AuthHeroBand extends StatelessWidget {
             children: [
               AppIllustration(
                 AppIllustrationKind.welcomeBowl,
-                size: art.clamp(0, constraints.maxWidth - 32),
+                size: art.clamp(0, maxArtWidth).toDouble(),
                 cycles: 2,
               ),
               PositionedDirectional(

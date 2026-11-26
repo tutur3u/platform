@@ -56,9 +56,10 @@ class HabitTrackerDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final viewportHeight = MediaQuery.sizeOf(context).height;
     final height = context.isCompact
-        ? MediaQuery.sizeOf(context).height * 0.92
-        : 760.0;
+        ? viewportHeight * 0.92
+        : math.min<double>(760, viewportHeight * 0.88);
     final tabs = [
       Tab(text: context.l10n.habitsOverviewTab),
       Tab(text: context.l10n.habitsEntriesTab),

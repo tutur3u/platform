@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
@@ -129,117 +130,143 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
     final scheme = Theme.of(context).colorScheme;
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: SizedBox(
-          height: (MediaQuery.sizeOf(context).height * 0.55).clamp(280, 520),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                context.l10n.notesConvertToTask,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.taskName,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 20),
-              if (_loading)
-                const Expanded(child: AppLoadingIndicator.page())
-              else ...[
-                Text(context.l10n.notesTaskBoard),
-                const SizedBox(height: 8),
-                if (_boards.isEmpty)
-                  Text(context.l10n.notesTaskNoBoards)
-                else
-                  SizedBox(
-                    height: 52,
-                    child: AppHorizontalViewport(
-                      child: AppHorizontalViewport(
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          clipBehavior: Clip.none,
-                          itemCount: _boards.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 8),
-                          itemBuilder: (context, index) {
-                            final board = _boards[index];
-                            return ChoiceChip(
-                              label: Text(board.$2),
-                              selected: _boardId == board.$1,
-                              selectedColor: scheme.onSurface,
-                              labelStyle: TextStyle(
-                                color: _boardId == board.$1
-                                    ? scheme.surface
-                                    : scheme.onSurface,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final viewportHeight = MediaQuery.sizeOf(context).height;
+          final preferred = (viewportHeight * 0.55).clamp(280, 520).toDouble();
+          final maxHeight = constraints.hasBoundedHeight
+              ? math.max<double>(160, constraints.maxHeight - 40)
+              : math.min(preferred, math.max<double>(180, viewportHeight - 64));
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.notesConvertToTask,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.taskName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 16),
+                  if (_loading)
+                    const SizedBox(
+                      height: 120,
+                      child: AppLoadingIndicator.page(),
+                    )
+                  else ...[
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(context.l10n.notesTaskBoard),
+                            const SizedBox(height: 8),
+                            if (_boards.isEmpty)
+                              Text(context.l10n.notesTaskNoBoards)
+                            else
+                              SizedBox(
+                                height: 52,
+                                child: AppHorizontalViewport(
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    clipBehavior: Clip.none,
+                                    itemCount: _boards.length,
+                                    separatorBuilder: (_, _) =>
+                                        const SizedBox(width: 8),
+                                    itemBuilder: (context, index) {
+                                      final board = _boards[index];
+                                      return ChoiceChip(
+                                        label: Text(board.$2),
+                                        selected: _boardId == board.$1,
+                                        selectedColor: scheme.onSurface,
+                                        labelStyle: TextStyle(
+                                          color: _boardId == board.$1
+                                              ? scheme.surface
+                                              : scheme.onSurface,
+                                        ),
+                                        onSelected: (_) =>
+                                            unawaited(_selectBoard(board.$1)),
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
-                              onSelected: (_) =>
-                                  unawaited(_selectBoard(board.$1)),
-                            );
-                          },
+                            const SizedBox(height: 16),
+                            Text(context.l10n.notesTaskList),
+                            const SizedBox(height: 8),
+                            if (_loadingLists)
+                              const NovaLoadingIndicator(size: 24)
+                            else if (_boardId != null && _lists.isEmpty)
+                              Text(context.l10n.notesTaskNoLists)
+                            else
+                              SizedBox(
+                                height: 52,
+                                child: AppHorizontalViewport(
+                                  child: ListView.separated(
+                                    scrollDirection: Axis.horizontal,
+                                    clipBehavior: Clip.none,
+                                    itemCount: _lists.length,
+                                    separatorBuilder: (_, _) =>
+                                        const SizedBox(width: 8),
+                                    itemBuilder: (context, index) {
+                                      final list = _lists[index];
+                                      return ChoiceChip(
+                                        label: Text(list.$2),
+                                        selected: _listId == list.$1,
+                                        selectedColor: scheme.onSurface,
+                                        labelStyle: TextStyle(
+                                          color: _listId == list.$1
+                                              ? scheme.surface
+                                              : scheme.onSurface,
+                                        ),
+                                        onSelected: (_) =>
+                                            setState(() => _listId = list.$1),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            if (_error != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(color: scheme.error),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
-                  ),
-                const SizedBox(height: 16),
-                Text(context.l10n.notesTaskList),
-                const SizedBox(height: 8),
-                if (_loadingLists)
-                  const NovaLoadingIndicator(size: 24)
-                else if (_boardId != null && _lists.isEmpty)
-                  Text(context.l10n.notesTaskNoLists)
-                else
-                  SizedBox(
-                    height: 52,
-                    child: AppHorizontalViewport(
-                      child: AppHorizontalViewport(
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          clipBehavior: Clip.none,
-                          itemCount: _lists.length,
-                          separatorBuilder: (_, _) => const SizedBox(width: 8),
-                          itemBuilder: (context, index) {
-                            final list = _lists[index];
-                            return ChoiceChip(
-                              label: Text(list.$2),
-                              selected: _listId == list.$1,
-                              selectedColor: scheme.onSurface,
-                              labelStyle: TextStyle(
-                                color: _listId == list.$1
-                                    ? scheme.surface
-                                    : scheme.onSurface,
-                              ),
-                              onSelected: (_) =>
-                                  setState(() => _listId = list.$1),
-                            );
-                          },
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: _listId == null || _creating
+                            ? null
+                            : _create,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: scheme.onSurface,
+                          foregroundColor: scheme.surface,
                         ),
+                        child: Text(context.l10n.notesCreateTask),
                       ),
                     ),
-                  ),
-                const Spacer(),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(_error!, style: TextStyle(color: scheme.error)),
-                  ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _listId == null || _creating ? null : _create,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: scheme.onSurface,
-                      foregroundColor: scheme.surface,
-                    ),
-                    child: Text(context.l10n.notesCreateTask),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

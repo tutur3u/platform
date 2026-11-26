@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
@@ -81,15 +83,29 @@ Future<T?> showAdaptiveSheet<T>({
     barrierDismissible: barrierDismissible,
     builder: (dialogContext) => AppModalBinding(
       dismissible: barrierDismissible,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxDialogWidth),
-            child: _sheetSurface(
-              dialogContext,
-              builder(dialogContext),
-              surface,
+      child: AppSheetKeyboardInset(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: LayoutBuilder(
+              builder: (layoutContext, constraints) {
+                final availableHeight = constraints.hasBoundedHeight
+                    ? constraints.maxHeight
+                    : MediaQuery.sizeOf(layoutContext).height * 0.88;
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: maxDialogWidth,
+                      maxHeight: math.max(160, availableHeight),
+                    ),
+                    child: _sheetSurface(
+                      layoutContext,
+                      builder(layoutContext),
+                      surface,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ),

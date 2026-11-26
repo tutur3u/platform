@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/config/env.dart';
@@ -44,6 +45,14 @@ Future<void> _shareMeetInvite(
   }
 }
 
+double _meetSheetContentHeight(BuildContext context, double preferred) {
+  final available =
+      MediaQuery.sizeOf(context).height -
+      MediaQuery.viewInsetsOf(context).bottom -
+      140;
+  return math.min(preferred, math.max<double>(180, available));
+}
+
 Future<void> showMeetChatSheet(
   BuildContext context,
   MeetCallController call,
@@ -59,7 +68,7 @@ Future<void> showMeetChatSheet(
         child: AppDialogScaffold(
           title: sheetContext.l10n.meetChat,
           child: SizedBox(
-            height: 480,
+            height: _meetSheetContentHeight(sheetContext, 480),
             child: Column(
               children: [
                 TabBar(
@@ -221,7 +230,7 @@ Future<void> showMeetParticipantsSheet(
   builder: (sheetContext) => AppDialogScaffold(
     title: sheetContext.l10n.meetParticipants,
     child: SizedBox(
-      height: 420,
+      height: _meetSheetContentHeight(sheetContext, 420),
       child: AnimatedBuilder(
         animation: call,
         builder: (context, _) => ListView(
@@ -341,7 +350,7 @@ Future<void> showMeetSettingsSheet(
   builder: (sheetContext) => AppDialogScaffold(
     title: sheetContext.l10n.meetSettings,
     child: SizedBox(
-      height: 430,
+      height: _meetSheetContentHeight(sheetContext, 430),
       child: AnimatedBuilder(
         animation: call,
         builder: (context, _) => ListView(
