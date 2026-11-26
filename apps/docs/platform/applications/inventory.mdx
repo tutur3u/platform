@@ -234,9 +234,12 @@ form saves. A sale line shows the image it was sold with: the route signs it whe
 it is still the product's image, and an older image renders as stored.
 
 Mobile reads a stored share URL or Supabase signed `workspaces` URL through the
-product image route, falling back to the storage share route when the product
-route is missing; a share URL that names the workspace by a route slug never
-falls back, because only the product image route checks the slug. Storage URLs are trusted only for the product's own workspace
+product image route. On any failure except 401 or 403 (including 404, a
+server error, or a response without a signed URL) it falls back to the storage
+share route; a 401 or 403 is a refusal. A share URL that names the workspace by
+a route slug never falls back, because only the product image route checks the
+slug, so its 404 is remembered as a refusal too. Storage URLs are trusted only
+for the product's own workspace
 and on an allow-listed host (the platform API origin for share URLs, the
 configured Supabase project for signed ones); any other storage URL shows the
 placeholder without a request. When access is refused, a legacy signed URL is
