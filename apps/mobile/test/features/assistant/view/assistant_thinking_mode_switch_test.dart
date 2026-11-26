@@ -154,4 +154,31 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
   });
+
+  testWidgets('a legacy conversation switches the mode without a write', (
+    tester,
+  ) async {
+    final repository = _CreationRepository(_SettingsApi());
+    final h = BackgroundReplyHarness(repository: repository);
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester);
+    // A legacy conversation sends the mode with each request.
+    h.chat.emit(
+      h.chat.state.copyWith(
+        storedChatId: 'ai-chat-11111111-1111-4111-8111-111111111111',
+      ),
+    );
+    await tester.pumpAndSettle();
+    final mode = find.byKey(_mode);
+    expect(tester.widget<AppButton>(mode).onPressed, isNotNull);
+
+    await tester.tap(mode);
+    await tester.pumpAndSettle();
+    expect(_shell(h).state.thinkingMode, AssistantThinkingMode.thinking);
+    expect(
+      find.descendant(of: mode, matching: find.text('Thinking')),
+      findsOneWidget,
+    );
+    expect(repository.api.patches, isEmpty);
+  });
 }

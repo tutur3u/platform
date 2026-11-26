@@ -3,14 +3,14 @@ part of 'assistant_shell_cubit.dart';
 extension _AssistantShellSettings on AssistantShellCubit {
   bool Function() _settingsLease() {
     final revision = ++_settingsRequestVersion;
-    final workspaceVersion = _requestVersion;
+    final epoch = _scopeEpoch;
     final actor = _repository.currentActorId;
     final scope = _currentScopeToken?.call();
     final settingsToken = _currentSettingsToken?.call();
     return () =>
         !isClosed &&
         revision == _settingsRequestVersion &&
-        workspaceVersion == _requestVersion &&
+        epoch == _scopeEpoch &&
         _repository.currentActorId == actor &&
         _currentScopeToken?.call() == scope &&
         _currentSettingsToken?.call() == settingsToken;
@@ -42,6 +42,9 @@ extension _AssistantShellSettings on AssistantShellCubit {
     if (creditWsId == null) return false;
     final current = _settingsLease();
     _settingsSelectionPending = true;
+    final settled = Completer<void>();
+    final pending = (epoch: _scopeEpoch, done: settled.future);
+    _pendingSelection = pending;
     try {
       final selection = AssistantSettingsSelection(
         modelId: model.value,
@@ -53,6 +56,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
       await _preferences.saveModel(workspace.id, model, shouldWrite: current);
       if (!current()) return false;
       _followAcknowledged(selection);
+      _appliedSelections++;
       _emitIfOpen(
         state.copyWith(selectedModel: model, conversationSettings: null),
       );
@@ -64,6 +68,10 @@ extension _AssistantShellSettings on AssistantShellCubit {
       return false;
     } finally {
       _settingsSelectionPending = false;
+      settled.complete();
+      if (identical(_pendingSelection?.done, pending.done)) {
+        _pendingSelection = null;
+      }
     }
   }
 
@@ -84,6 +92,9 @@ extension _AssistantShellSettings on AssistantShellCubit {
     if (creditWsId == null) return false;
     final current = _settingsLease();
     _settingsSelectionPending = true;
+    final settled = Completer<void>();
+    final pending = (epoch: _scopeEpoch, done: settled.future);
+    _pendingSelection = pending;
     try {
       final selection = AssistantSettingsSelection(
         modelId: state.selectedModel.value,
@@ -94,6 +105,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
       if (!await _acceptSettings(selection, current)) return false;
       if (!current()) return false;
       _followAcknowledged(selection);
+      _appliedSelections++;
       _sessionThinkingMode = mode;
       _emitIfOpen(
         state.copyWith(thinkingMode: mode, conversationSettings: null),
@@ -106,6 +118,10 @@ extension _AssistantShellSettings on AssistantShellCubit {
       return false;
     } finally {
       _settingsSelectionPending = false;
+      settled.complete();
+      if (identical(_pendingSelection?.done, pending.done)) {
+        _pendingSelection = null;
+      }
     }
   }
 
@@ -121,6 +137,9 @@ extension _AssistantShellSettings on AssistantShellCubit {
     if (creditWsId == null) return false;
     final current = _settingsLease();
     _settingsSelectionPending = true;
+    final settled = Completer<void>();
+    final pending = (epoch: _scopeEpoch, done: settled.future);
+    _pendingSelection = pending;
     try {
       final credits = await _repository.fetchCredits(creditWsId);
       if (!current()) return false;
@@ -145,6 +164,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
       await _preferences.saveModel(workspace.id, model, shouldWrite: current);
       if (!current()) return false;
       _followAcknowledged(selection);
+      _appliedSelections++;
       _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.loaded,
@@ -169,6 +189,10 @@ extension _AssistantShellSettings on AssistantShellCubit {
       return false;
     } finally {
       _settingsSelectionPending = false;
+      settled.complete();
+      if (identical(_pendingSelection?.done, pending.done)) {
+        _pendingSelection = null;
+      }
     }
   }
 }
