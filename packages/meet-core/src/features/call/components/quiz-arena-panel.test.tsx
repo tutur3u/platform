@@ -361,4 +361,14 @@ it('opens the quiz tool for a guest and locks their choice after submission', as
     (screen.getByRole('button', { name: /First/ }) as HTMLButtonElement)
       .disabled
   ).toBe(true);
+  active.question = { type: 'open_text', question: 'Explain' };
+  active.myAnswer = { text: 'My first answer' };
+  panel.rerender(fixture());
+  const field = screen.getByRole('textbox') as HTMLInputElement;
+  expect(field.disabled).toBe(true);
+  expect(field.value).toBe('My first answer');
+  expect(
+    (screen.getByRole('button', { name: 'Locked' }) as HTMLButtonElement)
+      .disabled
+  ).toBe(true);
 });

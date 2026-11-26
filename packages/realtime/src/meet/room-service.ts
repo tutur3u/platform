@@ -42,7 +42,6 @@ import {
 import {
   applyRoomQuizArena,
   quizArenaRoomCommandSchema,
-  type RoomQuizArenaState,
 } from './room-quiz-arena';
 import type { RoomProgrammingMira } from './room-programming-mira';
 import type { RoomRecording } from './room-recording';
@@ -76,7 +75,6 @@ export type RoomServiceState = MeetRoomSnapshot & {
   externalClassInitialized?: true;
   documents?: RoomDocumentsState;
   polls?: RoomPoll[];
-  quizArena?: RoomQuizArenaState;
   whiteboard?: RoomWhiteboard;
   breakouts?: RoomBreakouts;
   miraPrivate?: MiraPrivateState;

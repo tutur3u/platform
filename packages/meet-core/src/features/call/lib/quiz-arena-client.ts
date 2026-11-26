@@ -13,6 +13,7 @@ import {
   type QuizArenaView,
 } from '@tuturuuu/realtime/meet/room-quiz-arena';
 import { useEffect } from 'react';
+import { subscribeArenaChanges } from './quiz-arena-announcement';
 import type {
   QuizArenaAction,
   QuizArenaActionResult,
@@ -59,19 +60,6 @@ export function notifyQuizArenaMutation(meetingId: string) {
   channel?.close();
 }
 
-/** Active play polls quickly; an idle or closed board polls slowly. */
-export function quizArenaRefetchInterval(
-  view: QuizArenaClientView | undefined,
-  open: boolean
-) {
-  const live =
-    view?.kind === 'full' &&
-    (view.meta.phase === 'question' ||
-      view.meta.phase === 'final_wager' ||
-      view.meta.phase === 'final_answer');
-  return live || open ? 1200 : 5000;
-}
-
 /**
  * Keeps one merged full view per meeting and account. After the first full
  * read each poll asks only for changes since the last sequence; a delta that
@@ -110,13 +98,17 @@ export function useCallQuizArena(
   useEffect(() => {
     if (!enabled) return;
     const channel = openArenaChannel(meetingId);
-    if (!channel) return;
-    channel.onmessage = () => {
+    const refresh = () => {
       void client.invalidateQueries({
         queryKey: quizArenaKey(meetingId, accountId),
       });
     };
-    return () => channel.close();
+    if (channel) channel.onmessage = refresh;
+    const unsubscribe = subscribeArenaChanges(meetingId, refresh);
+    return () => {
+      unsubscribe();
+      channel?.close();
+    };
   }, [accountId, client, enabled, meetingId]);
 
   return useQuery({
@@ -129,7 +121,7 @@ export function useCallQuizArena(
       ),
     enabled,
     refetchInterval: (query) =>
-      quizArenaRefetchInterval(query.state.data, open),
+      open && query.state.data?.canManage ? 10_000 : 60_000,
     retry: false,
   });
 }

@@ -1,3 +1,5 @@
+import { takeActorRateLimit } from './actor-rate-limit';
+import { isGuestRemovalBlocked } from './room-removed-guests';
 import { canMeetRealtimeManageParticipants } from './permissions';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import {
@@ -27,7 +29,7 @@ import {
   voidTileAwards,
 } from './room-quiz-arena-scoring';
 import { projectQuizArenaForUser } from './room-quiz-arena-view';
-import type { RoomServiceState } from './room-service';
+import type { RoomServiceResult, RoomServiceState } from './room-service';
 
 export * from './room-quiz-arena-export';
 export * from './room-quiz-arena-schema';
@@ -43,12 +45,6 @@ export * from './room-quiz-arena-view';
 /** Answers that arrive within this window after the timer still count. */
 const ANSWER_GRACE_MS = 2000;
 const PARTICIPANT_ACTIONS = new Set(['arena.state', 'buzz', 'answer', 'wager']);
-
-type Result = {
-  state: RoomServiceState;
-  body: unknown;
-  status?: number;
-};
 
 function bumpAllPlayers(state: RoomQuizArenaState) {
   for (const player of Object.values(state.players)) player.v = state.seq;
@@ -144,19 +140,25 @@ export function applyRoomQuizArena(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   command: QuizArenaRoomCommand
-): Result {
+): RoomServiceResult {
   const accountId = token.accountId ?? token.userId;
   const canManage = !token.guest && canMeetRealtimeManageParticipants(token);
   const liveServer = token.scopes.includes('meet:live-server');
-  const present = Object.values(snapshot.presence).some(
+  const present = Object.values(snapshot.presence).find(
     (person) => (person.accountId ?? person.userId) === accountId
   );
-  const fail = (error: string, status: number): Result => ({
+  const fail = (error: string, status: number): RoomServiceResult => ({
     state: snapshot,
     body: { error },
     status,
   });
-  if (token.guest && (!present || snapshot.ended))
+  if (
+    token.guest &&
+    (!token.accountId ||
+      !present ||
+      snapshot.ended ||
+      isGuestRemovalBlocked(snapshot, accountId, Date.now()).blocked)
+  )
     return fail('Forbidden', 403);
   if (
     !canManage &&
@@ -201,13 +203,33 @@ export function applyRoomQuizArena(
   const save = (
     next: RoomQuizArenaState,
     body: unknown = { ok: true, seq: next.seq }
-  ): Result => {
+  ): RoomServiceResult => {
     if (
       new TextEncoder().encode(JSON.stringify(next)).byteLength >
       MAX_QUIZ_ARENA_BYTES
     )
       return fail('Quiz Arena storage is full', 409);
-    return { state: { ...snapshot, quizArena: next }, body };
+    // Individual all-answer submissions refresh the sender locally. Broadcasting
+    // every answer would trigger a full classroom of reads for each player.
+    const notify =
+      canManage ||
+      (next.config.answerMode === 'buzz_in' &&
+        (command.action === 'buzz' || command.action === 'answer')) ||
+      (command.action === 'wager' && next.config.playMode === 'teams');
+    return {
+      state: { ...snapshot, quizArena: next },
+      body,
+      ...(notify
+        ? {
+            messages: [
+              {
+                type: 'quizArena.changed' as const,
+                active: next.phase !== 'ended',
+              },
+            ],
+          }
+        : {}),
+    };
   };
 
   if (command.action === 'setup') {
@@ -232,13 +254,23 @@ export function applyRoomQuizArena(
   }
   if (!arena) return fail('Quiz Arena not found', 404);
 
+  if (
+    token.guest &&
+    !takeActorRateLimit(`quiz-arena:${token.roomId}:${accountId}`, 30, 60_000)
+  )
+    return fail('Too many Quiz Arena actions', 429);
   const state = structuredClone(arena);
   state.seq += 1;
   const now = Date.now();
   const findTile = (id: string) =>
     state.tiles.find((tile) => tile.id === id) ??
     (state.finalTile?.id === id ? state.finalTile : undefined);
-  const player = () => ensurePlayer(state, accountId, token.displayName ?? '');
+  const player = () =>
+    ensurePlayer(
+      state,
+      accountId,
+      present?.displayName ?? token.displayName ?? ''
+    );
   const needsWager = (tile: ArenaTile) =>
     tile.isBonusWager && !(arenaWagerKey(state, accountId) in tile.wagers);
 

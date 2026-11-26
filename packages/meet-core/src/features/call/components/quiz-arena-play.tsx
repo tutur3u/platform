@@ -161,11 +161,13 @@ export function AnswerArea({
   tile,
   busy,
   disabled,
+  locked = false,
   onAction,
 }: {
   tile: ProjectedArenaTile;
   busy: boolean;
   disabled: boolean;
+  locked?: boolean;
   onAction: Act;
 }) {
   const t = useTranslations('meet.call.quizArena');
@@ -194,7 +196,7 @@ export function AnswerArea({
               key={option.id}
               type="button"
               aria-pressed={!!chosen}
-              disabled={disabled || busy || tile.status !== 'active'}
+              disabled={locked || disabled || busy || tile.status !== 'active'}
               onClick={() =>
                 onAction({
                   action: 'answer',
@@ -238,7 +240,7 @@ export function AnswerArea({
     tile.myAnswer && 'text' in tile.myAnswer ? tile.myAnswer.text : null;
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (text.trim())
+    if (!locked && !disabled && !busy && text.trim())
       onAction({
         action: 'answer',
         tileId: tile.id,
@@ -251,15 +253,23 @@ export function AnswerArea({
         aria-label={t('your_answer')}
         placeholder={mine ?? t('your_answer')}
         maxLength={200}
-        value={text}
-        disabled={disabled || tile.status !== 'active'}
+        value={locked ? (mine ?? text) : text}
+        disabled={locked || disabled || tile.status !== 'active'}
         onChange={(event) => setText(event.target.value)}
       />
       <Button
         type="submit"
-        disabled={disabled || busy || !text.trim() || tile.status !== 'active'}
+        disabled={
+          locked || disabled || busy || !text.trim() || tile.status !== 'active'
+        }
       >
-        {t(mine ? 'update_answer' : 'submit_answer')}
+        {t(
+          locked
+            ? 'wager_locked_short'
+            : mine
+              ? 'update_answer'
+              : 'submit_answer'
+        )}
       </Button>
     </form>
   );

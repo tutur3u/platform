@@ -3932,8 +3932,11 @@ check, 64 KiB body bound, call access check and `private, no-store` responses.
   reset or the tile was played meanwhile. The room service checks the approved
   board version in the same operation as applying the change. Both tools are
   host-only and personal-mode only. An approved pick shows Mira's live tag.
-- **Sync.** Clients poll every 1.2 s while a round is live or the drawer is open,
-  otherwise every 5 s, and request only changes since their last sequence.
+- **Sync.** Admitted guests discover a board from its room announcement without
+  background quiz requests. An open panel refreshes on board changes and after
+  its own submissions. Individual all-answer submissions do not trigger reads
+  by classmates. A participant polls once a minute for recovery and an open
+  host panel checks scores every ten seconds.
   A reset starts a new epoch so stale deltas fall back to a full read.
 - **Sound.** Web Audio cues are off when the player mutes them or prefers
   reduced motion; animations use `motion-safe` variants.
@@ -3944,7 +3947,9 @@ wagers, final round, exports, deltas and a 50-player scale run),
 provenance and stale approval rejection),
 `server/quiz-arena.test.ts` (Mira guards, starter fallback, Upskii scoping),
 `quiz-arena/route.test.ts`, `cloudflare/live/quiz-arena.test.ts`,
-`quiz-arena-panel.test.tsx` and the Meet worker `api-registry.test.ts`.
+`room-quiz-arena-guest.test.ts` (admission, name binding, rate limits and announcements),
+`call-activities.test.tsx` (guest discovery), `quiz-arena-panel.test.tsx` (answer locking)
+and the Meet worker `api-registry.test.ts`.
 
 ## Meeting-list startup and hosting eligibility
 

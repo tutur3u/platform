@@ -61,6 +61,7 @@ type MeetEventAdmissionAudit = {
 
 export interface MeetRoomSnapshot
   extends TranscriptionRoomState, RoomFormsState {
+  quizArena?: import('./room-quiz-arena-schema').RoomQuizArenaState;
   lifecycle?: import('./room-lifecycle').MeetRoomLifecycle;
   liveAssistant?: import('./room-live').RoomLiveState;
   budget?: RoomBudget;

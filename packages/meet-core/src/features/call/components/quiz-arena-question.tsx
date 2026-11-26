@@ -24,6 +24,7 @@ type Props = {
   selfId: string;
   tile: ProjectedArenaTile;
   busy: boolean;
+  locked?: boolean;
   onAction: (action: QuizArenaAction) => void;
 };
 
@@ -33,6 +34,7 @@ function signed(locale: string, value: number) {
 
 export function QuizArenaQuestion({
   view,
+  locked = false,
   selfId,
   tile,
   busy,
@@ -115,6 +117,7 @@ export function QuizArenaQuestion({
       {tile.question &&
         (!buzzMode || myTurn || tile.status === 'revealed' || canManage) && (
           <AnswerArea
+            locked={locked}
             tile={tile}
             busy={busy}
             disabled={

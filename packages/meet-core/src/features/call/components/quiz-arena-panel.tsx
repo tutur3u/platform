@@ -40,17 +40,20 @@ type ArenaQuery = ReturnType<typeof useCallQuizArena>;
 const LIVE_PHASES = new Set(['question', 'final_wager', 'final_answer']);
 
 export function QuizArenaControl({
+  announced = false,
   query,
   open,
   onClick,
 }: {
   query: ArenaQuery;
   open: boolean;
+  announced?: boolean;
   onClick: () => void;
 }) {
   const t = useTranslations('meet.call.quizArena');
   const live =
-    query.data?.kind === 'full' && LIVE_PHASES.has(query.data.meta.phase);
+    announced ||
+    (query.data?.kind === 'full' && LIVE_PHASES.has(query.data.meta.phase));
   return (
     <ControlButton
       active={open}
@@ -302,7 +305,8 @@ export function QuizArenaPanel({
                 view={full}
                 selfId={accountId}
                 tile={active}
-                busy={busy || (guest && active.myAnswer !== null)}
+                busy={busy}
+                locked={guest && active.myAnswer !== null}
                 onAction={act}
               />
             )}

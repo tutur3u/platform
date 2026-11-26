@@ -39,10 +39,11 @@ vi.mock('../../../../../features/call/lib/call-session', () => ({
   getMeetCallSession: mocks.session,
 }));
 vi.mock('../../../../../features/call/server/quiz-arena', async () => {
-  const { quizArenaMutationSchema } =
-    await import('@tuturuuu/realtime/meet/room-quiz-arena');
+  const { quizArenaActionSchema } = await vi.importActual<
+    typeof import('../../../../../features/call/server/quiz-arena')
+  >('../../../../../features/call/server/quiz-arena');
   return {
-    quizArenaActionSchema: quizArenaMutationSchema,
+    quizArenaActionSchema,
     runQuizArenaAction: mocks.action,
   };
 });
@@ -196,6 +197,41 @@ it('routes guest state and answers with the signed room identity and refuses exp
   expect((await GET(new Request(url + '?format=csv'), params)).status).toBe(
     403
   );
+  expect((await GET(new Request(url + '?format=json'), params)).status).toBe(
+    403
+  );
+  const config = { answerMode: 'all_answer', playMode: 'individual' };
+  for (const command of [
+    { action: 'list_upskii' },
+    { action: 'import_upskii', courseId: id, config },
+    {
+      action: 'mira_generate_board',
+      config,
+      request: {
+        subject: 'general',
+        grade: '10',
+        categoriesCount: 3,
+        tiersCount: 3,
+      },
+    },
+    {
+      action: 'setup',
+      config,
+      board: {
+        title: 'Test',
+        categories: ['Test'],
+        tierPoints: [100],
+        tiles: [
+          {
+            categoryIndex: 0,
+            tierIndex: 0,
+            question: { type: 'open_text', question: 'Why?' },
+          },
+        ],
+      },
+    },
+  ])
+    expect((await post(command)).status).toBe(403);
   expect(mocks.fetch).toHaveBeenCalledTimes(2);
   expect(mocks.action).not.toHaveBeenCalled();
 });

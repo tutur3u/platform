@@ -8,6 +8,7 @@ import { ClassroomControls } from '../../classroom-tools/classroom-controls';
 import type { ClassroomTool } from '../../classroom-tools/classroom-client';
 import { ClassroomPanel } from '../../classroom-tools/classroom-panel';
 import { useCallPolls } from '../lib/polls-client';
+import { useArenaAnnouncement } from '../lib/quiz-arena-announcement';
 import { useCallQuizArena } from '../lib/quiz-arena-client';
 import { ControlButton } from './control-bar';
 import { PollsControl } from './polls-panel';
@@ -92,11 +93,14 @@ export function useCallActivities({
     } else stage.toggle(stageIdOf(next));
   };
   const activePoll = polls.data?.polls.some((poll) => poll.status === 'active');
+  const announced = useArenaAnnouncement(meetingId);
   const activeArena =
-    arena.data?.kind === 'full' &&
-    ['lobby', 'question', 'reveal', 'final_wager', 'final_answer'].includes(
-      arena.data.meta.phase
-    );
+    (enabled && announced) ||
+    (!requiresAccount &&
+      arena.data?.kind === 'full' &&
+      ['lobby', 'question', 'reveal', 'final_wager', 'final_answer'].includes(
+        arena.data.meta.phase
+      ));
   const showPolls = showTools || activePoll;
   const showArena = showTools || activeArena;
   const liveControl = activePoll ? (
@@ -108,6 +112,7 @@ export function useCallActivities({
   ) : activeArena ? (
     <QuizArenaControl
       query={arena}
+      announced={announced}
       open={isOpen('quiz-arena')}
       onClick={() => toggle('quiz-arena')}
     />
@@ -166,6 +171,7 @@ export function useCallActivities({
         {showArena && (
           <QuizArenaControl
             query={arena}
+            announced={announced}
             open={isOpen('quiz-arena')}
             onClick={() => toggle('quiz-arena')}
           />

@@ -296,6 +296,14 @@ export function admitOrHold(
         resumed: !!previous,
       },
       roomSettingsMessage(next, now),
+      ...(next.quizArena
+        ? [
+            {
+              type: 'quizArena.changed' as const,
+              active: next.quizArena.phase !== 'ended',
+            },
+          ]
+        : []),
       recordingMessage(next),
       ...transcriptionAnnouncements(next, token.userId),
       ...(next.chat ?? []).map((entry) => ({ ...entry, replayed: true })),
@@ -470,6 +478,17 @@ function decideParticipant(
                 presentClassTimer(next.classTimer, now),
                 now
               ),
+            },
+          ]
+        : []),
+      ...(next.quizArena
+        ? [
+            {
+              userId: targetId,
+              message: {
+                type: 'quizArena.changed' as const,
+                active: next.quizArena.phase !== 'ended',
+              },
             },
           ]
         : []),

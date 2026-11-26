@@ -1,5 +1,9 @@
 import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import type { MeetRealtimeServerMessage } from '@tuturuuu/realtime/meet';
+import {
+  setArenaAnnouncement,
+  clearArenaAnnouncement,
+} from '../lib/quiz-arena-announcement';
 import type { createRoomActions } from '../lib/room-actions';
 import type { MeetSignaling, MeetSignalingStatus } from '../lib/signaling';
 import {
@@ -20,6 +24,8 @@ function handleMeetToolMessage(
     'sendLiveQa' | 'sendSharedTool'
   >
 ) {
+  if (message.type === 'quizArena.changed')
+    setArenaAnnouncement(meetingId, message.active);
   deliverRoomAssistantAudio(meetingId, message);
   handleLiveQaMessage(meetingId, message, actions.sendLiveQa);
   handleLiveActivitiesMessage(meetingId, message, actions.sendSharedTool);
@@ -28,6 +34,7 @@ function handleMeetToolMessage(
 }
 
 function clearRoomTools(meetingId: string) {
+  clearArenaAnnouncement(meetingId);
   closeLiveActivitiesRoom(meetingId);
   closeWhiteboardRoom(meetingId);
   closeUpskiiRoom(meetingId);
