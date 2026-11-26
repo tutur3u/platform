@@ -192,6 +192,12 @@ export interface ChatConversation {
 }
 
 export interface ChatConversationPage {
+  /**
+   * Whether the viewer may delete other members' messages in this
+   * workspace's conversations. Only decides whether to offer the action;
+   * the server enforces it on delete.
+   */
+  canModerate?: boolean;
   conversations: ChatConversation[];
   nextOffset: number | null;
 }

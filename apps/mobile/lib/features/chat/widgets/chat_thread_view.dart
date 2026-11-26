@@ -50,6 +50,7 @@ class ChatThreadView extends StatelessWidget {
     this.onRetry,
     this.isMessageSynced,
     this.linkPreviews,
+    this.canDeleteOthers = false,
     super.key,
   });
 
@@ -87,6 +88,10 @@ class ChatThreadView extends StatelessWidget {
 
   /// Resolves link previews for synced messages; none are shown without it.
   final ChatLinkPreviewStore? linkPreviews;
+
+  /// Whether the viewer moderates this conversation and may delete other
+  /// members' messages.
+  final bool canDeleteOthers;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +138,7 @@ class ChatThreadView extends StatelessWidget {
                         isMessageSynced ??
                         (id) => !isPendingChatMessage(selected.wsId, id),
                     linkPreviews: linkPreviews,
+                    canDeleteOthers: canDeleteOthers,
                   ),
                 },
         ),

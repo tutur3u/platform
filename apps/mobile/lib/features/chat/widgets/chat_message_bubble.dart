@@ -220,7 +220,7 @@ class _Bubble extends StatelessWidget {
             )
           else if (message.content.isNotEmpty)
             _MessageText(
-              content: chatMessageDisplayContent(message),
+              content: chatMessageMarkdown(message),
               color: foreground,
             ),
           if (!deleted && message.attachments.isNotEmpty) ...[

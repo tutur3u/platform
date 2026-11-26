@@ -24,6 +24,7 @@ part 'chat_cubit_thread_actions.dart';
 part 'chat_cubit_message_merge.dart';
 part 'chat_cubit_sync.dart';
 part 'chat_cubit_read_receipts.dart';
+part 'chat_cubit_search.dart';
 part 'chat_cubit_typing.dart';
 
 class ChatCubit extends Cubit<ChatState> {
@@ -119,6 +120,7 @@ class ChatCubit extends Cubit<ChatState> {
   static const Duration revalidateAfter = Duration(seconds: 10);
   int _loadToken = 0;
   int _searchRequestVersion = 0;
+  Timer? _searchDebounce;
 
   Future<String> attachmentReadUrl(ChatAttachment attachment) async {
     final wsId = state.wsId;
@@ -194,6 +196,7 @@ class ChatCubit extends Cubit<ChatState> {
         state.copyWith(
           status: ChatStatus.loaded,
           conversations: _sortConversations(page.conversations),
+          canModerate: page.canModerate,
           selectedConversationId: selectedId,
           nextOffset: page.nextOffset,
           clearError: true,
@@ -259,6 +262,7 @@ class ChatCubit extends Cubit<ChatState> {
         state.copyWith(
           status: ChatStatus.loaded,
           conversations: _sortConversations(page.conversations),
+          canModerate: page.canModerate,
           selectedConversationId: selectedId,
           nextOffset: page.nextOffset,
           clearError: true,
@@ -639,6 +643,7 @@ class ChatCubit extends Cubit<ChatState> {
     OfflineMutationQueue.instance.pending.removeListener(_onQueueChanged);
     ++_loadToken;
     ++_searchRequestVersion;
+    _searchDebounce?.cancel();
     await _sendSubscription?.cancel();
     _inboxFallback?.cancel();
     _inboxFallback = null;

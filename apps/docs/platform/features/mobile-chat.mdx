@@ -18,12 +18,13 @@ The list matches web's sidebar grouping: pinned conversations first, then AI
 agents, channels, direct messages and groups, each in recency order. Rows show
 the latest message (prefixed with "You" or the sender's first name in shared
 conversations), the unread count and mute state. Opening a conversation clears
-its unread count locally while the read marker is sent. Search lists loaded
-conversations whose name matches and, once the query has two characters (web's
-minimum), messages from the workspace message search. The server has no
-conversation search: `GET .../chat/conversations` takes only `limit`, `offset`,
-`archived` and `scope`, and `/chat/search` returns messages only, so
-conversations not yet loaded on the device cannot match by name.
+its unread count locally while the read marker is sent. Search waits for a
+300ms pause and two characters (web's minimum), then asks the server for
+conversations matching by title or by another member's name or handle (see the
+Chat application's conversation search) and for messages. Until the
+conversation answer arrives, or when the server cannot answer, loaded
+conversations are matched by title. Opening a result the list has not loaded
+adds it to the list.
 
 Conversation pages load automatically when the remaining scroll distance falls
 below three quarters of the viewport, including when the first page cannot fill
@@ -47,11 +48,9 @@ through the idempotent desired-state request (`opId` and `present`); only the
 latest operation on a message may apply its reply or roll back, and a rollback
 restores just that emoji. Long press (secondary click on desktop) opens web's
 six quick reactions plus Reply, Copy text and, for the viewer's own messages,
-Delete. On web, members with `moderate_chat` may also delete other people's
-messages; mobile has no API that reports that permission (its workspace
-permission reader queries Supabase directly, which Chat does not use), so
-delete stays limited to the viewer's own messages until the conversation
-payload or a permissions route exposes it. Messages still waiting
+Delete. Moderators (the conversations route's `canModerate`) are also offered
+Delete on other members' messages in the workspace's own human conversations,
+with the same confirmation; the server enforces the permission on delete. Messages still waiting
 in the offline queue take no reactions, replies or deletion. Shared files
 render as rows that request a signed URL only when opened.
 
@@ -89,9 +88,12 @@ from the details sheet, is not toasted as well.
 
 While the viewer writes in a human conversation, mobile sends the room socket
 the same typing frame other clients render (`{t: 'typing', on}`): `on: true`
-on the first character, refreshed at most every three seconds while edits
-continue, and `on: false` after four idle seconds, an emptied field, a send or
-losing focus. Two typing frames are never less than a second apart; a change
+on the first character, refreshed every three seconds on a timer until typing
+ends (so a pause shorter than the idle limit never lets the indicator lapse),
+and `on: false` after four idle seconds, an emptied field, a send or
+losing focus. A frame that cannot go out (the room socket is
+reconnecting) is not counted as sent, so the next edit tries again. Two typing
+frames are never less than a second apart; a change
 wanted sooner waits and is coalesced with later edits, so quick type-and-clear
 or type-and-send cycles cost at most one frame a second. The room limits each
 socket to 20 client frames per 10 seconds (closing it beyond that) and
@@ -104,8 +106,8 @@ socket yet; it only renders it. Assistant conversations send nothing.
 Received typing applies to the open conversation only and is cleared when
 another conversation opens. Because a stop frame can be lost (the typist's app
 dies or goes offline, its socket is reconnecting, or the room's shared budget
-drops it), each typist expires five seconds after their last `on: true`, as on
-web, and a room presence frame reporting them offline or in the background
+drops it), each typist expires five seconds after their last `on: true`,
+which leaves room for a late refresh, and a room presence frame reporting them offline or in the background
 ends their typing at once.
 
 The room's `read.updated` event moves that member's read cursor forward
@@ -116,15 +118,21 @@ a direct conversation, Seen by N elsewhere, with up to three avatars and all
 reader names for screen readers. Web's native chat shows a static delivered
 mark rather than receipts.
 
+Bridged external chat messages show their decoded text as written, as web
+shows message text: it is never read as Markdown formatting, and its links
+stay tappable. Decoding is cached per message and content.
+
 Links in synced messages of server conversations get web's preview cards,
 read from the text as displayed (bridged external chat messages decode their
-HTML entities first, as on web): the same URL rule (http and https only, trailing punctuation removed, duplicates
+HTML character references first, as web does, with or without semicolons, up
+to three passes): the same URL rule (http and https only, trailing punctuation removed, duplicates
 dropped, at most five per message), a request to the conversation's
 `link-previews` route, and a card only for links the server resolved to a
 title or description. The route answers in request order, one preview per
 distinct link after dropping fragments, and a preview's URL may be where the
-link redirected, so previews pair with links by position. Cards show the site, title and description and open in
-the viewer's link browser choice; preview images are not shown, matching web
+link redirected, so previews pair with links by position when every link
+normalizes on the device and the counts agree, and by URL otherwise. Cards show the site, title and description and open only http(s)
+addresses, in the viewer's link browser choice; preview images are not shown, matching web
 and the route, which returns none. The device never fetches the linked pages
 itself. Previews are kept in memory for an hour, one request per message's
 link set is shared while in flight, and a failed request is not repeated for

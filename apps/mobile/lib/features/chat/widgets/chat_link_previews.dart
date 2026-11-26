@@ -34,20 +34,26 @@ String? _previewKey(String url) {
 /// Matches the preview route's answer to the requested [urls]. The route
 /// answers in request order, one preview per distinct normalized URL, and
 /// a preview's `url` may be where the link redirected, so previews pair by
-/// position; an answer of another length falls back to matching URLs.
+/// position. That holds only when every link normalizes here as it does on
+/// the server and the answer has one preview per link; otherwise previews
+/// pair by URL.
 Map<String, ChatLinkPreview> pairChatLinkPreviews(
   List<String> urls,
   List<ChatLinkPreview> previews,
 ) {
   final keys = <String>[];
   final urlsByKey = <String, List<String>>{};
+  var everyKeyKnown = true;
   for (final url in urls) {
     final key = _previewKey(url);
-    if (key == null) continue;
+    if (key == null) {
+      everyKeyKnown = false;
+      continue;
+    }
     if (!urlsByKey.containsKey(key)) keys.add(key);
     (urlsByKey[key] ??= []).add(url);
   }
-  if (previews.length == keys.length) {
+  if (everyKeyKnown && previews.length == keys.length) {
     return {
       for (var index = 0; index < keys.length; index++)
         for (final url in urlsByKey[keys[index]]!) url: previews[index],
@@ -163,7 +169,14 @@ class ChatLinkPreviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
     final colors = tokens.colorScheme;
-    final uri = Uri.tryParse(preview.url);
+    final parsed = Uri.tryParse(preview.url);
+    // The server resolves the link, but only a web address is opened.
+    final uri =
+        parsed != null &&
+            (parsed.scheme == 'https' || parsed.scheme == 'http') &&
+            parsed.host.isNotEmpty
+        ? parsed
+        : null;
     final site = _hasText(preview.siteName) ? preview.siteName! : uri?.host;
     final title = preview.title?.trim();
     final description = preview.description?.trim();

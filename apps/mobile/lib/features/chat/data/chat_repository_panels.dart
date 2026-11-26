@@ -134,6 +134,30 @@ extension ChatRepositoryPanels on ChatRepository {
         .toList(growable: false);
   }
 
+  /// Conversations the viewer can list whose title, or another member's
+  /// name or handle, contains [query]; the server matches case- and
+  /// accent-insensitively and needs at least two characters. Not cached:
+  /// results depend on the query.
+  Future<ChatConversationPage> searchConversations(
+    String wsId,
+    String query, {
+    ChatArchivedFilter archived = ChatArchivedFilter.active,
+    int limit = 20,
+  }) async {
+    final encoded = Uri(
+      queryParameters: {
+        'archived': archived.name,
+        'limit': '$limit',
+        'offset': '0',
+        'q': query,
+      },
+    ).query;
+    final response = await _apiClient.getJson(
+      '/api/v1/workspaces/$wsId/chat/conversations?$encoded',
+    );
+    return ChatConversationPage.fromJson(response);
+  }
+
   Future<List<ChatMessage>> searchMessages(String wsId, String query) async {
     final encoded = Uri(queryParameters: {'q': query}).query;
     final response = await _read(

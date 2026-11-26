@@ -5,7 +5,8 @@ import 'dart:async';
 /// A typist's `false` frame can be lost: the sender's app dies or goes
 /// offline, its socket is reconnecting, or the room's shared broadcast
 /// budget drops the frame. Each typist therefore expires [ttl] after their
-/// last `true`, as on web; senders refresh well inside it while typing.
+/// last `true`; senders refresh every three seconds while typing, so one
+/// refresh may be late or lost before the indicator lapses.
 /// The roster covers one conversation at a time and is cleared when it
 /// changes, so a typist never shows in another thread.
 class ChatTypingRoster {

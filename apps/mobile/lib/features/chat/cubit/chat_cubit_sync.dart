@@ -128,7 +128,7 @@ extension ChatCubitConversationRows on ChatCubit {
     final next = [...state.conversations];
     final index = next.indexWhere((item) => item.id == conversation.id);
     if (index >= 0) {
-      next[index] = conversation;
+      next[index] = _keepLatestReadCursors(next[index], conversation);
     } else {
       next.add(conversation);
     }

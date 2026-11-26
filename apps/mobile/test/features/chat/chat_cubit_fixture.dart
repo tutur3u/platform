@@ -92,11 +92,17 @@ class CubitFixtureRepository extends ChatRepository {
   }) async {
     final failure = conversationsFailure;
     if (failure != null) throw failure;
-    return ChatConversationPage(conversations: conversations);
+    return ChatConversationPage(
+      conversations: conversations,
+      canModerate: canModerate,
+    );
   }
 
   /// Fails `listConversations` with this error when set.
   Error? conversationsFailure;
+
+  /// The conversations route's moderation flag for the viewer.
+  bool canModerate = false;
 
   /// Server row count of a page; defaults to every returned message.
   int Function(List<ChatMessage> messages) serverCountOf = _allRows;

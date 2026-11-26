@@ -2,10 +2,10 @@ import 'dart:async';
 
 /// Turns composer edits into typing frames for one conversation room.
 ///
-/// The first keystroke sends `true`; while typing continues it is refreshed
-/// at most every [refreshAfter], so receivers that expire stale indicators
-/// keep showing it. [idleAfter] without an edit, an emptied field, a send or
-/// blur sends `false`.
+/// The first keystroke sends `true`; until typing ends it is refreshed every
+/// [refreshAfter] on a timer, so receivers that expire stale indicators keep
+/// showing it without a gap even while the typist pauses. [idleAfter]
+/// without an edit, an emptied field, a send or blur sends `false`.
 ///
 /// Two frames are never closer than [minGap]: a change wanted sooner waits
 /// for the gap and is coalesced with later edits, so typing, clearing and
@@ -14,10 +14,12 @@ import 'dart:async';
 /// typing and presence frames per 10 seconds for all members together;
 /// [minGap] keeps one typist to 10 frames in that window. [flush] (leaving
 /// the room or the foreground) sends a pending `false` at once, since the
-/// socket or app is going away.
+/// socket or app is going away. `send` reports whether the frame went out;
+/// one that did not (no socket while reconnecting) is not counted, so the
+/// next edit tries again.
 class ChatTypingPublisher {
   ChatTypingPublisher({
-    required void Function(bool typing) send,
+    required bool Function(bool typing) send,
     this.refreshAfter = const Duration(seconds: 3),
     this.idleAfter = const Duration(seconds: 4),
     this.minGap = const Duration(seconds: 1),
@@ -27,7 +29,7 @@ class ChatTypingPublisher {
        _now = now ?? DateTime.now,
        _timer = timer ?? Timer.new;
 
-  final void Function(bool typing) _send;
+  final bool Function(bool typing) _send;
   final Duration refreshAfter;
   final Duration idleAfter;
   final Duration minGap;
@@ -43,6 +45,7 @@ class ChatTypingPublisher {
   DateTime? _lastOnAt;
   Timer? _idle;
   Timer? _held;
+  Timer? _refresh;
   bool _disposed = false;
 
   /// Whether the last frame sent was `true`.
@@ -76,6 +79,8 @@ class ChatTypingPublisher {
     _idle = null;
     _held?.cancel();
     _held = null;
+    _refresh?.cancel();
+    _refresh = null;
     _wanted = false;
     if (_sent && !_disposed) _emit(false);
   }
@@ -113,10 +118,17 @@ class ChatTypingPublisher {
   }
 
   void _emit(bool on) {
+    _refresh?.cancel();
+    _refresh = null;
+    if (!_send(on)) return;
     final now = _now();
     _sent = on;
     _lastFrameAt = now;
-    if (on) _lastOnAt = now;
-    _send(on);
+    if (!on) return;
+    _lastOnAt = now;
+    _refresh = _timer(refreshAfter, () {
+      _refresh = null;
+      _sync();
+    });
   }
 }

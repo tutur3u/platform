@@ -195,12 +195,7 @@ class _ChatPageState extends State<_ChatActorHost> {
                     query: _searchController.text,
                     currentUserId: context.read<AuthCubit>().state.user?.id,
                     onSelect: (conversationId) {
-                      unawaited(
-                        _chatCubit.selectConversation(
-                          conversationId,
-                          forceRefresh: true,
-                        ),
-                      );
+                      unawaited(_chatCubit.openSearchResult(conversationId));
                       _closeSearch();
                     },
                   )
@@ -269,7 +264,7 @@ class _ChatPageState extends State<_ChatActorHost> {
 
   void _closeSearch() {
     _searchController.clear();
-    unawaited(_chatCubit.searchMessages(''));
+    _chatCubit.search('');
     setState(() => _searchVisible = false);
   }
 
@@ -311,7 +306,7 @@ class _ChatPageState extends State<_ChatActorHost> {
           searchHint: l10n.chatSearch,
           onSearchChanged: (query) {
             setState(() {});
-            unawaited(_chatCubit.searchMessages(query));
+            _chatCubit.search(query);
           },
           onCloseSearch: _closeSearch,
           onPressed: () {

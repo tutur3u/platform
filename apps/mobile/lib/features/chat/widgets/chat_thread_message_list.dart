@@ -14,6 +14,7 @@ class _MessageList extends StatefulWidget {
     required this.onLoadOlderMessages,
     required this.isMessageSynced,
     required this.linkPreviews,
+    required this.canDeleteOthers,
   });
 
   final ChatConversation conversation;
@@ -28,6 +29,7 @@ class _MessageList extends StatefulWidget {
   final VoidCallback? onLoadOlderMessages;
   final bool Function(String messageId) isMessageSynced;
   final ChatLinkPreviewStore? linkPreviews;
+  final bool canDeleteOthers;
 
   @override
   State<_MessageList> createState() => _MessageListState();
@@ -107,7 +109,11 @@ class _MessageListState extends State<_MessageList> {
         onReply: widget.onReply == null || pending
             ? null
             : () => widget.onReply!(message),
-        onDelete: !mine || pending || widget.onDeleteMessage == null
+        // Others' messages only for moderators; the server enforces it too.
+        onDelete:
+            (!mine && !widget.canDeleteOthers) ||
+                pending ||
+                widget.onDeleteMessage == null
             ? null
             : () => widget.onDeleteMessage!(message),
       ),

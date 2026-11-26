@@ -10,10 +10,15 @@ import {
 } from '@/lib/chat/agent-discovery';
 import { normalizeChatTimestamp } from '@/lib/chat/chat-timestamp';
 import {
+  matchesChatConversationQuery,
+  readChatConversationSearchQuery,
+} from '@/lib/chat/conversation-search';
+import {
   admitInitialAiSettings,
   initialAiSettingsSchema,
   validateInitialAiSettingsReceipt,
 } from '@/lib/chat/initial-ai-settings';
+import { canModerateChat } from '@/lib/chat/moderation';
 import {
   type ChatConversation,
   callPrivateChatRpc,
@@ -255,6 +260,25 @@ export const GET = withSessionAuth<RouteParams>(
     const scope =
       url.searchParams.get('scope') === 'external' ? 'external' : null;
     const pagination = readPagination(url);
+    const search = readChatConversationSearchQuery(url);
+    if (!search.ok) {
+      return NextResponse.json(
+        { code: search.code, message: search.message },
+        { status: 400 }
+      );
+    }
+    // Search covers the workspace's own conversations, not external ones.
+    if (search.query !== null && scope === 'external') {
+      return NextResponse.json(
+        {
+          code: 'chat_search_scope_unsupported',
+          message: 'Conversation search does not cover external chats.',
+        },
+        { status: 400 }
+      );
+    }
+    const searching = search.query !== null;
+    const paginate = pagination.isPaginated || searching;
 
     if (
       pagination.isPaginated &&
@@ -269,6 +293,12 @@ export const GET = withSessionAuth<RouteParams>(
       );
     }
 
+    // UI only: whether to offer deleting other members' messages.
+    const canModerate = canModerateChat({
+      actorUserId: auth.user.id,
+      wsId: context.context.normalizedWsId,
+    });
+
     try {
       if (scope === 'external') {
         const conversations = await listExternalChatConversations({
@@ -281,6 +311,7 @@ export const GET = withSessionAuth<RouteParams>(
         const hasNextPage = conversations.length > pagination.limit;
 
         return NextResponse.json({
+          canModerate: await canModerate,
           conversations: conversations.slice(0, pagination.limit),
           nextOffset: hasNextPage ? pagination.offset + pagination.limit : null,
         });
@@ -298,7 +329,9 @@ export const GET = withSessionAuth<RouteParams>(
         aiAgentExternalConversations,
         aiChatConversations,
       ] = await Promise.all([
-        pagination.isPaginated
+        // A search filters every conversation the viewer can list, so it
+        // reads the whole list; a page of recent ones may miss matches.
+        pagination.isPaginated && !searching
           ? listNativeConversationsByRecency({
               actorUserId: auth.user.id,
               archived,
@@ -337,9 +370,20 @@ export const GET = withSessionAuth<RouteParams>(
         ...aiAgentConversations,
         ...aiAgentExternalConversations,
         ...aiChatConversations,
-      ].sort(compareConversationsByRecency);
-      if (!pagination.isPaginated) {
+      ]
+        .filter(
+          (conversation) =>
+            search.query === null ||
+            matchesChatConversationQuery(
+              conversation,
+              search.query,
+              auth.user.id
+            )
+        )
+        .sort(compareConversationsByRecency);
+      if (!paginate) {
         return NextResponse.json({
+          canModerate: await canModerate,
           conversations: allConversations,
           nextOffset: null,
         });
@@ -347,6 +391,7 @@ export const GET = withSessionAuth<RouteParams>(
       const pageEnd = pagination.offset + pagination.limit;
       const hasNextPage = allConversations.length > pageEnd;
       return NextResponse.json({
+        canModerate: await canModerate,
         conversations: allConversations.slice(pagination.offset, pageEnd),
         nextOffset: hasNextPage ? pageEnd : null,
       });

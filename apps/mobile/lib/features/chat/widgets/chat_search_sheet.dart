@@ -1,8 +1,8 @@
 part of 'chat_sheets.dart';
 
-/// Search across the loaded conversations (by name) and the workspace's
-/// messages (server search), shown in place of the list while the shell
-/// search field is open.
+/// Search across the workspace's conversations (by title or member name)
+/// and messages, both answered by the server, shown in place of the list
+/// while the shell search field is open.
 class ChatSearchResults extends StatelessWidget {
   const ChatSearchResults({
     required this.state,
@@ -28,15 +28,18 @@ class ChatSearchResults extends StatelessWidget {
         message: l10n.chatSearchHint,
       );
     }
-    final conversations = state.conversations
-        .where(
-          (conversation) => conversation
-              .displayTitle(fallback: l10n.chatUntitled)
-              .toLowerCase()
-              .contains(needle),
-        )
-        .take(8)
-        .toList(growable: false);
+    // The server's matches (title or member names) once they arrive; the
+    // loaded list matched by title until then, or when it cannot answer.
+    final conversations =
+        (state.conversationSearchResults ??
+                state.conversations.where(
+                  (conversation) => conversation
+                      .displayTitle(fallback: l10n.chatUntitled)
+                      .toLowerCase()
+                      .contains(needle),
+                ))
+            .take(8)
+            .toList(growable: false);
     final messages = state.searchResults;
     if (conversations.isEmpty && messages.isEmpty) {
       return AppStateMessage(

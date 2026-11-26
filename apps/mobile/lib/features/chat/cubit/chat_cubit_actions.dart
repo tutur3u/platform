@@ -361,28 +361,6 @@ extension ChatCubitActions on ChatCubit {
     }
   }
 
-  Future<void> searchMessages(String query) async {
-    if (!_scopeActive) return;
-    final requestVersion = ++_searchRequestVersion;
-    final wsId = state.wsId;
-    if (wsId == null || query.trim().length < 2) {
-      _emitState(state.copyWith(searchResults: const []));
-      return;
-    }
-    try {
-      final messages = await _repository.searchMessages(wsId, query.trim());
-      if (_scopeActive &&
-          requestVersion == _searchRequestVersion &&
-          state.wsId == wsId) {
-        _emitState(state.copyWith(searchResults: messages));
-      }
-    } on ApiException catch (error) {
-      if (_scopeActive && requestVersion == _searchRequestVersion) {
-        _emitState(state.copyWith(error: error.message));
-      }
-    }
-  }
-
   Future<void> loadFriendRequests() async {
     if (!_scopeActive) return;
     final wsId = state.wsId;

@@ -36,6 +36,8 @@ class ChatState extends Equatable {
     this.isSending = false,
     this.isUploadingAttachment = false,
     this.canManageChat = false,
+    this.canModerate = false,
+    this.conversationSearchResults,
     this.replyToMessageId,
     this.hasOlderMessages = const {},
     this.loadingOlderConversationId,
@@ -66,6 +68,15 @@ class ChatState extends Equatable {
   final bool isUploadingAttachment;
   final bool canManageChat;
 
+  /// Whether the viewer may delete other members' messages in this
+  /// workspace's conversations, as the conversations route reports. The
+  /// server still enforces it on delete.
+  final bool canModerate;
+
+  /// The server's conversation matches for the open search, or null while
+  /// none have arrived (the loaded list is matched by name meanwhile).
+  final List<ChatConversation>? conversationSearchResults;
+
   /// Message the composer answers; sent as `replyToMessageId`.
   final String? replyToMessageId;
 
@@ -91,6 +102,19 @@ class ChatState extends Equatable {
       }
     }
     return null;
+  }
+
+  /// Whether the viewer may delete others' messages in the open thread:
+  /// they moderate this workspace and it is one of its server
+  /// conversations, which is what the delete route checks.
+  bool get canModerateSelected {
+    final conversation = selectedConversation;
+    return canModerate &&
+        conversation != null &&
+        conversation.wsId == wsId &&
+        conversation.type != ChatConversationType.ai &&
+        !conversation.isReadOnlyAgent &&
+        ChatCubit.isServerConversationId(conversation.id);
   }
 
   bool get selectedHasOlderMessages {
@@ -150,6 +174,8 @@ class ChatState extends Equatable {
     bool? isSending,
     bool? isUploadingAttachment,
     bool? canManageChat,
+    bool? canModerate,
+    Object? conversationSearchResults = _chatStateSentinel,
     Object? replyToMessageId = _chatStateSentinel,
     Map<String, bool>? hasOlderMessages,
     Object? loadingOlderConversationId = _chatStateSentinel,
@@ -192,6 +218,10 @@ class ChatState extends Equatable {
       isUploadingAttachment:
           isUploadingAttachment ?? this.isUploadingAttachment,
       canManageChat: canManageChat ?? this.canManageChat,
+      canModerate: canModerate ?? this.canModerate,
+      conversationSearchResults: conversationSearchResults == _chatStateSentinel
+          ? this.conversationSearchResults
+          : conversationSearchResults as List<ChatConversation>?,
       replyToMessageId: replyToMessageId == _chatStateSentinel
           ? this.replyToMessageId
           : replyToMessageId as String?,
@@ -233,6 +263,8 @@ class ChatState extends Equatable {
     isSending,
     isUploadingAttachment,
     canManageChat,
+    canModerate,
+    conversationSearchResults,
     replyToMessageId,
     hasOlderMessages,
     loadingOlderConversationId,

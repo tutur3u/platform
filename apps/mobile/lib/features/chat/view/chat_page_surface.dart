@@ -160,6 +160,7 @@ class _ThreadPane extends StatelessWidget {
             onLoadOlderMessages: () => unawaited(cubit.loadOlderMessages()),
             isMessageSynced: cubit.isMessageSynced,
             linkPreviews: cubit.linkPreviews,
+            canDeleteOthers: state.canModerateSelected,
             onRetry: () => unawaited(
               cubit.selectConversation(
                 state.selectedConversationId ?? '',

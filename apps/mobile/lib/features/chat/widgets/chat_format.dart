@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:html/parser.dart' as html;
 import 'package:intl/intl.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+import 'package:mobile/features/chat/widgets/chat_display_content.dart';
 import 'package:mobile/l10n/l10n.dart';
+
+export 'package:mobile/features/chat/widgets/chat_display_content.dart'
+    show chatMessageDisplayContent, chatMessageMarkdown;
 
 bool _sameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
@@ -77,25 +80,4 @@ String chatInitials(String name) {
   final first = parts.first.characters.first;
   final last = parts.length > 1 ? parts.last.characters.first : '';
   return (first + last).toUpperCase();
-}
-
-final _htmlEntity = RegExp(
-  '&(?:#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);',
-);
-
-/// Message text as web displays it: bridged external chat stores HTML
-/// entities, decoded here up to three passes as web does. Entities are
-/// decoded one at a time, so decoded `<` and `>` never become markup.
-String chatMessageDisplayContent(ChatMessage message) {
-  if (message.metadata['externalChat'] != true) return message.content;
-  var content = message.content;
-  for (var pass = 0; pass < 3; pass++) {
-    final decoded = content.replaceAllMapped(
-      _htmlEntity,
-      (match) => html.parseFragment(match[0]).text ?? match[0]!,
-    );
-    if (decoded == content) break;
-    content = decoded;
-  }
-  return content;
 }

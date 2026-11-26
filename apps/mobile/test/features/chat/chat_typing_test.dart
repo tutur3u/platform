@@ -65,12 +65,17 @@ void main() {
     late _Clock clock;
     late List<({bool on, DateTime at})> sent;
     late ChatTypingPublisher publisher;
+    var connected = true;
 
     setUp(() {
       clock = _Clock();
       sent = [];
+      connected = true;
       publisher = ChatTypingPublisher(
-        send: (on) => sent.add((on: on, at: clock.now)),
+        send: (on) {
+          if (connected) sent.add((on: on, at: clock.now));
+          return connected;
+        },
         now: () => clock.now,
         timer: clock.timer,
       );
@@ -107,9 +112,33 @@ void main() {
       publisher.onTextChanged('hel');
       expect(states(), [true, true]);
 
+      // The timed refresh at 6s lands before the idle stop at 7s.
       clock.advance(publisher.idleAfter);
-      expect(states(), [true, true, false]);
+      expect(states(), [true, true, true, false]);
       expect(publisher.isTyping, isFalse);
+    });
+
+    test('refreshes on time while the typist pauses', () {
+      publisher.onTextChanged('h');
+      clock.advance(const Duration(milliseconds: 3500));
+      // No keystroke since the first: the refresh still went out at 3s, so
+      // a receiver's expiry never lapses mid-thought.
+      expect(sent.map((frame) => frame.at.difference(sent.first.at)), [
+        Duration.zero,
+        publisher.refreshAfter,
+      ]);
+    });
+
+    test('a frame that could not be sent is tried again', () {
+      connected = false;
+      publisher.onTextChanged('h');
+      expect(publisher.isTyping, isFalse);
+
+      connected = true;
+      clock.advance(const Duration(milliseconds: 200));
+      publisher.onTextChanged('he');
+      expect(states(), [true]);
+      expect(publisher.isTyping, isTrue);
     });
 
     test('an emptied field ends typing once, after the frame gap', () {

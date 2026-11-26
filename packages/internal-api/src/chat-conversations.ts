@@ -1,5 +1,9 @@
 import { uploadAiChatFile } from './ai';
 import {
+  type ChatConversationPagePayload,
+  readChatConversationPage,
+} from './chat-conversation-pages';
+import {
   type ChatUploadUrlResponse,
   chatBasePath,
   uploadFileWithSignedUrl,
@@ -63,28 +67,19 @@ export async function listWorkspaceChatConversationsPage(
   options?: InternalApiClientOptions
 ): Promise<ChatConversationPage> {
   const client = getInternalApiClient(options);
-  const payload = await client.json<{
-    conversations: ChatConversation[];
-    nextOffset?: number | null;
-  }>(`${chatBasePath(workspaceId)}/conversations`, {
-    cache: 'no-store',
-    query: {
-      archived: params?.archived,
-      limit: params?.limit,
-      offset: params?.offset,
-      scope: params?.scope,
-    },
-  });
-  const conversations = (payload.conversations ?? []).filter(
-    (conversation): conversation is ChatConversation =>
-      Boolean(conversation?.id && conversation.type)
+  const payload = await client.json<ChatConversationPagePayload>(
+    `${chatBasePath(workspaceId)}/conversations`,
+    {
+      cache: 'no-store',
+      query: {
+        archived: params?.archived,
+        limit: params?.limit,
+        offset: params?.offset,
+        scope: params?.scope,
+      },
+    }
   );
-
-  return {
-    conversations,
-    nextOffset:
-      typeof payload.nextOffset === 'number' ? payload.nextOffset : null,
-  };
+  return readChatConversationPage(payload);
 }
 
 export async function createWorkspaceChatConversation(

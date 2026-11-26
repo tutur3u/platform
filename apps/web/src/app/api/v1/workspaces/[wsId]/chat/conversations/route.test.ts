@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     user: { id: 'user-1' },
   },
   callPrivateChatRpc: vi.fn(),
+  canModerateChat: vi.fn(),
   getPermissions: vi.fn(),
   listAiAgentExternalThreadConversations: vi.fn(),
   listAiChatConversations: vi.fn(),
@@ -40,6 +41,11 @@ vi.mock('@/lib/chat/agent-discovery', () => ({
   listRootAiAgentDiscoveryConversations: (
     ...args: Parameters<typeof mocks.listRootAiAgentDiscoveryConversations>
   ) => mocks.listRootAiAgentDiscoveryConversations(...args),
+}));
+
+vi.mock('@/lib/chat/moderation', () => ({
+  canModerateChat: (...args: Parameters<typeof mocks.canModerateChat>) =>
+    mocks.canModerateChat(...args),
 }));
 
 vi.mock('@/lib/chat/private-rpc', () => ({
@@ -115,6 +121,7 @@ describe('workspace chat conversations route', () => {
     vi.clearAllMocks();
     mockRouteContext();
     mocks.callPrivateChatRpc.mockResolvedValue([]);
+    mocks.canModerateChat.mockResolvedValue(false);
     mocks.getPermissions.mockResolvedValue({
       permissions: ['manage_workspace_secrets'],
       withoutPermission: () => false,
@@ -337,6 +344,7 @@ describe('workspace chat conversations route', () => {
     );
 
     await expect(response.json()).resolves.toEqual({
+      canModerate: false,
       conversations: [
         {
           id: 'external-conversation',

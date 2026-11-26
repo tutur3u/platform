@@ -1,7 +1,7 @@
 ---
 title: Chat
 description: Private-schema workspace messaging for direct messages, groups, channels, AI conversations, and Drive-backed attachments.
-updatedAt: "2026-11-20"
+updatedAt: "2026-11-26"
 audience: users
 ---
 
@@ -108,6 +108,29 @@ The chat permission set is:
 
 Member defaults include `view_chat` and `create_chat`. The dashboard navigation
 should hide or disable Chat when `view_chat` is missing.
+
+`GET /api/v1/workspaces/:wsId/chat/conversations` returns `canModerate`: whether
+the viewer holds `moderate_chat` in that workspace, from the same
+`public.has_workspace_permission` check `private.chat_delete_message` applies
+to other members' messages. Clients use it only to offer deleting others'
+messages in the workspace's own conversations; the delete RPC still enforces
+it, and a failed check reports `false`. Regression coverage:
+`route.search.test.ts` and `lib/chat/moderation.test.ts` in `apps/web`.
+
+## Conversation Search
+
+The same route searches conversations when `q` is set
+(`searchWorkspaceChatConversations` in `@tuturuuu/internal-api`). It matches the
+conversation title and the display names and handles of members other than the
+viewer, ignoring case and accents (Vietnamese `đ` included), and needs two to 100
+characters; shorter or longer queries are rejected with `400`. It filters the
+viewer's own listing (the actor-scoped `chat_list_conversations` RPC plus the AI
+sources the list already merges), so it cannot return a conversation the viewer
+could not list; results are newest first and paginate with `limit` and
+`offset`. External chat (`scope=external`) is not searchable. The search reads
+the viewer's whole listing before filtering, which suits conversation counts
+that fit one listing. Regression coverage: `route.search.test.ts` and
+`lib/chat/conversation-search.test.ts`.
 
 ## AI Conversations
 

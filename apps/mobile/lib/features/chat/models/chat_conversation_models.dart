@@ -140,7 +140,11 @@ class ChatConversation extends Equatable {
 }
 
 class ChatConversationPage extends Equatable {
-  const ChatConversationPage({required this.conversations, this.nextOffset});
+  const ChatConversationPage({
+    required this.conversations,
+    this.nextOffset,
+    this.canModerate = false,
+  });
 
   factory ChatConversationPage.fromJson(Map<String, dynamic> json) {
     return ChatConversationPage(
@@ -149,12 +153,17 @@ class ChatConversationPage extends Equatable {
         ChatConversation.fromJson,
       ),
       nextOffset: _intFromJson(json['nextOffset'] ?? json['next_offset']),
+      canModerate: json['canModerate'] == true,
     );
   }
 
   final List<ChatConversation> conversations;
   final int? nextOffset;
 
+  /// Whether the viewer may delete other members' messages in the
+  /// workspace's conversations. Only decides whether to offer the action.
+  final bool canModerate;
+
   @override
-  List<Object?> get props => [conversations, nextOffset];
+  List<Object?> get props => [conversations, nextOffset, canModerate];
 }
