@@ -1,5 +1,7 @@
 import 'server-only';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { workspaceTierRank } from './feature-tier-policy';
+
 export class MeetClassroomPolicyError extends Error {
   constructor(
     public status: number,
@@ -16,7 +18,7 @@ export const STAFF_CLASSROOM_PARTICIPANT_CAP = 100;
 export function classroomParticipantCap(tier: string) {
   return tier === 'ENTERPRISE'
     ? 100
-    : tier === 'PLUS' || tier === 'PRO'
+    : workspaceTierRank(tier) >= workspaceTierRank('PLUS')
       ? 50
       : 10;
 }

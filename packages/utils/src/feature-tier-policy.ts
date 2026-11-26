@@ -1,4 +1,17 @@
 import type { WorkspaceProductTier } from '@tuturuuu/types/db';
+export const WORKSPACE_TIER_ORDER = [
+  'FREE',
+  'PLUS',
+  'PRO',
+  'MAX',
+  'ULTRA',
+  'ENTERPRISE',
+] as const satisfies readonly WorkspaceProductTier[];
+
+export function workspaceTierRank(tier: string | null | undefined) {
+  return WORKSPACE_TIER_ORDER.findIndex((entry) => entry === tier);
+}
+
 export const FEATURE_TIERS = {
   // FREE tier features
   dashboard: 'FREE',

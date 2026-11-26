@@ -1,16 +1,8 @@
+import { WORKSPACE_TIER_ORDER } from '@tuturuuu/utils/feature-tier-policy';
 import type { Product } from '@tuturuuu/payment/polar';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 
 type PolarMetadata = Product['metadata'];
-
-const VALID_TIERS: WorkspaceProductTier[] = [
-  'FREE',
-  'PLUS',
-  'PRO',
-  'MAX',
-  'ULTRA',
-  'ENTERPRISE',
-];
 
 function parsePositiveInteger(value: unknown): number | null {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -38,9 +30,7 @@ export function parseWorkspaceProductTier(
   }
 
   const tierValue = tierRaw.trim().toUpperCase();
-  return VALID_TIERS.includes(tierValue as WorkspaceProductTier)
-    ? (tierValue as WorkspaceProductTier)
-    : null;
+  return WORKSPACE_TIER_ORDER.find((tier) => tier === tierValue) ?? null;
 }
 
 export function isAiCreditPackProduct(metadata: PolarMetadata): boolean {

@@ -1,5 +1,6 @@
 'use client';
 
+import { workspaceTierRank } from '@tuturuuu/utils/feature-tier-policy';
 import { useQuery } from '@tanstack/react-query';
 import {
   Archive,
@@ -176,12 +177,12 @@ export function NavLink({
   // Get the badge tier for dialog display
   const getBadgeTier = () => {
     if (!link.requiredWorkspaceTier) return null;
-    const tiers = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'] as const;
     const requiredTiers = Array.isArray(link.requiredWorkspaceTier.requiredTier)
       ? link.requiredWorkspaceTier.requiredTier
       : [link.requiredWorkspaceTier.requiredTier];
     return requiredTiers.reduce(
-      (min, tier) => (tiers.indexOf(tier) < tiers.indexOf(min) ? tier : min),
+      (min, tier) =>
+        workspaceTierRank(tier) < workspaceTierRank(min) ? tier : min,
       requiredTiers[0]!
     );
   };

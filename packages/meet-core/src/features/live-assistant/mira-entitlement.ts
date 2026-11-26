@@ -8,7 +8,13 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 export type MiraPayer = 'tuturuuu' | 'account';
 
 /** Same paid personal tiers that may host Meet (`canVerifiedAccountHostMeeting`). */
-export const MIRA_PAID_TIERS = ['PLUS', 'PRO', 'ENTERPRISE'] as const;
+export const MIRA_PAID_TIERS = [
+  'PLUS',
+  'PRO',
+  'MAX',
+  'ULTRA',
+  'ENTERPRISE',
+] as const;
 
 /** Exact-value opt-in shared with Meet hosting; anything else keeps paid tiers off. */
 export function isMiraPaidTierEnabled(value: unknown) {

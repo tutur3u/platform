@@ -25,3 +25,18 @@ describe('plan change direction', () => {
     ).toBe(false);
   });
 });
+
+it('ranks Max and Ultra by capabilities rather than comparing unlike amounts', () => {
+  expect(
+    isPlanUpgrade(
+      { tier: 'PRO', amount: 20_000 },
+      { tier: 'MAX', amount: 10_000 }
+    )
+  ).toBe(true);
+  expect(
+    isPlanUpgrade(
+      { tier: 'ULTRA', amount: 20_000 },
+      { tier: 'MAX', amount: 100_000 }
+    )
+  ).toBe(false);
+});

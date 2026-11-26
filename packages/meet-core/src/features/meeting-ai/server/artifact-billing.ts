@@ -1,3 +1,4 @@
+import { WORKSPACE_TIER_ORDER } from '@tuturuuu/utils/feature-tier-policy';
 import { meetingProviderTransport } from './provider-transport';
 import 'server-only';
 import { generateMeetArtifact } from '@tuturuuu/ai/meetings/gemini';
@@ -48,10 +49,7 @@ export async function generateBilledMeetArtifact(
   const { data: allocation, error } = await db
     .from('ai_credit_plan_allocations')
     .select('markup_multiplier')
-    .eq(
-      'tier',
-      z.enum(['FREE', 'PLUS', 'PRO', 'ENTERPRISE']).parse(allowance.tier)
-    )
+    .eq('tier', z.enum(WORKSPACE_TIER_ORDER).parse(allowance.tier))
     .eq('is_active', true)
     .single();
   const markup = Number(allocation?.markup_multiplier);

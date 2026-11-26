@@ -4,15 +4,10 @@ import type {
   WorkspaceUpgradeOptions,
 } from '@tuturuuu/internal-api';
 
-const TIER_RANK: Record<string, number> = {
-  ENTERPRISE: 3,
-  FREE: 0,
-  PLUS: 1,
-  PRO: 2,
-};
+import { workspaceTierRank } from '@tuturuuu/utils/feature-tier-policy';
 
 export const tierRank = (tier: string | null | undefined) =>
-  TIER_RANK[tier ?? 'FREE'] ?? 0;
+  Math.max(0, workspaceTierRank(tier));
 
 /** "Tuturuuu Workspace Plus Monthly" reads as "Plus". */
 export function simplePlanName(name: string) {

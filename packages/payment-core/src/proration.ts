@@ -1,3 +1,5 @@
+import { workspaceTierRank } from '@tuturuuu/utils/feature-tier-policy';
+
 /**
  * Response shape for a subscription plan-change proration preview.
  * Shared between the payment API route that computes it and the billing UI
@@ -37,9 +39,8 @@ export function isPlanUpgrade(
   current: { tier: string | null; amount: number },
   target: { tier: string | null; amount: number }
 ): boolean {
-  const tiers = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'];
-  const before = tiers.indexOf(current.tier ?? '');
-  const after = tiers.indexOf(target.tier ?? '');
+  const before = workspaceTierRank(current.tier);
+  const after = workspaceTierRank(target.tier);
   return before >= 0 && after >= 0 && before !== after
     ? after > before
     : target.amount > current.amount;

@@ -2,14 +2,19 @@ import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
 import { extractTierFromSubscriptions } from './workspace-helper';
+import { workspaceTierRank } from './feature-tier-policy';
+
 export class MeetDurationError extends Error {
   readonly status = 503;
 }
 
 export function meetingDurationSeconds(tier: string) {
   return (
-    (tier === 'PLUS' ? 10 : tier === 'PRO' || tier === 'ENTERPRISE' ? 24 : 2) *
-    3600
+    (tier === 'PLUS'
+      ? 10
+      : workspaceTierRank(tier) >= workspaceTierRank('PRO')
+        ? 24
+        : 2) * 3600
   );
 }
 
