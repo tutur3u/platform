@@ -7,6 +7,11 @@ const { imports, deleteMock, meetingMock } = vi.hoisted(() => ({
   meetingMock: vi.fn(),
 }));
 
+const invalidateHost = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/utils/meet-guest-host-cache', () => ({
+  invalidateMeetGuestHostCache: invalidateHost,
+}));
+
 vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: async () => ({
     ok: true,
@@ -74,6 +79,7 @@ function call() {
 it('deletes a meeting and erases its Mira evidence while attendance storage is unavailable', async () => {
   const response = await call();
   expect(response.status).toBe(200);
+  expect(invalidateHost).toHaveBeenCalledWith(MEETING);
   expect(deleteMock).toHaveBeenCalledOnce();
   expect(deleteMock).toHaveBeenCalledWith(
     'private',
@@ -115,6 +121,7 @@ it('does not treat a meeting lookup error as a missing meeting', async () => {
   });
   const response = await call();
   expect(response.status).toBe(500);
+  expect(invalidateHost).not.toHaveBeenCalled();
   expect(deleteMock).not.toHaveBeenCalled();
   expect(imports.count).toBe(0);
 });

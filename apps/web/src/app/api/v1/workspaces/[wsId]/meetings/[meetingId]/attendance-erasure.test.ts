@@ -19,6 +19,11 @@ const {
   meetingMock: vi.fn(),
 }));
 
+const invalidateHost = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/utils/meet-guest-host-cache', () => ({
+  invalidateMeetGuestHostCache: invalidateHost,
+}));
+
 vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: async () => ({
     ok: true,
@@ -121,6 +126,7 @@ it('erases the room copy only after the meeting row is deleted', async () => {
   });
   const response = await call();
   expect(response.status).toBe(200);
+  expect(invalidateHost).toHaveBeenCalledWith(MEETING);
   expect(order).toEqual(['prepare', 'delete', 'enqueue']);
   expect(deleteMock).not.toHaveBeenCalled();
 
@@ -140,6 +146,7 @@ it('does not delete the meeting when planning erasure fails', async () => {
   prepareMock.mockRejectedValue(new Error('timeout'));
   const response = await call();
   expect(response.status).toBe(500);
+  expect(invalidateHost).not.toHaveBeenCalled();
   expect(deleteMock).not.toHaveBeenCalled();
   expect(rpcMock).not.toHaveBeenCalled();
 });
@@ -149,6 +156,7 @@ it('deletes the meeting while attendance is off without calling erasure', async 
   prepareMock.mockRejectedValue(new Error('missing migration'));
   const response = await call();
   expect(response.status).toBe(200);
+  expect(invalidateHost).toHaveBeenCalledWith(MEETING);
   // Only the Mira erase-and-delete function runs, never an attendance step.
   expect(rpcMock).toHaveBeenCalledOnce();
   expect(rpcMock).toHaveBeenCalledWith('delete_meeting_erasing_mira', {
@@ -195,6 +203,7 @@ it('treats a meeting lookup error as a failure instead of a missing meeting', as
   });
   const response = await call();
   expect(response.status).toBe(500);
+  expect(invalidateHost).not.toHaveBeenCalled();
   expect(readPendingMock).not.toHaveBeenCalled();
   expect(enqueueMock).not.toHaveBeenCalled();
   expect(deleteMock).not.toHaveBeenCalled();
