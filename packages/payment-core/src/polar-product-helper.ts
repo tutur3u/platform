@@ -7,6 +7,7 @@ import {
   parseCreditPackTokens,
   parseWorkspaceProductTier,
 } from './polar-product-metadata';
+import { isStagedWorkspaceCatalogProduct } from './workspace-catalog';
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 
@@ -173,6 +174,7 @@ export async function syncProductToDatabase(
   supabase: TypedSupabaseClient,
   product: Product
 ) {
+  if (isStagedWorkspaceCatalogProduct(product)) return null;
   // Domain add-ons are not plans or credit packs; their entitlement comes
   // from subscriptions (private.workspace_domain_addons).
   if (isCustomDomainAddonProduct(product.metadata)) return null;

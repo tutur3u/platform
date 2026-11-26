@@ -149,6 +149,25 @@ export function publicWorkspaceReferenceRates(
   };
 }
 
+export function isStagedWorkspaceCatalogProduct(product: {
+  visibility: string;
+  recurringInterval: string | null;
+  metadata: Readonly<Record<string, unknown>>;
+}) {
+  if (workspaceCatalogConfig.enabled || product.visibility !== 'private')
+    return false;
+  const { catalog_key, catalog_version, product_tier } = product.metadata;
+  return (
+    catalog_version === WORKSPACE_CATALOG_VERSION &&
+    workspaceCatalogOffers().some(
+      (offer) =>
+        offer.key === catalog_key &&
+        offer.term === product.recurringInterval &&
+        offer.tier.toUpperCase() === product_tier
+    )
+  );
+}
+
 export function isReservedWorkspaceCatalogProduct(productId: string) {
   return (
     workspaceCatalogConfig.approved?.bindings.some(

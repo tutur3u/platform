@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { publicVersionedWorkspacePrices } from './public-prices';
 import { isSelfServeWorkspaceProduct } from './self-serve-products';
 import {
+  isStagedWorkspaceCatalogProduct,
   publicWorkspaceReferenceRates,
   selectWorkspaceCatalog,
   WORKSPACE_CATALOG_VERSION,
@@ -111,4 +112,26 @@ it('publishes only display fields from a separately approved rate revision', () 
       },
     ],
   });
+});
+
+it('keeps only matching private staged products out of the legacy projection', () => {
+  const product = {
+    visibility: 'private',
+    recurringInterval: 'year',
+    metadata: {
+      catalog_version: WORKSPACE_CATALOG_VERSION,
+      catalog_key: 'max-year-usd',
+      product_tier: 'MAX',
+    },
+  };
+  expect(isStagedWorkspaceCatalogProduct(product)).toBe(true);
+  expect(
+    isStagedWorkspaceCatalogProduct({ ...product, visibility: 'public' })
+  ).toBe(false);
+  expect(
+    isStagedWorkspaceCatalogProduct({
+      ...product,
+      metadata: { ...product.metadata, product_tier: 'PRO' },
+    })
+  ).toBe(false);
 });
