@@ -1,40 +1,6 @@
-/**
- * Speculation Rules shared by every app on the apex origin.
- *
- * Only app-launcher links (`a[data-app-slug]`) for another app that open in
- * the same tab are prefetched, and only on `moderate` eagerness (hover or pointer down), so a
- * prefetch is one Worker request for a navigation the user is about to make.
- * Routes with side effects or credentials in flight are never prefetched.
- *
- * The text is a constant so the Trusted Types `createScript` policy can allow
- * exactly this script body if a head script is re-inserted on the client.
- */
-export const SPECULATION_RULES = {
-  prefetch: [
-    {
-      source: 'document',
-      eagerness: 'moderate',
-      where: {
-        and: [
-          {
-            selector_matches:
-              'a[data-app-slug]:not([target]):not([data-current])',
-          },
-          { href_matches: '/*' },
-          { not: { href_matches: '/api/*' } },
-          { not: { href_matches: '/*/api/*' } },
-          { not: { href_matches: '/*/_serverFn/*' } },
-          { not: { href_matches: '/*logout*' } },
-          { not: { href_matches: '/*login*' } },
-          { not: { href_matches: '/*verify-token*' } },
-          { not: { href_matches: '/*auth/callback*' } },
-        ],
-      },
-    },
-  ],
-} as const;
-
-export const SPECULATION_RULES_TEXT = JSON.stringify(SPECULATION_RULES);
+// The rules live in csp.ts, which Node loads with native type stripping and
+// therefore keeps free of relative imports; this module re-exports them.
+export { SPECULATION_RULES, SPECULATION_RULES_TEXT } from './csp';
 
 const PREFETCH_PURPOSE = /(^|[\s,;])prefetch([\s,;]|$)/iu;
 
