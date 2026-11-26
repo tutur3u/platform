@@ -4231,7 +4231,8 @@
         "title": "Hạn mức theo gói",
         "transcription": "Phút âm thanh được chép lời",
         "voice": "Phút thoại Mira riêng tư"
-      }
+      },
+      "workspaceSeatPlan": "Gói không gian làm việc tính theo chỗ ngồi"
     },
     "problem": {
       "day": {

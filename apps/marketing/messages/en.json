@@ -4231,7 +4231,8 @@
         "title": "Plan allowances",
         "transcription": "Transcribed audio minutes",
         "voice": "Private Mira voice minutes"
-      }
+      },
+      "workspaceSeatPlan": "Seat-based workspace plan"
     },
     "problem": {
       "day": {
