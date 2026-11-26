@@ -4068,6 +4068,19 @@
       "title": "Bớt thời gian vận hành cuộc sống. Thêm thời gian để sống."
     },
     "pricing": {
+      "versionedComparison": {
+        "title": "Hạn mức theo gói",
+        "feature": "Hạn mức",
+        "credits": "Tín dụng AI",
+        "voice": "Phút thoại Mira riêng tư",
+        "boards": "Bảng công việc mỗi không gian",
+        "storage": "Dung lượng Drive (GiB)",
+        "meetings": "Phút tham gia họp",
+        "transcription": "Phút âm thanh được chép lời",
+        "forms": "Lượt phản hồi biểu mẫu",
+        "automation": "Lượt tự động hóa tiêu chuẩn",
+        "allowance": "Hạn mức sử dụng được đặt lại hằng tháng, kể cả với gói năm. Hạn mức trả phí và dung lượng được cộng gộp theo số chỗ khi áp dụng. AI miễn phí tính theo từng người. Thoại cũng dùng tín dụng AI. Không tự động tính phí vượt mức."
+      },
       "compare": "So sánh tất cả tính năng",
       "eyebrow": "Bảng giá",
       "faq": {

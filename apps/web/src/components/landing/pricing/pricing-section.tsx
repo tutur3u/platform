@@ -225,7 +225,7 @@ export function PricingSection() {
             {priceNotice}
           </p>
         )}
-        <FeatureMatrix />
+        <FeatureMatrix versioned={Boolean(prices?.max && prices?.ultra)} />
       </Reveal>
 
       {/* Usage-based add-ons */}
