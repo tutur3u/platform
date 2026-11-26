@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   EXPECTED_ANDROID_PACKAGE_NAME,
   EXPECTED_IOS_BUNDLE_ID,
+  EXPECTED_IOS_WATCH_BUNDLE_ID,
+  EXPECTED_IOS_WATCH_WIDGETS_BUNDLE_ID,
 } from './constants';
 import {
   assertMobileDeploymentEnvKey,
+  assertMobileDeploymentFileKind,
   MobileDeploymentValidationError,
   normalizeEnvEntry,
   parseEnvFile,
@@ -105,5 +108,77 @@ describe('mobile deployment validation', () => {
     expect(() =>
       validateFileArtifact('ios_google_service_info_plist', payload)
     ).not.toThrow();
+  });
+
+  it('accepts and validates Apple Watch and Watch Widgets provisioning profiles with exact bundle ID matching', () => {
+    expect(
+      assertMobileDeploymentFileKind(
+        'apple_watch_app_store_provisioning_profile'
+      )
+    ).toBe('apple_watch_app_store_provisioning_profile');
+    expect(
+      assertMobileDeploymentFileKind(
+        'apple_watch_widgets_app_store_provisioning_profile'
+      )
+    ).toBe('apple_watch_widgets_app_store_provisioning_profile');
+
+    const encodeProfile = (bundleId: string) =>
+      new TextEncoder().encode(
+        `<plist><dict><key>Entitlements</key><dict>\n\t<key>application-identifier</key>\n\t<string>TEAM123456.${bundleId}</string>\n</dict></dict></plist>`
+      );
+
+    const iosProfile = encodeProfile(EXPECTED_IOS_BUNDLE_ID);
+    const watchProfile = encodeProfile(EXPECTED_IOS_WATCH_BUNDLE_ID);
+    const widgetsProfile = encodeProfile(EXPECTED_IOS_WATCH_WIDGETS_BUNDLE_ID);
+
+    expect(() =>
+      validateFileArtifact('apple_app_store_provisioning_profile', iosProfile)
+    ).not.toThrow();
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_app_store_provisioning_profile',
+        watchProfile
+      )
+    ).not.toThrow();
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_widgets_app_store_provisioning_profile',
+        widgetsProfile
+      )
+    ).not.toThrow();
+
+    expect(() =>
+      validateFileArtifact('apple_app_store_provisioning_profile', watchProfile)
+    ).toThrow(MobileDeploymentValidationError);
+    expect(() =>
+      validateFileArtifact(
+        'apple_app_store_provisioning_profile',
+        widgetsProfile
+      )
+    ).toThrow(MobileDeploymentValidationError);
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_app_store_provisioning_profile',
+        widgetsProfile
+      )
+    ).toThrow(MobileDeploymentValidationError);
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_app_store_provisioning_profile',
+        iosProfile
+      )
+    ).toThrow(MobileDeploymentValidationError);
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_widgets_app_store_provisioning_profile',
+        watchProfile
+      )
+    ).toThrow(MobileDeploymentValidationError);
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_widgets_app_store_provisioning_profile',
+        iosProfile
+      )
+    ).toThrow(MobileDeploymentValidationError);
   });
 });

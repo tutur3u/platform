@@ -303,13 +303,10 @@ function evaluateVersionReadiness(
   secrets: MobileDeploymentSecretValueRow[],
   files: MobileDeploymentFileArtifactRow[]
 ) {
-  if (!version) {
-    return ['No version exists'];
-  }
+  if (!version) return ['No version exists'];
 
   const errors: string[] = [];
-  const envCount = secrets.filter((row) => row.kind === 'env').length;
-  if (envCount === 0) {
+  if (!secrets.some((row) => row.kind === 'env')) {
     errors.push('No build secrets are configured');
   }
 
@@ -321,9 +318,7 @@ function evaluateVersionReadiness(
   const fileKinds = new Map(files.map((row) => [row.kind, row]));
 
   for (const scalar of [...ANDROID_REQUIRED_SCALARS, ...IOS_REQUIRED_SCALARS]) {
-    if (!scalarNames.has(scalar)) {
-      errors.push(`${scalar} is missing`);
-    }
+    if (!scalarNames.has(scalar)) errors.push(`${scalar} is missing`);
   }
 
   const requiredFileSet = new Set<MobileDeploymentFileKind>([
@@ -333,14 +328,22 @@ function evaluateVersionReadiness(
   for (const fileKind of MOBILE_DEPLOYMENT_FILE_KINDS) {
     const file = fileKinds.get(fileKind);
     if (!file) {
-      if (requiredFileSet.has(fileKind)) {
+      if (requiredFileSet.has(fileKind))
         errors.push(`${FILE_KIND_LABELS[fileKind]} is missing`);
-      }
       continue;
     }
     if (file.validation_status !== 'valid') {
       errors.push(...file.validation_errors.map((e) => `${fileKind}: ${e}`));
     }
+  }
+
+  const watchCount = IOS_OPTIONAL_FILE_KINDS.filter((k) =>
+    fileKinds.has(k)
+  ).length;
+  if (watchCount > 0 && watchCount < IOS_OPTIONAL_FILE_KINDS.length) {
+    errors.push(
+      'Apple Watch provisioning profiles must be uploaded as a pair (app and widgets)'
+    );
   }
 
   return errors;

@@ -337,13 +337,20 @@ function validateAppStoreConnectPrivateKey(buffer: Uint8Array) {
   }
 }
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function validateProvisioningProfile(
   buffer: Uint8Array,
   expectedBundleId: string = EXPECTED_IOS_BUNDLE_ID
 ) {
   const text = new TextDecoder().decode(buffer);
+  const pattern = new RegExp(
+    `<key>application-identifier</key>\\s*<string>[A-Za-z0-9]+\\.${escapeRegExp(expectedBundleId)}</string>`
+  );
 
-  if (!text.includes(expectedBundleId) || !text.includes('Entitlements')) {
+  if (!text.includes('Entitlements') || !pattern.test(text)) {
     throw new MobileDeploymentValidationError(
       `Provisioning profile must include ${expectedBundleId} entitlements`
     );

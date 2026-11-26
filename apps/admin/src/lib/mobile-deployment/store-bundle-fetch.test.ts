@@ -375,4 +375,32 @@ describe('mobile deployment bundle fetch audit behavior', () => {
         .apple_watch_widgets_app_store_provisioning_profile
     ).toBe('file-apple_watch_widgets_app_store_provisioning_profile');
   });
+
+  it('flags readiness error when only one of the two Apple Watch provisioning profiles is uploaded', async () => {
+    seedActiveVersion();
+    const kind = 'apple_watch_app_store_provisioning_profile' as const;
+    const plaintext = Buffer.from(`synthetic-profile-${kind}`);
+    const ciphertext = encryptBytes(plaintext, fx.activeKey);
+    const path = `${MOBILE_DEPLOYMENT_DRIVE_PREFIX}/v-active/${kind}.ciphertext.json`;
+    fx.objects.set(path, ciphertext);
+    fx.db.tables.mobile_deployment_file_artifacts.push({
+      ciphertext_sha256: sha256Hex(ciphertext),
+      content_type: 'application/octet-stream',
+      filename: `${kind}.mobileprovision`,
+      id: `file-${kind}`,
+      kind,
+      plaintext_sha256: sha256Hex(plaintext),
+      plaintext_size: plaintext.byteLength,
+      storage_path: path,
+      storage_provider: 'r2',
+      validation_errors: [],
+      validation_status: 'valid',
+      version_id: 'v-active',
+    });
+
+    const state = await listMobileDeploymentState(fx.db as never);
+    expect(state.activeVersion?.readinessErrors).toContain(
+      'Apple Watch provisioning profiles must be uploaded as a pair (app and widgets)'
+    );
+  });
 });
