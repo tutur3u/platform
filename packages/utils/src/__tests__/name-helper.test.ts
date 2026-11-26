@@ -3,6 +3,7 @@ import {
   generateFunName,
   getAvatarPlaceholder,
   getInitials,
+  splitGraphemes,
 } from '../name-helper';
 
 describe('Name Helper', () => {
@@ -16,6 +17,22 @@ describe('Name Helper', () => {
       expect(getInitials('[QA] meet-g5-live 1', { firstTwoWords: true })).toBe(
         'QM'
       );
+    });
+
+    it('never splits an emoji, a combining mark or a Vietnamese letter', () => {
+      expect(getInitials('Minh 🎨')).toBe('M');
+      expect(getInitials('Minh 🎨', { firstTwoWords: true })).toBe('M');
+      expect(getInitials('🎨🎨')).toBe('🎨');
+      // "Ñu" and "Ân" written with combining marks.
+      expect(getInitials('N\u0303u A\u0302n')).toBe('N\u0303A\u0302');
+      expect(getInitials('Đặng Ánh')).toBe('ĐÁ');
+      expect(getInitials('ơn ước', { firstTwoWords: true })).toBe('ƠƯ');
+    });
+
+    it('splits text into the characters a reader sees', () => {
+      expect(splitGraphemes('M🎨')).toEqual(['M', '🎨']);
+      expect(splitGraphemes('👩‍👩‍👧')).toHaveLength(1);
+      expect(splitGraphemes('e\u0301')).toEqual(['e\u0301']);
     });
 
     it('uses the first non-space character when the name has no letters', () => {

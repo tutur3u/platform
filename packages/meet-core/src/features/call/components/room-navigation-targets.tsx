@@ -8,15 +8,9 @@ import type {
   NavigationPerson,
   NavigationTargets,
 } from '../hooks/use-room-navigation';
+import { personInitials } from '../lib/person-initials';
 
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const letters =
-    parts.length > 1
-      ? `${parts[0]![0]}${parts.at(-1)![0]}`
-      : (parts[0]?.slice(0, 2) ?? '?');
-  return letters.toLocaleUpperCase();
-}
+const initials = (name: string) => personInitials(name);
 
 /** Selection for Follow and Summon: everyone, or a set of people. */
 export function useTargetSelection(people: readonly NavigationPerson[]) {

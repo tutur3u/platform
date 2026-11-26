@@ -17,6 +17,7 @@ import {
   filterDevicesByKind,
   isAudioOutputSelectionSupported,
 } from '../lib/lobby-media';
+import { personInitial } from '../lib/person-initials';
 
 export interface LobbyParticipant {
   userId: string;
@@ -224,7 +225,7 @@ export function LobbyParticipantSummary({
           >
             <AvatarImage alt="" src={person.avatarUrl} />
             <AvatarFallback className="font-medium text-xs">
-              {person.displayName.trim().slice(0, 1).toUpperCase() || '?'}
+              {personInitial(person.displayName)}
             </AvatarFallback>
           </Avatar>
         ))}

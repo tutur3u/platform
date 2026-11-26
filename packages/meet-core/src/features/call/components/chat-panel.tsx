@@ -40,6 +40,7 @@ import {
   type MiraSlashCommand,
   miraSlashCommandDraft,
 } from '../lib/mira-slash-commands';
+import { personInitial } from '../lib/person-initials';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
 import { AskMiraMenu } from './ask-mira-menu';
 import { AssistantPrivateReview } from './assistant-private-review';
@@ -355,7 +356,7 @@ export function ChatPanel({
                   <Avatar className="mt-0.5 size-7 shrink-0">
                     <AvatarImage src={message.avatarUrl} alt="" />
                     <AvatarFallback>
-                      {message.displayName.slice(0, 1)}
+                      {personInitial(message.displayName)}
                     </AvatarFallback>
                   </Avatar>
                 )}

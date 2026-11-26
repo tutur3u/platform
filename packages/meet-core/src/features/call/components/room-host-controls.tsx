@@ -12,6 +12,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { meetParticipantName } from '../lib/participant-identity';
+import { personInitial } from '../lib/person-initials';
 import { ParticipantIdentityBadge } from './participant-identity-badge';
 /**
  * Host-only list of people admitted before, who skip the lobby next time.
@@ -50,7 +51,7 @@ export function RoomHostControls({
                     <Avatar className="size-7">
                       <AvatarImage src={person.avatarUrl} alt="" />
                       <AvatarFallback>
-                        {person.displayName.slice(0, 1)}
+                        {personInitial(person.displayName)}
                       </AvatarFallback>
                     </Avatar>
                     <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">

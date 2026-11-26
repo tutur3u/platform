@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect, useId, useState } from 'react';
 import type { PhoneLiveSheetTab } from '../hooks/use-phone-call-ui';
+import { personInitial } from '../lib/person-initials';
 import { MiraMark } from './mira-mark';
 import { MiraAvatar } from './mira-profile';
 
@@ -138,7 +139,7 @@ export function PhoneBottomSheetFrame({
               ) : (
                 <Avatar className="size-7">
                   <AvatarFallback className="font-semibold text-xs">
-                    {tile.name.trim().slice(0, 1).toUpperCase() || '?'}
+                    {personInitial(tile.name)}
                   </AvatarFallback>
                 </Avatar>
               )}
@@ -520,7 +521,7 @@ export function MeetPhoneBottomSheet({
                   >
                     <AvatarImage alt={person.name} src={person.avatarUrl} />
                     <AvatarFallback className="font-semibold text-[11px]">
-                      {person.name.trim().slice(0, 1).toUpperCase() || '?'}
+                      {personInitial(person.name)}
                     </AvatarFallback>
                   </Avatar>
                 ))}
@@ -634,7 +635,7 @@ export function MeetPhoneBottomSheet({
                       <Avatar className="size-7">
                         <AvatarImage alt={person.name} src={person.avatarUrl} />
                         <AvatarFallback className="font-semibold text-xs">
-                          {person.name.trim().slice(0, 1).toUpperCase() || '?'}
+                          {personInitial(person.name)}
                         </AvatarFallback>
                       </Avatar>
                       <span className="truncate font-medium text-xs text-foreground">

@@ -2,6 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
+import { personInitials } from '../lib/person-initials';
 import { MiraMark } from './mira-mark';
 
 /** Static class strings per dynamic color so Tailwind keeps every variant. */
@@ -81,12 +82,7 @@ export function colorFor(id: string) {
 }
 
 export function initials(name: string) {
-  const parts = name.trim().split(/\s+/u).filter(Boolean);
-  const letters =
-    parts.length > 1
-      ? `${parts[0]?.[0] ?? ''}${parts.at(-1)?.[0] ?? ''}`
-      : (parts[0]?.slice(0, 2) ?? '');
-  return letters.toLocaleUpperCase() || '?';
+  return personInitials(name);
 }
 
 export function Swatch({

@@ -1,5 +1,25 @@
 const articles = new Set(['van', 'von', 'der', 'den', 'de', 'la', 'les', 'le']);
 
+let graphemeSegmenter: Intl.Segmenter | null | undefined;
+
+/**
+ * The characters a reader sees in `text`: an emoji, a letter with combining
+ * marks or a Vietnamese letter with its tone mark stays one piece. Uses
+ * `Intl.Segmenter`, or code points where the runtime lacks it.
+ */
+export function splitGraphemes(text: string): string[] {
+  if (graphemeSegmenter === undefined)
+    graphemeSegmenter =
+      typeof Intl !== 'undefined' && 'Segmenter' in Intl
+        ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+        : null;
+  return graphemeSegmenter
+    ? Array.from(graphemeSegmenter.segment(text), (part) => part.segment)
+    : Array.from(text);
+}
+
+const isLetter = (grapheme: string) => /^\p{L}/u.test(grapheme);
+
 export const getInitials = (
   name?: string | null,
   { firstTwoWords = false } = {}
@@ -9,11 +29,11 @@ export const getInitials = (
   const words = name
     .split(firstTwoWords ? /\s+/u : /[\s\-']+/u)
     .flatMap((word) => {
-      const letter = word.match(/\p{L}/u)?.[0];
+      const letter = splitGraphemes(word).find(isLetter);
       return letter ? [{ word, letter }] : [];
     });
   const [first, second] = words;
-  if (!first) return name.match(/\S/u)?.[0].toUpperCase() ?? '';
+  if (!first) return splitGraphemes(name.trim())[0]?.toUpperCase() ?? '';
   if (!second) return first.letter.toUpperCase();
   if (firstTwoWords) return (first.letter + second.letter).toUpperCase();
 

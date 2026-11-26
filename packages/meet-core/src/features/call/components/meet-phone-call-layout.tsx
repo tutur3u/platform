@@ -18,6 +18,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useRef, useState } from 'react';
+import { personInitial } from '../lib/person-initials';
 import { MiraMark } from './mira-mark';
 import { MiraAvatar } from './mira-profile';
 
@@ -59,7 +60,7 @@ export interface MeetPhoneCallLayoutProps {
 }
 
 function tileInitial(name: string) {
-  return name.trim().slice(0, 1).toUpperCase() || '?';
+  return personInitial(name);
 }
 
 function StreamVideo({

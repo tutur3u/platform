@@ -22,6 +22,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useEffect, useId, useRef } from 'react';
+import { personInitial } from '../lib/person-initials';
 import { MiraMark } from './mira-mark';
 
 export type PhoneTurnstileStatus =
@@ -98,7 +99,7 @@ export function MeetPhoneLobbyPreview({
     }
   }, [stream, videoEnabled]);
 
-  const initial = displayName.trim().slice(0, 1).toUpperCase() || '?';
+  const initial = personInitial(displayName);
   const showVideo = Boolean(videoEnabled && stream);
 
   const turnstileLabel =

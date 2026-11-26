@@ -14,6 +14,7 @@ import {
   LobbyDevicePickers,
   LobbyMicMeter,
 } from '../components/lobby-controls';
+import { personInitial } from '../lib/person-initials';
 import type { PrejoinCapture } from './use-prejoin-capture';
 
 /** Owns the meter level so sampling re-renders only the meter. */
@@ -60,7 +61,7 @@ export function PrejoinPreview({
       element.srcObject = previewStream;
   }, [previewStream]);
   const locked = handedOff || limited;
-  const initial = name.trim().slice(0, 1).toUpperCase() || '?';
+  const initial = personInitial(name);
   return (
     <section
       aria-label={t('prejoin.preview')}

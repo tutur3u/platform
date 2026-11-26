@@ -5,15 +5,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { personInitials } from '../lib/person-initials';
 
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const letters =
-    parts.length > 1
-      ? `${parts[0]![0]}${parts.at(-1)![0]}`
-      : (parts[0]?.slice(0, 2) ?? '?');
-  return letters.toLocaleUpperCase();
-}
+const initials = (name: string) => personInitials(name);
 
 /**
  * Presence-only rooms carry no media, so the stage shows who is here instead

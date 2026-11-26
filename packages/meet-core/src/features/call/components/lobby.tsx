@@ -18,6 +18,7 @@ import {
   useLobbyMediaDevices,
 } from '../lib/lobby-media';
 import { prepareParticipantName } from '../lib/participant-name';
+import { personInitial } from '../lib/person-initials';
 import type { MeetSignalingStatus } from '../lib/signaling';
 import { AdmissionNotice } from './admission-notice';
 import { resourceErrorKey } from './call-resource-notice';
@@ -388,7 +389,7 @@ export function Lobby({
     });
   };
 
-  const initial = displayName.trim().slice(0, 1).toUpperCase() || '?';
+  const initial = personInitial(displayName);
 
   return (
     <div className="grid min-h-dvh items-center overflow-y-auto bg-background px-4 py-6 sm:px-6 lg:px-10">

@@ -4,6 +4,7 @@ import type { MeetAiChunk } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useLayoutEffect, useRef, useState } from 'react';
+import { personInitial } from '../call/lib/person-initials';
 import { transcriptBlocks, transcriptTime } from './transcript-blocks';
 
 /**
@@ -73,7 +74,7 @@ export function MeetingTranscript({
               aria-hidden
               className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted font-medium text-muted-foreground text-xs"
             >
-              {block.label ? block.label.slice(0, 1).toUpperCase() : '?'}
+              {personInitial(block.label ?? '')}
             </span>
             <div className="min-w-0 flex-1 space-y-1">
               <p className="flex flex-wrap items-baseline gap-x-2 text-sm">

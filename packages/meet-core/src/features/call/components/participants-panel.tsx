@@ -25,6 +25,7 @@ import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { MiraAudioStatus } from './mira-audio-status';
 import { MiraAvatar } from './mira-profile';
 import { meetParticipantName } from '../lib/participant-identity';
+import { personInitial } from '../lib/person-initials';
 import { ParticipantActions } from './participant-actions';
 import { ParticipantIdentityBadge } from './participant-identity-badge';
 import { RoomHostControls } from './room-host-controls';
@@ -133,7 +134,7 @@ export function ParticipantsPanel({
                     <Avatar className="size-8 pointer-coarse:size-11">
                       <AvatarImage src={entry.avatarUrl} alt="" />
                       <AvatarFallback>
-                        {entry.displayName.slice(0, 1)}
+                        {personInitial(entry.displayName)}
                       </AvatarFallback>
                     </Avatar>
                     <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
@@ -209,7 +210,7 @@ export function ParticipantsPanel({
                 <Avatar className="size-8 shrink-0">
                   <AvatarImage src={participant.avatarUrl} alt="" />
                   <AvatarFallback>
-                    {participant.displayName.slice(0, 1)}
+                    {personInitial(participant.displayName)}
                   </AvatarFallback>
                 </Avatar>
                 <span className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">

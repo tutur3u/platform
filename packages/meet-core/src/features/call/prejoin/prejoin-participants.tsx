@@ -4,6 +4,7 @@ import { Users } from '@tuturuuu/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { useTranslations } from 'next-intl';
 import type { LobbyParticipant } from '../components/lobby-controls';
+import { personInitial } from '../lib/person-initials';
 
 const MAX_VISIBLE_AVATARS = 4;
 
@@ -39,7 +40,7 @@ export function PrejoinParticipants({
           >
             <AvatarImage alt="" src={person.avatarUrl} />
             <AvatarFallback className="font-medium text-xs">
-              {person.displayName.trim().slice(0, 1).toUpperCase() || '?'}
+              {personInitial(person.displayName)}
             </AvatarFallback>
           </Avatar>
         ))}
