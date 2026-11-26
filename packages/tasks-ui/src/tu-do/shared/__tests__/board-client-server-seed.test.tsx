@@ -344,4 +344,45 @@ describe('BoardClient server seed', () => {
     expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
     queryClient.clear();
   });
+
+  it('never seeds another board with the mount board pages', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const view = (boardId: string) => (
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId={boardId}
+          currentUserId="user-1"
+          workspace={{ id: 'board-ws-uuid', personal: false } as any}
+          initialBoard={
+            {
+              id: boardId,
+              ws_id: 'board-ws-uuid',
+              task_lists: [],
+              access_type: 'member',
+            } as any
+          }
+          initialListPages={{
+            'list-1': {
+              tasks: [{ id: `${boardId}-task`, list_id: 'list-1' } as any],
+              count: 1,
+            },
+          }}
+          initialSnapshotAt={1_000}
+        />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(view('board-1'));
+    rerender(view('board-2'));
+    await act(async () => {});
+
+    expect(queryClient.getQueryData(['tasks', 'board-2'])).not.toEqual([
+      { id: 'board-1-task', list_id: 'list-1' },
+    ]);
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([
+      { id: 'board-1-task', list_id: 'list-1' },
+    ]);
+    queryClient.clear();
+  });
 });

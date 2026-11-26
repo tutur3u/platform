@@ -189,6 +189,7 @@ export function BoardClient({
     }
     if (initialBoard?.id !== boardId || !initialListPages) return null;
     return {
+      boardId,
       snapshotAt: initialSnapshotAt,
       tasks: isServerCopyNewer(
         queryClient,
@@ -209,16 +210,17 @@ export function BoardClient({
     }
   }, [preferenceSeed, queryClient]);
   useLayoutEffect(() => {
-    const tasksKey = ['tasks', boardId];
-    if (
-      serverSeed?.tasks &&
-      isServerCopyNewer(queryClient, tasksKey, serverSeed.snapshotAt)
-    ) {
+    if (!serverSeed?.tasks) return;
+    const tasksKey = ['tasks', serverSeed.boardId];
+    if (isServerCopyNewer(queryClient, tasksKey, serverSeed.snapshotAt)) {
       queryClient.setQueryData(tasksKey, serverSeed.tasks.tasks, {
         updatedAt: serverSeed.snapshotAt,
       });
     }
-  }, [boardId, queryClient, serverSeed]);
+  }, [queryClient, serverSeed]);
+  // The seed belongs to the board it was read for, even if a caller reuses
+  // this instance for another board.
+  const boardSeed = serverSeed?.boardId === boardId ? serverSeed : null;
 
   useEffect(() => {
     // A shared browser keeps only the signed-in user's board snapshots.
@@ -226,7 +228,7 @@ export function BoardClient({
     if (currentUserId) purgeOtherUserTaskBoardCaches(currentUserId);
     // Server pages were either seeded or skipped for a newer live cache; the
     // browser copy is older than both.
-    if (serverSeed) return;
+    if (boardSeed) return;
     const snapshot = readTaskBoardCache(cacheScopeId, boardId);
     if (!snapshot) return;
 
@@ -245,7 +247,7 @@ export function BoardClient({
     cacheScopeId,
     currentUserId,
     queryClient,
-    serverSeed,
+    boardSeed,
     workspace.id,
   ]);
 
@@ -286,7 +288,7 @@ export function BoardClient({
   const progressiveLoader = useProgressiveBoardLoader(
     boardWorkspaceId,
     boardId,
-    serverSeed?.tasks?.pagination ?? cachedSnapshot?.pagination
+    boardSeed?.tasks?.pagination ?? cachedSnapshot?.pagination
   );
 
   // Tasks start empty and are populated progressively per-list.
@@ -299,8 +301,8 @@ export function BoardClient({
       return queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
     },
     gcTime: 7 * 24 * 60 * 60_000,
-    initialData: serverSeed?.tasks?.tasks ?? cachedSnapshot?.tasks ?? [],
-    initialDataUpdatedAt: serverSeed?.tasks ? serverSeed.snapshotAt : undefined,
+    initialData: boardSeed?.tasks?.tasks ?? cachedSnapshot?.tasks ?? [],
+    initialDataUpdatedAt: boardSeed?.tasks ? boardSeed.snapshotAt : undefined,
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
