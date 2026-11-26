@@ -3,6 +3,7 @@ import {
   PUBLIC_WORKSPACE_PRODUCT_IDS,
   publicVersionedWorkspacePrices,
   publicWorkspacePrices,
+  publicWorkspaceReferenceRates,
 } from '@tuturuuu/payment-core/public-prices';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { connection, NextResponse } from 'next/server';
@@ -11,6 +12,9 @@ export async function GET() {
   await connection();
   try {
     const catalog = activeWorkspaceCatalog();
+    const referenceRates = catalog ? publicWorkspaceReferenceRates() : null;
+    if (catalog && !referenceRates)
+      throw new Error('Reference rates unavailable');
     const supabase = await createAdminClient();
     const { data, error } = await supabase
       .schema('private')
@@ -26,7 +30,7 @@ export async function GET() {
     if (error || !data) throw new Error('Catalog read unavailable');
     return NextResponse.json(
       catalog
-        ? publicVersionedWorkspacePrices(data, catalog)
+        ? { ...publicVersionedWorkspacePrices(data, catalog), referenceRates }
         : publicWorkspacePrices(data),
       {
         headers: {

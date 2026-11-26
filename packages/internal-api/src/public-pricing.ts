@@ -1,6 +1,17 @@
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
+export interface PublicWorkspaceReferenceRates {
+  revision: string;
+  rates: readonly {
+    modelId: string;
+    multiplierBasisPoints: number;
+    exampleCredits: number;
+    exampleInputTokens: number;
+    exampleOutputTokens: number;
+  }[];
+}
 export interface PublicWorkspacePrices {
   currency: 'usd';
+  referenceRates?: PublicWorkspaceReferenceRates | null;
   prices: Record<'plus' | 'pro', { monthly: number; annual: number }> &
     Partial<Record<'max' | 'ultra', { monthly: number; annual: number }>>;
 }

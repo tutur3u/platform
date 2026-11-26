@@ -4,7 +4,10 @@ import {
   matchesWorkspaceCatalogOffer,
 } from './workspace-catalog';
 
-export { activeWorkspaceCatalog } from './workspace-catalog';
+export {
+  activeWorkspaceCatalog,
+  publicWorkspaceReferenceRates,
+} from './workspace-catalog';
 
 export const PUBLIC_WORKSPACE_PRODUCT_IDS = Object.values(productIds);
 

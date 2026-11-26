@@ -1,7 +1,9 @@
+import { PLAN_AI_REFERENCE_POLICY_VERSION } from '@tuturuuu/utils/plan-ai-reference-policy';
 import { describe, expect, it } from 'vitest';
 import { publicVersionedWorkspacePrices } from './public-prices';
 import { isSelfServeWorkspaceProduct } from './self-serve-products';
 import {
+  publicWorkspaceReferenceRates,
   selectWorkspaceCatalog,
   WORKSPACE_CATALOG_VERSION,
   workspaceCatalogOffers,
@@ -76,5 +78,37 @@ describe('workspace catalog migration', () => {
     expect(() =>
       publicVersionedWorkspacePrices([...rows, rows[0]!], selection)
     ).toThrow();
+  });
+});
+
+it('publishes only display fields from a separately approved rate revision', () => {
+  const snapshot = {
+    revision: 'fixture-rate-revision',
+    approval: 'fixture-admin-approval',
+    rates: [
+      {
+        policyVersion: PLAN_AI_REFERENCE_POLICY_VERSION,
+        modelId: 'fixture-model',
+        referenceCredits: 44,
+        multiplierBasisPoints: 15_500,
+        exampleInputTokens: 2_000,
+        exampleOutputTokens: 1_000,
+      },
+    ],
+  } as const;
+  expect(
+    publicWorkspaceReferenceRates({ ...snapshot, approval: '' })
+  ).toBeNull();
+  expect(publicWorkspaceReferenceRates(snapshot)).toEqual({
+    revision: 'fixture-rate-revision',
+    rates: [
+      {
+        modelId: 'fixture-model',
+        multiplierBasisPoints: 15_500,
+        exampleCredits: 69,
+        exampleInputTokens: 2_000,
+        exampleOutputTokens: 1_000,
+      },
+    ],
   });
 });

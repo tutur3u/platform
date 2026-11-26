@@ -10,11 +10,27 @@ const PROVIDER_BUDGET_MICROS = {
   ULTRA: 72_730_000,
 } satisfies Record<VersionedPlanTier, number>;
 
-interface ApprovedModelRate {
+export interface ApprovedModelRate {
   policyVersion: typeof PLAN_AI_REFERENCE_POLICY_VERSION;
   modelId: string;
   referenceCredits: number;
   multiplierBasisPoints: number;
+}
+
+export function creditsForReferenceRate(rate: ApprovedModelRate) {
+  const scaledCredits = rate.referenceCredits * rate.multiplierBasisPoints;
+  if (
+    rate.policyVersion !== PLAN_AI_REFERENCE_POLICY_VERSION ||
+    !rate.modelId.trim() ||
+    !Number.isSafeInteger(rate.referenceCredits) ||
+    rate.referenceCredits <= 0 ||
+    !Number.isSafeInteger(rate.multiplierBasisPoints) ||
+    rate.multiplierBasisPoints <= 0 ||
+    !Number.isSafeInteger(scaledCredits)
+  ) {
+    return null;
+  }
+  return Math.ceil(scaledCredits / 10_000);
 }
 
 export function quotePlanAiReservation({
@@ -28,16 +44,10 @@ export function quotePlanAiReservation({
   modelId: string;
   maxProviderUsdMicros: number;
 }) {
-  const scaledCredits = rate.referenceCredits * rate.multiplierBasisPoints;
+  const credits = creditsForReferenceRate(rate);
   if (
-    rate.policyVersion !== PLAN_AI_REFERENCE_POLICY_VERSION ||
-    !modelId ||
+    credits === null ||
     rate.modelId !== modelId ||
-    !Number.isSafeInteger(rate.referenceCredits) ||
-    rate.referenceCredits <= 0 ||
-    !Number.isSafeInteger(rate.multiplierBasisPoints) ||
-    rate.multiplierBasisPoints <= 0 ||
-    !Number.isSafeInteger(scaledCredits) ||
     !Number.isSafeInteger(maxProviderUsdMicros) ||
     maxProviderUsdMicros <= 0
   ) {
@@ -45,11 +55,15 @@ export function quotePlanAiReservation({
   }
 
   const monthlyProviderBudgetUsdMicros = PROVIDER_BUDGET_MICROS[tier];
-  if (maxProviderUsdMicros > monthlyProviderBudgetUsdMicros) return null;
+  if (
+    !monthlyProviderBudgetUsdMicros ||
+    maxProviderUsdMicros > monthlyProviderBudgetUsdMicros
+  )
+    return null;
 
   return {
     policyVersion: rate.policyVersion,
-    credits: Math.ceil(scaledCredits / 10_000),
+    credits,
     providerUsdMicros: maxProviderUsdMicros,
     monthlyProviderBudgetUsdMicros,
   };

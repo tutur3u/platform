@@ -1,3 +1,8 @@
+import {
+  type ApprovedModelRate,
+  creditsForReferenceRate,
+} from '@tuturuuu/utils/plan-ai-reference-policy';
+
 export const WORKSPACE_CATALOG_VERSION = '20261126-v2';
 
 const catalogPrices = {
@@ -42,10 +47,20 @@ type VerifiedCatalog = {
   bindings: readonly Binding[];
 };
 
+type ReferenceRateSnapshot = {
+  revision: string;
+  approval: string;
+  rates: readonly (ApprovedModelRate & {
+    exampleInputTokens: number;
+    exampleOutputTokens: number;
+  })[];
+};
+
 // Populate from reviewed server-side bindings after the schema and entitlement gates.
 const workspaceCatalogConfig: {
   enabled: boolean;
   approved?: VerifiedCatalog;
+  approvedReferenceRates?: ReferenceRateSnapshot;
 } = { enabled: false };
 
 export function selectWorkspaceCatalog(
@@ -95,6 +110,43 @@ export type SelectedWorkspaceCatalog = NonNullable<
 // Cutover requires an approved binding set and a reviewed source change.
 export function activeWorkspaceCatalog() {
   return selectWorkspaceCatalog(workspaceCatalogConfig.enabled);
+}
+
+export function publicWorkspaceReferenceRates(
+  snapshot = workspaceCatalogConfig.approvedReferenceRates
+) {
+  if (
+    !snapshot?.revision.trim() ||
+    !snapshot.approval.trim() ||
+    snapshot.rates.length === 0 ||
+    new Set(snapshot.rates.map((rate) => rate.modelId)).size !==
+      snapshot.rates.length
+  )
+    return null;
+
+  const rates = snapshot.rates.map((rate) => {
+    const exampleCredits = creditsForReferenceRate(rate);
+    if (
+      exampleCredits === null ||
+      !Number.isSafeInteger(rate.exampleInputTokens) ||
+      rate.exampleInputTokens <= 0 ||
+      !Number.isSafeInteger(rate.exampleOutputTokens) ||
+      rate.exampleOutputTokens <= 0
+    )
+      return null;
+    return {
+      modelId: rate.modelId,
+      multiplierBasisPoints: rate.multiplierBasisPoints,
+      exampleCredits,
+      exampleInputTokens: rate.exampleInputTokens,
+      exampleOutputTokens: rate.exampleOutputTokens,
+    };
+  });
+  if (rates.some((rate) => rate === null)) return null;
+  return {
+    revision: snapshot.revision,
+    rates: rates.filter((rate) => rate !== null),
+  };
 }
 
 export function isReservedWorkspaceCatalogProduct(productId: string) {

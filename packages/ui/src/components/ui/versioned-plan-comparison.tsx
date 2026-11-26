@@ -1,3 +1,4 @@
+import type { PublicWorkspaceReferenceRates } from '@tuturuuu/internal-api/public-pricing';
 import {
   PLAN_QUOTAS,
   type VersionedPlanTier,
@@ -32,16 +33,23 @@ type ComparisonCopy = {
   forms: string;
   automation: string;
   allowance: string;
+  model: string;
+  modelRates: string;
+  multiplier: string;
+  exampleTokens: string;
+  exampleCredits: string;
 };
 
 export function VersionedPlanComparison({
   copy,
   locale,
   names,
+  referenceRates,
 }: {
   copy: ComparisonCopy;
   locale: string;
   names: Readonly<Record<VersionedPlanTier, string>>;
+  referenceRates: PublicWorkspaceReferenceRates | null;
 }) {
   const rows = [
     {
@@ -85,36 +93,68 @@ export function VersionedPlanComparison({
     },
   ];
 
-  const format = new Intl.NumberFormat(locale);
+  const format = new Intl.NumberFormat(locale, { maximumFractionDigits: 4 });
 
   return (
-    <Table>
-      <TableCaption>
-        <span className="font-medium">{copy.title}</span>
-        <span className="mt-1 block">{copy.allowance}</span>
-      </TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead scope="col">{copy.feature}</TableHead>
-          {tiers.map((tier) => (
-            <TableHead key={tier} scope="col">
-              {names[tier]}
-            </TableHead>
-          ))}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {rows.map(({ title, value }) => (
-          <TableRow key={title}>
-            <TableHead scope="row">{title}</TableHead>
+    <div className="space-y-6">
+      <Table>
+        <TableCaption>
+          <span className="font-medium">{copy.title}</span>
+          <span className="mt-1 block">{copy.allowance}</span>
+        </TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead scope="col">{copy.feature}</TableHead>
             {tiers.map((tier) => (
-              <TableCell key={tier}>
-                {format.format(value(PLAN_QUOTAS[tier]))}
-              </TableCell>
+              <TableHead key={tier} scope="col">
+                {names[tier]}
+              </TableHead>
             ))}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {rows.map(({ title, value }) => (
+            <TableRow key={title}>
+              <TableHead scope="row">{title}</TableHead>
+              {tiers.map((tier) => (
+                <TableCell key={tier}>
+                  {format.format(value(PLAN_QUOTAS[tier]))}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {referenceRates && (
+        <Table>
+          <TableCaption>
+            {copy.modelRates} · {referenceRates.revision}
+          </TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead scope="col">{copy.model}</TableHead>
+              <TableHead scope="col">{copy.multiplier}</TableHead>
+              <TableHead scope="col">{copy.exampleTokens}</TableHead>
+              <TableHead scope="col">{copy.exampleCredits}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {referenceRates.rates.map((rate) => (
+              <TableRow key={rate.modelId}>
+                <TableHead scope="row">{rate.modelId}</TableHead>
+                <TableCell>
+                  {format.format(rate.multiplierBasisPoints / 10_000)}×
+                </TableCell>
+                <TableCell>
+                  {format.format(rate.exampleInputTokens)} /{' '}
+                  {format.format(rate.exampleOutputTokens)}
+                </TableCell>
+                <TableCell>{format.format(rate.exampleCredits)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+    </div>
   );
 }

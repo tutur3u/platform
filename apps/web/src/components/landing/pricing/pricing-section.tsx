@@ -225,7 +225,10 @@ export function PricingSection() {
             {priceNotice}
           </p>
         )}
-        <FeatureMatrix versioned={Boolean(prices?.max && prices?.ultra)} />
+        <FeatureMatrix
+          referenceRates={catalog.data?.referenceRates}
+          versioned={Boolean(prices?.max && prices?.ultra)}
+        />
       </Reveal>
 
       {/* Usage-based add-ons */}

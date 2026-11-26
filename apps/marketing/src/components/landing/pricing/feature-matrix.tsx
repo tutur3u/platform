@@ -1,10 +1,17 @@
 'use client';
 
+import type { PublicWorkspaceReferenceRates } from '@tuturuuu/internal-api/public-pricing';
 import { CommercialComparison } from '@tuturuuu/ui/commercial-comparison';
 import { VersionedPlanComparison } from '@tuturuuu/ui/versioned-plan-comparison';
 import { useLocale, useMessages, useTranslations } from 'next-intl';
 
-export function FeatureMatrix({ versioned = false }: { versioned?: boolean }) {
+export function FeatureMatrix({
+  versioned = false,
+  referenceRates = null,
+}: {
+  versioned?: boolean;
+  referenceRates?: PublicWorkspaceReferenceRates | null;
+}) {
   const messages = useMessages();
   const locale = useLocale();
   const t = useTranslations('landing.pricing');
@@ -23,8 +30,14 @@ export function FeatureMatrix({ versioned = false }: { versioned?: boolean }) {
           forms: t('versionedComparison.forms'),
           automation: t('versionedComparison.automation'),
           allowance: t('versionedComparison.allowance'),
+          model: t('versionedComparison.model'),
+          modelRates: t('versionedComparison.modelRates'),
+          multiplier: t('versionedComparison.multiplier'),
+          exampleTokens: t('versionedComparison.exampleTokens'),
+          exampleCredits: t('versionedComparison.exampleCredits'),
         }}
         locale={locale}
+        referenceRates={referenceRates}
         names={{
           FREE: t('tiers.free.name'),
           PLUS: t('tiers.plus.name'),
