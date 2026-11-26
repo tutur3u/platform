@@ -4,6 +4,7 @@ import type { ComponentProps } from 'react';
 import { TranscriptControls } from '../../meeting-ai/transcript-controls';
 import type { CallState } from '../lib/call-state';
 import type { MeetRoomController } from '../lib/room-controller';
+import type { PlaybackTrial } from '../same-room-audio/use-playback-trial';
 import { roomActivitySettings } from './call-activity-settings';
 import { CallClock } from './call-clock';
 import { CallHeaderActions } from './call-header-actions';
@@ -29,6 +30,7 @@ export function CallHeaderControls({
   onOutput,
   outputDeviceId,
   participants,
+  playbackTrial,
   presenceOnly,
   room,
   roomTools,
@@ -52,6 +54,7 @@ export function CallHeaderControls({
   onOutput: (deviceId: string) => void;
   outputDeviceId: string;
   participants: ComponentProps<typeof PlaybackVolumeControl>['participants'];
+  playbackTrial?: PlaybackTrial;
   presenceOnly: boolean;
   room: MeetRoomController;
   roomTools: { canConfigure: boolean };
@@ -119,6 +122,7 @@ export function CallHeaderControls({
           sound={notifications.sound}
           onSound={notifications.toggleSound}
           outputDeviceId={outputDeviceId}
+          playbackTrial={playbackTrial}
           onOutput={onOutput}
           activities={
             roomTools.canConfigure ? roomActivitySettings(room) : undefined

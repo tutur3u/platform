@@ -39,6 +39,8 @@ import { MEETING_APP } from '../../../runtime';
 import { MiraAudienceSettings } from '../../live-assistant/mira-audience-settings';
 import { MIRA_SETTINGS_TAB } from '../../live-assistant/use-mira-audience';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
+import { PlaybackTrialPanel } from '../same-room-audio/playback-trial-panel';
+import type { PlaybackTrial } from '../same-room-audio/use-playback-trial';
 import { RoomPermissionToggles } from './participants-panel';
 import { useTranslations } from 'next-intl';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
@@ -74,6 +76,7 @@ export function CallSettings({
   onSound,
   outputDeviceId,
   onOutput,
+  playbackTrial,
   activities,
 }: {
   /** Present for people who decide who may open room activities. */
@@ -95,6 +98,7 @@ export function CallSettings({
   sound: boolean;
   onSound: () => void;
   outputDeviceId: string;
+  playbackTrial?: PlaybackTrial;
   onOutput: (id: string) => void;
 }) {
   const t = useTranslations('meet.call');
@@ -347,6 +351,7 @@ export function CallSettings({
         )}
         {activeTab === 'connection' && (
           <MeetSettingsStack>
+            {playbackTrial && <PlaybackTrialPanel trial={playbackTrial} />}
             <ConnectionPanel
               embedded
               telemetry={telemetry}

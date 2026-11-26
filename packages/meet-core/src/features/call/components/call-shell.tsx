@@ -25,6 +25,7 @@ import {
   selectOthers,
   selectSelf,
 } from '../lib/call-state';
+import { usePlaybackTrial } from '../same-room-audio/use-playback-trial';
 import { useCallActivities } from './call-activities';
 import { CallEnded } from './call-ended';
 import { useRoomTools } from './call-room-tools';
@@ -154,6 +155,7 @@ function CallShellContent({
   };
   const inCall = joined && !left;
   const sharedAudio = useSharedRoomAudio(room, inCall);
+  const playbackTrial = usePlaybackTrial(room, meetingId, inCall);
   const notifications = useCallNotifications(
     state,
     inCall,
@@ -449,6 +451,7 @@ function CallShellContent({
             onOutput={setOutputDeviceId}
             outputDeviceId={outputDeviceId}
             participants={participants}
+            playbackTrial={playbackTrial.eligible ? playbackTrial : undefined}
             presenceOnly={presenceOnly}
             room={room}
             roomTools={roomTools}
@@ -516,6 +519,7 @@ function CallShellContent({
                   selfInGrid
                   onChat={askMira}
                   audioSuppressed={sharedAudio.shared}
+                  trialMutedMics={playbackTrial.muted}
                   outputDeviceId={outputDeviceId}
                   room={room}
                   layout={layout}

@@ -64,6 +64,7 @@ export function CallStage({
   room,
   outputDeviceId,
   audioSuppressed = false,
+  trialMutedMics,
   layout,
   compact = false,
   activityRail = false,
@@ -78,6 +79,7 @@ export function CallStage({
   room: MeetRoomController;
   outputDeviceId?: string;
   audioSuppressed?: boolean;
+  trialMutedMics?: ReadonlyMap<string, string>;
   layout: CallLayout;
   compact?: boolean;
   activityRail?: boolean;
@@ -292,7 +294,11 @@ export function CallStage({
       condensed={condensed}
       miraActive={!!mira}
       outputDeviceId={outputDeviceId}
-      audioSuppressed={audioSuppressed || paged}
+      audioSuppressed={
+        audioSuppressed ||
+        paged ||
+        (tile.kind === 'camera' && trialMutedMics?.has(tile.userId))
+      }
       silenced={silenced.has(tile.key)}
       onSilence={toggleSilence}
       key={tile.key}
@@ -441,6 +447,7 @@ export function CallStage({
                 ? [
                     {
                       userId,
+                      kind,
                       track: tracks[kind],
                       key: `${userId}:${kind === 'audio' ? 'camera' : 'screen'}`,
                     },
@@ -454,7 +461,11 @@ export function CallStage({
               id={tile.key}
               userId={tile.userId}
               track={tile.track}
-              muted={audioSuppressed || silenced.has(tile.key)}
+              muted={
+                audioSuppressed ||
+                silenced.has(tile.key) ||
+                (tile.kind === 'audio' && !!trialMutedMics?.has(tile.userId))
+              }
               outputDeviceId={outputDeviceId}
               onBlocked={onAudioBlocked}
             />

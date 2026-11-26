@@ -1,0 +1,261 @@
+---
+title: "Meet same-room audio prototype"
+description: "Compare same-room microphone strategies and qualify them on physical laptops."
+---
+
+The prototype lives in
+`packages/meet-core/src/features/call/same-room-audio/`. The local call adapter
+applies designated playback to the stage's remote microphone elements. The
+microphone strategies run in deterministic fixtures. See
+[Meet calls](/platform/features/meet-calls#nearby-participants-and-same-room-audio)
+for the app's standard nearby-audio behavior.
+
+## Local group and playback
+
+Every room laptop enables `meet:same-room-trial` locally, enters the same
+6–10-character code, and selects the same participant IDs from the existing call
+roster. Select yourself and compare the roster checksum aloud. The checksum
+covers only the sorted selected IDs. The code and matching procedure are local
+operator inputs. Use distinct roster identities for the room laptops.
+
+Each laptop elects the lowest sorted ID among selected participants still in the
+roster. Selected peers' microphone playback is suppressed on each room laptop.
+The designated laptop plays non-group microphones. A selected ID stays in the
+operator's list when it leaves the call, so presence loss elects the next ID
+without changing the checksum. Rejoining with the same ID can restore the
+original designation. An output unplug while that laptop remains in the roster
+cannot trigger a group election. Have the affected laptop leave or have every
+operator update the selection and compare checksums again.
+
+The adapter sets only local remote microphone playback mute. Screen-share
+audio, outgoing mic and explicit mute controls, and recording and transcript
+consent retain their usual behavior. Stop the trial or close the call to drop its
+playback policy. The event trace records roster membership, designation,
+failover and trial mute changes. It contains timestamps and participant and
+track IDs, and downloads from the local browser. Keep traces with the trial
+recordings and share them only with the consented trial group.
+
+Automatic membership, synchronized output availability and coordinated manual
+speaker choice would require a future server relay. This trial uses the
+unmodified Meet presence feed and Cloudflare Realtime SFU.
+
+## Offline microphone strategies
+
+| Strategy | Mic behavior | Expected trade-off |
+| --- | --- | --- |
+| A. Single room mic | The first joined member with an enabled, connected mic publishes. The next eligible mic takes over after a disconnect or explicit mute. | Avoids duplicate copies. A second talker can be too far from the designated mic, as in S2. |
+| B. Correlation gate | Compare 20 ms mono frames at 8 kHz with normalized, mean-centered cross-correlation over both lag directions up to 30 ms. A two-frame attack at 0.86 coherence and two-frame release below 0.76 limit gate switching. | Keeps the first joined matching mic that is emitting and keeps low-coherence tracks open. The 20 ms frame buffer adds latency. There is no lookahead. Sustained common audio can mask a quieter independent talker. |
+| C. All mics open | Every enabled, connected mic emits. | Preserves each captured source and passes its duplicate copies. |
+
+An explicit mic mute gates that device immediately in A, B and C. Other enabled devices can still pick up the speaker acoustically. Screen tracks never enter the mic gate.
+
+## Offline fixture gate
+
+Run from the repository root on the gate host with workspace dependencies available.
+
+```sh
+SAME_ROOM_RESULTS_DIR=/absolute/path/to/results bun run --cwd packages/meet-core test same-room-audio
+```
+
+The harness writes `same-room-audio.json` and `same-room-audio.md`, including on a failed assertion after measurement. Without `SAME_ROOM_RESULTS_DIR`, Vitest prints the directory it creates under the system temporary directory. The deterministic suite compares 24 rows across seven scenarios, including both speaker modes for the remote-echo scenario. Positive results require running the suite.
+
+- Duplicate energy is the sum of excess per-talker stem energy entering the mix. The strongest retained copy of each talker in each frame is the primary. The ratio uses summed primary energy as its denominator. This excludes phase cancellation between stems.
+- Retention is strongest retained stem energy divided by strongest connected capture energy, summed across frames per talker. The reference includes a connected but explicitly muted mic so S3 shows the acoustic trade-off. Stems are available only in the fixture. Capture hard clipping scales the stems with the same per-sample gain.
+- Gate switches count mic open/closed transitions after the initial frame. Added latency is the nominal frame buffer and lookahead, excluding computation and media transport. Capture clips count full-scale-or-higher mic samples before saturation. Mix clips count full-scale-or-higher samples in the unnormalized output sum. The screen track stays separate.
+- Remote-echo energy is the sum of squares of the remote playback stem returning in the mic mix. S6 uses fixed speaker-to-mic coupling. S4 counts active 20 ms frames after the unplug event until at least 10% of the reference speech energy returns. Zero means recovery in the event frame. A missing recovery reports separately.
+
+The fixture gate requires B to remove at least 80% of S1 duplicate energy compared with C, B to retain at least 90% of both overlapping talkers in S2, and A to retain less than 10% of talker B in S2. It also checks zero output from the explicitly muted mic, failover on the modeled frame, clipping input coverage, lower modeled remote echo with one speaker, and exact screen PCM preservation.
+
+## Aligning microphone samples for a future gate
+
+The offline helper estimates the target delay per window with GCC-PHAT
+(generalized cross-correlation with phase transform) and fits a straight line
+through delays over time. A positive slope means target lag grows. The helper
+returns the peak ratio and fit residual so a caller can reject weak matches and
+detect timing jumps. It has no live PCM tap or gating integration.
+
+| Approach | Transport requirements | CPU and latency | Failure modes |
+| --- | --- | --- | --- |
+| Receiver-side alignment | Subscribe to each existing SFU microphone track independently. Associate each with its `RTCRtpReceiver` and SSRC. Use Web Audio and an AudioWorklet for decoded per-track PCM, or feature-detect an audio-capable `MediaStreamTrackProcessor` and use its frame timestamps where supported. Sample `getSynchronizationSources().rtpTimestamp` as a per-source RTP clock reference and handle wraparound and SSRC replacement. Check offer and answer audio extmaps for the absolute capture time extension and verify SFU forwarding and browser exposure before using it. `audio-sdp.ts` configures Opus FEC and DTX and does not add this extension. RTP timestamps from different source clocks need a mapping to capture time. Browser playout timestamps also need a measured mapping to the PCM tap. | Decode each mic and resample to a common rate. Run two forward FFTs and one inverse FFT per pair of windows against one reference. At 8 kHz with 2,048-sample windows and one update per second, benchmark CPU and allocation with 2, 3 and 6 mics. Measure alignment buffering and gate frame latency independently. | Adaptive jitter buffers and codec concealment shift or replace decoded samples. Packet loss, DTX gaps, reverberation and device-specific AEC can make correlation ambiguous. Up to about ±100 ppm per clock can accumulate a substantial lag over minutes. PCM timestamps and RTP observations can refer to different instants. |
+| Publisher-side gating | Tap PCM from each local mic before send. Use a future bounded relay on the existing realtime room path to exchange monotonic clock probes, capture-time anchors, gate decisions and expiry deadlines. Estimate clock offset from round-trip probes and refresh the mapping. Keep explicit user mute authoritative. | Local audio processing per mic and additional decision traffic. Gate lead time needs to cover probe uncertainty and high-percentile message delay. Measure CPU and send-to-playout delay with and without decision lookahead. | Asymmetric routing biases clock estimates. Reconnects can invalidate a clock epoch. Delayed decisions can suppress an independent talker. AEC and AGC change the signal on each laptop. Expire stale decisions and let explicitly enabled mics resume their normal user-controlled state. |
+
+For receiver-side alignment, start each run with a short chirp or clap and derive
+a coarse lag for each mic. On overlapping voiced windows, search a residual
+window of ±15 ms around the predicted lag and use periodic GCC-PHAT to check
+the prediction. Reject silence, peaks on the search boundary and ambiguous
+matches. Fit drift in ppm against a common sample timeline, then correct the
+lag with fractional resampling. A jump in jitter-buffer delay or an SSRC change
+starts a fresh fit. Log the estimate, confidence and reason for every reset.
+
+Run these experiments before trialing a live gate:
+
+1. Feed identical timestamped chirps and independent speech through two, then
+   three physical laptops. Record both the PCM taps and per-track RTP
+   observations. Compare against a shared-clock multichannel reference for
+   ten minutes with injected −100, 0 and +100 ppm source drift. Require a
+   95th-percentile alignment error at most 2 ms and fitted drift within 5 ppm
+   on voiced segments. Reject timestamp-only alignment if the browser cannot
+   associate RTP or capture timestamps with the PCM samples at that precision.
+2. Repeat with 1%, 3% and 5% loss, a 100 ms jitter step at minute five, an SFU
+   reconnect, and native AEC, gain control and noise suppression toggled one
+   at a time. Require reacquisition within 3 s of restored overlapping speech
+   and no suppression while estimates are uncertain. Log per-device p95 update
+   time and added playout latency. Reject a candidate that overruns its 20 ms
+   audio frame budget or adds more than 60 ms to median end-to-end latency.
+3. Compare the gate to the all-open fixture and physical baseline with ten
+   common-voice phrases and five independent overlaps per setup. Require at
+   least 80% less duplicate energy without losing more than 10% of each
+   independent talker's retained energy when isolated references are available.
+   In blinded listening, require at least four intelligible phrases per talker
+   out of five overlaps. Reject a gate that drops independent speech to remove
+   duplicates.
+4. For publisher-side control, inject 20, 50 and 100 ms one-way control delay,
+   then disconnect the decision leader during overlap. Measure applied-decision
+   skew, added lead time, expired decisions and mute state. Require p95 applied
+   skew at most 20 ms, normal playback and publishing within 300 ms of decision
+   loss, and zero bypasses of explicit mute. Reject the design if it cannot meet
+   these budgets over the existing realtime path.
+
+## Physical playback trial
+
+Physical acceptance requires actual laptop recordings and a trace from the
+backup laptop. Run once with two room laptops and once with three. Repeat each
+configuration with room speakers and with room headphones. Keep the remote
+listener in a separate quiet space on headphones during the call. Record the
+source revision, browser versions, device positions, fixed output volume,
+audio processing settings and consent. Use a disposable call on the local
+prototype with the existing SFU. Rehearse the procedure before saving evidence.
+
+1. On each room laptop, open the local Meet origin. Run this in its browser
+   console, reload, join the same call, and open **Settings → Connection →
+   Same-room audio trial**. The remote listener joins with ordinary playback.
+
+   ```js
+   localStorage.setItem('meet:same-room-trial', '1');
+   location.reload();
+   ```
+
+2. Start a continuous 48 kHz mono recording for each laptop and the remote
+   listener. Any recorder that exports WAV PCM16 or WAV float32 works. Use an
+   external mic or a second device to record the room near each laptop. For
+   the remote listener, use a mic or recorder near the headphone output so
+   the same recorded input can hear both sync claps and playback. Avoid
+   normalization, silence trimming, input changes and recorder pauses.
+
+3. With recorder mics within about 30 cm of one another, make two separate
+   sync claps, about one second apart. On the backup laptop, press **Mark sync
+   clap** as each clap happens. Move the remote listener and recorder to the
+   separate quiet space while recording continues. After both phases, reunite
+   all recorders for the third sync clap and mark it on the backup laptop.
+   A clap sent through Meet includes network latency. Use a shared physical
+   clap or a separately calibrated common reference for the clock anchors.
+   Estimate acoustic distance and recorder error for `clockErrorMs`, and
+   measure the button-to-clap error for `traceErrorMs`. A hardware trigger
+   or a shared-clock recording with a visible trigger can establish those
+   error bounds. Unbounded timing supports a listening trial only.
+
+4. For the all-speaker baseline, leave the trial stopped. Make ten isolated
+   claps near laptop A, spaced at least one second apart. Read three loud
+   phrases at normal gain, 30 cm from its mic. Then have the remote listener
+   play a fixed probe phrase or tone at fixed gain while the room stays silent.
+   Capture only the returned headphone signal on the remote recording during
+   the echo window. Keep the direct source out of that recording. If built-in
+   overlap protection, manual local mutes or blocked autoplay make the
+   comparison invalid, record that and rerun once the controls match. Log any
+   sustained howl or clipping heard during the run.
+
+5. For the designated phase, enter the same code, such as `ROOM42`, on each
+   room laptop. Tick the same participants, including yourself. Compare
+   checksums aloud and start the trial. Check that the remote listener remains
+   unticked and every room laptop shows the same speaker. Repeat the same
+   claps, loud phrases and echo probe with identical levels. Verify that only
+   the designated laptop plays the remote mic and both room and remote users
+   can hear the screen-share audio. Repeat with a mismatched roster and then
+   correct it by matching the checksums. Check explicit mic mute and the
+   existing recording and transcript consent controls.
+
+6. For failover, use a continuous remote probe that stays above the room
+   detection floor on the designated laptop. It must run before the selected
+   speaker leaves through recovery on the backup, with no speech in the room.
+   Disconnect or leave the call from the designated laptop and keep recording
+   every output. Keep the backup laptop in the call through the third sync
+   clap. On the backup, select **Download trace JSON** and save it as
+   `trace.json`. The trace time measures when that laptop processed roster
+   loss. The recorded audio gap can start earlier.
+
+7. Save `a.wav`, `b.wav`, `remote.wav` and `trace.json` alongside
+   `manifest.json`. Add another entry under `room` for a third laptop.
+   `room[0]` supplies the clap source. Each `sync` array uses approximate
+   windows in that file's own time, before alignment. Every phase window
+   is relative to the first sync clap on the shared timeline. Put one direct
+   room clap and its expected remote return in each `claps` window.
+   Give each loud phrase its own `loud` window. Use a single continuous probe
+   for the `failover` window. The script uses
+   1 ms RMS frames for onsets and 10 ms frames for failover. Choose onset
+   and tone floors above idle noise. Use matching floors across phases.
+   Replace all example times and errors below with observed values.
+
+   ```json
+   {
+     "room": [
+       {"file": "a.wav", "sync": [[4.9, 5.1], [5.9, 6.1], [209.9, 210.1]]},
+       {"file": "b.wav", "sync": [[6.9, 7.1], [7.9, 8.1], [211.9, 212.1]]}
+     ],
+     "remote": {
+       "file": "remote.wav",
+       "sync": [[2.9, 3.1], [3.9, 4.1], [207.9, 208.1]]
+     },
+     "trace": {"file": "trace.json", "roomIndex": 1},
+     "clockErrorMs": 5,
+     "traceErrorMs": 40,
+     "onsetDbfs": -35,
+     "toneDbfs": -40,
+     "baseline": {
+       "claps": [[40, 41], [42, 43], [44, 45], [46, 47], [48, 49],
+                 [50, 51], [52, 53], [54, 55], [56, 57], [58, 59]],
+       "loud": [[61, 63], [63, 65], [65, 67]],
+       "echo": [70, 75]
+     },
+     "designated": {
+       "claps": [[100, 101], [102, 103], [104, 105], [106, 107], [108, 109],
+                 [110, 111], [112, 113], [114, 115], [116, 117], [118, 119]],
+       "loud": [[121, 123], [123, 125], [125, 127]],
+       "echo": [130, 135],
+       "failover": [143, 150]
+     }
+   }
+   ```
+
+8. Run the analyzer from the repository root with Node. Paths inside the
+   manifest are relative to the manifest file.
+
+   ```sh
+   trial_dir=packages/meet-core/src/features/call/same-room-audio
+   node "$trial_dir/analyze-trial.mjs" /absolute/path/to/manifest.json
+   ```
+
+   | Output | Pass criterion |
+   | --- | --- |
+   | Clap latency, median and maximum | Ten measurable claps per mode, a recorder alignment error of at most 10 ms, and a designated median at most 250 ms and at most 60 ms above baseline. |
+   | Full-scale sample percentage and longest flat run | Every loud phrase on every WAV has at most 0.1% of samples at or beyond full scale and fewer than five consecutive identical samples at a rail. |
+   | Returned echo, RMS dBFS | At least 6 dB lower in designated mode, or both modes at or below −40 dBFS. |
+   | Audio gap and trace-to-audio time | The longer value, including timing uncertainty, is at most 300 ms. A recovery that cannot be observed, ambiguous gaps, or a bound that crosses 300 ms produces an inconclusive row. |
+
+   Exit status 0 means every measured row passed. Status 1 means a measured
+   row failed. Status 2 means the input or measurement was inconclusive.
+   Complete the listening and interaction checks separately. A low echo meter
+   reading alone cannot establish that the room heard the remote probe.
+
+9. Stop the trial or remove the local opt-in on each room laptop.
+
+   ```js
+   localStorage.removeItem('meet:same-room-trial');
+   ```
+
+Run the synthetic analyzer and drift tests on the gate host:
+
+```sh
+trial_dir=packages/meet-core/src/features/call/same-room-audio
+node --test "$trial_dir/analyze-trial.test.mjs"
+bun run --cwd packages/meet-core test same-room-audio
+```

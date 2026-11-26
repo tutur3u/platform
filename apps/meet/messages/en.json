@@ -5648,6 +5648,31 @@
         "visibility": "Activity visibility",
         "visibility_hint": "Who can open Co-Programming, live documents, polls and quizzes"
       },
+      "same_room_trial": {
+        "absent": " (out of call)",
+        "checksum": "Roster checksum: {checksum}",
+        "code": "Group code",
+        "download": "Download trace JSON",
+        "event": {
+          "designation": "Speaker selected",
+          "failover": "Speaker failover",
+          "join": "Member joined",
+          "leave": "Member left",
+          "mic-muted": "Mic playback suppressed",
+          "mic-restored": "Mic playback suppression removed",
+          "sync": "Clap sync marker"
+        },
+        "invalid": "Enter 6–10 letters or digits and select yourself and at least one other participant.",
+        "join": "Start trial",
+        "leave": "Stop trial",
+        "mark_sync": "Mark sync clap",
+        "members": "Select the laptops in your room, including this one",
+        "none": "None",
+        "placeholder": "ROOM42",
+        "speaker": "Designated speaker: {name}",
+        "title": "Same-room audio trial",
+        "trace": "Event trace"
+      },
       "save_chat": "Save meeting chat",
       "save_chat_hint": "On by default. Turning this off stops saving new messages; previously saved messages remain. Only room admins can change this.",
       "save_name_continue": "Save name and continue",
