@@ -36,10 +36,10 @@ export function MiraChatDenialBanner({
       role="alert"
       data-testid="mira-chat-denial-banner"
       data-denial-kind={denial.kind}
-      className="flex flex-col gap-3 rounded-2xl border border-dynamic-amber/30 bg-dynamic-amber/10 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+      className="flex flex-col gap-3 rounded-2xl border border-warning/30 bg-warning/10 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="flex min-w-0 items-start gap-2.5">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-dynamic-amber/25 bg-background/80 text-dynamic-amber">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-warning/25 bg-background/80 text-warning">
           <Lock aria-hidden className="h-3.5 w-3.5" />
         </span>
         <div className="min-w-0 space-y-0.5">
