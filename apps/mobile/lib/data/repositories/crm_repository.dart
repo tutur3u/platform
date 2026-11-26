@@ -18,6 +18,7 @@ import 'package:mobile/features/crm/utils/crm_visibility.dart';
 
 part 'crm_repository_account_links.dart';
 part 'crm_repository_approvals.dart';
+part 'crm_repository_attendance.dart';
 part 'crm_repository_billing.dart';
 part 'crm_repository_groups.dart';
 
@@ -26,7 +27,8 @@ class CrmRepository
         _CrmGroupMembershipRepository,
         _CrmBillingRepository,
         _CrmAccountLinkRepository,
-        _CrmApprovalRepository {
+        _CrmApprovalRepository,
+        _CrmAttendanceRepository {
   CrmRepository({
     ApiClient? apiClient,
     http.Client? httpClient,

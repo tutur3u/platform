@@ -1049,6 +1049,15 @@ permission-gated duplicate/merge tools remain available. Lists build rows lazily
 load another page near the viewport end, deduplicate overlapping IDs, and stop
 when an empty page disproves a stale total. A failed page offers an explicit retry.
 
+Contact detail includes the person's attendance history when the directory
+result allows `canCheckUserAttendance` and the workspace grants
+`check_user_attendance`. It opens on the current month and steps a month at a
+time, showing the month's present, late and absent counts and each marked
+session with its group. It loads only when expanded. Denied access (401, 403 or
+404) says attendance is unavailable, an offline read says so with a retry, and
+other failures offer a retry. Coverage: `contact_attendance_history_test.dart`
+and `contact_attendance_access_test.dart`.
+
 Regression coverage: `crm_workspace_test.dart` covers scoped late responses,
 permission-redacted detail, enlarged text, automatic paging, empty-page termination,
 and retained-versus-denied refreshes. `offline_mutation_admission_test.dart`
@@ -1060,6 +1069,8 @@ The mobile CRM uses the existing authenticated routes:
 - `/api/v1/workspaces/:wsId/users/database`
 - `/api/v1/workspaces/:wsId/users`
 - `/api/v1/workspaces/:wsId/users/:userId`
+- `/api/v1/workspaces/:wsId/users/:userId/attendance?month=yyyy-MM` (platform
+  route; Bearer through `getPermissions({ request })`, `check_user_attendance`)
 - `/api/v1/workspaces/:wsId/users/groups`
 - `/api/v1/workspaces/:wsId/users/feedbacks`
 - `/api/v1/workspaces/:wsId/users/audit-logs`

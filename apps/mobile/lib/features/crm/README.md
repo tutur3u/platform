@@ -20,6 +20,7 @@ mobile directory against that surface.
 | Search | Query on the database route | Shell search, the primary dock action. People search is sent to the API. Groups and tags filter the loaded page |
 | Filters | Status, link, attention, group membership, included and excluded groups | Same filters in the filter sheet |
 | Groups | Group pages, members, calendar, attendance | Create, edit and delete groups, and add or remove members. Schedule lists the next two weeks of sessions. A session opens attendance for its members |
+| Attendance history | Month calendar on a person's page | Month view in the detail with present, late and absent counts and each marked session, gated by `check_user_attendance` |
 | Tags | Group-tag list and editor | Create, edit and delete. Colour is one of the four brand marks. Group membership uses the tag group routes. Opening a tag filters people |
 | Detail | Profile fields, note, linked platform users, promotions | Permission-redacted fields, note, and linked platform accounts when public info is allowed. Private values stay selectable |
 | Create and edit | User form, including archive | Sheet form: name, email, phone, address, note, guest, archive, birthday, avatar, gender, ethnicity and national ID |
@@ -50,6 +51,6 @@ invent a second role model.
 | --- | --- |
 | 1 | Multi-select and broader bulk directory operations, guardian editing, profile-link management, and profile-detail requests |
 | 2 | Linked promotion management and referrals, contact balance and invoices, archive details and history, and contact follow-up |
-| 3 | Group membership role editing, requests, schedule and calendar editing, content/posts, attendance history, and indicator editing |
+| 3 | Group membership role editing, requests, schedule and calendar editing, content/posts, and indicator editing |
 | 4 | Report creation, editing, and detail, approval decisions, actionable guest leads, tutoring operations, organization structure, workforce contracts, and topic announcement contacts, templates, import and delivery |
 | 5 | Audit insights, export, and historical backfill controls |

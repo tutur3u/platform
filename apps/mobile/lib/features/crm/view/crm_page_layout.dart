@@ -197,6 +197,18 @@ extension _CrmPageLayout on _CrmPageState {
                       repository: _repository,
                     )
                   : null,
+              attendance: (_userPermissions?.canCheckUserAttendance ?? false)
+                  ? ContactAttendanceHistory(
+                      key: ValueKey((
+                        'attendance',
+                        widget.workspaceId,
+                        selected.id,
+                      )),
+                      workspaceId: widget.workspaceId,
+                      contactId: selected.id,
+                      repository: _repository,
+                    )
+                  : null,
               privateInfo: _userPermissions?.hasPrivateInfo ?? false,
               publicInfo: _userPermissions?.hasPublicInfo ?? false,
             )

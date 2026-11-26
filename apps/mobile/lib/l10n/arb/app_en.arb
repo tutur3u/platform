@@ -2395,6 +2395,11 @@
   "contactsApprovals": "Approvals",
   "contactsAttendance": "Attendance",
   "contactsAttendanceClear": "Not marked",
+  "contactsAttendanceHistoryEmpty": "No attendance this month",
+  "contactsAttendanceUnavailable": "Attendance access is unavailable",
+  "contactsAttendanceOffline": "Attendance isn't available offline",
+  "contactsPreviousMonth": "Previous month",
+  "contactsNextMonth": "Next month",
   "contactsAttendanceForDay": "{group} · {date}",
   "@contactsAttendanceForDay": {
     "placeholders": {

@@ -9,12 +9,16 @@ class _CrmUserDetail extends StatelessWidget {
     required this.canUnlink,
     required this.onUnlink,
     this.billing,
+    this.attendance,
   });
 
   final CrmUser user;
   final bool privateInfo;
   final bool publicInfo;
   final Widget? billing;
+
+  /// The contact's attendance history; null without attendance access.
+  final Widget? attendance;
   final bool Function(CrmLinkedUser) canUnlink;
   final ValueChanged<CrmLinkedUser> onUnlink;
 
@@ -121,6 +125,10 @@ class _CrmUserDetail extends StatelessWidget {
               ],
             ),
           ),
+        ],
+        if (attendance case final attendance?) ...[
+          const SizedBox(height: AppLayout.sectionGap),
+          attendance,
         ],
         if (privateInfo && billing != null) ...[
           const SizedBox(height: AppLayout.sectionGap),

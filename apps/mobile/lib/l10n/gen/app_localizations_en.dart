@@ -2708,6 +2708,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsAttendanceClear => 'Not marked';
 
   @override
+  String get contactsAttendanceHistoryEmpty => 'No attendance this month';
+
+  @override
+  String get contactsAttendanceUnavailable => 'Attendance access is unavailable';
+
+  @override
+  String get contactsAttendanceOffline => 'Attendance isn\'t available offline';
+
+  @override
+  String get contactsPreviousMonth => 'Previous month';
+
+  @override
+  String get contactsNextMonth => 'Next month';
+
+  @override
   String contactsAttendanceForDay(String group, String date) {
     return '$group · $date';
   }

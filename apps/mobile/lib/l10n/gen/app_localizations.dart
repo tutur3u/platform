@@ -5179,6 +5179,36 @@ abstract class AppLocalizations {
   /// **'Not marked'**
   String get contactsAttendanceClear;
 
+  /// No description provided for @contactsAttendanceHistoryEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No attendance this month'**
+  String get contactsAttendanceHistoryEmpty;
+
+  /// No description provided for @contactsAttendanceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance access is unavailable'**
+  String get contactsAttendanceUnavailable;
+
+  /// No description provided for @contactsAttendanceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance isn\'t available offline'**
+  String get contactsAttendanceOffline;
+
+  /// No description provided for @contactsPreviousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get contactsPreviousMonth;
+
+  /// No description provided for @contactsNextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get contactsNextMonth;
+
   /// No description provided for @contactsAttendanceForDay.
   ///
   /// In en, this message translates to:

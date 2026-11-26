@@ -2693,6 +2693,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsAttendanceClear => 'Chưa điểm danh';
 
   @override
+  String get contactsAttendanceHistoryEmpty => 'Không có điểm danh trong tháng này';
+
+  @override
+  String get contactsAttendanceUnavailable => 'Không có quyền xem điểm danh';
+
+  @override
+  String get contactsAttendanceOffline => 'Không thể xem điểm danh khi ngoại tuyến';
+
+  @override
+  String get contactsPreviousMonth => 'Tháng trước';
+
+  @override
+  String get contactsNextMonth => 'Tháng sau';
+
+  @override
   String contactsAttendanceForDay(String group, String date) {
     return '$group · $date';
   }

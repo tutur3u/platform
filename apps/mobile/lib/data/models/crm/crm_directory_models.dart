@@ -75,6 +75,37 @@ class CrmAttendanceMark extends Equatable {
   List<Object?> get props => [userId, status, sessionId, notes];
 }
 
+/// One attendance record in a contact's month, with the group it belongs to.
+class CrmMemberAttendance extends Equatable {
+  const CrmMemberAttendance({
+    required this.date,
+    required this.status,
+    required this.groupId,
+    required this.groupName,
+    this.sessionId,
+  });
+
+  factory CrmMemberAttendance.fromJson(Map<String, dynamic> json) {
+    final group = crmAsMap(json['groups']);
+    return CrmMemberAttendance(
+      date: DateTime.tryParse(crmAsString(json['date']) ?? '') ?? DateTime(0),
+      status: (crmAsString(json['status']) ?? 'NONE').toUpperCase(),
+      groupId: crmAsString(group['id']) ?? '',
+      groupName: crmAsString(group['name']) ?? '',
+      sessionId: crmAsString(json['session_id']),
+    );
+  }
+
+  final DateTime date;
+  final String status;
+  final String groupId;
+  final String groupName;
+  final String? sessionId;
+
+  @override
+  List<Object?> get props => [date, status, groupId, groupName, sessionId];
+}
+
 class CrmGroupMember extends Equatable {
   const CrmGroupMember({
     required this.id,

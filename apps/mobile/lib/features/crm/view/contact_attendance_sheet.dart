@@ -4,6 +4,7 @@ import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/features/crm/utils/contact_schedule.dart';
+import 'package:mobile/features/crm/view/contact_attendance_history.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Marks present, late or absent for one group session.
@@ -84,11 +85,14 @@ class ContactAttendanceSheetState extends State<ContactAttendanceSheet> {
               child: AppRichRow(
                 title: widget.members[index].label,
                 trailing: AppBadge(
-                  variant: _variant(
+                  variant: contactAttendanceVariant(
                     _status[widget.members[index].id] ?? 'NONE',
                   ),
                   child: Text(
-                    _label(l10n, _status[widget.members[index].id] ?? 'NONE'),
+                    contactAttendanceLabel(
+                      l10n,
+                      _status[widget.members[index].id] ?? 'NONE',
+                    ),
                   ),
                 ),
                 onTap: widget.canEdit
@@ -112,23 +116,5 @@ class ContactAttendanceSheetState extends State<ContactAttendanceSheet> {
         ],
       ],
     );
-  }
-
-  String _label(AppLocalizations l10n, String status) {
-    return switch (status.toUpperCase()) {
-      'PRESENT' => l10n.contactsPresent,
-      'ABSENT' => l10n.contactsAbsent,
-      'LATE' => l10n.contactsLate,
-      _ => l10n.contactsAttendanceClear,
-    };
-  }
-
-  AppBadgeVariant _variant(String status) {
-    return switch (status.toUpperCase()) {
-      'PRESENT' => AppBadgeVariant.success,
-      'ABSENT' => AppBadgeVariant.destructive,
-      'LATE' => AppBadgeVariant.warning,
-      _ => AppBadgeVariant.secondary,
-    };
   }
 }
