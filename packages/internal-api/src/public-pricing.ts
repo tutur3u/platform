@@ -1,7 +1,8 @@
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
 export interface PublicWorkspacePrices {
   currency: 'usd';
-  prices: Record<'plus' | 'pro', { monthly: number; annual: number }>;
+  prices: Record<'plus' | 'pro', { monthly: number; annual: number }> &
+    Partial<Record<'max' | 'ultra', { monthly: number; annual: number }>>;
 }
 export function getPublicWorkspacePrices(options?: InternalApiClientOptions) {
   return getInternalApiClient(options).json<PublicWorkspacePrices>(

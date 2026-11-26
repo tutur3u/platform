@@ -1,4 +1,11 @@
 import productIds from './polar-workspace-product-ids.json';
+import {
+  type SelectedWorkspaceCatalog,
+  matchesWorkspaceCatalogOffer,
+} from './workspace-catalog';
+
+export { activeWorkspaceCatalog } from './workspace-catalog';
+
 export const PUBLIC_WORKSPACE_PRODUCT_IDS = Object.values(productIds);
 
 export interface PublicPriceRow {
@@ -36,6 +43,31 @@ export function publicWorkspacePrices(rows: PublicPriceRow[]) {
       throw new Error('Public catalog is unavailable');
     prices[tier][interval === 'month' ? 'monthly' : 'annual'] =
       row.price_per_seat!;
+  }
+  return { currency: 'usd' as const, prices };
+}
+
+export function publicVersionedWorkspacePrices(
+  rows: PublicPriceRow[],
+  catalog: SelectedWorkspaceCatalog
+) {
+  const prices = {
+    plus: { monthly: 0, annual: 0 },
+    pro: { monthly: 0, annual: 0 },
+    max: { monthly: 0, annual: 0 },
+    ultra: { monthly: 0, annual: 0 },
+  };
+  for (const offer of catalog) {
+    const matches = rows.filter((row) => row.id === offer.productId);
+    const row = matches[0];
+    if (
+      matches.length !== 1 ||
+      !row ||
+      !matchesWorkspaceCatalogOffer(row, offer)
+    )
+      throw new Error('Public catalog is unavailable');
+    prices[offer.tier][offer.term === 'month' ? 'monthly' : 'annual'] =
+      offer.unitAmount;
   }
   return { currency: 'usd' as const, prices };
 }

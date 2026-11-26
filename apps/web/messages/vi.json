@@ -10569,7 +10569,8 @@
         "monthly": "Hàng Tháng",
         "save": "Tiết kiệm 17%",
         "yearly": "Hàng Năm"
-      }
+      },
+      "workspaceSeatPlan": "Gói không gian làm việc tính theo chỗ ngồi"
     },
     "problem": {
       "day": {

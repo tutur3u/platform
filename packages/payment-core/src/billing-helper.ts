@@ -1,9 +1,16 @@
 import type { CustomerSeat, Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { getSupportedProductPrice } from './polar-price';
 import {
   isAiCreditPackProduct,
   parseWorkspaceProductTier,
 } from './polar-product-metadata';
+
+import {
+  activeWorkspaceCatalog,
+  matchesWorkspaceCatalogOffer,
+  WORKSPACE_CATALOG_VERSION,
+} from './workspace-catalog';
 
 function privateSchema(supabase: TypedSupabaseClient) {
   return supabase.schema('private');
@@ -12,11 +19,50 @@ function privateSchema(supabase: TypedSupabaseClient) {
 export async function fetchProducts(polar: Polar) {
   try {
     const res = await polar.products.list({ isArchived: false });
-    return (res.result.items ?? []).filter(
+    const legacy = (res.result.items ?? []).filter(
       (product) =>
         !isAiCreditPackProduct(product.metadata) &&
         parseWorkspaceProductTier(product.metadata) != null
     );
+    const catalog = activeWorkspaceCatalog();
+    if (!catalog) return legacy;
+
+    const products = await Promise.all(
+      catalog.map(async (offer) => {
+        const product = await polar.products.get({ id: offer.productId });
+        const { price, pricePerSeat, minSeats, maxSeats } =
+          getSupportedProductPrice(product);
+        const tier = product.metadata.product_tier;
+        if (
+          price.id !== offer.priceId ||
+          product.metadata.catalog_key !== offer.key ||
+          product.metadata.catalog_version !== WORKSPACE_CATALOG_VERSION ||
+          product.recurringIntervalCount !== 1 ||
+          minSeats !== 1 ||
+          maxSeats !== null ||
+          !matchesWorkspaceCatalogOffer(
+            {
+              id: product.id,
+              archived: product.isArchived,
+              tier: typeof tier === 'string' ? tier : null,
+              pricing_model: price.amountType,
+              price_per_seat: pricePerSeat,
+              recurring_interval: product.recurringInterval,
+            },
+            offer
+          )
+        )
+          throw new Error('Workspace catalog product drift');
+        return product;
+      })
+    );
+    return [
+      ...legacy.filter((product) => {
+        const tier = parseWorkspaceProductTier(product.metadata);
+        return tier === 'FREE' || tier === 'ENTERPRISE';
+      }),
+      ...products,
+    ];
   } catch (err) {
     console.error('Failed to fetch products:', err);
     return [];
@@ -125,10 +171,11 @@ export async function fetchWorkspaceOrders(
       return [];
     }
 
-    const subscriptionProductsById = new Map(
+    type OrderProduct = { name: string | null; price: number | null };
+    const subscriptionProductsById = new Map<string, OrderProduct>(
       (subscriptionProducts ?? []).map((product) => [product.id, product])
     );
-    const creditPacksById = new Map(
+    const creditPacksById = new Map<string, OrderProduct>(
       (creditPacks ?? []).map((creditPack) => [creditPack.id, creditPack])
     );
 

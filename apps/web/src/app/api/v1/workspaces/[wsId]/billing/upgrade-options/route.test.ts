@@ -28,6 +28,7 @@ vi.mock('@tuturuuu/payment-core/billing-helper', () => ({
   checkManageSubscriptionPermission: mocks.canManage,
 }));
 vi.mock('@tuturuuu/payment-core/public-prices', () => ({
+  activeWorkspaceCatalog: () => null,
   get PUBLIC_WORKSPACE_PRODUCT_IDS() {
     return mocks.publicIds;
   },

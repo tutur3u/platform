@@ -119,7 +119,9 @@ export async function POST(
   const { data: targetProduct, error: targetError } = await supabase
     .schema('private')
     .from('workspace_subscription_products')
-    .select('tier, pricing_model, archived, price, min_seats, max_seats')
+    .select(
+      'id, tier, pricing_model, archived, price, min_seats, max_seats, price_per_seat, recurring_interval'
+    )
     .eq('id', productId)
     .maybeSingle();
   if (targetError)

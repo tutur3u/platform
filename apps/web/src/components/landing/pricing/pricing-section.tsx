@@ -112,6 +112,32 @@ export function PricingSection() {
       ],
       color: 'purple' as const,
     },
+    ...(['max', 'ultra'] as const).flatMap((id) => {
+      const price = prices?.[id];
+      if (!price) return [];
+      return [
+        {
+          id,
+          icon: Crown,
+          name: id === 'max' ? 'Max' : 'Ultra',
+          price: {
+            monthly: formatMoneyFromMinor(price.monthly, 'USD', locale),
+            yearly: formatMoneyFromMinor(price.annual, 'USD', locale),
+          },
+          period: {
+            monthly: t('tiers.pro.period.monthly'),
+            yearly: t('tiers.pro.period.yearly'),
+          },
+          badge: undefined,
+          highlighted: undefined,
+          description: t('workspaceSeatPlan'),
+          cta: t('tiers.pro.cta'),
+          ctaVariant: 'default' as const,
+          features: [],
+          color: 'purple' as const,
+        },
+      ];
+    }),
     {
       id: 'enterprise',
       icon: Building2,

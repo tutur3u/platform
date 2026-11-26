@@ -50,3 +50,18 @@ Web. See [Search indexing](/platform/features/search-indexing).
 [Finance](/platform/applications/finance), and
 [Storefront](/platform/applications/storefront) explain the separate ownership
 boundaries.
+
+## Workspace pricing catalog
+
+Web public pricing and the workspace upgrade dialog use the existing Plus and Pro
+catalog by default. Pay continues to offer the existing self-serve plans. The
+candidate USD seat catalog adds monthly and annual Max and Ultra offers alongside
+Plus and Pro. Cutover requires approved product and price bindings, provider
+readback, the schema stamp, and confirmed entitlements. The catalog itself
+defines prices only. Free and Enterprise keep their existing rules.
+
+Cutover applies to new checkout and self-serve plan-change targets. Existing
+subscriptions keep their provider products, paid terms, seats, and renewal
+conditions. Rollback restores the prior purchase selection while retaining the
+new bindings for existing subscriber records. Fixture coverage lives in
+`packages/payment-core/src/workspace-catalog.test.ts`.

@@ -4,7 +4,10 @@ import type {
   WorkspaceUpgradeOptions,
 } from '@tuturuuu/internal-api';
 import { checkManageSubscriptionPermission } from '@tuturuuu/payment-core/billing-helper';
-import { PUBLIC_WORKSPACE_PRODUCT_IDS } from '@tuturuuu/payment-core/public-prices';
+import {
+  activeWorkspaceCatalog,
+  PUBLIC_WORKSPACE_PRODUCT_IDS,
+} from '@tuturuuu/payment-core/public-prices';
 import { isSelfServeWorkspaceProduct } from '@tuturuuu/payment-core/self-serve-products';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { connection, NextResponse } from 'next/server';
@@ -70,19 +73,15 @@ export async function GET(request: Request, { params }: Params) {
     if (catalog.error) throw catalog.error;
     if (subscription.error) throw subscription.error;
 
+    const catalogIds =
+      activeWorkspaceCatalog()?.map(({ productId }) => productId) ??
+      PUBLIC_WORKSPACE_PRODUCT_IDS;
     const plans: UpgradePlan[] = [];
     let freeListed = false;
     for (const row of catalog.data ?? []) {
-      const selfServe = isSelfServeWorkspaceProduct({
-        archived: row.archived,
-        price: row.price,
-        pricing_model: row.pricing_model,
-        tier: row.tier,
-      });
-      if (!selfServe) continue;
+      if (!isSelfServeWorkspaceProduct(row)) continue;
       const isFree = row.tier === 'FREE';
-      if (isFree ? freeListed : !PUBLIC_WORKSPACE_PRODUCT_IDS.includes(row.id))
-        continue;
+      if (isFree ? freeListed : !catalogIds.includes(row.id)) continue;
       freeListed ||= isFree;
       plans.push({
         billingCycle: toCycle(row.recurring_interval),

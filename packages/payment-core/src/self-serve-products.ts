@@ -1,9 +1,18 @@
+import {
+  activeWorkspaceCatalog,
+  isReservedWorkspaceCatalogProduct,
+  matchesWorkspaceCatalogOffer,
+} from './workspace-catalog';
+
 /** Fixed legacy subscriptions remain valid, but new paid purchases use seats. */
 export function isSelfServeWorkspaceProduct(product: {
+  id?: string;
   tier: string | null;
   pricing_model: string | null;
   archived: boolean | null;
   price?: number | null;
+  price_per_seat?: number | null;
+  recurring_interval?: string | null;
 }) {
   if (product.archived !== false) return false;
   if (product.tier === 'FREE')
@@ -11,6 +20,12 @@ export function isSelfServeWorkspaceProduct(product: {
       product.pricing_model === 'free' ||
       (product.pricing_model === 'fixed' && product.price === 0)
     );
+  const catalog = activeWorkspaceCatalog();
+  if (catalog)
+    return catalog.some((offer) =>
+      matchesWorkspaceCatalogOffer(product, offer)
+    );
+  if (product.id && isReservedWorkspaceCatalogProduct(product.id)) return false;
   return (
     (product.tier === 'PLUS' || product.tier === 'PRO') &&
     product.pricing_model === 'seat_based'

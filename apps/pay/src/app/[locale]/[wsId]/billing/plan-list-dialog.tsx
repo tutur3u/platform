@@ -95,6 +95,9 @@ export default function PlanListDialog({
       const isFreeModel = product.metadata.product_tier === 'FREE';
       if (
         !isSelfServeWorkspaceProduct({
+          id: product.id,
+          price_per_seat: supported.pricePerSeat,
+          recurring_interval: product.recurringInterval,
           tier:
             typeof product.metadata.product_tier === 'string'
               ? product.metadata.product_tier

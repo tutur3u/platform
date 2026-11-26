@@ -10569,7 +10569,8 @@
         "monthly": "Monthly",
         "save": "Save 17%",
         "yearly": "Yearly"
-      }
+      },
+      "workspaceSeatPlan": "Seat-based workspace plan"
     },
     "problem": {
       "day": {
