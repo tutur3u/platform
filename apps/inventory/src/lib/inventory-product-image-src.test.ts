@@ -39,7 +39,9 @@ describe('inventory product image src', () => {
         productId: 'p-1',
         wsId: WS,
       })
-    ).toBe(`/inventory/api/v1/workspaces/${WS}/products/p-1/image`);
+    ).toBe(
+      `/inventory/api/v1/workspaces/${WS}/products/p-1/image?v=upload-id-a.png`
+    );
   });
 
   it('routes stored workspace images, including slug-named ones', () => {
@@ -50,7 +52,9 @@ describe('inventory product image src', () => {
           productId: 'p-1',
           wsId: 'personal',
         })
-      ).toBe('/api/v1/workspaces/personal/products/p-1/image');
+      ).toBe(
+        '/api/v1/workspaces/personal/products/p-1/image?v=upload-id-a.png'
+      );
     }
     expect(
       inventoryProductImageSrc({
@@ -71,8 +75,25 @@ describe('inventory product image src', () => {
     ).toBeNull();
   });
 
+  it('changes the src when the stored image is replaced', () => {
+    const before = inventoryProductImageSrc({
+      avatarUrl: share(OLD),
+      productId: 'p-1',
+      wsId: WS,
+    });
+    const after = inventoryProductImageSrc({
+      avatarUrl: share(IMAGE),
+      productId: 'p-1',
+      wsId: WS,
+    });
+    expect(before).toBe(
+      `/api/v1/workspaces/${WS}/products/p-1/image?v=upload-id-old.png`
+    );
+    expect(after).not.toBe(before);
+  });
+
   it('shows a sale line with the image it was sold with', () => {
-    const route = `/api/v1/workspaces/${WS}/products/p-1/image`;
+    const route = `/api/v1/workspaces/${WS}/products/p-1/image?v=upload-id-a.png`;
     // The current image is signed through the product route.
     expect(
       inventorySaleLineImageSrc({

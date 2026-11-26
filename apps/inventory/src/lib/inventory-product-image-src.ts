@@ -5,12 +5,25 @@ import { parseStoredInventoryProductImage } from './inventory-product-image';
  * The product image route for browser requests from the Inventory app,
  * under the app's mount (`/inventory/api/...` on `tuturuuu.com/inventory`,
  * unchanged on the subdomain).
+ *
+ * `version` is the stored image's file name. Upload names are unique, so a
+ * replaced image gets a new `src` and the browser does not reuse the image
+ * or the cached redirect for the previous file. The route ignores it.
  */
-export function inventoryProductImageRoute(wsId: string, productId: string) {
-  return resolveOwnAppApiPath(
+export function inventoryProductImageRoute(
+  wsId: string,
+  productId: string,
+  version?: string
+) {
+  const route = resolveOwnAppApiPath(
     'inventory',
     `/api/v1/workspaces/${encodeURIComponent(wsId)}/products/${encodeURIComponent(productId)}/image`
   );
+  return version ? `${route}?v=${encodeURIComponent(version)}` : route;
+}
+
+function imageVersion(path: string) {
+  return path.split('/').pop() || undefined;
 }
 
 /**
@@ -31,8 +44,9 @@ export function inventoryProductImageSrc({
 }): string | null {
   if (!avatarUrl) return null;
   if (!wsId || !productId) return avatarUrl;
-  return parseStoredInventoryProductImage(avatarUrl)
-    ? inventoryProductImageRoute(wsId, productId)
+  const stored = parseStoredInventoryProductImage(avatarUrl);
+  return stored
+    ? inventoryProductImageRoute(wsId, productId, imageVersion(stored.path))
     : avatarUrl;
 }
 
@@ -63,6 +77,6 @@ export function inventorySaleLineImageSrc({
   const linePath = parseStoredInventoryProductImage(lineImageUrl)?.path;
   const currentPath = parseStoredInventoryProductImage(productAvatarUrl)?.path;
   return linePath && linePath === currentPath
-    ? inventoryProductImageRoute(wsId, productId)
+    ? inventoryProductImageRoute(wsId, productId, imageVersion(linePath))
     : lineImageUrl;
 }
