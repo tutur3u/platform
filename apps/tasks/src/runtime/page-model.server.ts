@@ -2,10 +2,10 @@ import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
 import { matchPage } from '@tuturuuu/start-bridge/pages';
 import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
-import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { PAGE_REWRITE_HEADER } from '../lib/page-rewrite';
 import { startBoardSnapshot } from './board-snapshot.server';
 import { resolvePathLocale } from './locale';
+import { appPathname, isTaskBoardEntrypoint } from './page-path';
 import { type PagePattern, pages } from './page-registry.bridge.gen';
 import {
   loginModel,
@@ -104,16 +104,6 @@ export type TasksPage = Awaited<
   ReturnType<(typeof loaders)[keyof typeof loaders]>
 >;
 
-/** The app-relative pathname of a router path, without its locale prefix. */
-function appPathname(path: string) {
-  const base = runtimeAppBase();
-  let pathname = new URL(path, 'http://app.invalid').pathname;
-  if (base && (pathname === base || pathname.startsWith(`${base}/`)))
-    pathname = pathname.slice(base.length) || '/';
-  const localeless = pathname.replace(/^\/(?:en|vi)(?=\/|$)/u, '') || '/';
-  return { pathname: localeless, localePrefixed: localeless !== pathname };
-}
-
 export async function loadPageModel(path: string, preload = false) {
   // A proxy rewrite (crawler preview, root fallback) names the page to load.
   const rewrite = bridgeRequest().request.headers.get(PAGE_REWRITE_HEADER);
@@ -122,7 +112,7 @@ export async function loadPageModel(path: string, preload = false) {
   const url = new URL(target, 'http://app.invalid');
   const locale = resolvePathLocale(target);
   let { pathname, localePrefixed } = appPathname(target);
-  if (preload && pathname === '/') notFound();
+  if (preload && isTaskBoardEntrypoint(pathname)) notFound();
   if (pathname === '/') {
     const entry = await rootEntry({
       locale,
@@ -135,14 +125,6 @@ export async function loadPageModel(path: string, preload = false) {
   }
   const match = matchPage(pages, pathname);
   if (!match) notFound();
-  // Entrypoints can provision a board and must run only on navigation.
-  if (
-    preload &&
-    (match.page.pattern === '/[wsId]/boards' ||
-      match.page.pattern === '/[wsId]/tasks')
-  ) {
-    notFound();
-  }
   const params = { ...match.params, locale } as Record<string, string>;
   const page = await loaders[match.page.pattern as PagePattern]({
     params,
