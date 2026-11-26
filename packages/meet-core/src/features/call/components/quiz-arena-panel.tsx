@@ -72,6 +72,7 @@ function errorKey(error: unknown) {
 }
 
 export function QuizArenaPanel({
+  guest = false,
   accountId,
   meetingId,
   query,
@@ -80,6 +81,7 @@ export function QuizArenaPanel({
   accountId: string;
   meetingId: string;
   query: ArenaQuery;
+  guest?: boolean;
   onClose: () => void;
 }) {
   const t = useTranslations('meet.call.quizArena');
@@ -300,7 +302,7 @@ export function QuizArenaPanel({
                 view={full}
                 selfId={accountId}
                 tile={active}
-                busy={busy}
+                busy={busy || (guest && active.myAnswer !== null)}
                 onAction={act}
               />
             )}

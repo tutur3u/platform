@@ -162,6 +162,45 @@ describe('answer-key secrecy', () => {
 });
 
 describe('all-answer mode', () => {
+  it('scores the admitted guest once across devices and refuses a guest with only remembered approval', () => {
+    let state = setup({ answerMode: 'all_answer', playMode: 'individual' });
+    const guest = { ...player(1), guest: true, userId: uuid(900) };
+    const tile = arena(state).tiles[0]!;
+    state = ok(state, host, { action: 'arena.pickTile', tileId: tile.id });
+    const answer = {
+      action: 'arena.answer',
+      tileId: tile.id,
+      answer: { optionId: tile.question.options![0]!.id },
+    };
+    expect(
+      run(
+        {
+          ...state,
+          presence: {},
+          approved: {
+            [guest.accountId]: {
+              userId: guest.accountId,
+              displayName: guest.displayName,
+            },
+          },
+        },
+        guest,
+        answer
+      ).status
+    ).toBe(403);
+    state = ok(state, guest, answer);
+    expect(run(state, { ...guest, userId: uuid(901) }, answer).status).toBe(
+      409
+    );
+    state = ok(state, host, { action: 'arena.endGame' });
+    const podium = rankQuizArenaPlayers(view(state, 1).players);
+    expect(podium[0]).toMatchObject({
+      userId: guest.accountId,
+      displayName: guest.displayName,
+    });
+    expect(podium[0]!.score).toBeGreaterThan(0);
+  });
+
   it('grades choices on reveal with speed bonus and wrong-answer penalty', () => {
     let state = setup({
       answerMode: 'all_answer',

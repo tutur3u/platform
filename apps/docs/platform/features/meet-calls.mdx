@@ -1264,7 +1264,11 @@ next token.
   binds one response per poll to the verified guest session across devices;
   unverified guests cannot vote.
   Guests cannot create or manage polls.
-- Documents, Quiz Arena, notes, recordings and other account-backed features
+- Admitted guests can play Quiz Arena, including boards imported from Teach.
+  Their signed guest session identifies them across devices. Their first answer
+  per question counts toward the leaderboard under their room display name.
+  Board setup, imports, exports and moderator controls require a room manager.
+- Documents, notes, recordings and other account-backed features
   show **Sign in to use this** for guests instead of failing loudly.
 - When a host removes an anonymous guest, that guest id cannot rejoin the same
   meeting for ten minutes. Token refresh and reconnect enforce the ban.

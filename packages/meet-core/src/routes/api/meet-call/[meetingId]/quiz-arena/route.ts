@@ -1,7 +1,7 @@
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import {
   callRoomService,
-  roomRoute,
+  meetCallRoomRoute,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { connection } from 'next/server';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ async function readQuizArenaAction(request: Request) {
 export async function GET(request: Request, { params }: Params) {
   await connection();
   const { meetingId } = await params;
-  return roomRoute(request, meetingId, async (access) => {
+  return meetCallRoomRoute(request, meetingId, true, async (access) => {
     const query = new URL(request.url).searchParams;
     const entries = Object.fromEntries(query);
     if (query.size === 0)
@@ -52,6 +52,7 @@ export async function GET(request: Request, { params }: Params) {
     const parsed = exportQuery.safeParse(entries);
     if (query.size !== 1 || !parsed.success)
       throw new MeetCallAccessError(400, 'Invalid Quiz Arena request');
+    if (access.guest) throw new MeetCallAccessError(403, 'Forbidden');
     const { format } = parsed.data;
     const result = await callRoomService(access, {
       action: 'arena.export',
@@ -77,7 +78,20 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { meetingId } = await params;
-  return roomRoute(request, meetingId, async (access) =>
-    runQuizArenaAction(access, await readQuizArenaAction(request))
-  );
+  return meetCallRoomRoute(request, meetingId, true, async (access) => {
+    const action = await readQuizArenaAction(request);
+    if (access.guest) {
+      if (
+        action.action !== 'buzz' &&
+        action.action !== 'wager' &&
+        action.action !== 'answer'
+      )
+        throw new MeetCallAccessError(403, 'Forbidden');
+      return callRoomService(access, {
+        ...action,
+        action: `arena.${action.action}`,
+      });
+    }
+    return runQuizArenaAction(access, action);
+  });
 }

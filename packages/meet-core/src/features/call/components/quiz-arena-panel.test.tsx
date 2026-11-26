@@ -22,8 +22,13 @@ import viMessages from '../../../../../../apps/meet/messages/vi.json';
 import type { QuizArenaClientView } from '../lib/quiz-arena-client';
 import { QuizArenaControl, QuizArenaPanel } from './quiz-arena-panel';
 
+import { MeetToolProvider } from '../tools/context';
+import { QuizToolPanel } from '../tools/quiz/quiz-tool-panel';
+
+const arenaHook = vi.hoisted(() => vi.fn());
 const send = vi.hoisted(() => vi.fn());
 vi.mock('../lib/quiz-arena-client', () => ({
+  useCallQuizArena: arenaHook,
   sendQuizArenaAction: send,
   quizArenaKey: () => ['arena'],
   notifyQuizArenaMutation: () => {},
@@ -305,4 +310,55 @@ it('shows the builder to hosts on an empty arena and offers the starter board af
   cleanup();
   renderPanel({ kind: 'empty', canManage: false });
   expect(screen.getByText("The host hasn't set up a board yet.")).toBeTruthy();
+});
+
+it('opens the quiz tool for a guest and locks their choice after submission', async () => {
+  const active = tile(1, 0, 0, {
+    status: 'active',
+    question: {
+      type: 'single_choice',
+      question: 'Choose one',
+      options: [{ id: uuid(201), label: 'First' }],
+    },
+  });
+  const data = base(
+    { phase: 'question', answerMode: 'all_answer', activeTileId: active.id },
+    [active]
+  );
+  arenaHook.mockReturnValue({ data });
+  send.mockResolvedValue({ ok: true });
+  const client = new QueryClient();
+  const fixture = () => (
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={en} timeZone="UTC">
+        <MeetToolProvider
+          value={{
+            meetingId: 'meeting',
+            accountId: uuid(1),
+            requiresAccount: true,
+            enabled: true,
+            canManage: false,
+            close: vi.fn(),
+          }}
+        >
+          <QuizToolPanel />
+        </MeetToolProvider>
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+  const panel = render(fixture());
+  fireEvent.click(screen.getByRole('button', { name: /First/ }));
+  await waitFor(() =>
+    expect(send).toHaveBeenCalledWith('meeting', {
+      action: 'answer',
+      tileId: active.id,
+      answer: { optionId: uuid(201) },
+    })
+  );
+  active.myAnswer = { optionId: uuid(201) };
+  panel.rerender(fixture());
+  expect(
+    (screen.getByRole('button', { name: /First/ }) as HTMLButtonElement)
+      .disabled
+  ).toBe(true);
 });

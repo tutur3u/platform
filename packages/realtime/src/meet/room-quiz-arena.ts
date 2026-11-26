@@ -146,7 +146,7 @@ export function applyRoomQuizArena(
   command: QuizArenaRoomCommand
 ): Result {
   const accountId = token.accountId ?? token.userId;
-  const canManage = canMeetRealtimeManageParticipants(token);
+  const canManage = !token.guest && canMeetRealtimeManageParticipants(token);
   const liveServer = token.scopes.includes('meet:live-server');
   const present = Object.values(snapshot.presence).some(
     (person) => (person.accountId ?? person.userId) === accountId
@@ -156,6 +156,8 @@ export function applyRoomQuizArena(
     body: { error },
     status,
   });
+  if (token.guest && (!present || snapshot.ended))
+    return fail('Forbidden', 403);
   if (
     !canManage &&
     ((!present && !snapshot.approved?.[accountId]) ||
@@ -314,6 +316,11 @@ export function applyRoomQuizArena(
         : tile?.id === state.activeTileId && tile.status === 'active';
       if (!tile || !open) return fail('Tile is not active', 409);
       if (canManage) return fail('Hosts run the game', 409);
+      if (
+        token.guest &&
+        tile.submissions.some(({ userId }) => userId === accountId)
+      )
+        return fail('Answer already submitted', 409);
       if (!answerFits(tile.question, command.answer))
         return fail('Invalid answer', 400);
       const deadline =

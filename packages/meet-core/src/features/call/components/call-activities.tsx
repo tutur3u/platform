@@ -64,7 +64,7 @@ export function useCallActivities({
   formsTurnstileSiteKey?: string;
   formsAccess: { canManage: boolean; canReadWorkspace: boolean };
   stage: ActivityStage;
-  /** Anonymous guests may vote in polls only; Quiz Arena needs an account. */
+  /** Forms require an account. */
   requiresAccount?: boolean;
 }) {
   const formsT = useTranslations('meet.call');
@@ -78,8 +78,7 @@ export function useCallActivities({
   const canUseForms = enabled && formsEnabled && !requiresAccount;
   const classroomAvailable = enabled && classroomToolsEnabled;
   const polls = useCallPolls(meetingId, accountId, enabled, isOpen('polls'));
-  // Quiz Arena needs an account, so a guest never polls it (it would only
-  // answer 401).
+  // Guests start polling when they open the quiz tool.
   const arena = useCallQuizArena(
     meetingId,
     accountId,

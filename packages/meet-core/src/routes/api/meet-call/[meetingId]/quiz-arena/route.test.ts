@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
+  guest: vi.fn(),
   session: vi.fn(),
   fetch: vi.fn(),
   action: vi.fn(),
@@ -12,7 +13,7 @@ vi.mock('next/headers', () => ({
   cookies: async () => ({ get: () => undefined }),
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
-  getMeetGuestCallAccess: vi.fn(),
+  getMeetGuestCallAccess: mocks.guest,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
@@ -151,4 +152,50 @@ it('blocks cross-origin and oversized mutations before dispatch', async () => {
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ ok: true, seq: 3 });
   expect(mocks.action.mock.calls[0]?.[1]).toEqual(buzz);
+});
+
+it('routes guest state and answers with the signed room identity and refuses exports and setup', async () => {
+  mocks.access.mockRejectedValue(new MeetCallAccessError(401, 'Sign in'));
+  mocks.guest.mockResolvedValue({
+    guest: true,
+    user: { id: 'guest-id' },
+    meeting: { id, ws_id: 'workspace' },
+    displayName: 'Minh',
+    isHost: false,
+    admission: 'lobby',
+    canReadWorkspace: false,
+  });
+  mocks.fetch.mockImplementation(async () => Response.json({ ok: true }));
+  const post = (action: unknown) =>
+    POST(
+      new Request(url, {
+        method: 'POST',
+        headers: { origin: 'https://meet.test' },
+        body: JSON.stringify(action),
+      }),
+      params
+    );
+  expect((await GET(new Request(url), params)).status).toBe(200);
+  expect(
+    (await post({ action: 'answer', tileId, answer: { text: 'A' } })).status
+  ).toBe(200);
+  expect(mocks.session).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      guest: true,
+      userId: 'guest-id',
+      displayName: 'Minh',
+      meetingId: id,
+    })
+  );
+  expect(body(mocks.fetch.mock.calls[1]?.[1])).toEqual({
+    action: 'arena.answer',
+    tileId,
+    answer: { text: 'A' },
+  });
+  expect((await post({ action: 'endGame' })).status).toBe(403);
+  expect((await GET(new Request(url + '?format=csv'), params)).status).toBe(
+    403
+  );
+  expect(mocks.fetch).toHaveBeenCalledTimes(2);
+  expect(mocks.action).not.toHaveBeenCalled();
 });

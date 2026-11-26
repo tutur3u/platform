@@ -94,7 +94,7 @@ it('lists a live poll and a live Quiz Arena together in the shortcuts', () => {
   expect(screen.getByRole('button', { name: /quiz arena/i })).toBeTruthy();
 });
 
-it('never polls Quiz Arena for a guest, who would only get a 401', () => {
+it('keeps background Quiz Arena polling off for a guest with the panel closed', () => {
   arenaHook.mockClear();
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
