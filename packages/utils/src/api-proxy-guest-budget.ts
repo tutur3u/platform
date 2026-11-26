@@ -65,9 +65,9 @@ export const GUEST_SCOPE_MULTIPLIER = 100;
  * classroom pen board, the board list, a running transcript and Room Mira,
  * with a Mira settling burst and the lobby's polling before admission) and
  * half an hour of drawing on the classroom board (a write and a re-read per
- * stroke), a guest keeps at least 1.5x headroom on its minute and hour reads
- * and its hourly writes, and the day's budgets cover about twelve such hours.
- * The write minute stays at 30, a third over the drawing peak.
+ * stroke), a guest keeps at least 1.5x headroom on every minute and hour
+ * budget. The hourly writes also cover a full hour of steady drawing with
+ * 1.5x headroom, and the day's budgets cover about eight such hours.
  */
 export function guestRateLimits(): RateLimitProfile {
   const config = (
@@ -88,8 +88,8 @@ export function guestRateLimits(): RateLimitProfile {
     ],
     mutate: [
       config('minute', '1 m', 45, 'API_PROXY_GUEST_MUTATE_LIMIT_MINUTE'),
-      config('hour', '1 h', 1200, 'API_PROXY_GUEST_MUTATE_LIMIT_HOUR'),
-      config('day', '1 d', 9600, 'API_PROXY_GUEST_MUTATE_LIMIT_DAY'),
+      config('hour', '1 h', 2000, 'API_PROXY_GUEST_MUTATE_LIMIT_HOUR'),
+      config('day', '1 d', 16_000, 'API_PROXY_GUEST_MUTATE_LIMIT_DAY'),
     ],
   };
 }
