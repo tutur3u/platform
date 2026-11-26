@@ -1,5 +1,6 @@
+import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import { NextRequest } from 'next/server';
-import { expect, it, type Mock } from 'vitest';
+import { expect, it, type Mock, vi } from 'vitest';
 
 export function registerAnonymousApiProxyCases(mocks: {
   guardApiProxyRequest: Mock;
@@ -107,14 +108,15 @@ export function registerAnonymousApiProxyCases(mocks: {
     'lets Upskii Basic credentials reach the guard on POST %s, without a UA and uncounted',
     async (path) => {
       const { proxy } = await import('../proxy');
-      for (const headers of [
+      const headerSets: Record<string, string>[] = [
         { Authorization: UPSKII_BASIC, 'content-type': 'application/json' },
         {
           Authorization: UPSKII_BASIC,
           'content-type': 'application/json',
           'user-agent': 'upskii-server/1.0',
         },
-      ]) {
+      ];
+      for (const headers of headerSets) {
         mocks.guardApiProxyRequest.mockClear();
         const response = await proxy(
           new NextRequest(`http://localhost${path}`, {
@@ -134,6 +136,8 @@ export function registerAnonymousApiProxyCases(mocks: {
   it.each([
     ['GET', '/api/v1/integrations/upskii/link-status'],
     ['PUT', '/api/v1/integrations/upskii/unlink'],
+    ['HEAD', '/api/v1/integrations/upskii/introspect'],
+    ['POST', '/api/v1/integrations/UPSKII/unlink'],
     ['POST', '/api/v1/integrations/upskii/link'],
     ['POST', '/api/v1/integrations/upskii/link-status/'],
     ['POST', '/api/v1/integrations/upskii/introspect/extra'],
@@ -144,7 +148,7 @@ export function registerAnonymousApiProxyCases(mocks: {
     const { proxy } = await import('../proxy');
     const response = await proxy(
       new NextRequest(`http://localhost${path}`, {
-        ...(method === 'GET' ? {} : { body: '{}' }),
+        ...(method === 'GET' || method === 'HEAD' ? {} : { body: '{}' }),
         headers: { Authorization: UPSKII_BASIC, 'user-agent': 'curl/8.0' },
         method,
       })
@@ -210,6 +214,48 @@ export function registerAnonymousApiProxyCases(mocks: {
         'suspicious-anonymous-request'
       );
       expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['test-secret', true],
+    ['forged-secret', false],
+  ])(
+    'treats a UA-less ttr_app_ bearer signed with %s as server-to-server: %s',
+    async (secret, admitted) => {
+      vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
+      try {
+        const { token } = createAppCoordinationToken(
+          {
+            expiresInSeconds: 300,
+            originApp: 'web',
+            scopes: ['upskii-link:write'],
+            targetApp: 'upskii',
+            userId: '11111111-1111-4111-8111-111111111111',
+          },
+          { secret }
+        );
+        const { proxy } = await import('../proxy');
+        const response = await proxy(
+          new NextRequest('http://localhost/api/v1/integrations/upskii/link', {
+            body: '{}',
+            headers: { Authorization: `Bearer ${token}` },
+            method: 'POST',
+          })
+        );
+
+        expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
+          admitted ? null : 'suspicious-anonymous-request'
+        );
+        expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(
+          admitted ? 1 : 0
+        );
+        expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledTimes(
+          admitted ? 0 : 1
+        );
+      } finally {
+        vi.unstubAllEnvs();
+      }
     }
   );
 }

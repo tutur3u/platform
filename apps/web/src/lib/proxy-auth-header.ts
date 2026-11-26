@@ -29,8 +29,10 @@ export function isUpskiiAppCredentialCall(req: ProxyRequest): boolean {
     return false;
   }
 
+  // The same shape `readBasicAppCredentials` parses, so the proxy never
+  // refuses a header the route would accept.
   const authHeader = req.headers.get('authorization')?.trim() ?? '';
-  return /^basic [A-Za-z0-9+/]+={0,2}$/iu.test(authHeader);
+  return /^Basic\s+[A-Za-z0-9+/=]{1,512}$/u.test(authHeader);
 }
 
 export function looksLikeSupabaseJwt(token: string): boolean {

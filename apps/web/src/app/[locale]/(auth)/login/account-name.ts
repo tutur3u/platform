@@ -11,11 +11,19 @@ export function maskEmailForDisplay(email: string | null | undefined) {
   const at = trimmed.lastIndexOf('@');
   if (at <= 0 || at === trimmed.length - 1) return null;
 
-  return `${trimmed[0]}•••${trimmed.slice(at)}`;
+  return `${Array.from(trimmed)[0]}•••${trimmed.slice(at)}`;
 }
 
 function readName(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+/** Some providers put the email in a name field; never show it in full. */
+function readSafeName(value: unknown) {
+  const name = readName(value);
+  return name && /^[^\s@]+@[^\s@]+$/u.test(name)
+    ? maskEmailForDisplay(name)
+    : name;
 }
 
 export function resolveSessionAccountName({
@@ -29,13 +37,13 @@ export function resolveSessionAccountName({
   handle?: unknown;
   metadata?: Record<string, unknown>;
 }) {
-  const handleName = readName(handle);
+  const handleName = readName(handle)?.replace(/^@+/u, '');
 
   return (
-    readName(displayName) ??
-    readName(metadata?.full_name) ??
-    readName(metadata?.name) ??
-    (handleName ? `@${handleName.replace(/^@+/u, '')}` : null) ??
+    readSafeName(displayName) ??
+    readSafeName(metadata?.full_name) ??
+    readSafeName(metadata?.name) ??
+    (handleName ? `@${handleName}` : null) ??
     maskEmailForDisplay(email)
   );
 }
