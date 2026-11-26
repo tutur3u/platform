@@ -2851,12 +2851,14 @@ Scope: the in-call view and the ended-meeting screen in Meet and Parley.
   device in `localStorage` under `meet.self-preview`; unavailable storage falls
   back to the defaults (bottom-right, medium, visible). Snap animations honour
   `prefers-reduced-motion`.
-- The ended screen has one primary action, **Back to Meet**, and at most one
-  secondary action, **New meeting**, shown only to viewers who may start one.
-  Everything else sits in a single quiet **More** menu with icons: the notes
-  reader toggle, **Create a follow-up task**, **Restore meeting** and **Meeting
-  settings**, each behind its existing permission. The left screen keeps
-  **Rejoin** as its primary action with Back to Meet as the secondary.
+- When notes or a transcript are available to the viewer, the ended screen
+  makes opening the reader its primary action. **Back to Meet** remains
+  available and becomes the primary action when the reader is already open or
+  there is nothing to read. **New meeting** remains available to viewers who
+  may start one. **More** holds the open reader's hide action, **Create a
+  follow-up task**, **Restore meeting**, and **Meeting settings**, subject to
+  their existing permissions. The left screen keeps **Rejoin** as its primary
+  action with Back to Meet as the secondary.
 - The notes reader item follows what the meeting produced, decided from the
   access-checked meet-ai state and only for viewers who may read notes. With no
   post-call notes and no readable transcript there is no item. With notes only

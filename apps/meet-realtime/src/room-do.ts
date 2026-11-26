@@ -2,7 +2,6 @@ import {
   accountRoomTime,
   activeMeetEvent,
   admitOrHold,
-  applyMeetRoomSettings,
   MeetPresencePublisher,
   canCloseMeetSubscriptions,
   createMeetSnapshotWriteGate,
@@ -11,7 +10,6 @@ import {
   createMeetRoomSocketDelivery,
   type MeetRoomSocketAttachment,
   meetClassFeatures,
-  meetRoomStateView,
   createMeetRoomSnapshot,
   expireRoomBudget,
   MeetCommandExecutor,
@@ -31,10 +29,7 @@ import {
   expireRoomLive,
   liveRoomAnnouncements,
 } from '../../../packages/realtime/src/meet/room-live';
-import {
-  resolveRoomSettingsPatch,
-  roomCommand,
-} from '../../../packages/realtime/src/meet/room-settings-gate';
+import { roomCommand } from '../../../packages/realtime/src/meet/room-settings-gate';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { hasMeetMediaContextConflict } from '../../../packages/realtime/src/meet/room-media-role';
 import {
@@ -52,6 +47,7 @@ import {
   scheduleRoomFollowUps,
   wakeAttendanceCopies,
 } from './room-maintenance';
+import { handleMeetRoomState } from './room-state-request';
 import { handleMeetRoomDevice } from './room-device-request';
 import { MiraShareStorage } from './mira-share-storage';
 import { privateRoomStorage } from './private-room-storage';
@@ -310,45 +306,17 @@ export class MeetRoomDurableObject implements DurableObject {
         disconnect: (userIds) => this.delivery.disconnect(userIds),
       });
     }
-    if (url.pathname === '/room-state') {
-      if (
-        request.method === 'GET' &&
-        url.searchParams.get('eventAudit') === '1'
-      ) {
-        if (token.role !== 'host' || !token.eventHost)
-          return new Response(null, { status: 403 });
-        return Response.json(
-          {
-            activations: this.snapshot.eventActivationAudit ?? [],
-            admissions: this.snapshot.eventAdmissionAudit ?? [],
-          },
-          { headers: { 'Cache-Control': 'private, no-store' } }
-        );
-      }
-      if (request.method === 'PATCH') {
-        const settings = resolveRoomSettingsPatch(
-          await request.json().catch(() => null),
-          this.snapshot.settings,
-          token,
-          this.env
-        );
-        if (settings instanceof Response) return settings;
-        const updated = applyMeetRoomSettings(
-          this.snapshot,
-          settings,
-          token,
-          new Date().toISOString()
-        );
-        this.snapshot = updated.state;
-        await this.persist();
-        if (this.snapshot.budget?.pendingPublications?.length)
-          await this.scheduleSweep(Date.now());
-        this.broadcast(updated.broadcast);
-      }
-      return Response.json(meetRoomStateView(this.snapshot, token), {
-        headers: { 'Cache-Control': 'private, no-store' },
+    if (url.pathname === '/room-state')
+      return handleMeetRoomState(request, url, token, this.env, {
+        read: () => this.snapshot,
+        commit: async (updated) => {
+          this.snapshot = updated.state;
+          await this.persist();
+          if (this.snapshot.budget?.pendingPublications?.length)
+            await this.scheduleSweep(Date.now());
+          this.broadcast(updated.broadcast);
+        },
       });
-    }
     const previous = this.snapshot.presence[token.userId];
     if (
       previous &&

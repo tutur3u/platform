@@ -195,7 +195,7 @@ export function CallEnded({
                 canManage={canManage}
                 shareNotesAfterMeeting={shareAfter}
                 onShareNotesChange={setShareAfter}
-                reader={reader}
+                reader={showReaderAction ? null : reader}
                 readerOpen={open}
                 onToggleReader={() => setShowNotes(!open)}
               />

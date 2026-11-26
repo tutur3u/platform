@@ -202,22 +202,16 @@ it('opens available notes and transcript directly from the ended screen', () => 
   expect(screen.getByTestId('session-notes')).toBeTruthy();
 });
 
-it('names the overflow reader item after what the meeting actually has', () => {
-  withAi('notes');
+it.each([
+  ['notes', 'Show notes'],
+  ['transcript', 'Show transcript'],
+  ['both', 'View notes & transcript'],
+] as const)('names the ended-screen reader when %s is available', (available, label) => {
+  withAi(available);
   renderEnded();
+  expect(screen.getByRole('button', { name: label })).toBeTruthy();
   openMore();
-  fireEvent.click(item('Show notes') as HTMLElement);
-  expect(screen.getByTestId('session-notes')).toBeTruthy();
-  cleanup();
-  withAi('transcript');
-  renderEnded();
-  openMore();
-  expect(item('Show transcript')).toBeTruthy();
-  cleanup();
-  withAi('both');
-  renderEnded();
-  openMore();
-  expect(item('View notes & transcript')).toBeTruthy();
+  expect(item(label)).toBeNull();
 });
 
 it('keeps the host task action in the overflow when there is no reader', () => {
@@ -288,7 +282,7 @@ it('never renders the notes reader for viewers without notes access', () => {
   expect(item(/notes|transcript/i)).toBeNull();
 });
 
-it('has exactly one primary action, Back to Meet, even when notes exist', () => {
+it('makes the available notes reader the sole primary action', () => {
   withAi('both');
   renderEnded({ canReadNotes: true, canStartMeeting: true });
   const section = screen
@@ -298,7 +292,7 @@ it('has exactly one primary action, Back to Meet, even when notes exist', () => 
     (el) => (el as HTMLElement).dataset.variant === 'default'
   );
   expect(primaries).toHaveLength(1);
-  expect(primaries[0]?.textContent).toBe('Back to Meet');
+  expect(primaries[0]?.textContent).toBe('View notes & transcript');
   expect(screen.getByRole('button', { name: 'New meeting' })).toBeTruthy();
 });
 
