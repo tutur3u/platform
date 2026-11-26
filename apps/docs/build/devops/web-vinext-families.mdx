@@ -358,8 +358,27 @@ nothing populates the R2 store yet.
   trusted by the proxy), or `Authorization: Basic` on `POST` to exactly
   `/api/v1/integrations/upskii/{introspect,link-status,unlink}`. Those three
   routes are also the only place a `Basic` header is not a
-  `malformed-auth-header` 401. Neither exemption is counted as abuse, and rate
-  limits, the query/scanner rules and route authentication still apply. Other
+  `malformed-auth-header` 401. Neither exemption is counted as abuse by the
+  proxy, and rate limits, the query/scanner rules and route authentication
+  still apply. Instead the Upskii routes count their own failed Basic checks
+  (`lib/integrations/upskii/auth-failure.ts`), scoped to those routes. They
+  never feed the global edge IP block, so a bad or rotated Upskii secret cannot
+  cut a source off from other APIs.
+  - Failures from an address source (IPv6 grouped by /64) count per source
+    and client id. After 5 in 10 minutes the pair gets 429 on those routes,
+    before the secret check, until the window ends. Sending the right secret
+    recovers it after that.
+  - A Worker-zone source (`cf-worker`, which is how the real Upskii server
+    calls) is never locked out, because that header is not proven for every
+    client egressing from Cloudflare (WARP, for example). Per-IP admission,
+    pacing and the 256-bit secret bound guessing there. An `unknown` source
+    (no trusted client address) is never locked out either, because every such
+    caller would share one key. The first one from client id `upskii` per
+    isolate logs `UPSKII_AUTH_SOURCE_UNKNOWN`.
+  - Failures per client id across all sources log `UPSKII_AUTH_FAILURE_SURGE`
+    past `accountLinkAuthFailure`, but never lock the client id out.
+  - Every counter fails closed: without its store the routes answer 503 rather
+    than allow unlimited guesses. Other
   paths, methods, trailing slashes and encoded variants keep both blocks.
   Clients should still send a User-Agent.
 

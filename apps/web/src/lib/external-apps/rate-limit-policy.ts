@@ -39,6 +39,11 @@ export const EXTERNAL_APP_RATE_LIMITS = {
   accountLinkAttempt: { windowMs: MINUTE_MS, maxRequests: 600 },
   accountLinkApp: { windowMs: MINUTE_MS, maxRequests: 600 },
   accountLinkUser: { windowMs: MINUTE_MS, maxRequests: 10 },
+  // Failed Upskii Basic credential checks: per source and client id (past it
+  // the pair is locked out of those routes for the window), and per client
+  // id across all sources (past it each failure alerts; never a lockout).
+  accountLinkAuthFailureSource: { windowMs: 10 * MINUTE_MS, maxRequests: 5 },
+  accountLinkAuthFailure: { windowMs: 10 * MINUTE_MS, maxRequests: 30 },
 } as const satisfies Record<string, RateLimitConfig>;
 
 export type ExternalAppRateLimitBucket = keyof typeof EXTERNAL_APP_RATE_LIMITS;

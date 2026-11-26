@@ -16,6 +16,12 @@ vi.mock('@/lib/integrations/upskii/rate-limit', () => ({
   admitAccountLinkRequest: vi.fn(async () => null),
   limitVerifiedAccountLinkRequest: vi.fn(async () => null),
 }));
+vi.mock('@/lib/integrations/upskii/auth-failure', () => ({
+  noteUpskiiAuthSource: vi.fn(),
+  recordUpskiiAuthFailure: vi.fn(async () => null),
+  refuseLockedUpskiiAuthSource: vi.fn(async () => null),
+  upskiiAuthSource: () => '198.51.100.7',
+}));
 vi.mock('@/lib/external-apps/exchange-rate-limit', () => ({
   paceExternalAppExchangeFailure: vi.fn(async () => null),
 }));

@@ -8,6 +8,12 @@ import { isQaTestAccount } from '@tuturuuu/utils/qa-test-account';
 import { type NextRequest, NextResponse } from 'next/server';
 import { verifyExternalAppSecret } from '@/lib/app-coordination/external-apps';
 import { paceExternalAppExchangeFailure } from '@/lib/external-apps/exchange-rate-limit';
+import {
+  noteUpskiiAuthSource,
+  recordUpskiiAuthFailure,
+  refuseLockedUpskiiAuthSource,
+  upskiiAuthSource,
+} from './auth-failure';
 import { UPSKII_APP_ID } from './constants';
 import { checkUpskiiQaAccess, type UpskiiQaRefusal } from './qa-access';
 import {
@@ -116,9 +122,11 @@ function unauthorized() {
 
 /**
  * Verifies the Upskii server's own app credentials from the Authorization
- * header, with per-IP and per-app limits before the check, failure pacing
- * after a wrong secret, and a per-app limit once verified. Returns the admin
- * client on success, or the response to send.
+ * header: per-IP and per-app limits apply first, then a source and client id
+ * locked out after failed checks is refused before the secret check. Every
+ * failure is counted (`./auth-failure`), a wrong secret is also paced, and a
+ * verified app is limited per app. Returns the admin client on success, or the response to
+ * send.
  */
 export async function requireUpskiiAppCredentials(
   request: NextRequest,
@@ -128,7 +136,9 @@ export async function requireUpskiiAppCredentials(
   | { ok: false; response: NextResponse }
 > {
   const ip = extractIPFromRequest(request.headers);
+  const source = upskiiAuthSource(request.headers, ip);
   const credentials = readBasicAppCredentials(request);
+  noteUpskiiAuthSource(source, credentials?.appId ?? 'none');
   const admission = await admitAccountLinkRequest({
     appId: credentials?.appId ?? 'none',
     appSecret: credentials?.appSecret,
@@ -137,12 +147,23 @@ export async function requireUpskiiAppCredentials(
   });
   if (admission) return { ok: false, response: admission };
 
+  // After admission, so a locked flood costs no unbounded store reads.
+  const locked = await refuseLockedUpskiiAuthSource(
+    source,
+    credentials?.appId ?? 'none'
+  );
+  if (locked) return { ok: false, response: locked };
+
   if (!credentials || credentials.appId !== UPSKII_APP_ID) {
-    console.warn('[upskii-link] credential refused', {
-      reason: credentials ? 'app' : 'header',
+    const reason = credentials ? 'app' : 'header';
+    console.warn('[upskii-link] credential refused', { reason, route });
+    const refused = await recordUpskiiAuthFailure({
+      appId: credentials?.appId ?? 'none',
+      reason,
       route,
+      source,
     });
-    return { ok: false, response: unauthorized() };
+    return { ok: false, response: refused ?? unauthorized() };
   }
 
   const verification = await verifyExternalAppSecret(credentials);
@@ -151,11 +172,19 @@ export async function requireUpskiiAppCredentials(
       reason: 'secret',
       route,
     });
-    const paced = await paceExternalAppExchangeFailure(
-      { appId: credentials.appId, ip },
-      'secret'
-    );
-    return { ok: false, response: paced ?? unauthorized() };
+    const [paced, refused] = await Promise.all([
+      paceExternalAppExchangeFailure(
+        { appId: credentials.appId, ip },
+        'secret'
+      ),
+      recordUpskiiAuthFailure({
+        appId: credentials.appId,
+        reason: 'secret',
+        route,
+        source,
+      }),
+    ]);
+    return { ok: false, response: refused ?? paced ?? unauthorized() };
   }
 
   const limited = await limitVerifiedAccountLinkRequest({
