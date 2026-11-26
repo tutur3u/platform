@@ -112,7 +112,50 @@ const getLocale = (
   };
 };
 
-export const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
+const prefixedLocaleMiddleware = createIntlMiddleware({
+  locales: supportedLocales,
+  defaultLocale,
+  localeDetection: false,
+  localePrefix: 'always',
+  localeCookie: false,
+  alternateLinks: false,
+});
+
+/**
+ * Forwards an already locale-prefixed request (such as `/vi/login` or
+ * `/en/login`) through `next-intl` so `x-next-intl-locale` reaches SSR without
+ * redirecting away from the prefix or emitting a `Set-Cookie` header that
+ * would defeat CDN caching.
+ */
+export const handlePrefixedLocale = ({
+  req,
+}: {
+  req: NextRequest;
+}): NextResponse => prefixedLocaleMiddleware(req);
+
+/**
+ * Resolves locale headers for cacheable auth shells (`/login`, `/add-account`):
+ * locale-prefixed paths keep their explicit prefix without redirects or cookies,
+ * while unprefixed paths negotiate locale via `handleLocale`.
+ */
+export const handleAuthShellLocale = ({
+  req,
+}: {
+  req: NextRequest;
+}): NextResponse => {
+  const firstSegment = req.nextUrl.pathname.split('/')[1] || '';
+  return getSupportedLocale(firstSegment)
+    ? handlePrefixedLocale({ req })
+    : handleLocale({ localeCookie: false, req });
+};
+
+export const handleLocale = ({
+  localeCookie,
+  req,
+}: {
+  localeCookie?: false;
+  req: NextRequest;
+}): NextResponse => {
   // Get locale from cookie or browser languages
   const { locale } = getLocale(req);
 
@@ -126,6 +169,7 @@ export const handleLocale = ({ req }: { req: NextRequest }): NextResponse => {
     defaultLocale: isMarketingPage ? defaultLocale : (locale as Locale),
     localeDetection: false,
     localePrefix: 'as-needed',
+    ...(localeCookie === false ? { localeCookie: false } : {}),
   });
 
   return nextIntlMiddleware(req);

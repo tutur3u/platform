@@ -181,20 +181,31 @@ export function createWebNextConfig({
           source: '/.well-known/apple-app-site-association',
           headers: [{ key: 'Content-Type', value: 'application/json' }],
         },
-        // One optional-locale source per page keeps the Vercel route table
-        // small; `/:locale?/login` matches both `/login` and `/<locale>/login`.
-        // The shared CDN policy applies only without a session cookie. The
-        // private rule comes last, so a runtime that ignores has/missing
-        // entirely still serves private; a regex miss is covered only by the
-        // pattern itself, which next.config.test.ts exercises.
-        ...['/:locale?/login', '/:locale?/add-account'].flatMap((source) => [
-          { source, missing: SESSION_COOKIE_HEADER, headers: authShellHeaders },
-          {
-            source,
-            has: SESSION_COOKIE_HEADER,
-            headers: privateAuthShellHeaders,
-          },
-        ]),
+        // Only locale-prefixed auth shells (`/en/login`, `/vi/login`) are
+        // deterministic per URL and safe to share on the CDN when anonymous.
+        // Unprefixed `/login` and `/add-account` negotiate locale from
+        // `Cookie` / `Accept-Language`, so they stay private and unstored.
+        // The private rule comes last for prefixed routes, so a runtime that
+        // ignores has/missing entirely still serves private; a regex miss is
+        // covered only by the pattern itself, which next.config.test.ts exercises.
+        ...['/:locale(en|vi)/login', '/:locale(en|vi)/add-account'].flatMap(
+          (source) => [
+            {
+              source,
+              missing: SESSION_COOKIE_HEADER,
+              headers: authShellHeaders,
+            },
+            {
+              source,
+              has: SESSION_COOKIE_HEADER,
+              headers: privateAuthShellHeaders,
+            },
+          ]
+        ),
+        ...['/login', '/add-account'].map((source) => ({
+          source,
+          headers: privateAuthShellHeaders,
+        })),
         ...['/:locale?/sso/consent'].map((source) => ({
           source,
           headers: [

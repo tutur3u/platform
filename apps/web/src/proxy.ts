@@ -68,7 +68,7 @@ import {
   legacySettingsRedirectResponse,
   legacySettingsTab,
 } from './lib/legacy-settings-redirect';
-import { handleLocale } from './lib/locale-proxy';
+import { handleAuthShellLocale, handleLocale } from './lib/locale-proxy';
 import {
   hasMalformedAuthorizationHeader,
   isServerToServerAppCall,
@@ -261,10 +261,7 @@ function handleCacheableAuthShellRoute(req: NextRequest): NextResponse | null {
     return null;
   }
 
-  const { locale } = getLocaleAwarePathname(req.nextUrl.pathname);
-  const response = locale ? NextResponse.next() : handleLocale({ req });
-
-  return applyAuthShellCacheHeaders(req, response);
+  return applyAuthShellCacheHeaders(req, handleAuthShellLocale({ req }));
 }
 
 function redirectToPath(req: NextRequest, pathname: string) {

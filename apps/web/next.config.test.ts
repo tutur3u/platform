@@ -140,8 +140,8 @@ describe('locale-optional auth shell header sources', () => {
     }
   );
 
-  it.each(['/login', '/vi/login', '/add-account'])(
-    'shares the %s shell through the CDN only without a session cookie',
+  it.each(['/en/login', '/vi/login', '/vi/add-account'])(
+    'shares the locale-prefixed %s shell through the CDN only without a session cookie',
     async (pathname) => {
       const anonymous = await finalConfigHeaders(pathname, 'NEXT_LOCALE=vi');
       expect(anonymous.get('cdn-cache-control')).toContain('public');
@@ -164,10 +164,21 @@ describe('locale-optional auth shell header sources', () => {
     }
   );
 
+  it.each(['/login', '/add-account'])(
+    'keeps unprefixed negotiated %s private and unstored even without a session cookie',
+    async (pathname) => {
+      const anonymous = await finalConfigHeaders(pathname, 'NEXT_LOCALE=fr');
+      expect(anonymous.get('cache-control')).toBe('private, no-store');
+      expect(anonymous.get('cdn-cache-control')).toBe('no-store');
+      expect(anonymous.get('vercel-cdn-cache-control')).toBe('no-store');
+      expect(anonymous.get('x-robots-tag')).toContain('noindex');
+    }
+  );
+
   it('falls back to private when cookie conditions are ignored', async () => {
     const { default: nextConfig } = await import('./next.config');
     const loginRules = ((await nextConfig.headers?.()) ?? []).filter(
-      (rule) => rule.source === '/:locale?/login'
+      (rule) => rule.source === '/:locale(en|vi)/login'
     );
     expect(loginRules.at(-1)?.headers).toContainEqual({
       key: 'CDN-Cache-Control',
@@ -175,7 +186,7 @@ describe('locale-optional auth shell header sources', () => {
     });
   });
 
-  it('declares one header source per auth shell page', async () => {
+  it('declares explicit header sources per auth shell page', async () => {
     const { default: nextConfig } = await import('./next.config');
     const sources = ((await nextConfig.headers?.()) ?? []).map(
       (rule) => rule.source
@@ -185,10 +196,12 @@ describe('locale-optional auth shell header sources', () => {
         /\/(login|add-account|sso\/consent)$/.test(source)
       )
     ).toEqual([
-      '/:locale?/login',
-      '/:locale?/login',
-      '/:locale?/add-account',
-      '/:locale?/add-account',
+      '/:locale(en|vi)/login',
+      '/:locale(en|vi)/login',
+      '/:locale(en|vi)/add-account',
+      '/:locale(en|vi)/add-account',
+      '/login',
+      '/add-account',
       '/:locale?/sso/consent',
     ]);
   });

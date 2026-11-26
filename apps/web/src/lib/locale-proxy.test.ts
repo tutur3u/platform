@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
-import { handleLocale } from './locale-proxy';
+import {
+  handleAuthShellLocale,
+  handleLocale,
+  handlePrefixedLocale,
+} from './locale-proxy';
 
 describe('public marketing locale URLs', () => {
   it.each(['en', 'vi'] as const)(
@@ -110,4 +114,62 @@ describe('document loads after a language change', () => {
     );
     expect(response.cookies.get(LOCALE_COOKIE_NAME)).toBeUndefined();
   });
+});
+
+describe('prefixed cacheable auth shell URLs', () => {
+  it.each([
+    ['/vi/login', 'vi'],
+    ['/en/login?returnUrl=/en/personal/tasks', 'en'],
+    ['/vi/add-account?returnUrl=/vi/personal/tasks', 'vi'],
+  ] as const)(
+    'propagates %s locale (%s) without redirecting or setting cookies',
+    (pathname, expectedLocale) => {
+      for (const cookieLocale of [null, 'en', 'vi'] as const) {
+        const response = handlePrefixedLocale({
+          req: new NextRequest(`https://tuturuuu.com${pathname}`, {
+            headers: {
+              'accept-language': 'en-US,en;q=0.9',
+              ...(cookieLocale
+                ? { cookie: `${LOCALE_COOKIE_NAME}=${cookieLocale}` }
+                : {}),
+            },
+          }),
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get('location')).toBeNull();
+        expect(response.headers.get('set-cookie')).toBeNull();
+        expect(
+          response.headers.get('x-middleware-request-x-next-intl-locale')
+        ).toBe(expectedLocale);
+      }
+    }
+  );
+
+  it.each([
+    ['en-US,en;q=0.9', 'en'],
+    ['vi-VN,vi;q=0.9', 'vi'],
+  ] as const)(
+    'negotiates unprefixed /login (%s -> %s) without writing Set-Cookie for unsupported locale cookies',
+    (acceptLanguage, expectedLocale) => {
+      const response = handleAuthShellLocale({
+        req: new NextRequest('https://tuturuuu.com/login', {
+          headers: {
+            'accept-language': acceptLanguage,
+            cookie: `${LOCALE_COOKIE_NAME}=fr`,
+          },
+        }),
+      });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('set-cookie')).toBeNull();
+      expect(
+        response.headers.get('x-middleware-request-x-next-intl-locale')
+      ).toBe(expectedLocale);
+      expect(response.headers.get('x-middleware-rewrite')).toBe(
+        `https://tuturuuu.com/${expectedLocale}/login`
+      );
+    }
+  );
 });
