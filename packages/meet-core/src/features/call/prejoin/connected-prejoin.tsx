@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ConnectedLobbyProps } from '../components/call-lobby';
 import { resourceErrorKey } from '../components/call-resource-notice';
+import { EventGuestRejoinNotice } from '../components/event-guest-rejoin-notice';
 import { GuestLobbyUpgrade } from '../components/guest-lobby-upgrade';
 import { useGuestVerification } from '../components/guest-verification-context';
 import { prepareParticipantName } from '../lib/participant-name';
@@ -238,7 +239,13 @@ export function ConnectedPrejoin({
         }
         name={trimmed || defaultDisplayName}
         verified={verification?.verified === true}
-        verification={<GuestLobbyUpgrade room={room} displayName={trimmed} />}
+        verification={
+          room.state.eventRejoinRequired ? (
+            <EventGuestRejoinNotice />
+          ) : (
+            <GuestLobbyUpgrade room={room} displayName={trimmed} />
+          )
+        }
         fields={nameField}
         media={[
           ...(permissionChoice?.audio || audioPending
@@ -289,9 +296,12 @@ export function ConnectedPrejoin({
               {transcriptionNotice}
             </output>
           ) : null}
-          {waiting ? (
-            <GuestLobbyUpgrade room={room} displayName={defaultDisplayName} />
-          ) : null}
+          {waiting &&
+            (room.state.eventRejoinRequired ? (
+              <EventGuestRejoinNotice />
+            ) : (
+              <GuestLobbyUpgrade room={room} displayName={defaultDisplayName} />
+            ))}
         </>
       }
       onPresenceChange={

@@ -11,6 +11,8 @@ import type { PrejoinCapture } from './use-prejoin-capture';
 vi.mock('../components/guest-lobby-upgrade', () => ({
   GuestLobbyUpgrade: () => <div data-testid="guest-upgrade" />,
 }));
+const refresh = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: vi.fn() } }));
 const rename = vi.hoisted(() =>
   vi.fn(async (_id: string, name: string) => ({ name }))
@@ -98,6 +100,7 @@ function show(
     guestRequest?: boolean;
     permissionPending?: boolean;
     verified?: boolean;
+    eventRejoinRequired?: boolean;
   } = {}
 ) {
   const cap = capture();
@@ -106,6 +109,7 @@ function show(
   if (options.handedOff)
     (cap as unknown as { handedOff: boolean }).handedOff = true;
   const controller = room(options.admission ?? 'admitted', {}, options.role);
+  controller.state.eventRejoinRequired = options.eventRejoinRequired ?? false;
   if (options.error)
     (controller.state as unknown as { error: string }).error = options.error;
   const onJoined = vi.fn();
@@ -230,6 +234,26 @@ it.each(['connecting', 'waiting'])(
         ? call.prejoin.guest_waiting
         : call.prejoin.guest_joining;
     expect(screen.getByRole('status').textContent).toBe(expected);
+    expect(onJoined).not.toHaveBeenCalled();
+  }
+);
+
+it.each([true, false])(
+  'offers re-verification after early event shutdown (guest request: %s)',
+  (guestRequest) => {
+    refresh.mockClear();
+    const { onJoined } = show({
+      guestRequest,
+      canReadWorkspace: false,
+      admission: 'waiting',
+      eventRejoinRequired: true,
+    });
+    expect(screen.getByText(call.guest_join.event_rejoin_notice)).toBeTruthy();
+    expect(screen.queryByTestId('guest-upgrade')).toBeNull();
+    fireEvent.click(
+      screen.getByRole('button', { name: call.guest_join.event_rejoin_verify })
+    );
+    expect(refresh).toHaveBeenCalledOnce();
     expect(onJoined).not.toHaveBeenCalled();
   }
 );
