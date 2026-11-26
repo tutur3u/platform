@@ -219,3 +219,19 @@ secret or changing its event subscriptions; the four catalog records were
 reconciled through the existing product-sync helper. Existing subscription
 financial terms and internal 100% discounts were preserved. Verify successful
 provider deliveries after deploying the middleware repair.
+
+## Temporary workspace review access
+
+Root administrators can grant Plus or Pro to a workspace from **Admin → Account
+Benefits → Workspace review access**. Enter the workspace UUID, an audit reason,
+and the last day of access in UTC. Keep the returned grant ID to revoke it from
+the same panel. Revocation and expiry take effect on the next entitlement check.
+The grant keeps its reason and the identities and timestamps of the grant and
+revoke actions.
+
+Mira Live applies the workspace's effective tier and its ordinary membership and
+credit checks. Meet applies the grant only to the verified host's personal
+workspace, subject to the paid hosting rollout switch. A higher active
+subscription still takes precedence. The grant does not create an invoice or
+change a provider subscription. The workspace review grant SQL test and the Meet
+and Live entitlement tests cover these boundaries.

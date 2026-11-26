@@ -238,6 +238,7 @@ describe('resolveLiveEligibility', () => {
 describe('default lookups', () => {
   function fakeClient({
     subscriptions = [] as Record<string, unknown>[],
+    effectiveTier = 'FREE',
     packs = [] as Record<string, unknown>[],
     balance = [] as Record<string, unknown>[] | null,
   }) {
@@ -256,7 +257,10 @@ describe('default lookups', () => {
         resolve({ data, error: null });
       return query;
     };
-    const rpc = vi.fn(async () => ({ data: balance, error: null }));
+    const rpc = vi.fn(async (name: string) => ({
+      data: name === '_resolve_workspace_tier' ? effectiveTier : balance,
+      error: null,
+    }));
     return { client: { from, rpc }, calls, rpc };
   }
 
@@ -328,7 +332,31 @@ describe('default lookups', () => {
     });
   });
 
-  it('resolves FREE only when no active subscription exists', async () => {
+  it('admits a paid grant without a provider subscription', async () => {
+    const { client, rpc } = fakeClient({
+      effectiveTier: 'PLUS',
+      balance: [{ total_allocated: 9000, total_used: 0, bonus_credits: 0 }],
+    });
+    supabase.createAdminClient.mockResolvedValue(client);
+    const result = await resolveLiveEligibility(
+      { userId, billingWsId: personalWs },
+      {
+        ...defaultLiveEligibilityDeps,
+        getWorkspace: async () => ({ name: null, personal: true }),
+        readConfig: productionConfig,
+      }
+    );
+    expect(result).toMatchObject({
+      eligible: true,
+      isFree: false,
+      tier: 'PLUS',
+    });
+    expect(rpc).toHaveBeenCalledWith('_resolve_workspace_tier', {
+      p_ws_id: personalWs,
+    });
+  });
+
+  it('resolves FREE when there is no active subscription or grant', async () => {
     const { client } = fakeClient({ subscriptions: [] });
     supabase.createAdminClient.mockResolvedValue(client);
     await expect(defaultLiveEligibilityDeps.getTier(personalWs)).resolves.toBe(

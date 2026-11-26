@@ -49,7 +49,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public._release_expired_embedding_credit_reservations(uuid)', false, true),
   ('public._resolve_table_associated_ws_id(text,jsonb)', false, true),
   ('public._resolve_user_personal_workspace_id(uuid)', false, true),
-  ('public._resolve_workspace_tier(uuid)', true, true),
+  ('public._resolve_workspace_tier(uuid)', false, true),
   ('public._validate_platform_entity_limit_target(text)', false, true),
   ('public.abandon_profile_banner_operation(uuid,uuid,text)', false, true),
   ('public.account_mfa_verified_factor(uuid,text,bigint,bigint)', false, true),
@@ -550,7 +550,10 @@ INSERT INTO definer_added_later VALUES
   ('public.get_workspace_secret_credential(uuid,text)'),
   ('public.workspace_secret_credential_status(uuid,uuid)'),
   ('public.put_workspace_secret_config(uuid,text,text)'),
-  ('public.list_workspace_secret_config(uuid)');
+  ('public.list_workspace_secret_config(uuid)'),
+  -- apps/database/supabase/migrations/20261126170028_add_workspace_review_plan_grants.sql
+  ('public.create_workspace_review_plan_grant(uuid,uuid,uuid,public.workspace_product_tier,text,timestamptz)'),
+  ('public.revoke_workspace_review_plan_grant(uuid,uuid,uuid)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later l
   WHERE to_regprocedure(l.signature) IS NULL
     OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')

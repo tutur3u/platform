@@ -18925,6 +18925,21 @@
     "directory": "Danh bạ",
     "payroll": "Bảng lương"
   },
+  "workspaceReviewPlan": {
+    "denied": "Cần quyền quản trị viên không gian làm việc gốc.",
+    "expiresOn": "Ngày truy cập cuối cùng (UTC)",
+    "grant": "Cấp gói",
+    "grantId": "ID quyền truy cập",
+    "granted": "Đã cấp gói. ID: {id}",
+    "invalid": "Hãy kiểm tra không gian làm việc, lý do và ngày hết hạn.",
+    "plan": "Gói",
+    "reason": "Lý do",
+    "revoke": "Thu hồi quyền",
+    "revoked": "Đã thu hồi quyền.",
+    "title": "Quyền truy cập đánh giá cho không gian làm việc",
+    "unavailable": "Không thể cập nhật quyền. Hãy kiểm tra ID không gian làm việc hoặc ID quyền truy cập.",
+    "workspaceId": "ID không gian làm việc"
+  },
   "ws_post_details": {
     "approval_locked": "Không thể gỡ phê duyệt vì đã có ít nhất một email được gửi.",
     "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",

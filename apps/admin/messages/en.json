@@ -18925,6 +18925,21 @@
     "directory": "Directory",
     "payroll": "Payroll"
   },
+  "workspaceReviewPlan": {
+    "denied": "Root administrator access is required.",
+    "expiresOn": "Last day of access (UTC)",
+    "grant": "Grant plan",
+    "grantId": "Grant ID",
+    "granted": "Grant created. ID: {id}",
+    "invalid": "Check the workspace, reason and expiry.",
+    "plan": "Plan",
+    "reason": "Reason",
+    "revoke": "Revoke grant",
+    "revoked": "Grant revoked.",
+    "title": "Workspace review access",
+    "unavailable": "The grant could not be updated. Check the workspace or grant ID.",
+    "workspaceId": "Workspace ID"
+  },
   "ws_post_details": {
     "approval_locked": "Approval is locked because at least one email has already been sent.",
     "approval_revocable": "Approval can still be removed because no email has been sent yet.",

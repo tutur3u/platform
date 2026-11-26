@@ -98,11 +98,21 @@ class LiveEligibilityLookupError extends Error {
   }
 }
 
+async function resolveLiveWorkspaceTier(
+  client: TypedSupabaseClient,
+  workspaceId: string
+) {
+  const { data, error } = await client.rpc('_resolve_workspace_tier', {
+    p_ws_id: workspaceId,
+  });
+  if (error || !data) throw new LiveEligibilityLookupError('effective tier');
+  return data;
+}
+
 export const defaultLiveEligibilityDeps: LiveEligibilityDeps = {
   /**
-   * Mirrors `_resolve_workspace_tier`: the newest `active` subscription's
-   * product tier, else FREE. Unlike `getWorkspaceTier`, a failed read throws
-   * instead of falling back to FREE.
+   * Checks subscription integrity before using the reservation's effective
+   * tier resolver, which also recognizes active administrative grants.
    */
   async getTier(wsId) {
     const client = await admin();
@@ -115,7 +125,7 @@ export const defaultLiveEligibilityDeps: LiveEligibilityDeps = {
       .limit(1);
     if (error) throw new LiveEligibilityLookupError('subscriptions');
     const subscription = subscriptions?.[0];
-    if (!subscription) return 'FREE';
+    if (!subscription) return resolveLiveWorkspaceTier(client, wsId);
     // An active subscription without a product has no knowable tier.
     const productId = subscription.product_id;
     if (!productId)
@@ -130,7 +140,7 @@ export const defaultLiveEligibilityDeps: LiveEligibilityDeps = {
     if (productError || !tier) {
       throw new LiveEligibilityLookupError('subscription product');
     }
-    return tier;
+    return resolveLiveWorkspaceTier(client, wsId);
   },
   /**
    * Reads the exact balance row the reservation uses by calling the same

@@ -27930,6 +27930,43 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_review_plan_grants: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          expires_at: string;
+          id: string;
+          reason: string;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          expires_at: string;
+          id: string;
+          reason: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string;
+          id?: string;
+          reason?: string;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_role_permissions_orphans_20261031: {
         Row: {
           created_at: string;
@@ -30430,6 +30467,10 @@ export type Database = {
         Returns: boolean;
       };
       can_manage_form: { Args: { p_form_id: string }; Returns: boolean };
+      can_manage_workspace_review_plan_grants: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
+      };
       can_merge_teacher_contact: {
         Args: { p_actor_id: string; p_source_id: string; p_ws_id: string };
         Returns: boolean;
@@ -63210,6 +63251,17 @@ export type Database = {
         };
         Returns: string;
       };
+      create_workspace_review_plan_grant: {
+        Args: {
+          p_actor_id: string;
+          p_expires_at: string;
+          p_grant_id: string;
+          p_reason: string;
+          p_tier: Database['public']['Enums']['workspace_product_tier'];
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       current_user_can_assign_workspace_role: {
         Args: { p_role_id: string; p_ws_id: string };
         Returns: boolean;
@@ -66556,6 +66608,10 @@ export type Database = {
       revoke_all_other_sessions: { Args: { user_id: string }; Returns: number };
       revoke_user_session: {
         Args: { session_id: string; target_user_id: string };
+        Returns: boolean;
+      };
+      revoke_workspace_review_plan_grant: {
+        Args: { p_actor_id: string; p_grant_id: string; p_ws_id: string };
         Returns: boolean;
       };
       save_meet_ai_memory: {

@@ -12,7 +12,6 @@ import {
   isMiraPaidTier,
   isMiraPaidTierEnabled,
   miraPayerMatchesBilling,
-  newestActiveSubscriptionTier,
 } from '../../features/live-assistant/mira-entitlement';
 import { MiraTtlCache } from '../../features/live-assistant/mira-ttl-cache';
 import { hasMiraAdultAttestation } from '../../features/live-assistant/participant-consent';
@@ -139,17 +138,6 @@ const attestationResult = z
   )
   .max(1);
 const personalResult = z.array(z.object({ id: z.uuid() })).max(1);
-const subscriptionResult = z.array(
-  z.object({
-    created_at: z.string(),
-    status: z.string().nullable(),
-    product_id: z.string().nullable(),
-  })
-);
-const productResult = z.array(
-  z.object({ id: z.string(), tier: z.string().nullable() })
-);
-
 /** Hosting's paid-tier rule, read over the Worker's server-only REST client. */
 export async function readLivePaidAccount(
   env: LiveEnvironment,
@@ -163,34 +151,13 @@ export async function readLivePaidAccount(
     )
   );
   if (!personal) return false;
-  const subscriptions = subscriptionResult.parse(
-    await liveDatabase<unknown>(
-      env,
-      `workspace_subscriptions?ws_id=eq.${personal.id}&status=eq.active&select=created_at,status,product_id`
-    )
+  const tier = z.string().parse(
+    await liveDatabase<unknown>(env, 'rpc/_resolve_workspace_tier', {
+      method: 'POST',
+      body: { p_ws_id: personal.id },
+    })
   );
-  const ids = [
-    ...new Set(
-      subscriptions
-        .map((subscription) => subscription.product_id)
-        .filter((id): id is string => !!id)
-    ),
-  ];
-  if (!ids.length) return false;
-  if (ids.some((id) => !z.uuid().safeParse(id).success)) return false;
-  const products = productResult.parse(
-    await liveDatabase<unknown>(
-      env,
-      `workspace_subscription_products?id=in.(${ids.join(',')})&select=id,tier`,
-      { schema: 'private' }
-    )
-  );
-  return isMiraPaidTier(
-    newestActiveSubscriptionTier(
-      subscriptions,
-      new Map(products.map((product) => [product.id, product.tier]))
-    )
-  );
+  return isMiraPaidTier(tier);
 }
 
 async function readLiveWorkspaceAudience(

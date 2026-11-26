@@ -1,7 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceProductTier } from '@tuturuuu/types';
-import { extractTierFromSubscriptions } from './workspace-helper';
 import { workspaceTierRank } from './feature-tier-policy';
 
 export class MeetDurationError extends Error {
@@ -32,43 +31,13 @@ export async function getHostMeetingTier(
     .maybeSingle();
   if (error) throw new MeetDurationError('Meeting entitlement lookup failed');
   if (!data) return 'FREE';
-  const subscriptions = await db
-    .from('workspace_subscriptions')
-    .select('created_at, status, product_id')
-    .eq('ws_id', data.id)
-    .eq('status', 'active');
-  if (subscriptions.error)
-    throw new MeetDurationError('Meeting entitlement lookup failed');
-  const ids = [
-    ...new Set(
-      subscriptions.data
-        .map((subscription) => subscription.product_id)
-        .filter((id): id is string => !!id)
-    ),
-  ];
-  if (!ids.length) return 'FREE';
-  const products = await db
-    .schema('private')
-    .from('workspace_subscription_products')
-    .select('id, tier')
-    .in('id', ids);
-  if (products.error)
-    throw new MeetDurationError('Meeting entitlement lookup failed');
-  const tiers = new Map(
-    products.data.map((product) => [product.id, product.tier])
+  const { data: tier, error: tierError } = await db.rpc(
+    '_resolve_workspace_tier',
+    { p_ws_id: data.id }
   );
-  if (ids.some((id) => !tiers.get(id)))
-    throw new MeetDurationError('Meeting entitlement product unavailable');
-  const tier = extractTierFromSubscriptions(
-    subscriptions.data.map((subscription) => ({
-      ...subscription,
-      product_tier: subscription.product_id
-        ? (tiers.get(subscription.product_id) ?? null)
-        : null,
-    }))
-  );
-
-  return tier ?? 'FREE';
+  if (tierError || !tier)
+    throw new MeetDurationError('Meeting entitlement lookup failed');
+  return tier;
 }
 
 export async function getHostMeetingDurationSeconds(hostId: string) {

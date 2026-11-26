@@ -30,17 +30,14 @@ const enabled = { MEET_PAID_TIER_HOSTING_ENABLED: 'true' } as LiveEnvironment;
 function fixture(tier: string | null) {
   f.database.mockImplementation((_env, path: string) => {
     if (path.startsWith('workspaces?')) return [{ id: personal }];
-    if (path.startsWith('workspace_subscriptions?'))
-      return [
-        { created_at: '2026-11-01', status: 'active', product_id: product },
-      ];
-    return [{ id: product, tier }];
+    if (path === 'rpc/_resolve_workspace_tier') return tier;
+    throw new Error(`Unexpected entitlement lookup: ${path}`);
   });
 }
 
 beforeEach(() => vi.resetAllMocks());
 
-it('requires the exact hosting switch before any subscription read', async () => {
+it('requires the exact hosting switch before any entitlement read', async () => {
   fixture('PRO');
   for (const value of [undefined, '', 'TRUE', '1'])
     expect(
@@ -52,19 +49,19 @@ it('requires the exact hosting switch before any subscription read', async () =>
   expect(f.database).not.toHaveBeenCalled();
 });
 
-it('admits only paid Personal tiers and reads products from the private schema', async () => {
+it('admits paid Personal tiers from the shared effective tier resolver', async () => {
   fixture('PRO');
   expect(await readLivePaidAccount(enabled, owner)).toBe(true);
   expect(f.database).toHaveBeenLastCalledWith(
     enabled,
-    expect.stringContaining('workspace_subscription_products?'),
-    { schema: 'private' }
+    'rpc/_resolve_workspace_tier',
+    { method: 'POST', body: { p_ws_id: personal } }
   );
   fixture('FREE');
   expect(await readLivePaidAccount(enabled, owner)).toBe(false);
 });
 
-it('fails closed for a missing Personal workspace or product tier', async () => {
+it('fails closed for a missing Personal workspace or effective tier', async () => {
   f.database.mockResolvedValueOnce([]);
   expect(await readLivePaidAccount(enabled, owner)).toBe(false);
   fixture(null);
