@@ -24,3 +24,10 @@ export const FEATURE_TIERS = {
   ai_lab: 'PRO',
   mira: 'PRO',
 } as const satisfies Record<string, WorkspaceProductTier>;
+
+// The legacy Mira gate covers workspace-aware Mira. Explicit enrollment allows
+// private Mira separately and leaves workspace-context access at Pro.
+export const VERSIONED_FEATURE_TIERS = {
+  ...FEATURE_TIERS,
+  private_mira: 'FREE',
+} as const satisfies Record<string, WorkspaceProductTier>;
