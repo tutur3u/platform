@@ -95,13 +95,12 @@ dispatch stops rather than replacing a newer live release.
 
 ## Per-speaker transcription flag
 
-A Meet release ships `MEET_AI_PER_SPEAKER` off. Turning it on is a separate
-change with its own release-authority ACK, never part of a deploy. It is a hard
-gate: before flag-on, the updated EN and VI consent text and its notice-version
-bump must already be live (this asks every participant again), together with
-the other pilot gates in
-[Per-speaker transcription](/platform/features/meet-per-speaker-transcription#release-gates).
-Turning the flag off is always allowed and acts as a hard stop.
+The release sets `MEET_AI_PER_SPEAKER=true` on both Workers. An empty
+`MEET_AI_PER_SPEAKER_WORKSPACES` allowlist admits nobody. Add workspace UUIDs
+only after release-authority approval, the updated EN and VI consent text and
+notice version are live, and the other
+[per-speaker release gates](/platform/features/meet-per-speaker-transcription#release-gates)
+pass. Clearing the allowlist closes admission on both Workers after deployment.
 
 ## Meet UX v2 flag
 

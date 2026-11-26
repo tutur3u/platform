@@ -39,7 +39,7 @@ export function isMeetAiPerSpeakerEnabled(
   return (
     isMeetAiPerSpeakerOn(env) &&
     typeof wsId === 'string' &&
-    meetAiPerSpeakerWorkspaceIds(env).has(wsId) &&
+    meetAiPerSpeakerWorkspaceIds(env).has(wsId.toLowerCase()) &&
     !isMeetAiHardDenied(wsId, env)
   );
 }

@@ -728,6 +728,18 @@ jobs:
           path: ${{ runner.temp }}/meet-rollback-*.json
           retention-days: 7
           if-no-files-found: error
+      - name: Validate the per-speaker workspace allowlist
+        if: steps.admission.outputs.superseded != 'true'
+        env:
+          MEET_AI_PER_SPEAKER_WORKSPACES: ${{ vars.MEET_AI_PER_SPEAKER_WORKSPACES || '' }}
+        run: |
+          node --input-type=module -e '
+            const ids = process.env.MEET_AI_PER_SPEAKER_WORKSPACES.split(/[\s,]+/).filter(Boolean);
+            if (ids.some((id) => !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id))) {
+              console.error("Invalid UUID in MEET_AI_PER_SPEAKER_WORKSPACES");
+              process.exitCode = 1;
+            }
+          '
       - name: Deploy signaling before the frontend
         if: steps.admission.outputs.superseded != 'true'
         env:

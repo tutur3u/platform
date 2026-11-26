@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { meetAiPerSpeakerWorkspaceIds } from '@tuturuuu/realtime/meet';
 import { meetAiWorkerEnv } from './workspace-gate';
 
 export const MEET_AI_PER_SPEAKER_ENV = 'MEET_AI_PER_SPEAKER';
@@ -15,11 +15,7 @@ const read = (env: FlagEnv, key: string) =>
  * nothing: one malformed entry voids the whole list.
  */
 export function meetPerSpeakerWorkspaceIds(env: FlagEnv): Set<string> {
-  const raw = read(env, MEET_AI_PER_SPEAKER_WORKSPACES_ENV);
-  if (typeof raw !== 'string' || !raw.trim()) return new Set();
-  const ids = raw.split(',').map((value) => value.trim().toLowerCase());
-  if (ids.some((id) => !z.uuid().safeParse(id).success)) return new Set();
-  return new Set(ids);
+  return meetAiPerSpeakerWorkspaceIds(env);
 }
 
 /**
