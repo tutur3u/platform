@@ -1,4 +1,10 @@
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertModuleClosure } from './cf-build-output-publisher.mjs';
@@ -43,10 +49,11 @@ export const PUBLIC_BUILD_ENV = Object.freeze([
 ]);
 // build-family.sh derives this one from the committed gateway mounts.
 const DERIVED_PUBLIC_ENV = new Set(['NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS']);
-const DEPLOY_CREDENTIAL = /^(?:CLOUDFLARE_|CF_|WRANGLER_API|VERCEL_TOKEN$)/u;
-const SECRET_NAME = /(?:TOKEN|SECRET|PASSWORD|PRIVATE|PEPPER|CREDENTIAL|_KEY$)/u;
-// Runner-provided names that hold no secret value.
-const RUNNER_SAFE = new Set(['WRANGLER_SEND_METRICS']);
+const DEPLOY_CREDENTIAL =
+  /^(?:CLOUDFLARE_|CF_|VERCEL_TOKEN$|[A-Z0-9]+_API_(?:TOKEN|KEY|SECRET|PASSWORD)$)/u;
+const SECRET_NAME =
+  /(?:TOKEN|SECRET|PASSWORD|PRIVATE|PEPPER|CREDENTIAL|_KEY$)/u;
+const TELEMETRY_ENV = 'CF_SEND_TELEMETRY';
 const RUNNER_PREFIX = /^(?:ACTIONS_|GITHUB_|RUNNER_)/u;
 
 const fail = (code, message) => {
@@ -87,7 +94,7 @@ export function secretLookingEnv(env) {
         typeof value === 'string' &&
         value.length >= 8 &&
         !name.startsWith('NEXT_PUBLIC_') &&
-        !RUNNER_SAFE.has(name) &&
+        name !== TELEMETRY_ENV &&
         (SECRET_NAME.test(name) || DEPLOY_CREDENTIAL.test(name))
     )
   );
@@ -104,7 +111,9 @@ export function buildEnvProblems(env) {
     if (!env[name]?.trim()) problems.push(`${name} is empty or unset`);
   }
   for (const name of Object.keys(env).sort()) {
-    if (DEPLOY_CREDENTIAL.test(name) && !RUNNER_SAFE.has(name)) {
+    if (name === TELEMETRY_ENV) {
+      if (env[name] !== 'false') problems.push(`${name} must be false`);
+    } else if (DEPLOY_CREDENTIAL.test(name)) {
       problems.push(`${name} is a deploy credential name`);
     } else if (name.startsWith('NEXT_PUBLIC_')) {
       if (!PUBLIC_BUILD_ENV.includes(name) && !DERIVED_PUBLIC_ENV.has(name)) {
@@ -133,7 +142,6 @@ export function resolveAssetsDir(appDir) {
   if (!found) fail(EXIT.missing, 'no client assets with _headers were built');
   return found;
 }
-
 
 function writeJson(path, value) {
   writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
@@ -257,19 +265,16 @@ export function sealFamily({
 }
 
 /** Verifies every sealed directory and writes the combined receipt. */
-export function writeReceipt({
-  sha,
-  familyDirs,
-  outPath,
-  expected,
-  run = {},
-}) {
+export function writeReceipt({ sha, familyDirs, outPath, expected, run = {} }) {
   assertSha(sha);
   const ids = Object.keys(familyDirs).sort();
   if (expected) {
     const want = [...expected].sort();
     if (ids.join(',') !== want.join(',')) {
-      fail(EXIT.missing, `sealed families ${ids.join(',')} != ${want.join(',')}`);
+      fail(
+        EXIT.missing,
+        `sealed families ${ids.join(',')} != ${want.join(',')}`
+      );
     }
   }
   const families = {};
@@ -325,7 +330,9 @@ export function main(argv, env = process.env) {
     const problems = buildEnvProblems(env);
     for (const problem of problems) console.error(problem);
     if (problems.length > 0) return EXIT.secret;
-    console.log(`build env holds the ${PUBLIC_BUILD_ENV.length} public values only`);
+    console.log(
+      `build env holds the ${PUBLIC_BUILD_ENV.length} public values only`
+    );
     return EXIT.ok;
   }
   if (command === 'seal') {
@@ -352,7 +359,10 @@ export function main(argv, env = process.env) {
       .split(',')
       .filter(Boolean);
     const familyDirs = Object.fromEntries(
-      expected.map((id) => [assertFamilyId(id), join(root, `web-vinext-sealed-${id}`)])
+      expected.map((id) => [
+        assertFamilyId(id),
+        join(root, `web-vinext-sealed-${id}`),
+      ])
     );
     const { receipt, receiptSha256 } = writeReceipt({
       sha: option(rest, '--sha'),
@@ -367,7 +377,10 @@ export function main(argv, env = process.env) {
     console.log(`receipt.json sha256 ${receiptSha256}`);
     return EXIT.ok;
   }
-  fail(EXIT.usage, 'usage: web-vinext-seal.mjs plan|env-guard|seal|receipt ...');
+  fail(
+    EXIT.usage,
+    'usage: web-vinext-seal.mjs plan|env-guard|seal|receipt ...'
+  );
 }
 
 if (

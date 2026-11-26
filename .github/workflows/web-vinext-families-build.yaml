@@ -101,7 +101,7 @@ jobs:
     env:
       SHA: ${{ needs.plan.outputs.sha }}
       FAMILY: ${{ matrix.family }}
-      WRANGLER_SEND_METRICS: "false"
+      CF_SEND_TELEMETRY: "false"
       # Public values only (environment variables, never secrets); every one
       # is inlined into the client and server bundles.
       NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}

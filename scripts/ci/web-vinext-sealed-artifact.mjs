@@ -60,8 +60,7 @@ const fail = (code, message) => {
   throw new SealError(code, message);
 };
 
-export const sha256 = (data) =>
-  createHash('sha256').update(data).digest('hex');
+export const sha256 = (data) => createHash('sha256').update(data).digest('hex');
 
 export function assertSha(value, label = 'sha') {
   if (typeof value !== 'string' || !SHA.test(value)) {
@@ -152,8 +151,7 @@ const FORBIDDEN_NAME = /^(?:\.dev\.vars.*|\.env(?:\..*)?|secrets\.json)$/u;
 
 function jwtRole(segment) {
   try {
-    return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'))
-      ?.role;
+    return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'))?.role;
   } catch {
     return null;
   }
@@ -254,11 +252,17 @@ export function verifySealedFamily(dir, expectedSha, { expectedFamily } = {}) {
   const onDisk = listFiles(root).filter((path) => path !== SEAL_FILE);
   const missing = listed.filter((path) => !onDisk.includes(path));
   if (missing.length > 0) {
-    fail(EXIT.missing, `sealed files missing: ${missing.slice(0, 5).join(', ')}`);
+    fail(
+      EXIT.missing,
+      `sealed files missing: ${missing.slice(0, 5).join(', ')}`
+    );
   }
   const extra = onDisk.filter((path) => !Object.hasOwn(sealed, path));
   if (extra.length > 0) {
-    fail(EXIT.tamper, `unsealed files present: ${extra.slice(0, 5).join(', ')}`);
+    fail(
+      EXIT.tamper,
+      `unsealed files present: ${extra.slice(0, 5).join(', ')}`
+    );
   }
   const actual = hashFiles(root, onDisk);
   for (const path of listed) {
@@ -293,7 +297,10 @@ export function verifySealedFamily(dir, expectedSha, { expectedFamily } = {}) {
   const present = bundleModules(bundleRoot);
   const absent = names.filter((name) => !present.includes(name));
   if (absent.length > 0) {
-    fail(EXIT.missing, `sealed modules missing: ${absent.slice(0, 5).join(', ')}`);
+    fail(
+      EXIT.missing,
+      `sealed modules missing: ${absent.slice(0, 5).join(', ')}`
+    );
   }
   const unlisted = present.filter((name) => !Object.hasOwn(modules, name));
   if (unlisted.length > 0) {
@@ -373,7 +380,8 @@ export function verifySealedFamily(dir, expectedSha, { expectedFamily } = {}) {
  */
 export function verifyReceipt(receiptPath, familyDirs, expectedSha) {
   const receipt = readJson(receiptPath, EXIT.usage, 'receipt.json');
-  if (receipt.schema !== RECEIPT_SCHEMA) fail(EXIT.pin, 'unknown receipt schema');
+  if (receipt.schema !== RECEIPT_SCHEMA)
+    fail(EXIT.pin, 'unknown receipt schema');
   if (assertSha(receipt.sha, 'receipt sha') !== assertSha(expectedSha)) {
     fail(EXIT.pin, 'receipt sha differs from the expected sha');
   }

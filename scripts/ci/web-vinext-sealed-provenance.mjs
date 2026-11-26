@@ -63,7 +63,10 @@ export function checkRun(run, sha) {
   if (run.head_repository?.full_name !== REPOSITORY) {
     fail(E.run, 'run head repository is a fork');
   }
-  if (run.path !== WORKFLOW_PATH && run.path !== `${WORKFLOW_PATH}@refs/heads/main`) {
+  if (
+    run.path !== WORKFLOW_PATH &&
+    run.path !== `${WORKFLOW_PATH}@refs/heads/main`
+  ) {
     fail(E.run, 'run workflow path');
   }
   if (run.event !== 'workflow_dispatch') fail(E.run, 'run event');
@@ -122,7 +125,8 @@ export function checkArtifacts(list) {
     if (!digest) fail(E.artifact, `${artifact.name} has no sha256 digest`);
     artifacts[artifact.name] = { id: artifact.id, digest };
   }
-  if (!artifacts[RECEIPT_ARTIFACT]) fail(E.artifact, 'receipt artifact missing');
+  if (!artifacts[RECEIPT_ARTIFACT])
+    fail(E.artifact, 'receipt artifact missing');
   if (Object.keys(artifacts).length < 2) fail(E.artifact, 'no family artifact');
   return artifacts;
 }
@@ -220,7 +224,10 @@ export function verifyProvenance({
   mkdirSync(join(out, 'zips'), { recursive: true });
   for (const [name, { id, digest }] of Object.entries(artifacts)) {
     const zip = join(out, 'zips', `${name}.zip`);
-    writeFileSync(zip, gh(['api', `${api}/actions/artifacts/${id}/zip`], { raw: true }));
+    writeFileSync(
+      zip,
+      gh(['api', `${api}/actions/artifacts/${id}/zip`], { raw: true })
+    );
     if (sha256(readFileSync(zip)) !== digest) {
       fail(E.artifact, `${name} zip differs from GitHub's digest`);
     }
@@ -284,7 +291,9 @@ if (
       );
     }
     const { sealedRoot, families } = verifyProvenance({ runId, sha, outDir });
-    console.log(`verified provenance of ${families.join(', ')} in ${sealedRoot}`);
+    console.log(
+      `verified provenance of ${families.join(', ')} in ${sealedRoot}`
+    );
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode =

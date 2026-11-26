@@ -10,12 +10,7 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 import test from 'node:test';
-import {
-  ASSETS,
-  BUNDLE,
-  fixtureApp,
-  SHA,
-} from './web-vinext-seal.fixture.mjs';
+import { ASSETS, BUNDLE, fixtureApp, SHA } from './web-vinext-seal.fixture.mjs';
 import {
   buildEnvProblems,
   PUBLIC_BUILD_ENV,
@@ -88,7 +83,10 @@ test('a sealed family verifies with sorted per-file and per-module hashes', (t) 
 
 test('a changed module byte is tamper', (t) => {
   const { out } = sealed(t);
-  appendFileSync(join(out, 'output/v1/workers/default/bundle/ssr/index.js'), ' ');
+  appendFileSync(
+    join(out, 'output/v1/workers/default/bundle/ssr/index.js'),
+    ' '
+  );
   assertCode(() => verifySealedFamily(out, SHA), EXIT.tamper, /hash mismatch/u);
 });
 
@@ -101,7 +99,11 @@ test('an unsealed extra file is tamper', (t) => {
 test('an edited seal.json no longer matches the receipt', (t) => {
   const { root, out } = sealed(t);
   const receiptPath = join(root, 'receipt.json');
-  writeReceipt({ sha: SHA, familyDirs: { 'api-core': out }, outPath: receiptPath });
+  writeReceipt({
+    sha: SHA,
+    familyDirs: { 'api-core': out },
+    outPath: receiptPath,
+  });
   assert.equal(
     verifyReceipt(receiptPath, familyDirsUnder(join(root, 'sealed')), SHA).sha,
     SHA
@@ -189,7 +191,10 @@ test('an import of an unsealed module fails the closure', (t) => {
     chunk: 'import "./.cache/late.mjs";\nexport const page = 1;\n',
   });
   mkdirSync(join(fixture.app, BUNDLE, 'ssr/.cache'));
-  writeFileSync(join(fixture.app, BUNDLE, 'ssr/.cache/late.mjs'), 'export {};\n');
+  writeFileSync(
+    join(fixture.app, BUNDLE, 'ssr/.cache/late.mjs'),
+    'export {};\n'
+  );
   assertCode(
     () =>
       sealFamily({
@@ -243,7 +248,12 @@ test('secret-shaped values and env files are refused', (t) => {
     Buffer.from(JSON.stringify({ role: value })).toString('base64url');
   const jwt = (value) => `eyJhbGciOiJIUzI1NiJ9.${role(value)}.signature123`;
   const anon = fixtureApp(t, { chunk: `export const k = "${jwt('anon')}";\n` });
-  sealFamily({ appDir: anon.app, family: anon.family, sha: SHA, outDir: anon.out });
+  sealFamily({
+    appDir: anon.app,
+    family: anon.family,
+    sha: SHA,
+    outDir: anon.out,
+  });
   const { out } = sealed(t);
   writeFileSync(
     join(out, 'output/v1/workers/default/bundle/ssr/index.js'),
@@ -294,9 +304,30 @@ test('the build env guard allows only the public values', () => {
   for (const problem of problems) {
     assert.ok(!/value-\d/u.test(problem), 'a value was printed');
   }
-  assert.deepEqual(Object.keys(secretLookingEnv({ ...env, ACTIONS_RUNTIME_TOKEN: 'abcdefgh1' })), [
-    'ACTIONS_RUNTIME_TOKEN',
-  ]);
+  assert.deepEqual(
+    Object.keys(
+      secretLookingEnv({ ...env, ACTIONS_RUNTIME_TOKEN: 'abcdefgh1' })
+    ),
+    ['ACTIONS_RUNTIME_TOKEN']
+  );
+});
+
+test('the cf telemetry flag accepts only the literal false value', () => {
+  const publicEnv = Object.fromEntries(
+    PUBLIC_BUILD_ENV.map((name) => [name, 'public'])
+  );
+  assert.deepEqual(
+    buildEnvProblems({ ...publicEnv, CF_SEND_TELEMETRY: 'false' }),
+    []
+  );
+  assert.deepEqual(
+    buildEnvProblems({ ...publicEnv, CF_SEND_TELEMETRY: 'true' }),
+    ['CF_SEND_TELEMETRY must be false']
+  );
+  assert.deepEqual(
+    buildEnvProblems({ ...publicEnv, OLDCLI_API_TOKEN: 'short' }),
+    ['OLDCLI_API_TOKEN is a deploy credential name']
+  );
 });
 
 test('the families input must name enabled families once', () => {
@@ -313,13 +344,26 @@ test('the families input must name enabled families once', () => {
 test('the committed families are exactly the six Web Workers', () => {
   const { families } = JSON.parse(
     readFileSync(
-      new URL('../../apps/web/cloudflare/vinext/families.json', import.meta.url),
+      new URL(
+        '../../apps/web/cloudflare/vinext/families.json',
+        import.meta.url
+      ),
       'utf8'
     )
   );
   assert.deepEqual(
-    families.filter((family) => family.enabled).map((family) => family.id).sort(),
-    ['api-core', 'api-ops', 'dashboard', 'dashboard-apps', 'public-auth', 'web-rest']
+    families
+      .filter((family) => family.enabled)
+      .map((family) => family.id)
+      .sort(),
+    [
+      'api-core',
+      'api-ops',
+      'dashboard',
+      'dashboard-apps',
+      'public-auth',
+      'web-rest',
+    ]
   );
 });
 

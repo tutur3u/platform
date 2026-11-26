@@ -6,7 +6,10 @@ import { PUBLIC_BUILD_ENV } from './web-vinext-seal.mjs';
 // The families build workflow is a public-repo build: dispatch only, read-only
 // token, no secrets, no Cloudflare credential, pinned actions.
 const workflow = readFileSync(
-  new URL('../../.github/workflows/web-vinext-families-build.yaml', import.meta.url),
+  new URL(
+    '../../.github/workflows/web-vinext-families-build.yaml',
+    import.meta.url
+  ),
   'utf8'
 );
 const lines = workflow.split('\n');
@@ -49,7 +52,11 @@ test('the workflow runs on workflow_dispatch only', () => {
 function permissionsOf(text) {
   const match = /^ {4}permissions:\n((?: {6}.*\n)+)/mu.exec(`${text}\n`);
   assert.ok(match, 'job declares its permissions');
-  return match[1].trim().split('\n').map((line) => line.trim()).sort();
+  return match[1]
+    .trim()
+    .split('\n')
+    .map((line) => line.trim())
+    .sort();
 }
 
 test('jobs that run pin code hold contents: read only', () => {
@@ -73,29 +80,47 @@ test('only the attest job signs, and it runs no pin code', () => {
     'id-token: write',
   ]);
   assert.match(attest, /^ {4}needs: \[plan, receipt\]$/mu);
-  assert.doesNotMatch(attest, /actions\/checkout|setup-node|setup-bun|\bnode |\bbun |download-artifact|scripts\//u);
+  assert.doesNotMatch(
+    attest,
+    /actions\/checkout|setup-node|setup-bun|\bnode |\bbun |download-artifact|scripts\//u
+  );
   assert.match(attest, /actions\/attest-build-provenance@[0-9a-f]{40}/u);
   assert.match(attest, /subject-checksums:/u);
-  const writers = workflow.split('\n').filter((line) => /:\s*write\b/u.test(line));
+  const writers = workflow
+    .split('\n')
+    .filter((line) => /:\s*write\b/u.test(line));
   assert.equal(writers.length, 2);
-  assert.match(workflow, /^run-name: Web vinext families \$\{\{ inputs\.sha \}\}$/mu);
+  assert.match(
+    workflow,
+    /^run-name: Web vinext families \$\{\{ inputs\.sha \}\}$/mu
+  );
 });
 
 test('the workflow reads no secret and carries no Cloudflare credential', () => {
   assert.doesNotMatch(workflow, /secrets\./u);
   assert.doesNotMatch(workflow, /secrets\s*\[/u);
   assert.doesNotMatch(workflow, /toJSON\(\s*secrets/u);
-  assert.doesNotMatch(workflow, /CLOUDFLARE_(?:API_TOKEN|ACCOUNT_ID)|CF_API_TOKEN/u);
-  assert.doesNotMatch(workflow, /cf deploy|wrangler deploy|api\.cloudflare\.com/u);
+  assert.doesNotMatch(
+    workflow,
+    /CLOUDFLARE_(?:API_TOKEN|ACCOUNT_ID)|CF_API_TOKEN/u
+  );
+  const executable = lines
+    .filter((line) => !line.trimStart().startsWith('#'))
+    .join('\n');
+  assert.doesNotMatch(executable, /\bdeploy\b|api\.cloudflare\.com/u);
   assert.match(workflow, /persist-credentials: false/u);
-  for (const line of lines.filter((line) => /persist-credentials/u.test(line))) {
+  for (const line of lines.filter((line) =>
+    /persist-credentials/u.test(line)
+  )) {
     assert.match(line, /persist-credentials: false/u);
   }
 });
 
 test('the build env is exactly the public variables, from vars', () => {
   const names = [
-    ...workflow.matchAll(/^ {6}(NEXT_PUBLIC_[A-Z0-9_]+): \$\{\{ vars\.([A-Z0-9_]+) \}\}$/gmu),
+    ...workflow.matchAll(
+      /^ {6}(NEXT_PUBLIC_[A-Z0-9_]+): \$\{\{ vars\.([A-Z0-9_]+) \}\}$/gmu
+    ),
   ];
   assert.deepEqual(
     names.map((match) => match[1]).sort(),
@@ -120,10 +145,15 @@ test('actions are pinned to full commit SHAs', () => {
 test('the pin is validated and checked out exactly', () => {
   assert.match(workflow, /\^\[0-9a-f\]\{40\}\$/u);
   assert.match(workflow, /git merge-base --is-ancestor "\$SHA" origin\/main/u);
-  assert.match(workflow, /git merge-base --is-ancestor "\$SHA" origin\/production/u);
+  assert.match(
+    workflow,
+    /git merge-base --is-ancestor "\$SHA" origin\/production/u
+  );
   assert.match(workflow, /test "\$\(git rev-parse HEAD\)" = "\$SHA"/u);
   // Inputs reach shell through env, never by expression interpolation.
-  for (const line of lines.filter((line) => /^\s+(?:run: |[^:]*\$\(|echo)/u.test(line))) {
+  for (const line of lines.filter((line) =>
+    /^\s+(?:run: |[^:]*\$\(|echo)/u.test(line)
+  )) {
     assert.doesNotMatch(line, /\$\{\{\s*inputs\./u, line);
   }
   assert.match(
@@ -134,7 +164,10 @@ test('the pin is validated and checked out exactly', () => {
 
 test('artifacts are sealed, verified and kept for a bounded time', () => {
   assert.match(workflow, /web-vinext-seal\.mjs seal /u);
-  assert.match(workflow, /web-vinext-sealed-artifact\.mjs \\\n\s+"\$RUNNER_TEMP\/sealed\/\$FAMILY"/u);
+  assert.match(
+    workflow,
+    /web-vinext-sealed-artifact\.mjs \\\n\s+"\$RUNNER_TEMP\/sealed\/\$FAMILY"/u
+  );
   assert.match(workflow, /web-vinext-seal\.mjs receipt /u);
   assert.match(workflow, /web-vinext-sealed-artifact\.mjs --receipt/u);
   const retention = [...workflow.matchAll(/retention-days: (\d+)/gu)].map(
