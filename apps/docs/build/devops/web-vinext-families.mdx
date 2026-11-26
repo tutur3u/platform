@@ -1,7 +1,7 @@
 ---
 title: "Web vinext Workers"
 description: "apps/web built with vinext on Vite+ as route-family Cloudflare Workers: families, build, checks, bindings and known gaps."
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-26"
 audience: developers
 ---
 
@@ -131,6 +131,190 @@ first. The smoke then expects `x-tuturuuu-build` on a
 Worker builds emit no source maps (`build.sourcemap: false`): Cloudflare
 rejects an upload whose source maps exceed 60 MiB (error 10021), and the
 `public-auth` maps alone reach about 70 MiB.
+
+## CI sealed builds
+
+`.github/workflows/web-vinext-families-build.yaml` builds and seals families
+in GitHub Actions instead of on an operator machine. It runs on
+`workflow_dispatch` only, with inputs `sha` (an exact 40-hex commit) and
+`families` (a comma list; empty builds every enabled family in
+`families.json`). It never publishes: the token is `contents: read`, it reads
+no secret and holds no Cloudflare credential. The `cf deploy --dry-run` inside
+`build-family.sh` runs locally without credentials.
+
+The workflow:
+
+1. Runs only for `tutur3u/platform` dispatched from `main`. It refuses a `sha`
+   that is not 40 lowercase hex or not an ancestor of `origin/main` or
+   `origin/production`, and checks that `HEAD` is that commit.
+2. Builds each family in its own job (Node from `.node-version`, Bun 1.4.4,
+   frozen install, no caches, extra swap). It generates the build metadata
+   with `PLATFORM_BUILD_ENVIRONMENT=production` and runs `build-family.sh`.
+3. Seals the build with `scripts/ci/web-vinext-seal.mjs seal`, re-verifies it
+   with `scripts/ci/web-vinext-sealed-artifact.mjs`, and uploads the artifact
+   `web-vinext-sealed-<family>`.
+4. Downloads every family artifact in a fresh job, verifies each one again and
+   uploads `web-vinext-sealed-receipt` (`receipt.json`). The receipt job runs
+   only when every family succeeded, so a run without a receipt is not
+   publishable even if some family artifacts exist. Artifacts are kept 7 days.
+5. Signs a build provenance attestation for every artifact zip in the
+   `attest` job. It is the only job with `id-token: write` and
+   `attestations: write`, it checks out nothing, and it reads the zip digests
+   from GitHub's artifact API. The jobs that run code from the pin hold
+   `contents: read` only, so their runners never get an OIDC token.
+
+The run title is `Web vinext families <sha>`, which ties a run to its pin.
+
+### Build environment
+
+The `build` jobs use the GitHub environment `web-vinext-build`. Create it,
+with deployment branches restricted to exactly `main` (custom branch
+policies), before the first dispatch. A job that names a missing environment
+makes GitHub create it unprotected, and `vars.*` then falls back to
+repository and organization variables. The provenance check refuses a run
+when the environment is missing or open to another branch, and the env guard
+fails the build when any of the eight values is empty. The environment holds
+eight **variables** and no secrets:
+
+| Variable | Sensitivity |
+| --- | --- |
+| `NEXT_PUBLIC_APP_URL` | Public |
+| `NEXT_PUBLIC_WEB_APP_URL` | Public |
+| `NEXT_PUBLIC_SUPABASE_URL` | Public |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public (the publishable key, never `sb_secret_`) |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public (site key, not the Turnstile secret) |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Public |
+| `NEXT_PUBLIC_DISCORD_LINK` | Public |
+| `NEXT_PUBLIC_SHORTENER_URL` | Public |
+
+All eight are inlined into both the client and the server bundles, so they are
+readable in every artifact and in the served pages. No real secret is needed
+at build time: `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` and
+`ABUSE_GUARD_KEY_PEPPER` are Worker secrets bound at upload
+(`cloudflare.config.ts` declares names only). `build-family.sh` derives
+`NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS`, `PLATFORM_BUILD_COMMIT` and
+`PLATFORM_DEPLOYMENT_STAMP` from the checkout. `CALENDAR_APP_URL` and
+`NEXT_PUBLIC_CALENDAR_APP_URL` are optional and unset, as in operator builds.
+
+Because a public repository's artifacts are downloadable by anyone with read
+access, two guards keep secrets out of them:
+
+- `web-vinext-seal.mjs env-guard` runs before the install. It fails, naming
+  variables only, when a public value is empty, when another `NEXT_PUBLIC_*`
+  name is present (it would be inlined), when a `CLOUDFLARE_*`/`CF_*` name is
+  present, when any other secret-looking name (`*TOKEN*`, `*SECRET*`,
+  `*_KEY`, `*PASSWORD*`, `*PEPPER*`) is set, or when a public value has a
+  secret shape.
+- The seal scans every sealed file before writing `seal.json`. It refuses the
+  value of any secret-looking variable in the job environment (at least 8
+  characters), Supabase secret keys, service-role JWTs, PEM private keys,
+  GitHub tokens, Stripe live keys, AWS access key ids, OpenAI and Anthropic
+  API keys, and `.env*`, `.dev.vars*` or `secrets.json` files. Findings
+  name the file and the variable or rule, never the value.
+
+### Sealed layout
+
+Download into one directory per family, then the receipt:
+
+```bash
+gh run download <run-id> -R tutur3u/platform -n web-vinext-sealed-<family> -D sealed/<family>
+gh run download <run-id> -R tutur3u/platform -n web-vinext-sealed-receipt -D sealed
+```
+
+```text
+sealed/
+  receipt.json            schema, sha, families.<id>.{worker, sealSha256, moduleCount, fileCount}
+  <family>/
+    seal.json             see below
+    output/               apps/web/.cloudflare/output of the build, unchanged
+      v1/workers/default/bundle/index.mjs   main module
+    client/               only when the build put client assets in dist/client
+    assets-manifest.json  assetsDir, headersFile, files.<path>.{sha256, bytes}
+    check.json            web-vinext-bundle-check.mjs result (Redis, RSDW, size, stamp)
+    dry-run.log           cf deploy --dry-run --prebuilt output
+    imports-check.json    mainModule, moduleCount, closure: "ok", stampModules
+```
+
+`seal.json` (`schema: tuturuuu.web-vinext-seal/v1`) holds `family`,
+`worker` (`tuturuuu-web-vinext-<family>`), `sha`, `deploymentStamp` (first 12
+characters), `bundleDir` (`output/v1/workers/default/bundle`), `mainModule`
+(`index.mjs`, relative to `bundleDir`), `assetsDir`, `stampModule` (a module
+containing both `x-tuturuuu-build` and the quoted sha), `moduleCount`,
+`modules` (bundle-relative path to sha256, sorted), `fileCount`, `files`
+(sealed-directory path to `{sha256, bytes}` for every file except
+`seal.json`, sorted) and `build` (repository, run id, attempt, workflow ref).
+Modules are every `.js`/`.mjs` file under `bundleDir`, excluding `.map` files
+and dot directories.
+
+Send `<assetsDir>/_headers` as the assets config `_headers`, never as an
+uploaded asset (see the stamp notes above).
+
+### Verifying before publishing
+
+The sealed verifier proves only that an artifact is internally consistent,
+not where it came from. A copy of the workflow dispatched from another branch
+can produce an artifact that passes it. Check origin first, from a checkout
+of `main`, with a `gh` signed in to an account that can read the repository's
+environments:
+
+```bash
+node scripts/ci/web-vinext-sealed-provenance.mjs <run-id> <sha> <empty-out-dir>
+```
+
+It refuses (exit 10) a run that is not
+`.github/workflows/web-vinext-families-build.yaml` on `tutur3u/platform`,
+dispatched with `workflow_dispatch` from `main` and successful, or whose
+workflow commit is not on `main`. It refuses (11) a run title that does not
+name the sha, a sha on neither `main` nor `production`, and any seal or
+receipt whose `build`/`run` names another run or workflow ref. It downloads
+every `web-vinext-sealed-*` zip and refuses (12) a missing, extra or expired
+artifact or a zip whose sha256 differs from GitHub's digest. It runs
+`gh attestation verify --signer-workflow
+tutur3u/platform/.github/workflows/web-vinext-families-build.yaml
+--source-ref refs/heads/main --source-digest <workflow commit>
+--deny-self-hosted-runners` on each zip and refuses (13) a missing attestation
+or one from another run. It refuses (14) a `web-vinext-build` environment
+that is missing or allows a branch other than `main`. Only then does it
+extract `<out>/sealed/<family>` and `<out>/sealed/receipt.json` and run the
+sealed receipt verifier, whose exit codes follow. Publish from that `sealed/`
+directory only.
+
+The sealed verifier can also run on its own:
+
+```bash
+node scripts/ci/web-vinext-sealed-artifact.mjs --receipt sealed/receipt.json sealed <sha>
+node scripts/ci/web-vinext-sealed-artifact.mjs sealed/<family> <sha> --family <family>
+```
+
+It re-hashes every file, refuses extra files and symlinks, requires the
+fixed layout (`bundleDir`, `mainModule` `index.mjs`, `assetsDir` one of
+`output/v1/workers/default/assets` or `client`), compares the module set and
+count, checks every assets manifest entry, the `_headers` stamp, the stamp
+module, the module closure and the secret scan.
+
+| Exit | Meaning |
+| --- | --- |
+| 0 | Verified |
+| 2 | Usage error, or `seal.json`/`receipt.json` missing or unreadable |
+| 3 | Pin mismatch: wrong or malformed sha, family, worker, stamp or schema |
+| 4 | Tamper: hash, size, file set, module count or receipt digest differs, or a symlink |
+| 5 | Missing: a sealed file, module, main module, assets directory or family |
+| 6 | Stamp: no `_headers` rule, or no module with the header and quoted sha |
+| 7 | Closure: a module imports an unsealed module |
+| 8 | Secret: a secret-shaped value or forbidden file name |
+| 10 | Provenance: run repository, workflow path, event, branch or result |
+| 11 | Provenance: run title, sha off `main`/`production`, or a seal bound to another run |
+| 12 | Provenance: artifact missing, extra, expired or digest mismatch |
+| 13 | Provenance: attestation missing or from another signer, ref, commit or run |
+| 14 | Provenance: `web-vinext-build` missing or not restricted to `main` |
+
+Tests: `scripts/ci/web-vinext-seal.test.mjs` (seal, tamper, missing module,
+wrong sha, decoy layout, manifest entries, symlinks, secret refusal, env
+guard), `scripts/ci/web-vinext-sealed-provenance.test.mjs` (wrong branch,
+workflow, event, sha, digest, attestation and environment) and
+`scripts/ci/web-vinext-families-build-workflow.test.mjs` (dispatch only,
+`contents: read` for pin-code jobs, signing only in `attest`, no secrets or
+Cloudflare credential, pinned actions).
 
 ## Deploying a family
 

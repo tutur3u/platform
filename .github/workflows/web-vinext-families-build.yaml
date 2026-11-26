@@ -1,0 +1,250 @@
+# Builds and seals the apps/web vinext family Workers for one exact commit.
+# Manual dispatch only: it never runs on push, pull request or schedule, holds
+# no deploy credential and makes no Cloudflare account call (the cf dry run is
+# local and runs without credentials). The build env is the eight public
+# NEXT_PUBLIC_* variables of the `web-vinext-build` environment, which are
+# inlined into the public bundles anyway; the workflow reads no secret.
+# Publishing stays with the operator toolkit, which first checks origin with
+# scripts/ci/web-vinext-sealed-provenance.mjs (run, digests, attestation) and
+# then contents with scripts/ci/web-vinext-sealed-artifact.mjs. See
+# apps/docs/build/devops/web-vinext-families.mdx#ci-sealed-builds.
+name: Web vinext Families Build
+# The run title names the pin; the provenance check requires it.
+run-name: Web vinext families ${{ inputs.sha }}
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Exact 40-hex commit on main or production to build.
+        required: true
+        type: string
+      families:
+        description: Comma list of family ids; empty builds every enabled family.
+        required: false
+        type: string
+        default: ""
+permissions:
+  contents: read
+concurrency:
+  group: web-vinext-families-build-${{ inputs.sha }}
+  cancel-in-progress: false
+jobs:
+  plan:
+    if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      sha: ${{ steps.pin.outputs.sha }}
+      families: ${{ steps.plan.outputs.families }}
+      families_csv: ${{ steps.plan.outputs.families_csv }}
+    steps:
+      - name: Validate the pin
+        id: pin
+        env:
+          INPUT_SHA: ${{ inputs.sha }}
+        run: |
+          if [[ ! "$INPUT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::sha must be an exact 40-character lowercase commit" >&2
+            exit 1
+          fi
+          echo "sha=$INPUT_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.pin.outputs.sha }}
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - name: Require the pin on main or production
+        env:
+          SHA: ${{ steps.pin.outputs.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$SHA"
+          git fetch --no-tags --filter=blob:none origin \
+            +refs/heads/main:refs/remotes/origin/main \
+            +refs/heads/production:refs/remotes/origin/production
+          if git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "$SHA is on main"
+          elif git merge-base --is-ancestor "$SHA" origin/production; then
+            echo "$SHA is on production"
+          else
+            echo "::error::$SHA is not an ancestor of origin/main or origin/production" >&2
+            exit 1
+          fi
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - name: Plan families
+        id: plan
+        env:
+          FAMILIES: ${{ inputs.families }}
+        run: |
+          families="$(node scripts/ci/web-vinext-seal.mjs plan \
+            --config apps/web/cloudflare/vinext/families.json --families "$FAMILIES")"
+          echo "families=$families" >> "$GITHUB_OUTPUT"
+          echo "families_csv=$(node -p 'JSON.parse(process.argv[1]).join(",")' "$families")" >> "$GITHUB_OUTPUT"
+          echo "Families: $families"
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: web-vinext-build
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        family: ${{ fromJSON(needs.plan.outputs.families) }}
+    env:
+      SHA: ${{ needs.plan.outputs.sha }}
+      FAMILY: ${{ matrix.family }}
+      WRANGLER_SEND_METRICS: "false"
+      # Public values only (environment variables, never secrets); every one
+      # is inlined into the client and server bundles.
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      NEXT_PUBLIC_DISCORD_LINK: ${{ vars.NEXT_PUBLIC_DISCORD_LINK }}
+      NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+      NEXT_PUBLIC_SHORTENER_URL: ${{ vars.NEXT_PUBLIC_SHORTENER_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+      NEXT_PUBLIC_WEB_APP_URL: ${{ vars.NEXT_PUBLIC_WEB_APP_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+      - name: Confirm the checkout is the pin
+        run: test "$(git rev-parse HEAD)" = "$SHA"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - name: Refuse a non-public build env
+        run: node scripts/ci/web-vinext-seal.mjs env-guard
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+          cache-enabled: "false"
+          package-cache-enabled: "false"
+      - name: Add swap for the family build
+        run: |
+          sudo fallocate -l 24G /mnt/web-vinext-swap
+          sudo chmod 600 /mnt/web-vinext-swap
+          sudo mkswap /mnt/web-vinext-swap
+          sudo swapon /mnt/web-vinext-swap
+          free -h
+      - name: Install dependencies
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Mark the checkout disposable
+        run: printf 'disposable checkout for an OpenNext family build\n' > apps/web/.opennext-disposable-checkout
+      - name: Generate build metadata
+        env:
+          PLATFORM_BUILD_ENVIRONMENT: production
+          PLATFORM_BUILD_REF_NAME: main
+          PLATFORM_BUILD_COMMIT_HASH: ${{ needs.plan.outputs.sha }}
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build the family
+        run: bash apps/web/cloudflare/vinext/build-family.sh "$FAMILY"
+      - name: Seal the family
+        # The bundle check (build-family.sh) gated Redis, RSDW and size; the
+        # seal adds the stamp, the module closure and the secret scan.
+        run: |
+          node scripts/ci/web-vinext-seal.mjs seal --app apps/web \
+            --family "$FAMILY" --sha "$SHA" --out "$RUNNER_TEMP/sealed/$FAMILY"
+          node scripts/ci/web-vinext-sealed-artifact.mjs \
+            "$RUNNER_TEMP/sealed/$FAMILY" "$SHA" --family "$FAMILY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-vinext-sealed-${{ matrix.family }}
+          path: ${{ runner.temp }}/sealed/${{ matrix.family }}
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  receipt:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      SHA: ${{ needs.plan.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.plan.outputs.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            /.node-version
+            /scripts/ci/cf-build-output-publisher.mjs
+            /scripts/ci/wave1-native-upload-limits.mjs
+            /scripts/ci/web-opennext-size.mjs
+            /scripts/ci/web-opennext-smoke.mjs
+            /scripts/ci/web-vinext-bundle-check.mjs
+            /scripts/ci/web-vinext-seal.mjs
+            /scripts/ci/web-vinext-sealed-artifact.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: web-vinext-sealed-*
+          path: ${{ runner.temp }}/sealed
+      - name: Re-verify every family and write the receipt
+        env:
+          FAMILIES: ${{ needs.plan.outputs.families_csv }}
+        run: |
+          node scripts/ci/web-vinext-seal.mjs receipt --sha "$SHA" \
+            --root "$RUNNER_TEMP/sealed" --families "$FAMILIES" \
+            --out "$RUNNER_TEMP/receipt/receipt.json"
+          node scripts/ci/web-vinext-sealed-artifact.mjs --receipt \
+            "$RUNNER_TEMP/receipt/receipt.json" "$RUNNER_TEMP/sealed" "$SHA"
+          {
+            echo "### Sealed vinext families at \`$SHA\`"
+            echo '```json'
+            cat "$RUNNER_TEMP/receipt/receipt.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-vinext-sealed-receipt
+          path: ${{ runner.temp }}/receipt/receipt.json
+          if-no-files-found: error
+          retention-days: 7
+
+  attest:
+    # Signs build provenance for every artifact zip. This is the only job with
+    # id-token and attestations permissions, and it checks out nothing and runs
+    # no code from the pin: the digests come from GitHub's artifact API. Jobs
+    # that run pin code (plan, build, receipt) hold contents: read only, so
+    # their runners never receive an OIDC token request URL.
+    needs: [plan, receipt]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: List the sealed artifact digests
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FAMILIES: ${{ needs.plan.outputs.families_csv }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name | startswith("web-vinext-sealed-")) | "\(.digest | ltrimstr("sha256:"))  \(.name).zip"' \
+            > "$RUNNER_TEMP/subjects.txt"
+          expected=$(( $(tr ',' '\n' <<< "$FAMILIES" | grep -c .) + 1 ))
+          actual=$(grep -cE '^[0-9a-f]{64}  web-vinext-sealed-[a-z0-9-]+\.zip$' "$RUNNER_TEMP/subjects.txt" || true)
+          if [[ "$actual" != "$expected" || "$(wc -l < "$RUNNER_TEMP/subjects.txt")" -ne "$expected" ]]; then
+            echo "::error::expected $expected sealed artifact digests, found $actual" >&2
+            exit 1
+          fi
+          cat "$RUNNER_TEMP/subjects.txt"
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: ${{ runner.temp }}/subjects.txt
