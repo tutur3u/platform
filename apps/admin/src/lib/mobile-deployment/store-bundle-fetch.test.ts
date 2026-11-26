@@ -313,4 +313,66 @@ describe('mobile deployment bundle fetch audit behavior', () => {
       success: false,
     });
   });
+
+  it('includes optional Apple Watch provisioning profiles in iOS bundles when present and omits them when absent', async () => {
+    seedActiveVersion();
+    const token = await issueToken(['ios']);
+
+    const withoutWatch = await fetchBundle(token, 'ios');
+    expect(
+      withoutWatch.files.apple_watch_app_store_provisioning_profile
+    ).toBeUndefined();
+    expect(
+      withoutWatch.files.apple_watch_widgets_app_store_provisioning_profile
+    ).toBeUndefined();
+
+    for (const kind of [
+      'apple_watch_app_store_provisioning_profile',
+      'apple_watch_widgets_app_store_provisioning_profile',
+    ] as const) {
+      const plaintext = Buffer.from(`synthetic-profile-${kind}`);
+      const ciphertext = encryptBytes(plaintext, fx.activeKey);
+      const path = `${MOBILE_DEPLOYMENT_DRIVE_PREFIX}/v-active/${kind}.ciphertext.json`;
+      fx.objects.set(path, ciphertext);
+      fx.db.tables.mobile_deployment_file_artifacts.push({
+        ciphertext_sha256: sha256Hex(ciphertext),
+        content_type: 'application/octet-stream',
+        filename: `${kind}.mobileprovision`,
+        id: `file-${kind}`,
+        kind,
+        plaintext_sha256: sha256Hex(plaintext),
+        plaintext_size: plaintext.byteLength,
+        storage_path: path,
+        storage_provider: 'r2',
+        validation_errors: [],
+        validation_status: 'valid',
+        version_id: 'v-active',
+      });
+    }
+
+    const withWatch = await fetchBundle(token, 'ios');
+    expect(
+      Buffer.from(
+        withWatch.files.apple_watch_app_store_provisioning_profile!.base64,
+        'base64'
+      ).toString('utf8')
+    ).toBe('synthetic-profile-apple_watch_app_store_provisioning_profile');
+    expect(
+      Buffer.from(
+        withWatch.files.apple_watch_widgets_app_store_provisioning_profile!
+          .base64,
+        'base64'
+      ).toString('utf8')
+    ).toBe(
+      'synthetic-profile-apple_watch_widgets_app_store_provisioning_profile'
+    );
+    expect(
+      withWatch.resourceVersionIds.files
+        .apple_watch_app_store_provisioning_profile
+    ).toBe('file-apple_watch_app_store_provisioning_profile');
+    expect(
+      withWatch.resourceVersionIds.files
+        .apple_watch_widgets_app_store_provisioning_profile
+    ).toBe('file-apple_watch_widgets_app_store_provisioning_profile');
+  });
 });

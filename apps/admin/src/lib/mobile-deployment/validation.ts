@@ -2,6 +2,8 @@ import {
   BLOCKED_ENV_FILE_KEYS,
   EXPECTED_ANDROID_PACKAGE_NAME,
   EXPECTED_IOS_BUNDLE_ID,
+  EXPECTED_IOS_WATCH_BUNDLE_ID,
+  EXPECTED_IOS_WATCH_WIDGETS_BUNDLE_ID,
   MAX_ENV_VALUE_BYTES,
   MAX_MOBILE_DEPLOYMENT_FILE_BYTES,
   MAX_SCALAR_VALUE_BYTES,
@@ -335,15 +337,15 @@ function validateAppStoreConnectPrivateKey(buffer: Uint8Array) {
   }
 }
 
-function validateProvisioningProfile(buffer: Uint8Array) {
+function validateProvisioningProfile(
+  buffer: Uint8Array,
+  expectedBundleId: string = EXPECTED_IOS_BUNDLE_ID
+) {
   const text = new TextDecoder().decode(buffer);
 
-  if (
-    !text.includes(EXPECTED_IOS_BUNDLE_ID) ||
-    !text.includes('Entitlements')
-  ) {
+  if (!text.includes(expectedBundleId) || !text.includes('Entitlements')) {
     throw new MobileDeploymentValidationError(
-      `Provisioning profile must include ${EXPECTED_IOS_BUNDLE_ID} entitlements`
+      `Provisioning profile must include ${expectedBundleId} entitlements`
     );
   }
 }
@@ -371,7 +373,11 @@ export function validateFileArtifact(
   } else if (kind === 'app_store_connect_private_key_p8') {
     validateAppStoreConnectPrivateKey(buffer);
   } else if (kind === 'apple_app_store_provisioning_profile') {
-    validateProvisioningProfile(buffer);
+    validateProvisioningProfile(buffer, EXPECTED_IOS_BUNDLE_ID);
+  } else if (kind === 'apple_watch_app_store_provisioning_profile') {
+    validateProvisioningProfile(buffer, EXPECTED_IOS_WATCH_BUNDLE_ID);
+  } else if (kind === 'apple_watch_widgets_app_store_provisioning_profile') {
+    validateProvisioningProfile(buffer, EXPECTED_IOS_WATCH_WIDGETS_BUNDLE_ID);
   }
 }
 

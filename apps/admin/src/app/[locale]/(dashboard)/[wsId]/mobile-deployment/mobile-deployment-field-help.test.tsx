@@ -17,6 +17,26 @@ describe('MobileDeploymentFieldHelp', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders guidance triggers for Apple Watch provisioning profiles', () => {
+    const { rerender } = render(
+      <MobileDeploymentFieldHelp field="apple_watch_app_store_provisioning_profile" />
+    );
+    expect(
+      screen.getByRole('button', {
+        name: 'guidance.ariaLabel:apple_watch_app_store_provisioning_profile',
+      })
+    ).toBeInTheDocument();
+
+    rerender(
+      <MobileDeploymentFieldHelp field="apple_watch_widgets_app_store_provisioning_profile" />
+    );
+    expect(
+      screen.getByRole('button', {
+        name: 'guidance.ariaLabel:apple_watch_widgets_app_store_provisioning_profile',
+      })
+    ).toBeInTheDocument();
+  });
+
   it('renders nothing for a field without guidance', () => {
     const { container } = render(
       <MobileDeploymentFieldHelp field="CUSTOM_ENV_VAR" />

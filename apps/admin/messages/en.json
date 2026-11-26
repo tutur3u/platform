@@ -11773,6 +11773,14 @@
           "what": "Your 10-character Apple Developer Team ID, used to scope signing and provisioning.",
           "where": "Apple Developer → Membership details."
         },
+        "apple_watch_app_store_provisioning_profile": {
+          "what": "App Store provisioning profile (.mobileprovision) for the Apple Watch companion app (com.tuturuuu.app.mobile.watchkitapp).",
+          "where": "Apple Developer → Profiles → create an App Store distribution profile for the watchOS app bundle ID."
+        },
+        "apple_watch_widgets_app_store_provisioning_profile": {
+          "what": "App Store provisioning profile (.mobileprovision) for the Apple Watch complications extension (com.tuturuuu.app.mobile.watchkitapp.widgets).",
+          "where": "Apple Developer → Profiles → create an App Store distribution profile for the watchOS WidgetKit extension bundle ID."
+        },
         "CI_TOKEN_NAME": {
           "what": "A human-readable label for a CI token the GitHub Actions mobile-deploy workflow uses to authenticate to this vault.",
           "where": "Chosen by you; the token value is shown only once when issued (internal value)."

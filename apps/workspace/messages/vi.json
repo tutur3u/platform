@@ -11556,6 +11556,14 @@
           "what": "Team ID Apple Developer gồm 10 ký tự, dùng để giới hạn việc ký và cấp profile.",
           "where": "Apple Developer → thông tin Membership."
         },
+        "apple_watch_app_store_provisioning_profile": {
+          "what": "Provisioning profile App Store (.mobileprovision) cho ứng dụng Apple Watch đi kèm (com.tuturuuu.app.mobile.watchkitapp).",
+          "where": "Apple Developer → Profiles → tạo profile phân phối App Store cho bundle ID của ứng dụng watchOS."
+        },
+        "apple_watch_widgets_app_store_provisioning_profile": {
+          "what": "Provisioning profile App Store (.mobileprovision) cho tiện ích mặt đồng hồ Apple Watch (com.tuturuuu.app.mobile.watchkitapp.widgets).",
+          "where": "Apple Developer → Profiles → tạo profile phân phối App Store cho bundle ID của tiện ích WidgetKit trên watchOS."
+        },
         "CI_TOKEN_NAME": {
           "what": "Nhãn dễ đọc cho token CI mà quy trình GitHub Actions triển khai di động dùng để xác thực với kho bí mật này.",
           "where": "Do bạn đặt; giá trị token chỉ hiển thị một lần khi được cấp (giá trị nội bộ)."

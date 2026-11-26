@@ -28,6 +28,8 @@ export const MOBILE_DEPLOYMENT_FILE_KINDS: MobileDeploymentFileKind[] = [
   'google_play_service_account_json',
   'apple_distribution_certificate_p12',
   'apple_app_store_provisioning_profile',
+  'apple_watch_app_store_provisioning_profile',
+  'apple_watch_widgets_app_store_provisioning_profile',
   'app_store_connect_private_key_p8',
 ];
 

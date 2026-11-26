@@ -24,6 +24,10 @@ export const MOBILE_DEPLOYMENT_TOKEN_LOOKUP_LENGTH = 28;
 
 export const EXPECTED_ANDROID_PACKAGE_NAME = 'com.tuturuuu.app.mobile' as const;
 export const EXPECTED_IOS_BUNDLE_ID = 'com.tuturuuu.app.mobile' as const;
+export const EXPECTED_IOS_WATCH_BUNDLE_ID =
+  'com.tuturuuu.app.mobile.watchkitapp' as const;
+export const EXPECTED_IOS_WATCH_WIDGETS_BUNDLE_ID =
+  'com.tuturuuu.app.mobile.watchkitapp.widgets' as const;
 /** Default Google Play track used when none is stored. */
 export const GOOGLE_PLAY_TRACK = 'internal' as const;
 /** Standard Google Play release tracks selectable for deployment. */
@@ -47,6 +51,8 @@ export const MOBILE_DEPLOYMENT_FILE_KINDS = [
   'google_play_service_account_json',
   'apple_distribution_certificate_p12',
   'apple_app_store_provisioning_profile',
+  'apple_watch_app_store_provisioning_profile',
+  'apple_watch_widgets_app_store_provisioning_profile',
   'app_store_connect_private_key_p8',
 ] as const;
 export type MobileDeploymentFileKind =
@@ -78,6 +84,11 @@ export const IOS_REQUIRED_FILE_KINDS = [
   'apple_distribution_certificate_p12',
   'apple_app_store_provisioning_profile',
   'app_store_connect_private_key_p8',
+] as const satisfies readonly MobileDeploymentFileKind[];
+
+export const IOS_OPTIONAL_FILE_KINDS = [
+  'apple_watch_app_store_provisioning_profile',
+  'apple_watch_widgets_app_store_provisioning_profile',
 ] as const satisfies readonly MobileDeploymentFileKind[];
 
 export const ANDROID_REQUIRED_SCALARS = [
@@ -116,6 +127,10 @@ export const FILE_KIND_LABELS: Record<MobileDeploymentFileKind, string> = {
   google_play_service_account_json: 'Google Play service account JSON',
   apple_distribution_certificate_p12: 'Apple distribution certificate .p12',
   apple_app_store_provisioning_profile: 'Apple App Store provisioning profile',
+  apple_watch_app_store_provisioning_profile:
+    'Apple Watch App Store provisioning profile',
+  apple_watch_widgets_app_store_provisioning_profile:
+    'Apple Watch Widgets App Store provisioning profile',
   app_store_connect_private_key_p8: 'App Store Connect private key .p8',
 };
 

@@ -17,9 +17,11 @@ import {
   EXPECTED_IOS_BUNDLE_ID,
   FILE_KIND_LABELS,
   GOOGLE_PLAY_TRACK,
+  IOS_OPTIONAL_FILE_KINDS,
   IOS_REQUIRED_FILE_KINDS,
   IOS_REQUIRED_SCALARS,
   MOBILE_DEPLOYMENT_ENVIRONMENT,
+  MOBILE_DEPLOYMENT_FILE_KINDS,
   MOBILE_DEPLOYMENT_NON_SECRET_NAMES,
   MOBILE_DEPLOYMENT_SCALAR_NAMES,
   MOBILE_DEPLOYMENT_TOKEN_LOOKUP_LENGTH,
@@ -129,18 +131,6 @@ function assertNoError(error: unknown, message: string): asserts error is null {
         : message;
     throw new MobileDeploymentStoreError(detail || message, 500);
   }
-}
-
-function requiredFilesForPlatform(platform: MobileDeploymentPlatform) {
-  return platform === 'android'
-    ? ANDROID_REQUIRED_FILE_KINDS
-    : IOS_REQUIRED_FILE_KINDS;
-}
-
-function requiredScalarsForPlatform(platform: MobileDeploymentPlatform) {
-  return platform === 'android'
-    ? ANDROID_REQUIRED_SCALARS
-    : IOS_REQUIRED_SCALARS;
 }
 
 function mapVersionStatus(
@@ -336,20 +326,20 @@ function evaluateVersionReadiness(
     }
   }
 
-  for (const fileKind of [
+  const requiredFileSet = new Set<MobileDeploymentFileKind>([
     ...ANDROID_REQUIRED_FILE_KINDS,
     ...IOS_REQUIRED_FILE_KINDS,
-  ]) {
+  ]);
+  for (const fileKind of MOBILE_DEPLOYMENT_FILE_KINDS) {
     const file = fileKinds.get(fileKind);
     if (!file) {
-      errors.push(`${FILE_KIND_LABELS[fileKind]} is missing`);
+      if (requiredFileSet.has(fileKind)) {
+        errors.push(`${FILE_KIND_LABELS[fileKind]} is missing`);
+      }
       continue;
     }
-
     if (file.validation_status !== 'valid') {
-      errors.push(
-        ...file.validation_errors.map((error) => `${fileKind}: ${error}`)
-      );
+      errors.push(...file.validation_errors.map((e) => `${fileKind}: ${e}`));
     }
   }
 
@@ -1156,7 +1146,9 @@ async function buildBundle({
     }
   }
 
-  for (const scalar of requiredScalarsForPlatform(platform)) {
+  const requiredScalars =
+    platform === 'android' ? ANDROID_REQUIRED_SCALARS : IOS_REQUIRED_SCALARS;
+  for (const scalar of requiredScalars) {
     if (!scalarValues[scalar]) {
       throw new MobileDeploymentStoreError(
         'Mobile deployment scalar is missing',
@@ -1168,16 +1160,21 @@ async function buildBundle({
 
   const filesByKind = new Map(files.map((file) => [file.kind, file]));
   const bundleFiles: MobileDeploymentBundle['files'] = {};
-  const fileIds: MobileDeploymentBundle['resourceVersionIds']['files'] =
-    Object.fromEntries(
-      [...ANDROID_REQUIRED_FILE_KINDS, ...IOS_REQUIRED_FILE_KINDS].map(
-        (kind) => [kind, undefined]
-      )
-    ) as MobileDeploymentBundle['resourceVersionIds']['files'];
+  const fileIds = Object.fromEntries(
+    MOBILE_DEPLOYMENT_FILE_KINDS.map((kind) => [kind, undefined])
+  ) as MobileDeploymentBundle['resourceVersionIds']['files'];
+  const required =
+    platform === 'android'
+      ? ANDROID_REQUIRED_FILE_KINDS
+      : IOS_REQUIRED_FILE_KINDS;
+  const requiredKinds = new Set<MobileDeploymentFileKind>(required);
+  const bundleKinds: readonly MobileDeploymentFileKind[] =
+    platform === 'ios' ? [...required, ...IOS_OPTIONAL_FILE_KINDS] : required;
 
-  for (const kind of requiredFilesForPlatform(platform)) {
+  for (const kind of bundleKinds) {
     const file = filesByKind.get(kind);
     if (!file) {
+      if (!requiredKinds.has(kind)) continue;
       throw new MobileDeploymentStoreError(
         'Mobile deployment file is missing',
         409,

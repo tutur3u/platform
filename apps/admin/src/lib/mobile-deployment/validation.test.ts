@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   EXPECTED_ANDROID_PACKAGE_NAME,
   EXPECTED_IOS_BUNDLE_ID,
+  EXPECTED_IOS_WATCH_BUNDLE_ID,
+  EXPECTED_IOS_WATCH_WIDGETS_BUNDLE_ID,
 } from './constants';
 import {
   assertMobileDeploymentEnvKey,
+  assertMobileDeploymentFileKind,
   MobileDeploymentValidationError,
   normalizeEnvEntry,
   parseEnvFile,
@@ -105,5 +108,44 @@ describe('mobile deployment validation', () => {
     expect(() =>
       validateFileArtifact('ios_google_service_info_plist', payload)
     ).not.toThrow();
+  });
+
+  it('accepts and validates Apple Watch and Watch Widgets provisioning profiles', () => {
+    expect(
+      assertMobileDeploymentFileKind(
+        'apple_watch_app_store_provisioning_profile'
+      )
+    ).toBe('apple_watch_app_store_provisioning_profile');
+    expect(
+      assertMobileDeploymentFileKind(
+        'apple_watch_widgets_app_store_provisioning_profile'
+      )
+    ).toBe('apple_watch_widgets_app_store_provisioning_profile');
+
+    const watchProfile = new TextEncoder().encode(
+      `<plist><dict><key>Entitlements</key><dict><key>application-identifier</key><string>TEAM.${EXPECTED_IOS_WATCH_BUNDLE_ID}</string></dict></dict></plist>`
+    );
+    const widgetsProfile = new TextEncoder().encode(
+      `<plist><dict><key>Entitlements</key><dict><key>application-identifier</key><string>TEAM.${EXPECTED_IOS_WATCH_WIDGETS_BUNDLE_ID}</string></dict></dict></plist>`
+    );
+
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_app_store_provisioning_profile',
+        watchProfile
+      )
+    ).not.toThrow();
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_widgets_app_store_provisioning_profile',
+        widgetsProfile
+      )
+    ).not.toThrow();
+    expect(() =>
+      validateFileArtifact(
+        'apple_watch_widgets_app_store_provisioning_profile',
+        watchProfile
+      )
+    ).toThrow(MobileDeploymentValidationError);
   });
 });

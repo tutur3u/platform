@@ -90,6 +90,12 @@ export const MOBILE_DEPLOYMENT_FIELD_DOCS: Record<string, { url?: string }> = {
   apple_app_store_provisioning_profile: {
     url: 'https://developer.apple.com/account/resources/profiles/list',
   },
+  apple_watch_app_store_provisioning_profile: {
+    url: 'https://developer.apple.com/account/resources/profiles/list',
+  },
+  apple_watch_widgets_app_store_provisioning_profile: {
+    url: 'https://developer.apple.com/account/resources/profiles/list',
+  },
   app_store_connect_private_key_p8: {
     url: 'https://appstoreconnect.apple.com/access/integrations/api',
   },
