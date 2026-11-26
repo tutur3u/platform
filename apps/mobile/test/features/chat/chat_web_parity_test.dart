@@ -7,6 +7,7 @@ import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/data/chat_link_preview_store.dart';
 import 'package:mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+import 'package:mobile/features/chat/widgets/chat_format.dart';
 import 'package:mobile/features/chat/widgets/chat_link_previews.dart';
 import 'package:mobile/features/chat/widgets/chat_read_receipt.dart';
 import 'package:mocktail/mocktail.dart';
@@ -224,6 +225,71 @@ void main() {
       fail = false;
       expect(await store.load('ws', 'c', urls), hasLength(1));
       expect(calls, hasLength(3));
+    });
+
+    test('previews pair with links in request order', () {
+      const redirected = ChatLinkPreview(
+        url: 'https://www.docs.example/guide',
+        title: 'Guide',
+      );
+      const bare = ChatLinkPreview(url: 'https://b.example/', title: 'B');
+      // One preview per normalized link: the fragment variant shares one.
+      final paired = pairChatLinkPreviews(
+        const [
+          'https://docs.example/guide',
+          'https://docs.example/guide#intro',
+          'https://b.example',
+        ],
+        const [redirected, bare],
+      );
+      expect(paired, {
+        'https://docs.example/guide': redirected,
+        'https://docs.example/guide#intro': redirected,
+        'https://b.example': bare,
+      });
+
+      // An answer that skipped a link pairs by URL instead.
+      expect(
+        pairChatLinkPreviews(
+          const ['https://a.example', 'https://b.example'],
+          const [bare],
+        ),
+        {'https://b.example': bare},
+      );
+    });
+
+    test('remembered failures are capped like previews', () async {
+      var calls = 0;
+      final retried = ChatLinkPreviewStore(
+        capacity: 1,
+        fetch: (wsId, conversationId, urls) async {
+          calls++;
+          throw StateError('offline');
+        },
+      );
+      await retried.load('ws', 'c', const ['https://a.example']);
+      await retried.load('ws', 'c', const ['https://b.example']);
+      // The oldest failure was dropped, so its link may be retried.
+      await retried.load('ws', 'c', const ['https://a.example']);
+      expect(calls, 3);
+    });
+
+    test('external chat links are read from decoded text, as on web', () {
+      final message = fixtureMessage(1).copyWith(
+        content: 'See https://a.example/?x=1&amp;amp;y=2 &lt;b&gt;',
+        metadata: const {'externalChat': true},
+      );
+      expect(
+        chatMessageDisplayContent(message),
+        'See https://a.example/?x=1&y=2 <b>',
+      );
+      expect(extractChatLinks(chatMessageDisplayContent(message)), [
+        'https://a.example/?x=1&y=2',
+      ]);
+      expect(
+        chatMessageDisplayContent(message.copyWith(metadata: const {})),
+        message.content,
+      );
     });
 
     testWidgets('only previews with text get a card', (tester) async {

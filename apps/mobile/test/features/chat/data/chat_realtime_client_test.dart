@@ -282,7 +282,7 @@ void main() {
     client.dispose();
   });
 
-  test('a room carries read cursors and sends typing frames', () async {
+  test('a room carries read cursors, typing and presence', () async {
     const room = '11111111-1111-4111-8111-111111111111';
     final sent = <String>[];
     final sockets = <_ScriptedSocket>[];
@@ -339,6 +339,26 @@ void main() {
         lastReadAt: DateTime.utc(2026, 11, 26, 9, 30, 0, 123, 456),
       ),
     );
+
+    // Away or offline members stop typing; their own stop may be lost.
+    sockets.single
+      ..add({'t': 'typing', 'on': true, 'userId': 'peer'})
+      ..add({'t': 'presence', 'state': 'foreground', 'userId': 'peer'})
+      ..add({'t': 'presence', 'state': 'offline', 'userId': 'peer'})
+      ..add({'t': 'presence', 'state': 'background', 'userId': 'self'});
+    await _until(() => events.whereType<ChatRealtimeTypingEvent>().length == 2);
+    expect(events.whereType<ChatRealtimeTypingEvent>(), const [
+      ChatRealtimeTypingEvent(
+        conversationId: room,
+        actorUserId: 'peer',
+        isTyping: true,
+      ),
+      ChatRealtimeTypingEvent(
+        conversationId: room,
+        actorUserId: 'peer',
+        isTyping: false,
+      ),
+    ]);
 
     await subscription.cancel();
     client.dispose();

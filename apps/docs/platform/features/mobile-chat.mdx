@@ -90,11 +90,23 @@ from the details sheet, is not toasted as well.
 While the viewer writes in a human conversation, mobile sends the room socket
 the same typing frame other clients render (`{t: 'typing', on}`): `on: true`
 on the first character, refreshed at most every three seconds while edits
-continue, and `on: false` once after four idle seconds, an emptied field, a
-send, losing focus or leaving the thread. That stays well inside the room's
-budget of 20 client frames per 10 seconds per socket. Web's native chat does
-not send typing on this socket yet; it only renders it. Assistant
-conversations send nothing.
+continue, and `on: false` after four idle seconds, an emptied field, a send or
+losing focus. Two typing frames are never less than a second apart; a change
+wanted sooner waits and is coalesced with later edits, so quick type-and-clear
+or type-and-send cycles cost at most one frame a second. The room limits each
+socket to 20 client frames per 10 seconds (closing it beyond that) and
+rebroadcasts at most 20 typing and presence frames per 10 seconds for all
+members together, dropping the rest, so one typist uses at most half of
+either. Leaving the thread, closing Chat or the app leaving the foreground
+sends `on: false` at once. Web's native chat does not send typing on this
+socket yet; it only renders it. Assistant conversations send nothing.
+
+Received typing applies to the open conversation only and is cleared when
+another conversation opens. Because a stop frame can be lost (the typist's app
+dies or goes offline, its socket is reconnecting, or the room's shared budget
+drops it), each typist expires five seconds after their last `on: true`, as on
+web, and a room presence frame reporting them offline or in the background
+ends their typing at once.
 
 The room's `read.updated` event moves that member's read cursor forward
 locally (never back), with no conversation refetch; an event without a cursor
@@ -104,16 +116,20 @@ a direct conversation, Seen by N elsewhere, with up to three avatars and all
 reader names for screen readers. Web's native chat shows a static delivered
 mark rather than receipts.
 
-Links in synced messages of server conversations get web's preview cards: the
-same URL rule (http and https only, trailing punctuation removed, duplicates
+Links in synced messages of server conversations get web's preview cards,
+read from the text as displayed (bridged external chat messages decode their
+HTML entities first, as on web): the same URL rule (http and https only, trailing punctuation removed, duplicates
 dropped, at most five per message), a request to the conversation's
 `link-previews` route, and a card only for links the server resolved to a
-title or description. Cards show the site, title and description and open in
+title or description. The route answers in request order, one preview per
+distinct link after dropping fragments, and a preview's URL may be where the
+link redirected, so previews pair with links by position. Cards show the site, title and description and open in
 the viewer's link browser choice; preview images are not shown, matching web
 and the route, which returns none. The device never fetches the linked pages
 itself. Previews are kept in memory for an hour, one request per message's
 link set is shared while in flight, and a failed request is not repeated for
-a minute. Web's inline YouTube player is not part of mobile.
+a minute; both caches are bounded. Web's inline YouTube player is not part of
+mobile.
 
 ## Composer
 

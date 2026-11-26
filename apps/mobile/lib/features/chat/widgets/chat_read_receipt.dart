@@ -112,7 +112,6 @@ class ChatReadReceipt extends StatelessWidget {
                 direct ? l10n.chatSeen : l10n.chatSeenByCount(readers.length),
                 style: tokens.typography.xSmall.copyWith(
                   color: colors.mutedForeground,
-                  fontSize: 11,
                 ),
               ),
             ],

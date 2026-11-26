@@ -261,7 +261,7 @@ class _MessageListState extends State<_MessageList> {
               store: previews,
               wsId: conversation.wsId,
               conversationId: conversation.id,
-              content: message.content,
+              content: chatMessageDisplayContent(message),
             ),
       receipt: readers == null
           ? null

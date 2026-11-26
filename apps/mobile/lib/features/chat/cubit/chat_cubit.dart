@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
@@ -14,6 +15,7 @@ import 'package:mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/data/chat_typing_publisher.dart';
+import 'package:mobile/features/chat/data/chat_typing_roster.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'chat_state.dart';
@@ -59,7 +61,15 @@ class ChatCubit extends Cubit<ChatState> {
   final Map<String, DateTime> _freshFetchedAt = {};
 
   /// The viewer's typing signal for the open thread, if one is announced.
-  ({String conversationId, ChatTypingPublisher publisher})? _typing;
+  ({
+    String conversationId,
+    ChatTypingPublisher publisher,
+    AppLifecycleListener? lifecycle,
+  })?
+  _typing;
+
+  /// Other members typing in the open conversation.
+  late final _typists = ChatTypingRoster(onChanged: _publishTypists);
 
   final DateTime Function() _now;
   final String? Function() _currentUserId;
@@ -489,18 +499,8 @@ class ChatCubit extends Cubit<ChatState> {
         } else {
           _patchMessage(message, replaceReactions: type == 'reaction.updated');
         }
-      case ChatRealtimeTypingEvent(
-        :final conversationId,
-        :final actorUserId,
-        :final isTyping,
-      ):
-        if (conversationId != state.selectedConversationId ||
-            actorUserId == null) {
-          return;
-        }
-        final next = Set<String>.from(state.typingUserIds);
-        isTyping ? next.add(actorUserId) : next.remove(actorUserId);
-        emit(state.copyWith(typingUserIds: next));
+      case ChatRealtimeTypingEvent():
+        _applyRemoteTyping(event);
       case ChatRealtimeReadEvent():
         _applyReadCursor(event);
       case ChatRealtimeErrorEvent():
@@ -539,7 +539,7 @@ class ChatCubit extends Cubit<ChatState> {
     final sameRoom = next == _roomConversationId;
     final subscriptionMatches = (next == null) == (_roomSubscription == null);
     if (sameRoom && subscriptionMatches) return;
-    stopTyping(); // Before the old room socket closes, so it can send off.
+    _switchTypingRoom(next);
     _roomFallback?.cancel();
     _roomFallback = null;
     _roomConversationId = next;
@@ -584,48 +584,6 @@ class ChatCubit extends Cubit<ChatState> {
       case ChatStreamDoneEvent():
         emit(state.copyWith(isSending: false, streamingAssistantText: ''));
     }
-  }
-
-  void _upsertConversation(
-    ChatConversation conversation, {
-    bool select = false,
-  }) {
-    final next = [...state.conversations];
-    final index = next.indexWhere((item) => item.id == conversation.id);
-    if (index >= 0) {
-      next[index] = conversation;
-    } else {
-      next.add(conversation);
-    }
-    emit(
-      state.copyWith(
-        conversations: _sortConversations(next),
-        selectedConversationId: select
-            ? conversation.id
-            : state.selectedConversationId,
-      ),
-    );
-    if (select) _syncConversationRoom();
-  }
-
-  void _removeConversation(String conversationId) {
-    _forgetFetchedRanges(conversationId);
-    final next = state.conversations
-        .where((conversation) => conversation.id != conversationId)
-        .toList(growable: false);
-    final selectedId = state.selectedConversationId == conversationId
-        ? _resolveSelectedConversationId(next)
-        : state.selectedConversationId;
-    final nextMessages = Map<String, List<ChatMessage>>.from(state.messages)
-      ..remove(conversationId);
-    emit(
-      state.copyWith(
-        conversations: next,
-        messages: nextMessages,
-        selectedConversationId: selectedId,
-      ),
-    );
-    _syncConversationRoom();
   }
 
   void _upsertMessage(ChatMessage message) {
@@ -676,7 +634,7 @@ class ChatCubit extends Cubit<ChatState> {
 
   @override
   Future<void> close() async {
-    stopTyping();
+    _disposeTyping();
     _closing = true;
     OfflineMutationQueue.instance.pending.removeListener(_onQueueChanged);
     ++_loadToken;

@@ -254,7 +254,14 @@ class _ChatRealtimeRun {
           case 'resync':
             _emit(const ChatRealtimeResyncEvent());
           case 'typing':
+          // A member who went offline or to the background stops typing;
+          // their own `false` frame may never arrive.
+          case 'presence':
             final userId = frame['userId']?.toString();
+            final typing = frame['t'] == 'typing' && frame['on'] == true;
+            if (frame['t'] == 'presence' && frame['state'] == 'foreground') {
+              break;
+            }
             if (conversationId != null &&
                 userId != null &&
                 userId.isNotEmpty &&
@@ -263,7 +270,7 @@ class _ChatRealtimeRun {
                 ChatRealtimeTypingEvent(
                   conversationId: conversationId!,
                   actorUserId: userId,
-                  isTyping: frame['on'] == true,
+                  isTyping: typing,
                 ),
               );
             }

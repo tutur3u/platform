@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:html/parser.dart' as html;
 import 'package:intl/intl.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -54,10 +55,9 @@ String chatSenderName(BuildContext context, ChatMessage message) {
 String chatMessagePreview(BuildContext context, ChatMessage message) {
   final l10n = context.l10n;
   if (message.deletedAt != null) return l10n.chatMessageDeleted;
-  final text = message.content
-      .replaceAll(RegExp('[*_`>#]+'), '')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
+  final text = chatMessageDisplayContent(
+    message,
+  ).replaceAll(RegExp('[*_`>#]+'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
   if (text.isNotEmpty) return text;
   if (message.attachments.isNotEmpty) {
     return message.attachments.length == 1
@@ -77,4 +77,25 @@ String chatInitials(String name) {
   final first = parts.first.characters.first;
   final last = parts.length > 1 ? parts.last.characters.first : '';
   return (first + last).toUpperCase();
+}
+
+final _htmlEntity = RegExp(
+  '&(?:#[0-9]+|#[xX][0-9a-fA-F]+|[A-Za-z][A-Za-z0-9]*);',
+);
+
+/// Message text as web displays it: bridged external chat stores HTML
+/// entities, decoded here up to three passes as web does. Entities are
+/// decoded one at a time, so decoded `<` and `>` never become markup.
+String chatMessageDisplayContent(ChatMessage message) {
+  if (message.metadata['externalChat'] != true) return message.content;
+  var content = message.content;
+  for (var pass = 0; pass < 3; pass++) {
+    final decoded = content.replaceAllMapped(
+      _htmlEntity,
+      (match) => html.parseFragment(match[0]).text ?? match[0]!,
+    );
+    if (decoded == content) break;
+    content = decoded;
+  }
+  return content;
 }

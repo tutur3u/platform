@@ -118,3 +118,48 @@ extension ChatCubitSync on ChatCubit {
     }
   }
 }
+
+/// Adds, replaces and removes conversation rows from realtime and actions.
+extension ChatCubitConversationRows on ChatCubit {
+  void _upsertConversation(
+    ChatConversation conversation, {
+    bool select = false,
+  }) {
+    final next = [...state.conversations];
+    final index = next.indexWhere((item) => item.id == conversation.id);
+    if (index >= 0) {
+      next[index] = conversation;
+    } else {
+      next.add(conversation);
+    }
+    emit(
+      state.copyWith(
+        conversations: _sortConversations(next),
+        selectedConversationId: select
+            ? conversation.id
+            : state.selectedConversationId,
+      ),
+    );
+    if (select) _syncConversationRoom();
+  }
+
+  void _removeConversation(String conversationId) {
+    _forgetFetchedRanges(conversationId);
+    final next = state.conversations
+        .where((conversation) => conversation.id != conversationId)
+        .toList(growable: false);
+    final selectedId = state.selectedConversationId == conversationId
+        ? _resolveSelectedConversationId(next)
+        : state.selectedConversationId;
+    final nextMessages = Map<String, List<ChatMessage>>.from(state.messages)
+      ..remove(conversationId);
+    emit(
+      state.copyWith(
+        conversations: next,
+        messages: nextMessages,
+        selectedConversationId: selectedId,
+      ),
+    );
+    _syncConversationRoom();
+  }
+}

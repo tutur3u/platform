@@ -21,6 +21,48 @@ List<String> extractChatLinks(String content) {
   return seen.toList(growable: false);
 }
 
+/// The server's normalization of a preview URL: the fragment is dropped
+/// and an empty path becomes `/`, as WHATWG URL serialization does.
+String? _previewKey(String url) {
+  final uri = Uri.tryParse(url);
+  if (uri == null || !uri.hasScheme || uri.host.isEmpty) return null;
+  final normalized = uri.removeFragment();
+  return (normalized.path.isEmpty ? normalized.replace(path: '/') : normalized)
+      .toString();
+}
+
+/// Matches the preview route's answer to the requested [urls]. The route
+/// answers in request order, one preview per distinct normalized URL, and
+/// a preview's `url` may be where the link redirected, so previews pair by
+/// position; an answer of another length falls back to matching URLs.
+Map<String, ChatLinkPreview> pairChatLinkPreviews(
+  List<String> urls,
+  List<ChatLinkPreview> previews,
+) {
+  final keys = <String>[];
+  final urlsByKey = <String, List<String>>{};
+  for (final url in urls) {
+    final key = _previewKey(url);
+    if (key == null) continue;
+    if (!urlsByKey.containsKey(key)) keys.add(key);
+    (urlsByKey[key] ??= []).add(url);
+  }
+  if (previews.length == keys.length) {
+    return {
+      for (var index = 0; index < keys.length; index++)
+        for (final url in urlsByKey[keys[index]]!) url: previews[index],
+    };
+  }
+  final byKey = {
+    for (final preview in previews)
+      if (_previewKey(preview.url) case final key?) key: preview,
+  };
+  return {
+    for (final url in urls)
+      if (byKey[_previewKey(url)] case final preview?) url: preview,
+  };
+}
+
 /// Preview cards for the links in a synced message. Only links the server
 /// resolved to a title or description get a card; images are not shown.
 class ChatLinkPreviews extends StatefulWidget {
@@ -81,16 +123,16 @@ class _ChatLinkPreviewsState extends State<ChatLinkPreviews> {
         _urls,
       ),
       builder: (context, snapshot) {
-        final byUrl = {
-          for (final preview in snapshot.data ?? const <ChatLinkPreview>[])
-            preview.url: preview,
-        };
-        final visible = [
+        final byUrl = pairChatLinkPreviews(
+          _urls,
+          snapshot.data ?? const <ChatLinkPreview>[],
+        );
+        final visible = {
           for (final url in _urls)
             if (byUrl[url] case final preview?
                 when _hasText(preview.title) || _hasText(preview.description))
               preview,
-        ];
+        }.toList(growable: false);
         if (visible.isEmpty) return const SizedBox.shrink();
         return Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xs),
@@ -144,7 +186,8 @@ class ChatLinkPreviewCard extends StatelessWidget {
               children: [
                 Icon(
                   LucideIcons.globe,
-                  size: 12,
+                  // Sized to the site label beside it.
+                  size: tokens.typography.xSmall.fontSize,
                   color: colors.mutedForeground,
                 ),
                 Flexible(

@@ -219,7 +219,10 @@ class _Bubble extends StatelessWidget {
               ),
             )
           else if (message.content.isNotEmpty)
-            _MessageText(content: message.content, color: foreground),
+            _MessageText(
+              content: chatMessageDisplayContent(message),
+              color: foreground,
+            ),
           if (!deleted && message.attachments.isNotEmpty) ...[
             if (message.content.isNotEmpty)
               const SizedBox(height: AppSpacing.sm),

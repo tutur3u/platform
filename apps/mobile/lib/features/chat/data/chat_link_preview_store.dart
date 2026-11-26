@@ -33,7 +33,8 @@ class ChatLinkPreviewStore {
   final Duration ttl;
   final Duration retryAfter;
 
-  /// Most link sets kept; the oldest is dropped first.
+  /// Most link sets kept, and most failures remembered; the oldest of
+  /// each is dropped first.
   final int capacity;
 
   // Map literals keep insertion order, so the first key is the oldest.
@@ -91,7 +92,12 @@ class ChatLinkPreviewStore {
       }
       return previews;
     } on Object {
-      _failedAt[key] = _now();
+      _failedAt
+        ..remove(key)
+        ..[key] = _now();
+      while (_failedAt.length > capacity) {
+        _failedAt.remove(_failedAt.keys.first);
+      }
       return const [];
     } finally {
       unawaited(_inFlight.remove(key));
