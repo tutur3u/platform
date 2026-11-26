@@ -1,4 +1,4 @@
-import type { PublicWorkspaceReferenceRates } from '@tuturuuu/internal-api/public-pricing';
+import type { PublicWorkspaceReferenceRates } from '@tuturuuu/internal-api';
 import {
   PLAN_QUOTAS,
   type VersionedPlanTier,

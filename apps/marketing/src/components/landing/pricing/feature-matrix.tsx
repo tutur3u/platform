@@ -1,6 +1,6 @@
 'use client';
 
-import type { PublicWorkspaceReferenceRates } from '@tuturuuu/internal-api/public-pricing';
+import type { PublicWorkspaceReferenceRates } from '@tuturuuu/internal-api';
 import { CommercialComparison } from '@tuturuuu/ui/commercial-comparison';
 import { VersionedPlanComparison } from '@tuturuuu/ui/versioned-plan-comparison';
 import { useLocale, useMessages, useTranslations } from 'next-intl';
