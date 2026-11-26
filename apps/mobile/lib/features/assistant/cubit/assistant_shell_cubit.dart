@@ -33,6 +33,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     AssistantSettingsSelector? selectSettings,
     Object? Function()? currentSettingsToken,
     void Function(AssistantSettingsDisposition)? onSettingsSelectionFailure,
+    this.selectionSettleWait = const Duration(seconds: 3),
   }) : _repository = repository,
        _preferences = preferences,
        _currentScopeToken = currentScopeToken,
@@ -75,6 +76,18 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
 
   /// Counts applied settings changes, so a load knows one landed meanwhile.
   int _appliedSelections = 0;
+
+  /// Whether the current session's first load has emitted its settings.
+  /// Settings changes wait for it, so none is built from the previous
+  /// session's model or credit source.
+  bool _sessionLoaded = false;
+
+  /// Longest a workspace load waits for a settings change still being saved
+  /// before it emits; a change that settles later still applies itself.
+  final Duration selectionSettleWait;
+
+  /// Whether a settings change may start now.
+  bool get _acceptsSettingsChanges => _sessionLoaded;
   final Object? Function()? _currentSettingsToken;
   final void Function(AssistantSettingsDisposition)?
   _onSettingsSelectionFailure;
@@ -106,9 +119,11 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       actorId: _repository.currentActorId,
       workspaceId: workspace.id,
     );
-    if (scope != _sessionScope) {
+    final newSession = scope != _sessionScope;
+    if (newSession) {
       _sessionScope = scope;
       _scopeEpoch++;
+      _sessionLoaded = false;
       _sessionThinkingMode = AssistantThinkingMode.fast;
       _openConversation = null;
     }
@@ -191,10 +206,12 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       // A settings change in flight wins over this load's view of them.
       final pending = _pendingSelection;
       if (pending != null && pending.epoch == _scopeEpoch) {
-        await pending.done;
+        await pending.done.timeout(selectionSettleWait, onTimeout: () {});
         if (isClosed || requestVersion != _requestVersion) return;
       }
-      final changed = _appliedSelections != appliedAtStart;
+      // Only a change within this same session can win; a new session's
+      // first load always applies its own settings.
+      final changed = !newSession && _appliedSelections != appliedAtStart;
       final open = _openConversationFor(workspace.id);
       final creditSource = changed
           ? state.creditSource
@@ -229,6 +246,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         ),
       );
 
+      _sessionLoaded = true;
       if (!changed) {
         unawaited(_preferences.saveModel(workspace.id, selectedModel));
         unawaited(
@@ -373,6 +391,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   /// request (the legacy transport), so no settings write is needed.
   bool selectThinkingModeForRequests(AssistantThinkingMode mode) {
     if (isClosed ||
+        !_acceptsSettingsChanges ||
         state.workspace == null ||
         _settingsSelectionPending ||
         mode == state.thinkingMode ||

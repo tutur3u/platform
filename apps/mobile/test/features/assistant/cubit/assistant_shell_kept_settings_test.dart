@@ -47,11 +47,16 @@ void main() {
   late String actor;
   late List<AssistantSettingsSelection> selections;
   Completer<void>? selectionGate;
+  Completer<void>? creditsGate;
+  late String creditsTier;
 
-  AssistantShellCubit shell() {
+  AssistantShellCubit shell({
+    Duration settleWait = const Duration(seconds: 3),
+  }) {
     final cubit = AssistantShellCubit(
       repository: repository,
       preferences: AssistantPreferences(currentUserId: () => actor),
+      selectionSettleWait: settleWait,
       selectSettings: (selection, _) async {
         selections.add(selection);
         await selectionGate?.future;
@@ -67,6 +72,8 @@ void main() {
     actor = _actorA;
     selections = [];
     selectionGate = null;
+    creditsGate = null;
+    creditsTier = 'PRO';
     repository = _Repository();
     when(() => repository.currentActorId).thenAnswer((_) => actor);
     when(
@@ -87,9 +94,10 @@ void main() {
         any(),
         forceRefresh: any(named: 'forceRefresh'),
       ),
-    ).thenAnswer(
-      (_) async => const AssistantCredits(tier: 'PRO', remaining: 5000),
-    );
+    ).thenAnswer((_) async {
+      await creditsGate?.future;
+      return AssistantCredits(tier: creditsTier, remaining: 5000);
+    });
     when(repository.fetchGatewayModels).thenAnswer((_) async => []);
   });
 
@@ -209,5 +217,106 @@ void main() {
     expect(await changing, isFalse);
     await back;
     expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
+  });
+
+  test('a change tapped while a new session loads never lands', () async {
+    final cubit = shell();
+    await cubit.loadWorkspace(_workspace);
+    expect(cubit.state.creditSource, AssistantCreditSource.workspace);
+
+    // Another account takes over the shared workspace; its workspace credits
+    // are locked, so the new session settles on personal credits.
+    actor = _actorB;
+    creditsTier = 'FREE';
+    creditsGate = Completer<void>();
+    final loading = cubit.loadWorkspace(_workspace, forceRefresh: true);
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      await cubit.setThinkingMode(AssistantThinkingMode.thinking),
+      isFalse,
+    );
+    expect(
+      await cubit.setSelectedModel(
+        const AssistantGatewayModel(
+          value: 'google/gemini-3-pro',
+          label: 'Gemini 3 Pro',
+          provider: 'google',
+        ),
+      ),
+      isFalse,
+    );
+    expect(
+      await cubit.setCreditSource(AssistantCreditSource.workspace),
+      isFalse,
+    );
+    expect(
+      cubit.selectThinkingModeForRequests(AssistantThinkingMode.thinking),
+      isFalse,
+    );
+    creditsGate!.complete();
+    await loading;
+
+    expect(selections, isEmpty);
+    expect(cubit.state.status, AssistantShellStatus.loaded);
+    expect(cubit.state.workspaceCreditLocked, isTrue);
+    expect(cubit.state.creditSource, AssistantCreditSource.personal);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
+    // The new session accepts changes once it has loaded.
+    expect(await cubit.setThinkingMode(AssistantThinkingMode.thinking), isTrue);
+    expect(selections.single.creditSource, AssistantCreditSource.personal);
+  });
+
+  test('a refresh holds its settings until the change saves', () async {
+    final cubit = shell();
+    await cubit.loadWorkspace(_workspace);
+    cubit.restoreConversationSettings(_thinkingChat);
+    selectionGate = Completer<void>();
+    final changing = cubit.setThinkingMode(AssistantThinkingMode.fast);
+    final refreshing = cubit.loadWorkspace(_workspace, forceRefresh: true);
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    // The refresh has its data but waits for the change in flight.
+    expect(cubit.state.status, AssistantShellStatus.loading);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
+
+    selectionGate!.complete();
+    await changing;
+    await refreshing;
+    expect(cubit.state.status, AssistantShellStatus.loaded);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.fast);
+  });
+
+  test('a change saved before the refresh settles keeps its model', () async {
+    final cubit = shell();
+    await cubit.loadWorkspace(_workspace);
+    const next = AssistantGatewayModel(
+      value: 'google/gemini-3-pro',
+      label: 'Gemini 3 Pro',
+      provider: 'google',
+    );
+    // The refresh starts and reads its stored settings, then the change
+    // lands while the refresh still waits on the network.
+    creditsGate = Completer<void>();
+    final refreshing = cubit.loadWorkspace(_workspace, forceRefresh: true);
+    await Future<void>.delayed(Duration.zero);
+    expect(await cubit.setSelectedModel(next), isTrue);
+    creditsGate!.complete();
+    await refreshing;
+    expect(cubit.state.status, AssistantShellStatus.loaded);
+    expect(cubit.state.selectedModel.value, next.value);
+  });
+
+  test('a refresh waits for a slow change only up to its limit', () async {
+    final cubit = shell(settleWait: const Duration(milliseconds: 50));
+    await cubit.loadWorkspace(_workspace);
+    selectionGate = Completer<void>();
+    final changing = cubit.setThinkingMode(AssistantThinkingMode.thinking);
+    await cubit.loadWorkspace(_workspace, forceRefresh: true);
+    expect(cubit.state.status, AssistantShellStatus.loaded);
+
+    // The change applies itself once it settles.
+    selectionGate!.complete();
+    expect(await changing, isTrue);
+    expect(cubit.state.thinkingMode, AssistantThinkingMode.thinking);
   });
 }

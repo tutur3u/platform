@@ -181,4 +181,40 @@ void main() {
     );
     expect(repository.api.patches, isEmpty);
   });
+
+  testWidgets('model and mode controls wait while settings load', (
+    tester,
+  ) async {
+    final h = BackgroundReplyHarness(
+      repository: _CreationRepository(_SettingsApi()),
+    );
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester);
+    final model = find.byKey(const ValueKey('assistant-composer-model'));
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
+
+    final shell = _shell(h);
+    final loaded = shell.state.copyWith(
+      availableModels: const [
+        AssistantGatewayModel(
+          value: 'google/gemini-3-flash',
+          label: 'Gemini 3 Flash',
+          provider: 'google',
+        ),
+      ],
+    );
+    shell.emit(loaded);
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppButton>(model).onPressed, isNotNull);
+
+    shell.emit(loaded.copyWith(status: AssistantShellStatus.loading));
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNull);
+    expect(tester.widget<AppButton>(model).onPressed, isNull);
+
+    shell.emit(loaded);
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
+    expect(tester.widget<AppButton>(model).onPressed, isNotNull);
+  });
 }

@@ -35,7 +35,11 @@ extension _AssistantShellSettings on AssistantShellCubit {
 
   Future<bool> _selectModel(AssistantGatewayModel model) async {
     final workspace = state.workspace;
-    if (workspace == null || _settingsSelectionPending) return false;
+    if (workspace == null ||
+        _settingsSelectionPending ||
+        !_acceptsSettingsChanges) {
+      return false;
+    }
     final creditWsId = state.creditSource == AssistantCreditSource.personal
         ? state.personalWorkspaceId
         : workspace.id;
@@ -82,6 +86,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
     final workspace = state.workspace;
     if (workspace == null ||
         _settingsSelectionPending ||
+        !_acceptsSettingsChanges ||
         mode == state.thinkingMode ||
         assistantModelUsesProviderDefaults(state.selectedModel)) {
       return false;
@@ -127,7 +132,11 @@ extension _AssistantShellSettings on AssistantShellCubit {
 
   Future<bool> _selectCreditSource(AssistantCreditSource source) async {
     final workspace = state.workspace;
-    if (workspace == null || _settingsSelectionPending) return false;
+    if (workspace == null ||
+        _settingsSelectionPending ||
+        !_acceptsSettingsChanges) {
+      return false;
+    }
     final effective = state.workspaceCreditLocked
         ? AssistantCreditSource.personal
         : source;

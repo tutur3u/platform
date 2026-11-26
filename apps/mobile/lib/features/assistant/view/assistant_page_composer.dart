@@ -89,7 +89,8 @@ extension _AssistantPageComposer on _AssistantPageState {
                   : null,
               onOpenModels: localLane
                   ? _showLiveSettings
-                  : shellState.availableModels.isEmpty
+                  : shellState.availableModels.isEmpty ||
+                        !_shellSettled(shellState)
                   ? null
                   : () => showAssistantModelPicker(
                       context,
@@ -101,7 +102,8 @@ extension _AssistantPageComposer on _AssistantPageState {
                   _thinkingModeAvailable(shellState, localLane)
                   ? _selectThinkingMode
                   : null,
-              modeEnabled: _thinkingModeIdle(chatState),
+              modeEnabled:
+                  _thinkingModeIdle(chatState) && _shellSettled(shellState),
             )
           : null,
       child: composer,
@@ -168,6 +170,12 @@ extension _AssistantPageComposer on _AssistantPageState {
       return false;
     }
   }
+
+  /// The model and mode controls wait while the workspace settings load, so
+  /// no change is built from the previous session's settings.
+  bool _shellSettled(AssistantShellState shell) =>
+      shell.status != AssistantShellStatus.initial &&
+      shell.status != AssistantShellStatus.loading;
 
   /// The mode changes only between replies, so a switch never stops a reply
   /// in flight or drops queued messages; it applies to the next send.
