@@ -1,4 +1,5 @@
 import type { MeetRealtimeTokenPayload } from '../../../packages/realtime/src/meet';
+import { MEET_EXTERNAL_CLASS_SCOPE } from '../../../packages/realtime/src/meet/external-class-room';
 import { roomRatingResponse } from '../../../packages/realtime/src/meet/room-rating';
 import { readSharedTutorChat } from './mira-share-storage';
 import { personalReceiptStorage } from './personal-receipt-storage';
@@ -16,6 +17,7 @@ export async function privateRoomStorage(
   token: MeetRealtimeTokenPayload,
   body: unknown
 ): Promise<Response | undefined> {
+  if (token.scopes.includes(MEET_EXTERNAL_CLASS_SCOPE)) return;
   const shared = await readSharedTutorChat(storage, snapshot, token, body);
   if (shared) return shared;
   const personal = await personalReceiptStorage(storage, token, body);

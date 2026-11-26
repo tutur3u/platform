@@ -1,4 +1,5 @@
 import { serializeJsonHeader } from '../../../packages/realtime/src/core/json-header';
+import { MEET_EXTERNAL_CLASS_SCOPE } from '../../../packages/realtime/src/meet/external-class-room';
 import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
 import type { MeetRoomEnv } from './room-env';
 
@@ -29,6 +30,13 @@ export async function meetRoomRequest(
     env.MEET_REALTIME_TOKEN_SECRET
   );
   if (!token) return new Response('Unauthorized', { status: 401 });
+
+  if (
+    token.scopes.includes(MEET_EXTERNAL_CLASS_SCOPE) &&
+    url.pathname !== '/room-service'
+  ) {
+    return new Response('Forbidden', { status: 403 });
+  }
 
   // The signed room id owns routing for the verified ticket.
   const room = env.MEET_ROOM.get(env.MEET_ROOM.idFromName(token.roomId));

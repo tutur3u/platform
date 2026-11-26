@@ -21906,6 +21906,18 @@
     "view_billing": "View full billing",
     "your_plan": "Your current plan"
   },
+  "upskii-live-class-permission": {
+    "allow": "Allow Upskii to start Meet rooms for your classes",
+    "back": "Back to Upskii integrations",
+    "description": "Upskii can create and open a Meet room for a class you teach when you press Start live class. Revoke anytime in Integrations.",
+    "granted": "Permission granted.",
+    "hosting_unavailable": "This Tuturuuu account cannot host Meet rooms.",
+    "linked_as": "Linked to {email}",
+    "not_granted": "Permission required.",
+    "not_linked": "Link this Tuturuuu account in Upskii integrations first.",
+    "revoke": "Revoke permission",
+    "title": "Upskii live class permission"
+  },
   "usage": {
     "ai_automation": "AI & Automation",
     "content_storage": "Content & Storage",

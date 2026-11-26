@@ -73,6 +73,7 @@ export type RoomChatMessage = Extract<
   { type: 'chat.message' }
 >;
 export type RoomServiceState = MeetRoomSnapshot & {
+  externalClassInitialized?: true;
   documents?: RoomDocumentsState;
   polls?: RoomPoll[];
   quizArena?: RoomQuizArenaState;

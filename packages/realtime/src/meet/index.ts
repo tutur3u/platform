@@ -358,3 +358,4 @@ export {
   MEET_RENAMES_PER_MINUTE,
   RENAME_RATE_LIMITED,
 } from './room-rename';
+export { MEET_EXTERNAL_CLASS_SCOPE } from './external-class-room';

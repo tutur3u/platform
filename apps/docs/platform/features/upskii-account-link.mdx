@@ -27,7 +27,33 @@ side stores the other side's user tokens.
 | Data shared | Read-only: the user's Upskii classes, lessons and assessments, as scopes `upskii:classes:read`, `upskii:lessons:read` and `upskii:assessments:read`. Upskii receives only the Tuturuuu account id and email for its link row. |
 | Surfaces | Upskii settings (connect, status, disconnect). The Tuturuuu sign-in confirmation. Tuturuuu settings → Account → Integrations on apps/web and every satellite (status, disconnect, connect hands off to Upskii). The catalog card. Meet reads content server-side. |
 | Revocation | Either side can disconnect at any time. Data flows only while both sides hold an active link. |
-| Exceptions | Workspace-level sharing and write access are out of scope. Platform admins cannot create or read another user's link. QA test accounts never count as staff; see [QA accounts](#qa-accounts). |
+| Exceptions | Workspace-level sharing is out of scope. The link alone grants no write access. Platform admins cannot create or read another user's link. QA test accounts never count as staff; see [QA accounts](#qa-accounts). |
+
+### Start a live class
+
+Upskii teachers can give Upskii the separate `meet:rooms:external-class:write`
+permission from **Settings → Integrations**. Tuturuuu asks the verified
+account holder to approve the exact active link. Permission is off by default
+and can be revoked from the same entry point.
+
+**Start live class** opens the class's canonical Meet room in a new tab and
+shows the invitation link and QR code. The active linked teacher needs normal
+Meet hosting entitlement. The first start sets guest join and automatic
+admission. The original teacher keeps ownership, and later starts reuse the
+room and preserve any settings they changed in Meet. Members see **Join live
+class** in Upskii while the admitted host is connected and the session is open.
+
+Revoking permission or disconnecting the link stops new starts and join actions
+through Upskii. An in-progress Meet call continues under its own guest and
+admission controls. For the workshop fallback, use the canonical Meet link and
+its QR code.
+
+The Supabase room initializer serializes starts per class and binds the mapping
+to the original teacher. The Meet realtime Worker owns first-use settings and
+the connected-host check. The integration tests cover strict request fields,
+revocation and host presence. The database tests
+`upskii-live-class-rooms.sql` and `upskii-live-class-room-concurrency.sql`
+cover the service-only grants, ownership and concurrent first starts.
 
 ### QA accounts
 

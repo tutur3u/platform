@@ -2,6 +2,10 @@ import {
   type MeetClassFeatures,
   meetClassFeatures,
 } from '../../../packages/realtime/src/meet/class-features';
+import {
+  applyExternalClassRoom,
+  MEET_EXTERNAL_CLASS_SCOPE,
+} from '../../../packages/realtime/src/meet/external-class-room';
 import type { MeetRoomFormsEnv } from '../../../packages/realtime/src/meet/room-forms';
 import type { MeetRealtimeTokenPayload } from '../../../packages/realtime/src/meet/primitives';
 import { applyRoomBoardAccess } from '../../../packages/realtime/src/meet/room-board-access';
@@ -33,6 +37,16 @@ export function roomService(
   features: MeetClassFeatures = meetClassFeatures(),
   formsEnv: RoomServiceEnv = {}
 ): RoomServiceResult {
+  const externalClass = applyExternalClassRoom(
+    state,
+    token,
+    input,
+    formsEnv.connectedUsers ?? new Set()
+  );
+  if (externalClass) return externalClass;
+  if (token.scopes.includes(MEET_EXTERNAL_CLASS_SCOPE)) {
+    return { state, status: 403, body: { error: 'Forbidden' } };
+  }
   // The board check needs the live sockets, which only the room knows.
   const board = applyRoomBoardAccess(
     state,

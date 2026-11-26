@@ -21913,6 +21913,18 @@
     "view_billing": "Xem toàn bộ thanh toán",
     "your_plan": "Gói hiện tại của bạn"
   },
+  "upskii-live-class-permission": {
+    "allow": "Cho phép Upskii tạo phòng Meet cho các lớp của bạn",
+    "back": "Quay lại phần tích hợp Upskii",
+    "description": "Upskii có thể tạo và mở phòng Meet cho lớp bạn dạy khi bạn bấm Bắt đầu lớp trực tuyến. Bạn có thể thu hồi bất cứ lúc nào trong mục Tích hợp.",
+    "granted": "Đã cấp quyền.",
+    "hosting_unavailable": "Tài khoản Tuturuuu này không có quyền chủ trì phòng Meet.",
+    "linked_as": "Đã liên kết với {email}",
+    "not_granted": "Cần cấp quyền.",
+    "not_linked": "Trước tiên, hãy liên kết tài khoản Tuturuuu này trong phần tích hợp Upskii.",
+    "revoke": "Thu hồi quyền",
+    "title": "Quyền mở lớp trực tuyến trên Upskii"
+  },
   "usage": {
     "ai_automation": "AI & Tự động hóa",
     "content_storage": "Nội dung & Lưu trữ",
