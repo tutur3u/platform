@@ -2,7 +2,6 @@
 
 import { ChevronDown } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { usePathname } from 'next/navigation';
 import { type ReactNode, useId } from 'react';
 import { isNavLinkActive } from './nav-link-matching';
 import type { NavLink as NavLinkType } from './navigation';
@@ -18,6 +17,12 @@ export interface SidebarNavigationProps {
    * remembered. Off by default: other apps keep the plain label-change headers.
    */
   collapsibleSections?: boolean;
+  /**
+   * Current route pathname injected by the framework adapter so collapsed
+   * sections keep the active item visible without coupling this component to
+   * a router implementation.
+   */
+  pathname?: string;
   renderLink: (link: NavLinkType) => ReactNode;
 }
 
@@ -176,9 +181,11 @@ function CollapsibleSidebarSection({
 function CollapsibleSidebarSections({
   links,
   isCollapsed,
+  pathname,
   renderLink,
-}: Pick<SidebarNavigationProps, 'links' | 'isCollapsed' | 'renderLink'>) {
-  const pathname = usePathname() ?? '';
+}: Pick<SidebarNavigationProps, 'links' | 'isCollapsed' | 'renderLink'> & {
+  pathname: string;
+}) {
   const { collapsedIds, toggleSection } = useCollapsedSidebarSections();
   const blocks = groupSidebarBlocks(links);
 
@@ -227,6 +234,7 @@ export function SidebarNavigation({
   className,
   label,
   collapsibleSections = false,
+  pathname = '',
   renderLink,
 }: SidebarNavigationProps) {
   if (!links?.length) {
@@ -243,6 +251,7 @@ export function SidebarNavigation({
           <CollapsibleSidebarSections
             links={links}
             isCollapsed={isCollapsed}
+            pathname={pathname}
             renderLink={renderLink}
           />
         </nav>

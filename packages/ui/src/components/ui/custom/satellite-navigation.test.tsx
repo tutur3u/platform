@@ -1,14 +1,10 @@
 import '@testing-library/jest-dom';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NavLink } from './navigation';
 import { SidebarNavigation } from './satellite-navigation';
-
-const navigationState = vi.hoisted(() => ({ pathname: '/personal' }));
-
-vi.mock('next/navigation', () => ({
-  usePathname: () => navigationState.pathname,
-}));
 
 function section(
   id: string,
@@ -43,6 +39,7 @@ function renderSidebar(
       collapsibleSections
       isCollapsed={false}
       links={links}
+      pathname="/personal"
       renderLink={(link) => <a href={link.href}>{link.title}</a>}
       {...props}
     />
@@ -51,7 +48,6 @@ function renderSidebar(
 
 describe('SidebarNavigation collapsible sections', () => {
   beforeEach(() => {
-    navigationState.pathname = '/personal';
     window.localStorage.clear();
   });
 
@@ -67,8 +63,7 @@ describe('SidebarNavigation collapsible sections', () => {
   });
 
   it('collapses a section, remembers it, and keeps the active page visible', () => {
-    navigationState.pathname = '/personal/notes';
-    const { unmount } = renderSidebar();
+    const { unmount } = renderSidebar({ pathname: '/personal/notes' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Productivity' }));
 
@@ -80,12 +75,13 @@ describe('SidebarNavigation collapsible sections', () => {
     expect(screen.getByText('Mail')).toBeInTheDocument();
 
     unmount();
-    renderSidebar();
+    renderSidebar({ pathname: '/personal/notes' });
 
     expect(
       screen.getByRole('button', { name: 'Productivity' })
     ).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByText('Tasks')).toBeNull();
+    expect(screen.getByText('Notes')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Productivity' }));
     expect(screen.getByText('Tasks')).toBeInTheDocument();
@@ -114,6 +110,20 @@ describe('SidebarNavigation collapsible sections', () => {
 
     expect(screen.getByText('Tasks')).toBeInTheDocument();
     getItem.mockRestore();
+  });
+});
+
+describe('SidebarNavigation framework independence', () => {
+  it.each([
+    './satellite-navigation.tsx',
+    './nav-link-matching.ts',
+    './sidebar-collapsed-sections.ts',
+  ])('keeps %s free of framework runtime imports', (relativePath) => {
+    const source = readFileSync(resolve(__dirname, relativePath), 'utf8');
+
+    expect(source).not.toMatch(
+      /from\s+['"](?:next(?:\/|$)|next-intl(?:\/|$)|react-router(?:\/|$)|@tanstack\/react-router(?:\/|$)|cloudflare:)/
+    );
   });
 });
 

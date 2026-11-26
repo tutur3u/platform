@@ -1,4 +1,5 @@
 'use client';
+import { usePathname } from 'next/navigation';
 import { NavLink } from './nav-link';
 import type { NavLink as NavLinkType } from './navigation';
 import { SidebarNavigation } from './satellite-navigation';
@@ -11,6 +12,7 @@ interface NavProps {
   onClick: () => void;
   className?: string;
   collapsibleSections?: boolean;
+  pathname?: string;
 }
 export function Nav({
   wsId,
@@ -20,13 +22,16 @@ export function Nav({
   onClick,
   className,
   collapsibleSections,
+  pathname,
 }: NavProps) {
+  const routerPathname = usePathname();
   return (
     <SidebarNavigation
       links={links}
       isCollapsed={isCollapsed}
       className={className}
       collapsibleSections={collapsibleSections}
+      pathname={pathname ?? routerPathname ?? ''}
       renderLink={(link) => (
         <NavLink
           wsId={wsId}
