@@ -76,8 +76,9 @@ export function ActivitiesMenu({
     board?: { active: boolean; toggle: () => void };
   };
   /**
-   * The Tuturuuu Whiteboard for a member who may not use the room's tools
-   * (`whiteboardPolicy` `memberBoard`), so they reach the host's board.
+   * The Tuturuuu Whiteboard for someone who may not use the room's tools: a
+   * member, or a guest while the guest switch is on (`whiteboardPolicy`
+   * `boardEntry`), so they reach the host's board.
    */
   board?: { active: boolean; toggle: () => void };
   preview?: { onFeedback: () => void };

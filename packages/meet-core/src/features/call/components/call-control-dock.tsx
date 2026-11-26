@@ -9,6 +9,7 @@ import type { RoomNavigation } from '../hooks/use-room-navigation';
 import { managesJoinQr, roomKeepsJoinQr } from '../hooks/use-stage-join-qr';
 import type { MeetRoomController } from '../lib/room-controller';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
+import { soloBoardAction } from '../stage-layout/whiteboard-policy';
 import { type MeetToolDefinition, meetTools } from '../tools/registry';
 import { ActivitiesMenu } from './activities-menu';
 import type { ActivityEntry } from './call-activities';
@@ -73,7 +74,7 @@ export function CallControlDock({
   programming,
   document,
   board,
-  memberBoard = false,
+  boardEntry = false,
   penBoardFirst,
   layout,
   setLayout,
@@ -110,8 +111,8 @@ export function CallControlDock({
   document: Toggle;
   /** Absent where the person cannot use the board, such as a v2 guest. */
   board?: Toggle;
-  /** Lists the board without room tools (`whiteboardPolicy` `memberBoard`). */
-  memberBoard?: boolean;
+  /** Lists the board without room tools (`whiteboardPolicy` `boardEntry`). */
+  boardEntry?: boolean;
   /** The Whiteboard entry opens the pen board first (`whiteboardPolicy`). */
   penBoardFirst?: boolean;
   layout: CallLayout;
@@ -162,7 +163,7 @@ export function CallControlDock({
       collaboration={
         roomTools.canUse ? { programming, document, board } : undefined
       }
-      board={!roomTools.canUse && memberBoard ? board : undefined}
+      board={soloBoardAction({ boardEntry }, roomTools.canUse, board)}
       preview={
         roomTools.showPreview
           ? { onFeedback: () => onDrawer('feedback') }

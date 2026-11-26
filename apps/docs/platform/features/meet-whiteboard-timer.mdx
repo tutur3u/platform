@@ -72,6 +72,14 @@ guest access allows (**No access**, **Can view**, **Can draw**, set by the
 host). They draw only on a **Can draw** board while guest drawing (below) is
 also on. Co-Programming and the live document still ask a guest to sign in.
 
+The Whiteboard entry lists the Tuturuuu Whiteboard on its own for anyone
+without room tools (`whiteboardPolicy` `boardEntry`): every member, and a guest
+while the switch is on. A guest's **Open Whiteboard** therefore opens the
+same board as the host, view-only until guest drawing is on, never the
+classroom pen board. While the switch is off, a guest's Whiteboard stays the
+pen board. Regression coverage: `whiteboard-policy.test.ts` ("the guest
+Whiteboard entry") and `activities-menu-merged.test.tsx`.
+
 **Guest drawing.** A second switch, `MEET_GUEST_WHITEBOARD_DRAW`, read the
 same way: on only for the exact string `true`; missing, empty or any other
 value is off, and off is the default. It stays off until guest drawing

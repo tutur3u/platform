@@ -50,7 +50,7 @@ afterEach(() => {
 function renderMenu(
   withBoard = true,
   penBoardFirst = false,
-  catalog: 'host' | 'member' = 'host'
+  catalog: 'host' | 'member' | 'guest' = 'host'
 ) {
   const action = () => ({ active: false, toggle: vi.fn() });
   const board = action();
@@ -64,7 +64,8 @@ function renderMenu(
           openToolIds={[]}
           onTool={onTool}
           penBoardFirst={penBoardFirst}
-          // A member without room tools gets the board on its own.
+          // A member without room tools, or a guest while the guest switch is
+          // on, gets the board on its own.
           collaboration={
             catalog === 'host'
               ? {
@@ -74,7 +75,7 @@ function renderMenu(
                 }
               : undefined
           }
-          board={catalog === 'member' && withBoard ? board : undefined}
+          board={catalog !== 'host' && withBoard ? board : undefined}
           extra={[
             {
               id: 'whiteboard',
@@ -161,14 +162,14 @@ it('keeps every older entry without Meet UX v2', () => {
     expect(nav.getByRole('button', { name: label })).toBeTruthy();
 });
 
-it.each(['host', 'member'] as const)(
+it.each(['host', 'member', 'guest'] as const)(
   'opens the Tuturuuu Whiteboard from the %s catalog',
   (catalog) => {
     const { board, classroom, onTool } = renderMenu(true, false, catalog);
     fireEvent.click(
       screen.getByRole('button', { name: `Start ${a.merged.whiteboard}` })
     );
-    // Host and member land on the same board, not the classroom board.
+    // Host, member and guest land on the same board, not the classroom one.
     expect(board.toggle).toHaveBeenCalledOnce();
     expect(classroom.toggle).not.toHaveBeenCalled();
     expect(onTool).not.toHaveBeenCalledWith('pen-whiteboard');

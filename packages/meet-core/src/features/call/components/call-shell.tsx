@@ -284,7 +284,7 @@ function CallShellContent({
   const availability = useStageAvailability({
     live: liveTools,
     collaboration: canCollaborate,
-    board: canCollaborate || whiteboard.memberBoard,
+    board: canCollaborate || whiteboard.boardEntry,
     classroom: !!classroomToolsEnabled,
     tools: toolAccess,
   });
@@ -632,7 +632,7 @@ function CallShellContent({
               }
             : undefined
         }
-        memberBoard={whiteboard.memberBoard}
+        boardEntry={whiteboard.boardEntry}
         penBoardFirst={whiteboard.penBoardFirst}
         layout={layout}
         setLayout={(next) => {

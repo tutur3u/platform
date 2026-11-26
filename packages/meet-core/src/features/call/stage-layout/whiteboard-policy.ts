@@ -30,6 +30,12 @@ export interface WhiteboardPolicy {
   /** The guest may open the Tuturuuu Whiteboard pane instead of sign-in. */
   guestBoard: boolean;
   /**
+   * The Whiteboard entry opens the Tuturuuu Whiteboard for someone without
+   * room tools: every member, and a guest while the guest switch is on, so
+   * everyone opens the same board as the host.
+   */
+  boardEntry: boolean;
+  /**
    * The merged Whiteboard opens the pen board first, because a guest in the
    * room could not open the Tuturuuu Whiteboard.
    */
@@ -39,10 +45,10 @@ export interface WhiteboardPolicy {
 /**
  * Which whiteboard a person gets. Without Meet UX v2 nothing changes: the
  * board is listed and guests see the sign-in state. With it, every workspace
- * member gets the Tuturuuu Whiteboard, room tools or not; guests use it only
- * while the server switch is on; while it is off, guests are offered the pen
- * board, and so is everyone in a room with a guest, so the room draws on one
- * board.
+ * member gets the Tuturuuu Whiteboard, room tools or not; a guest gets the
+ * same Tuturuuu Whiteboard while the server switch is on (view-only until
+ * guest drawing is on); while it is off, guests are offered the pen board,
+ * and so is everyone in a room with a guest, so the room draws on one board.
  */
 export function whiteboardPolicy({
   merged,
@@ -55,6 +61,7 @@ export function whiteboardPolicy({
       offerBoard: true,
       memberBoard: false,
       guestBoard: false,
+      boardEntry: false,
       penBoardFirst: false,
     };
   if (requiresAccount)
@@ -62,12 +69,26 @@ export function whiteboardPolicy({
       offerBoard: guestWhiteboard,
       memberBoard: false,
       guestBoard: guestWhiteboard,
+      boardEntry: guestWhiteboard,
       penBoardFirst: false,
     };
   return {
     offerBoard: true,
     memberBoard: true,
     guestBoard: false,
+    boardEntry: true,
     penBoardFirst: guestsPresent && !guestWhiteboard,
   };
+}
+
+/**
+ * The board action the activities menu lists for someone without room
+ * tools; room tools list it in their collaboration block instead.
+ */
+export function soloBoardAction<T>(
+  policy: Pick<WhiteboardPolicy, 'boardEntry'>,
+  canUseRoomTools: boolean,
+  board: T | undefined
+): T | undefined {
+  return !canUseRoomTools && policy.boardEntry ? board : undefined;
 }

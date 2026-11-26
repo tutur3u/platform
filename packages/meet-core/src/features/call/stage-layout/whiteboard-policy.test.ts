@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { isOutsideWorkspace, whiteboardPolicy } from './whiteboard-policy';
+import {
+  isOutsideWorkspace,
+  soloBoardAction,
+  whiteboardPolicy,
+} from './whiteboard-policy';
 
 const base = {
   merged: true,
@@ -24,6 +28,7 @@ describe('whiteboardPolicy', () => {
           offerBoard: true,
           memberBoard: false,
           guestBoard: false,
+          boardEntry: false,
           penBoardFirst: false,
         });
   });
@@ -33,6 +38,7 @@ describe('whiteboardPolicy', () => {
       offerBoard: false,
       memberBoard: false,
       guestBoard: false,
+      boardEntry: false,
       penBoardFirst: false,
     });
   });
@@ -42,6 +48,7 @@ describe('whiteboardPolicy', () => {
       offerBoard: true,
       memberBoard: true,
       guestBoard: false,
+      boardEntry: true,
       penBoardFirst: true,
     });
     expect(whiteboardPolicy(base).penBoardFirst).toBe(false);
@@ -53,6 +60,7 @@ describe('whiteboardPolicy', () => {
       offerBoard: true,
       memberBoard: false,
       guestBoard: true,
+      boardEntry: true,
       penBoardFirst: false,
     });
     expect(whiteboardPolicy(on).penBoardFirst).toBe(false);
@@ -67,6 +75,33 @@ describe('a members-only room', () => {
     expect(host.offerBoard && member.offerBoard).toBe(true);
     expect(member.memberBoard).toBe(true);
     expect(member.penBoardFirst).toBe(false);
+  });
+});
+
+describe('the guest Whiteboard entry', () => {
+  const board = { active: false, toggle: () => {} };
+  const guest = { ...base, requiresAccount: true, guestsPresent: true };
+
+  it('opens the same Tuturuuu Whiteboard as the host while the switch is on', () => {
+    const on = whiteboardPolicy({ ...guest, guestWhiteboard: true });
+    const host = whiteboardPolicy({ ...base, guestWhiteboard: true });
+    expect(on.boardEntry).toBe(true);
+    expect(on.penBoardFirst).toBe(false);
+    expect(host.penBoardFirst).toBe(false);
+    // A guest has no room tools, so the board is listed on its own.
+    expect(soloBoardAction(on, false, board)).toBe(board);
+  });
+
+  it('keeps the pen board for a guest while the switch is off', () => {
+    const off = whiteboardPolicy(guest);
+    expect(off.offerBoard).toBe(false);
+    expect(soloBoardAction(off, false, board)).toBeUndefined();
+  });
+
+  it('lists the board in the room tools block for someone who may use them', () => {
+    const member = whiteboardPolicy(base);
+    expect(soloBoardAction(member, true, board)).toBeUndefined();
+    expect(soloBoardAction(member, false, board)).toBe(board);
   });
 });
 
