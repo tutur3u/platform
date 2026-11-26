@@ -34,6 +34,7 @@ import { CallHeader } from './call-header';
 import { ActivitiesRequestProvider } from '../stage-layout/activities-request';
 import { useCallActivityPresentation } from '../stage-layout/use-call-activity-presentation';
 import { PresenceStage } from '../stage-layout/presence-stage';
+import { EventGuestRejoinNotice } from './event-guest-rejoin-notice';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
 import { CallSettingsLinkProvider } from './call-settings-link';
@@ -418,6 +419,7 @@ function CallShellContent({
     );
   return (
     <div className="flex h-dvh flex-col bg-background [html[data-stage-fullscreen]_&>header]:hidden">
+      {state.eventRejoinRequired && <EventGuestRejoinNotice />}
       <CallHeader
         meetingId={meetingId}
         accountId={accountId}

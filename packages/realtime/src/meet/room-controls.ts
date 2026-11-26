@@ -202,6 +202,10 @@ export function applyRoomControl(
     );
     const disabling =
       typeof eventMode === 'object' && eventMode.disable === activeEvent;
+    const clearExpiredConfirmation =
+      typeof eventMode === 'object' &&
+      !activeEvent &&
+      eventMode.disable === state.settings?.eventModeExpiresAt;
     const nextExpiry = nowMs + MEET_EVENT_DURATION_MS;
     const enabling =
       eventMode === true &&
@@ -238,6 +242,7 @@ export function applyRoomControl(
     const applied =
       eventMode !== undefined &&
       !changedEvent &&
+      !clearExpiredConfirmation &&
       Object.keys(patch).length === 0
         ? outcome(state)
         : applyMeetRoomSettings(
@@ -266,7 +271,7 @@ export function applyRoomControl(
                 shareNotes: false,
                 ...state.settings,
                 ...patch,
-                ...(changedEvent
+                ...(changedEvent || clearExpiredConfirmation
                   ? { eventModeExpiresAt: enabling ? changedEvent : undefined }
                   : {}),
               },
@@ -276,6 +281,24 @@ export function applyRoomControl(
             token,
             now
           );
+    if (disabling) {
+      for (const waiter of Object.values(state.waiting))
+        if (waiter.guest && waiter.eventProof === activeEvent)
+          applied.direct.push({
+            userId: waiter.userId,
+            message: { type: 'guest.eventRejoinRequired' },
+          });
+      for (const person of Object.values(state.presence))
+        if (
+          person.guest &&
+          state.approved?.[person.accountId ?? person.userId]?.eventProof ===
+            activeEvent
+        )
+          applied.direct.push({
+            userId: person.userId,
+            message: { type: 'guest.eventRejoinRequired' },
+          });
+    }
     // The sender's request settles on the settings the room now holds, so a
     // value the room did not keep is visible to the sender.
     return message.requestId

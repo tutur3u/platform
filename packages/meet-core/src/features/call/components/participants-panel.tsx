@@ -90,8 +90,11 @@ export function ParticipantsPanel({
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
-  const event =
-    (settings?.eventModeExpiresAt ?? 0) > Date.now() + settingsClockSkew;
+  const now = Date.now() + settingsClockSkew;
+  const event = (settings?.eventModeExpiresAt ?? 0) > now;
+  const bulkEligibleCount = event
+    ? waiting.length
+    : waiting.filter((entry) => entry.eventProof === undefined).length;
   const presenceOnly = settings?.transport === 'presence';
   const [search, setSearch] = useState('');
   const query = participants.length > 8 ? search.trim().toLowerCase() : '';
@@ -150,9 +153,9 @@ export function ParticipantsPanel({
                       </AlertDialogContent>
                     </AlertDialog>
                   )}
-                  {onAdmitAll && !event && (
+                  {onAdmitAll && !event && bulkEligibleCount > 0 && (
                     <Button size="sm" onClick={() => onAdmitAll()}>
-                      {labels('admit_all', { count: waiting.length })}
+                      {labels('admit_all', { count: bulkEligibleCount })}
                     </Button>
                   )}
                   {onDenyAll && (
@@ -164,7 +167,7 @@ export function ParticipantsPanel({
               )}
               {!!bulkRemaining && (
                 <p role="status" className="mb-2 text-muted-foreground text-xs">
-                  {labels('waiting_capacity', {
+                  {t('guest_join.event_waiting_remaining', {
                     count: Math.min(bulkRemaining, waiting.length),
                   })}
                 </p>
@@ -186,6 +189,11 @@ export function ParticipantsPanel({
                         {meetParticipantName(entry.displayName, entry)}
                       </span>
                       <ParticipantIdentityBadge participant={entry} />
+                      {!event && (entry.eventProof ?? 0) > now && (
+                        <Badge variant="secondary" className="shrink-0">
+                          {t('guest_join.event_waiting_individual')}
+                        </Badge>
+                      )}
                       {entry.unverified ? (
                         <Badge variant="destructive" className="shrink-0">
                           {t('guest_join.unverified_badge')}

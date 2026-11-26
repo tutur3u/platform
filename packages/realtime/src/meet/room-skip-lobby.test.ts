@@ -362,7 +362,12 @@ describe('event room admission', () => {
     expect(run(waiting, disable, member).state).toBe(waiting);
     const absentStaff = { ...waiting, presence: {} };
     expect(run(absentStaff, disable, staff).state).toBe(absentStaff);
-    const off = run(waiting, disable, staff).state;
+    const disabled = run(waiting, disable, staff);
+    expect(disabled.direct).toContainEqual({
+      userId: guest.userId,
+      message: { type: 'guest.eventRejoinRequired' },
+    });
+    const off = disabled.state;
     expect(off.settings?.eventModeExpiresAt).toBeUndefined();
     expect(off.waiting).toBe(waiting.waiting);
     expect(off.eventActivationAudit?.at(-1)).toMatchObject({
@@ -382,11 +387,19 @@ describe('event room admission', () => {
     const skipEnabled = run(off, skip(true), staff).state;
     expect(skipEnabled.waiting[guest.userId]).toBeDefined();
     const bulk = run(
-      skipEnabled,
+      admitOrHold(skipEnabled, normal, now).state,
       { type: 'admission.decideAll', admit: true },
       staff
-    ).state;
-    expect(bulk.waiting[guest.userId]).toBeDefined();
+    );
+    expect(bulk.reply).toContainEqual(
+      expect.objectContaining({
+        type: 'admission.bulkResult',
+        admitted: 1,
+        denied: 0,
+        remaining: 1,
+      })
+    );
+    expect(bulk.state.waiting[guest.userId]).toBeDefined();
     expect(admitOrHold(off, proof, now).disconnect).toContain(guest.userId);
     const individually = run(
       off,
@@ -394,6 +407,13 @@ describe('event room admission', () => {
       staff
     ).state;
     expect(individually.presence[guest.userId]).toBeDefined();
+    const ordinaryReconnect = admitOrHold(individually, guest, now).state;
+    expect(ordinaryReconnect.waiting[guest.userId]).toBeDefined();
+    expect(ordinaryReconnect.presence[guest.userId]).toBeUndefined();
+    expect(
+      ordinaryReconnect.approved?.[guest.userId]?.admissionEventExpiresAt
+    ).toBe(expiry);
+
     expect(admitOrHold(individually, proof, now).disconnect).toContain(
       guest.userId
     );
@@ -406,6 +426,60 @@ describe('event room admission', () => {
     expect(renewed.settings?.eventModeExpiresAt).toBe(expiry + 1);
     expect(run(renewed, disable, staff).state).toBe(renewed);
     expect(admitOrHold(renewed, proof, now).disconnect).toContain(guest.userId);
+    const decide = {
+      type: 'admission.decide',
+      userId: guest.userId,
+      admit: true,
+    } satisfies MeetRealtimeClientMessage;
+    for (const [state, at] of [
+      [off, new Date(expiry).toISOString()],
+      [renewed, new Date(Date.parse(now) + 1).toISOString()],
+      [
+        { ...off, removedGuests: { [guest.userId]: Date.parse(now) + 60_000 } },
+        now,
+      ],
+    ] as const) {
+      const refused = applyMeetRoomCommand(state, {
+        message: decide,
+        token: staff,
+        now: at,
+      });
+      expect(refused.state.waiting[guest.userId]).toBeUndefined();
+      expect(refused.disconnect).toContain(guest.userId);
+    }
+    const bulkAfterReenable = applyMeetRoomCommand(renewed, {
+      message: {
+        type: 'admission.decideAll',
+        admit: true,
+        confirmedEventExpiresAt: expiry + 1,
+      },
+      token: staff,
+      now: new Date(Date.parse(now) + 1).toISOString(),
+    });
+    expect(bulkAfterReenable.reply).toContainEqual(
+      expect.objectContaining({
+        type: 'admission.bulkResult',
+        admitted: 0,
+        denied: 0,
+        remaining: 0,
+      })
+    );
+    expect(bulkAfterReenable.disconnect).toContain(guest.userId);
+    const naturallyExpired = applyMeetRoomCommand(waiting, {
+      message: { ...disable, requestId: 'stale-disable' },
+      token: staff,
+      now: new Date(expiry).toISOString(),
+    });
+    expect(naturallyExpired.reply).toContainEqual(
+      expect.objectContaining({
+        type: 'room.settings',
+        requestId: 'stale-disable',
+        settings: expect.objectContaining({ eventModeExpiresAt: undefined }),
+      })
+    );
+    expect(naturallyExpired.state.eventActivationAudit).toBe(
+      waiting.eventActivationAudit
+    );
   });
 
   it('caps simultaneous waiting and admitted guest connections only during the event', () => {

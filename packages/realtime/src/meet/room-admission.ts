@@ -611,7 +611,7 @@ export function decideRoomAdmission(
     requestId: message.requestId,
     admitted: message.admit ? decided : 0,
     denied: message.admit ? 0 : decided,
-    remaining: waiting.length - decided,
+    remaining: Object.keys(result.state.waiting).length,
   });
   if (event && message.admit && decided > 0) {
     result.state = {

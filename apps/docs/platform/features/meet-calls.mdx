@@ -1311,7 +1311,12 @@ resume immediately, and the room keeps its waiting roster. Hosts can admit
 connected event-proof waiters individually until their original proof expiry.
 Bulk admission and automatic admission leave them waiting. Reconnecting,
 refreshing a token, or making a new guest API request requires a session
-under normal guest rules. An event proof never becomes ordinary verification.
+under normal guest rules. Waiting and admitted event-proof guests get a
+rejoin prompt when event mode ends early. Until they rejoin, guest tools
+that make new API requests are unavailable. Event approvals expire with
+their event, including approvals for guests who used ordinary browser
+verification. Ordinary approvals apply outside events. A verified guest
+can still skip the lobby when the room enables that option.
 Classroom initialization leaves event mode off.
 
 During that window, a guest in the challenge-required tier must complete a

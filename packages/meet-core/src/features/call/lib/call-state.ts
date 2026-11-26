@@ -83,6 +83,7 @@ export interface CallState {
   presenceSeq?: number | null;
   presenceNeedsResync?: boolean;
   roomId?: string;
+  eventRejoinRequired?: true;
   bulkAdmission?: { admitted: number; denied: number; remaining: number };
   settings: MeetRoomSettings;
   /** Settings features the room announced; older rooms announce none. */
@@ -318,6 +319,9 @@ export function reduceCallState(
         },
       };
     }
+
+    case 'guest.eventRejoinRequired':
+      return { ...state, eventRejoinRequired: true };
 
     case 'admission.bulkResult':
       return {

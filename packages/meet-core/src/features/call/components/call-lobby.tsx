@@ -10,6 +10,7 @@ import {
 } from '../../live-assistant/mira-join-box';
 import { peekMiraJoinChoice } from '../../live-assistant/mira-join-choice';
 import type { MeetRoomController } from '../lib/room-controller';
+import { EventGuestRejoinNotice } from './event-guest-rejoin-notice';
 import { GuestLobbyUpgrade } from './guest-lobby-upgrade';
 import { Lobby, type LobbyParticipant } from './lobby';
 import { ConnectedPrejoin } from '../prejoin/connected-prejoin';
@@ -159,7 +160,11 @@ function LegacyConnectedLobby({
       transcriptionNotice={transcriptionNotice}
       waiting={room.state.admission === 'waiting'}
       waitingExtra={
-        <GuestLobbyUpgrade room={room} displayName={defaultDisplayName} />
+        room.state.eventRejoinRequired ? (
+          <EventGuestRejoinNotice />
+        ) : (
+          <GuestLobbyUpgrade room={room} displayName={defaultDisplayName} />
+        )
       }
       joinExtra={
         miraMeetingId ? (

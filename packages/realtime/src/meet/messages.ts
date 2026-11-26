@@ -418,6 +418,7 @@ export type MeetRealtimeServerMessage =
       upserted: MeetRealtimePresence[];
       removed: string[];
     }
+  | { type: 'guest.eventRejoinRequired' }
   | {
       type: 'admission.bulkResult';
       admitted: number;
