@@ -1,3 +1,5 @@
+import type { Product } from '@tuturuuu/payment/polar';
+import { getSupportedProductPrice } from './polar-price';
 import {
   type ApprovedModelRate,
   creditsForReferenceRate,
@@ -12,17 +14,45 @@ const catalogPrices = {
   ultra: { month: 20000, year: 200000 },
 } as const;
 
+const catalogVndPrices = {
+  plus: { month: 249000, year: 2490000 },
+  pro: { month: 499000, year: 4990000 },
+  max: { month: 2499000, year: 24990000 },
+  ultra: { month: 4999000, year: 49990000 },
+} as const;
+
+export type WorkspaceCheckoutCurrency = 'usd' | 'vnd';
+
+export function resolveWorkspaceCheckoutCurrency({
+  override,
+  billingCountry,
+  locale,
+}: {
+  override?: WorkspaceCheckoutCurrency;
+  billingCountry?: string | null;
+  locale?: string | null;
+}): WorkspaceCheckoutCurrency {
+  if (override) return override;
+  const country = billingCountry?.trim().toUpperCase();
+  if (country && /^[A-Z]{2}$/.test(country))
+    return country === 'VN' ? 'vnd' : 'usd';
+  return locale && /^(?:vi(?:[-_]|$)|.+[-_]VN(?:[-_]|$))/i.test(locale)
+    ? 'vnd'
+    : 'usd';
+}
+
 type Tier = keyof typeof catalogPrices;
 type Term = 'month' | 'year';
-type CatalogKey = `${Tier}-${Term}-usd`;
+type CatalogKey = `${Tier}-${Term}`;
 
 export function workspaceCatalogOffers() {
   return (Object.keys(catalogPrices) as Tier[]).flatMap((tier) =>
     (['month', 'year'] as const).map((term) => ({
-      key: `${tier}-${term}-usd` as CatalogKey,
+      key: `${tier}-${term}` as CatalogKey,
       tier,
       term,
       unitAmount: catalogPrices[tier][term],
+      vndUnitAmount: catalogVndPrices[tier][term],
     }))
   );
 }
@@ -31,6 +61,8 @@ type Binding = {
   key: CatalogKey;
   productId: string;
   priceId: string;
+  vndPriceId: string;
+  vndUnitAmount: number;
   currency: string;
   unitAmount: number;
   pricingModel: string;
@@ -82,7 +114,10 @@ export function selectWorkspaceCatalog(
     bindings.length !== offers.length ||
     new Set(bindings.map(({ productId }) => productId)).size !==
       offers.length ||
-    new Set(bindings.map(({ priceId }) => priceId)).size !== offers.length
+    new Set(
+      bindings.flatMap(({ priceId, vndPriceId }) => [priceId, vndPriceId])
+    ).size !==
+      offers.length * 2
   )
     throw new Error('Workspace catalog bindings are incomplete or ambiguous');
 
@@ -91,6 +126,8 @@ export function selectWorkspaceCatalog(
     if (
       !binding?.productId.trim() ||
       !binding.priceId.trim() ||
+      !binding.vndPriceId.trim() ||
+      binding.vndUnitAmount !== offer.vndUnitAmount ||
       binding.currency !== 'usd' ||
       binding.unitAmount !== offer.unitAmount ||
       binding.pricingModel !== 'seat_based' ||
@@ -99,7 +136,12 @@ export function selectWorkspaceCatalog(
       binding.maxSeats !== null
     )
       throw new Error('Workspace catalog binding mismatch');
-    return { ...offer, productId: binding.productId, priceId: binding.priceId };
+    return {
+      ...offer,
+      productId: binding.productId,
+      priceId: binding.priceId,
+      vndPriceId: binding.vndPriceId,
+    };
   });
 }
 
@@ -149,23 +191,45 @@ export function publicWorkspaceReferenceRates(
   };
 }
 
-export function isStagedWorkspaceCatalogProduct(product: {
-  visibility: string;
-  recurringInterval: string | null;
-  metadata: Readonly<Record<string, unknown>>;
-}) {
-  if (workspaceCatalogConfig.enabled || product.visibility !== 'private')
-    return false;
-  const { catalog_key, catalog_version, product_tier } = product.metadata;
-  return (
-    catalog_version === WORKSPACE_CATALOG_VERSION &&
-    workspaceCatalogOffers().some(
-      (offer) =>
-        offer.key === catalog_key &&
-        offer.term === product.recurringInterval &&
-        offer.tier.toUpperCase() === product_tier
-    )
+export function getVersionedWorkspaceProductPrices(product: Product) {
+  if (product.metadata.catalog_version !== WORKSPACE_CATALOG_VERSION)
+    return null;
+  const offer = workspaceCatalogOffers().find(
+    (candidate) =>
+      candidate.key === product.metadata.catalog_key &&
+      candidate.term === product.recurringInterval &&
+      candidate.tier.toUpperCase() === product.metadata.product_tier
   );
+  const prices = product.prices.filter((price) => !price.isArchived);
+  if (!offer || product.recurringIntervalCount !== 1 || prices.length !== 2) {
+    throw new Error('Invalid versioned workspace catalog product');
+  }
+  const read = (currency: WorkspaceCheckoutCurrency, amount: number) => {
+    const projection = getSupportedProductPrice(
+      {
+        ...product,
+        prices: prices.filter(
+          (price) =>
+            'priceCurrency' in price && price.priceCurrency === currency
+        ),
+      },
+      currency === 'usd'
+    );
+    if (
+      projection.price.amountType !== 'seat_based' ||
+      projection.price.taxBehavior !== 'exclusive' ||
+      projection.pricePerSeat !== amount ||
+      projection.minSeats !== 1 ||
+      projection.maxSeats !== null
+    )
+      throw new Error('Versioned workspace catalog price mismatch');
+    return projection;
+  };
+  return {
+    offer,
+    usd: read('usd', offer.unitAmount),
+    vnd: read('vnd', offer.vndUnitAmount),
+  };
 }
 
 export function isReservedWorkspaceCatalogProduct(productId: string) {

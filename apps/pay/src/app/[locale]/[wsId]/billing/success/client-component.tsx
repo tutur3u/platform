@@ -1,5 +1,6 @@
 'use client';
 
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import {
   ArrowLeft,
   CheckCircle,
@@ -35,10 +36,11 @@ export default function ClientComponent({
   // Checkout totals include provider discounts and taxes; invoices live in order history.
   const paymentDetails: PaymentDetails = {
     planName: checkout.product?.name || t('no-plan'),
-    amount: new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency: checkout.currency,
-    }).format(checkout.totalAmount / 100),
+    amount: formatMoneyFromMinor(
+      checkout.totalAmount,
+      checkout.currency,
+      locale
+    ),
     checkoutId: checkout.id,
     date: format(new Date(checkout.createdAt), 'MMMM d, yyyy'),
   };

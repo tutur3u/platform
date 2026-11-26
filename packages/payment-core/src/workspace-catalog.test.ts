@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { publicVersionedWorkspacePrices } from './public-prices';
 import { isSelfServeWorkspaceProduct } from './self-serve-products';
 import {
-  isStagedWorkspaceCatalogProduct,
+  resolveWorkspaceCheckoutCurrency,
   publicWorkspaceReferenceRates,
   selectWorkspaceCatalog,
   WORKSPACE_CATALOG_VERSION,
@@ -14,6 +14,7 @@ const bindings = workspaceCatalogOffers().map((offer) => ({
   ...offer,
   productId: `fixture-product-${offer.key}`,
   priceId: `fixture-price-${offer.key}`,
+  vndPriceId: `fixture-vnd-price-${offer.key}`,
   currency: 'usd',
   pricingModel: 'seat_based',
   taxBehavior: 'exclusive',
@@ -62,9 +63,26 @@ describe('workspace catalog migration', () => {
     ).toThrow();
   });
 
-  it('projects eight verified USD offers without exposing provider identifiers', () => {
+  const currencyRows = bindings.flatMap((offer) => [
+    {
+      product_id: offer.productId,
+      price_id: offer.priceId,
+      currency: 'usd',
+      amount_per_seat: offer.unitAmount,
+    },
+    {
+      product_id: offer.productId,
+      price_id: offer.vndPriceId,
+      currency: 'vnd',
+      amount_per_seat: offer.vndUnitAmount,
+    },
+  ]);
+
+  it('projects eight verified USD and VND offers without exposing provider identifiers', () => {
     const selection = selectWorkspaceCatalog(true, approved)!;
-    expect(publicVersionedWorkspacePrices(rows, selection)).toEqual({
+    expect(
+      publicVersionedWorkspacePrices(rows, selection, currencyRows)
+    ).toEqual({
       currency: 'usd',
       prices: {
         plus: { monthly: 1000, annual: 10000 },
@@ -72,12 +90,25 @@ describe('workspace catalog migration', () => {
         max: { monthly: 10000, annual: 100000 },
         ultra: { monthly: 20000, annual: 200000 },
       },
+      vndPrices: {
+        plus: { monthly: 249000, annual: 2490000 },
+        pro: { monthly: 499000, annual: 4990000 },
+        max: { monthly: 2499000, annual: 24990000 },
+        ultra: { monthly: 4999000, annual: 49990000 },
+      },
     });
     expect(() =>
-      publicVersionedWorkspacePrices(rows.slice(1), selection)
+      publicVersionedWorkspacePrices(rows, selection, currencyRows.slice(1))
     ).toThrow();
     expect(() =>
-      publicVersionedWorkspacePrices([...rows, rows[0]!], selection)
+      publicVersionedWorkspacePrices(rows.slice(1), selection, currencyRows)
+    ).toThrow();
+    expect(() =>
+      publicVersionedWorkspacePrices(
+        [...rows, rows[0]!],
+        selection,
+        currencyRows
+      )
     ).toThrow();
   });
 });
@@ -114,24 +145,17 @@ it('publishes only display fields from a separately approved rate revision', () 
   });
 });
 
-it('keeps only matching private staged products out of the legacy projection', () => {
-  const product = {
-    visibility: 'private',
-    recurringInterval: 'year',
-    metadata: {
-      catalog_version: WORKSPACE_CATALOG_VERSION,
-      catalog_key: 'max-year-usd',
-      product_tier: 'MAX',
-    },
-  };
-  expect(isStagedWorkspaceCatalogProduct(product)).toBe(true);
+it('resolves explicit currency before country and locale', () => {
+  expect(resolveWorkspaceCheckoutCurrency({ billingCountry: ' vn ' })).toBe(
+    'vnd'
+  );
+  expect(resolveWorkspaceCheckoutCurrency({ locale: 'en-VN' })).toBe('vnd');
+  expect(resolveWorkspaceCheckoutCurrency({ locale: 'vi' })).toBe('vnd');
   expect(
-    isStagedWorkspaceCatalogProduct({ ...product, visibility: 'public' })
-  ).toBe(false);
+    resolveWorkspaceCheckoutCurrency({ billingCountry: 'US', locale: 'vi' })
+  ).toBe('usd');
   expect(
-    isStagedWorkspaceCatalogProduct({
-      ...product,
-      metadata: { ...product.metadata, product_tier: 'PRO' },
-    })
-  ).toBe(false);
+    resolveWorkspaceCheckoutCurrency({ billingCountry: 'VN', override: 'usd' })
+  ).toBe('usd');
+  expect(resolveWorkspaceCheckoutCurrency({ locale: 'en-US' })).toBe('usd');
 });

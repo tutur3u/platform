@@ -84,7 +84,12 @@ export function createPayCreditPackCheckout(
 
 export function createPaySubscriptionCheckout(
   subscriptionId: string,
-  payload: { productId: string; wsId: string },
+  payload: {
+    productId: string;
+    wsId: string;
+    currency?: 'usd' | 'vnd';
+    locale?: string;
+  },
   options?: InternalApiClientOptions
 ) {
   return getPayClient(options).json<{ url: string }>(

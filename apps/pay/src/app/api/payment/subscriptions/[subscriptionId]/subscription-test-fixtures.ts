@@ -13,6 +13,7 @@ export function adminFixture({
   currentSeats = 1,
   minSeats = 1,
   maxSeats = null,
+  currencyPrices = {},
 }: {
   subscription?: boolean;
   model?: string;
@@ -26,11 +27,15 @@ export function adminFixture({
   currentSeats?: number | null;
   minSeats?: number | null;
   maxSeats?: number | null;
+  currencyPrices?: Readonly<
+    Record<string, { price_id: string; amount_per_seat: number }>
+  >;
 } = {}) {
   const now = Date.now();
   const queries: Record<string, ReturnType<typeof vi.fn>> = {};
   const from = vi.fn((table: string) => {
     let queriedId: unknown;
+    let queriedCurrency: unknown;
     const result =
       table === 'workspaces'
         ? { data: { id: 'workspace', personal: true } }
@@ -65,6 +70,13 @@ export function adminFixture({
       select: vi.fn(),
       eq: vi.fn(),
       maybeSingle: vi.fn(async () => {
+        if (table === 'workspace_subscription_product_prices')
+          return {
+            data:
+              typeof queriedCurrency === 'string'
+                ? (currencyPrices[queriedCurrency] ?? null)
+                : null,
+          };
         if (table !== 'workspace_subscription_products') return result;
         if (queriedId === 'current-product')
           return {
@@ -106,6 +118,7 @@ export function adminFixture({
     query.select.mockReturnValue(query);
     query.eq.mockImplementation((field: string, value: unknown) => {
       if (field === 'id') queriedId = value;
+      if (field === 'currency') queriedCurrency = value;
       return query;
     });
     queries[table] = query.eq;

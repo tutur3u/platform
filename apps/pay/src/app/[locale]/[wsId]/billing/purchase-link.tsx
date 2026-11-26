@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { createPaySubscriptionCheckout } from '@tuturuuu/internal-api';
 import { PolarEmbedCheckout } from '@tuturuuu/payment/polar/checkout/embed';
 import { Button } from '@tuturuuu/ui/button';
+import { useLocale } from 'next-intl';
 import { useTheme } from 'next-themes';
 import type { PropsWithChildren } from 'react';
 import { useEffect, useState } from 'react';
@@ -13,6 +14,7 @@ interface PurchaseLinkProps {
   productId: string | null;
   wsId: string;
   customerEmail?: string;
+  checkoutCurrency?: 'usd' | 'vnd';
   className?: string;
   onCheckoutOpened?: () => void;
   /** Called when user wants to change an existing subscription. If provided, opens in-app dialog instead of external portal */
@@ -24,10 +26,12 @@ export default function PurchaseLink({
   productId,
   wsId,
   className,
+  checkoutCurrency,
   children,
   onCheckoutOpened,
   onPlanChange,
 }: PropsWithChildren<PurchaseLinkProps>) {
+  const locale = useLocale();
   const { resolvedTheme } = useTheme();
   const [checkoutInstance, setCheckoutInstance] =
     useState<PolarEmbedCheckout | null>(null);
@@ -38,6 +42,8 @@ export default function PurchaseLink({
       const data = await createPaySubscriptionCheckout(subscriptionId!, {
         wsId,
         productId: productId!,
+        currency: checkoutCurrency,
+        locale,
       });
       return { type: 'checkout' as const, data };
     },

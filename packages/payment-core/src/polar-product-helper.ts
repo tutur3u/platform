@@ -7,7 +7,7 @@ import {
   parseCreditPackTokens,
   parseWorkspaceProductTier,
 } from './polar-product-metadata';
-import { isStagedWorkspaceCatalogProduct } from './workspace-catalog';
+import { getVersionedWorkspaceProductPrices } from './workspace-catalog';
 
 const CREDIT_PACK_EXPIRY_DAYS = 60;
 
@@ -174,10 +174,35 @@ export async function syncProductToDatabase(
   supabase: TypedSupabaseClient,
   product: Product
 ) {
-  if (isStagedWorkspaceCatalogProduct(product)) return null;
   // Domain add-ons are not plans or credit packs; their entitlement comes
   // from subscriptions (private.workspace_domain_addons).
   if (isCustomDomainAddonProduct(product.metadata)) return null;
+  const versioned = getVersionedWorkspaceProductPrices(product);
+  if (versioned) {
+    const tier = parseWorkspaceProductTier(product.metadata);
+    if (!tier) throw new Error('Invalid versioned workspace catalog tier');
+    const { data, error } = await supabase.rpc(
+      'sync_versioned_workspace_subscription_product',
+      {
+        p_product_id: product.id,
+        p_name: product.name,
+        p_description: product.description ?? '',
+        p_tier: tier,
+        p_interval: versioned.offer.term,
+        p_archived: product.isArchived,
+        p_provider_updated_at: new Date(
+          product.modifiedAt ?? product.createdAt
+        ).toISOString(),
+        p_usd_price_id: versioned.usd.price.id,
+        p_usd_amount: versioned.offer.unitAmount,
+        p_vnd_price_id: versioned.vnd.price.id,
+        p_vnd_amount: versioned.offer.vndUnitAmount,
+      }
+    );
+    if (error || !data)
+      throw new Error('Versioned workspace catalog projection failed');
+    return data;
+  }
   if (product.isArchived) {
     const table = isAiCreditPackProduct(product.metadata)
       ? 'workspace_credit_packs'

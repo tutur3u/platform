@@ -65,3 +65,5 @@ subscriptions keep their provider products, paid terms, seats, and renewal
 conditions. Rollback restores the prior purchase selection while retaining the
 new bindings for existing subscriber records. Fixture coverage lives in
 `packages/payment-core/src/workspace-catalog.test.ts`.
+
+For the versioned four-tier catalog, checkout chooses USD or VND explicitly. A currency selected in the plan picker takes precedence, followed by the existing Polar billing country and the account or request locale. Vietnam maps to VND and other countries map to USD. Checkout must return the requested currency before Pay opens it. Displayed amounts are estimates before provider taxes and discounts. Billing history and checkout confirmation display the original order currency, including zero-decimal VND. Existing subscriptions keep their price and billing currency.

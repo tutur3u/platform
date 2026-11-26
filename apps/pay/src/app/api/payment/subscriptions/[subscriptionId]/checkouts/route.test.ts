@@ -1,9 +1,22 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ resolve: vi.fn(), create: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  resolve: vi.fn(),
+  create: vi.fn(),
+  customer: vi.fn(),
+  catalog: vi.fn(),
+}));
 vi.mock('@tuturuuu/payment/polar/server', () => ({
-  createPolarClient: () => ({ checkouts: { create: mocks.create } }),
+  ResourceNotFound: class ResourceNotFound extends Error {},
+  createPolarClient: () => ({
+    checkouts: { create: mocks.create },
+    customers: { getExternal: mocks.customer },
+  }),
+}));
+vi.mock('@tuturuuu/payment-core/public-prices', async (load) => ({
+  ...(await load<typeof import('@tuturuuu/payment-core/public-prices')>()),
+  activeWorkspaceCatalog: mocks.catalog,
 }));
 vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: mocks.resolve,
@@ -16,11 +29,19 @@ const adminFixture = (options: Parameters<typeof fixture>[0] = {}) =>
 
 import { POST } from './route';
 
-async function checkout(post = POST, origin = 'https://pay.tuturuuu.com') {
+async function checkout(
+  post = POST,
+  origin = 'https://pay.tuturuuu.com',
+  preferences: { currency?: 'usd' | 'vnd'; locale?: string } = {}
+) {
   return post(
     new NextRequest(`${origin}/api/payment/subscriptions/sub/checkouts`, {
       method: 'POST',
-      body: JSON.stringify({ wsId: 'workspace', productId: 'product' }),
+      body: JSON.stringify({
+        wsId: 'workspace',
+        productId: 'product',
+        ...preferences,
+      }),
     }),
     { params: Promise.resolve({ subscriptionId: 'sub' }) }
   );
@@ -31,6 +52,7 @@ afterEach(() => vi.unstubAllEnvs());
 describe('workspace checkout boundary', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.catalog.mockReturnValue(null);
     mocks.create.mockResolvedValue({ url: 'https://polar.sh/checkout/test' });
   });
   it('binds the subscription to the authorized workspace before contacting Polar', async () => {
@@ -155,5 +177,47 @@ describe('workspace checkout boundary', () => {
         successUrl: `${origin}/workspace/billing/success?checkoutId={CHECKOUT_ID}`,
       })
     );
+  });
+  it('requests and verifies VND from the saved billing country, with an explicit USD override', async () => {
+    mocks.catalog.mockReturnValue([
+      {
+        productId: 'product',
+        priceId: 'usd-price',
+        unitAmount: 1_000,
+        vndPriceId: 'vnd-price',
+        vndUnitAmount: 249_000,
+      },
+    ]);
+    const f = adminFixture({
+      currencyPrices: {
+        usd: { price_id: 'usd-price', amount_per_seat: 1_000 },
+        vnd: { price_id: 'vnd-price', amount_per_seat: 249_000 },
+      },
+    });
+    mocks.resolve.mockResolvedValue({ admin: f.admin, user: { id: 'user' } });
+    mocks.customer.mockResolvedValue({ billingAddress: { country: 'VN' } });
+    mocks.create.mockResolvedValue({
+      url: 'https://polar.sh/checkout/test',
+      currency: 'vnd',
+      productId: 'product',
+      productPriceId: 'vnd-price',
+    });
+    expect((await checkout(POST, undefined, { locale: 'en' })).status).toBe(
+      200
+    );
+    expect(mocks.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ currency: 'vnd' })
+    );
+    expect(
+      f.queries.workspace_subscription_product_prices
+    ).toHaveBeenCalledWith('currency', 'vnd');
+
+    const response = await checkout(POST, undefined, { currency: 'usd' });
+    expect(mocks.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ currency: 'usd' })
+    );
+    expect(response.status).toBe(502);
+    expect(await response.json()).not.toHaveProperty('url');
+    expect(mocks.customer).toHaveBeenCalledTimes(1);
   });
 });

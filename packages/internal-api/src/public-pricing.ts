@@ -12,6 +12,10 @@ export interface PublicWorkspaceReferenceRates {
 export interface PublicWorkspacePrices {
   currency: 'usd';
   referenceRates?: PublicWorkspaceReferenceRates | null;
+  vndPrices?: Record<
+    'plus' | 'pro' | 'max' | 'ultra',
+    { monthly: number; annual: number }
+  >;
   prices: Record<'plus' | 'pro', { monthly: number; annual: number }> &
     Partial<Record<'max' | 'ultra', { monthly: number; annual: number }>>;
 }

@@ -1,4 +1,12 @@
-import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import {
+  createPolarClient,
+  ResourceNotFound,
+} from '@tuturuuu/payment/polar/server';
+import {
+  activeWorkspaceCatalog,
+  resolveWorkspaceCheckoutCurrency,
+} from '@tuturuuu/payment-core/public-prices';
+import { convertWorkspaceIDToExternalID } from '@tuturuuu/payment-core/subscription-helper';
 import {
   getSelfServePlanChangeError,
   isSelfServeWorkspaceProduct,
@@ -9,8 +17,16 @@ import {
   sanitizeLogValue,
 } from '@tuturuuu/utils/log-sanitizer';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
 import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
+
+const checkoutPreferences = z.object({
+  wsId: z.string().min(1),
+  productId: z.string().min(1),
+  currency: z.enum(['usd', 'vnd']).optional(),
+  locale: z.string().trim().min(1).max(35).optional(),
+});
 
 export async function POST(
   request: NextRequest,
@@ -18,16 +34,17 @@ export async function POST(
 ) {
   const { subscriptionId } = await params;
 
-  const { wsId, productId } = await request.json();
-
-  // Validate that you have the info you need
-  if (!subscriptionId || !productId || !wsId) {
+  const parsed = checkoutPreferences.safeParse(
+    await request.json().catch(() => null)
+  );
+  if (!subscriptionId || !parsed.success) {
     return NextResponse.json(
       { error: 'Subscription ID, Product ID and Workspace ID are required' },
       { status: 400 }
     );
   }
 
+  const { wsId, productId, currency: override, locale } = parsed.data;
   const actor = await resolveSatelliteRequestActor(request, [
     'pay',
     'platform',
@@ -187,11 +204,74 @@ export async function POST(
   // HERE is where you add the metadata
   try {
     const polar = createPolarClient();
+    const offer = activeWorkspaceCatalog()?.find(
+      (entry) => entry.productId === productId
+    );
+    if (override && !offer) {
+      return NextResponse.json(
+        { error: 'Checkout currency is unavailable for this product' },
+        { status: 400 }
+      );
+    }
+
+    let billingCountry: string | undefined;
+    if (offer && !override) {
+      try {
+        const customer = await polar.customers.getExternal({
+          externalId: convertWorkspaceIDToExternalID(wsId),
+        });
+        billingCountry = customer.billingAddress?.country;
+      } catch (error) {
+        if (!(error instanceof ResourceNotFound)) throw error;
+      }
+    }
+
+    const currency = offer
+      ? resolveWorkspaceCheckoutCurrency({
+          override,
+          billingCountry,
+          locale:
+            locale ??
+            (typeof user.user_metadata?.locale === 'string'
+              ? user.user_metadata.locale
+              : null),
+        })
+      : undefined;
+
+    const expectedPriceId =
+      currency && offer
+        ? currency === 'vnd'
+          ? offer.vndPriceId
+          : offer.priceId
+        : null;
+    if (currency && offer && expectedPriceId) {
+      const { data: price, error } = await supabase
+        .schema('private')
+        .from('workspace_subscription_product_prices')
+        .select('price_id,amount_per_seat')
+        .eq('product_id', productId)
+        .eq('currency', currency)
+        .eq('is_current', true)
+        .maybeSingle();
+      const unitAmount =
+        currency === 'vnd' ? offer.vndUnitAmount : offer.unitAmount;
+      if (
+        error ||
+        price?.price_id !== expectedPriceId ||
+        price.amount_per_seat !== unitAmount
+      ) {
+        return NextResponse.json(
+          { error: 'Checkout price could not be verified' },
+          { status: 503 }
+        );
+      }
+    }
 
     const checkoutSession = await polar.checkouts.create({
       subscriptionId: subscription.polar_subscription_id,
       metadata: { wsId },
       products: [productId],
+      ...(currency ? { currency } : {}),
       requireBillingAddress: true,
       seats,
       minSeats: seats,
@@ -200,6 +280,20 @@ export async function POST(
       embedOrigin: BASE_URL,
       successUrl: `${BASE_URL}/${wsId}/billing/success?checkoutId={CHECKOUT_ID}`,
     });
+
+    if (currency && expectedPriceId) {
+      if (
+        checkoutSession.productId !== productId ||
+        checkoutSession.currency.toLowerCase() !== currency ||
+        (checkoutSession.productPriceId !== null &&
+          checkoutSession.productPriceId !== expectedPriceId)
+      ) {
+        return NextResponse.json(
+          { error: 'Checkout currency could not be verified' },
+          { status: 502 }
+        );
+      }
+    }
 
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {

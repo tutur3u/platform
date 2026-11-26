@@ -6,7 +6,10 @@ import {
 
 export {
   activeWorkspaceCatalog,
+  getVersionedWorkspaceProductPrices,
   publicWorkspaceReferenceRates,
+  resolveWorkspaceCheckoutCurrency,
+  type WorkspaceCheckoutCurrency,
 } from './workspace-catalog';
 
 export const PUBLIC_WORKSPACE_PRODUCT_IDS = Object.values(productIds);
@@ -50,9 +53,17 @@ export function publicWorkspacePrices(rows: PublicPriceRow[]) {
   return { currency: 'usd' as const, prices };
 }
 
+export interface PublicCurrencyPriceRow {
+  product_id: string;
+  price_id: string;
+  currency: string;
+  amount_per_seat: number;
+}
+
 export function publicVersionedWorkspacePrices(
   rows: PublicPriceRow[],
-  catalog: SelectedWorkspaceCatalog
+  catalog: SelectedWorkspaceCatalog,
+  currencyRows: readonly PublicCurrencyPriceRow[]
 ) {
   const prices = {
     plus: { monthly: 0, annual: 0 },
@@ -60,6 +71,15 @@ export function publicVersionedWorkspacePrices(
     max: { monthly: 0, annual: 0 },
     ultra: { monthly: 0, annual: 0 },
   };
+  const vndPrices = {
+    plus: { monthly: 0, annual: 0 },
+    pro: { monthly: 0, annual: 0 },
+    max: { monthly: 0, annual: 0 },
+    ultra: { monthly: 0, annual: 0 },
+  };
+  if (currencyRows.length !== catalog.length * 2) {
+    throw new Error('Public currency catalog is unavailable');
+  }
   for (const offer of catalog) {
     const matches = rows.filter((row) => row.id === offer.productId);
     const row = matches[0];
@@ -69,8 +89,31 @@ export function publicVersionedWorkspacePrices(
       !matchesWorkspaceCatalogOffer(row, offer)
     )
       throw new Error('Public catalog is unavailable');
-    prices[offer.tier][offer.term === 'month' ? 'monthly' : 'annual'] =
-      offer.unitAmount;
+    const readPrice = (currency: string, priceId: string, amount: number) => {
+      const pricesForCurrency = currencyRows.filter(
+        (price) =>
+          price.product_id === offer.productId && price.currency === currency
+      );
+      if (
+        pricesForCurrency.length !== 1 ||
+        pricesForCurrency[0]?.price_id !== priceId ||
+        pricesForCurrency[0]?.amount_per_seat !== amount
+      ) {
+        throw new Error('Public currency catalog is unavailable');
+      }
+      return amount;
+    };
+    const term = offer.term === 'month' ? 'monthly' : 'annual';
+    prices[offer.tier][term] = readPrice(
+      'usd',
+      offer.priceId,
+      offer.unitAmount
+    );
+    vndPrices[offer.tier][term] = readPrice(
+      'vnd',
+      offer.vndPriceId,
+      offer.vndUnitAmount
+    );
   }
-  return { currency: 'usd' as const, prices };
+  return { currency: 'usd' as const, prices, vndPrices };
 }

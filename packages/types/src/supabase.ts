@@ -2671,6 +2671,70 @@ export type Database = {
           },
         ];
       };
+      billing_ai_reference_rates: {
+        Row: {
+          example_input_tokens: number;
+          example_output_tokens: number;
+          model_id: string;
+          multiplier_basis_points: number;
+          reference_credits: number;
+          revision_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          example_input_tokens: number;
+          example_output_tokens: number;
+          model_id: string;
+          multiplier_basis_points: number;
+          reference_credits: number;
+          revision_id: string;
+        };
+        Update: {
+          example_input_tokens?: number;
+          example_output_tokens?: number;
+          model_id?: string;
+          multiplier_basis_points?: number;
+          reference_credits?: number;
+          revision_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'billing_ai_reference_rates_revision_id_fkey';
+            columns: ['revision_id'];
+            isOneToOne: false;
+            referencedRelation: 'billing_ai_reference_revisions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      billing_ai_reference_revisions: {
+        Row: {
+          approval_reason: string;
+          approved_at: string;
+          approved_by: string;
+          effective_at: string;
+          id: string;
+          version: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          approval_reason: string;
+          approved_at: string;
+          approved_by: string;
+          effective_at: string;
+          id?: string;
+          version: string;
+        };
+        Update: {
+          approval_reason?: string;
+          approved_at?: string;
+          approved_by?: string;
+          effective_at?: string;
+          id?: string;
+          version?: string;
+        };
+        Relationships: [];
+      };
       calendar_event_guests: {
         Row: {
           contact_id: string | null;
@@ -28074,6 +28138,42 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [];
+      };
+      workspace_subscription_product_prices: {
+        Row: {
+          amount_per_seat: number;
+          currency: string;
+          is_current: boolean;
+          price_id: string;
+          product_id: string;
+          provider_updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount_per_seat: number;
+          currency: string;
+          is_current?: boolean;
+          price_id: string;
+          product_id: string;
+          provider_updated_at: string;
+        };
+        Update: {
+          amount_per_seat?: number;
+          currency?: string;
+          is_current?: boolean;
+          price_id?: string;
+          product_id?: string;
+          provider_updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_subscription_product_prices_product_id_fkey';
+            columns: ['product_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_subscription_products';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       workspace_subscription_products: {
         Row: {
@@ -66837,6 +66937,28 @@ export type Database = {
           updated_count: number;
         }[];
       };
+      sync_versioned_workspace_subscription_product: {
+        Args: {
+          p_archived: boolean;
+          p_description: string;
+          p_interval: string;
+          p_name: string;
+          p_product_id: string;
+          p_provider_updated_at: string;
+          p_tier: Database['public']['Enums']['workspace_product_tier'];
+          p_usd_amount: number;
+          p_usd_price_id: string;
+          p_vnd_amount: number;
+          p_vnd_price_id: string;
+        };
+        Returns: Database['private']['Tables']['workspace_subscription_products']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_subscription_products';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       task_reminder_already_sent: {
         Args: {
           p_reminder_interval: string;
@@ -69274,7 +69396,13 @@ export type Database = {
         | 'custom'
         | 'free'
         | 'metered_unit';
-      workspace_product_tier: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
+      workspace_product_tier:
+        | 'FREE'
+        | 'PLUS'
+        | 'PRO'
+        | 'MAX'
+        | 'ULTRA'
+        | 'ENTERPRISE';
       workspace_role_permission:
         | 'view_infrastructure'
         | 'manage_workspace_secrets'
@@ -72344,7 +72472,14 @@ export const Constants = {
         'free',
         'metered_unit',
       ],
-      workspace_product_tier: ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'],
+      workspace_product_tier: [
+        'FREE',
+        'PLUS',
+        'PRO',
+        'MAX',
+        'ULTRA',
+        'ENTERPRISE',
+      ],
       workspace_role_permission: [
         'view_infrastructure',
         'manage_workspace_secrets',

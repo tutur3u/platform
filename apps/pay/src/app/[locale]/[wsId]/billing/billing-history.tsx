@@ -11,7 +11,7 @@ import {
   XCircle,
 } from '@tuturuuu/icons';
 import { getPayOrderInvoiceUrl } from '@tuturuuu/internal-api';
-import { centToDollar } from '@tuturuuu/payment-core/price-helper';
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -270,24 +270,27 @@ export default function BillingHistory({ orders }: { orders: OrderItem[] }) {
                       {hasDiscount ? (
                         <div className="flex flex-col items-end">
                           <span className="text-muted-foreground text-xs line-through">
-                            {order.currency === 'usd'
-                              ? '$'
-                              : order.currency.toUpperCase()}{' '}
-                            {centToDollar(order.originalAmount)}
+                            {formatMoneyFromMinor(
+                              order.originalAmount,
+                              order.currency,
+                              locale
+                            )}
                           </span>
                           <span className="font-semibold text-dynamic-green">
-                            {order.currency === 'usd'
-                              ? '$'
-                              : order.currency.toUpperCase()}{' '}
-                            {centToDollar(order.totalAmount)}
+                            {formatMoneyFromMinor(
+                              order.totalAmount,
+                              order.currency,
+                              locale
+                            )}
                           </span>
                         </div>
                       ) : (
                         <span className="font-semibold">
-                          {order.currency === 'usd'
-                            ? '$'
-                            : order.currency.toUpperCase()}{' '}
-                          {centToDollar(order.totalAmount)}
+                          {formatMoneyFromMinor(
+                            order.totalAmount,
+                            order.currency,
+                            locale
+                          )}
                         </span>
                       )}
                     </TableCell>

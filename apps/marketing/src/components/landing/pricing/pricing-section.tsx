@@ -21,7 +21,11 @@ import { PricingToggle } from './pricing-toggle';
 export function PricingSection() {
   const catalog = usePublicWorkspacePrices();
   const locale = useLocale();
-  const prices = catalog.data?.prices;
+  const localizedPrices = /^vi(?:-|$)/i.test(locale)
+    ? catalog.data?.vndPrices
+    : undefined;
+  const prices = localizedPrices ?? catalog.data?.prices;
+  const currency = localizedPrices ? 'VND' : 'USD';
   const [isYearly, setIsYearly] = useState(false);
   const t = useTranslations('landing.pricing');
 
@@ -56,10 +60,10 @@ export function PricingSection() {
       name: t('tiers.plus.name'),
       price: {
         monthly: prices
-          ? formatMoneyFromMinor(prices.plus.monthly, 'USD', locale)
+          ? formatMoneyFromMinor(prices.plus.monthly, currency, locale)
           : '—',
         yearly: prices
-          ? formatMoneyFromMinor(prices.plus.annual, 'USD', locale)
+          ? formatMoneyFromMinor(prices.plus.annual, currency, locale)
           : '—',
       },
       period: {
@@ -88,10 +92,10 @@ export function PricingSection() {
       name: t('tiers.pro.name'),
       price: {
         monthly: prices
-          ? formatMoneyFromMinor(prices.pro.monthly, 'USD', locale)
+          ? formatMoneyFromMinor(prices.pro.monthly, currency, locale)
           : '—',
         yearly: prices
-          ? formatMoneyFromMinor(prices.pro.annual, 'USD', locale)
+          ? formatMoneyFromMinor(prices.pro.annual, currency, locale)
           : '—',
       },
       period: {
@@ -121,8 +125,8 @@ export function PricingSection() {
           icon: Crown,
           name: id === 'max' ? 'Max' : 'Ultra',
           price: {
-            monthly: formatMoneyFromMinor(price.monthly, 'USD', locale),
-            yearly: formatMoneyFromMinor(price.annual, 'USD', locale),
+            monthly: formatMoneyFromMinor(price.monthly, currency, locale),
+            yearly: formatMoneyFromMinor(price.annual, currency, locale),
           },
           period: {
             monthly: t('tiers.pro.period.monthly'),

@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/icons';
 import type { Product } from '@tuturuuu/payment/polar';
 import { getSupportedProductPrice } from '@tuturuuu/payment-core/polar-price';
+import { getVersionedWorkspaceProductPrices } from '@tuturuuu/payment-core/public-prices';
 import { centToDollar } from '@tuturuuu/payment-core/price-helper';
 import { isPlanUpgrade } from '@tuturuuu/payment-core/proration';
 import {
@@ -29,8 +30,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
+import { formatMoneyFromMinor } from '@tuturuuu/utils/money';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { Plan } from './billing-client';
 import { BillingStatusRefresh } from './billing-status-refresh';
@@ -61,6 +70,10 @@ export default function PlanListDialog({
   requiredSeats,
 }: PlanListDialogProps) {
   const t = useTranslations('billing');
+  const locale = useLocale();
+  const [checkoutCurrency, setCheckoutCurrency] = useState<
+    'auto' | 'usd' | 'vnd'
+  >('auto');
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
   const billingSyncPending = pendingPlanId !== null;
   useEffect(() => {
@@ -86,8 +99,10 @@ export default function PlanListDialog({
   const allPlans = products
     .map((product) => {
       let supported: ReturnType<typeof getSupportedProductPrice>;
+      let versioned: ReturnType<typeof getVersionedWorkspaceProductPrices>;
       try {
-        supported = getSupportedProductPrice(product);
+        versioned = getVersionedWorkspaceProductPrices(product);
+        supported = versioned?.usd ?? getSupportedProductPrice(product);
       } catch {
         return null;
       }
@@ -135,6 +150,7 @@ export default function PlanListDialog({
           ? 'free'
           : (firstPrice?.amountType ?? 'custom'),
         pricePerSeat,
+        vndPricePerSeat: versioned?.offer.vndUnitAmount ?? null,
         minSeats,
         maxSeats,
       };
@@ -151,6 +167,18 @@ export default function PlanListDialog({
     });
 
   // Filter plans by selected billing cycle (Free plan shown in both)
+  const showCurrencyChoice =
+    currentPlan.tier === 'FREE' &&
+    allPlans.some((plan) => plan.vndPricePerSeat !== null);
+
+  const formatCheckoutPrice = (usd: number, vnd: number, quantity = 1) => {
+    const usdLabel = formatMoneyFromMinor(usd * quantity, 'USD', locale);
+    const vndLabel = formatMoneyFromMinor(vnd * quantity, 'VND', locale);
+    if (checkoutCurrency === 'usd') return usdLabel;
+    if (checkoutCurrency === 'vnd') return vndLabel;
+    return `${usdLabel} / ${vndLabel}`;
+  };
+
   const filteredPlans = allPlans.filter(
     (plan) => plan.isFree || plan.billingCycle === selectedCycle
   );
@@ -385,12 +413,44 @@ export default function PlanListDialog({
             </div>
           </div>
 
+          {showCurrencyChoice && (
+            <div className="mb-4 flex justify-end">
+              <Select
+                value={checkoutCurrency}
+                onValueChange={(value) => {
+                  if (value === 'auto' || value === 'usd' || value === 'vnd')
+                    setCheckoutCurrency(value);
+                }}
+              >
+                <SelectTrigger
+                  aria-label={t('checkout-currency')}
+                  className="w-48"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">
+                    {t('checkout-currency-auto')}
+                  </SelectItem>
+                  <SelectItem value="usd">USD</SelectItem>
+                  <SelectItem value="vnd">VND</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Pricing Cards Grid */}
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
             {filteredPlans.map((plan) => {
               const isCurrentPlan = plan.id === currentPlan.productId;
               const isSeatBased = plan.pricingModel === 'seat_based';
               const isFixed = plan.pricingModel === 'fixed';
+              const localized =
+                showCurrencyChoice &&
+                plan.pricePerSeat !== null &&
+                plan.vndPricePerSeat !== null
+                  ? { usd: plan.pricePerSeat, vnd: plan.vndPricePerSeat }
+                  : null;
               const targetSeats = effectiveSeats(plan);
               const styles = getPlanStyles(plan, isCurrentPlan);
               const PlanIcon = styles.Icon;
@@ -469,12 +529,15 @@ export default function PlanListDialog({
                               : styles.iconColor
                           )}
                         >
-                          $
-                          {isSeatBased && plan.pricePerSeat
-                            ? centToDollar(plan.pricePerSeat)
-                            : isFixed && plan.price
-                              ? centToDollar(plan.price)
-                              : 0}
+                          {localized
+                            ? formatCheckoutPrice(localized.usd, localized.vnd)
+                            : `$${
+                                isSeatBased && plan.pricePerSeat
+                                  ? centToDollar(plan.pricePerSeat)
+                                  : isFixed && plan.price
+                                    ? centToDollar(plan.price)
+                                    : 0
+                              }`}
                         </span>
                         {plan.billingCycle && (
                           <span className="text-muted-foreground text-sm">
@@ -515,16 +578,27 @@ export default function PlanListDialog({
                             <div className="flex items-center gap-1.5">
                               <Users className="h-3 w-3 text-muted-foreground" />
                               <p className="font-semibold text-foreground text-xs">
-                                {t('estimated-total', {
-                                  total: centToDollar(
-                                    plan.pricePerSeat * targetSeats
-                                  ),
-                                  cycle:
-                                    plan.billingCycle === 'month'
-                                      ? t('per-month')
-                                      : t('per-year'),
-                                  count: targetSeats,
-                                })}
+                                {t(
+                                  localized
+                                    ? 'estimated-catalog-total'
+                                    : 'estimated-total',
+                                  {
+                                    total: localized
+                                      ? formatCheckoutPrice(
+                                          localized.usd,
+                                          localized.vnd,
+                                          targetSeats
+                                        )
+                                      : centToDollar(
+                                          plan.pricePerSeat * targetSeats
+                                        ),
+                                    cycle:
+                                      plan.billingCycle === 'month'
+                                        ? t('per-month')
+                                        : t('per-year'),
+                                    count: targetSeats,
+                                  }
+                                )}
                               </p>
                             </div>
                             <p className="mt-0.5 pl-5 text-[10px] text-muted-foreground">
@@ -606,6 +680,11 @@ export default function PlanListDialog({
                             subscriptionId={currentPlan.id}
                             wsId={wsId}
                             productId={plan.id}
+                            checkoutCurrency={
+                              localized && checkoutCurrency !== 'auto'
+                                ? checkoutCurrency
+                                : undefined
+                            }
                             onPlanChange={
                               currentPlan.tier !== 'FREE'
                                 ? () =>

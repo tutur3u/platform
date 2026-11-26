@@ -1,6 +1,5 @@
 import type { CustomerSeat, Polar } from '@tuturuuu/payment/polar';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { getSupportedProductPrice } from './polar-price';
 import {
   isAiCreditPackProduct,
   parseWorkspaceProductTier,
@@ -8,6 +7,7 @@ import {
 
 import {
   activeWorkspaceCatalog,
+  getVersionedWorkspaceProductPrices,
   matchesWorkspaceCatalogOffer,
   WORKSPACE_CATALOG_VERSION,
 } from './workspace-catalog';
@@ -21,6 +21,7 @@ export async function fetchProducts(polar: Polar) {
     const res = await polar.products.list({ isArchived: false });
     const legacy = (res.result.items ?? []).filter(
       (product) =>
+        product.metadata.catalog_version !== WORKSPACE_CATALOG_VERSION &&
         !isAiCreditPackProduct(product.metadata) &&
         parseWorkspaceProductTier(product.metadata) != null
     );
@@ -30,11 +31,13 @@ export async function fetchProducts(polar: Polar) {
     const products = await Promise.all(
       catalog.map(async (offer) => {
         const product = await polar.products.get({ id: offer.productId });
-        const { price, pricePerSeat, minSeats, maxSeats } =
-          getSupportedProductPrice(product);
+        const versioned = getVersionedWorkspaceProductPrices(product);
+        if (!versioned) throw new Error('Workspace catalog product drift');
+        const { price, pricePerSeat, minSeats, maxSeats } = versioned.usd;
         const tier = product.metadata.product_tier;
         if (
           price.id !== offer.priceId ||
+          versioned.vnd.price.id !== offer.vndPriceId ||
           product.metadata.catalog_key !== offer.key ||
           product.metadata.catalog_version !== WORKSPACE_CATALOG_VERSION ||
           product.recurringIntervalCount !== 1 ||

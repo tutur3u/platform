@@ -28,9 +28,29 @@ export async function GET() {
           PUBLIC_WORKSPACE_PRODUCT_IDS
       );
     if (error || !data) throw new Error('Catalog read unavailable');
+    const currencyPrices = catalog
+      ? await supabase
+          .schema('private')
+          .from('workspace_subscription_product_prices')
+          .select('product_id,price_id,currency,amount_per_seat')
+          .eq('is_current', true)
+          .in(
+            'product_id',
+            catalog.map(({ productId }) => productId)
+          )
+      : null;
+    if (currencyPrices?.error)
+      throw new Error('Currency catalog read unavailable');
     return NextResponse.json(
       catalog
-        ? { ...publicVersionedWorkspacePrices(data, catalog), referenceRates }
+        ? {
+            ...publicVersionedWorkspacePrices(
+              data,
+              catalog,
+              currencyPrices?.data ?? []
+            ),
+            referenceRates,
+          }
         : publicWorkspacePrices(data),
       {
         headers: {

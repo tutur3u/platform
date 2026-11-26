@@ -37,4 +37,19 @@ describe('checkout confirmation totals', () => {
       expect(screen.getByText('success.checkout-id')).toBeTruthy();
     }
   );
+  it('preserves the full provider amount for zero-decimal VND', () => {
+    const checkout = {
+      id: 'checkout-vnd',
+      totalAmount: 273_900,
+      currency: 'vnd',
+      createdAt: new Date('2026-11-26T00:00:00Z'),
+      product: { name: 'Plus' },
+    } as Checkout;
+    render(<Confirmation wsId="workspace" checkout={checkout} />);
+    const amount = new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(273_900);
+    expect(screen.getByText(amount)).toBeTruthy();
+  });
 });

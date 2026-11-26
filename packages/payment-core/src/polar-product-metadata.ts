@@ -7,6 +7,8 @@ const VALID_TIERS: WorkspaceProductTier[] = [
   'FREE',
   'PLUS',
   'PRO',
+  'MAX',
+  'ULTRA',
   'ENTERPRISE',
 ];
 
