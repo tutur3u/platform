@@ -48,15 +48,22 @@ import {
   hasMeetMediaContextConflict,
   resolveMeetRoomMediaRole,
 } from './room-media-role';
+import {
+  blockAutoAdmission,
+  isEarlyClosedWaiter,
+  skipsLobby,
+  skipsLobbyAsVerifiedGuest,
+} from './room-admission-policy';
 import { buildReady } from './room-admission-ready';
 import { denied, outcome } from './room-outcome';
 import {
   isGuestRemovalBlocked,
-  pruneRemovedGuests,
   recordRemovedGuest,
 } from './room-removed-guests';
 import { recordingMessage } from './room-recording';
 import { transcriptionAnnouncements } from './transcription';
+
+export { blockAutoAdmission, skipsLobby, skipsLobbyAsVerifiedGuest };
 
 export function admitOrHold(
   state: MeetRoomSnapshot,
@@ -328,17 +335,6 @@ function dropInvalidEventWaiter(
     toManagers: [meetAdmissionPendingMessage(next)],
     disconnect: [userId],
   });
-}
-
-function isEarlyClosedWaiter(
-  state: MeetRoomSnapshot,
-  proof: number | undefined,
-  nowMs: number
-) {
-  return (
-    proof !== undefined &&
-    proof === activeMeetEvent(state.earlyClosedEventExpiresAt, nowMs)
-  );
 }
 
 function decideParticipant(
@@ -642,48 +638,6 @@ export function decideRoomAdmission(
 }
 
 /**
- * Whether a signed-in person is admitted without waiting: the host turned on
- * automatic admission, admission is open, and nobody removed or denied this
- * account. Guests are decided by `skipsLobbyAsVerifiedGuest`.
- */
-export function skipsLobby(state: MeetRoomSnapshot, accountId: string) {
-  return (
-    !!state.settings?.skipLobby &&
-    !state.settings.admissionClosed &&
-    !state.deniedAutoAdmission?.includes(accountId) &&
-    (state.deniedAutoAdmission?.length ?? 0) < 256
-  );
-}
-
-/**
- * Whether an anonymous guest skips the lobby under "Admit everyone": the host
- * allows guests and admits automatically, admission is open, the guest passed
- * a human check, and nobody removed or denied this guest. Unverified guests
- * always wait. While any guest removal ban is active the room pauses guest
- * auto-admit, because a removed guest can verify again under a new id.
- */
-export function skipsLobbyAsVerifiedGuest(
-  state: MeetRoomSnapshot,
-  token: Pick<
-    MeetRealtimeTokenPayload,
-    'guest' | 'guestTurnstileVerified' | 'accountId' | 'userId'
-  >,
-  nowMs: number
-) {
-  const id = token.accountId ?? token.userId;
-  return (
-    !pruneRemovedGuests(state.removedGuests, nowMs) &&
-    token.guest === true &&
-    token.guestTurnstileVerified === true &&
-    !!state.settings?.allowAnonymousGuests &&
-    !!state.settings.skipLobby &&
-    !state.settings.admissionClosed &&
-    !state.deniedAutoAdmission?.includes(id) &&
-    (state.deniedAutoAdmission?.length ?? 0) < 256
-  );
-}
-
-/**
  * Admits the signed-in people and verified guests already waiting, oldest
  * first, once automatic
  * admission turns on. `result` is the outcome that turned it on; what each
@@ -734,14 +688,4 @@ export function admitWaitingSignedIn(
     admitted++;
   }
   return admitted ? merged : result;
-}
-
-export function blockAutoAdmission(state: MeetRoomSnapshot, id: string) {
-  const blocked = state.deniedAutoAdmission ?? [];
-  return blocked.length >= 256 || blocked.includes(id)
-    ? state
-    : {
-        ...state,
-        deniedAutoAdmission: [...blocked, id],
-      };
 }
