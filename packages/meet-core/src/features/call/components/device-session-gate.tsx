@@ -63,7 +63,8 @@ function DeviceSessionGate({
 }: CallShellProps & { nameSetup?: CallShellNameSetup; prejoin?: boolean }) {
   const t = useTranslations('meet.call');
   const pathname = usePathname();
-  // Kept across reloads of this tab, so a reload resumes the same device.
+  // Kept across reloads of this tab, so a reload resumes the same device; the
+  // session waits until this page's claim on the id is confirmed.
   const deviceId = useTabDeviceId(props.meetingId, props.accountId);
   const [mode, setMode] = useState<'switch' | 'additional' | undefined>();
   // Download media controls alongside the device check, not before first paint.
@@ -76,7 +77,7 @@ function DeviceSessionGate({
       createMeetCallRealtimeToken(
         props.meetingId,
         undefined,
-        { deviceId, joinMode: mode },
+        { deviceId: deviceId ?? '', joinMode: mode },
         AbortSignal.any([signal, AbortSignal.timeout(12_000)])
       ),
     retry: (failures, error) =>
@@ -86,8 +87,12 @@ function DeviceSessionGate({
     refetchOnReconnect: false,
     staleTime: Infinity,
     gcTime: 0,
-    enabled: !nameSetup,
+    enabled: !nameSetup && !!deviceId,
   });
+  // A retry bypasses `enabled`, so it also waits for the confirmed id.
+  const retry = () => {
+    if (deviceId) void session.refetch();
+  };
   if (nameSetup) return <NameSetupPrejoin {...nameSetup} />;
   if (session.data?.token && !session.data.requiresDeviceChoice) {
     const Shell = prejoin ? PrejoinCallShell : ConnectedCallShell;
@@ -96,7 +101,7 @@ function DeviceSessionGate({
         {...props}
         token={session.data.token}
         realtimeUrl={session.data.realtimeUrl}
-        deviceId={deviceId}
+        deviceId={deviceId ?? undefined}
       />
     );
   }
@@ -108,7 +113,7 @@ function DeviceSessionGate({
       meetingName={props.meetingName}
       leaveHref={props.leaveHref}
       busy={session.isFetching}
-      onRetry={() => void session.refetch()}
+      onRetry={retry}
       title={
         choice
           ? t('device_already_joined')
@@ -150,7 +155,7 @@ function DeviceSessionGate({
         <Button
           className="w-full"
           disabled={session.isFetching}
-          onClick={() => void session.refetch()}
+          onClick={retry}
         >
           {session.isFetching ? (
             <Loader2 className="size-4 animate-spin" />

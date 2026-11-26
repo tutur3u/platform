@@ -79,6 +79,36 @@ it('asks for the session as the same device after the tab reloads', () => {
   expect(sessionDevice(1)?.deviceId).toBe(first);
 });
 
+it('asks as a new device when another page overwrote its claim', () => {
+  sessionStorage.setItem('meet:device:meeting:account', 'copied-id');
+  const write = Storage.prototype.setItem;
+  let raced = false;
+  // The other page writes its claim right after this page's write.
+  const spy = vi
+    .spyOn(Storage.prototype, 'setItem')
+    .mockImplementation(function (this: Storage, name, value) {
+      write.call(this, name, value);
+      if (name !== 'meet:device-claim:copied-id' || raced) return;
+      raced = true;
+      write.call(
+        this,
+        name,
+        JSON.stringify({ nonce: 'other-page', at: Date.now() })
+      );
+    });
+  try {
+    show();
+  } finally {
+    spy.mockRestore();
+  }
+  expect(raced).toBe(true);
+  expect(mocks.token).toHaveBeenCalledTimes(1);
+  const deviceId = sessionDevice(0)?.deviceId;
+  expect(deviceId).toBeTruthy();
+  expect(deviceId).not.toBe('copied-id');
+  expect(sessionStorage.getItem('meet:device:meeting:account')).toBe(deviceId);
+});
+
 it('asks as a new device when another live page holds the tab id', () => {
   sessionStorage.setItem('meet:device:meeting:account', 'copied-id');
   localStorage.setItem(

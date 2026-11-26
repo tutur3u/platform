@@ -7,7 +7,8 @@
  * `sessionStorage`, so each live page also holds a claim on its id in
  * `localStorage`: a page that finds its id claimed by another live page mints
  * a new one. A page drops its claim on `pagehide`, so its own reload finds the
- * id free; a claim nobody renews expires after `CLAIM_TTL_MS`.
+ * id free; a claim nobody renews expires after `CLAIM_TTL_MS`, and acquiring
+ * sweeps expired claims.
  *
  * Every storage access is guarded: when storage is unavailable the page gets
  * a fresh random id, which joins as a new device.
@@ -17,10 +18,19 @@ const DEVICE_PREFIX = 'meet:device:';
 const CLAIM_PREFIX = 'meet:device-claim:';
 /** How often a live page renews its claim. */
 export const CLAIM_RENEW_MS = 15_000;
-/** A claim older than this belongs to no live page; background tabs renew slowly. */
+/**
+ * A claim older than this belongs to no live page; the margin allows for
+ * background tabs, whose timers run slowly.
+ */
 export const CLAIM_TTL_MS = 75_000;
 
-type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+type KeyValueStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> &
+  Partial<Pick<Storage, 'key' | 'length'>>;
+
+/** An id for a render with no browser storage, such as the server render. */
+export function throwawayTabDeviceClaim(): TabDeviceClaim {
+  return { deviceId: crypto.randomUUID(), nonce: crypto.randomUUID() };
+}
 
 export interface TabDeviceEnvironment {
   session?: KeyValueStorage | null;
@@ -52,7 +62,9 @@ function browserStorage(kind: 'sessionStorage' | 'localStorage') {
 function environment(env: TabDeviceEnvironment = {}) {
   return {
     session:
-      env.session === undefined ? browserStorage('sessionStorage') : env.session,
+      env.session === undefined
+        ? browserStorage('sessionStorage')
+        : env.session,
     local: env.local === undefined ? browserStorage('localStorage') : env.local,
     now: env.now ?? Date.now,
     randomId: env.randomId ?? (() => crypto.randomUUID()),
@@ -101,6 +113,24 @@ function writeClaim(
   );
 }
 
+/** Removes claims nobody renewed in time, or that cannot be read. */
+function sweepExpiredClaims(local: KeyValueStorage | null, nowMs: number) {
+  try {
+    if (!local?.key || typeof local.length !== 'number') return;
+    const keys: string[] = [];
+    for (let index = 0; index < local.length; index++) {
+      const name = local.key(index);
+      if (name?.startsWith(CLAIM_PREFIX)) keys.push(name);
+    }
+    for (const name of keys) {
+      const claim = claimOf(local, name.slice(CLAIM_PREFIX.length));
+      if (!claim || nowMs - claim.at >= CLAIM_TTL_MS) local.removeItem(name);
+    }
+  } catch {
+    // Left for the next page to sweep.
+  }
+}
+
 /**
  * The device id for this page: the tab's stored id when no other live page
  * claims it, otherwise a new one, which becomes the tab's stored id.
@@ -110,6 +140,7 @@ export function acquireTabDeviceId(
   env?: TabDeviceEnvironment
 ): TabDeviceClaim {
   const { session, local, now, randomId } = environment(env);
+  sweepExpiredClaims(local, now());
   const nonce = randomId();
   const stored = read(session, key);
   const owner = stored ? claimOf(local, stored) : null;
@@ -118,6 +149,23 @@ export function acquireTabDeviceId(
   if (deviceId !== stored) write(session, key, deviceId);
   const claim = { deviceId, nonce };
   writeClaim(local, claim, now());
+  return claim;
+}
+
+/**
+ * Re-reads the claim after it was written. Storage has no compare-and-set, so
+ * two pages acquiring at once can both write; the page whose write did not
+ * stick acquires again, which gives it a new id. A missing claim (storage
+ * unavailable or already dropped) is written again.
+ */
+export function confirmTabDeviceClaim(
+  key: string,
+  claim: TabDeviceClaim,
+  env?: TabDeviceEnvironment
+): TabDeviceClaim {
+  const owner = claimOf(environment(env).local, claim.deviceId);
+  if (owner && owner.nonce !== claim.nonce) return acquireTabDeviceId(key, env);
+  renewTabDeviceClaim(claim, env);
   return claim;
 }
 

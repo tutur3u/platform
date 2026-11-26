@@ -563,9 +563,17 @@ known), so:
 - **A duplicated tab is a new device too.** Duplicating copies
   `sessionStorage`, so each live page also holds a claim on its id in
   `localStorage` (`meet:device-claim:<deviceId>`), renewed every 15 seconds. A
-  page whose stored id is claimed by another live page mints a new id. A page
-  drops its claim on `pagehide` and when the call unmounts; a claim nobody
-  renews for 75 seconds is treated as free.
+  page whose stored id is claimed by another live page mints a new id. Storage
+  has no compare-and-set, so each page reads its claim back before it asks for
+  a session; a page whose write was overwritten mints a new id first. A page
+  drops its claim on `pagehide` and when the call unmounts. A claim nobody
+  renews for 75 seconds is treated as free, and each new page removes such
+  expired claims.
+- **After a crash or a killed tab** the page cannot drop its claim, so the claim
+  stays live for up to 75 seconds. A reload within that window joins as a new
+  device; the old device leaves when the room's presence grace ends.
+- **The server render** has no tab storage; it uses a throwaway id and keeps
+  nothing, and the session is requested only from the browser.
 - **Without storage** (denied or unavailable) every load gets a fresh random
   id and joins as a new device.
 
