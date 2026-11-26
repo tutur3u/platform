@@ -21910,4 +21910,141 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskCollabOpenDiscussion => 'Comments, links and activity';
+
+  @override
+  String get calendarRecurrenceRepeat => 'Repeat';
+
+  @override
+  String get calendarRecurrenceNone => 'Does not repeat';
+
+  @override
+  String get calendarRecurrenceDaily => 'Daily';
+
+  @override
+  String get calendarRecurrenceWeekly => 'Weekly';
+
+  @override
+  String get calendarRecurrenceMonthly => 'Monthly';
+
+  @override
+  String get calendarRecurrenceYearly => 'Yearly';
+
+  @override
+  String get calendarRecurrenceInterval => 'Every';
+
+  @override
+  String calendarRecurrenceSummaryInterval(String frequency, int interval) {
+    return '$frequency, every $interval';
+  }
+
+  @override
+  String get calendarRecurrenceWeekdays => 'Days of the week';
+
+  @override
+  String get calendarRecurrenceMonthPattern => 'Repeat by';
+
+  @override
+  String get calendarRecurrenceMonthDayPattern => 'Day of month';
+
+  @override
+  String get calendarRecurrenceMonthWeekdayPattern => 'Weekday in month';
+
+  @override
+  String get calendarRecurrenceMonthDayOverflow => 'When the day is missing';
+
+  @override
+  String get calendarRecurrenceMonthDaySkip => 'Skip that month';
+
+  @override
+  String get calendarRecurrenceMonthDayLast => 'Use the last day';
+
+  @override
+  String get calendarRecurrenceWeekIndex => 'Which week';
+
+  @override
+  String get calendarRecurrenceOrdinal1 => 'First';
+
+  @override
+  String get calendarRecurrenceOrdinal2 => 'Second';
+
+  @override
+  String get calendarRecurrenceOrdinal3 => 'Third';
+
+  @override
+  String get calendarRecurrenceOrdinal4 => 'Fourth';
+
+  @override
+  String get calendarRecurrenceOrdinalLast => 'Last';
+
+  @override
+  String get calendarRecurrenceMonth => 'Month';
+
+  @override
+  String get calendarRecurrenceEnding => 'Repeat until';
+
+  @override
+  String get calendarRecurrenceEndNever => 'No end date';
+
+  @override
+  String get calendarRecurrenceEndCount => 'Number of occurrences';
+
+  @override
+  String get calendarRecurrenceEndUntil => 'End date';
+
+  @override
+  String get calendarRecurrenceRelativeWeekdayHelp => 'With several weekdays selected, each month uses the earliest matching date in the selected week. The start date must match this pattern.';
+
+  @override
+  String get calendarRecurrenceTimezone => 'Time zone';
+
+  @override
+  String get calendarRecurrenceScope => 'Apply changes to';
+
+  @override
+  String get calendarRecurrenceScopeThis => 'Only this occurrence';
+
+  @override
+  String get calendarRecurrenceScopeFuture => 'This and following occurrences';
+
+  @override
+  String get calendarRecurrenceScopeAll => 'Entire series';
+
+  @override
+  String get calendarRecurrenceDelete => 'Delete recurring event';
+
+  @override
+  String get calendarRecurrenceFutureReset => 'Edits and cancellations for this and following occurrences will be reset when you save.';
+
+  @override
+  String get calendarRecurrenceEdit => 'Edit recurring event';
+
+  @override
+  String get calendarRecurrenceConflict => 'This series changed elsewhere. Reload it before saving.';
+
+  @override
+  String get calendarRecurrenceReload => 'Reload series';
+
+  @override
+  String get calendarRecurrenceFailed => 'Could not save this change. Your draft is retained; try again.';
+
+  @override
+  String get calendarRecurrenceInvalid => 'Check the title, dates, time zone and recurrence settings.';
+
+  @override
+  String get calendarRecurrenceUnavailable => 'This recurring event is unavailable.';
+
+  @override
+  String get calendarRecurrenceOffline => 'Connect to the internet to change recurring events. Your draft is retained.';
+
+  @override
+  String get calendarRecurrenceDenied => 'You don\'t have permission to change events in this calendar.';
+
+  @override
+  String get calendarRecurrenceLoadFailed => 'Couldn\'t load recurring events.';
+
+  @override
+  String get calendarRecurrenceProviderReadOnly => 'This provider recurrence rule cannot be safely edited here. Manage the series in its original calendar.';
+
+  @override
+  String get calendarRecurrenceSaving => 'Saving…';
 }

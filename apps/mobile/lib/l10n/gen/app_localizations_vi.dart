@@ -21651,4 +21651,141 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskCollabOpenDiscussion => 'Bình luận, liên kết và hoạt động';
+
+  @override
+  String get calendarRecurrenceRepeat => 'Lặp lại';
+
+  @override
+  String get calendarRecurrenceNone => 'Không lặp lại';
+
+  @override
+  String get calendarRecurrenceDaily => 'Hàng ngày';
+
+  @override
+  String get calendarRecurrenceWeekly => 'Hàng tuần';
+
+  @override
+  String get calendarRecurrenceMonthly => 'Hàng tháng';
+
+  @override
+  String get calendarRecurrenceYearly => 'Hàng năm';
+
+  @override
+  String get calendarRecurrenceInterval => 'Mỗi';
+
+  @override
+  String calendarRecurrenceSummaryInterval(String frequency, int interval) {
+    return '$frequency, mỗi $interval';
+  }
+
+  @override
+  String get calendarRecurrenceWeekdays => 'Ngày trong tuần';
+
+  @override
+  String get calendarRecurrenceMonthPattern => 'Lặp theo';
+
+  @override
+  String get calendarRecurrenceMonthDayPattern => 'Ngày trong tháng';
+
+  @override
+  String get calendarRecurrenceMonthWeekdayPattern => 'Thứ trong tháng';
+
+  @override
+  String get calendarRecurrenceMonthDayOverflow => 'Khi tháng không có ngày này';
+
+  @override
+  String get calendarRecurrenceMonthDaySkip => 'Bỏ qua tháng đó';
+
+  @override
+  String get calendarRecurrenceMonthDayLast => 'Dùng ngày cuối tháng';
+
+  @override
+  String get calendarRecurrenceWeekIndex => 'Tuần nào';
+
+  @override
+  String get calendarRecurrenceOrdinal1 => 'Đầu tiên';
+
+  @override
+  String get calendarRecurrenceOrdinal2 => 'Thứ hai';
+
+  @override
+  String get calendarRecurrenceOrdinal3 => 'Thứ ba';
+
+  @override
+  String get calendarRecurrenceOrdinal4 => 'Thứ tư';
+
+  @override
+  String get calendarRecurrenceOrdinalLast => 'Cuối cùng';
+
+  @override
+  String get calendarRecurrenceMonth => 'Tháng';
+
+  @override
+  String get calendarRecurrenceEnding => 'Lặp lại đến';
+
+  @override
+  String get calendarRecurrenceEndNever => 'Không có ngày kết thúc';
+
+  @override
+  String get calendarRecurrenceEndCount => 'Số lần lặp';
+
+  @override
+  String get calendarRecurrenceEndUntil => 'Ngày kết thúc';
+
+  @override
+  String get calendarRecurrenceRelativeWeekdayHelp => 'Khi chọn nhiều thứ, mỗi tháng dùng ngày khớp sớm nhất trong tuần đã chọn. Ngày bắt đầu phải khớp quy tắc này.';
+
+  @override
+  String get calendarRecurrenceTimezone => 'Múi giờ';
+
+  @override
+  String get calendarRecurrenceScope => 'Áp dụng thay đổi cho';
+
+  @override
+  String get calendarRecurrenceScopeThis => 'Chỉ lần này';
+
+  @override
+  String get calendarRecurrenceScopeFuture => 'Lần này và các lần sau';
+
+  @override
+  String get calendarRecurrenceScopeAll => 'Toàn bộ chuỗi';
+
+  @override
+  String get calendarRecurrenceDelete => 'Xóa sự kiện lặp lại';
+
+  @override
+  String get calendarRecurrenceFutureReset => 'Các chỉnh sửa và lần hủy cho lần này và các lần tiếp theo sẽ được đặt lại khi bạn lưu.';
+
+  @override
+  String get calendarRecurrenceEdit => 'Sửa sự kiện lặp lại';
+
+  @override
+  String get calendarRecurrenceConflict => 'Chuỗi đã được thay đổi ở nơi khác. Tải lại trước khi lưu.';
+
+  @override
+  String get calendarRecurrenceReload => 'Tải lại chuỗi';
+
+  @override
+  String get calendarRecurrenceFailed => 'Không thể lưu thay đổi. Bản nháp được giữ lại; hãy thử lại.';
+
+  @override
+  String get calendarRecurrenceInvalid => 'Kiểm tra tiêu đề, ngày, múi giờ và cài đặt lặp lại.';
+
+  @override
+  String get calendarRecurrenceUnavailable => 'Sự kiện lặp lại này không khả dụng.';
+
+  @override
+  String get calendarRecurrenceOffline => 'Hãy kết nối Internet để thay đổi sự kiện lặp lại. Bản nháp được giữ lại.';
+
+  @override
+  String get calendarRecurrenceDenied => 'Bạn không có quyền thay đổi sự kiện trong lịch này.';
+
+  @override
+  String get calendarRecurrenceLoadFailed => 'Không thể tải các sự kiện lặp lại.';
+
+  @override
+  String get calendarRecurrenceProviderReadOnly => 'Không thể chỉnh sửa an toàn quy tắc lặp lại này tại đây. Hãy quản lý chuỗi sự kiện trong lịch gốc.';
+
+  @override
+  String get calendarRecurrenceSaving => 'Đang lưu…';
 }

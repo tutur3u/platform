@@ -5,16 +5,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/layout/app_page.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
+import 'package:mobile/core/ui/ui.dart'
+    show AppSheetAction, showAppActionSheet, showAppConfirmDialog;
+import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/calendar_recurrence.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/repositories/calendar_series_repository.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/calendar/cubit/calendar_series_cubit.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/calendar/utils/calendar_recurrence_draft.dart';
 import 'package:mobile/features/calendar/view/calendar_timezone_listener.dart';
 import 'package:mobile/features/calendar/widgets/agenda_view.dart';
 import 'package:mobile/features/calendar/widgets/calendar_connections_sheet.dart';
@@ -24,9 +32,11 @@ import 'package:mobile/features/calendar/widgets/calendar_minute_clock.dart';
 import 'package:mobile/features/calendar/widgets/calendar_zoom_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_detail_sheet.dart';
 import 'package:mobile/features/calendar/widgets/event_form_sheet.dart';
+import 'package:mobile/features/calendar/widgets/event_recurrence_rows.dart';
 import 'package:mobile/features/calendar/widgets/month_strip.dart';
 import 'package:mobile/features/calendar/widgets/month_view.dart';
 import 'package:mobile/features/calendar/widgets/multi_day_schedule_view.dart';
+import 'package:mobile/features/calendar/widgets/recurrence_pattern_sheet.dart';
 import 'package:mobile/features/calendar/widgets/three_day_view.dart';
 import 'package:mobile/features/calendar/widgets/week_view.dart';
 import 'package:mobile/features/calendar/widgets/year_view.dart';
@@ -42,6 +52,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'calendar_page_actions.dart';
 part 'calendar_page_reselect.dart';
+part 'calendar_page_series_actions.dart';
 part 'calendar_page_views.dart';
 part 'calendar_zoom_page.dart';
 
@@ -55,30 +66,47 @@ class CalendarPage extends StatelessWidget {
     super.key,
     this.initialEventId,
     this.repositoryFactory,
+    this.seriesRepositoryFactory,
     this.cacheStore,
   });
 
   final String? initialEventId;
   final CalendarRepository Function()? repositoryFactory;
+  final CalendarSeriesRepository Function()? seriesRepositoryFactory;
   final CacheStore? cacheStore;
 
   @override
   Widget build(BuildContext context) {
     final defaultMode = _defaultCalendarMode(context);
-    return BlocProvider(
-      create: (context) {
-        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-        final cubit = CalendarCubit(
-          calendarRepository: repositoryFactory?.call() ?? CalendarRepository(),
-          cacheStore: cacheStore,
-          defaultViewMode: defaultMode,
-          initialState: wsId != null
-              ? CalendarCubit.cachedStateForWorkspace(wsId)
-              : null,
-        )..setTimezone(calendarZone(context));
-        if (wsId != null) unawaited(cubit.loadEvents(wsId, forceRefresh: true));
-        return cubit;
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) =>
+              CalendarSeriesCubit(repository: seriesRepositoryFactory?.call()),
+        ),
+        BlocProvider(
+          create: (context) {
+            final wsId = context
+                .read<WorkspaceCubit>()
+                .state
+                .currentWorkspace
+                ?.id;
+            final cubit = CalendarCubit(
+              calendarRepository:
+                  repositoryFactory?.call() ?? CalendarRepository(),
+              cacheStore: cacheStore,
+              defaultViewMode: defaultMode,
+              initialState: wsId != null
+                  ? CalendarCubit.cachedStateForWorkspace(wsId)
+                  : null,
+            )..setTimezone(calendarZone(context));
+            if (wsId != null) {
+              unawaited(cubit.loadEvents(wsId, forceRefresh: true));
+            }
+            return cubit;
+          },
+        ),
+      ],
       child: CalendarMinuteClock(
         child: _CalendarView(
           initialEventId: initialEventId,
@@ -116,6 +144,7 @@ class _CalendarViewState extends State<_CalendarView> {
         final cubit = context.read<CalendarCubit>();
         if (wsId != null && !cubit.state.isRefreshing) {
           unawaited(cubit.loadEvents(wsId, forceRefresh: true));
+          unawaited(context.read<CalendarSeriesCubit>().reload());
         }
       }),
     );
@@ -348,46 +377,79 @@ class _CalendarViewState extends State<_CalendarView> {
               }
             },
             child: CalendarTimezoneListener(
-              child: BlocConsumer<CalendarCubit, CalendarState>(
-                listenWhen: (previous, current) =>
-                    current.error != null && previous.error != current.error,
-                listener: (context, state) {
-                  shad.showToast(
-                    context: Navigator.of(context, rootNavigator: true).context,
-                    builder: (context, overlay) =>
-                        shad.SurfaceCard(child: Text(state.error!)),
-                  );
-                },
-                builder: (context, state) {
-                  if (state.status == CalendarStatus.loading &&
-                      !state.isRefreshing &&
-                      state.events.isEmpty) {
-                    return const AppLoadingIndicator.page();
-                  }
-
-                  if (state.status == CalendarStatus.error &&
-                      state.events.isEmpty) {
-                    return NovaRefreshIndicator.state(
-                      onRefresh: () => _reload(context, retainError: true),
-                      child: _ErrorView(error: state.error),
+              child: MultiBlocListener(
+                listeners: [
+                  BlocListener<CalendarCubit, CalendarState>(
+                    listenWhen: (prev, curr) =>
+                        prev.fetchedRange != curr.fetchedRange ||
+                        prev.timezone != curr.timezone,
+                    listener: (context, _) => _loadSeries(context),
+                  ),
+                  BlocListener<CalendarSeriesCubit, CalendarSeriesState>(
+                    listenWhen: (prev, curr) =>
+                        prev.generation != curr.generation &&
+                        curr.loadFailure != null &&
+                        curr.loadFailure != CalendarSeriesFailure.offline,
+                    listener: (context, state) => _seriesToast(
+                      context,
+                      context.l10n.calendarRecurrenceLoadFailed,
+                    ),
+                  ),
+                ],
+                child: BlocConsumer<CalendarCubit, CalendarState>(
+                  listenWhen: (previous, current) =>
+                      current.error != null && previous.error != current.error,
+                  listener: (context, state) {
+                    shad.showToast(
+                      context: Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).context,
+                      builder: (context, overlay) =>
+                          shad.SurfaceCard(child: Text(state.error!)),
                     );
-                  }
+                  },
+                  builder: (context, state) {
+                    if (state.status == CalendarStatus.loading &&
+                        !state.isRefreshing &&
+                        state.events.isEmpty) {
+                      return const AppLoadingIndicator.page();
+                    }
 
-                  return AppPageBody.fullBleed(
-                    consumeBottomClearance: false,
-                    child: NovaRefreshIndicator(
-                      onRefresh: () => _reload(context, retainError: true),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) => _buildCalendarBody(
-                          context,
-                          state,
-                          firstDayOfWeek,
-                          constraints.maxHeight,
+                    if (state.status == CalendarStatus.error &&
+                        state.events.isEmpty) {
+                      return NovaRefreshIndicator.state(
+                        onRefresh: () => _reload(context, retainError: true),
+                        child: _ErrorView(error: state.error),
+                      );
+                    }
+
+                    return AppPageBody.fullBleed(
+                      consumeBottomClearance: false,
+                      child: NovaRefreshIndicator(
+                        onRefresh: () => _reload(context, retainError: true),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) =>
+                              BlocBuilder<
+                                CalendarSeriesCubit,
+                                CalendarSeriesState
+                              >(
+                                builder: (context, _) => _buildCalendarBody(
+                                  context,
+                                  state.copyWith(
+                                    events: context
+                                        .read<CalendarSeriesCubit>()
+                                        .mergeInto(state.events),
+                                  ),
+                                  firstDayOfWeek,
+                                  constraints.maxHeight,
+                                ),
+                              ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
           ),
@@ -532,10 +594,14 @@ class _ErrorView extends StatelessWidget {
 Future<void> _reload(BuildContext context, {bool retainError = false}) async {
   final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
   if (wsId != null) {
-    await context.read<CalendarCubit>().loadEvents(
-      wsId,
-      forceRefresh: true,
-      retainError: retainError,
-    );
+    final series = context.read<CalendarSeriesCubit>();
+    await Future.wait([
+      context.read<CalendarCubit>().loadEvents(
+        wsId,
+        forceRefresh: true,
+        retainError: retainError,
+      ),
+      series.reload(),
+    ]);
   }
 }

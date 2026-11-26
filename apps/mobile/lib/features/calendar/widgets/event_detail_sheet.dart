@@ -15,15 +15,24 @@ import 'package:mobile/features/calendar/widgets/calendar_description_body.dart'
 import 'package:mobile/l10n/l10n.dart';
 
 /// Returns edit/delete only after the corresponding action is confirmed.
+/// A recurring occurrence ([recurrence] set) returns delete unconfirmed: the
+/// scope choice that follows confirms it.
 Future<String?> showEventDetailSheet(
   BuildContext context, {
   required CalendarEvent event,
   bool readOnly = false,
+  String? recurrence,
+  String? notice,
 }) => showAdaptiveSheet<String>(
   context: context,
   useRootNavigator: true,
   backgroundColor: AppTokens.of(context).colorScheme.popover,
-  builder: (context) => EventDetailContent(event: event, readOnly: readOnly),
+  builder: (context) => EventDetailContent(
+    event: event,
+    readOnly: readOnly,
+    recurrence: recurrence,
+    notice: notice,
+  ),
 );
 
 /// Displays the event properties supplied by the calendar API.
@@ -31,10 +40,16 @@ class EventDetailContent extends StatelessWidget {
   const EventDetailContent({
     required this.event,
     this.readOnly = false,
+    this.recurrence,
+    this.notice,
     super.key,
   });
   final CalendarEvent event;
   final bool readOnly;
+
+  /// Repeat summary of a recurring occurrence.
+  final String? recurrence;
+  final String? notice;
   @override
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
@@ -97,6 +112,23 @@ class EventDetailContent extends StatelessWidget {
                         color: c.mutedForeground,
                       ),
                     ),
+                    if (recurrence case final summary?)
+                      Row(
+                        children: [
+                          Icon(
+                            LucideIcons.repeat,
+                            size: 14,
+                            color: c.mutedForeground,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            summary,
+                            style: tokens.typography.bodySm.copyWith(
+                              color: c.mutedForeground,
+                            ),
+                          ),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -129,6 +161,15 @@ class EventDetailContent extends StatelessWidget {
               ),
             ),
           ],
+          if (notice case final text?) ...[
+            const SizedBox(height: 16),
+            Text(
+              text,
+              style: tokens.typography.bodySm.copyWith(
+                color: c.mutedForeground,
+              ),
+            ),
+          ],
           if (event.description?.isNotEmpty ?? false) ...[
             const SizedBox(height: 24),
             CalendarDescriptionBody(description: event.description!),
@@ -148,6 +189,10 @@ class EventDetailContent extends StatelessWidget {
   }
 
   Future<void> _delete(BuildContext context) async {
+    if (recurrence != null) {
+      Navigator.of(context).pop('delete');
+      return;
+    }
     final l10n = context.l10n;
     final confirmed = await showAppConfirmDialog(
       context: context,

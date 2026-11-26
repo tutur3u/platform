@@ -1,7 +1,7 @@
 ---
 title: Native recurring Calendar events
 description: Create and edit canonical recurring events with explicit scopes.
-updatedAt: "2026-10-06"
+updatedAt: "2026-11-26"
 audience: users
 ---
 
@@ -52,6 +52,50 @@ month-end and imported-rule preservation against Google and Outlook serializers;
 `use-native-calendar-occurrences.test.tsx` covers SWR and actor/permission fences;
 `use-calendar-readonly.test.tsx` proves virtual mutations cannot reach ordinary
 write APIs.
+
+## Mobile app
+
+The mobile Calendar shows native occurrences for its loaded range beside ordinary
+events. Create has a **Repeat** row (default **Does not repeat**) that opens the
+same pattern options as the web editor: frequency, interval, weekdays, monthly
+or yearly absolute day with skip/last-day overflow or ordinal weekday including
+last, yearly month, and no end, a count or an inclusive end date. A repeating
+event shows a **Time zone** row; it defaults to the Calendar time zone, or the
+device zone when none is set. Selectors derived from the start date follow it
+when the start date changes. The first occurrence must match the pattern; the
+form rejects a mismatch before saving.
+
+Tapping an occurrence opens its details with the repeat summary. Edit and Delete
+then ask for **Only this occurrence**, **This and following occurrences** or
+**Entire series**, listed in that order with this occurrence first, using the web
+copy. A single occurrence cannot change all-day mode or the pattern, so those rows
+are hidden. A future edit after the first occurrence shows the tail reset notice.
+Requests omit the rule and anchor unless they changed, so details-only edits
+keep retained exceptions and let the server derive the remaining future rule.
+A future pattern change with a count end applies the entered count to the new
+tail. Edits send the revision loaded when the form opened; deletes send the
+revision of the occurrence the user saw. A conflict keeps the form open with
+**Reload series**, which reopens it on the current revision, and a delete conflict
+asks before reloading occurrences.
+
+Series writes run while the form stays open, so a denial, conflict, validation or
+connection failure keeps the draft. They never enter the offline mutation queue:
+each carries a revision that a later replay could overwrite. Reads fall back to
+the last stored result for the same range when offline, and an access denial
+clears stored occurrences. Unchanged form retries reuse their request id. Provider-
+backed series are read-only on mobile. Occurrences are never sent to ordinary
+event writes. Range reads are split into spans of at most 400 days.
+
+Production mobile requests reach Calendar through the Infrastructure gateway,
+which forwards only the two exact series routes listed in
+[mobile workspace tools](/platform/features/mobile-workspace-tools#native-api-requests-and-hosting-challenges).
+
+Regression evidence: `apps/mobile/test/features/calendar/recurrence/` covers
+pattern validation, rule serialization, request identities, range chunking,
+scoped edit and delete flows, denial, offline and conflict handling, and
+provider read-only occurrences; `calendar_series_repository_test.dart` covers
+request bodies, offline reads and denial; `gateway-series.test.ts` covers the
+gateway allowlist.
 
 ## Unsupported provider rules
 

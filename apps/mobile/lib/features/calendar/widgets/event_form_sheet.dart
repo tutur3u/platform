@@ -5,10 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/data/models/calendar_recurrence.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/features/assistant/bridge/assistant_screen_context.dart';
+import 'package:mobile/features/calendar/cubit/calendar_series_cubit.dart';
 import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
+import 'package:mobile/features/calendar/utils/calendar_recurrence_draft.dart';
 import 'package:mobile/features/calendar/utils/event_colors.dart';
+import 'package:mobile/features/calendar/widgets/event_recurrence_rows.dart';
 import 'package:mobile/features/calendar/widgets/google_calendar_color_picker.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -28,6 +32,7 @@ Future<Map<String, dynamic>?> showEventFormSheet(
   String? timezone,
   GoogleCalendarColorOptions? providerColors,
   Future<GoogleCalendarColorOptions?>? providerColorsFuture,
+  EventRecurrenceOptions? recurrence,
 }) {
   return showAppSheet<Map<String, dynamic>>(
     context: context,
@@ -38,6 +43,7 @@ Future<Map<String, dynamic>?> showEventFormSheet(
       providerColors: providerColors,
       providerColorsFuture: providerColorsFuture,
       isCurrentScope: isCurrentScope,
+      recurrence: recurrence,
     ),
   );
 }
@@ -50,6 +56,7 @@ class _EventFormContent extends StatefulWidget {
     this.timezone,
     this.providerColors,
     this.providerColorsFuture,
+    this.recurrence,
   });
 
   final CalendarEvent? event;
@@ -58,6 +65,7 @@ class _EventFormContent extends StatefulWidget {
   final GoogleCalendarColorOptions? providerColors;
   final Future<GoogleCalendarColorOptions?>? providerColorsFuture;
   final bool Function() isCurrentScope;
+  final EventRecurrenceOptions? recurrence;
 
   @override
   State<_EventFormContent> createState() => _EventFormContentState();
@@ -82,6 +90,11 @@ class _EventFormContentState extends State<_EventFormContent> {
   GoogleCalendarColorChoice? _providerColor;
   GoogleCalendarColorChoice? _initialProviderColor;
   GoogleCalendarColorOptions? _providerColors;
+  RecurrencePattern? _pattern;
+  late String _ruleZone;
+  bool _patternChanged = false;
+  bool _busy = false;
+  CalendarSeriesFailure? _failure;
 
   bool get _canUseProviderColors =>
       widget.event?.provider == 'google' &&
@@ -94,6 +107,8 @@ class _EventFormContentState extends State<_EventFormContent> {
   void initState() {
     super.initState();
     _providerColors = widget.providerColors;
+    _pattern = widget.recurrence?.pattern;
+    _ruleZone = widget.recurrence?.timeZone ?? '';
     _initialProviderColor = _storedProviderColor(_providerColors);
     unawaited(
       widget.providerColorsFuture?.then((colors) {
@@ -218,16 +233,18 @@ class _EventFormContentState extends State<_EventFormContent> {
 
     try {
       // An unchanged ambiguous fall-back wall time keeps its stored instant.
-      final start =
+      final startKept =
           _initialAllDay == _isAllDay &&
-              _sameDisplayedMinute(_initialStartWall, startAt) &&
-              _originalStart != null
+          _sameDisplayedMinute(_initialStartWall, startAt) &&
+          _originalStart != null;
+      final endKept =
+          _initialAllDay == _isAllDay &&
+          _sameDisplayedMinute(_initialEndWall, endAt) &&
+          _originalEnd != null;
+      final start = startKept
           ? _originalStart!.toUtc()
           : calendarWallToUtc(startAt, widget.timezone);
-      final end =
-          _initialAllDay == _isAllDay &&
-              _sameDisplayedMinute(_initialEndWall, endAt) &&
-              _originalEnd != null
+      final end = endKept
           ? _originalEnd!.toUtc()
           : calendarWallToUtc(endAt, widget.timezone);
       if (!end.isAfter(start)) throw const FormatException('Invalid range');
@@ -252,16 +269,85 @@ class _EventFormContentState extends State<_EventFormContent> {
         ).pop(<String, dynamic>{'providerColor': _providerColor});
         return;
       }
-      Navigator.of(context).pop(<String, dynamic>{
+      final result = <String, dynamic>{
         'title': title,
         'description': _descriptionController.text.trim(),
         'location': _locationController.text.trim(),
         'startAt': start,
         'endAt': end,
         'color': _color,
-      });
+      };
+      final recurrence = widget.recurrence;
+      if (recurrence != null &&
+          (_pattern != null || recurrence.scope != null)) {
+        unawaited(
+          _submitSeries(recurrence, result, timesKept: startKept && endKept),
+        );
+        return;
+      }
+      Navigator.of(context).pop(result);
     } on FormatException {
       setState(() => _dateTimeError = context.l10n.calendarInvalidLocalTime);
+    }
+  }
+
+  /// Series bounds are local wall times in the rule zone; all-day bounds keep
+  /// the dates shown in the form.
+  DateTime _ruleWall(DateTime instant) =>
+      calendarWallDate(instant, _isAllDay ? widget.timezone : _ruleZone);
+
+  Future<void> _submitSeries(
+    EventRecurrenceOptions recurrence,
+    Map<String, dynamic> result, {
+    required bool timesKept,
+  }) async {
+    final start = _ruleWall(result['startAt'] as DateTime);
+    final pattern = _pattern;
+    if (!recurrence.occurrenceOnly &&
+        pattern != null &&
+        !pattern.isValidFor(start)) {
+      setState(() => _failure = CalendarSeriesFailure.invalid);
+      return;
+    }
+    final sendsRule =
+        !recurrence.occurrenceOnly &&
+        pattern != null &&
+        (recurrence.scope == null ||
+            _patternChanged ||
+            _ruleZone != recurrence.timeZone);
+    setState(() {
+      _busy = true;
+      _failure = null;
+    });
+    final failure = await recurrence.onSubmit({
+      ...result,
+      'anchor': CalendarRecurrenceAnchor(
+        startLocal: recurrenceLocalString(start),
+        endLocal: recurrenceLocalString(_ruleWall(result['endAt'] as DateTime)),
+        allDay: _isAllDay,
+      ),
+      'timesChanged': !timesKept,
+      'rule': sendsRule ? pattern.toRule(_ruleZone) : null,
+    });
+    if (!mounted) return;
+    if (failure == null) {
+      // The series write already applied; callers must not write again.
+      Navigator.of(context).pop(<String, dynamic>{'series': true});
+      return;
+    }
+    setState(() {
+      _busy = false;
+      _failure = failure;
+    });
+  }
+
+  void _followStart(DateTime previous, DateTime next) {
+    final pattern = _pattern;
+    if (pattern == null) return;
+    final moved = pattern.followStart(previous, next);
+    if (moved.toRule(_ruleZone) != pattern.toRule(_ruleZone)) {
+      _pattern = moved;
+      _patternChanged = true;
     }
   }
 
@@ -277,6 +363,7 @@ class _EventFormContentState extends State<_EventFormContent> {
     final date = calendarDate(picked.year, picked.month, picked.day);
     setState(() {
       if (isStart) {
+        _followStart(_startDate, date);
         _startDate = date;
         if (_endDate.isBefore(_startDate)) _endDate = _startDate;
       } else {
@@ -362,16 +449,32 @@ class _EventFormContentState extends State<_EventFormContent> {
     final colorScheme = Theme.of(context).colorScheme;
     final dateFormat = DateFormat.yMMMd(context.l10n.localeName);
 
+    final recurrence = widget.recurrence;
+    final failure = _failure;
     return AppSheetScaffold(
-      title: _isEditing ? l10n.calendarEditEvent : l10n.calendarNewEvent,
+      title: recurrence?.scope != null
+          ? l10n.calendarRecurrenceEdit
+          : _isEditing
+          ? l10n.calendarEditEvent
+          : l10n.calendarNewEvent,
       actions: [
         AppButton.ghost(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(l10n.calendarEventCancel),
         ),
+        if (failure == CalendarSeriesFailure.conflict)
+          AppButton.secondary(
+            onPressed: () =>
+                Navigator.of(context).pop(<String, dynamic>{'reload': true}),
+            child: Text(l10n.calendarRecurrenceReload),
+          ),
         AppButton.primary(
-          onPressed: _titleController.text.trim().isNotEmpty ? _save : null,
-          child: Text(l10n.calendarEventSave),
+          onPressed: _titleController.text.trim().isNotEmpty && !_busy
+              ? _save
+              : null,
+          child: Text(
+            _busy ? l10n.calendarRecurrenceSaving : l10n.calendarEventSave,
+          ),
         ),
       ],
       child: Column(
@@ -380,6 +483,16 @@ class _EventFormContentState extends State<_EventFormContent> {
         children: [
           if (_dateTimeError != null)
             Text(_dateTimeError!, style: TextStyle(color: colorScheme.error)),
+          if (failure != null)
+            Text(
+              recurrenceFailureMessage(l10n, failure),
+              style: TextStyle(color: colorScheme.error),
+            ),
+          if (recurrence?.showFutureReset ?? false)
+            Text(
+              l10n.calendarRecurrenceFutureReset,
+              style: TextStyle(color: colorScheme.onSurfaceVariant),
+            ),
           const SizedBox(height: 16),
 
           // Title.
@@ -418,7 +531,9 @@ class _EventFormContentState extends State<_EventFormContent> {
           AppToggleRow(
             title: Text(l10n.calendarEventAllDay),
             value: _isAllDay,
-            onChanged: (v) => setState(() => _isAllDay = v),
+            onChanged: recurrence?.occurrenceOnly ?? false
+                ? null
+                : (v) => setState(() => _isAllDay = v),
           ),
 
           // Start date/time.
@@ -439,6 +554,26 @@ class _EventFormContentState extends State<_EventFormContent> {
             onDateTap: () => _pickDate(false),
             onTimeTap: _isAllDay ? null : () => _pickTime(false),
           ),
+          if (recurrence != null)
+            EventRecurrenceRows(
+              options: recurrence,
+              pattern: _pattern,
+              timeZone: _ruleZone,
+              start: calendarDate(
+                _startDate.year,
+                _startDate.month,
+                _startDate.day,
+              ),
+              onPattern: (pattern) => setState(() {
+                _pattern = pattern;
+                _patternChanged = true;
+                _failure = null;
+              }),
+              onTimeZone: (zone) => setState(() {
+                _ruleZone = zone;
+                _failure = null;
+              }),
+            ),
           const SizedBox(height: 16),
 
           // Color picker.

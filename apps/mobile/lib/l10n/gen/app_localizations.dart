@@ -39852,6 +39852,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Comments, links and activity'**
   String get taskCollabOpenDiscussion;
+
+  /// No description provided for @calendarRecurrenceRepeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get calendarRecurrenceRepeat;
+
+  /// No description provided for @calendarRecurrenceNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not repeat'**
+  String get calendarRecurrenceNone;
+
+  /// No description provided for @calendarRecurrenceDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get calendarRecurrenceDaily;
+
+  /// No description provided for @calendarRecurrenceWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get calendarRecurrenceWeekly;
+
+  /// No description provided for @calendarRecurrenceMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get calendarRecurrenceMonthly;
+
+  /// No description provided for @calendarRecurrenceYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get calendarRecurrenceYearly;
+
+  /// No description provided for @calendarRecurrenceInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'Every'**
+  String get calendarRecurrenceInterval;
+
+  /// No description provided for @calendarRecurrenceSummaryInterval.
+  ///
+  /// In en, this message translates to:
+  /// **'{frequency}, every {interval}'**
+  String calendarRecurrenceSummaryInterval(String frequency, int interval);
+
+  /// No description provided for @calendarRecurrenceWeekdays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days of the week'**
+  String get calendarRecurrenceWeekdays;
+
+  /// No description provided for @calendarRecurrenceMonthPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat by'**
+  String get calendarRecurrenceMonthPattern;
+
+  /// No description provided for @calendarRecurrenceMonthDayPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Day of month'**
+  String get calendarRecurrenceMonthDayPattern;
+
+  /// No description provided for @calendarRecurrenceMonthWeekdayPattern.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekday in month'**
+  String get calendarRecurrenceMonthWeekdayPattern;
+
+  /// No description provided for @calendarRecurrenceMonthDayOverflow.
+  ///
+  /// In en, this message translates to:
+  /// **'When the day is missing'**
+  String get calendarRecurrenceMonthDayOverflow;
+
+  /// No description provided for @calendarRecurrenceMonthDaySkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip that month'**
+  String get calendarRecurrenceMonthDaySkip;
+
+  /// No description provided for @calendarRecurrenceMonthDayLast.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the last day'**
+  String get calendarRecurrenceMonthDayLast;
+
+  /// No description provided for @calendarRecurrenceWeekIndex.
+  ///
+  /// In en, this message translates to:
+  /// **'Which week'**
+  String get calendarRecurrenceWeekIndex;
+
+  /// No description provided for @calendarRecurrenceOrdinal1.
+  ///
+  /// In en, this message translates to:
+  /// **'First'**
+  String get calendarRecurrenceOrdinal1;
+
+  /// No description provided for @calendarRecurrenceOrdinal2.
+  ///
+  /// In en, this message translates to:
+  /// **'Second'**
+  String get calendarRecurrenceOrdinal2;
+
+  /// No description provided for @calendarRecurrenceOrdinal3.
+  ///
+  /// In en, this message translates to:
+  /// **'Third'**
+  String get calendarRecurrenceOrdinal3;
+
+  /// No description provided for @calendarRecurrenceOrdinal4.
+  ///
+  /// In en, this message translates to:
+  /// **'Fourth'**
+  String get calendarRecurrenceOrdinal4;
+
+  /// No description provided for @calendarRecurrenceOrdinalLast.
+  ///
+  /// In en, this message translates to:
+  /// **'Last'**
+  String get calendarRecurrenceOrdinalLast;
+
+  /// No description provided for @calendarRecurrenceMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get calendarRecurrenceMonth;
+
+  /// No description provided for @calendarRecurrenceEnding.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat until'**
+  String get calendarRecurrenceEnding;
+
+  /// No description provided for @calendarRecurrenceEndNever.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get calendarRecurrenceEndNever;
+
+  /// No description provided for @calendarRecurrenceEndCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Number of occurrences'**
+  String get calendarRecurrenceEndCount;
+
+  /// No description provided for @calendarRecurrenceEndUntil.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get calendarRecurrenceEndUntil;
+
+  /// No description provided for @calendarRecurrenceRelativeWeekdayHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'With several weekdays selected, each month uses the earliest matching date in the selected week. The start date must match this pattern.'**
+  String get calendarRecurrenceRelativeWeekdayHelp;
+
+  /// No description provided for @calendarRecurrenceTimezone.
+  ///
+  /// In en, this message translates to:
+  /// **'Time zone'**
+  String get calendarRecurrenceTimezone;
+
+  /// No description provided for @calendarRecurrenceScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply changes to'**
+  String get calendarRecurrenceScope;
+
+  /// No description provided for @calendarRecurrenceScopeThis.
+  ///
+  /// In en, this message translates to:
+  /// **'Only this occurrence'**
+  String get calendarRecurrenceScopeThis;
+
+  /// No description provided for @calendarRecurrenceScopeFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'This and following occurrences'**
+  String get calendarRecurrenceScopeFuture;
+
+  /// No description provided for @calendarRecurrenceScopeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Entire series'**
+  String get calendarRecurrenceScopeAll;
+
+  /// No description provided for @calendarRecurrenceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recurring event'**
+  String get calendarRecurrenceDelete;
+
+  /// No description provided for @calendarRecurrenceFutureReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Edits and cancellations for this and following occurrences will be reset when you save.'**
+  String get calendarRecurrenceFutureReset;
+
+  /// No description provided for @calendarRecurrenceEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit recurring event'**
+  String get calendarRecurrenceEdit;
+
+  /// No description provided for @calendarRecurrenceConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This series changed elsewhere. Reload it before saving.'**
+  String get calendarRecurrenceConflict;
+
+  /// No description provided for @calendarRecurrenceReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload series'**
+  String get calendarRecurrenceReload;
+
+  /// No description provided for @calendarRecurrenceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save this change. Your draft is retained; try again.'**
+  String get calendarRecurrenceFailed;
+
+  /// No description provided for @calendarRecurrenceInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the title, dates, time zone and recurrence settings.'**
+  String get calendarRecurrenceInvalid;
+
+  /// No description provided for @calendarRecurrenceUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This recurring event is unavailable.'**
+  String get calendarRecurrenceUnavailable;
+
+  /// No description provided for @calendarRecurrenceOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to change recurring events. Your draft is retained.'**
+  String get calendarRecurrenceOffline;
+
+  /// No description provided for @calendarRecurrenceDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to change events in this calendar.'**
+  String get calendarRecurrenceDenied;
+
+  /// No description provided for @calendarRecurrenceLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load recurring events.'**
+  String get calendarRecurrenceLoadFailed;
+
+  /// No description provided for @calendarRecurrenceProviderReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'This provider recurrence rule cannot be safely edited here. Manage the series in its original calendar.'**
+  String get calendarRecurrenceProviderReadOnly;
+
+  /// No description provided for @calendarRecurrenceSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get calendarRecurrenceSaving;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

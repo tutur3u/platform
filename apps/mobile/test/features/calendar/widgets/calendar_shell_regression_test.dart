@@ -40,6 +40,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+import '../../../helpers/empty_calendar_series_repository.dart';
 import '../../../helpers/pump_app.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
@@ -365,6 +366,7 @@ class _CalendarShellHarness {
               path: Routes.calendar,
               builder: (_, _) => CalendarPage(
                 repositoryFactory: () => repository,
+                seriesRepositoryFactory: EmptyCalendarSeriesRepository.new,
                 cacheStore: storage,
               ),
             ),

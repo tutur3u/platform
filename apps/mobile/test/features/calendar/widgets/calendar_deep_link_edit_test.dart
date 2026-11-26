@@ -19,6 +19,8 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+import '../../../helpers/empty_calendar_series_repository.dart';
+
 class _Workspace extends Mock implements WorkspaceCubit {}
 
 class _Timezone extends Mock implements TimezoneSettingsCubit {}
@@ -108,6 +110,7 @@ void main() {
                   child: CalendarPage(
                     initialEventId: 'fixture-event',
                     repositoryFactory: () => repository,
+                    seriesRepositoryFactory: EmptyCalendarSeriesRepository.new,
                   ),
                 ),
               ),

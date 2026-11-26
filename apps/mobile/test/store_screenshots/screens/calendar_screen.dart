@@ -14,6 +14,7 @@ import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 
+import '../../helpers/empty_calendar_series_repository.dart';
 import '../fixtures/calendar_fixture.dart';
 import '../fixtures/store_team.dart';
 import '../store_screenshot_app.dart';
@@ -56,6 +57,7 @@ final StoreScreen calendarStoreScreen = StoreScreen(
       ],
       child: CalendarPage(
         repositoryFactory: () => StoreCalendarRepository(locale),
+        seriesRepositoryFactory: EmptyCalendarSeriesRepository.new,
         cacheStore: StoreEmptyCacheStore(),
       ),
     );

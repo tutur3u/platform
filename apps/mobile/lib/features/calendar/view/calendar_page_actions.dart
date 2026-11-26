@@ -9,10 +9,13 @@ extension _CalendarPageActions on _CalendarViewState {
       return;
     }
 
+    final zone = await _seriesZone(cubit.state.timezone);
+    if (!context.mounted) return;
     final result = await showEventFormSheet(
       context,
       initialStartTime: startTime,
       timezone: cubit.state.timezone,
+      recurrence: _createRecurrence(context, wsId, zone),
       isCurrentScope: () =>
           mounted &&
           context.mounted &&
@@ -20,6 +23,7 @@ extension _CalendarPageActions on _CalendarViewState {
           context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId,
     );
     if (result == null ||
+        result['series'] == true ||
         !context.mounted ||
         currentCacheUserId() != userId ||
         context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
@@ -42,6 +46,14 @@ extension _CalendarPageActions on _CalendarViewState {
     CalendarEvent event, {
     CalendarEvent? sourceEvent,
   }) async {
+    // Virtual occurrences change only through scoped series operations.
+    final occurrence = context.read<CalendarSeriesCubit>().occurrenceFor(
+      event.id,
+    );
+    if (occurrence != null) {
+      await _showOccurrenceDetail(context, event, occurrence);
+      return;
+    }
     final originalUserId = currentCacheUserId();
     final originalWorkspaceId = context
         .read<WorkspaceCubit>()

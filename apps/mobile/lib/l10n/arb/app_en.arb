@@ -11005,5 +11005,60 @@
   "boardShareSaved": "Board share saved",
   "boardShareRemoved": "Board share removed",
   "boardSharePermissionError": "You don't have permission to view this. Ask a workspace admin for project management access.",
-  "taskCollabOpenDiscussion": "Comments, links and activity"
+  "taskCollabOpenDiscussion": "Comments, links and activity",
+  "calendarRecurrenceRepeat": "Repeat",
+  "calendarRecurrenceNone": "Does not repeat",
+  "calendarRecurrenceDaily": "Daily",
+  "calendarRecurrenceWeekly": "Weekly",
+  "calendarRecurrenceMonthly": "Monthly",
+  "calendarRecurrenceYearly": "Yearly",
+  "calendarRecurrenceInterval": "Every",
+  "calendarRecurrenceSummaryInterval": "{frequency}, every {interval}",
+  "calendarRecurrenceWeekdays": "Days of the week",
+  "calendarRecurrenceMonthPattern": "Repeat by",
+  "calendarRecurrenceMonthDayPattern": "Day of month",
+  "calendarRecurrenceMonthWeekdayPattern": "Weekday in month",
+  "calendarRecurrenceMonthDayOverflow": "When the day is missing",
+  "calendarRecurrenceMonthDaySkip": "Skip that month",
+  "calendarRecurrenceMonthDayLast": "Use the last day",
+  "calendarRecurrenceWeekIndex": "Which week",
+  "calendarRecurrenceOrdinal1": "First",
+  "calendarRecurrenceOrdinal2": "Second",
+  "calendarRecurrenceOrdinal3": "Third",
+  "calendarRecurrenceOrdinal4": "Fourth",
+  "calendarRecurrenceOrdinalLast": "Last",
+  "calendarRecurrenceMonth": "Month",
+  "calendarRecurrenceEnding": "Repeat until",
+  "calendarRecurrenceEndNever": "No end date",
+  "calendarRecurrenceEndCount": "Number of occurrences",
+  "calendarRecurrenceEndUntil": "End date",
+  "calendarRecurrenceRelativeWeekdayHelp": "With several weekdays selected, each month uses the earliest matching date in the selected week. The start date must match this pattern.",
+  "calendarRecurrenceTimezone": "Time zone",
+  "calendarRecurrenceScope": "Apply changes to",
+  "calendarRecurrenceScopeThis": "Only this occurrence",
+  "calendarRecurrenceScopeFuture": "This and following occurrences",
+  "calendarRecurrenceScopeAll": "Entire series",
+  "calendarRecurrenceDelete": "Delete recurring event",
+  "calendarRecurrenceFutureReset": "Edits and cancellations for this and following occurrences will be reset when you save.",
+  "calendarRecurrenceEdit": "Edit recurring event",
+  "calendarRecurrenceConflict": "This series changed elsewhere. Reload it before saving.",
+  "calendarRecurrenceReload": "Reload series",
+  "calendarRecurrenceFailed": "Could not save this change. Your draft is retained; try again.",
+  "calendarRecurrenceInvalid": "Check the title, dates, time zone and recurrence settings.",
+  "calendarRecurrenceUnavailable": "This recurring event is unavailable.",
+  "calendarRecurrenceOffline": "Connect to the internet to change recurring events. Your draft is retained.",
+  "calendarRecurrenceDenied": "You don't have permission to change events in this calendar.",
+  "calendarRecurrenceLoadFailed": "Couldn't load recurring events.",
+  "calendarRecurrenceProviderReadOnly": "This provider recurrence rule cannot be safely edited here. Manage the series in its original calendar.",
+  "calendarRecurrenceSaving": "Saving…",
+  "@calendarRecurrenceSummaryInterval": {
+    "placeholders": {
+      "frequency": {
+        "type": "String"
+      },
+      "interval": {
+        "type": "int"
+      }
+    }
+  }
 }
