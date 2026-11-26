@@ -2,11 +2,47 @@ import type {
   GuardWindowOutcome,
   GuardWindowSubject,
 } from '@tuturuuu/utils/abuse-guard/client';
-import { createExpiringMap } from '@tuturuuu/utils/abuse-guard/local-cache';
+import { createLocalWindowLimiter } from '@tuturuuu/utils/abuse-guard/local-cache';
+import { networkSubject } from '@tuturuuu/utils/network-subject';
+import { parsePositiveIntEnv } from '@tuturuuu/utils/positive-int-env';
 
-/** Five guest join attempts per network per meeting link every ten minutes. */
-export const MEET_GUEST_JOIN_LIMIT = 5;
+/**
+ * Guest join attempts per network for one meeting link per window: an IPv4
+ * address, or an IPv6 /64 (`networkSubject`). A
+ * classroom behind one school NAT joins together, so this covers a full class
+ * plus retries. Turnstile, the name checks and host admission stay the gate
+ * for real access; this only bounds how fast one network can mint sessions.
+ */
+export const MEET_GUEST_JOIN_LIMIT = 60;
 export const MEET_GUEST_JOIN_WINDOW_MS = 10 * 60_000;
+/**
+ * Guest join attempts per network across every meeting per window, so one
+ * address cannot mint guests over many meetings; it covers one school running
+ * two or three rooms.
+ */
+export const MEET_GUEST_JOIN_NETWORK_LIMIT = 120;
+export const MEET_GUEST_JOIN_NETWORK_WINDOW_MS = 60 * 60_000;
+/**
+ * Overrides for the two limits, parsed like the proxy's limits: anything but
+ * a plain positive integer keeps the default.
+ */
+export const MEET_GUEST_JOIN_LIMIT_ENV = 'MEET_GUEST_JOIN_LIMIT';
+export const MEET_GUEST_JOIN_NETWORK_LIMIT_ENV =
+  'MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT';
+
+/** The effective per-meeting and cross-meeting join limits. */
+export function meetGuestJoinLimits() {
+  return {
+    meeting: parsePositiveIntEnv(
+      MEET_GUEST_JOIN_LIMIT_ENV,
+      MEET_GUEST_JOIN_LIMIT
+    ),
+    network: parsePositiveIntEnv(
+      MEET_GUEST_JOIN_NETWORK_LIMIT_ENV,
+      MEET_GUEST_JOIN_NETWORK_LIMIT
+    ),
+  };
+}
 
 export type MeetGuestJoinLimitDecision =
   | { ok: true }
@@ -20,14 +56,21 @@ export function meetGuestJoinWindows(
   meetingId: string,
   network: string
 ): GuardWindowSubject[] {
+  const limits = meetGuestJoinLimits();
   return [
     {
       partition: `meet-guest-ip:${network}`,
       windows: [
         {
           key: `join:${meetingId}:10m`,
-          limit: MEET_GUEST_JOIN_LIMIT,
+          limit: limits.meeting,
           windowMs: MEET_GUEST_JOIN_WINDOW_MS,
+          algo: 'fixed',
+        },
+        {
+          key: 'join:all-meetings:1h',
+          limit: limits.network,
+          windowMs: MEET_GUEST_JOIN_NETWORK_WINDOW_MS,
           algo: 'fixed',
         },
       ],
@@ -35,11 +78,13 @@ export function meetGuestJoinWindows(
   ];
 }
 
-let localAttempts = createExpiringMap<number>(10_000);
+/** Most network and meeting counters one isolate keeps while counting locally. */
+const LOCAL_ATTEMPT_ENTRIES = 10_000;
+let localAttempts = createLocalWindowLimiter(LOCAL_ATTEMPT_ENTRIES);
 
 /** Test hook: forget the per-isolate attempt counts. */
 export function resetMeetGuestJoinLimiter() {
-  localAttempts = createExpiringMap<number>(10_000);
+  localAttempts = createLocalWindowLimiter(LOCAL_ATTEMPT_ENTRIES);
 }
 
 function retryAfter(resetAt: number, now: number) {
@@ -57,7 +102,8 @@ export async function checkMeetGuestJoinLimit(
   limiter: MeetGuestJoinLimiter | null,
   now: () => number = Date.now
 ): Promise<MeetGuestJoinLimitDecision> {
-  const network = input.network?.trim() || 'unknown';
+  // An IPv6 client counts as its /64, so rotating addresses opens no window.
+  const network = networkSubject(input.network?.trim() || 'unknown');
   if (limiter) {
     try {
       const outcome = await limiter.hitWindows(
@@ -72,14 +118,20 @@ export async function checkMeetGuestJoinLimit(
       });
     }
   }
-  const key = `${input.meetingId}:${network}`;
+  // The same windows as the store, all-or-nothing: a refused attempt counts
+  // in neither.
   const at = now();
-  const count = localAttempts.get(key, at) ?? 0;
-  if (count >= MEET_GUEST_JOIN_LIMIT)
-    return {
-      ok: false,
-      retryAfterSeconds: Math.ceil(MEET_GUEST_JOIN_WINDOW_MS / 1000),
-    };
-  localAttempts.set(key, count + 1, at + MEET_GUEST_JOIN_WINDOW_MS);
-  return { ok: true };
+  const denied = localAttempts.hit(
+    meetGuestJoinWindows(input.meetingId, network)[0]!.windows.map(
+      (window) => ({
+        key: `${network}:${window.key}`,
+        limit: window.limit,
+        windowMs: window.windowMs,
+      })
+    ),
+    at
+  );
+  return denied
+    ? { ok: false, retryAfterSeconds: retryAfter(denied.resetAt, at) }
+    : { ok: true };
 }

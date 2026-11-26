@@ -294,3 +294,24 @@ it('refuses a spent or foreign puzzle pass', async () => {
   expect(response.headers.get('Set-Cookie')).toBeNull();
   expect(mocks.risk).not.toHaveBeenCalled();
 });
+
+it('refuses the 61st join from one network with the existing rate-limit code', async () => {
+  const actual = await vi.importActual<
+    typeof import('@tuturuuu/meet-core/features/call/lib/guest-rate-limit')
+  >('@tuturuuu/meet-core/features/call/lib/guest-rate-limit');
+  actual.resetMeetGuestJoinLimiter();
+  // The real limit, counted locally as when the shared store is unbound.
+  mocks.limit.mockImplementation(actual.checkMeetGuestJoinLimit);
+  const join = () =>
+    POST(request({ displayName: 'An', turnstileToken: 't' }), params);
+  for (let guest = 0; guest < actual.MEET_GUEST_JOIN_LIMIT; guest++)
+    expect((await join()).status).toBe(200);
+  const refused = await join();
+  expect(refused.status).toBe(429);
+  expect(await refused.json()).toMatchObject({
+    code: 'MEET_GUEST_RATE_LIMITED',
+  });
+  expect(Number(refused.headers.get('Retry-After'))).toBeGreaterThan(0);
+  // Turnstile still checked every admitted attempt and never the refused one.
+  expect(mocks.verify).toHaveBeenCalledTimes(actual.MEET_GUEST_JOIN_LIMIT);
+});

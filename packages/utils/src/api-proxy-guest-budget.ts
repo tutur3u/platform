@@ -9,12 +9,15 @@
  * display names and unsigned or foreign-meeting cookies resolve to nothing and
  * stay on the anonymous budget.
  *
- * A guest request is checked against three subjects, in order:
- * - the guest itself, with a budget sized for in-call polling;
+ * A guest request is checked against the guest itself first, with a budget
+ * sized for in-call polling; a guest that floods is refused there and never
+ * charges the shared buckets. Only then are two aggregates checked together:
  * - the meeting, a fixed multiple of one guest, so minting many guest
  *   sessions for one meeting never multiplies its traffic past that cap;
- * - the address, a fixed multiple of one guest, so many guest sessions from
+ * - the network, a fixed multiple of one guest, so many guest sessions from
  *   one address stay bounded while a classroom behind one NAT keeps working.
+ *   An IPv6 client counts as its /64 (`networkSubject`), so rotating
+ *   addresses inside it never opens a fresh cap.
  */
 import type { NextRequest, NextResponse } from 'next/server';
 import type { RateLimitConfig, RateLimitProfile } from './api-proxy-guard';
@@ -22,6 +25,8 @@ import {
   enforceLimiterSubjects,
   type LimiterSubject,
 } from './api-proxy-limiter-subjects';
+import { networkSubject } from './network-subject';
+import { parsePositiveIntEnv } from './positive-int-env';
 
 /** A guest whose server-signed session the app verified for this request. */
 export type VerifiedGuestActor = {
@@ -46,11 +51,6 @@ export const GUEST_ADDRESS_MULTIPLIER = 40;
 /** Guests in one meeting whose combined traffic one meeting may carry. */
 export const GUEST_SCOPE_MULTIPLIER = 100;
 
-function envLimit(name: string, fallback: number) {
-  const parsed = Number.parseInt(process.env[name] ?? '', 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
 /**
  * One guest's budget. In-call polling (polls, transcript consent, Room Mira,
  * the board list or the classroom pen board) stays under a minute's and an
@@ -62,7 +62,11 @@ export function guestRateLimits(): RateLimitProfile {
     duration: RateLimitConfig['duration'],
     fallback: number,
     env: string
-  ): RateLimitConfig => ({ window, duration, limit: envLimit(env, fallback) });
+  ): RateLimitConfig => ({
+    window,
+    duration,
+    limit: parsePositiveIntEnv(env, fallback),
+  });
   return {
     get: [
       config('minute', '1 m', 120, 'API_PROXY_GUEST_READ_LIMIT_MINUTE'),
@@ -109,7 +113,7 @@ export function guestLimiterSubjects(
     ...(ipKey
       ? [
           {
-            id: `guest-${ipKey}`,
+            id: `guest-net:${networkSubject(ipKey.replace(/^ip:/u, ''))}`,
             prefix: `${prefix}:address-x${GUEST_ADDRESS_MULTIPLIER}`,
             rateLimits: aggregate(profile, GUEST_ADDRESS_MULTIPLIER),
           },
@@ -139,8 +143,12 @@ export async function resolveGuestActor(
   }
 }
 
-/** Charges a verified guest request; returns the 429 for the first exhausted window. */
-export function enforceGuestBudget(
+/**
+ * Charges a verified guest request and returns the 429 for an exhausted
+ * window. The guest's own budget is checked first; the meeting and network
+ * aggregates are then checked together, and the meeting's refusal wins.
+ */
+export async function enforceGuestBudget(
   req: NextRequest,
   actor: VerifiedGuestActor,
   context: {
@@ -152,19 +160,21 @@ export function enforceGuestBudget(
     policyName: string;
   }
 ): Promise<NextResponse | null> {
-  return enforceLimiterSubjects(
-    req,
-    guestLimiterSubjects(
-      context.prefixBase,
-      context.routeKey,
-      actor,
-      context.ipKey
-    ),
-    {
+  const [guest, ...aggregates] = guestLimiterSubjects(
+    context.prefixBase,
+    context.routeKey,
+    actor,
+    context.ipKey
+  );
+  const enforce = (subject: LimiterSubject) =>
+    enforceLimiterSubjects(req, [subject], {
       callerClass: GUEST_CALLER_CLASS,
       isDev: context.isDev,
       isRead: context.isRead,
       policyName: context.policyName,
-    }
-  );
+    });
+  const own = guest ? await enforce(guest) : null;
+  if (own) return own;
+  const shared = await Promise.all(aggregates.map(enforce));
+  return shared.find((rejection) => rejection !== null) ?? null;
 }

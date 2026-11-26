@@ -1196,9 +1196,21 @@ next token.
   automatically** is on.
   Media locks apply to guests, and everyone sees the guest marker described
   under Participant identity markers.
-- Each network may attempt five guest joins per meeting link every ten minutes.
-  Failed checks count. The shared abuse-guard store decides when it is bound;
-  otherwise attempts are counted per isolate, with Turnstile still required.
+- Each network may attempt 60 guest joins per meeting link every ten minutes,
+  so a class behind one school NAT can join together, and 120 guest joins an
+  hour across all meetings, so one address cannot mint guests over many
+  meetings (one school running two or three rooms fits). A network is an
+  IPv4 address or an IPv6 /64. Failed checks count, and an attempt over
+  either limit is refused with 429 `MEET_GUEST_RATE_LIMITED` and a
+  `Retry-After`, before Turnstile runs. The shared abuse-guard store decides
+  when it is bound; otherwise the same windows are counted per isolate. The
+  limits are `MEET_GUEST_JOIN_LIMIT` and `MEET_GUEST_JOIN_NETWORK_LIMIT` in
+  `guest-rate-limit.ts`, overridable through the `MEET_GUEST_JOIN_LIMIT` and
+  `MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT` variables; anything but a plain
+  positive integer keeps the default. These limits only bound how fast
+  sessions are minted: Turnstile, the name checks and host admission still
+  decide who gets in. Regression coverage: `guest-rate-limit.test.ts` and the
+  guest join `route.test.ts`.
 - The join page server-renders the Turnstile script under the response's CSP
   nonce and preconnects to `challenges.cloudflare.com`, so the check starts
   loading while the page hydrates. A name typed before hydration is kept, and
@@ -2194,9 +2206,15 @@ Operating requirements:
     (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`);
   - the meeting: 100 guests' minute and hour budget combined, so minting
     guest sessions for one meeting cannot multiply its traffic;
-  - the address: 40 guests' minute and hour budget combined, so a classroom
+  - the network: 40 guests' minute and hour budget combined, so a classroom
     behind one school NAT keeps working while many sessions from one address
-    stay bounded.
+    stay bounded. An IPv6 client counts as its /64, so rotating addresses
+    inside it opens no fresh cap.
+
+  The guest's own budget is checked first, so a guest over it never charges
+  the meeting or network caps; those two are then checked together. Every
+  `API_PROXY_*` limit override must be a plain positive integer; a value such
+  as `12abc`, zero or a negative number keeps the default.
 
   Only the default route policy takes the guest budget; sign-in, OTP and
   appeal routes keep their own limits, and an account actor keeps its user

@@ -40,6 +40,7 @@ import {
   isFinanceRead,
 } from './api-proxy-read-policy';
 import { guardRejection } from './guard-rejection';
+import { parsePositiveIntEnv } from './positive-int-env';
 import { guardOfflineDownloadRequest } from './offline-download-guard';
 import { buildProxyRateLimitRejection } from './proxy-rate-limit-rejection';
 import { validateRequestEmojiLimit } from './request-emoji-limit';
@@ -104,32 +105,6 @@ export type GuardOptions = {
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
-
-function parsePositiveIntEnv(
-  name: string,
-  fallback: number,
-  aliases: string[] = []
-): number {
-  const rawValue = process.env[name];
-  if (rawValue) {
-    const parsed = Number.parseInt(rawValue, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-  }
-
-  for (const alias of aliases) {
-    const aliasValue = process.env[alias];
-    if (!aliasValue) {
-      continue;
-    }
-
-    const parsed = Number.parseInt(aliasValue, 10);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
-  }
-
-  return fallback;
-}
 
 function createConfig(
   window: RateLimitWindow,

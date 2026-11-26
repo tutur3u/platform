@@ -135,7 +135,7 @@ describe('the verified guest budget at the API proxy guard', () => {
     expect(await poll({ guest: 'guest-a' })).toBeNull();
     expect(mocks.ids).toContain(`guest:${MEETING}:guest-a`);
     expect(mocks.ids).toContain(`guest-scope:${MEETING}`);
-    expect(mocks.ids).toContain(`guest-ip:${SCHOOL_IP}`);
+    expect(mocks.ids).toContain(`guest-net:${SCHOOL_IP}`);
     expect(mocks.ids).not.toContain(`ip:${SCHOOL_IP}`);
   });
 
@@ -206,6 +206,45 @@ describe('the verified guest budget at the API proxy guard', () => {
     expect(extra?.headers.get('X-RateLimit-Caller-Class')).toBe('guest');
     // Another address is not affected.
     expect(await poll({ guest: 'minted-guest', ip: '192.0.2.44' })).toBeNull();
+  });
+
+  it('counts an IPv6 client by its /64, so rotating addresses opens no cap', async () => {
+    vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '3');
+    const { GUEST_ADDRESS_MULTIPLIER } = await import(
+      '../api-proxy-guest-budget.js'
+    );
+    // Every guest, and every read, from a different address in one /64.
+    let host = 0;
+    const rotating = () => `2001:db8:aa:bb::${(++host).toString(16)}`;
+    for (let guest = 0; guest < GUEST_ADDRESS_MULTIPLIER; guest++)
+      for (let read = 0; read < 3; read++)
+        expect(
+          await poll({ guest: `guest-${guest}`, ip: rotating() })
+        ).toBeNull();
+    expect(mocks.ids).toContain('guest-net:2001:db8:aa:bb::/64');
+    const extra = await poll({ guest: 'minted-guest', ip: rotating() });
+    expect(extra?.status).toBe(429);
+    expect(extra?.headers.get('X-RateLimit-Caller-Class')).toBe('guest');
+    // Another /64 keeps its own cap.
+    expect(
+      await poll({ guest: 'minted-guest', ip: '2001:db8:aa:bc::1' })
+    ).toBeNull();
+  });
+
+  it('never charges the shared caps for a guest over its own budget', async () => {
+    vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '1');
+    expect(await poll({ guest: 'guest-a' })).toBeNull();
+    mocks.ids.length = 0;
+    expect((await poll({ guest: 'guest-a' }))?.status).toBe(429);
+    expect(mocks.ids.every((id) => id === `guest:${MEETING}:guest-a`)).toBe(
+      true
+    );
+  });
+
+  it('keeps junk overrides on the default guest budget', async () => {
+    vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '1abc');
+    const { guestRateLimits } = await import('../api-proxy-guest-budget.js');
+    expect(guestRateLimits().get[0]?.limit).toBe(120);
   });
 
   it('holds the per-meeting cap however many guests and addresses join', async () => {
