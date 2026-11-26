@@ -195,10 +195,14 @@ share belongs to that location.
 
 Product images are read through `GET products/{id}/image` in the Inventory app.
 It needs inventory read access (catalog view, or create-sales, as the products
-list does) and no drive access. It signs only the product's own stored image:
-the path comes from that product's `avatar_url` in the requested workspace and
-must be a single object under `inventory/media/product-featured-image/`; other
-workspaces, other media targets, traversal segments and public URLs answer 404.
+list does) and no drive access, and like the other single-product routes it
+accepts Inventory app sessions and native bearer clients only. It signs only
+the product's own stored image: the path comes from that product's
+`avatar_url` in the requested workspace and must be a single object under
+`inventory/media/product-featured-image/`; other workspaces, other media
+targets, traversal segments and public URLs answer 404. A stored URL that names
+the workspace by the `personal` or `internal` route slug is read only when the
+slug is that workspace (a personal workspace, or the root workspace).
 It redirects to a fresh one-hour signed URL (an `<img src>` on web) or, with
 `?format=json`, returns `{ signedUrl, expiresAt }` for native clients. Responses
 are `private, no-store`. Regression coverage: the route and
@@ -211,11 +215,16 @@ mobile uses HTTPS only and retries once without `Content-Type`, as web does.
 The product stores the stable share URL,
 `https://tuturuuu.com/api/v1/workspaces/{ws}/storage/share?path={path}` (the
 absolute form of `buildWorkspaceStorageShareUrl`, on the canonical platform
-origin), not the signed read URL, which expires after at most seven days.
+origin), not the signed read URL, which expires after at most seven days. The
+share URL names the workspace by the UUID in the upload's storage key, never the
+page's route slug.
 Storefront, listing and bundle media keep the signed read URL because they are
-shown publicly. Web renders product images through the product image route and
-shows any other stored value, such as a public CDN image, as stored; the upload
-field previews a new upload from its signed read URL until the form saves.
+shown publicly. Web renders product images through the product image route,
+resolved under the app's mount (`/inventory/api/...` on `tuturuuu.com/inventory`),
+and shows any other stored value, such as a public CDN image, as stored; the
+upload field previews a new upload from its signed read URL until the form
+saves. A sale line shows the image it was sold with: the route signs it when it
+is still the product's image, and an older image renders as stored.
 
 Mobile reads a stored share URL or Supabase signed `workspaces` URL through the
 product image route, falling back to the storage share route when the product
