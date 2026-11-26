@@ -293,6 +293,27 @@ void main() {
         expect(fetched, ['https://storage.example/s']);
       });
 
+      test('a slug-named URL never falls back to the share route', () async {
+        final api = _Api();
+        when(
+          () => api.getJson(route),
+        ).thenThrow(const ApiException(message: 'Not found', statusCode: 404));
+        await expectLater(
+          load(
+            inventoryImageShareUrl(
+              'personal',
+              'inventory/media/slug.png',
+              origin: origin,
+            ),
+            api,
+            productId: product,
+            userId: 'u1',
+          ),
+          throwsA(isA<InventoryImageUnavailable>()),
+        );
+        verifyNever(() => api.postJson(any(), any()));
+      });
+
       test('a refusal is remembered per account', () async {
         final api = _Api();
         when(

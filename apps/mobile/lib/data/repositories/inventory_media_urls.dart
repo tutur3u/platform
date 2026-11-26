@@ -29,10 +29,18 @@ final class InventoryImageDirect extends InventoryImageSource {
 /// A workspace object: a share URL on the platform origin, or a Supabase
 /// signed `workspaces` URL ([legacy]) whose token expires.
 final class InventoryImageObject extends InventoryImageSource {
-  const InventoryImageObject(this.path, {required this.legacy});
+  const InventoryImageObject(
+    this.path, {
+    required this.legacy,
+    this.slugNamed = false,
+  });
 
   final String path;
   final bool legacy;
+
+  /// The stored URL names the workspace by a route slug, which only the
+  /// product image route can check against the product's workspace.
+  final bool slugNamed;
 }
 
 /// A storage URL for another workspace or an unexpected host; never read.
@@ -75,7 +83,11 @@ InventoryImageSource classifyInventoryImageUrl(
         !_safePath(path)) {
       return const InventoryImageRefused();
     }
-    return InventoryImageObject(path, legacy: false);
+    return InventoryImageObject(
+      path,
+      legacy: false,
+      slugNamed: workspace != workspaceId.toLowerCase(),
+    );
   }
   const signed = ['storage', 'v1', 'object', 'sign', 'workspaces'];
   final isSigned =
@@ -154,7 +166,7 @@ Future<Uint8List> fetchInventoryProductImage(
       throw const InventoryImageUnavailable();
     case InventoryImageDirect():
       return await fetch(url);
-    case InventoryImageObject(:final path, :final legacy):
+    case InventoryImageObject(:final path, :final legacy, :final slugNamed):
       final refusalKey = '${userId ?? ''}/$workspaceId/$path';
       Future<Uint8List> refused() async {
         if (legacy) return await fetch(url);
@@ -176,6 +188,11 @@ Future<Uint8List> fetchInventoryProductImage(
           }
           // A missing route or image falls through to the share route.
         }
+      }
+      // The share route trusts the workspace in its own path, so a
+      // slug-named URL never falls back to it.
+      if ((signedUrl == null || signedUrl.isEmpty) && slugNamed) {
+        return await refused();
       }
       if (signedUrl == null || signedUrl.isEmpty) {
         try {
