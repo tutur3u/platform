@@ -41,4 +41,3 @@ describe('uppercasing', () => {
     expect(localeAware).not.toHaveBeenCalled();
   });
 });
-

@@ -7,8 +7,7 @@ class FakeSocket {
   sent: any[] = [];
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: string }) => void) | null = null;
-  onclose: ((event?: { code?: number; reason?: string }) => void) | null =
-    null;
+  onclose: ((event?: { code?: number; reason?: string }) => void) | null = null;
   onerror: (() => void) | null = null;
   constructor(
     public url: string,

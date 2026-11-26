@@ -194,9 +194,8 @@ describe('the verified guest budget at the API proxy guard', () => {
 
   it('holds the per-address guest ceiling for guest sessions from one IP', async () => {
     vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '3');
-    const { GUEST_ADDRESS_MULTIPLIER } = await import(
-      '../api-proxy-guest-budget.js'
-    );
+    const { GUEST_ADDRESS_MULTIPLIER } =
+      await import('../api-proxy-guest-budget.js');
     // Each guest uses its whole minute; the address carries 40 guests' worth.
     for (let guest = 0; guest < GUEST_ADDRESS_MULTIPLIER; guest++)
       for (let read = 0; read < 3; read++)
@@ -210,9 +209,8 @@ describe('the verified guest budget at the API proxy guard', () => {
 
   it('counts an IPv6 client by its /64, so rotating addresses opens no cap', async () => {
     vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '3');
-    const { GUEST_ADDRESS_MULTIPLIER } = await import(
-      '../api-proxy-guest-budget.js'
-    );
+    const { GUEST_ADDRESS_MULTIPLIER } =
+      await import('../api-proxy-guest-budget.js');
     // Every guest, and every read, from a different address in one /64.
     let host = 0;
     const rotating = () => `2001:db8:aa:bb::${(++host).toString(16)}`;
@@ -262,7 +260,7 @@ describe('the verified guest budget at the API proxy guard', () => {
   async function flood(network: string, reads: number, perGuest: number) {
     let passed = 0;
     for (let read = 0; read < reads; read++) {
-      const guest = `${network}-guest-${Math.floor(read / perGuest)}`;
+      const guest = `${network.replaceAll('.', '-')}-guest-${Math.floor(read / perGuest)}`;
       if ((await poll({ guest, ip: network })) === null) passed++;
     }
     return passed;
@@ -270,9 +268,8 @@ describe('the verified guest budget at the API proxy guard', () => {
 
   it('never charges the meeting cap for a network over its own cap', async () => {
     vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '3');
-    const { GUEST_ADDRESS_MULTIPLIER } = await import(
-      '../api-proxy-guest-budget.js'
-    );
+    const { GUEST_ADDRESS_MULTIPLIER } =
+      await import('../api-proxy-guest-budget.js');
     const cap = 3 * GUEST_ADDRESS_MULTIPLIER;
     expect(await flood('203.0.113.20', cap + 30, 3)).toBe(cap);
     // The 30 refused reads stopped at the network and never reached it.
@@ -281,9 +278,8 @@ describe('the verified guest budget at the API proxy guard', () => {
 
   it('takes three networks to exhaust a meeting', async () => {
     vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '3');
-    const { GUEST_ADDRESS_MULTIPLIER, GUEST_SCOPE_MULTIPLIER } = await import(
-      '../api-proxy-guest-budget.js'
-    );
+    const { GUEST_ADDRESS_MULTIPLIER, GUEST_SCOPE_MULTIPLIER } =
+      await import('../api-proxy-guest-budget.js');
     const networkCap = 3 * GUEST_ADDRESS_MULTIPLIER;
     const meetingCap = 3 * GUEST_SCOPE_MULTIPLIER;
     // Two networks flooding past their caps still leave the meeting open.
@@ -301,9 +297,8 @@ describe('the verified guest budget at the API proxy guard', () => {
 
   it('holds the per-meeting cap however many guests and addresses join', async () => {
     vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '2');
-    const { GUEST_SCOPE_MULTIPLIER } = await import(
-      '../api-proxy-guest-budget.js'
-    );
+    const { GUEST_SCOPE_MULTIPLIER } =
+      await import('../api-proxy-guest-budget.js');
     for (let guest = 0; guest < GUEST_SCOPE_MULTIPLIER; guest++)
       for (let read = 0; read < 2; read++)
         expect(

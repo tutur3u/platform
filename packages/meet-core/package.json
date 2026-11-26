@@ -414,6 +414,8 @@
     "./features/call/lib/guest-session.ts": "./src/features/call/lib/guest-session.ts",
     "./features/call/lib/guest-rate-limit": "./src/features/call/lib/guest-rate-limit.ts",
     "./features/call/lib/guest-rate-limit.ts": "./src/features/call/lib/guest-rate-limit.ts",
+    "./features/call/lib/guest-rate-limit-actor": "./src/features/call/lib/guest-rate-limit-actor.ts",
+    "./features/call/lib/guest-rate-limit-actor.ts": "./src/features/call/lib/guest-rate-limit-actor.ts",
     "./features/call/lib/guest-unverified-limit": "./src/features/call/lib/guest-unverified-limit.ts",
     "./features/call/lib/guest-unverified-limit.ts": "./src/features/call/lib/guest-unverified-limit.ts",
     "./features/call/components/guest-verification-context": "./src/features/call/components/guest-verification-context.tsx",
