@@ -11,7 +11,11 @@ import {
   uuid,
 } from './room-quiz-arena.fixtures';
 
-const guest = { ...player(1), guest: true, roomId: 'arena-guest-check' };
+const guest = {
+  ...player(1),
+  guest: true as const,
+  roomId: 'arena-guest-check',
+};
 const config = { answerMode: 'buzz_in', playMode: 'individual' } as const;
 
 it('requires live admission, the stable guest id and a room without a removal ban', () => {

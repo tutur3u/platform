@@ -109,7 +109,7 @@ function show(
   if (options.handedOff)
     (cap as unknown as { handedOff: boolean }).handedOff = true;
   const controller = room(options.admission ?? 'admitted', {}, options.role);
-  controller.state.eventRejoinRequired = options.eventRejoinRequired ?? false;
+  if (options.eventRejoinRequired) controller.state.eventRejoinRequired = true;
   if (options.error)
     (controller.state as unknown as { error: string }).error = options.error;
   const onJoined = vi.fn();
