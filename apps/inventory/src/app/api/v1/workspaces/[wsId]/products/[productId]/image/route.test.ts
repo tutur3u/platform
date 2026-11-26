@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   authorizeInventoryWorkspace: vi.fn(),
   createWorkspaceStorageSignedReadUrl: vi.fn(),
   maybeSingle: vi.fn(),
+  workspace: vi.fn(),
   eq: vi.fn(),
 }));
 
@@ -42,17 +43,20 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: async () => {
-    const query = {
-      eq: (...args: unknown[]) => {
-        mocks.eq(...args);
-        return query;
-      },
-      maybeSingle: () => mocks.maybeSingle(),
-      select: () => query,
-    };
-    return { from: () => query };
-  },
+  createAdminClient: async () => ({
+    from: (table: string) => {
+      const query = {
+        eq: (...args: unknown[]) => {
+          if (table === 'workspace_products') mocks.eq(...args);
+          return query;
+        },
+        maybeSingle: () =>
+          table === 'workspaces' ? mocks.workspace() : mocks.maybeSingle(),
+        select: () => query,
+      };
+      return query;
+    },
+  }),
 }));
 
 function grant(...granted: string[]) {
@@ -97,6 +101,54 @@ describe('inventory product image route', () => {
       'https://storage.example.com/signed'
     );
     stored(shareUrl(WS, IMAGE));
+    mocks.workspace.mockResolvedValue({
+      data: { personal: false },
+      error: null,
+    });
+  });
+
+  it('accepts Inventory sessions only', async () => {
+    await get();
+    expect(mocks.authorizeInventoryWorkspace).toHaveBeenCalledWith(
+      expect.any(Request),
+      WS,
+      { appSessionTargets: ['inventory'] }
+    );
+  });
+
+  it('reads a stored personal slug only for a personal workspace', async () => {
+    stored(shareUrl('personal', IMAGE));
+    expect((await get()).status).toBe(404);
+    mocks.workspace.mockResolvedValue({
+      data: { personal: true },
+      error: null,
+    });
+    expect((await get()).status).toBe(302);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
+      WS,
+      IMAGE,
+      { expiresIn: 3600 }
+    );
+  });
+
+  it('reads a stored internal slug only for the root workspace', async () => {
+    stored(shareUrl('internal', IMAGE));
+    expect((await get()).status).toBe(404);
+    const root = '00000000-0000-0000-0000-000000000000';
+    mocks.authorizeInventoryWorkspace.mockResolvedValue({
+      ok: true,
+      value: {
+        permissions: grant('view_inventory_catalog'),
+        userId: 'user-1',
+        wsId: root,
+      },
+    });
+    expect((await get()).status).toBe(302);
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
+      root,
+      IMAGE,
+      { expiresIn: 3600 }
+    );
   });
 
   it('redirects catalog readers to a fresh signed read', async () => {

@@ -3,7 +3,7 @@
 import type { CheckCircle2 } from '@tuturuuu/icons';
 import type { InventoryProductSummary } from '@tuturuuu/internal-api/inventory';
 import { cn } from '@tuturuuu/utils/format';
-import { inventoryProductImageSrc } from '@/lib/inventory-product-image';
+import { inventoryProductImageSrc } from '@/lib/inventory-product-image-src';
 import { numberOrZero } from './operator-stock';
 
 type BadgeTone = 'danger' | 'missing' | 'ready';

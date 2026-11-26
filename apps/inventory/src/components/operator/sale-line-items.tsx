@@ -18,7 +18,7 @@ import { LoadingRegion, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { minorToMajor } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { inventoryProductImageSrc } from '@/lib/inventory-product-image';
+import { inventorySaleLineImageSrc } from '@/lib/inventory-product-image-src';
 import { currency } from './operator-format';
 
 export type AggregatedSaleLine = {
@@ -66,8 +66,9 @@ export function aggregateSaleLines(
     }
 
     grouped.set(key, {
-      imageUrl: inventoryProductImageSrc({
-        avatarUrl: line.product_image_url ?? product?.avatar_url,
+      imageUrl: inventorySaleLineImageSrc({
+        lineImageUrl: line.product_image_url,
+        productAvatarUrl: product?.avatar_url,
         productId: line.product_id || product?.id,
         wsId: product?.ws_id,
       }),

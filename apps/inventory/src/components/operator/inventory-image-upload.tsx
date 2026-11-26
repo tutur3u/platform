@@ -12,10 +12,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { WEB_APP_URL } from '@/constants/common';
-import {
-  inventoryProductImageSrc,
-  inventoryUploadStoredValue,
-} from '@/lib/inventory-product-image';
+import { inventoryUploadStoredValue } from '@/lib/inventory-product-image';
+import { inventoryProductImageSrc } from '@/lib/inventory-product-image-src';
 
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif';
 
@@ -60,11 +58,11 @@ export function InventoryImageUploadField({
     onSuccess: (result) => {
       onChange(
         inventoryUploadStoredValue({
+          fullPath: result.fullPath,
           path: result.path,
           platformOrigin: WEB_APP_URL,
           readUrl: result.url,
           target,
-          wsId,
         })
       );
       setPreviewUrl(result.url);

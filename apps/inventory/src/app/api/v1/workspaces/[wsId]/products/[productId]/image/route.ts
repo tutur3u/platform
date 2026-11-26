@@ -8,8 +8,13 @@ import {
   WorkspaceStorageError,
 } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
-import { resolveInventoryProductImagePath } from '@/lib/inventory-product-image';
+import {
+  INVENTORY_WORKSPACE_SLUGS,
+  parseStoredInventoryProductImage,
+  resolveInventoryProductImagePath,
+} from '@/lib/inventory-product-image';
 
 /** Signed URLs from this route stay short-lived; readers ask again. */
 const SIGNED_READ_TTL_SECONDS = 60 * 60;
@@ -35,8 +40,10 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
+  // Like the other single-product routes, only Inventory app sessions (and
+  // native bearer clients) read through here.
   const auth = await authorizeInventoryWorkspace(request, requestedWsId, {
-    appSessionTargets: ['inventory', 'finance'],
+    appSessionTargets: ['inventory'],
   });
   if (!auth.ok) return auth.response;
   const { permissions, wsId } = auth.value;
@@ -62,7 +69,11 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  const path = resolveInventoryProductImagePath(product?.avatar_url, wsId);
+  const path = resolveInventoryProductImagePath(
+    product?.avatar_url,
+    wsId,
+    await storedWorkspaceAliases(sbAdmin, wsId, product?.avatar_url)
+  );
   if (!product || !path) {
     return NextResponse.json({ message: 'Image not found' }, { status: 404 });
   }
@@ -98,4 +109,38 @@ export async function GET(request: Request, { params }: Params) {
       { status: 500 }
     );
   }
+}
+
+/**
+ * Route slugs a stored URL may use for this workspace: `internal` for the
+ * root workspace and `personal` for a personal workspace. They are looked up
+ * only when the stored URL names a slug rather than the workspace UUID.
+ */
+async function storedWorkspaceAliases(
+  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  wsId: string,
+  avatarUrl: string | null | undefined
+): Promise<string[]> {
+  const workspace = parseStoredInventoryProductImage(
+    avatarUrl
+  )?.workspace.toLowerCase();
+  if (
+    !workspace ||
+    !(INVENTORY_WORKSPACE_SLUGS as readonly string[]).includes(workspace)
+  ) {
+    return [];
+  }
+  if (workspace === 'internal') {
+    return wsId === ROOT_WORKSPACE_ID ? ['internal'] : [];
+  }
+  const { data, error } = await sbAdmin
+    .from('workspaces')
+    .select('personal')
+    .eq('id', wsId)
+    .maybeSingle();
+  if (error) {
+    console.error('Error loading workspace for product image', error);
+    return [];
+  }
+  return data?.personal ? ['personal'] : [];
 }

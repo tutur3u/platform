@@ -8,7 +8,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { getCurrencyLocale } from '@tuturuuu/utils/format';
 import { getCurrencyFractionDigits } from '@tuturuuu/utils/money';
 import { useTranslations } from 'next-intl';
-import { inventoryProductImageSrc } from '@/lib/inventory-product-image';
+import { inventoryProductImageSrc } from '@/lib/inventory-product-image-src';
 import { currency } from './operator-format';
 
 export type SaleStockOption = {

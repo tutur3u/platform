@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
-  inventoryProductImageRoute,
-  inventoryProductImageSrc,
   inventoryUploadStoredValue,
   isInventoryProductImagePath,
+  parseStoredInventoryProductImage,
   resolveInventoryProductImagePath,
 } from './inventory-product-image';
 
@@ -57,33 +56,25 @@ describe('inventory product image paths', () => {
     ).toBeNull();
   });
 
-  it('routes workspace images through the product route, others as stored', () => {
-    const share = `https://tuturuuu.com/api/v1/workspaces/${WS}/storage/share?path=${encodeURIComponent(IMAGE)}`;
-    expect(
-      inventoryProductImageSrc({ avatarUrl: share, productId: 'p-1', wsId: WS })
-    ).toBe(inventoryProductImageRoute(WS, 'p-1'));
-    expect(
-      inventoryProductImageSrc({
-        avatarUrl: 'https://cdn.tuturuuu.com/a.png',
-        productId: 'p-1',
-        wsId: WS,
-      })
-    ).toBe('https://cdn.tuturuuu.com/a.png');
-    expect(
-      inventoryProductImageSrc({ avatarUrl: share, productId: null, wsId: WS })
-    ).toBe(share);
-    expect(
-      inventoryProductImageSrc({ avatarUrl: null, productId: 'p', wsId: WS })
-    ).toBeNull();
+  it('accepts slug aliases only when the caller passes them', () => {
+    const slugged = `https://tuturuuu.com/api/v1/workspaces/personal/storage/share?path=${encodeURIComponent(IMAGE)}`;
+    expect(resolveInventoryProductImagePath(slugged, WS)).toBeNull();
+    expect(resolveInventoryProductImagePath(slugged, WS, ['personal'])).toBe(
+      IMAGE
+    );
+    expect(parseStoredInventoryProductImage(slugged)).toEqual({
+      path: IMAGE,
+      workspace: 'personal',
+    });
   });
 
   it('stores product uploads as share URLs and other media as uploaded', () => {
     const stored = inventoryUploadStoredValue({
+      fullPath: `${WS}/${IMAGE}`,
       path: IMAGE,
       platformOrigin: 'https://tuturuuu.com',
       readUrl: 'https://storage.example/signed',
       target: 'product-featured-image',
-      wsId: WS,
     });
     expect(stored).toBe(
       `https://tuturuuu.com/api/v1/workspaces/${WS}/storage/share?path=${encodeURIComponent(IMAGE)}`
@@ -91,12 +82,43 @@ describe('inventory product image paths', () => {
     expect(resolveInventoryProductImagePath(stored, WS)).toBe(IMAGE);
     expect(
       inventoryUploadStoredValue({
+        fullPath: `${WS}/inventory/media/storefront-banner/a.png`,
         path: 'inventory/media/storefront-banner/a.png',
         platformOrigin: 'https://tuturuuu.com',
         readUrl: 'https://storage.example/banner',
         target: 'storefront-banner',
-        wsId: WS,
       })
     ).toBe('https://storage.example/banner');
+  });
+
+  it.each(['personal', 'internal'])(
+    'names the workspace by UUID when the page uses the %s slug',
+    (slug) => {
+      // The page's slug never reaches the stored URL; the server's storage
+      // key carries the UUID.
+      const stored = inventoryUploadStoredValue({
+        fullPath: `${WS}/${IMAGE}`,
+        path: IMAGE,
+        platformOrigin: 'https://tuturuuu.com',
+        readUrl: 'https://storage.example/signed',
+        target: 'product-featured-image',
+      });
+      expect(stored).not.toContain(`/workspaces/${slug}/`);
+      expect(resolveInventoryProductImagePath(stored, WS)).toBe(IMAGE);
+    }
+  );
+
+  it('keeps the signed URL when the storage key has no workspace UUID', () => {
+    for (const fullPath of [null, IMAGE, `personal/${IMAGE}`, `${WS}/other.png`]) {
+      expect(
+        inventoryUploadStoredValue({
+          fullPath,
+          path: IMAGE,
+          platformOrigin: 'https://tuturuuu.com',
+          readUrl: 'https://storage.example/signed',
+          target: 'product-featured-image',
+        })
+      ).toBe('https://storage.example/signed');
+    }
   });
 });
