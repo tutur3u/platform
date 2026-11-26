@@ -53,7 +53,7 @@ vi.mock('./access', async (original) => ({
   meetAiAccess: mocks.access,
 }));
 
-import { meetAiResponse } from './access';
+import { MeetAiError, meetAiResponse } from './access';
 import { transcribeMeetChunk } from './chunks';
 
 const id = '00000000-0000-4000-8000-000000000001';
@@ -62,11 +62,13 @@ function query(result: unknown) {
   const value = {
     select: vi.fn(),
     update: vi.fn(),
+    delete: vi.fn(),
     eq: vi.fn(),
     maybeSingle: vi.fn().mockResolvedValue(result),
   };
   value.select.mockReturnValue(value);
   value.update.mockReturnValue(value);
+  value.delete.mockReturnValue(value);
   value.eq.mockReturnValue(value);
   return value;
 }
@@ -168,4 +170,37 @@ it('retries a transient credit check and transcribes with that admission', async
     expect.objectContaining({ userId: id, attemptId: id }),
     { workspaceId: 'meeting-workspace', allowance }
   );
+});
+
+it('removes the reserved row when the billed run is refused', async () => {
+  const { from } = storage({ data: { ended_at: null }, error: null }, null);
+  mocks.check.mockResolvedValue({ allowed: true, tier: 'FREE' });
+  mocks.generate.mockRejectedValue(
+    new MeetAiError(
+      402,
+      'AI credits unavailable for the meeting workspace',
+      'MEET_AI_MODEL_NOT_ON_PLAN'
+    )
+  );
+  const response = await meetAiResponse(() =>
+    transcribeMeetChunk(request(), params)
+  );
+  expect(response.status).toBe(402);
+  expect(await response.json()).toMatchObject({
+    code: 'MEET_AI_MODEL_NOT_ON_PLAN',
+  });
+  // No failed row is left to show as "[Missing audio segment]".
+  const cleanup = from.mock.results.at(-1)?.value;
+  expect(cleanup.delete).toHaveBeenCalledOnce();
+  expect(cleanup.update).not.toHaveBeenCalled();
+});
+
+it('still marks a provider failure as a failed row', async () => {
+  const { from } = storage({ data: { ended_at: null }, error: null }, null);
+  mocks.check.mockResolvedValue({ allowed: true, tier: 'FREE' });
+  mocks.generate.mockRejectedValue(new MeetAiError(502, 'Provider failed'));
+  await meetAiResponse(() => transcribeMeetChunk(request(), params));
+  const cleanup = from.mock.results.at(-1)?.value;
+  expect(cleanup.update).toHaveBeenCalledWith({ status: 'failed' });
+  expect(cleanup.delete).not.toHaveBeenCalled();
 });

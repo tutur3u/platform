@@ -289,6 +289,20 @@ async function transcribeLegacyChunk(
     if (persisted._tag === 'Left') throw persisted.left;
     return project(persisted.right);
   } catch (error) {
+    // A credit refusal comes before the provider runs (the billed run is
+    // refused), so like an admission refusal it leaves no transcript
+    // segment: the reserved row is removed instead of marked failed.
+    if (error instanceof MeetAiError && error.status === 402) {
+      let refused = db
+        .from('meet_ai_chunks')
+        .delete()
+        .eq('id', id)
+        .eq('status', 'processing');
+      if (inserted.data.attempt_id)
+        refused = refused.eq('attempt_id', inserted.data.attempt_id);
+      await refused;
+      throw error;
+    }
     let failure = db
       .from('meet_ai_chunks')
       .update({ status: 'failed' })
