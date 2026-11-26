@@ -8,6 +8,7 @@ import {
   WorkspaceStorageError,
 } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import {
@@ -122,7 +123,7 @@ export async function GET(request: Request, { params }: Params) {
  * only when the stored URL names a slug rather than the workspace UUID.
  */
 async function storedWorkspaceAliases(
-  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  sbAdmin: TypedSupabaseClient,
   wsId: string,
   avatarUrl: string | null | undefined
 ): Promise<string[]> {
