@@ -4160,6 +4160,8 @@
       "failure_credits": "Không đủ tín dụng AI. Kiểm tra số dư AI Hub trước khi thử lại.",
       "failure_limit": "Đã đạt giới hạn của nhà cung cấp AI. Hãy chờ trước khi thử lại; bản chép lời đã lưu vẫn còn.",
       "failure_mira_consent": "Hãy nhờ mọi người mở Mira và chọn Xác nhận để lưu lựa chọn trước khi bắt đầu chép lời.",
+      "failure_mira_off": "Chủ phòng cần bật Mira cho cả phòng trước khi bắt đầu chép lời.",
+      "failure_mira_off_host": "Hãy bật Mira cho cả phòng trong menu Mira trước khi bắt đầu chép lời.",
       "failure_unavailable": "Tạm thời không thể xử lý AI. Hãy thử tạo ghi chú lại sau từ bản chép lời đã lưu.",
       "finish": "Dừng & tạo ghi chú",
       "followup_assign_me": "Giao công việc này cho tôi",

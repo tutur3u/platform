@@ -8,7 +8,10 @@ import viMessages from '../../../../../apps/meet/messages/vi.json';
 const mocks = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: mocks.error } }));
 
-import { showMeetingAiFailure } from './failure-toast';
+import {
+  roomMiraFailureContext,
+  showMeetingAiFailure,
+} from './failure-toast';
 
 afterEach(() => {
   cleanup();
@@ -90,3 +93,31 @@ for (const [locale, messages, expected] of [
     expect(warn).toHaveBeenCalledWith('Meeting AI request failed', error);
   });
 }
+
+const consentRefusal = { status: 409, code: 'MIRA_ROOM_CONSENT_REQUIRED' };
+const roomMira = (acceptance: boolean, canAccept: boolean) =>
+  roomMiraFailureContext({
+    available: true,
+    acceptance: acceptance
+      ? { revision: 1, acceptorName: 'Host', capabilities: [], acceptedAt: 1 }
+      : null,
+    canAccept,
+  } as unknown as Parameters<typeof roomMiraFailureContext>[0]);
+
+it('asks for Confirm only while room Mira is on', () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  showMeetingAiFailure((key) => key, consentRefusal, roomMira(true, false));
+  expect(mocks.error).toHaveBeenLastCalledWith('failure_mira_consent');
+  // Unknown room Mira state keeps the Confirm wording.
+  showMeetingAiFailure((key) => key, consentRefusal);
+  expect(mocks.error).toHaveBeenLastCalledWith('failure_mira_consent');
+});
+
+it('asks the host to turn room Mira on while it is off', () => {
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  // A participant sees no Confirm until the host turns room Mira on.
+  showMeetingAiFailure((key) => key, consentRefusal, roomMira(false, false));
+  expect(mocks.error).toHaveBeenLastCalledWith('failure_mira_off');
+  showMeetingAiFailure((key) => key, consentRefusal, roomMira(false, true));
+  expect(mocks.error).toHaveBeenLastCalledWith('failure_mira_off_host');
+});

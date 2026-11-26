@@ -4187,6 +4187,8 @@
       "failure_credits": "AI credits are unavailable. Check your AI Hub balance before retrying.",
       "failure_limit": "The AI provider limit was reached. Wait before retrying; your saved transcript remains available.",
       "failure_mira_consent": "Ask everyone to open Mira and select Confirm to save their choice before starting the transcript.",
+      "failure_mira_off": "The host needs to turn on Room Mira before the transcript can start.",
+      "failure_mira_off_host": "Turn on Room Mira from the Mira menu before starting the transcript.",
       "failure_unavailable": "AI processing is temporarily unavailable. Retry notes later from the saved transcript.",
       "finish": "Stop & generate notes",
       "followup_assign_me": "Assign this task to me",

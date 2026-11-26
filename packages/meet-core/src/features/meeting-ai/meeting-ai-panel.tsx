@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { TTR_URL } from '../../constants/common';
 import { useRoomMiraConsent } from '../call/components/use-room-mira';
-import { showMeetingAiFailure } from './failure-toast';
+import { roomMiraFailureContext, showMeetingAiFailure } from './failure-toast';
 import { MeetingAiStatusBar } from './meeting-ai-status-bar';
 import { meetingAiStatus } from './meeting-ai-status';
 import { MeetingLiveNotes } from './meeting-live-notes';
@@ -36,8 +36,14 @@ export function MeetingAiPanel({
   // One opt-out never pauses the others in a per-speaker meeting, so the
   // room-wide fence does not describe it.
   const perSpeaker = inCall && room.mode === 'self';
+  // The room's session and capture mode change with a start or a stop.
+  // A Mira on given under the other notice is confirmed in the Mira notice
+  // first; the room would refuse the host's Allow until then.
+  const mira = useRoomMiraConsent(ai.meetingId, inCall);
   const run = (work: () => Promise<unknown>) =>
-    void work().catch((error: unknown) => showMeetingAiFailure(t, error));
+    void work().catch((error: unknown) =>
+      showMeetingAiFailure(t, error, roomMiraFailureContext(mira.data))
+    );
   const data = ai.data;
   const status = meetingAiStatus({
     isLoading: ai.isLoading,
@@ -52,10 +58,6 @@ export function MeetingAiPanel({
   const active = data?.sessions.find(
     (session: MeetAiSession) => !session.ended_at
   );
-  // The room's session and capture mode change with a start or a stop.
-  // A Mira on given under the other notice is confirmed in the Mira notice
-  // first; the room would refuse the host's Allow until then.
-  const mira = useRoomMiraConsent(ai.meetingId, inCall);
   const miraStale =
     !!mira.data?.available &&
     mira.data.choice === 'on' &&
