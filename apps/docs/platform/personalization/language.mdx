@@ -29,6 +29,7 @@ Exceptions:
 
 - Web and Workspace public pages are English at unprefixed addresses and Vietnamese under `/vi`, whatever the cookie says, so search engines see one fixed locale per address.
 - An app mounted under `tuturuuu.com/<app>` stores its choice under its own path, and that choice outranks the one made on tuturuuu.com there. **System** clears it; the app then follows the tuturuuu.com choice when one exists, rather than the browser, and the menu marks that choice.
+- Meet's own server render and server functions resolve the locale in this order: the URL's locale segment (first, or right after the `/meet` mount), the proxy's `x-next-intl-locale` header, a supported `NEXT_LOCALE` cookie, then `Accept-Language`, else English. A server function call has no locale segment, so a page reloaded after a form (such as the guest lobby's save-name) keeps the language of the `/vi` link it was opened from. Coverage: `apps/meet/src/runtime/request-locale.test.ts`.
 - The Apps launcher stores the locale of every page it serves, so after **System** it keeps the language the page loaded in as an explicit choice.
 - When the browser's language list and its `Accept-Language` header disagree, **System** loads the page in the list's language and the app stores that language as an explicit choice.
 
