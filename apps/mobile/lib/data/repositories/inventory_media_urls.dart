@@ -64,8 +64,13 @@ InventoryImageSource classifyInventoryImageUrl(
       segments[5] == 'share';
   if (isShare) {
     final path = uri.queryParameters['path'];
+    // A stored URL may name the workspace by the `personal` or `internal`
+    // route slug; the product image route checks it against the product's
+    // workspace, so only those slugs pass besides the workspace UUID.
+    final workspace = segments[3].toLowerCase();
     if (!(platformHosts ?? _platformHosts()).contains(uri.host) ||
-        segments[3].toLowerCase() != workspaceId.toLowerCase() ||
+        (workspace != workspaceId.toLowerCase() &&
+            !_workspaceSlugs.contains(workspace)) ||
         path == null ||
         !_safePath(path)) {
       return const InventoryImageRefused();
@@ -103,6 +108,8 @@ Set<String> _platformHosts() {
 
 Set<String> _storageHosts() =>
     {?Uri.tryParse(Env.supabaseUrl)?.host}..remove('');
+
+const Set<String> _workspaceSlugs = {'personal', 'internal'};
 
 bool _safePath(String path) =>
     path.isNotEmpty &&

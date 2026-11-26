@@ -202,6 +202,17 @@ void main() {
         ),
         isA<InventoryImageObject>().having((o) => o.legacy, 'legacy', isTrue),
       );
+      // Route slugs reach the product image route, which checks them.
+      expect(
+        classify(
+          inventoryImageShareUrl(
+            'personal',
+            'inventory/media/p.png',
+            origin: origin,
+          ),
+        ),
+        isA<InventoryImageObject>(),
+      );
       expect(
         classify('https://cdn.tuturuuu.com/public/a.png'),
         isA<InventoryImageDirect>(),
