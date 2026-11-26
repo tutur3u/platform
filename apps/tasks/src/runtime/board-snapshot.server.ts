@@ -19,7 +19,9 @@ import {
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { abuseSubject } from '@tuturuuu/utils/abuse-protection/abuse-subject';
 import { isIPBlockedEdge } from '@tuturuuu/utils/abuse-protection/edge';
+import { hasCachedIpBlockAppealRelief } from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { isIPBlockedReusingRecentClear } from '@tuturuuu/utils/abuse-protection/recent-ip-block';
+import { getProxySessionSubjectKeyFromCookieHeader } from '@tuturuuu/utils/api-proxy-guard';
 import { NextRequest } from '@tuturuuu/start-bridge/next/server';
 import { readTaskBoardDetail } from '../app/api/v1/workspaces/[wsId]/task-boards/[boardId]/board-detail';
 import { readUserSuspension } from '../lib/session-security-lookups';
@@ -36,8 +38,6 @@ export interface BoardSnapshot {
   /** Absent when no list page could be read. */
   listPages?: Record<string, BoardSnapshotListPage>;
   preferences: BoardPreferenceSeed;
-  /** When the reads started (ms), so the browser keeps newer local edits. */
-  capturedAt: number;
 }
 
 const DENIED_STATUSES = new Set([400, 401, 403, 404]);
@@ -82,8 +82,8 @@ async function readFirstListPage(
  * task API routes decide end to end: the API proxy guard's edge block check
  * on the request's abuse subject (where `api_abuse` and Worker-subject
  * blocks live), the wrapper's persistent IP block check, and the suspension
- * check. A direct page load does not pass the proxy guard, so any block from
- * either store denies here. All lookups fail open, as on the API routes.
+ * check. A direct page load also verifies temporary relief for API-abuse
+ * blocks against the caller's session and IP.
  */
 async function isDeniedBeforeRead(userId: string) {
   const requestHeaders = await headers();
@@ -96,7 +96,22 @@ async function isDeniedBeforeRead(userId: string) {
     }),
     readUserSuspension(userId),
   ]);
-  return Boolean(suspension) || edgeBlock !== null || block !== null;
+  if (suspension) return true;
+  if (!edgeBlock && !block) return false;
+  if (
+    ipAddress === 'unknown' ||
+    (edgeBlock && edgeBlock.reason !== 'api_abuse') ||
+    (block && block.reason !== 'api_abuse')
+  ) {
+    return true;
+  }
+  const sessionKey = await getProxySessionSubjectKeyFromCookieHeader(
+    requestHeaders.get('cookie')
+  );
+  return (
+    !sessionKey ||
+    !(await hasCachedIpBlockAppealRelief(sessionKey, `ip:${ipAddress}`))
+  );
 }
 
 /** Stored values by id, with `null` for ids the user never stored. */
@@ -171,7 +186,6 @@ export async function loadBoardSnapshot({
   wsId: string;
   boardId: string;
 }): Promise<BoardSnapshot | null> {
-  const capturedAt = Date.now();
   // The same request-level decisions the API wrapper makes come first: no
   // board data is read for a blocked IP or a suspended actor.
   if (await isDeniedBeforeRead(user.id)) return null;
@@ -211,7 +225,6 @@ export async function loadBoardSnapshot({
     board,
     listPages: anyPageRead ? listPages : undefined,
     preferences,
-    capturedAt,
   };
 }
 

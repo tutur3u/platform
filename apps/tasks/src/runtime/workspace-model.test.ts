@@ -98,6 +98,7 @@ describe('workspaceModel', () => {
     mocks.readShellProfile.mockResolvedValue({ id: 'user-1' });
     mocks.getRequestWorkspace.mockResolvedValue(workspace);
     mocks.getPermissions.mockResolvedValue({
+      wsId: workspace.id,
       containsPermission: () => true,
     });
     mocks.cookies.mockResolvedValue({ get: () => undefined });
@@ -134,8 +135,14 @@ describe('workspaceModel', () => {
 
   it('falls back to the resolved workspace id for permissions', async () => {
     mocks.getPermissions
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ containsPermission: () => false });
+      .mockResolvedValueOnce({
+        wsId: 'other-workspace',
+        containsPermission: () => true,
+      })
+      .mockResolvedValueOnce({
+        wsId: workspace.id,
+        containsPermission: () => false,
+      });
 
     await expect(workspaceModel('personal')).resolves.toMatchObject({
       canManageCycles: false,
@@ -181,7 +188,6 @@ describe('boardModel', () => {
         board: { id: boardId, ws_id: wsId, access_type: 'member' },
         listPages: { 'list-1': { tasks: [], count: 0 } },
         preferences: { userConfigs: {}, workspaceConfigs: {} },
-        capturedAt: 1,
       })
     );
   });

@@ -45,10 +45,11 @@ export async function workspaceModel(id: string) {
   // A route id the permission resolver does not know falls back to the
   // workspace id the guard resolved.
   const permissions =
-    routePermissions ??
-    (id === workspace.id
-      ? null
-      : await getPermissions({ user, wsId: workspace.id }));
+    routePermissions?.wsId === workspace.id
+      ? routePermissions
+      : id === workspace.id && !routePermissions
+        ? null
+        : await getPermissions({ user, wsId: workspace.id });
   return {
     kind: 'workspace' as const,
     workspace,

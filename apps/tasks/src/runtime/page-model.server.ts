@@ -114,7 +114,7 @@ function appPathname(path: string) {
   return { pathname: localeless, localePrefixed: localeless !== pathname };
 }
 
-export async function loadPageModel(path: string) {
+export async function loadPageModel(path: string, preload = false) {
   // A proxy rewrite (crawler preview, root fallback) names the page to load.
   const rewrite = bridgeRequest().request.headers.get(PAGE_REWRITE_HEADER);
   const target =
@@ -122,6 +122,7 @@ export async function loadPageModel(path: string) {
   const url = new URL(target, 'http://app.invalid');
   const locale = resolvePathLocale(target);
   let { pathname, localePrefixed } = appPathname(target);
+  if (preload && pathname === '/') notFound();
   if (pathname === '/') {
     const entry = await rootEntry({
       locale,
@@ -134,6 +135,14 @@ export async function loadPageModel(path: string) {
   }
   const match = matchPage(pages, pathname);
   if (!match) notFound();
+  // Entrypoints can provision a board and must run only on navigation.
+  if (
+    preload &&
+    (match.page.pattern === '/[wsId]/boards' ||
+      match.page.pattern === '/[wsId]/tasks')
+  ) {
+    notFound();
+  }
   const params = { ...match.params, locale } as Record<string, string>;
   const page = await loaders[match.page.pattern as PagePattern]({
     params,

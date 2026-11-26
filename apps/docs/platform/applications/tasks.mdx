@@ -76,15 +76,16 @@ board page, because a partly loaded board cannot show that a list is empty.
 
 The native Tasks board page reads everything the kanban waits for in the same
 server request, in-process, as the verified actor, after the same request
-decisions the API routes make end to end (a block in the API proxy's edge
-store or the persistent IP block store, `api_abuse` included, or a suspended
-actor gets no board): the board, the first
+decisions for a suspended actor or an IP block from either the edge or
+persistent store. A matching temporary appeal lets the verified session read
+through an `api_abuse` block. The snapshot contains the board, the first
 50-task page of every list, and the actor's list preferences (persist
 collapsed, hide empty, auto-collapse, pinned special lists). The browser seeds
 these into its query cache before the first render, so columns skip their
-first request and the board shows tasks as soon as it hydrates. The snapshot
-carries the time its reads started (`capturedAt`). A cached query is replaced
-only when it was last written no later than that time, so a preloaded or
+first request and the board shows tasks as soon as it hydrates. The browser
+records when it starts a snapshot request, using hydration time for the
+initial server-rendered snapshot. A cached query is replaced only when it
+was last written no later than that time, so a preloaded or
 cached route never overwrites edits made in the tab since; lists the server
 could not read keep their cached tasks. Task pages seed once per mounted
 board, and a snapshot older than five seconds at mount, or one skipped for a
@@ -1892,7 +1893,8 @@ matching model arrives, including board and workspace switches and back/forward
 navigation. The URL/model boundary compares pathnames only; query-only changes
 do not invalidate the board identity. Board state remounts
 for each actor, workspace and board; workspace providers remount for each actor
-and workspace. A retained board snapshot cannot supply another board's body.
+and workspace. A retained board snapshot cannot supply another board's body. Workspace task
+and board entrypoints provision a board only on navigation.
 
 Regression coverage: `apps/tasks/src/runtime/page-transition.test.tsx` and
 `page-transition-router.test.tsx` cover retained models, late responses and

@@ -53,17 +53,29 @@ function PageChunk({ children }: { children: ReactNode }) {
   );
 }
 
-function WorkspacePageView({ page }: { page: WorkspacePage }) {
+function WorkspacePageView({
+  page,
+  snapshotAt,
+}: {
+  page: WorkspacePage;
+  snapshotAt: number;
+}) {
   return page.kind === 'board' || page.kind === 'new-task' ? (
-    <WorkspacePageContent page={page} />
+    <WorkspacePageContent page={page} snapshotAt={snapshotAt} />
   ) : (
     <PageChunk>
-      <WorkspacePageContent page={page} />
+      <WorkspacePageContent page={page} snapshotAt={snapshotAt} />
     </PageChunk>
   );
 }
 
-function WorkspacePageContent({ page }: { page: WorkspacePage }) {
+function WorkspacePageContent({
+  page,
+  snapshotAt,
+}: {
+  page: WorkspacePage;
+  snapshotAt: number;
+}) {
   const locale = useLocale();
   switch (page.kind) {
     case 'progress':
@@ -81,7 +93,7 @@ function WorkspacePageContent({ page }: { page: WorkspacePage }) {
           initialBoard={page.board}
           initialListPages={page.listPages}
           initialPreferences={page.preferences}
-          initialSnapshotAt={page.snapshotAt}
+          initialSnapshotAt={snapshotAt}
           workspace={page.workspace}
           workspaceTier={page.workspace.tier ?? null}
           currentUserId={page.currentUserId}
@@ -137,7 +149,13 @@ function WorkspacePageContent({ page }: { page: WorkspacePage }) {
   }
 }
 
-export function PageView({ model }: { model: TasksPageModel }) {
+export function PageView({
+  model,
+  snapshotAt,
+}: {
+  model: TasksPageModel;
+  snapshotAt: number;
+}) {
   const { page } = model;
   switch (page.kind) {
     case 'verify-token':
@@ -156,7 +174,7 @@ export function PageView({ model }: { model: TasksPageModel }) {
           key={`${model.actorId}:${page.shell.workspace.id}`}
           model={page.shell}
         >
-          <WorkspacePageView page={page.page} />
+          <WorkspacePageView page={page.page} snapshotAt={snapshotAt} />
         </WorkspaceView>
       );
     case 'public-board':

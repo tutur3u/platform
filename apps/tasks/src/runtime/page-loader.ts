@@ -17,8 +17,8 @@ export const loadTasksLocale = createServerFn({ method: 'POST' })
   });
 
 export const loadTasksPage = createServerFn({ method: 'POST' })
-  .validator(tasksPageInput)
+  .validator(tasksPageInput.extend({ preload: z.boolean().optional() }))
   .handler(async ({ data }) => {
     const { loadPageModel } = await import('./page-model.server');
-    return loadPageModel(data.path);
+    return loadPageModel(data.path, data.preload);
   });

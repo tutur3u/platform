@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   handleTaskRouteGET: vi.fn(),
+  getProxySessionSubjectKey: vi.fn(),
+  hasCachedIpBlockAppealRelief: vi.fn(),
   headers: vi.fn(),
   isIPBlocked: vi.fn(),
   isIPBlockedEdge: vi.fn(),
@@ -37,6 +39,12 @@ vi.mock('@tuturuuu/utils/abuse-protection', () => ({
 vi.mock('@tuturuuu/utils/abuse-protection/abuse-subject', () => ({
   abuseSubject: (_headers: unknown, ip: string) => `subject:${ip}`,
 }));
+vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
+  getProxySessionSubjectKeyFromCookieHeader: mocks.getProxySessionSubjectKey,
+}));
+vi.mock('@tuturuuu/utils/abuse-protection/edge-trust', () => ({
+  hasCachedIpBlockAppealRelief: mocks.hasCachedIpBlockAppealRelief,
+}));
 vi.mock('@tuturuuu/utils/abuse-protection/edge', () => ({
   isIPBlockedEdge: mocks.isIPBlockedEdge,
 }));
@@ -70,6 +78,8 @@ describe('loadBoardSnapshot request decisions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.headers.mockResolvedValue(new Headers());
+    mocks.getProxySessionSubjectKey.mockResolvedValue(null);
+    mocks.hasCachedIpBlockAppealRelief.mockResolvedValue(false);
     mocks.isIPBlocked.mockResolvedValue(null);
     mocks.isIPBlockedEdge.mockResolvedValue(null);
     mocks.readUserSuspension.mockResolvedValue(null);
@@ -125,6 +135,29 @@ describe('loadBoardSnapshot request decisions', () => {
 
     await expect(load()).resolves.toBeNull();
     expect(mocks.readTaskBoardDetail).not.toHaveBeenCalled();
+  });
+
+  it('reads the board with matching temporary API-abuse relief', async () => {
+    mocks.isIPBlocked.mockResolvedValue(block('api_abuse'));
+    mocks.isIPBlockedEdge.mockResolvedValue(block('api_abuse'));
+    mocks.getProxySessionSubjectKey.mockResolvedValue('session-key');
+    mocks.hasCachedIpBlockAppealRelief.mockResolvedValue(true);
+
+    await expect(load()).resolves.toMatchObject({ board: { id: 'board-1' } });
+    expect(mocks.hasCachedIpBlockAppealRelief).toHaveBeenCalledWith(
+      'session-key',
+      'ip:203.0.113.9'
+    );
+  });
+
+  it('keeps unrelated blocks in force during API-abuse relief', async () => {
+    mocks.isIPBlocked.mockResolvedValue(block('password_login_failed'));
+    mocks.isIPBlockedEdge.mockResolvedValue(block('api_abuse'));
+    mocks.getProxySessionSubjectKey.mockResolvedValue('session-key');
+    mocks.hasCachedIpBlockAppealRelief.mockResolvedValue(true);
+
+    await expect(load()).resolves.toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('reads nothing for a block only the edge proxy store holds', async () => {
