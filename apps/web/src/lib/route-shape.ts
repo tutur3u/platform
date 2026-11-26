@@ -74,6 +74,7 @@ export const KNOWN_ROOT_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'terms',
   'u',
   'ui',
+  'upskii',
   'users',
   'verify-token',
   'visualizations',
