@@ -13,7 +13,7 @@ import type { CallLifecycle } from '../lib/call-state';
 import { useWideEndedLayout } from './ended-layout';
 import { EndedMeetingFactsRow } from './ended-meeting-facts-row';
 import { EndedMeetingRating } from './ended-meeting-rating';
-import { EndedMoreMenu } from './ended-more-menu';
+import { EndedMoreMenu, READER_LABELS } from './ended-more-menu';
 import {
   EndedNotesPanel,
   isEndedReader,
@@ -112,6 +112,7 @@ export function CallEnded({
       className={primaryClass}
     />
   ) : null;
+  const showReaderAction = ended && reader !== null && !open;
   const primary = rejoinable ? (
     <Button
       size="lg"
@@ -122,7 +123,7 @@ export function CallEnded({
       {t('rejoin_call')}
     </Button>
   ) : (
-    backLink(true)
+    backLink(!showReaderAction)
   );
   const hint = !ended
     ? t('call_left_hint')
@@ -166,6 +167,16 @@ export function CallEnded({
             }
             actions={
               <>
+                {showReaderAction && (
+                  <Button
+                    size="lg"
+                    className={primaryClass}
+                    onClick={() => setShowNotes(true)}
+                    disabled={saving}
+                  >
+                    {t(READER_LABELS[reader].show)}
+                  </Button>
+                )}
                 {primary}
                 {secondary}
               </>

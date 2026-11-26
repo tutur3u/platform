@@ -21,7 +21,7 @@ import { EndedMeetingSettings } from './ended-meeting-settings';
 import type { EndedReader } from './ended-notes-panel';
 import { useRestoreRoom } from './restore-room-button';
 
-const READER_LABELS = {
+export const READER_LABELS = {
   notes: { show: 'show_notes', hide: 'hide_notes' },
   transcript: { show: 'show_transcript', hide: 'hide_transcript' },
   both: { show: 'view_meeting_notes', hide: 'hide_meeting_notes' },

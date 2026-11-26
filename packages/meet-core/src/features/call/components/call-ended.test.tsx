@@ -194,6 +194,14 @@ it('shows notes and transcript in tabs only when both exist', () => {
   expect(screen.queryByTestId('transcript')).toBeNull();
 });
 
+it('opens available notes and transcript directly from the ended screen', () => {
+  withAi('both');
+  renderEnded();
+  expect(screen.queryByTestId('session-notes')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'View notes & transcript' }));
+  expect(screen.getByTestId('session-notes')).toBeTruthy();
+});
+
 it('names the overflow reader item after what the meeting actually has', () => {
   withAi('notes');
   renderEnded();
