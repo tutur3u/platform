@@ -37,18 +37,7 @@ insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_us
 values
   ('e3a54000-0000-4000-8000-000000009711', 'live-class-one@example.com', now(), '{}'::jsonb, '{}'::jsonb),
   ('e3a54000-0000-4000-8000-000000009712', 'live-class-two@example.com', now(), '{}'::jsonb, '{}'::jsonb);
-insert into public.workspaces (id, name, personal, creator_id)
-select ws.id, 'Live class test', true, ws.owner_id
-from (values
-  ('e3a54000-0000-4000-8000-000000009721'::uuid, 'e3a54000-0000-4000-8000-000000009711'::uuid),
-  ('e3a54000-0000-4000-8000-000000009722'::uuid, 'e3a54000-0000-4000-8000-000000009712'::uuid)
-) as ws(id, owner_id)
-where not exists (select from public.workspaces where personal is true and creator_id = ws.owner_id);
-insert into public.workspace_members (ws_id, user_id, type)
-select id, creator_id, 'MEMBER' from public.workspaces where personal is true
-and creator_id in ('e3a54000-0000-4000-8000-000000009711', 'e3a54000-0000-4000-8000-000000009712')
-on conflict do nothing;
-
+-- Signup creates each teacher’s personal workspace and owner membership.
 insert into private.external_account_links (id, provider, external_subject, user_id)
 values
   ('e3a54000-0000-4000-8000-000000009731', 'upskii', 'live-class-teacher-1', 'e3a54000-0000-4000-8000-000000009711'),
