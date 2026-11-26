@@ -166,25 +166,12 @@ export const DELETE = withSessionAuth<RouteParams>(
         return NextResponse.json({ message });
       }
 
-      try {
-        await deleteExternalChatMessageIfBound({
-          conversationId: params.conversationId,
-          messageId: params.messageId,
-          wsId: context.context.normalizedWsId,
-        });
-      } catch (error) {
-        console.error('External chat deletion failed before native mutation', {
-          code: error instanceof Error ? error.message : 'unknown',
-        });
-        return NextResponse.json(
-          {
-            code: 'external_delete_failed',
-            message: 'The connected site did not accept the deletion',
-          },
-          { status: 502 }
-        );
-      }
-
+      // chat_delete_message is the authorization and the delete in one
+      // transaction: it requires chat access to this workspace, the message
+      // in this conversation of this workspace, and the caller as its sender
+      // or holding moderate_chat. The connected site hears of a deletion only
+      // after it is committed here, so no one can remove a visitor's message
+      // there that they could not delete here.
       const message = await callPrivateChatRpc<ChatMessage | null>(
         'chat_delete_message',
         {
@@ -200,6 +187,26 @@ export const DELETE = withSessionAuth<RouteParams>(
           { status: 404 }
         );
       }
+
+      // The deletion stands once committed, so a site that does not accept
+      // it is reported beside a 200 rather than as an error: a failure
+      // status would tell the client nothing was deleted, and a retry would
+      // find the message already gone and never reach the site.
+      let externalDelete: 'failed' | undefined;
+      try {
+        await deleteExternalChatMessageIfBound({
+          conversationId: message.conversationId,
+          messageId: message.id,
+          wsId: context.context.normalizedWsId,
+        });
+      } catch (error) {
+        externalDelete = 'failed';
+        console.error('Connected site did not accept a chat deletion', {
+          code: error instanceof Error ? error.message : 'unknown',
+          messageId: message.id,
+        });
+      }
+
       const conversation = await callPrivateChatRpc<ChatConversation | null>(
         'chat_get_conversation',
         {
@@ -209,7 +216,8 @@ export const DELETE = withSessionAuth<RouteParams>(
         }
       );
 
-      if (!conversation) return NextResponse.json({ message });
+      const body = externalDelete ? { externalDelete, message } : { message };
+      if (!conversation) return NextResponse.json(body);
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
@@ -220,7 +228,7 @@ export const DELETE = withSessionAuth<RouteParams>(
         wsId: context.context.normalizedWsId,
       });
 
-      return NextResponse.json({ message });
+      return NextResponse.json(body);
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to delete chat message');
     }

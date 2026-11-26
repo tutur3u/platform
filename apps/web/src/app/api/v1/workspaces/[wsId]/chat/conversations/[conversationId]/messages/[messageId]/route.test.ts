@@ -82,52 +82,6 @@ describe('connected chat message mutations', () => {
     });
   });
 
-  it('does not mutate native chat when legacy deletion fails', async () => {
-    mocks.deleteExternalChatMessageIfBound.mockRejectedValue(
-      new Error('external_chat_control_failed:503')
-    );
-    const { DELETE } = await import('./route');
-
-    const response = await DELETE(new Request('http://localhost') as never, {
-      params: Promise.resolve({
-        conversationId: 'conversation-1',
-        messageId: 'message-1',
-        wsId: 'workspace-1',
-      }),
-    });
-
-    expect(response.status).toBe(502);
-    await expect(response.json()).resolves.toMatchObject({
-      code: 'external_delete_failed',
-    });
-    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
-  });
-
-  it('deletes in legacy before mutating and publishing native chat', async () => {
-    mocks.deleteExternalChatMessageIfBound.mockResolvedValue(true);
-    const { DELETE } = await import('./route');
-
-    const response = await DELETE(new Request('http://localhost') as never, {
-      params: Promise.resolve({
-        conversationId: 'conversation-1',
-        messageId: 'message-1',
-        wsId: 'workspace-1',
-      }),
-    });
-
-    expect(response.status).toBe(200);
-    expect(mocks.deleteExternalChatMessageIfBound).toHaveBeenCalledBefore(
-      mocks.callPrivateChatRpc
-    );
-    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
-      'chat_delete_message',
-      expect.objectContaining({ p_message_id: 'message-1' })
-    );
-    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'message.deleted' })
-    );
-  });
-
   it('blocks native-only edits for connected conversations', async () => {
     mocks.isExternalChatConversation.mockResolvedValue(true);
     const { PATCH } = await import('./route');
