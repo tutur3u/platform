@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(46);
+select plan(51);
 
 select ok(to_regclass('private.mail_domains') is not null, 'mail domains live in the private schema');
 select ok(to_regclass('private.mail_stored_objects') is not null, 'mail stored objects live in the private schema');
@@ -387,6 +387,68 @@ select throws_ok(
      where domain = 'ingest.tutur3u.com' $$,
   null,
   'catch-all targets must belong to the canonical domain'
+);
+
+insert into auth.users (id)
+values ('00000000-0000-4000-8000-000000009851'), ('00000000-0000-4000-8000-000000009852');
+
+insert into public.users (id)
+values ('00000000-0000-4000-8000-000000009851'), ('00000000-0000-4000-8000-000000009852')
+on conflict (id) do nothing;
+
+insert into public.workspace_members (ws_id, user_id, type)
+values ('00000000-0000-0000-0000-000000000000', '00000000-0000-4000-8000-000000009851', 'MEMBER');
+
+set local role service_role;
+
+select throws_ok(
+  $$ select private.set_mail_domain_catch_all(
+    '00000000-0000-4000-8000-000000009852',
+    (select id from private.mail_domains where domain = 'tutur3u.com'),
+    false, null, false) $$,
+  '42501', 'Root workspace admin required',
+  'a non-root actor cannot change catch-all'
+);
+
+select throws_ok(
+  $$ update private.mail_domains set catch_all_enabled = true,
+       catch_all_mailbox_id = (select id from private.mail_mailboxes where address = 'ops-mail-test@tuturuuu.com')
+     where domain = 'tutur3u.com' $$,
+  '42501', 'Root workspace admin required',
+  'a direct service-role update requires an authorized actor'
+);
+
+select throws_ok(
+  $$ select private.set_mail_domain_catch_all(
+    '00000000-0000-4000-8000-000000009851',
+    (select id from private.mail_domains where domain = 'tutur3u.com'),
+    true, '00000000-0000-0000-0000-000000000002', false) $$,
+  '23514', 'catch-all mailbox must be active and belong to the authorized destination domain',
+  'a root admin cannot route catch-all to a foreign domain'
+);
+
+select is(
+  private.set_mail_domain_catch_all(
+    '00000000-0000-4000-8000-000000009851',
+    (select id from private.mail_domains where domain = 'tutur3u.com'),
+    true,
+    (select id from private.mail_mailboxes where address = 'ops-mail-test@tuturuuu.com'),
+    false),
+  true,
+  'a root admin can route reviewer-domain catch-all to an active staff mailbox'
+);
+
+reset role;
+
+select ok(
+  exists (
+    select 1 from private.mail_catch_all_audit a
+    join private.mail_domains d on d.id = a.domain_id
+    where d.domain = 'tutur3u.com' and d.canonical_domain_id is null
+      and a.actor_id = '00000000-0000-4000-8000-000000009851'
+      and a.new_settings->>'target_mailbox_id' = d.catch_all_mailbox_id::text
+  ),
+  'cross-domain catch-all is audited with the actor and preserves canonical routing'
 );
 
 select * from finish();

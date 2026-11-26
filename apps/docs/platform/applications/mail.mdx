@@ -992,11 +992,19 @@ disabled state.
 ## Catch-all delivery
 
 Catch-all routing is platform-operated because it affects an entire inbound
-domain. The destination is relational metadata on `private.mail_domains`, not a
-workspace secret: `catch_all_mailbox_id` must reference an active mailbox on the
-canonical domain, and `catch_all_enabled` defaults to `false`. Automatic drafts
-for catch-all deliveries have a separate opt-in and remain disabled unless a
-platform operator explicitly enables them.
+domain. Root workspace admins manage it in Mail Settings → Delivery. The
+picker offers active mailboxes on the canonical domain. The
+root-managed `tutur3u.com` domain also offers active `tuturuuu.com` mailboxes.
+Exact-recipient delivery still checks the canonical domain first, including the
+reviewer mailboxes. The database audits each settings change with the actor
+and previous and new settings.
+
+Catch-all and its automatic AI drafts start disabled. Operators opt in to
+automatic drafts separately. The database regression suite for the private
+Mail schema covers authorized cross-domain targets and rejects foreign
+mailboxes. The Mail inbound resolver suite covers exact-recipient precedence.
+Administrators can save catch-all settings after both Mail and the paired-domain
+migration are live.
 
 Activate the bridge in this order:
 

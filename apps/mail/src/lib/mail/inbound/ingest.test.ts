@@ -85,9 +85,17 @@ describe('resolveInboundMailbox', () => {
               filters.push([column, value]);
               return builder;
             },
+            in(column: string, values: string[]) {
+              filters.push([column, values]);
+              return builder;
+            },
             async maybeSingle() {
               const row = (rows[table] ?? []).find((candidate) =>
-                filters.every(([column, value]) => candidate[column] === value)
+                filters.every(([column, value]) =>
+                  Array.isArray(value)
+                    ? value.includes(candidate[column])
+                    : candidate[column] === value
+                )
               );
               return { data: row ?? null, error: null };
             },
@@ -106,6 +114,7 @@ describe('resolveInboundMailbox', () => {
       admin: adminWithRows({
         mail_domains: [
           {
+            catch_all_domain_id: 'staff',
             catch_all_enabled: true,
             catch_all_mailbox_id: 'fallback',
             id: 'ingress',
@@ -118,7 +127,7 @@ describe('resolveInboundMailbox', () => {
             id: 'exact',
             status: 'active',
           },
-          { domain_id: 'canonical', id: 'fallback', status: 'active' },
+          { domain_id: 'staff', id: 'fallback', status: 'active' },
         ],
       }),
       canonicalDomainId: 'canonical',
@@ -155,6 +164,35 @@ describe('resolveInboundMailbox', () => {
       route: 'catch_all',
     });
   });
+
+  it.each([
+    ['staff', { mailbox: { id: 'fallback' }, route: 'catch_all' }],
+    ['foreign', null],
+  ])(
+    'applies the configured catch-all boundary to %s mailboxes',
+    async (domain, expected) => {
+      const result = await resolveInboundMailbox({
+        admin: adminWithRows({
+          mail_domains: [
+            {
+              id: 'reviewer',
+              catch_all_domain_id: 'staff',
+              catch_all_enabled: true,
+              catch_all_mailbox_id: 'fallback',
+            },
+          ],
+          mail_mailboxes: [
+            { domain_id: domain, id: 'fallback', status: 'active' },
+          ],
+        }),
+        canonicalDomainId: 'reviewer',
+        canonicalRecipient: 'unmatched@tutur3u.com',
+        provisionInternalUser: false,
+      });
+      if (expected === null) expect(result).toBeNull();
+      else expect(result).toMatchObject(expected);
+    }
+  );
 
   it.each(['disabled', 'quarantined', 'archived'])(
     'routes a %s address to catch-all without recreating its mailbox',

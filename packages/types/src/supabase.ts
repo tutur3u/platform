@@ -14129,6 +14129,34 @@ export type Database = {
           },
         ];
       };
+      mail_catch_all_audit: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          domain_id: string;
+          id: number;
+          new_settings: NonNullable<Json>;
+          previous_settings: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          domain_id: string;
+          id?: never;
+          new_settings: NonNullable<Json>;
+          previous_settings: NonNullable<Json>;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          domain_id?: string;
+          id?: never;
+          new_settings?: NonNullable<Json>;
+          previous_settings?: NonNullable<Json>;
+        };
+        Relationships: [];
+      };
       mail_connected_accounts: {
         Row: {
           address: string;
@@ -14215,6 +14243,7 @@ export type Database = {
         Row: {
           canonical_domain_id: string | null;
           catch_all_auto_draft_enabled: boolean;
+          catch_all_domain_id: string | null;
           catch_all_enabled: boolean;
           catch_all_mailbox_id: string | null;
           cloudflare_account_id: string | null;
@@ -14236,6 +14265,7 @@ export type Database = {
         Insert: {
           canonical_domain_id?: string | null;
           catch_all_auto_draft_enabled?: boolean;
+          catch_all_domain_id?: string | null;
           catch_all_enabled?: boolean;
           catch_all_mailbox_id?: string | null;
           cloudflare_account_id?: string | null;
@@ -14256,6 +14286,7 @@ export type Database = {
         Update: {
           canonical_domain_id?: string | null;
           catch_all_auto_draft_enabled?: boolean;
+          catch_all_domain_id?: string | null;
           catch_all_enabled?: boolean;
           catch_all_mailbox_id?: string | null;
           cloudflare_account_id?: string | null;
@@ -14277,6 +14308,13 @@ export type Database = {
           {
             foreignKeyName: 'mail_domains_canonical_domain_id_fkey';
             columns: ['canonical_domain_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_domains';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_domains_catch_all_domain_id_fkey';
+            columns: ['catch_all_domain_id'];
             isOneToOne: false;
             referencedRelation: 'mail_domains';
             referencedColumns: ['id'];
@@ -36686,6 +36724,16 @@ export type Database = {
       set_devbox_runner_resource_limits: {
         Args: { p_limits: Json; p_runner_id: string };
         Returns: Json;
+      };
+      set_mail_domain_catch_all: {
+        Args: {
+          p_actor_id: string;
+          p_auto_draft_enabled: boolean;
+          p_domain_id: string;
+          p_enabled: boolean;
+          p_target_mailbox_id: string;
+        };
+        Returns: boolean;
       };
       set_mail_thread_preference: {
         Args: {

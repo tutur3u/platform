@@ -44,11 +44,19 @@ function createAdmin({
     const filters: Array<[string, unknown]> = [];
     const matches = () =>
       (rows[name] ?? []).filter((row) =>
-        filters.every(([column, value]) => row[column] === value)
+        filters.every(([column, value]) =>
+          Array.isArray(value)
+            ? value.includes(row[column])
+            : row[column] === value
+        )
       );
     const builder: Record<string, unknown> = {
       eq(column: string, value: unknown) {
         filters.push([column, value]);
+        return builder;
+      },
+      in(column: string, values: string[]) {
+        filters.push([column, values]);
         return builder;
       },
       insert(value: Row) {

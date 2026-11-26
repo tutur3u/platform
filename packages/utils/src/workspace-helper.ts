@@ -558,13 +558,11 @@ export async function enforceRootWorkspaceAdmin(
     supabase,
   });
 
-  if (membership.error === 'membership_lookup_failed' || !membership.ok) {
-    if (options.redirectTo) {
-      throw new WorkspaceRedirectRequiredError(options.redirectTo);
-    }
-
-    throw new WorkspaceAccessError('Root workspace admin required');
+  if (membership.ok) return principal;
+  if (options.redirectTo) {
+    throw new WorkspaceRedirectRequiredError(options.redirectTo);
   }
+  throw new WorkspaceAccessError('Root workspace admin required');
 }
 
 export async function getSecrets({

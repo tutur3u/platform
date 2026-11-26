@@ -44,10 +44,13 @@ async function loadConfiguration(domainId: string) {
   if (!domain) return null;
 
   const canonicalDomainId = domain.canonical_domain_id ?? domain.id;
+  const allowedDomainIds = domain.catch_all_domain_id
+    ? [canonicalDomainId, domain.catch_all_domain_id]
+    : [canonicalDomainId];
   const { data: mailboxes, error: mailboxError } = await privateSchema
     .from('mail_mailboxes')
     .select('id,address,display_name')
-    .eq('domain_id', canonicalDomainId)
+    .in('domain_id', allowedDomainIds)
     .eq('status', 'active')
     .order('address');
   if (mailboxError) throw mailboxError;
@@ -81,7 +84,7 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
-  await enforceRootWorkspaceAdmin(ROOT_WORKSPACE_ID);
+  const actor = await enforceRootWorkspaceAdmin(ROOT_WORKSPACE_ID);
   const { domainId } = await params;
   let json: unknown;
   try {
@@ -102,16 +105,25 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   const admin = await createAdminClient({ noCookie: true });
-  const { error } = await (admin as any)
+  const { data: updated, error } = await (admin as any)
     .schema('private')
-    .from('mail_domains')
-    .update({
-      catch_all_auto_draft_enabled: parsed.data.autoDraftEnabled,
-      catch_all_enabled: parsed.data.enabled,
-      catch_all_mailbox_id: parsed.data.targetMailboxId,
-    })
-    .eq('id', domainId);
+    .rpc('set_mail_domain_catch_all', {
+      p_actor_id: actor.id,
+      p_domain_id: domainId,
+      p_enabled: parsed.data.enabled,
+      p_target_mailbox_id: parsed.data.targetMailboxId,
+      p_auto_draft_enabled: parsed.data.autoDraftEnabled,
+    });
   if (error) {
+    if (error.code === '42501') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (error.code === '23514') {
+      return NextResponse.json(
+        { error: 'Invalid catch-all configuration' },
+        { status: 400 }
+      );
+    }
     console.error('[mail] failed to update catch-all configuration', {
       error: safeErrorFields(error),
     });
@@ -120,6 +132,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       { status: 500 }
     );
   }
+
+  if (!updated)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const config = await loadConfiguration(domainId);
   if (!config)

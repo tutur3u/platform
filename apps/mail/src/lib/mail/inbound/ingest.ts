@@ -89,7 +89,7 @@ export async function resolveInboundMailbox({
     admin,
     'mail_domains'
   )
-    .select('catch_all_enabled,catch_all_mailbox_id')
+    .select('*')
     .eq('id', ingressDomainId)
     .maybeSingle();
   if (domainError) throw domainError;
@@ -100,13 +100,16 @@ export async function resolveInboundMailbox({
     return null;
   }
 
+  const allowedDomainIds = ingressDomain.catch_all_domain_id
+    ? [canonicalDomainId, ingressDomain.catch_all_domain_id]
+    : [canonicalDomainId];
   const { data: fallback, error: fallbackError } = await privateTable(
     admin,
     'mail_mailboxes'
   )
     .select('*')
     .eq('id', ingressDomain.catch_all_mailbox_id)
-    .eq('domain_id', canonicalDomainId)
+    .in('domain_id', allowedDomainIds)
     .eq('status', 'active')
     .maybeSingle();
   if (fallbackError) throw fallbackError;
