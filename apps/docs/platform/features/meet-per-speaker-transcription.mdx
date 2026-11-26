@@ -34,6 +34,15 @@ mode per meeting. Host room capture stays available as the fallback mode.
 | Unsupported browsers | A browser that cannot confirm echo cancellation on the microphone does not upload and shows "not available on this device". |
 | Internal pilot | When the flag is first turned on, only signed-in members of the allowlisted workspace may contribute. Signed-in non-members are labelled like guests. |
 
+The in-call Notes tab in per-speaker mode reminds readers that members'
+microphones may pick up nearby speech.
+
+For a guest-facing event that requires stronger isolation, leave
+transcription off in the event room. The host can open a separate private
+notes room, join as the only signed-in participant, and dictate a recap
+after leaving the event. Keep the event audio out of the notes room and
+follow the usual Mira consent and transcription eligibility requirements.
+
 ## Architecture
 
 The design adopts the participant self-capture contract (`self_v1`) whose

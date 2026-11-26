@@ -4284,6 +4284,7 @@
       "self_mode_room": "Ghi cả phòng",
       "self_mode_self": "Thiết bị của từng người",
       "self_mode_title": "Cách ghi bản phiên âm",
+      "self_notes_pickup": "Micrô của thành viên có thể thu cả lời nói ở gần.",
       "self_notice": "Trong cuộc họp này, thiết bị của mỗi người chỉ phiên âm giọng nói của chính họ. Nếu bạn tắt Mira, giọng nói của bạn không được ghi lại và những người khác vẫn giữ bản phiên âm của họ. Giọng bạn vẫn có thể bị micro của người khác thu lại; dùng tai nghe sẽ giúp ích.",
       "self_readers": "Chủ trì và quản trị viên của không gian làm việc này có thể đọc bản phiên âm và ghi chú. Các dòng đã được phiên âm vẫn được giữ và dùng cho ghi chú.",
       "self_state_app": "Phiên âm giọng nói của bạn chưa khả dụng trong ứng dụng.",

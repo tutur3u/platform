@@ -4284,6 +4284,7 @@
       "self_mode_room": "Room capture",
       "self_mode_self": "Each person's device",
       "self_mode_title": "Transcript capture",
+      "self_notes_pickup": "Members’ microphones may pick up nearby speech.",
       "self_notice": "In this meeting each person's device transcribes only their own voice. If you turn Mira off, your voice is not captured and the others keep their transcript. Your voice can still be picked up by someone else's microphone; using headphones helps.",
       "self_readers": "The host and this workspace's admins can read the transcript and notes. Lines already transcribed stay and are used for notes.",
       "self_state_app": "Transcription of your voice is not available in the app.",

@@ -200,6 +200,31 @@ it('reads the room again after the host starts or stops a session', async () => 
   );
 });
 
+it.each(['self', 'room'] as const)(
+  'shows the microphone pickup notice only in per-speaker notes (%s)',
+  async (mode) => {
+    f.read.mockResolvedValue({
+      ...consent(true),
+      mode,
+      session: null,
+    });
+    show(hook());
+
+    await screen.findByText(mode === 'self' ? ai.self_notice : ai.notice);
+    expect(screen.queryByText(ai.self_notes_pickup)).toBeNull();
+
+    fireEvent.keyDown(screen.getByRole('tab', { name: ai.notes }), {
+      key: 'Enter',
+    });
+    if (mode === 'self') {
+      expect(await screen.findByText(ai.self_notes_pickup)).toBeTruthy();
+    } else {
+      expect(await screen.findByText(ai.notes_empty)).toBeTruthy();
+      expect(screen.queryByText(ai.self_notes_pickup)).toBeNull();
+    }
+  }
+);
+
 it('never allows on the host’s behalf when a fresh read says per-speaker', async () => {
   resetSelfCaptureFlags('room');
   // The cached view says room capture; the room has moved to per-speaker.

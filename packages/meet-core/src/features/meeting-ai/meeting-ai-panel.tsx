@@ -120,6 +120,11 @@ export function MeetingAiPanel({
             />
           </TabsContent>
           <TabsContent value="notes" className="space-y-3">
+            {perSpeaker ? (
+              <p className="text-muted-foreground text-sm">
+                {t('self_notes_pickup')}
+              </p>
+            ) : null}
             {active && inCall ? (
               <MeetingLiveNotes
                 wsId={ai.wsId}
