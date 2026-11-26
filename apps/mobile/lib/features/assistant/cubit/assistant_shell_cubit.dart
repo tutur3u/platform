@@ -98,6 +98,16 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   bool get _acceptsSettingsChanges =>
       _sessionLoaded && _sessionScope?.actorId == _repository.currentActorId;
 
+  /// Whether the session has loaded for the current actor. New chats wait
+  /// for it, so none is created on a credit source the session has not
+  /// resolved; unlike [settingsReady] a failed settings change does not
+  /// clear it.
+  bool get sessionReady => _acceptsSettingsChanges;
+
+  /// The credit source a new chat uses in this session, before the
+  /// workspace lock applies.
+  AssistantCreditSource _newChatCreditSource = AssistantCreditSource.workspace;
+
   /// Whether the composer's model and mode controls can change settings:
   /// the session has loaded and the last load or change did not fail.
   bool get settingsReady =>
@@ -134,6 +144,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       workspaceId: workspace.id,
     );
     final newSession = scope != _sessionScope;
+    final actorChanged = scope.actorId != _sessionScope?.actorId;
     if (newSession) {
       _sessionScope = scope;
       _scopeEpoch++;
@@ -142,13 +153,17 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       _openConversation = null;
     }
     final appliedAtStart = _appliedSelections;
-    // A new session drops the previous account's model, credits and
-    // conversation, so nothing sent while it loads carries them.
+    // A new session drops the previous workspace's model, credits, context
+    // and conversation, and a new actor also drops the previous account's
+    // assistant profile and personal workspace, so nothing shown or sent
+    // while it loads carries them.
     final base = newSession
         ? state.copyWith(
-            soul: const AssistantSoul(),
-            soulSnapshot: null,
-            personalWorkspaceId: null,
+            soul: actorChanged ? const AssistantSoul() : null,
+            soulSnapshot: actorChanged ? null : state.soulSnapshot,
+            personalWorkspaceId: actorChanged
+                ? null
+                : state.personalWorkspaceId,
             workspaceCredits: const AssistantCredits(),
             personalCredits: const AssistantCredits(),
             activeCredits: const AssistantCredits(),
@@ -252,6 +267,9 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       // An open conversation's acknowledged settings decide its credit
       // source, since sends must match what the conversation stores.
       // Otherwise locked workspace credits resolve to personal credits.
+      _newChatCreditSource = changed && open == null
+          ? state.creditSource
+          : activeCreditSource;
       final creditSource =
           open?.creditSource ??
           (workspaceCreditLocked
@@ -373,15 +391,15 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       // A new chat takes the session's mode, not the last opened
       // conversation's, and a locked workspace's new chat uses personal
       // credits even after a conversation saved on workspace credits.
-      final locked = state.workspaceCreditLocked;
+      final source = state.workspaceCreditLocked
+          ? AssistantCreditSource.personal
+          : _newChatCreditSource;
       emit(
         state.copyWith(
           conversationSettings: null,
           thinkingMode: _sessionThinkingMode,
-          creditSource: locked ? AssistantCreditSource.personal : null,
-          activeCredits: locked && state.personalWorkspaceId != null
-              ? state.personalCredits
-              : null,
+          creditSource: source,
+          activeCredits: _creditsFor(source),
         ),
       );
       return;
@@ -391,6 +409,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       state.copyWith(
         selectedModel: model,
         creditSource: settings.creditSource,
+        activeCredits: _creditsFor(settings.creditSource),
         thinkingMode: settings.thinkingMode,
         conversationSettings: settings,
       ),
@@ -407,6 +426,14 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         ? open.settings
         : null;
   }
+
+  /// The loaded credits behind [source]; personal credits fall back to the
+  /// workspace's when the account has no separate personal workspace.
+  AssistantCredits _creditsFor(AssistantCreditSource source) =>
+      source == AssistantCreditSource.personal &&
+          state.personalWorkspaceId != null
+      ? state.personalCredits
+      : state.workspaceCredits;
 
   AssistantGatewayModel _conversationModel(
     AssistantConversationSettings settings,

@@ -759,16 +759,20 @@ The selector waits while a reply is in flight or messages are queued, so a
 change never stops a reply or drops queued messages, and a change still being
 saved wins over a workspace refresh that lands meanwhile; the refresh waits up
 to three seconds for it, and a change that settles later still applies itself. A
-new session starts without the previous account's model, credits, workspace
-context, assistant profile or conversation, so nothing sent while it loads
-carries them. The model and mode controls wait until the session's workspace
-settings load successfully, so no change is built from another session's model
-or credit source, and locked workspace credits resolve to personal credits for
-new chats, while an open conversation keeps the credit source it stores, which
-its sends must match. Live keeps its own model choice. Regression coverage:
+new session starts without the previous workspace's model, credits, workspace
+context or conversation, and a new account also starts without the previous
+account's assistant profile and personal workspace, so nothing shown or sent
+while it loads carries them; a new chat waits until the session has loaded its
+credits. The model and mode controls wait until the session's workspace settings
+load successfully, so no change is built from another session's model or credit
+source, and in a workspace with locked credits every new chat uses personal
+credits, while an open conversation keeps the credit source it stores, which its
+sends must match; a new chat after it returns to the session's credit choice.
+Live keeps its own model choice. Regression coverage:
 `assistant_shell_recovery_test.dart`, `assistant_shell_kept_settings_test.dart`,
 `assistant_shell_session_gate_test.dart`,
-`assistant_shell_locked_credits_test.dart`, `assistant_legacy_chat_test.dart`,
+`assistant_shell_locked_credits_test.dart`,
+`assistant_session_load_send_test.dart`, `assistant_legacy_chat_test.dart`,
 `assistant_thinking_mode_switch_test.dart` and
 `assistant_home_render_test.dart`.
 

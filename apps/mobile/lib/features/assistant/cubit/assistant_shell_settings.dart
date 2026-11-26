@@ -174,6 +174,7 @@ extension _AssistantShellSettings on AssistantShellCubit {
       );
       await _preferences.saveModel(workspace.id, model, shouldWrite: current);
       if (!current()) return false;
+      _newChatCreditSource = effective;
       _followAcknowledged(selection);
       _appliedSelections++;
       _emitIfOpen(

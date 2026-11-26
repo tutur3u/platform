@@ -88,9 +88,7 @@ extension _AssistantAttachments on _AssistantPageState {
       thinkingMode: shell.thinkingMode,
       creditSource: shell.creditSource,
       workspaceContextId: shell.workspaceContextId,
-      creditWsId: shell.creditSource == AssistantCreditSource.personal
-          ? shell.personalWorkspaceId
-          : wsId,
+      creditWsId: shell.sendCreditWorkspace(wsId),
       isCurrentActor: isCurrent,
     );
   }

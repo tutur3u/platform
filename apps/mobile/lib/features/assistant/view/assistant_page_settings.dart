@@ -53,6 +53,9 @@ extension _AssistantPageSettings on _AssistantPageState {
     String modelId,
     bool Function() creationCurrent,
   ) {
+    // A new chat waits for the session's settings, so it is never created on
+    // a credit source the session has not resolved yet.
+    if (!_shellCubit.sessionReady) return null;
     final shell = _shellCubit.state;
     final actor = _currentActor();
     final scope = _localScope();

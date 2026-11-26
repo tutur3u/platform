@@ -112,16 +112,19 @@ void main() {
     creditsGate = Completer<void>();
     final loading = cubit.loadWorkspace(_workspace, forceRefresh: true);
     await Future<void>.delayed(Duration.zero);
-    // Nothing sent now can carry the previous account's credit workspace.
+    // Nothing sent now can carry the previous account's credit workspace,
+    // and new chats wait for the session to resolve its own credits.
     expect(cubit.state.status, AssistantShellStatus.loading);
     expect(cubit.state.personalWorkspaceId, isNull);
-    expect(cubit.state.creditSource, AssistantCreditSource.workspace);
+    expect(cubit.state.sendCreditWorkspace(_ws), isNot('personal'));
     expect(cubit.state.activeCredits, const AssistantCredits());
     expect(cubit.state.conversationSettings, isNull);
     expect(cubit.state.selectedModel.value, 'google/gemini-3.1-flash-lite');
+    expect(cubit.sessionReady, isFalse);
     expect(cubit.settingsReady, isFalse);
     creditsGate!.complete();
     await loading;
+    expect(cubit.sessionReady, isTrue);
     expect(cubit.settingsReady, isTrue);
   });
 

@@ -124,7 +124,7 @@ void main() {
       // Personal credits stay on a paid plan.
       return AssistantCredits(
         tier: wsId == _personal ? 'PRO' : creditsTier,
-        remaining: 5000,
+        remaining: wsId == _personal ? 7000 : 5000,
       );
     });
     when(repository.fetchGatewayModels).thenAnswer((_) async => []);
@@ -270,4 +270,56 @@ void main() {
       );
     },
   );
+
+  test('the same account switching workspaces keeps its profile', () async {
+    final cubit = shell();
+    await cubit.loadWorkspace(_workspace);
+    expect(cubit.state.personalWorkspaceId, _personal);
+    creditsGate = Completer<void>();
+    final loading = cubit.loadWorkspace(
+      const Workspace(id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'),
+    );
+    await Future<void>.delayed(Duration.zero);
+    // Workspace settings reset, but the account's own profile stays.
+    expect(cubit.state.status, AssistantShellStatus.loading);
+    expect(cubit.state.soul.name, 'Mira of $_actorA');
+    expect(cubit.state.personalWorkspaceId, _personal);
+    expect(cubit.state.workspaceContextId, 'personal');
+    creditsGate!.complete();
+    await loading;
+  });
+
+  test('a restored conversation shows the credits it uses', () async {
+    creditsTier = 'PRO';
+    final cubit = shell();
+    await cubit.loadWorkspace(const Workspace(id: _ws, tier: 'PRO'));
+    expect(cubit.state.creditSource, AssistantCreditSource.workspace);
+    cubit.restoreConversationSettings(
+      const AssistantConversationSettings(
+        modelId: 'google/gemini-3-flash',
+        creditSource: AssistantCreditSource.personal,
+        creditWsId: _personal,
+        thinkingMode: AssistantThinkingMode.fast,
+      ),
+    );
+    expect(cubit.state.creditSource, AssistantCreditSource.personal);
+    expect(cubit.state.activeCredits.remaining, 7000);
+    expect(cubit.state.activeCredits, cubit.state.personalCredits);
+    cubit.restoreConversationSettings(_workspaceChat);
+    expect(cubit.state.activeCredits, cubit.state.workspaceCredits);
+  });
+
+  test("a new chat returns to the session's credit choice", () async {
+    creditsTier = 'PRO';
+    final cubit = shell();
+    await cubit.loadWorkspace(const Workspace(id: _ws, tier: 'PRO'));
+    expect(await cubit.setCreditSource(AssistantCreditSource.personal), isTrue);
+    // A conversation on workspace credits, then a new chat.
+    cubit
+      ..restoreConversationSettings(_workspaceChat)
+      ..restoreConversationSettings(null);
+    expect(cubit.state.creditSource, AssistantCreditSource.personal);
+    expect(cubit.state.activeCredits, cubit.state.personalCredits);
+    expect(cubit.state.sendCreditWorkspace(_ws), _personal);
+  });
 }
