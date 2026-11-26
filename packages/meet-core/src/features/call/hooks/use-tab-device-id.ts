@@ -48,10 +48,7 @@ export function useTabDeviceId(meetingId: string, accountId?: string | null) {
     }
     pageClaims.set(key, claim);
     setConfirmed(claim.nonce);
-    const timer = setInterval(
-      () => renewTabDeviceClaim(claim),
-      CLAIM_RENEW_MS
-    );
+    const timer = setInterval(() => renewTabDeviceClaim(claim), CLAIM_RENEW_MS);
     const hide = () => releaseTabDeviceClaim(claim);
     const show = () => renewTabDeviceClaim(claim);
     window.addEventListener('pagehide', hide);

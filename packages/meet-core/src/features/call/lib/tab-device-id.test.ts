@@ -49,7 +49,9 @@ function browser() {
   let clock = 1_000_000;
   let counter = 0;
   const local = new MemoryStorage();
-  const tab = (session = new MemoryStorage()): TabDeviceEnvironment & {
+  const tab = (
+    session = new MemoryStorage()
+  ): TabDeviceEnvironment & {
     session: MemoryStorage;
   } => ({
     session,
@@ -119,9 +121,7 @@ describe('tab device id', () => {
     renewTabDeviceClaim(page, original);
     advance(CLAIM_TTL_MS - 1);
     const duplicate = tab(original.session.copy());
-    expect(acquireTabDeviceId(key, duplicate).deviceId).not.toBe(
-      page.deviceId
-    );
+    expect(acquireTabDeviceId(key, duplicate).deviceId).not.toBe(page.deviceId);
   });
 
   it('gives a page whose claim write did not stick a new id', () => {
@@ -178,7 +178,7 @@ describe('tab device id', () => {
 
   it('acquires even when listing the claims throws', () => {
     const { tab, local } = browser();
-    const listing = Object.assign(Object.create(local), {
+    const listing = {
       key: () => {
         throw new Error('denied');
       },
@@ -186,7 +186,7 @@ describe('tab device id', () => {
       getItem: (name: string) => local.getItem(name),
       setItem: (name: string, value: string) => local.setItem(name, value),
       removeItem: (name: string) => local.removeItem(name),
-    });
+    };
     const env = { ...tab(), local: listing };
     expect(acquireTabDeviceId(key, env).deviceId).toMatch(/^id-/);
   });
@@ -235,8 +235,9 @@ describe('tab device id', () => {
       tabDeviceKey('meeting-1', 'account-2'),
       session
     );
-    expect(new Set([a, otherMeeting, otherAccount].map((c) => c.deviceId)))
-      .toHaveProperty('size', 3);
+    expect(
+      new Set([a, otherMeeting, otherAccount].map((c) => c.deviceId))
+    ).toHaveProperty('size', 3);
     expect(session.session.getItem(key)).toBe(a.deviceId);
   });
 });
