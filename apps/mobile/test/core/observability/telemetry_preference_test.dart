@@ -330,25 +330,42 @@ void main() {
   });
 
   test(
-    'the privacy manifest is declared, untracked and in the Runner target',
+    'the privacy manifests are declared, untracked and in their Apple targets',
     () {
-      final manifest = File(
+      for (final manifestPath in const [
         'ios/Runner/PrivacyInfo.xcprivacy',
-      ).readAsStringSync();
-      expect(manifest, matches(RegExp(r'NSPrivacyTracking</key>\s*<false/>')));
-      expect(manifest, contains('NSPrivacyAccessedAPICategoryUserDefaults'));
-      expect(manifest, contains('CA92.1'));
-      expect(
-        manifest,
-        isNot(contains('NSPrivacyCollectedDataTypePurchaseHistory')),
-      );
-      expect(manifest, isNot(contains('NSPrivacyCollectedDataTypeUserID')));
+        'ios/TuturuuuWatch/PrivacyInfo.xcprivacy',
+        'ios/TuturuuuWatchWidgets/PrivacyInfo.xcprivacy',
+      ]) {
+        final manifest = File(manifestPath).readAsStringSync();
+        expect(
+          manifest,
+          matches(RegExp(r'NSPrivacyTracking</key>\s*<false/>')),
+          reason: manifestPath,
+        );
+        expect(
+          manifest,
+          contains('NSPrivacyAccessedAPICategoryUserDefaults'),
+          reason: manifestPath,
+        );
+        expect(manifest, contains('CA92.1'), reason: manifestPath);
+        expect(
+          manifest,
+          isNot(contains('NSPrivacyCollectedDataTypePurchaseHistory')),
+          reason: manifestPath,
+        );
+        expect(
+          manifest,
+          isNot(contains('NSPrivacyCollectedDataTypeUserID')),
+          reason: manifestPath,
+        );
+      }
       final project = File(
         'ios/Runner.xcodeproj/project.pbxproj',
       ).readAsStringSync();
       expect(
         RegExp('PrivacyInfo.xcprivacy in Resources').allMatches(project),
-        hasLength(2),
+        hasLength(6),
       );
     },
   );
