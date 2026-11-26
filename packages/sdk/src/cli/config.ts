@@ -1,6 +1,8 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile } from 'node:fs/promises';
 import { homedir, platform } from 'node:os';
-import { dirname, posix, win32 } from 'node:path';
+import { dirname, posix, resolve, win32 } from 'node:path';
+import { writeFileAtomically } from './atomic-file';
+import { CLI_ENVS, type CliEnv } from './cli-env';
 
 export interface CliSession {
   accessToken: string;
@@ -18,6 +20,7 @@ export interface CliConfig {
   currentProjectId?: string;
   currentTaskId?: string;
   currentWorkspaceId?: string;
+  defaultEnv?: CliEnv;
   session?: CliSession;
   tasksBaseUrl?: string;
   updateCheck?: {
@@ -302,6 +305,11 @@ export async function readCliConfig(
       currentProjectId: parsed.currentProjectId,
       currentTaskId: parsed.currentTaskId,
       currentWorkspaceId: parsed.currentWorkspaceId,
+      defaultEnv:
+        typeof parsed.defaultEnv === 'string' &&
+        (CLI_ENVS as readonly string[]).includes(parsed.defaultEnv)
+          ? (parsed.defaultEnv as CliEnv)
+          : undefined,
       session: parsed.session,
       tasksBaseUrl: parsed.tasksBaseUrl
         ? normalizeHostBaseUrl(parsed.tasksBaseUrl)
@@ -321,9 +329,22 @@ export async function writeCliConfig(
   config: CliConfig,
   path = getDefaultConfigPath()
 ) {
-  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-  await writeFile(
-    path,
+  const target = resolve(path);
+  const parent = dirname(target);
+  const parentInfo = await lstat(parent).catch(() => undefined);
+  if (!parentInfo) {
+    await mkdir(parent, { recursive: true, mode: 0o700 });
+  } else if (parentInfo.isSymbolicLink() || !parentInfo.isDirectory()) {
+    throw new Error('CLI config directory must be a real directory.');
+  }
+  const existing = await lstat(target).catch(() => undefined);
+  if (existing && (existing.isSymbolicLink() || !existing.isFile())) {
+    throw new Error(
+      'Refusing to write CLI config through a symlink or non-file.'
+    );
+  }
+  await writeFileAtomically(
+    target,
     `${JSON.stringify(
       {
         ...config,

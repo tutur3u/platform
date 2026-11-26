@@ -1,6 +1,7 @@
 import { open, readFile } from 'node:fs/promises';
 import { z } from 'zod';
 import type { TuturuuuUserClient } from '../platform';
+import type { ExternalAppConfiguration } from '../platform-external-admin';
 import { type FlagValue, getFlag, parseCsv } from './args';
 import { domainsHelp } from './domains';
 import { runExternalProjectsCommand } from './external-projects';
@@ -75,7 +76,9 @@ export async function runExternalCommand(options: Options) {
     if (action === 'list') return emit(await admin.apps());
     if (action === 'get') {
       if (!id) throw new Error('Missing app ID.');
-      const app = (await admin.apps()).apps.find((app) => app.id === id);
+      const app = (await admin.apps()).apps.find(
+        (entry: ExternalAppConfiguration) => entry.id === id
+      );
       if (!app) throw new Error('App not found.');
       return emit(app);
     }
@@ -88,7 +91,9 @@ export async function runExternalCommand(options: Options) {
     }
     if (action === 'scopes') {
       if (!id) throw new Error('Missing app ID.');
-      const app = (await admin.apps()).apps.find((app) => app.id === id);
+      const app = (await admin.apps()).apps.find(
+        (entry: ExternalAppConfiguration) => entry.id === id
+      );
       if (!app) throw new Error('App not found.');
       if (!getFlag(flags, 'scopes') && flags['clear-scopes'] !== true)
         return emit({ id, allowedScopes: app.allowedScopes });
@@ -196,6 +201,7 @@ export function externalAdminHelp(group?: string) {
   ttr external binding get --workspace <id>
   ttr external binding set --workspace <id> --template <key> --confirm LINK_SITE_TEMPLATE
   ttr external projects --help
+  ttr external upskii --help
 
 App JSON: id, displayName, enabled, origins, allowedScopes, allowedWorkspaceIds;
 optional requirePkce and callbackPaths (omitted fields keep their stored value).

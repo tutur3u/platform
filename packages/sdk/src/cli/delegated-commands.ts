@@ -6,13 +6,19 @@ export function isDelegatedCommand(command: string | undefined) {
     command === 'resources' ||
     command === 'storage' ||
     command === 'git' ||
-    command === 'check'
+    command === 'check' ||
+    command === 'doctor' ||
+    command === 'env'
   );
 }
 
 export async function runDelegatedCommand(argv: string[]) {
   if (argv[0] === 'board')
     return (await import('./board-command.js')).runBoardCommand(argv.slice(1));
+  if (argv[0] === 'doctor')
+    return (await import('./doctor.js')).runDoctorCommand(argv.slice(1));
+  if (argv[0] === 'env')
+    return (await import('./env-command.js')).runEnvCommand(argv.slice(1));
   if (argv[0] === 'git')
     return (await import('./git-guard.js')).runGitCommand(argv.slice(1));
   if (argv[0] === 'check') {
