@@ -14,7 +14,7 @@ inputs:
     description: Allow archive creation and upload from trusted main runs
     default: "true"
   seed-image-catalog:
-    description: Fixed trusted seed catalog (current or cli-2.121.0)
+    description: Fixed trusted seed catalog (current, cli-2.121.0 or cli-3.3.0)
     default: current
   pin-cache-key:
     description: Bind fixed-catalog content pins into the archive key

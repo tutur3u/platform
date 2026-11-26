@@ -9,7 +9,7 @@ const {
   verifyPinnedContent,
 } = require('./supabase-image-cache-seed.js');
 const data = require('./supabase-image-cache-seed-data.json');
-const catalog = 'cli-2.121.0';
+const catalog = 'cli-3.3.0';
 const images = data.catalogs[catalog].profiles.contract;
 const identity = {
   images,

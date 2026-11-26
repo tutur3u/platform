@@ -501,7 +501,11 @@ jobs:
           fi
           cd apps/database
           supabase link --project-ref "$PRODUCTION_PROJECT_ID"
-          supabase db push --include-all
+          # CLI v3 targets the local stack unless --remote is passed; bare
+          # --remote means the project linked above. --yes is the required
+          # unattended consent for this hosted mutation; it also lets the CLI
+          # lift a network ban on the runner's address for this project.
+          supabase db push --remote --include-all --yes
 
       - name: Record successful production migration marker
         if: steps.coordinator.outputs.publish != 'false'
@@ -569,6 +573,6 @@ jobs:
           fi
           cd apps/database
           supabase link --project-ref "$PRODUCTION_PROJECT_ID"
-          listing="$(supabase migration list --linked)"
+          listing="$(supabase migration list --remote)"
           printf '%s\n' "$listing"
           printf '%s\n' "$listing" | "$GITHUB_WORKSPACE/scripts/ci/summarize-production-migration-list.sh" supabase/migrations

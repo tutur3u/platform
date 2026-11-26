@@ -123,7 +123,9 @@ export function probeCli(databaseDir, { runner = spawnSync } = {}) {
       binarySha256,
       generate:
         /supabase db schema declarative generate\b/.test(generate) &&
-        /--local\b/.test(generate),
+        // CLI v3 generates from the local database by default; --remote is
+        // the only target flag it still documents.
+        /--remote\b/.test(generate),
       sync:
         /supabase db schema declarative sync\b/.test(sync) &&
         /--no-apply\b/.test(sync),

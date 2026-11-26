@@ -30,7 +30,7 @@ on:
         description: Reviewed image catalog for main-only seeding
         type: choice
         default: current
-        options: [current, cli-2.121.0]
+        options: [current, cli-2.121.0, cli-3.3.0]
 env:
   SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws
 permissions:

@@ -23,7 +23,7 @@ function fixture(t) {
   );
   fs.writeFileSync(
     path.join(db, 'package.json'),
-    JSON.stringify({ devDependencies: { supabase: '2.117.0' } })
+    JSON.stringify({ devDependencies: { supabase: '3.3.0' } })
   );
   fs.writeFileSync(
     path.join(db, 'supabase/migrations/20260101000000_init.sql'),
@@ -34,7 +34,7 @@ function fixture(t) {
 }
 
 const supported = () => ({
-  installedVersion: '2.117.0',
+  installedVersion: '3.3.0',
   binarySha256: 'fixture',
   generate: true,
   sync: true,
@@ -84,7 +84,7 @@ test('a complete-looking tree and supported CLI cannot self-attest a baseline', 
 test('version mismatch and legacy engine fail closed', (t) => {
   const { root } = fixture(t);
   const report = readiness(root, {
-    probe: () => ({ ...supported(), installedVersion: '2.118.0', sync: false }),
+    probe: () => ({ ...supported(), installedVersion: '3.2.0', sync: false }),
   });
   for (const code of [
     'cli-version-unbound',
@@ -179,8 +179,8 @@ test('CLI help must describe the exact command and required safety flags', (t) =
       status: 0,
       stdout:
         args[0] === '--version'
-          ? '2.117.0\n'
-          : 'Usage: supabase db [command]\n--local --no-apply',
+          ? '3.3.0\n'
+          : 'Usage: supabase db [command]\n--remote --no-apply',
     };
   };
   const unsupported = probeCli(db, { runner });
@@ -197,8 +197,8 @@ test('CLI help must describe the exact command and required safety flags', (t) =
         status: 0,
         stdout:
           args[0] === '--version'
-            ? '2.117.0'
-            : `Usage: supabase ${args.slice(0, -1).join(' ')}\n--local --no-apply`,
+            ? '3.3.0'
+            : `Usage: supabase ${args.slice(0, -1).join(' ')}\n--remote --no-apply`,
       }),
     }).sync,
     true

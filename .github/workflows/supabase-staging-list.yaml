@@ -43,6 +43,6 @@ jobs:
           fi
           cd apps/database
           supabase link --project-ref "$STAGING_PROJECT_ID"
-          listing="$(supabase migration list --linked)"
+          listing="$(supabase migration list --remote)"
           printf '%s\n' "$listing"
           printf '%s\n' "$listing" | "$GITHUB_WORKSPACE/scripts/ci/summarize-production-migration-list.sh" supabase/migrations

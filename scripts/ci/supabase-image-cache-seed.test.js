@@ -184,7 +184,7 @@ test('seed workflow keeps fixed main-only choices, serial profiles and read-only
     description: 'Reviewed image catalog for main-only seeding',
     type: 'choice',
     default: 'current',
-    options: ['current', 'cli-2.121.0'],
+    options: ['current', 'cli-2.121.0', 'cli-3.3.0'],
   });
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   const seed = workflow.jobs['seed-images'];
@@ -228,7 +228,10 @@ test('every current and retained catalog image has a matching official fallback'
     'mailpit:v1.30.2',
     'imgproxy:v3.8.0',
   ].map((image) => `public.ecr.aws/supabase/${image}`);
-  const future = data.catalogs['cli-2.121.0'].images;
+  const future = {
+    ...data.catalogs['cli-2.121.0'].images,
+    ...data.catalogs['cli-3.3.0'].images,
+  };
   assert.deepEqual(
     Object.keys(data.fallbacks).sort(),
     [...new Set([...retainedImages, ...Object.keys(future)])].sort()

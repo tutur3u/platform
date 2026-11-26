@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Summarize `supabase migration list --linked` from stdin against a local
+# Summarize `supabase migration list --remote` from stdin against a local
 # migrations directory. Remote versions are column 2. CLI v2.121.0 wraps
 # every cell in backticks, and an absent cell is a backtick, a space, and
 # a backtick. A parsed remote list exits 0, including when versions are pending.

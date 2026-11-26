@@ -11,20 +11,20 @@ const { catalogPin, digestReference } = require('./supabase-image-cache-seed');
 const { MAX_ARCHIVE_BYTES } = require('./supabase-image-cache');
 const data = require('./supabase-image-cache-seed-data.json');
 const config =
-  ['api', 'auth', 'realtime', 'studio', 'inbucket', 'storage']
+  ['api', 'auth', 'realtime', 'studio', 'local_smtp', 'storage']
     .map((section) => `[${section}]\nenabled = true\n`)
     .join('') +
   ['edge_runtime', 'analytics', 'db.pooler']
     .map((section) => `[${section}]\nenabled = false\n`)
     .join('');
-const images = Object.keys(data.catalogs['cli-2.121.0'].images);
+const images = Object.keys(data.catalogs['cli-3.3.0'].images);
 const services = images.map((image) => ({
   name: `supabase/${image.split('/').at(-1).split(':')[0]}`,
   local: image.split(':').at(-1),
 }));
 const inputs = {
   services,
-  cliVersion: '2.121.0',
+  cliVersion: '3.3.0',
   config,
   lock: 'lock',
   platform: 'linux',
@@ -105,7 +105,7 @@ function fixture(patch = {}) {
     if (args[0] === 'image') {
       const image = args.at(-1);
       const canonical = identity(inputs).images.find((item) => {
-        const pin = catalogPin('cli-2.121.0', item);
+        const pin = catalogPin('cli-3.3.0', item);
         const mirror = mirrorFor(item, pin);
         return (
           item === image ||
@@ -113,7 +113,7 @@ function fixture(patch = {}) {
           (mirror && `${mirror.repository}@${mirror.amd64}` === image)
         );
       });
-      const pin = catalogPin('cli-2.121.0', canonical);
+      const pin = catalogPin('cli-3.3.0', canonical);
       return {
         status: 0,
         stdout: JSON.stringify([
@@ -165,7 +165,7 @@ test('identity binds lock, config, CLI, platform and every selected pin without 
     assert.notEqual(identity({ ...inputs, ...patch }).digest, original);
   }
   assert.throws(() => identity({ ...inputs, cliVersion: '0.0.0' }));
-  const pin = catalogPin('cli-2.121.0', identity(inputs).images[0]);
+  const pin = catalogPin('cli-3.3.0', identity(inputs).images[0]);
   const old = pin.config;
   try {
     pin.config = `sha256:${'0'.repeat(64)}`;
@@ -238,9 +238,9 @@ test('oversized archive is refused before Docker load and removed', async () => 
 });
 test('mirror qualification requires canonical manifest and config equality', () => {
   const image = identity(inputs).images.find((item) =>
-    mirrorFor(item, catalogPin('cli-2.121.0', item))
+    mirrorFor(item, catalogPin('cli-3.3.0', item))
   );
-  const pin = catalogPin('cli-2.121.0', image);
+  const pin = catalogPin('cli-3.3.0', image);
   assert.match(mirrorFor(image, pin).repository, /^ghcr.io\/supabase\//);
   assert.equal(mirrorFor(image, { ...pin, config: 'wrong' }), null);
   assert.equal(mirrorFor(image, { ...pin, amd64: 'wrong' }), null);
@@ -469,7 +469,7 @@ test('pull failures report only catalog identity and bounded classification, nev
           image,
           transport: 'canonical',
           operation: 'pull',
-          attempts: mirrorFor(image, catalogPin('cli-2.121.0', image)) ? 3 : 2,
+          attempts: mirrorFor(image, catalogPin('cli-3.3.0', image)) ? 3 : 2,
           failure,
         },
       });

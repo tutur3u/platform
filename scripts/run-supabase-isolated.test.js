@@ -41,7 +41,7 @@ port = 8009
 [studio]
 port = 8003
 
-[inbucket]
+[local_smtp]
 port = 8004
 # smtp_port = 8005
 

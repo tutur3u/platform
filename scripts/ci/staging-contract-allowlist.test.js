@@ -44,6 +44,8 @@ test('the staging contract allowlist is exactly current plus main history', () =
     'd880c279f37b63628706b195e5397be1cf25acd5',
     // main: #6948 protected migration environments and project binding
     '40f1cc37c1b4c0ed2b9976019c95eb145311c77d',
+    // main: Supabase CLI 2.121.0 push producer before the v3 --remote form
+    '74fb269fcc135b0467c19d82286f1c3484c7d4f7',
     current,
   ]);
   for (const rejected of [

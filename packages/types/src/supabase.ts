@@ -28771,32 +28771,30 @@ export type Database = {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
-          content: string | null;
-          created_at: string | null;
+          content: string;
+          created_at: string;
           creator_display_name: string | null;
           creator_email: string | null;
           creator_full_name: string | null;
           creator_id: string | null;
-          feedback: string | null;
-          group_id: string | null;
+          feedback: string;
+          group_id: string;
           group_name: string | null;
           group_ws_id: string | null;
-          id: string | null;
+          id: string;
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
-          report_approval_status:
-            | Database['public']['Enums']['approval_status']
-            | null;
-          report_id: string | null;
+          report_approval_status: Database['public']['Enums']['approval_status'];
+          report_id: string;
           report_user_id: string | null;
           score: number | null;
           scores: number[] | null;
-          title: string | null;
+          title: string;
           user_display_name: string | null;
           user_email: string | null;
           user_full_name: string | null;
-          user_id: string | null;
+          user_id: string;
           user_ws_id: string | null;
         };
         ComputedFields: never;
@@ -28828,23 +28826,23 @@ export type Database = {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
-          cadence: string | null;
-          content: string | null;
-          created_at: string | null;
+          cadence: string;
+          content: string;
+          created_at: string;
           creator_display_name: string | null;
           creator_email: string | null;
           creator_full_name: string | null;
           creator_id: string | null;
           delivered_at: string | null;
           delivery_requested_at: string | null;
-          delivery_status: string | null;
-          feedback: string | null;
-          generation_mode: string | null;
-          generation_status: string | null;
-          group_id: string | null;
+          delivery_status: string;
+          feedback: string;
+          generation_mode: string;
+          generation_status: string;
+          group_id: string;
           group_name: string | null;
           group_ws_id: string | null;
-          id: string | null;
+          id: string;
           last_delivery_error: string | null;
           manager_instruction: string | null;
           modifier_display_name: string | null;
@@ -28855,22 +28853,20 @@ export type Database = {
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
-          report_approval_status:
-            | Database['public']['Enums']['approval_status']
-            | null;
+          report_approval_status: Database['public']['Enums']['approval_status'];
           report_stage: string | null;
           score: number | null;
           scores: number[] | null;
-          source_context: Json | null;
-          title: string | null;
-          updated_at: string | null;
+          source_context: NonNullable<Json>;
+          title: string;
+          updated_at: string;
           updated_by: string | null;
           user_archived: boolean | null;
           user_archived_until: string | null;
           user_display_name: string | null;
           user_email: string | null;
           user_full_name: string | null;
-          user_id: string | null;
+          user_id: string;
           user_note: string | null;
           user_ws_id: string | null;
         };
@@ -28887,16 +28883,16 @@ export type Database = {
       };
       form_committed_responses: {
         Row: {
-          completion_state: string | null;
-          created_at: string | null;
+          completion_state: string;
+          created_at: string;
           duration_seconds: number | null;
-          form_id: string | null;
-          id: string | null;
+          form_id: string;
+          id: string;
           respondent_email: string | null;
           respondent_user_id: string | null;
           session_id: string | null;
           share_link_id: string | null;
-          submitted_at: string | null;
+          submitted_at: string;
         };
         ComputedFields: never;
         Insert: {
@@ -28964,9 +28960,9 @@ export type Database = {
       inventory_active_warehouses: {
         Row: {
           created_at: string | null;
-          id: string | null;
+          id: string;
           name: string | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         ComputedFields: never;
         Insert: {
@@ -28985,19 +28981,19 @@ export type Database = {
       };
       nova_submissions_with_scores: {
         Row: {
-          created_at: string | null;
+          created_at: string;
           criteria_score: number | null;
-          id: string | null;
+          id: string;
           passed_tests: number | null;
-          problem_id: string | null;
-          prompt: string | null;
+          problem_id: string;
+          prompt: string;
           session_id: string | null;
           sum_criterion_score: number | null;
           test_case_score: number | null;
           total_criteria: number | null;
           total_score: number | null;
           total_tests: number | null;
-          user_id: string | null;
+          user_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -29034,10 +29030,10 @@ export type Database = {
       nova_team_challenge_leaderboard: {
         Row: {
           challenge_id: string | null;
-          name: string | null;
+          name: string;
           problem_scores: Json | null;
           score: number | null;
-          team_id: string | null;
+          team_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -29060,9 +29056,9 @@ export type Database = {
       nova_team_leaderboard: {
         Row: {
           challenge_scores: Json | null;
-          name: string | null;
+          name: string;
           score: number | null;
-          team_id: string | null;
+          team_id: string;
         };
         ComputedFields: never;
         Relationships: [];
@@ -29070,11 +29066,11 @@ export type Database = {
       nova_user_challenge_leaderboard: {
         Row: {
           avatar: string | null;
-          challenge_id: string | null;
+          challenge_id: string;
           name: string | null;
           problem_scores: Json | null;
           score: number | null;
-          user_id: string | null;
+          user_id: string;
         };
         ComputedFields: never;
         Relationships: [];
@@ -29085,14 +29081,14 @@ export type Database = {
           challenge_scores: Json | null;
           name: string | null;
           score: number | null;
-          user_id: string | null;
+          user_id: string;
         };
         ComputedFields: never;
         Relationships: [];
       };
       posts_dashboard_view: {
         Row: {
-          created_at: string | null;
+          created_at: string;
           display_name: string | null;
           email_id: string | null;
           email_sent_at: string | null;
@@ -29100,17 +29096,17 @@ export type Database = {
           full_name: string | null;
           group_id: string | null;
           group_name: string | null;
-          is_completed: boolean | null;
+          is_completed: boolean;
           notes: string | null;
           post_content: string | null;
-          post_created_at: string | null;
-          post_id: string | null;
-          post_id_full: string | null;
+          post_created_at: string;
+          post_id: string;
+          post_id_full: string;
           post_title: string | null;
           recipient: string | null;
           user_email: string | null;
-          user_id: string | null;
-          ws_id: string | null;
+          user_id: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -29133,9 +29129,9 @@ export type Database = {
       product_email_recipients: {
         Row: {
           granted_at: string | null;
-          policy_version: string | null;
-          source: string | null;
-          user_id: string | null;
+          policy_version: string;
+          source: string;
+          user_id: string;
         };
         ComputedFields: never;
         Insert: {
@@ -29181,23 +29177,21 @@ export type Database = {
       };
       time_tracking_request_activity_with_users: {
         Row: {
-          action_type:
-            | Database['public']['Enums']['time_tracking_request_activity_action']
-            | null;
+          action_type: Database['public']['Enums']['time_tracking_request_activity_action'];
           actor_avatar_url: string | null;
           actor_display_name: string | null;
           actor_handle: string | null;
-          actor_id: string | null;
+          actor_id: string;
           changed_fields: Json | null;
           comment_content: string | null;
           comment_id: string | null;
-          created_at: string | null;
+          created_at: string;
           feedback_reason: string | null;
-          id: string | null;
+          id: string;
           metadata: Json | null;
           new_status: string | null;
           previous_status: string | null;
-          request_id: string | null;
+          request_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -29247,13 +29241,13 @@ export type Database = {
       };
       time_tracking_request_comments_with_users: {
         Row: {
-          content: string | null;
-          created_at: string | null;
-          id: string | null;
-          request_id: string | null;
-          updated_at: string | null;
+          content: string;
+          created_at: string;
+          id: string;
+          request_id: string;
+          updated_at: string;
           user: Json | null;
-          user_id: string | null;
+          user_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -29289,9 +29283,7 @@ export type Database = {
       };
       time_tracking_requests_with_details: {
         Row: {
-          approval_status:
-            | Database['public']['Enums']['time_tracking_request_status']
-            | null;
+          approval_status: Database['public']['Enums']['time_tracking_request_status'];
           approved_at: string | null;
           approved_by: string | null;
           approved_by_user: Json | null;
@@ -29299,10 +29291,10 @@ export type Database = {
           break_type_name: string | null;
           category: Json | null;
           category_id: string | null;
-          created_at: string | null;
+          created_at: string;
           description: string | null;
-          end_time: string | null;
-          id: string | null;
+          end_time: string;
+          id: string;
           images: string[] | null;
           linked_session_id: string | null;
           needs_info_reason: string | null;
@@ -29313,14 +29305,14 @@ export type Database = {
           rejected_by: string | null;
           rejected_by_user: Json | null;
           rejection_reason: string | null;
-          start_time: string | null;
+          start_time: string;
           task: Json | null;
           task_id: string | null;
-          title: string | null;
-          updated_at: string | null;
+          title: string;
+          updated_at: string;
           user: Json | null;
-          user_id: string | null;
-          workspace_id: string | null;
+          user_id: string;
+          workspace_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -29386,9 +29378,9 @@ export type Database = {
         Row: {
           calculated_discount_value: number | null;
           promo_code: string | null;
-          promo_id: string | null;
+          promo_id: string;
           user_id: string | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [];
@@ -36501,23 +36493,23 @@ export type Database = {
         Returns: {
           approved_at: string | null;
           approved_by: string | null;
-          cadence: string | null;
-          content: string | null;
-          created_at: string | null;
+          cadence: string;
+          content: string;
+          created_at: string;
           creator_display_name: string | null;
           creator_email: string | null;
           creator_full_name: string | null;
           creator_id: string | null;
           delivered_at: string | null;
           delivery_requested_at: string | null;
-          delivery_status: string | null;
-          feedback: string | null;
-          generation_mode: string | null;
-          generation_status: string | null;
-          group_id: string | null;
+          delivery_status: string;
+          feedback: string;
+          generation_mode: string;
+          generation_status: string;
+          group_id: string;
           group_name: string | null;
           group_ws_id: string | null;
-          id: string | null;
+          id: string;
           last_delivery_error: string | null;
           manager_instruction: string | null;
           modifier_display_name: string | null;
@@ -36528,22 +36520,20 @@ export type Database = {
           rejected_at: string | null;
           rejected_by: string | null;
           rejection_reason: string | null;
-          report_approval_status:
-            | Database['public']['Enums']['approval_status']
-            | null;
+          report_approval_status: Database['public']['Enums']['approval_status'];
           report_stage: string | null;
           score: number | null;
           scores: number[] | null;
-          source_context: Json | null;
-          title: string | null;
-          updated_at: string | null;
+          source_context: NonNullable<Json>;
+          title: string;
+          updated_at: string;
           updated_by: string | null;
           user_archived: boolean | null;
           user_archived_until: string | null;
           user_display_name: string | null;
           user_email: string | null;
           user_full_name: string | null;
-          user_id: string | null;
+          user_id: string;
           user_note: string | null;
           user_ws_id: string | null;
         }[];
@@ -37999,7 +37989,9 @@ export type Database = {
       workspace_secret_name_tier: { Args: { p_name: string }; Returns: string };
       workspace_user_groups: {
         Args: { '': Database['private']['Tables']['user_group_posts']['Row'] };
-        Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
+        Returns: {
+          error: true;
+        } & 'the function private.workspace_user_groups with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache';
         SetofOptions: {
           from: 'private.user_group_posts';
           to: 'workspace_user_groups';
@@ -38012,7 +38004,9 @@ export type Database = {
             Args: {
               '': Database['private']['Tables']['user_group_post_checks']['Row'];
             };
-            Returns: Database['public']['Tables']['workspace_users']['Row'];
+            Returns: {
+              error: true;
+            } & 'the function private.workspace_users with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache';
             SetofOptions: {
               from: 'private.user_group_post_checks';
               to: 'workspace_users';
@@ -38024,7 +38018,9 @@ export type Database = {
             Args: {
               '': Database['private']['Tables']['user_group_posts']['Row'];
             };
-            Returns: Database['public']['Tables']['workspace_users']['Row'];
+            Returns: {
+              error: true;
+            } & 'the function private.workspace_users with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache';
             SetofOptions: {
               from: 'private.user_group_posts';
               to: 'workspace_users';
@@ -60731,14 +60727,14 @@ export type Database = {
         Row: {
           auth_role: string | null;
           auth_uid: string | null;
-          id: number | null;
+          id: number;
           old_record: Json | null;
           old_record_id: string | null;
-          op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null;
+          op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE';
           record: Json | null;
           record_id: string | null;
           table_name: unknown;
-          ts: string | null;
+          ts: string;
           ws_id: string | null;
         };
         ComputedFields: never;
@@ -60768,7 +60764,22 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       distinct_invoice_creators: {
         Row: {
@@ -60776,8 +60787,8 @@ export type Database = {
           display_name: string | null;
           email: string | null;
           full_name: string | null;
-          id: string | null;
-          ws_id: string | null;
+          id: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -60817,8 +60828,8 @@ export type Database = {
           display_name: string | null;
           email: string | null;
           full_name: string | null;
-          id: string | null;
-          ws_id: string | null;
+          id: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -60855,7 +60866,7 @@ export type Database = {
       entity_limit_source__tasks: {
         Row: {
           created_at: string | null;
-          id: string | null;
+          id: string;
           user_id: string | null;
           ws_id: string | null;
         };
@@ -60907,10 +60918,10 @@ export type Database = {
       };
       entity_limit_source__workspace_whiteboards: {
         Row: {
-          created_at: string | null;
-          id: string | null;
-          user_id: string | null;
-          ws_id: string | null;
+          created_at: string;
+          id: string;
+          user_id: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Insert: {
@@ -60973,9 +60984,9 @@ export type Database = {
       entity_limit_source__workspaces: {
         Row: {
           created_at: string | null;
-          id: string | null;
+          id: string;
           personal_ws_id: string | null;
-          user_id: string | null;
+          user_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -60999,10 +61010,10 @@ export type Database = {
         Row: {
           attendance_count: number | null;
           full_name: string | null;
-          group_id: string | null;
+          group_id: string;
           is_completed: boolean | null;
           post_id: string | null;
-          user_id: string | null;
+          user_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61056,12 +61067,12 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           gender: string | null;
-          group_id: string | null;
+          group_id: string;
           is_completed: boolean | null;
           phone: string | null;
           post_id: string | null;
-          user_id: string | null;
-          ws_id: string | null;
+          user_id: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61136,10 +61147,10 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           gender: string | null;
-          group_id: string | null;
+          group_id: string;
           phone: string | null;
-          user_id: string | null;
-          ws_id: string | null;
+          user_id: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61213,12 +61224,12 @@ export type Database = {
           browser: string | null;
           click_count: number | null;
           device_type: string | null;
-          domain: string | null;
+          domain: string;
           first_click_at: string | null;
           last_click_at: string | null;
-          link_id: string | null;
+          link_id: string;
           os: string | null;
-          slug: string | null;
+          slug: string;
           unique_visitors: number | null;
         };
         ComputedFields: never;
@@ -61230,14 +61241,14 @@ export type Database = {
           click_count: number | null;
           country: string | null;
           country_region: string | null;
-          domain: string | null;
+          domain: string;
           first_click_at: string | null;
           last_click_at: string | null;
           latitude: number | null;
-          link_id: string | null;
+          link_id: string;
           longitude: number | null;
           postal_code: string | null;
-          slug: string | null;
+          slug: string;
           timezone: string | null;
           unique_visitors: number | null;
           vercel_region: string | null;
@@ -61247,14 +61258,14 @@ export type Database = {
       };
       link_analytics_summary: {
         Row: {
-          creator_id: string | null;
-          domain: string | null;
+          creator_id: string;
+          domain: string;
           first_click_at: string | null;
           last_click_at: string | null;
-          link_created_at: string | null;
-          link_id: string | null;
-          original_url: string | null;
-          slug: string | null;
+          link_created_at: string;
+          link_id: string;
+          original_url: string;
+          slug: string;
           top_browser: string | null;
           top_city: string | null;
           top_country: string | null;
@@ -61270,7 +61281,7 @@ export type Database = {
           unique_operating_systems: number | null;
           unique_referrers: number | null;
           unique_visitors: number | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61336,7 +61347,7 @@ export type Database = {
           domain_count: number | null;
           email: string | null;
           first_link_created: string | null;
-          id: string | null;
+          id: string;
           last_link_created: string | null;
           link_count: number | null;
         };
@@ -61359,8 +61370,8 @@ export type Database = {
           activity_date: string | null;
           session_count: number | null;
           total_duration: number | null;
-          user_id: string | null;
-          ws_id: string | null;
+          user_id: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61418,7 +61429,7 @@ export type Database = {
           description: string | null;
           duration_seconds: number | null;
           end_time: string | null;
-          id: string | null;
+          id: string;
           is_running: boolean | null;
           productivity_score: number | null;
           session_date: string | null;
@@ -61426,15 +61437,15 @@ export type Database = {
           session_month: string | null;
           session_week: string | null;
           start_hour: number | null;
-          start_time: string | null;
+          start_time: string;
           tags: string[] | null;
           task_id: string | null;
           task_name: string | null;
-          title: string | null;
+          title: string;
           updated_at: string | null;
-          user_id: string | null;
-          was_resumed: boolean | null;
-          ws_id: string | null;
+          user_id: string;
+          was_resumed: boolean;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61512,17 +61523,17 @@ export type Database = {
       };
       user_groups_with_tags: {
         Row: {
-          archived: boolean | null;
+          archived: boolean;
           created_at: string | null;
           ending_date: string | null;
-          id: string | null;
-          name: string | null;
+          id: string;
+          name: string;
           notes: string | null;
           sessions: string[] | null;
           starting_date: string | null;
           tag_count: number | null;
           tags: Json | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61563,14 +61574,14 @@ export type Database = {
           created_at: string | null;
           creator_id: string | null;
           description: string | null;
-          id: string | null;
+          id: string;
           invoice_id: string | null;
-          is_amount_confidential: boolean | null;
-          is_category_confidential: boolean | null;
-          is_description_confidential: boolean | null;
-          report_opt_in: boolean | null;
-          taken_at: string | null;
-          wallet_id: string | null;
+          is_amount_confidential: boolean;
+          is_category_confidential: boolean;
+          is_description_confidential: boolean;
+          report_opt_in: boolean;
+          taken_at: string;
+          wallet_id: string;
         };
         ComputedFields: never;
         Insert: {
@@ -61651,9 +61662,9 @@ export type Database = {
       workspace_dataset_row_cells: {
         Row: {
           cells: Json | null;
-          created_at: string | null;
-          dataset_id: string | null;
-          row_id: string | null;
+          created_at: string;
+          dataset_id: string;
+          row_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61668,20 +61679,18 @@ export type Database = {
       };
       workspace_invite_links_with_stats: {
         Row: {
-          code: string | null;
-          created_at: string | null;
-          creator_id: string | null;
+          code: string;
+          created_at: string;
+          creator_id: string;
           current_uses: number | null;
           expires_at: string | null;
-          id: string | null;
+          id: string;
           is_expired: boolean | null;
           is_full: boolean | null;
           max_uses: number | null;
-          member_type:
-            | Database['public']['Enums']['workspace_member_type']
-            | null;
-          updated_at: string | null;
-          ws_id: string | null;
+          member_type: Database['public']['Enums']['workspace_member_type'];
+          updated_at: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61731,7 +61740,7 @@ export type Database = {
       };
       workspace_link_counts: {
         Row: {
-          id: string | null;
+          id: string;
           link_count: number | null;
           logo_url: string | null;
           name: string | null;
@@ -61757,15 +61766,15 @@ export type Database = {
       workspace_user_groups_with_amount: {
         Row: {
           amount: number | null;
-          archived: boolean | null;
+          archived: boolean;
           created_at: string | null;
           ending_date: string | null;
-          id: string | null;
-          name: string | null;
+          id: string;
+          name: string;
           notes: string | null;
           sessions: string[] | null;
           starting_date: string | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61802,16 +61811,16 @@ export type Database = {
       workspace_user_groups_with_guest: {
         Row: {
           amount: number | null;
-          archived: boolean | null;
+          archived: boolean;
           created_at: string | null;
           ending_date: string | null;
-          id: string | null;
+          id: string;
           is_guest: boolean | null;
-          name: string | null;
+          name: string;
           notes: string | null;
           sessions: string[] | null;
           starting_date: string | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61847,24 +61856,24 @@ export type Database = {
       };
       workspace_user_profile_links_with_stats: {
         Row: {
-          allowed_fields: string[] | null;
-          code: string | null;
-          created_at: string | null;
-          creator_id: string | null;
+          allowed_fields: string[];
+          code: string;
+          created_at: string;
+          creator_id: string;
           current_uses: number | null;
           expires_at: string | null;
-          id: string | null;
+          id: string;
           is_expired: boolean | null;
           is_full: boolean | null;
           is_revoked: boolean | null;
           max_uses: number | null;
-          mode: string | null;
-          prefill_existing_values: boolean | null;
-          requires_auth: boolean | null;
+          mode: string;
+          prefill_existing_values: boolean;
+          requires_auth: boolean;
           revoked_at: string | null;
           target_user_id: string | null;
-          updated_at: string | null;
-          ws_id: string | null;
+          updated_at: string;
+          ws_id: string;
         };
         ComputedFields: never;
         Relationships: [
@@ -61950,7 +61959,7 @@ export type Database = {
       workspace_users_with_groups: {
         Row: {
           address: string | null;
-          archived: boolean | null;
+          archived: boolean;
           archived_until: string | null;
           avatar_url: string | null;
           balance: number | null;
@@ -61965,14 +61974,14 @@ export type Database = {
           group_count: number | null;
           groups: Json | null;
           guardian: string | null;
-          id: string | null;
+          id: string;
           linked_users: Json | null;
           national_id: string | null;
           note: string | null;
           phone: string | null;
-          updated_at: string | null;
+          updated_at: string;
           updated_by: string | null;
-          ws_id: string | null;
+          ws_id: string;
         };
         ComputedFields: never;
         Insert: {
@@ -69428,6 +69437,63 @@ export type Database = {
   };
   storage: {
     Tables: {
+      bucket_lifecycle_states: {
+        Row: {
+          bucket_id: string;
+          claim_id: string | null;
+          claim_until: string | null;
+          continuation: Json | null;
+          failure_count: number;
+          generation: string | null;
+          last_completed_at: string | null;
+          last_error: Json | null;
+          last_result: Json | null;
+          last_started_at: string | null;
+          last_success_at: string | null;
+          next_run_at: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          bucket_id: string;
+          claim_id?: string | null;
+          claim_until?: string | null;
+          continuation?: Json | null;
+          failure_count?: number;
+          generation?: string | null;
+          last_completed_at?: string | null;
+          last_error?: Json | null;
+          last_result?: Json | null;
+          last_started_at?: string | null;
+          last_success_at?: string | null;
+          next_run_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          bucket_id?: string;
+          claim_id?: string | null;
+          claim_until?: string | null;
+          continuation?: Json | null;
+          failure_count?: number;
+          generation?: string | null;
+          last_completed_at?: string | null;
+          last_error?: Json | null;
+          last_result?: Json | null;
+          last_started_at?: string | null;
+          last_success_at?: string | null;
+          next_run_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'bucket_lifecycle_states_bucket_id_fkey';
+            columns: ['bucket_id'];
+            isOneToOne: true;
+            referencedRelation: 'buckets';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       buckets: {
         Row: {
           allowed_mime_types: string[] | null;
@@ -69629,6 +69695,31 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      lifecycle_abandoned_artifacts: {
+        Row: {
+          attempted_at: string;
+          bucket_id: string;
+          key: string;
+          name: string;
+          version: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempted_at?: string;
+          bucket_id: string;
+          key: string;
+          name: string;
+          version?: string | null;
+        };
+        Update: {
+          attempted_at?: string;
+          bucket_id?: string;
+          key?: string;
+          name?: string;
+          version?: string | null;
+        };
+        Relationships: [];
       };
       migrations: {
         Row: {
@@ -69880,6 +69971,14 @@ export type Database = {
         Args: { bucketid: string; metadata: Json; name: string; owner: string };
         Returns: undefined;
       };
+      delete_lifecycle_objects: {
+        Args: { object_ids: string[] };
+        Returns: {
+          id: string;
+          is_delete_marker: boolean;
+          metadata: Json;
+        }[];
+      };
       extension: { Args: { name: string }; Returns: string };
       filename: { Args: { name: string }; Returns: string };
       foldername: { Args: { name: string }; Returns: string[] };
@@ -69938,6 +70037,10 @@ export type Database = {
         }[];
       };
       operation: { Args: Record<PropertyKey, never>; Returns: string };
+      reconcile_lifecycle_state: {
+        Args: { policy_changed: boolean; target_bucket_id: string };
+        Returns: undefined;
+      };
       search: {
         Args: {
           bucketname: string;

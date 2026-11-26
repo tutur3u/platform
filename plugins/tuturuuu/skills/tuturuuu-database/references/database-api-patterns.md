@@ -32,11 +32,17 @@ review prove baseline equivalence. Existing migration history stays immutable.
 - Separate short existing-table DDL, `VALIDATE CONSTRAINT`, and concurrent index
   creation into distinct migration transactions. Earlier `ALTER TABLE` locks
   otherwise survive through later scans; `lock_timeout` bounds acquisition, not
-  lock lifetime. With pinned CLI 2.117.0, keep `CREATE INDEX CONCURRENTLY` as the
-  only statement in its file so it executes outside the transaction batch. See
+  lock lifetime. Keep `CREATE INDEX CONCURRENTLY` as the only statement in its
+  file: CLI 3.3.0 runs it alone outside the file's implicit transaction and
+  commits any statements before it separately, so a mixed file can end up
+  partly applied without its history row. See
   the [habit migration sequence](../../../../../apps/docs/platform/features/mira-health-planning-tools.mdx#idempotent-writes)
   for the schema-preserving split and regression coverage.
-- CLI 2.121.0 applies and records each migration file in its own transaction:
+- CLI 3.3.0 applies and records each migration file in one
+  implicit pipeline transaction, adding no `BEGIN`/`COMMIT`. `LOCK TABLE` there
+  fails with SQLSTATE 25P01; a file with authored `BEGIN`/`COMMIT` runs statement
+  by statement with the history row inserted afterwards. Each file commits
+  separately:
   when a later file fails, earlier files stay applied and recorded. Do not rely
   on statements after an explicit `commit;` to escape a file's locks. Put a
   long `VALIDATE CONSTRAINT` in its own follow-up file, after a `NOT VALID`

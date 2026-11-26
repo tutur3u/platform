@@ -154,7 +154,6 @@ for (const selected of [
           'gen',
           'types',
           'typescript',
-          '--local',
           '--schema',
           'public,private,storage',
         ]);

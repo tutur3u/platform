@@ -88,3 +88,15 @@ test('CLI discovery requires all ten seed services and excludes disabled service
     /Duplicate/
   );
 });
+
+test('CLI v3 Dockerfile metadata comes from the TypeScript CLI tree', () => {
+  const { dockerfileURL } = require('./supabase-image-cache-registry.js');
+  assert.equal(
+    dockerfileURL('2.121.0'),
+    'https://raw.githubusercontent.com/supabase/cli/v2.121.0/apps/cli-go/pkg/config/templates/Dockerfile'
+  );
+  assert.equal(
+    dockerfileURL('3.3.0'),
+    'https://raw.githubusercontent.com/supabase/cli/v3.3.0/apps/cli/src/shared/services/Dockerfile'
+  );
+});

@@ -85,6 +85,14 @@ function sameContent(canonical, alternate) {
   );
 }
 
+// CLI v3 is a TypeScript rewrite; its embedded Dockerfile moved with it.
+function dockerfileURL(version) {
+  const file = /^2\./u.test(version)
+    ? 'apps/cli-go/pkg/config/templates/Dockerfile'
+    : 'apps/cli/src/shared/services/Dockerfile';
+  return `https://raw.githubusercontent.com/supabase/cli/v${version}/${file}`;
+}
+
 function seedImages(dockerfile) {
   const images = new Map();
   for (const match of dockerfile.matchAll(
@@ -103,10 +111,8 @@ function seedImages(dockerfile) {
 
 async function main() {
   const images = new Set();
-  for (const version of ['2.117.0', '2.121.0']) {
-    const dockerfile = await get(
-      `https://raw.githubusercontent.com/supabase/cli/v${version}/apps/cli-go/pkg/config/templates/Dockerfile`
-    );
+  for (const version of ['2.121.0', '3.3.0']) {
+    const dockerfile = await get(dockerfileURL(version));
     for (const image of seedImages(dockerfile.toString())) images.add(image);
   }
   const results = [];
@@ -136,4 +142,4 @@ if (require.main === module)
     process.exitCode = 1;
   });
 
-module.exports = { manifestPin, sameContent, seedImages };
+module.exports = { dockerfileURL, manifestPin, sameContent, seedImages };

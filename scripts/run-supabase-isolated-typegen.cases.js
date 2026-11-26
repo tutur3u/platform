@@ -153,7 +153,6 @@ test('typegen uses the pinned binary and disposable workdir', async () => {
         'gen',
         'types',
         'typescript',
-        '--local',
         '--schema',
         'public,private,storage',
       ],

@@ -125,7 +125,6 @@ export async function generateTypesFromDisposableStack({
           'gen',
           'types',
           'typescript',
-          '--local',
           '--schema',
           'public,private,storage',
         ],

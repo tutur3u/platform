@@ -613,7 +613,7 @@ test('Supabase production migration requires Cloudflare Web deployment and succe
     deployJob,
     /ref: \$\{\{ needs\.evaluate-prerequisites\.outputs\.target_sha \}\}/
   );
-  assert.match(deployJob, /supabase db push --include-all/);
+  assert.match(deployJob, /supabase db push --remote --include-all --yes/);
   assert.match(deployJob, /Record successful production migration marker/);
   assert.match(deployJob, /scripts\/ci\/record-deployment-marker\.ts/);
 });

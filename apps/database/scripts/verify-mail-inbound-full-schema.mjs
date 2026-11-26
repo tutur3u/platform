@@ -35,11 +35,15 @@ const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const excluded =
   'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 
-// Pinned upstream v2.117.0: apps/cli-go/cmd/root.go registers --network-id;
-// internal/utils/config.go binds NetId; internal/utils/docker.go DockerCreate
-// overrides hostConfig.NetworkMode for *every* container. db/reset/reset.go
-// recreates PostgreSQL 17 through that same DockerStart path. gen/types/types.go
-// also uses DockerRun, but this controller never invokes typegen.
+// Pinned upstream v3.3.0 (TypeScript CLI; the Go apps/cli-go tree is gone):
+// apps/cli/src/command-internal/global-flags.ts registers the root-level
+// --network-id (NetworkIdFlag). start.handler.ts passes it to every service
+// spec and db-bootstrap/docker-create-args.ts emits `--network <id>`;
+// db-bootstrap/recreate-local-database.ts recreates PostgreSQL 17 on it during
+// db reset; command-internal/test-db.handler.ts runs pg_prove with it. gen
+// types runs in-process and rejects --network-id; this controller never
+// invokes typegen. db-bootstrap/container-lifecycle.ts ensureNetwork creates a
+// NON-internal network when the supplied one is absent.
 // Root must create and finally remove the labeled internal network. The CLI
 // can create a NON-internal network if its supplied ID is absent, so inspect
 // before each phase and hold admission if the network disappears.
@@ -420,7 +424,7 @@ export async function runMailFullSchema({
   );
   if (
     !binary ||
-    call(binary, ['--version'], sourceRoot) !== '2.117.0' ||
+    call(binary, ['--version'], sourceRoot) !== '3.3.0' ||
     !call(binary, ['start', '--help'], sourceRoot).includes('--network-id') ||
     !call(binary, ['db', 'reset', '--help'], sourceRoot).includes(
       '--network-id'

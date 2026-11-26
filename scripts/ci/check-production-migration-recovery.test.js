@@ -505,7 +505,7 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
   );
   assert.ok(yaml.indexOf(proofCommand) < yaml.indexOf('SHOULD_DEPLOY=true'));
   assert.match(proof, /process\.exitCode = 1/);
-  assert.match(yaml, /supabase db push --include-all/);
+  assert.match(yaml, /supabase db push --remote --include-all --yes/);
   assert.match(yaml, /expected_project_ref:/);
   assert.match(yaml, /PRODUCTION_PROJECT_ID.*!= "\$EXPECTED_PROJECT_REF"/);
   assert.ok(

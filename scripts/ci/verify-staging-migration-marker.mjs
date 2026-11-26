@@ -234,6 +234,7 @@ function checkRun(run, p, repository, workflow) {
 // Append future push producers here as well as in the source allowlist.
 const directPushContracts = new Set([
   '74fb269fcc135b0467c19d82286f1c3484c7d4f7',
+  '1389bebec73ba2585dba8fcd28c143343dd78f53',
 ]);
 const contracts = [
   [
@@ -246,6 +247,7 @@ const contracts = [
       'd880c279f37b63628706b195e5397be1cf25acd5',
       '40f1cc37c1b4c0ed2b9976019c95eb145311c77d',
       '74fb269fcc135b0467c19d82286f1c3484c7d4f7',
+      '1389bebec73ba2585dba8fcd28c143343dd78f53',
     ],
   ],
   [

@@ -13,20 +13,20 @@ const {
   MAX_ARCHIVE_BYTES,
 } = require('./supabase-image-cache.js');
 const services = [
-  ['supabase/postgres', '17.11.0.004'],
-  ['supabase/postgres-meta', 'v0.100.0'],
-  ['postgrest/postgrest', 'v16.4'],
-  ['supabase/gotrue', 'v2.197.0'],
-  ['supabase/realtime', 'v2.143.4'],
-  ['supabase/storage-api', 'v1.82.1'],
-  ['supabase/studio', '2026.10.12-sha-3699278'],
+  ['supabase/postgres', '17.12.0.002'],
+  ['supabase/postgres-meta', 'v0.100.1'],
+  ['postgrest/postgrest', 'v16.6'],
+  ['supabase/gotrue', 'v2.198.0'],
+  ['supabase/realtime', 'v2.174.5'],
+  ['supabase/storage-api', 'v1.98.5'],
+  ['supabase/studio', '2026.11.23-sha-4a73166'],
   ['supabase/edge-runtime', 'v1.77.4'],
   ['supabase/logflare', '1.53.0'],
   ['supabase/supavisor', '2.9.13'],
 ].map(([name, local]) => ({ name, local }));
 const identity = {
   services,
-  cliVersion: '2.121.0',
+  cliVersion: '3.3.0',
   registry: 'public.ecr.aws',
   profile: 'contract',
 };
@@ -48,11 +48,11 @@ test('configuration diagnostics allow only fixed public messages and service ide
 
 test('contract images derive versions from CLI metadata including temporary overrides', () => {
   assert.deepEqual(imageList(identity), [
-    'public.ecr.aws/supabase/gotrue:v2.197.0',
-    'public.ecr.aws/supabase/postgres:17.11.0.004',
-    'public.ecr.aws/supabase/postgres-meta:v0.100.0',
-    'public.ecr.aws/supabase/realtime:v2.143.4',
-    'public.ecr.aws/supabase/storage-api:v1.82.1',
+    'public.ecr.aws/supabase/gotrue:v2.198.0',
+    'public.ecr.aws/supabase/postgres:17.12.0.002',
+    'public.ecr.aws/supabase/postgres-meta:v0.100.1',
+    'public.ecr.aws/supabase/realtime:v2.174.5',
+    'public.ecr.aws/supabase/storage-api:v1.98.5',
   ]);
   assert.ok(
     imageList({
@@ -63,13 +63,13 @@ test('contract images derive versions from CLI metadata including temporary over
     }).includes('public.ecr.aws/supabase/postgres:17.6.1.168')
   );
   assert.deepEqual(imageList({ ...identity, profile: 'contract-http' }), [
-    'public.ecr.aws/supabase/gotrue:v2.197.0',
+    'public.ecr.aws/supabase/gotrue:v2.198.0',
     'public.ecr.aws/supabase/kong:2.8.1',
-    'public.ecr.aws/supabase/postgres:17.11.0.004',
-    'public.ecr.aws/supabase/postgres-meta:v0.100.0',
-    'public.ecr.aws/supabase/postgrest:v16.4',
-    'public.ecr.aws/supabase/realtime:v2.143.4',
-    'public.ecr.aws/supabase/storage-api:v1.82.1',
+    'public.ecr.aws/supabase/postgres:17.12.0.002',
+    'public.ecr.aws/supabase/postgres-meta:v0.100.1',
+    'public.ecr.aws/supabase/postgrest:v16.6',
+    'public.ecr.aws/supabase/realtime:v2.174.5',
+    'public.ecr.aws/supabase/storage-api:v1.98.5',
   ]);
 });
 test('full stack includes pinned supplemental images and omits disabled services', () => {
@@ -206,7 +206,7 @@ test('real cache helper pulls only on miss, saves only trusted archives, and loa
   fs.writeFileSync(path.join(database, 'supabase/config.toml'), '');
   fs.writeFileSync(
     path.join(database, 'scripts/run-supabase.js'),
-    `console.log(process.argv.includes('--version') ? '2.121.0' : ${JSON.stringify(JSON.stringify(services))});`
+    `console.log(process.argv.includes('--version') ? '3.3.0' : ${JSON.stringify(JSON.stringify(services))});`
   );
   const docker = path.join(root, 'docker');
   fs.writeFileSync(
@@ -217,9 +217,9 @@ const path = require('node:path');
 const root = __dirname;
 const args = process.argv.slice(2);
 fs.appendFileSync(path.join(root, 'calls'), JSON.stringify(args) + '\\n');
-if (args[0] === 'image' && process.env.IMAGE_SEED_CATALOG === 'cli-2.121.0') {
+if (args[0] === 'image' && process.env.IMAGE_SEED_CATALOG === 'cli-3.3.0') {
   if (args.includes('--format')) { console.log('100'); process.exit(0); }
-  const pins = ${JSON.stringify(require('./supabase-image-cache-seed-data.json').catalogs['cli-2.121.0'].images)};
+  const pins = ${JSON.stringify(require('./supabase-image-cache-seed-data.json').catalogs['cli-3.3.0'].images)};
   const reference = args.at(-1);
   const entry = Object.entries(pins).find(([image, pin]) => image === reference || image.split(':')[0] + '@' + pin.amd64 === reference);
   if (!entry) process.exit(1);
@@ -339,23 +339,23 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
     "Object.defineProperty(process, 'platform', { value: 'linux' }); Object.defineProperty(process, 'arch', { value: 'x64' });"
   );
   env.NODE_OPTIONS = `--require=${platformFixture}`;
-  env.IMAGE_SEED_CATALOG = 'cli-2.121.0';
+  env.IMAGE_SEED_CATALOG = 'cli-3.3.0';
   env.IMAGE_PULL_BUDGET_SECONDS = '600';
   run('key');
   assert.match(
     fs.readFileSync(env.GITHUB_OUTPUT, 'utf8'),
-    /key=supabase-images-v1-1f27e9c5ae4e1b32fe7e337cfb66488d653f2ca75e5d70920ef07e45f37a9cf0/
+    /key=supabase-images-v1-12dd3a1044f0b7b9cddf562704a0ef19560ea6b90682379eecf37a1dcc4be616/
   );
   env.IMAGE_PIN_CACHE_KEY = 'true';
   run('key');
   assert.ok(
     fs.readFileSync(env.GITHUB_OUTPUT, 'utf8').includes(
       `key=${cacheKey({
-        images: seedCatalog('cli-2.121.0', futureContext),
+        images: seedCatalog('cli-3.3.0', futureContext),
         registry: 'public.ecr.aws',
         platform: 'linux',
         arch: 'x64',
-        catalog: 'cli-2.121.0',
+        catalog: 'cli-3.3.0',
       })}`
     )
   );
@@ -367,7 +367,7 @@ if (args[0] === 'save') fs.writeFileSync(args[2], 'test archive');
   assert.equal(futureCalls.filter((args) => args[0] === 'tag').length, 5);
   assert.deepEqual(
     futureCalls.find((args) => args[0] === 'save').slice(3),
-    seedCatalog('cli-2.121.0', futureContext)
+    seedCatalog('cli-3.3.0', futureContext)
   );
   const saved = calls().filter((args) => args[0] === 'save').length;
   env.IMAGE_SAVE = 'false';
@@ -479,11 +479,11 @@ test('only the fixed trusted Linux seed catalog bypasses installed CLI metadata'
     { profile: 'unknown' },
   ])
     assert.throws(() =>
-      seedCatalog('cli-2.121.0', { ...futureContext, ...patch })
+      seedCatalog('cli-3.3.0', { ...futureContext, ...patch })
     );
   for (const name of ['__proto__', 'cli-2.122.0', 'https://arbitrary'])
     assert.throws(() => seedCatalog(name, futureContext));
-  assert.throws(() => catalogPin('cli-2.121.0', gotrue));
+  assert.throws(() => catalogPin('cli-3.3.0', gotrue));
 });
 
 test('all three seed keys equal current consumer keys and retained keys remain unchanged', () => {
@@ -491,17 +491,17 @@ test('all three seed keys equal current consumer keys and retained keys remain u
     [
       'contract',
       '229d3fa96dc11003926d8c5c3091c544fc4ce1fd6cb56d1ca94d696f961c6931',
-      '1f27e9c5ae4e1b32fe7e337cfb66488d653f2ca75e5d70920ef07e45f37a9cf0',
+      '12dd3a1044f0b7b9cddf562704a0ef19560ea6b90682379eecf37a1dcc4be616',
     ],
     [
       'contract-http',
       '22ec2badf2f791f9c51b19b371e2722570d4e420383804a697c2fb2efe2c6036',
-      'f0bd567d6109866d8f088db24b26800bac970f3263c96026557ae0168c1bdbe1',
+      '18642332a7be19ecee793f81af4a02af75ef5028cfaf0ed50dc9b8752dd4bbd6',
     ],
     [
       'full',
       '75a831d01e0b1689c7a40ae43b79dd5e838b394ef37fa5d43bc3290213c551eb',
-      '605f4bc0796aa6e082f6e8e913a484da99d5eb46a49a049eceb6fc30202bec9e',
+      '4aaea8665d92f90d2b6e6b4fa937f09e9f9dcd0f232c80539c1a4586a3f3004f',
     ],
   ];
   const config = fs.readFileSync('apps/database/supabase/config.toml', 'utf8');
@@ -538,14 +538,14 @@ test('all three seed keys equal current consumer keys and retained keys remain u
       key(retained[profile].map((image) => `public.ecr.aws/supabase/${image}`)),
       `supabase-images-v1-${retainedKey}`
     );
-    const images = seedCatalog('cli-2.121.0', { ...futureContext, profile });
+    const images = seedCatalog('cli-3.3.0', { ...futureContext, profile });
     assert.deepEqual(
       [...images].sort(),
       imageList({ ...identity, profile, config }).sort()
     );
     assert.equal(key(images), `supabase-images-v1-${currentKey}`);
     for (const image of images) {
-      const pin = catalogPin('cli-2.121.0', image);
+      const pin = catalogPin('cli-3.3.0', image);
       for (const field of ['index', 'amd64', 'config'])
         assert.match(pin[field], /^sha256:[a-f0-9]{64}$/);
     }

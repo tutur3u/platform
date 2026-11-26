@@ -15,9 +15,9 @@ const {
 } = require('./supabase-image-cache-seed.js');
 
 // Fallback pins from the CLI Dockerfile for images absent from `services`.
-// https://github.com/supabase/cli/blob/v2.121.0/apps/cli-go/pkg/config/templates/Dockerfile
+// https://github.com/supabase/cli/blob/v3.3.0/apps/cli/src/shared/services/Dockerfile
 const SUPPLEMENTAL = {
-  version: '2.121.0',
+  version: '3.3.0',
   images: { kong: '2.8.1', mailpit: 'v1.31.3', imgproxy: 'v3.26.0' },
 };
 const MAX_ARCHIVE_BYTES = 6 * 1024 ** 3;
@@ -57,7 +57,7 @@ function imageList({ services, cliVersion, registry, profile, config = '' }) {
       ['auth', ['gotrue']],
       ['realtime', ['realtime']],
       ['studio', ['studio']],
-      ['inbucket', ['mailpit']],
+      ['local_smtp', ['mailpit']],
       ['storage', ['storage-api', 'imgproxy']],
     ])
       if (enabled(config, section)) names.push(...images);
@@ -497,7 +497,7 @@ function configurationDiagnostic(error) {
       'Duplicate CLI image metadata',
       'Missing image cache identity',
     ].includes(message) ||
-    /^(?:Uncached service enabled|Missing explicit service configuration): (?:api|auth|realtime|studio|inbucket|storage|edge_runtime|analytics|db\.pooler)$/.test(
+    /^(?:Uncached service enabled|Missing explicit service configuration): (?:api|auth|realtime|studio|local_smtp|storage|edge_runtime|analytics|db\.pooler)$/.test(
       message
     ) ||
     /^Missing CLI image metadata: (?:postgres|postgres-meta|kong|postgrest|gotrue|realtime|studio|mailpit|storage-api|imgproxy)$/.test(

@@ -39,6 +39,7 @@ function git(cwd, ...args) {
 function run(
   t,
   {
+    codeSpans = false,
     listFails = false,
     localVersions,
     mainVersions,
@@ -75,15 +76,21 @@ function run(
   fs.writeFileSync(
     path.join(bin, 'supabase'),
     `#!/bin/sh
-case "$1 $2" in
-  "link --project-ref") exit 0 ;;
-  "migration list")
+# CLI v3 targets the local stack unless --remote is passed, and hosted
+# mutations need --yes, so only the exact remote forms are accepted.
+case "$*" in
+  "link --project-ref $STAGING_PROJECT_ID") exit 0 ;;
+  "migration list --remote")
     [ "$FAKE_LIST_FAILS" = true ] && exit 1
     printf '\\n   Local          | Remote         | Time (UTC)\\n  ----------------|----------------|---------------------\\n'
     for version in $FAKE_REMOTE; do
-      printf '   %s | %s | 2026-01-01 00:00:00\\n' "$version" "$version"
+      if [ "$FAKE_CODE_SPANS" = true ]; then
+        printf '   \`%s\` | \`%s\` | \`2026-01-01 00:00:00\`\\n' "$version" "$version"
+      else
+        printf '   %s | %s | 2026-01-01 00:00:00\\n' "$version" "$version"
+      fi
     done ;;
-  "db push") echo pushed >> "$PUSH_LOG" ;;
+  "db push --remote --include-all --yes") echo pushed >> "$PUSH_LOG" ;;
   *) exit 9 ;;
 esac
 `,
@@ -94,6 +101,7 @@ esac
     cwd: repo,
     encoding: 'utf8',
     env: {
+      FAKE_CODE_SPANS: String(codeSpans),
       FAKE_LIST_FAILS: String(listFails),
       FAKE_REMOTE: remoteVersions.join(' '),
       GITHUB_STEP_SUMMARY: summary,
@@ -179,4 +187,24 @@ test('a non-staging project ref fails closed before linking or pushing', (t) => 
     result.output,
     /STAGING_PROJECT_ID does not match the staging project ref/u
   );
+});
+
+test('code-span migration list cells are parsed like plain cells', (t) => {
+  const ahead = run(t, {
+    codeSpans: true,
+    localVersions: [v(1), v(2)],
+    mainVersions: [v(1), v(2), v(3)],
+    remoteVersions: [v(1), v(2), v(3)],
+  });
+  assert.equal(ahead.status, 0, ahead.output);
+  assert.equal(ahead.pushed, false);
+  assert.match(ahead.output, /Already applied by a descendant/u);
+  const unknown = run(t, {
+    codeSpans: true,
+    localVersions: [v(1), v(2)],
+    mainVersions: [v(1), v(2), v(3)],
+    remoteVersions: [v(1), v(2), v(9)],
+  });
+  assert.notEqual(unknown.status, 0);
+  assert.equal(unknown.pushed, false);
 });

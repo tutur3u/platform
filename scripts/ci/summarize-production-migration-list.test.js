@@ -185,7 +185,10 @@ test('parsed remote versions against an empty catalog exit 1', (t) => {
 
 test('the list step calls the parser and leaves the apply command once', () => {
   const yaml = fs.readFileSync(workflowPath, 'utf8');
-  assert.equal(yaml.split('supabase db push --include-all').length - 1, 1);
+  assert.equal(
+    yaml.split('supabase db push --remote --include-all --yes').length - 1,
+    1
+  );
   assert.match(yaml, /inputs\.list_only != true/);
   const list = yaml.slice(yaml.indexOf('  list-versions:'));
   assert.match(list, /inputs\.list_only == true/);
@@ -194,7 +197,7 @@ test('the list step calls the parser and leaves the apply command once', () => {
     /printf '%s\\n' "\$listing" \| "\$GITHUB_WORKSPACE\/scripts\/ci\/summarize-production-migration-list\.sh" supabase\/migrations/
   );
   assert.match(list, /supabase link --project-ref "\$PRODUCTION_PROJECT_ID"/);
-  assert.match(list, /supabase migration list --linked/);
+  assert.match(list, /supabase migration list --remote/);
   assert.doesNotMatch(list, /gsub\(\/\[\[:space:\]\]\/, "", \$2\)/);
   assert.doesNotMatch(list, /supabase db push/);
   assert.match(list, /contents: read/);

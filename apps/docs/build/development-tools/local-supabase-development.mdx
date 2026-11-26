@@ -46,6 +46,63 @@ Regression checks: run the five dblink fixtures with the default connection,
 then with `test.dblink_connstr` targeting an unavailable port and confirm each
 reports a clean skip before fixture setup.
 
+## Supabase CLI v3 targets
+
+The workspace pins Supabase CLI 3.3.0. v3 changes which database a command
+touches, so read this before writing a script or workflow step
+([migration guide](https://supabase.com/docs/guides/local-development/cli/migrating-to-v3)).
+
+- **Local by default.** `db push`, `db pull`, `db dump`, `migration list`/`repair`/`fetch`,
+  `gen types`, `inspect` and `storage` run against the local stack unless they
+  get `--remote`. A bare `supabase db push` after `supabase link` succeeds
+  against the local stack and never touches the hosted project. Bare `--remote`
+  means the linked project; `link --project-ref` is unchanged. `--linked`,
+  `--project-ref` (outside `link`) and `--db-url` still work but are deprecated;
+  `--local` is a no-op.
+- **Hosted changes need consent.** Unattended hosted mutations fail without
+  `--yes`. `SUPABASE_YES` in an env file and `echo y |` do not count.
+- **Environment beats config.** Values resolve as flag, shell environment,
+  project `.env` files, then `config.toml`. `SUPABASE_PROJECT_ID` changes which
+  project a bare `--remote` means, so workflows that rely on the linked project
+  must not set it.
+- **`[local_smtp]`, not `[inbucket]`.** v3 refuses to load a config with the old
+  section name.
+
+The staging and production workflows run
+`supabase link --project-ref "$..._PROJECT_ID"` and then
+`supabase migration list --remote` and `supabase db push --remote --include-all --yes`.
+`scripts/ci/supabase-cli-remote-target-guard.test.js` fails CI when a workflow
+or composite action runs a hosted-target command without `--remote`, a hosted
+mutation without `--yes`, a `--remote=<value>` form, or sets
+`SUPABASE_PROJECT_ID` alongside bare `--remote`.
+`supabase-production-migration-only.yaml` keeps its explicit 2.121.0 pin for
+its frozen recovery apply.
+
+The setup action installs the CLI pinned by the checked-out target revision.
+A production recovery run whose `target_sha` predates the 3.3.0 pin installs a
+2.x CLI that rejects `--remote`, so the step stops before applying anything
+and records no marker. Recover such a revision from a target that carries the
+3.3.0 pin. `--yes` on `db push` also lets the CLI lift a network ban on the
+runner's address for the linked project.
+
+`sb:push`, `sb:pull`, `sb:sync`, `sb:linkpush` and the `sbr:*` scripts pass
+`--remote` explicitly. These
+scripts write to hosted projects and remain forbidden for agents (see the root
+`AGENTS.md`); production migrations go only through `supabase-production.yaml`.
+
+**First-run proof.** After a CLI major upgrade lands, the next staging migration
+run is the proof that the hosted path works. It must succeed under the new CLI
+before any production migration apply uses it. If it skips or fails, stop and
+report the blocker; do not push migrations manually.
+
+CLI 3.3.0 runs these local images: Postgres
+17.12.0.002, GoTrue v2.198.0, PostgREST v16.6, postgres-meta v0.100.1, Realtime
+v2.174.5, Storage v1.98.5 and Studio 2026.11.23-sha-4a73166. The `cli-3.3.0` CI
+seed catalog in `scripts/ci/supabase-image-cache-seed-data.json` pins their
+digests; regenerate it with `scripts/ci/supabase-image-cache-registry.js`, which
+reads each CLI version's embedded Dockerfile (`apps/cli/src/shared/services/Dockerfile`
+from v3).
+
 ## CLI upgrade type drift
 
 Regenerate `packages/types/src/supabase.ts` from the complete applied migration

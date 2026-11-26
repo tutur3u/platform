@@ -44,7 +44,7 @@ export const PORT_FIELDS = [
   { key: 'port', offset: 1, section: 'api' },
   { key: 'port', offset: 2, section: 'db' },
   { key: 'port', offset: 3, section: 'studio' },
-  { key: 'port', offset: 4, section: 'inbucket' },
+  { key: 'port', offset: 4, section: 'local_smtp' },
   { key: 'port', offset: 5, section: 'analytics' },
   { key: 'port', offset: 6, section: 'db.pooler' },
   { key: 'inspector_port', offset: 7, section: 'edge_runtime' },

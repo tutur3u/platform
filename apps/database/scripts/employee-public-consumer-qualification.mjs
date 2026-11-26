@@ -409,14 +409,7 @@ export function generateEmployeeTypes({
 }) {
   const types = bounded(
     binaryPath,
-    [
-      'gen',
-      'types',
-      'typescript',
-      '--local',
-      '--schema',
-      'public,private,storage',
-    ],
+    ['gen', 'types', 'typescript', '--schema', 'public,private,storage'],
     metadata.disposableRoot,
     120000
   );
