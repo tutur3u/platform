@@ -6,7 +6,8 @@ const visible = (grapheme: string) => /^[\p{L}\p{N}]/u.test(grapheme);
  * Up to two initials for a person's avatar: the first letters of their first
  * and last words, or the first two of a single word. Words without a letter
  * or digit, such as an emoji, are skipped, and an emoji, a combining mark or
- * a Vietnamese tone mark is never split.
+ * a Vietnamese tone mark is never split. Uppercasing ignores the runtime
+ * locale, so the server render and the browser agree.
  */
 export function personInitials(name: string, fallback = '?') {
   const words = name
@@ -20,10 +21,10 @@ export function personInitials(name: string, fallback = '?') {
     words.length > 1 && first && last
       ? `${first[0]}${last[0]}`
       : (first?.slice(0, 2).join('') ?? '');
-  return letters.toLocaleUpperCase() || fallback;
+  return letters.toUpperCase() || fallback;
 }
 
 /** The first character of a name, uppercased, whole even for an emoji. */
 export function personInitial(name: string, fallback = '?') {
-  return splitGraphemes(name.trim())[0]?.toLocaleUpperCase() || fallback;
+  return splitGraphemes(name.trim())[0]?.toUpperCase() || fallback;
 }

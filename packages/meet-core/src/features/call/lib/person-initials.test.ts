@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { personInitial, personInitials } from './person-initials';
 
 describe('personInitials', () => {
@@ -28,3 +28,17 @@ describe('personInitial', () => {
     expect(personInitial('')).toBe('?');
   });
 });
+
+describe('uppercasing', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('never depends on the runtime locale', () => {
+    // A Turkish server would turn "i" into "İ" with a locale-aware call and
+    // disagree with an English browser at hydration.
+    const localeAware = vi.spyOn(String.prototype, 'toLocaleUpperCase');
+    expect(personInitials('ilk insan')).toBe('II');
+    expect(personInitial('ilk')).toBe('I');
+    expect(localeAware).not.toHaveBeenCalled();
+  });
+});
+
