@@ -1,6 +1,7 @@
 import '@tanstack/react-start/server-only';
 import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { headers } from '@tuturuuu/start-bridge/next/headers';
 import type { WorkspaceTasksResponse } from '@tuturuuu/internal-api';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -13,6 +14,8 @@ import {
   type BoardPreferenceSeed,
 } from '@tuturuuu/tasks-ui/tu-do/shared/board-preference-seed';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
+import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
+import { isIPBlockedReusingRecentClear } from '@tuturuuu/utils/abuse-protection/recent-ip-block';
 import { NextRequest } from '@tuturuuu/start-bridge/next/server';
 import { readTaskBoardDetail } from '../app/api/v1/workspaces/[wsId]/task-boards/[boardId]/board-detail';
 import { readUserSuspension } from '../lib/session-security-lookups';
@@ -71,6 +74,26 @@ async function readFirstListPage(
     console.warn('Board snapshot list page failed', { listId, error });
     return null;
   }
+}
+
+/**
+ * Whether the request's IP is blocked or the actor is suspended, decided as
+ * `withSessionAuth` decides for the board and task API routes: an
+ * `api_abuse` IP block is waived for a verified session, any other block and
+ * any suspension deny. Both lookups fail open, as there.
+ */
+async function isDeniedBeforeRead(userId: string) {
+  const ipAddress = extractIPFromHeaders(await headers());
+  const [block, suspension] = await Promise.all([
+    isIPBlockedReusingRecentClear(ipAddress, {
+      route: '/[wsId]/boards/[boardId]',
+      source: 'tasks-board-page',
+    }),
+    readUserSuspension(userId),
+  ]);
+  return (
+    Boolean(suspension) || (block !== null && block.reason !== 'api_abuse')
+  );
 }
 
 /** Stored values by id, with `null` for ids the user never stored. */
@@ -146,7 +169,9 @@ export async function loadBoardSnapshot({
   boardId: string;
 }): Promise<BoardSnapshot | null> {
   const capturedAt = Date.now();
-  const suspension = readUserSuspension(user.id);
+  // The same request-level decisions the API wrapper makes come first: no
+  // board data is read for a blocked IP or a suspended actor.
+  if (await isDeniedBeforeRead(user.id)) return null;
   const admin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
@@ -162,16 +187,14 @@ export async function loadBoardSnapshot({
   };
 
   const lists = (board.task_lists ?? []).filter((list) => !list.deleted);
-  const [pages, preferences, actorSuspension] = await Promise.all([
+  const [pages, preferences] = await Promise.all([
     Promise.all(
       lists.map((list) =>
         readFirstListPage(auth, board.ws_id, board.id, list.id)
       )
     ),
     readBoardPreferences(admin, user.id, board),
-    suspension,
   ]);
-  if (actorSuspension) return null;
 
   const listPages: Record<string, BoardSnapshotListPage> = {};
   lists.forEach((list, index) => {

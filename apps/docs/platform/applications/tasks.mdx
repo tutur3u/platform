@@ -75,7 +75,9 @@ board page, because a partly loaded board cannot show that a list is empty.
 ### Kanban first paint
 
 The native Tasks board page reads everything the kanban waits for in the same
-server request, in-process, as the verified actor: the board, the first
+server request, in-process, as the verified actor, after the same request
+decisions the API routes make (a blocked IP or a suspended actor gets no
+board; an `api_abuse` IP block is waived for a verified session): the board, the first
 50-task page of every list, and the actor's list preferences (persist
 collapsed, hide empty, auto-collapse, pinned special lists). The browser seeds
 these into its query cache before the first render, so columns skip their
