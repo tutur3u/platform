@@ -190,6 +190,15 @@ CLI-only APIs.
    issued scopes include a workspace scope (`workspace:*` or `workspace.*`)
    or an external-project scope. Without it the exchange answers `400` with
    `code: "WORKSPACE_ID_REQUIRED"` before redeeming the cross-app token.
+   A token sign-in (not a refresh) that sends neither `workspaceId` nor
+   `requestedScopes` is the exception. It is an identity sign-in and gets
+   only the app's non-workspace allowed scopes, possibly none (for example
+   EduFest's player sign-in), instead of the whole default grant and a `400`.
+   Such a token cannot call any workspace-scoped route. Refreshes are
+   unchanged: a bound refresh token keeps its grant and workspace, and an
+   unbound one still gets the `400`, then the bind-on-refresh sunset.
+   Explicit `requestedScopes` and apps exempt from strict binding behave as
+   before (`exchange-scopes.test.ts`, `route-workspace-binding.test.ts`).
    This server-to-server route must bypass browser challenges and WAF managed
    challenges. A Cloudflare response with `cf-mitigated: challenge` is an edge
    block, not an app-token validation failure, and the external app cannot

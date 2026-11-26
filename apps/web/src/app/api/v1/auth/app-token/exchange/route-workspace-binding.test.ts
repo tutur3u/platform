@@ -71,13 +71,31 @@ describe('app token exchange workspace binding', () => {
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
 
-  it('refuses an app default grant of workspace scopes without a workspace', async () => {
+  it('signs in with an identity-only token when it names no workspace and no scopes', async () => {
     const response = await exchange({
       requestedScopes: [],
       token: 'valid-cross-app-token',
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(200);
+    const claims = await accessClaims(response);
+    expect(claims?.scopes).toEqual([]);
+    expect(claims?.workspace_id).toBeUndefined();
+  });
+
+  it('keeps the default grant for a sign-in that names its workspace', async () => {
+    const response = await exchange({
+      requestedScopes: [],
+      token: 'valid-cross-app-token',
+      workspaceId,
+    });
+
+    expect(response.status).toBe(200);
+    const claims = await accessClaims(response);
+    expect(claims?.workspace_id).toBe(workspaceId);
+    expect(claims?.scopes).toEqual(
+      expect.arrayContaining(['workspace:drive:read', 'workspace:drive:write'])
+    );
   });
 
   it('binds workspace scopes to the resolved workspace', async () => {
@@ -110,6 +128,32 @@ describe('app token exchange workspace binding', () => {
 
     expect(response.status).toBe(200);
     expect((await accessClaims(response))?.workspace_id).toBe(workspaceId);
+  });
+
+  it("keeps a bound refresh token's default grant when it names no workspace and no scopes", async () => {
+    const response = await exchange({
+      refreshToken: refreshToken(workspaceId),
+      requestedScopes: [],
+    });
+
+    expect(response.status).toBe(200);
+    const claims = await accessClaims(response);
+    expect(claims?.workspace_id).toBe(workspaceId);
+    expect(claims?.scopes).toEqual(
+      expect.arrayContaining(['workspace:drive:read', 'workspace:drive:write'])
+    );
+  });
+
+  it('still asks an unbound refresh token with no scopes for a workspace', async () => {
+    const response = await exchange({
+      refreshToken: refreshToken(),
+      requestedScopes: [],
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'WORKSPACE_ID_REQUIRED',
+    });
   });
 
   it('refuses a refresh that names another workspace', async () => {

@@ -116,12 +116,14 @@ async function resolveExchangeTarget({
   appId,
   appSecret,
   requestedScopes,
+  signIn,
   targetApp,
   workspaceId,
 }: {
   appId?: string;
   appSecret?: string;
   requestedScopes: string[];
+  signIn: boolean;
   targetApp?: string;
   workspaceId?: string;
 }) {
@@ -165,6 +167,7 @@ async function resolveExchangeTarget({
       requirePkce: verification.app.requirePkce === true,
       scopes: getAllowedAppTokenScopesWithWorkspaceSession({
         allowedScopes: verification.app.allowedScopes,
+        identitySignInAppId: signIn ? verification.app.id : undefined,
         allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
         requestedScopes,
         workspaceId,
@@ -325,10 +328,8 @@ async function exchangeAppToken(
     );
   }
 
-  // Token and refresh exchanges are admitted per app and presented secret
-  // before the secret is checked, and a failed secret or token check answers
-  // 429 past its per-app and per-IP limit, on both paths. Refresh also keeps
-  // its own per-family pre-limit.
+  // Admitted per app+secret before the secret check; failures 429 past per-app
+  // and per-IP limits. Refresh also keeps its own per-family pre-limit.
   const exchangeAppId = appId ?? targetApp;
   const exchange = exchangeAppId
     ? {
@@ -353,6 +354,7 @@ async function exchangeAppToken(
       appId,
       appSecret,
       requestedScopes,
+      signIn: Boolean(token),
       targetApp,
       workspaceId,
     });
@@ -438,8 +440,7 @@ async function exchangeAppToken(
         { status: 503, headers: { 'Retry-After': '30' } }
       );
     }
-    // The family is already revoked. Report NOT_A_MEMBER only to a caller that
-    // opted in, and only when the full workspace-session check confirms it.
+    // Family already revoked; NOT_A_MEMBER only when opted in and confirmed.
     if (refreshResult && 'denied' in refreshResult) {
       return denialCodes?.includes('NOT_A_MEMBER') &&
         (await confirmRefreshNotAMember({
@@ -490,8 +491,7 @@ async function exchangeAppToken(
       );
     }
 
-    // A verifier redeems only through the service_role _pkce function; without
-    // one, the anonymous validator refuses every challenge-bound token.
+    // Only the service_role _pkce RPC redeems a challenge-bound token.
     const { data, error } = codeVerifier
       ? await sbAdmin.rpc('validate_cross_app_token_with_session_pkce', {
           p_code_verifier: codeVerifier,

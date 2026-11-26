@@ -113,6 +113,19 @@ describe('external-app member list access', () => {
     });
   });
 
+  it('refuses a scope-less identity token', async () => {
+    mocks.claims.mockReturnValue({
+      iat: Math.floor(Date.now() / 1000),
+      scopes: [],
+      sub: 'user-1',
+      target_app: 'edufest',
+    });
+    expect(await denial()).toEqual({
+      body: { error: 'Forbidden' },
+      status: 403,
+    });
+  });
+
   it('keeps an unlinked workspace without NOT_A_MEMBER', async () => {
     mocks.getExternalAppById.mockImplementation(async (id: string) => ({
       allowedWorkspaceIds: [],
