@@ -217,4 +217,41 @@ void main() {
     expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
     expect(tester.widget<AppButton>(model).onPressed, isNotNull);
   });
+
+  testWidgets('model and mode controls follow settings readiness', (
+    tester,
+  ) async {
+    final h = BackgroundReplyHarness(
+      repository: _CreationRepository(_SettingsApi()),
+    );
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester);
+    final shell = _shell(h);
+    final model = find.byKey(const ValueKey('assistant-composer-model'));
+    final loaded = shell.state.copyWith(
+      availableModels: const [
+        AssistantGatewayModel(
+          value: 'google/gemini-3-flash',
+          label: 'Gemini 3 Flash',
+          provider: 'google',
+        ),
+      ],
+    );
+    shell.emit(loaded);
+    await tester.pumpAndSettle();
+    expect(shell.settingsReady, isTrue);
+    expect(tester.widget<AppButton>(model).onPressed, isNotNull);
+
+    // A failed settings load or change is not ready.
+    shell.emit(loaded.copyWith(status: AssistantShellStatus.error));
+    await tester.pumpAndSettle();
+    expect(shell.settingsReady, isFalse);
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNull);
+    expect(tester.widget<AppButton>(model).onPressed, isNull);
+
+    shell.emit(loaded);
+    await tester.pumpAndSettle();
+    expect(tester.widget<AppButton>(find.byKey(_mode)).onPressed, isNotNull);
+    expect(tester.widget<AppButton>(model).onPressed, isNotNull);
+  });
 }

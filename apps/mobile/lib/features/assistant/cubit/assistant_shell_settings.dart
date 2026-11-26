@@ -194,6 +194,9 @@ extension _AssistantShellSettings on AssistantShellCubit {
       return true;
     } on Object {
       if (current()) {
+        // The credits behind model eligibility are unknown after this, so the
+        // model and mode controls stay off until the credit sheet's Retry
+        // reloads the workspace.
         _emitIfOpen(state.copyWith(status: AssistantShellStatus.error));
         _onSettingsSelectionFailure?.call(AssistantSettingsDisposition.unknown);
       }

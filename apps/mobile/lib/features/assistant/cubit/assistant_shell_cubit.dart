@@ -3,9 +3,11 @@
 // ignore_for_file: always_use_package_imports
 
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:mobile/data/models/workspace.dart';
 
 import '../data/assistant_preferences.dart';
@@ -86,6 +88,11 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   /// before it emits; a change that settles later still applies itself.
   final Duration selectionSettleWait;
 
+  /// Whether the current session's first load has emitted; exposed so tests
+  /// can check it is set by the time the loaded state is published.
+  @visibleForTesting
+  bool get sessionLoaded => _sessionLoaded;
+
   /// Whether a settings change may start now: the session's first load has
   /// emitted and the session still belongs to the current actor.
   bool get _acceptsSettingsChanges =>
@@ -139,6 +146,8 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     // conversation, so nothing sent while it loads carries them.
     final base = newSession
         ? state.copyWith(
+            soul: const AssistantSoul(),
+            soulSnapshot: null,
             personalWorkspaceId: null,
             workspaceCredits: const AssistantCredits(),
             personalCredits: const AssistantCredits(),
@@ -148,6 +157,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
             conversationSettings: null,
             thinkingMode: _sessionThinkingMode,
             creditSource: AssistantCreditSource.workspace,
+            workspaceContextId: 'personal',
             workspaceCreditLocked: false,
             isPersonalDashboardWorkspace: false,
           )
@@ -239,12 +249,16 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       // first load always applies its own settings.
       final changed = !newSession && _appliedSelections != appliedAtStart;
       final open = _openConversationFor(workspace.id);
-      // Locked workspace credits always resolve to personal credits.
-      final creditSource = workspaceCreditLocked
-          ? AssistantCreditSource.personal
-          : changed
-          ? state.creditSource
-          : open?.creditSource ?? activeCreditSource;
+      // An open conversation's acknowledged settings decide its credit
+      // source, since sends must match what the conversation stores.
+      // Otherwise locked workspace credits resolve to personal credits.
+      final creditSource =
+          open?.creditSource ??
+          (workspaceCreditLocked
+              ? AssistantCreditSource.personal
+              : changed
+              ? state.creditSource
+              : activeCreditSource);
       // Ready before the emit, so the composer sees it with the loaded state.
       _sessionLoaded = true;
       _emitIfOpen(
@@ -285,9 +299,15 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           _preferences.saveCreditSource(workspace.id, activeCreditSource),
         );
       }
-    } on Object catch (error) {
+    } on Object catch (error, stackTrace) {
       // Any failure, not only an Exception, ends the load so the shell never
-      // stays in loading.
+      // stays in loading; it is logged so programming errors still surface.
+      developer.log(
+        'Assistant workspace load failed',
+        name: 'AssistantShellCubit',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (isClosed || requestVersion != _requestVersion) return;
       _emitIfOpen(
         state.copyWith(
@@ -351,11 +371,17 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           );
     if (settings == null) {
       // A new chat takes the session's mode, not the last opened
-      // conversation's.
+      // conversation's, and a locked workspace's new chat uses personal
+      // credits even after a conversation saved on workspace credits.
+      final locked = state.workspaceCreditLocked;
       emit(
         state.copyWith(
           conversationSettings: null,
           thinkingMode: _sessionThinkingMode,
+          creditSource: locked ? AssistantCreditSource.personal : null,
+          activeCredits: locked && state.personalWorkspaceId != null
+              ? state.personalCredits
+              : null,
         ),
       );
       return;
