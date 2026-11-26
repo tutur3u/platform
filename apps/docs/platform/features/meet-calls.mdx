@@ -2199,20 +2199,24 @@ Operating requirements:
   the server minted into the cookie. The signature, meeting binding and expiry
   are checked as the call routes check them. A client header, a display name,
   or an unsigned, expired or other-meeting cookie stays on the anonymous
-  per-IP budget. Each guest read is charged three times, and the first
-  exhausted window refuses it:
-  - the guest: 120 reads a minute, 4,000 an hour, 30,000 a day, and 30
-    writes a minute, 300 an hour, 1,500 a day
-    (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`);
-  - the meeting: 100 guests' minute and hour budget combined, so minting
-    guest sessions for one meeting cannot multiply its traffic;
-  - the network: 40 guests' minute and hour budget combined, so a classroom
-    behind one school NAT keeps working while many sessions from one address
-    stay bounded. An IPv6 client counts as its /64, so rotating addresses
-    inside it opens no fresh cap.
+  per-IP budget. Each guest read is checked against three budgets in this
+  order, and the first exhausted window refuses it without charging the
+  budgets after it:
+  1. the guest: 120 reads a minute, 4,000 an hour, 30,000 a day, and 30
+     writes a minute, 300 an hour, 1,500 a day
+     (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`), so a guest
+     over it charges nothing shared;
+  2. the network: 40 guests' minute and hour budget combined, so a classroom
+     behind one school NAT keeps working while many sessions from one address
+     stay bounded. An IPv6 client counts as its /64, so rotating addresses
+     inside it opens no fresh cap;
+  3. the meeting: 100 guests' minute and hour budget combined, so minting
+     guest sessions for one meeting cannot multiply its traffic. A network
+     over its own cap never charges it, so one network adds at most 4,800
+     reads a minute to a meeting and exhausting a meeting's 12,000 takes at
+     least three networks.
 
-  The guest's own budget is checked first, so a guest over it never charges
-  the meeting or network caps; those two are then checked together. Every
+  Every
   `API_PROXY_*` limit override must be a plain positive integer; a value such
   as `12abc`, zero or a negative number keeps the default.
 

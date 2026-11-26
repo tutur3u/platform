@@ -247,6 +247,58 @@ describe('the verified guest budget at the API proxy guard', () => {
     expect(guestRateLimits().get[0]?.limit).toBe(120);
   });
 
+  /** Reads the meeting aggregate has counted in its minute window. */
+  const meetingMinuteCount = () =>
+    [...mocks.windows.entries()]
+      .filter(
+        ([key]) =>
+          key.includes(':scope-x') &&
+          key.includes(':get:minute|') &&
+          key.endsWith(`|guest-scope:${MEETING}`)
+      )
+      .reduce((total, [, hits]) => total + hits.length, 0);
+
+  /** Sends `reads` reads from fresh guests on one network; returns how many passed. */
+  async function flood(network: string, reads: number, perGuest: number) {
+    let passed = 0;
+    for (let read = 0; read < reads; read++) {
+      const guest = `${network}-guest-${Math.floor(read / perGuest)}`;
+      if ((await poll({ guest, ip: network })) === null) passed++;
+    }
+    return passed;
+  }
+
+  it('never charges the meeting cap for a network over its own cap', async () => {
+    vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '3');
+    const { GUEST_ADDRESS_MULTIPLIER } = await import(
+      '../api-proxy-guest-budget.js'
+    );
+    const cap = 3 * GUEST_ADDRESS_MULTIPLIER;
+    expect(await flood('203.0.113.20', cap + 30, 3)).toBe(cap);
+    // The 30 refused reads stopped at the network and never reached it.
+    expect(meetingMinuteCount()).toBe(cap);
+  });
+
+  it('takes three networks to exhaust a meeting', async () => {
+    vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '3');
+    const { GUEST_ADDRESS_MULTIPLIER, GUEST_SCOPE_MULTIPLIER } = await import(
+      '../api-proxy-guest-budget.js'
+    );
+    const networkCap = 3 * GUEST_ADDRESS_MULTIPLIER;
+    const meetingCap = 3 * GUEST_SCOPE_MULTIPLIER;
+    // Two networks flooding past their caps still leave the meeting open.
+    expect(await flood('203.0.113.21', networkCap * 2, 3)).toBe(networkCap);
+    expect(await flood('203.0.113.22', networkCap * 2, 3)).toBe(networkCap);
+    expect(meetingMinuteCount()).toBe(2 * networkCap);
+    expect(await poll({ guest: 'late', ip: '203.0.113.23' })).toBeNull();
+    // Only a third network fills what is left.
+    const left = meetingCap - 2 * networkCap - 1;
+    expect(await flood('203.0.113.24', networkCap, 3)).toBe(left);
+    const refused = await poll({ guest: 'later', ip: '203.0.113.25' });
+    expect(refused?.status).toBe(429);
+    expect(refused?.headers.get('X-RateLimit-Caller-Class')).toBe('guest');
+  });
+
   it('holds the per-meeting cap however many guests and addresses join', async () => {
     vi.stubEnv('API_PROXY_GUEST_READ_LIMIT_MINUTE', '2');
     const { GUEST_SCOPE_MULTIPLIER } = await import(

@@ -9,15 +9,18 @@
  * display names and unsigned or foreign-meeting cookies resolve to nothing and
  * stay on the anonymous budget.
  *
- * A guest request is checked against the guest itself first, with a budget
- * sized for in-call polling; a guest that floods is refused there and never
- * charges the shared buckets. Only then are two aggregates checked together:
- * - the meeting, a fixed multiple of one guest, so minting many guest
- *   sessions for one meeting never multiplies its traffic past that cap;
+ * A guest request is checked against three subjects in order, and the first
+ * exhausted one refuses it without charging the ones after it:
+ * - the guest itself, with a budget sized for in-call polling, so a guest
+ *   that floods never charges the shared buckets;
  * - the network, a fixed multiple of one guest, so many guest sessions from
  *   one address stay bounded while a classroom behind one NAT keeps working.
  *   An IPv6 client counts as its /64 (`networkSubject`), so rotating
- *   addresses inside it never opens a fresh cap.
+ *   addresses inside it never opens a fresh cap;
+ * - the meeting, a larger fixed multiple of one guest, so minting many guest
+ *   sessions for one meeting never multiplies its traffic past that cap. A
+ *   network over its own cap never charges it, so one network adds at most
+ *   its own cap to a meeting and starving a meeting takes several networks.
  */
 import type { NextRequest, NextResponse } from 'next/server';
 import type { RateLimitConfig, RateLimitProfile } from './api-proxy-guard';
@@ -105,11 +108,6 @@ export function guestLimiterSubjects(
       prefix,
       rateLimits: profile,
     },
-    {
-      id: `guest-scope:${actor.scopeId}`,
-      prefix: `${prefix}:scope-x${GUEST_SCOPE_MULTIPLIER}`,
-      rateLimits: aggregate(profile, GUEST_SCOPE_MULTIPLIER),
-    },
     ...(ipKey
       ? [
           {
@@ -119,6 +117,11 @@ export function guestLimiterSubjects(
           },
         ]
       : []),
+    {
+      id: `guest-scope:${actor.scopeId}`,
+      prefix: `${prefix}:scope-x${GUEST_SCOPE_MULTIPLIER}`,
+      rateLimits: aggregate(profile, GUEST_SCOPE_MULTIPLIER),
+    },
   ];
 }
 
@@ -144,11 +147,10 @@ export async function resolveGuestActor(
 }
 
 /**
- * Charges a verified guest request and returns the 429 for an exhausted
- * window. The guest's own budget is checked first; the meeting and network
- * aggregates are then checked together, and the meeting's refusal wins.
+ * Charges a verified guest request: guest, then network, then meeting. The
+ * first exhausted window refuses it and nothing after it is charged.
  */
-export async function enforceGuestBudget(
+export function enforceGuestBudget(
   req: NextRequest,
   actor: VerifiedGuestActor,
   context: {
@@ -160,21 +162,19 @@ export async function enforceGuestBudget(
     policyName: string;
   }
 ): Promise<NextResponse | null> {
-  const [guest, ...aggregates] = guestLimiterSubjects(
-    context.prefixBase,
-    context.routeKey,
-    actor,
-    context.ipKey
-  );
-  const enforce = (subject: LimiterSubject) =>
-    enforceLimiterSubjects(req, [subject], {
+  return enforceLimiterSubjects(
+    req,
+    guestLimiterSubjects(
+      context.prefixBase,
+      context.routeKey,
+      actor,
+      context.ipKey
+    ),
+    {
       callerClass: GUEST_CALLER_CLASS,
       isDev: context.isDev,
       isRead: context.isRead,
       policyName: context.policyName,
-    });
-  const own = guest ? await enforce(guest) : null;
-  if (own) return own;
-  const shared = await Promise.all(aggregates.map(enforce));
-  return shared.find((rejection) => rejection !== null) ?? null;
+    }
+  );
 }
