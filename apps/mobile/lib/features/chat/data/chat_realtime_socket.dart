@@ -111,6 +111,16 @@ class _ChatRealtimeRun {
     );
   }
 
+  /// Publishes the viewer's typing state on this conversation room. The
+  /// room rebroadcasts it to the other members; inbox sockets ignore it.
+  /// Returns false when no room socket is open.
+  bool reportTyping(bool on) {
+    final send = _socket?.send;
+    if (send == null || conversationId == null) return false;
+    send(jsonEncode({'on': on, 't': 'typing'}));
+    return true;
+  }
+
   void _releaseRetry() {
     final gate = _retryGate;
     if (gate != null && !gate.isCompleted) gate.complete();
@@ -344,6 +354,20 @@ ChatRealtimeEvent? _eventFromWorker(Object? raw, String? roomId) {
         isTyping: payload['isTyping'] == true,
       );
     case 'read.updated':
+      final userId = payload['userId']?.toString();
+      final lastReadAt = DateTime.tryParse(
+        payload['lastReadAt']?.toString() ?? '',
+      );
+      final conversation =
+          payload['conversationId']?.toString() ?? roomId ?? '';
+      if (userId == null || lastReadAt == null || conversation.isEmpty) {
+        return const ChatRealtimeResyncEvent();
+      }
+      return ChatRealtimeReadEvent(
+        conversationId: conversation,
+        userId: userId,
+        lastReadAt: lastReadAt,
+      );
     case 'member.removed':
       return const ChatRealtimeResyncEvent();
     default:

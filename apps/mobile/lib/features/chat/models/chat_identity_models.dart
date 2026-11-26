@@ -74,6 +74,20 @@ class ChatConversationMember extends Equatable {
   bool get isMuted => mutedAt != null;
   bool get isPinned => pinnedAt != null;
 
+  /// This member with its read cursor at [at].
+  ChatConversationMember withLastReadAt(DateTime at) => ChatConversationMember(
+    id: id,
+    conversationId: conversationId,
+    userId: userId,
+    user: user,
+    role: role,
+    joinedAt: joinedAt,
+    lastReadAt: at,
+    mutedAt: mutedAt,
+    pinnedAt: pinnedAt,
+    archivedAt: archivedAt,
+  );
+
   @override
   List<Object?> get props => [
     id,

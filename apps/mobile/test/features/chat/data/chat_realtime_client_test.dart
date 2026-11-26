@@ -281,6 +281,68 @@ void main() {
     await subscription.cancel();
     client.dispose();
   });
+
+  test('a room carries read cursors and sends typing frames', () async {
+    const room = '11111111-1111-4111-8111-111111111111';
+    final sent = <String>[];
+    final sockets = <_ScriptedSocket>[];
+    final client = _client(
+      ticket: (_, {conversationId}) async => {
+        'enabled': true,
+        'ticket': 'tok',
+        'url': 'ws://127.0.0.1:9/v1/connect',
+      },
+      openSocket: (url, protocols) async {
+        final socket = _ScriptedSocket(url, protocols, sent: sent);
+        sockets.add(socket);
+        return socket.live;
+      },
+    );
+    final events = <ChatRealtimeEvent>[];
+    final subscription = client
+        .connect('workspace', conversationId: room)
+        .listen(events.add);
+    await _until(() => sockets.length == 1);
+    sockets.single.add({'t': 'ready', 'seq': 1, 'userId': 'self'});
+    await _until(() => events.whereType<ChatRealtimeReadyEvent>().isNotEmpty);
+
+    expect(client.sendTyping('workspace', room, typing: true), isTrue);
+    expect(client.sendTyping('workspace', 'elsewhere', typing: true), isFalse);
+    expect(sent.map(jsonDecode), [
+      {'on': true, 't': 'typing'},
+    ]);
+
+    final resyncs = events.whereType<ChatRealtimeResyncEvent>().length;
+    sockets.single.add({
+      't': 'event',
+      'seq': 2,
+      'event': {
+        'type': 'read.updated',
+        'lastReadAt': '2026-11-26 09:30:00.123456+00',
+        'userId': 'peer',
+      },
+    });
+    sockets.single.add({
+      't': 'event',
+      'seq': 3,
+      'event': {'type': 'read.updated', 'userId': 'peer'},
+    });
+    // A frame without a cursor falls back to a refetch.
+    await _until(
+      () => events.whereType<ChatRealtimeResyncEvent>().length > resyncs,
+    );
+    expect(
+      events.whereType<ChatRealtimeReadEvent>().single,
+      ChatRealtimeReadEvent(
+        conversationId: room,
+        userId: 'peer',
+        lastReadAt: DateTime.utc(2026, 11, 26, 9, 30, 0, 123, 456),
+      ),
+    );
+
+    await subscription.cancel();
+    client.dispose();
+  });
 }
 
 ChatRealtimeClient _client({

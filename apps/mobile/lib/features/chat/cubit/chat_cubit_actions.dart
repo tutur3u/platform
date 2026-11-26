@@ -93,6 +93,7 @@ extension ChatCubitActions on ChatCubit {
 
   Future<void> sendMessage(String content) async {
     if (!_scopeActive) return;
+    stopTyping();
     final requestVersion = _loadToken;
     final wsId = state.wsId;
     final conversation = state.selectedConversation;

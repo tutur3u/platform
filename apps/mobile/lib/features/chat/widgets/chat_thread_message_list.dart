@@ -13,6 +13,7 @@ class _MessageList extends StatefulWidget {
     required this.isLoadingOlderMessages,
     required this.onLoadOlderMessages,
     required this.isMessageSynced,
+    required this.linkPreviews,
   });
 
   final ChatConversation conversation;
@@ -26,6 +27,7 @@ class _MessageList extends StatefulWidget {
   final bool isLoadingOlderMessages;
   final VoidCallback? onLoadOlderMessages;
   final bool Function(String messageId) isMessageSynced;
+  final ChatLinkPreviewStore? linkPreviews;
 
   @override
   State<_MessageList> createState() => _MessageListState();
@@ -147,6 +149,12 @@ class _MessageListState extends State<_MessageList> {
     };
     final showNames = widget.conversation.type != ChatConversationType.direct;
     final showHistory = widget.hasOlderMessages;
+    final seen = chatSeenReceipt(
+      widget.conversation,
+      messages,
+      currentUserId: widget.currentUserId,
+      isSynced: _isSynced,
+    );
 
     // Rebuild when the offline queue changes, so a send that replays
     // becomes actionable without waiting for another state change.
@@ -196,7 +204,15 @@ class _MessageListState extends State<_MessageList> {
                             workspaceId: widget.conversation.wsId,
                             feature: 'chat',
                             entityId: message.id,
-                            child: _bubble(item, byId, bubbleWidth, showNames),
+                            child: _bubble(
+                              item,
+                              byId,
+                              bubbleWidth,
+                              showNames,
+                              seen?.messageId == message.id
+                                  ? seen?.readers
+                                  : null,
+                            ),
                           ),
                         ),
               };
@@ -212,10 +228,13 @@ class _MessageListState extends State<_MessageList> {
     Map<String, ChatMessage> byId,
     double maxWidth,
     bool showNames,
+    List<ChatUserProfile>? readers,
   ) {
     final message = item.message;
     final replyId = message.replyToMessageId;
     final parent = replyId == null ? null : byId[replyId];
+    final previews = widget.linkPreviews;
+    final conversation = widget.conversation;
     return ChatMessageBubble(
       item: item,
       maxWidth: maxWidth,
@@ -231,6 +250,25 @@ class _MessageListState extends State<_MessageList> {
       onOpenActions: message.id == _streamingId
           ? null
           : () => _openActions(message, mine: item.isMine),
+      // The preview route serves server conversations' synced messages.
+      linkPreviews:
+          previews == null ||
+              !_isSynced(message) ||
+              !ChatCubit.isServerConversationId(conversation.id) ||
+              message.content.isEmpty
+          ? null
+          : ChatLinkPreviews(
+              store: previews,
+              wsId: conversation.wsId,
+              conversationId: conversation.id,
+              content: message.content,
+            ),
+      receipt: readers == null
+          ? null
+          : ChatReadReceipt(
+              readers: readers,
+              direct: conversation.type == ChatConversationType.direct,
+            ),
     );
   }
 }

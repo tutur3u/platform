@@ -7,12 +7,15 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
+import 'package:mobile/features/chat/data/chat_link_preview_store.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_avatar.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
 import 'package:mobile/features/chat/widgets/chat_format.dart';
+import 'package:mobile/features/chat/widgets/chat_link_previews.dart';
 import 'package:mobile/features/chat/widgets/chat_message_actions.dart';
 import 'package:mobile/features/chat/widgets/chat_message_bubble.dart';
+import 'package:mobile/features/chat/widgets/chat_read_receipt.dart';
 import 'package:mobile/features/chat/widgets/chat_thread_items.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
@@ -37,6 +40,8 @@ class ChatThreadView extends StatelessWidget {
     this.replyTo,
     this.onReply,
     this.onCancelReply,
+    this.onTypingChanged,
+    this.onTypingStopped,
     this.onDeleteMessage,
     this.typingNames = const [],
     this.hasOlderMessages = false,
@@ -44,6 +49,7 @@ class ChatThreadView extends StatelessWidget {
     this.onLoadOlderMessages,
     this.onRetry,
     this.isMessageSynced,
+    this.linkPreviews,
     super.key,
   });
 
@@ -64,6 +70,8 @@ class ChatThreadView extends StatelessWidget {
   final ChatMessage? replyTo;
   final ValueChanged<ChatMessage>? onReply;
   final VoidCallback? onCancelReply;
+  final ValueChanged<String>? onTypingChanged;
+  final VoidCallback? onTypingStopped;
   final Future<void> Function(ChatMessage message)? onDeleteMessage;
 
   /// Display names of people typing in this conversation.
@@ -76,6 +84,9 @@ class ChatThreadView extends StatelessWidget {
   /// Whether a message is on the server and can take replies, reactions
   /// and deletion. Defaults to "not waiting in the offline queue".
   final bool Function(String messageId)? isMessageSynced;
+
+  /// Resolves link previews for synced messages; none are shown without it.
+  final ChatLinkPreviewStore? linkPreviews;
 
   @override
   Widget build(BuildContext context) {
@@ -121,6 +132,7 @@ class ChatThreadView extends StatelessWidget {
                     isMessageSynced:
                         isMessageSynced ??
                         (id) => !isPendingChatMessage(selected.wsId, id),
+                    linkPreviews: linkPreviews,
                   ),
                 },
         ),
@@ -135,6 +147,8 @@ class ChatThreadView extends StatelessWidget {
             onRemoveAttachment: onRemoveAttachment,
             replyTo: replyTo,
             onCancelReply: onCancelReply,
+            onTypingChanged: onTypingChanged,
+            onTypingStopped: onTypingStopped,
           ),
       ],
     );

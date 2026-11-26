@@ -15,6 +15,19 @@ bool isPendingChatMessage(String wsId, String messageId) =>
     );
 
 extension ChatCubitMessageMerge on ChatCubit {
+  String? _resolveSelectedConversationId(
+    List<ChatConversation> conversations, {
+    String? preferredId,
+  }) {
+    if (preferredId != null &&
+        conversations.any((conversation) => conversation.id == preferredId)) {
+      return preferredId;
+    }
+    // Opening Chat starts at the conversation list. Only an explicit deep
+    // link or a user selection opens a thread.
+    return null;
+  }
+
   List<ChatConversation> _sortConversations(
     List<ChatConversation> conversations,
   ) {

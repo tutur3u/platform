@@ -151,12 +151,15 @@ class _ThreadPane extends StatelessWidget {
             replyTo: state.replyToMessage,
             onReply: cubit.startReply,
             onCancelReply: cubit.cancelReply,
+            onTypingChanged: cubit.reportTyping,
+            onTypingStopped: cubit.stopTyping,
             onDeleteMessage: cubit.deleteMessage,
             typingNames: typingNames,
             hasOlderMessages: state.selectedHasOlderMessages,
             isLoadingOlderMessages: state.isLoadingOlderMessages,
             onLoadOlderMessages: () => unawaited(cubit.loadOlderMessages()),
             isMessageSynced: cubit.isMessageSynced,
+            linkPreviews: cubit.linkPreviews,
             onRetry: () => unawaited(
               cubit.selectConversation(
                 state.selectedConversationId ?? '',

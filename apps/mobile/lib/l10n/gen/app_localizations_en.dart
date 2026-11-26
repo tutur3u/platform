@@ -2216,6 +2216,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatSearchMessagesSection => 'Messages';
 
   @override
+  String get chatSeen => 'Seen';
+
+  @override
+  String chatSeenByCount(int count) {
+    return 'Seen by $count';
+  }
+
+  @override
+  String chatSeenByNames(Object names) {
+    return 'Seen by $names';
+  }
+
+  @override
   String get chatSelectConversationDescription => 'Pick a conversation from the list to read and reply.';
 
   @override

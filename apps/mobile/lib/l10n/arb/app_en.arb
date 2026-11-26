@@ -269,6 +269,18 @@
       "count": {}
     }
   },
+  "@chatSeenByCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@chatSeenByNames": {
+    "placeholders": {
+      "names": {}
+    }
+  },
   "@chatMembersCount": {
     "placeholders": {
       "count": {}
@@ -2202,6 +2214,9 @@
   "chatSearchConversations": "Conversations",
   "chatSearchHint": "Find people, channels and messages.",
   "chatSearchMessagesSection": "Messages",
+  "chatSeen": "Seen",
+  "chatSeenByCount": "Seen by {count}",
+  "chatSeenByNames": "Seen by {names}",
   "chatSelectConversationDescription": "Pick a conversation from the list to read and reply.",
   "chatSelectConversationTitle": "No conversation open",
   "chatSystemEvent": "Conversation updated",

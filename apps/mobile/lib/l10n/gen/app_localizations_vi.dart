@@ -2202,6 +2202,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatSearchMessagesSection => 'Tin nhắn';
 
   @override
+  String get chatSeen => 'Đã xem';
+
+  @override
+  String chatSeenByCount(int count) {
+    return '$count người đã xem';
+  }
+
+  @override
+  String chatSeenByNames(Object names) {
+    return '$names đã xem';
+  }
+
+  @override
   String get chatSelectConversationDescription => 'Chọn một cuộc trò chuyện trong danh sách để đọc và trả lời.';
 
   @override

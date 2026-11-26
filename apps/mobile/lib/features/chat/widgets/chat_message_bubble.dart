@@ -32,6 +32,8 @@ class ChatMessageBubble extends StatelessWidget {
     this.onJumpToReply,
     this.onOpenActions,
     this.highlighted = false,
+    this.linkPreviews,
+    this.receipt,
     super.key,
   });
 
@@ -48,6 +50,12 @@ class ChatMessageBubble extends StatelessWidget {
   final VoidCallback? onJumpToReply;
   final VoidCallback? onOpenActions;
   final bool highlighted;
+
+  /// Cards for the message's links, shown under the bubble.
+  final Widget? linkPreviews;
+
+  /// Who has seen the message, shown under its time.
+  final Widget? receipt;
 
   @override
   Widget build(BuildContext context) {
@@ -89,6 +97,11 @@ class ChatMessageBubble extends StatelessWidget {
             ),
           ),
         ),
+        if (linkPreviews case final previews? when message.deletedAt == null)
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: previews,
+          ),
         if (message.reactions.isNotEmpty && message.deletedAt == null)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.xs),
@@ -100,6 +113,7 @@ class ChatMessageBubble extends StatelessWidget {
             ),
           ),
         if (item.endsGroup) _MessageMeta(message: message, mine: mine),
+        ?receipt,
       ],
     );
     return Row(

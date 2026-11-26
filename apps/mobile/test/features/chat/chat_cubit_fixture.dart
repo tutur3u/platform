@@ -223,7 +223,19 @@ class CubitHarness {
           ? inbox.stream
           : const Stream<ChatRealtimeEvent>.empty(),
     );
+    when(
+      () => realtime.sendTyping(any(), any(), typing: any(named: 'typing')),
+    ).thenAnswer((invocation) {
+      typingSent.add((
+        conversationId: invocation.positionalArguments[1] as String,
+        on: invocation.namedArguments[#typing] as bool,
+      ));
+      return true;
+    });
   }
+
+  /// Typing signals the cubit published, in order.
+  final List<({String conversationId, bool on})> typingSent = [];
 
   final api = CubitFixtureApi();
   final realtime = CubitFixtureRealtime();

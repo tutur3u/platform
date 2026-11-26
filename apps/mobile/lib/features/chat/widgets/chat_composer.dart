@@ -23,6 +23,8 @@ class ChatComposer extends StatefulWidget {
     required this.onRemoveAttachment,
     this.replyTo,
     this.onCancelReply,
+    this.onTypingChanged,
+    this.onTypingStopped,
     super.key,
   });
 
@@ -37,6 +39,12 @@ class ChatComposer extends StatefulWidget {
   final ChatMessage? replyTo;
   final VoidCallback? onCancelReply;
 
+  /// Called with the field's text whenever it changes, to publish typing.
+  final ValueChanged<String>? onTypingChanged;
+
+  /// Called when the field loses focus, which ends the typing signal.
+  final VoidCallback? onTypingStopped;
+
   @override
   State<ChatComposer> createState() => _ChatComposerState();
 }
@@ -45,11 +53,13 @@ class _ChatComposerState extends State<ChatComposer> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focus = FocusNode();
   bool _hasText = false;
+  String _lastText = '';
 
   @override
   void initState() {
     super.initState();
     _controller.addListener(_syncHasText);
+    _focus.addListener(_onFocusChanged);
   }
 
   @override
@@ -65,12 +75,24 @@ class _ChatComposerState extends State<ChatComposer> {
     _controller
       ..removeListener(_syncHasText)
       ..dispose();
-    _focus.dispose();
+    _focus
+      ..removeListener(_onFocusChanged)
+      ..dispose();
     super.dispose();
   }
 
+  void _onFocusChanged() {
+    if (!_focus.hasFocus) widget.onTypingStopped?.call();
+  }
+
   void _syncHasText() {
-    final hasText = _controller.text.trim().isNotEmpty;
+    // The controller also notifies on cursor moves; only text edits count.
+    final text = _controller.text;
+    if (text != _lastText) {
+      _lastText = text;
+      widget.onTypingChanged?.call(text);
+    }
+    final hasText = text.trim().isNotEmpty;
     if (hasText != _hasText) setState(() => _hasText = hasText);
   }
 

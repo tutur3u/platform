@@ -9,9 +9,11 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/chat/data/chat_link_preview_store.dart';
 import 'package:mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
+import 'package:mobile/features/chat/data/chat_typing_publisher.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'chat_state.dart';
@@ -19,6 +21,8 @@ part 'chat_cubit_actions.dart';
 part 'chat_cubit_thread_actions.dart';
 part 'chat_cubit_message_merge.dart';
 part 'chat_cubit_sync.dart';
+part 'chat_cubit_read_receipts.dart';
+part 'chat_cubit_typing.dart';
 
 class ChatCubit extends Cubit<ChatState> {
   ChatCubit({
@@ -54,6 +58,9 @@ class ChatCubit extends Cubit<ChatState> {
   /// When each conversation last loaded its newest page from the server.
   final Map<String, DateTime> _freshFetchedAt = {};
 
+  /// The viewer's typing signal for the open thread, if one is announced.
+  ({String conversationId, ChatTypingPublisher publisher})? _typing;
+
   final DateTime Function() _now;
   final String? Function() _currentUserId;
   final String? _ownerId;
@@ -75,6 +82,11 @@ class ChatCubit extends Cubit<ChatState> {
 
   final ChatRepository _repository;
   final ChatRealtimeClient _realtimeClient;
+
+  /// Server-resolved previews for links in messages.
+  late final linkPreviews = ChatLinkPreviewStore(
+    fetch: _repository.getLinkPreviews,
+  );
   StreamSubscription<ChatRealtimeEvent>? _realtimeSubscription;
   StreamSubscription<ChatRealtimeEvent>? _roomSubscription;
   StreamSubscription<ChatMessageStreamEvent>? _sendSubscription;
@@ -85,6 +97,9 @@ class ChatCubit extends Cubit<ChatState> {
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
     caseSensitive: false,
   );
+
+  /// Whether [id] names a server conversation, not a local thread.
+  static bool isServerConversationId(String id) => _roomIdPattern.hasMatch(id);
   bool _refreshingFallback = false;
 
   /// Messages per history page; a full page means older messages may exist.
@@ -486,6 +501,8 @@ class ChatCubit extends Cubit<ChatState> {
         final next = Set<String>.from(state.typingUserIds);
         isTyping ? next.add(actorUserId) : next.remove(actorUserId);
         emit(state.copyWith(typingUserIds: next));
+      case ChatRealtimeReadEvent():
+        _applyReadCursor(event);
       case ChatRealtimeErrorEvent():
         final current = room ? _roomFallback : _inboxFallback;
         if (current != null) return;
@@ -522,6 +539,7 @@ class ChatCubit extends Cubit<ChatState> {
     final sameRoom = next == _roomConversationId;
     final subscriptionMatches = (next == null) == (_roomSubscription == null);
     if (sameRoom && subscriptionMatches) return;
+    stopTyping(); // Before the old room socket closes, so it can send off.
     _roomFallback?.cancel();
     _roomFallback = null;
     _roomConversationId = next;
@@ -656,21 +674,9 @@ class ChatCubit extends Cubit<ChatState> {
     );
   }
 
-  String? _resolveSelectedConversationId(
-    List<ChatConversation> conversations, {
-    String? preferredId,
-  }) {
-    if (preferredId != null &&
-        conversations.any((conversation) => conversation.id == preferredId)) {
-      return preferredId;
-    }
-    // Opening Chat starts at the conversation list. Only an explicit deep
-    // link or a user selection opens a thread.
-    return null;
-  }
-
   @override
   Future<void> close() async {
+    stopTyping();
     _closing = true;
     OfflineMutationQueue.instance.pending.removeListener(_onQueueChanged);
     ++_loadToken;

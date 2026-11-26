@@ -4255,6 +4255,24 @@ abstract class AppLocalizations {
   /// **'Messages'**
   String get chatSearchMessagesSection;
 
+  /// No description provided for @chatSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get chatSeen;
+
+  /// No description provided for @chatSeenByCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by {count}'**
+  String chatSeenByCount(int count);
+
+  /// No description provided for @chatSeenByNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by {names}'**
+  String chatSeenByNames(Object names);
+
   /// No description provided for @chatSelectConversationDescription.
   ///
   /// In en, this message translates to:

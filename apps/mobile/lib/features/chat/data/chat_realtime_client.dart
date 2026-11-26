@@ -71,6 +71,22 @@ class ChatRealtimeTypingEvent extends ChatRealtimeEvent {
   List<Object?> get props => [conversationId, actorUserId, isTyping];
 }
 
+/// A member's read cursor moved (`read.updated` on the conversation room).
+class ChatRealtimeReadEvent extends ChatRealtimeEvent {
+  const ChatRealtimeReadEvent({
+    required this.conversationId,
+    required this.userId,
+    required this.lastReadAt,
+  });
+
+  final String conversationId;
+  final String userId;
+  final DateTime lastReadAt;
+
+  @override
+  List<Object?> get props => [conversationId, userId, lastReadAt];
+}
+
 class ChatRealtimeErrorEvent extends ChatRealtimeEvent {
   const ChatRealtimeErrorEvent(this.message);
 
@@ -140,6 +156,19 @@ class ChatRealtimeClient {
       }),
     );
     return controller.stream;
+  }
+
+  /// Sends the viewer's typing state on [conversationId]'s open room socket,
+  /// as the conversation room protocol defines (`{t: typing, on}`). Returns
+  /// false when that room has no open socket, such as on the legacy stream.
+  bool sendTyping(String wsId, String conversationId, {required bool typing}) {
+    var sent = false;
+    for (final run in _runs) {
+      if (run.wsId == wsId && run.conversationId == conversationId) {
+        sent = run.reportTyping(typing) || sent;
+      }
+    }
+    return sent;
   }
 
   /// Retries once after polling, when the app or network returns.
