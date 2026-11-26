@@ -117,6 +117,23 @@ messages in the workspace's own conversations; the delete RPC still enforces
 it, and a failed check reports `false`. Regression coverage:
 `route.search.test.ts` and `lib/chat/moderation.test.ts` in `apps/web`.
 
+Deleting a message runs the native delete first. The delete checks chat access
+to the workspace and conversation, that the message belongs to that
+conversation, and that the caller is its sender or holds `moderate_chat`
+(`private.chat_delete_message`). A refused native delete returns its error and
+nothing else happens. In a conversation bridged to a connected site, the route
+then asks the site to delete its copy. When that deletion cannot be delivered
+(no site mapping for the message, the binding unavailable, or the site refusing
+or timing out), the message stays deleted in the workspace, the
+`message.deleted` realtime event is still published, and the response is `200`
+with `externalDelete: 'failed'`; the site keeps its copy and nothing retries
+automatically. Conversations without a connected site return the plain
+`{ message }` body. No web or mobile client surfaces `externalDelete` yet, so a
+failed site deletion is visible only in the server log ("Connected site did not
+accept a chat deletion"); surfacing and retrying it is tracked as GH-618.
+Regression coverage: `route.delete.test.ts` under
+`chat/conversations/[conversationId]/messages/[messageId]` in `apps/web`.
+
 ## Conversation Search
 
 The same route searches conversations when `q` is set
