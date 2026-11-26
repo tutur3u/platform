@@ -1,9 +1,10 @@
 /// <reference types="vitest/globals" />
+import { constants } from 'node:fs';
 import {
   chmod,
-  lstat,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   readdir,
   rm,
@@ -152,8 +153,21 @@ describe('Exact-ACK change packets', () => {
 
     it('writes canonical JSON atomically with mode 0600 and round-trips verify and show', async () => {
       const output = join(root, 'packet.json');
-      await writeFile(output, 'old data', { mode: 0o644 });
-      const original = await lstat(output);
+      const initialHandle = await open(
+        output,
+        constants.O_WRONLY |
+          constants.O_CREAT |
+          constants.O_TRUNC |
+          constants.O_NOFOLLOW,
+        0o644
+      );
+      let originalIno: number;
+      try {
+        await initialHandle.writeFile('old data');
+        originalIno = (await initialHandle.stat()).ino;
+      } finally {
+        await initialHandle.close();
+      }
       const created = await command([
         ...createArgs,
         `--out=${output}`,
@@ -163,10 +177,18 @@ describe('Exact-ACK change packets', () => {
         '--changes=[{"field":"version","after":2}]',
       ]);
       expect(created).toMatchObject({ exitCode: 0, stderr: '' });
-      expect(await readFile(output, 'utf8')).toBe(created.stdout);
-      const info = await lstat(output);
-      expect(info.mode & 0o7777).toBe(0o600);
-      expect(info.ino).not.toBe(original.ino);
+      const writtenHandle = await open(
+        output,
+        constants.O_RDONLY | constants.O_NOFOLLOW
+      );
+      try {
+        const info = await writtenHandle.stat();
+        expect(await writtenHandle.readFile('utf8')).toBe(created.stdout);
+        expect(info.mode & 0o7777).toBe(0o600);
+        expect(info.ino).not.toBe(originalIno);
+      } finally {
+        await writtenHandle.close();
+      }
       expect(await readdir(root)).toEqual(['packet.json']);
       const packet = verifyChangePacket(JSON.parse(created.stdout), []);
       expect(packet).toMatchObject({

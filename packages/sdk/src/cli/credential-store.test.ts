@@ -1,4 +1,5 @@
-import { mkdtemp, readFile, rm, stat, symlink } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { mkdtemp, open, readFile, rm, stat, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +11,19 @@ import {
   redactSecrets,
   rejectSecretFlags,
 } from './credential-store';
+
+/** Mode and contents from one descriptor, so the checked file is the file read. */
+async function readPrivate(path: string) {
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    return {
+      mode: (await handle.stat()).mode & 0o777,
+      text: await handle.readFile('utf8'),
+    };
+  } finally {
+    await handle.close();
+  }
+}
 
 const key = { family: 'upskii-qa', env: 'staging' } as const;
 const secret = 'fixture-credential-1234';
@@ -172,10 +186,12 @@ describe('credential store', () => {
     const data = join(directory, 'default.json');
     const index = join(root, 'profiles.json');
     expect((await stat(directory)).mode & 0o777).toBe(0o700);
-    expect((await stat(data)).mode & 0o777).toBe(0o600);
-    expect((await stat(index)).mode & 0o777).toBe(0o600);
-    expect(JSON.parse(await readFile(data, 'utf8'))).toEqual({ secret });
-    expect(JSON.parse(await readFile(index, 'utf8'))).toEqual([metadata]);
+    const dataFile = await readPrivate(data);
+    const indexFile = await readPrivate(index);
+    expect(dataFile.mode).toBe(0o600);
+    expect(indexFile.mode).toBe(0o600);
+    expect(JSON.parse(dataFile.text)).toEqual({ secret });
+    expect(JSON.parse(indexFile.text)).toEqual([metadata]);
     expect(await store.get(key)).toEqual({ ...metadata, secret });
     expect(await store.delete(key)).toBe(true);
     await expect(stat(data)).rejects.toMatchObject({ code: 'ENOENT' });

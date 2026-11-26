@@ -1,4 +1,5 @@
-import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { mkdtemp, open, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -20,6 +21,19 @@ import {
   runUpskiiQaCommand,
   upskiiQaHelp,
 } from './qa-command';
+
+/** Mode and contents from one descriptor, so the checked file is the file read. */
+async function readPrivate(path: string) {
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    return {
+      mode: (await handle.stat()).mode & 0o777,
+      text: await handle.readFile('utf8'),
+    };
+  } finally {
+    await handle.close();
+  }
+}
 
 const PROVISIONER_TOKEN = 'qa-prov-token-secret-9876543210';
 const CREATED_PASSWORD = 'QaPass!SuperSecretValue99';
@@ -312,10 +326,9 @@ describe('upskii qa command', () => {
     const payload = JSON.parse(createOut);
     expect(payload.user.password).toBeUndefined();
     expect((await stat(outDir)).mode & 0o777).toBe(0o700);
-    expect((await stat(payload.credentialsFile)).mode & 0o777).toBe(0o600);
-    expect(
-      JSON.parse(await readFile(payload.credentialsFile, 'utf8')).password
-    ).toBe(CREATED_PASSWORD);
+    const credsFile = await readPrivate(payload.credentialsFile);
+    expect(credsFile.mode).toBe(0o600);
+    expect(JSON.parse(credsFile.text).password).toBe(CREATED_PASSWORD);
   });
 
   it('supports users disable/purge confirm guards, seed-class, and 0600 session storageState', async () => {
@@ -452,7 +465,14 @@ describe('upskii qa command', () => {
     );
     expect(sessionOut).not.toContain(SESSION_COOKIE_VALUE);
     expect(sessionOut).not.toContain(CREATED_PASSWORD);
-    expect((await stat(storagePath)).mode & 0o777).toBe(0o600);
+    const storageFile = await readPrivate(storagePath);
+    expect(storageFile.mode).toBe(0o600);
+    expect(JSON.parse(storageFile.text).cookies).toEqual([
+      expect.objectContaining({
+        name: '__Secure-upskii.session_token',
+        value: SESSION_COOKIE_VALUE,
+      }),
+    ]);
     expect(await readCookieFromStorageState(storagePath)).toBe(
       `__Secure-upskii.session_token=${SESSION_COOKIE_VALUE}`
     );

@@ -540,8 +540,8 @@ describe('ttr external upskii P2 subfamilies', () => {
       deps
     );
     expect(JSON.parse(flagSet.stdout).applied).toBe(true);
-    const adminCalls = calls.filter((c) =>
-      c.url.startsWith('https://staging.admin.upskii.com')
+    const adminCalls = calls.filter(
+      (c) => new URL(c.url).origin === 'https://staging.admin.upskii.com'
     );
     expect(adminCalls.length).toBeGreaterThanOrEqual(5);
     expect(adminCalls.every((c) => c.auth === `Bearer ${adminToken}`)).toBe(

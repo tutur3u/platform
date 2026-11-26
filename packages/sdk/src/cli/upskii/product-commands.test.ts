@@ -438,7 +438,9 @@ describe('ttr external upskii P1 product & auth commands', () => {
         write: () => {},
       }
     );
-    expect(seenUrls.some((u) => u.includes('web.tutur3u.com'))).toBe(false);
+    expect(
+      seenUrls.some((u) => new URL(u).hostname === 'web.tutur3u.com')
+    ).toBe(false);
 
     // L2 regression: staging cookie must be rejected when targeting --env prod
     let prodErr = '';

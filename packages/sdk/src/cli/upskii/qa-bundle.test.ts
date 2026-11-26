@@ -1,10 +1,24 @@
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { mkdtemp, open, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CLI_EXIT, CliError } from '../cli-contracts';
 import type { CliEnv } from '../cli-env';
 import { runUpskiiQaCommand, type UpskiiQaLedger } from './qa-command';
+
+/** Mode and contents from one descriptor, so the checked file is the file read. */
+async function readPrivate(path: string) {
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    return {
+      mode: (await handle.stat()).mode & 0o777,
+      text: await handle.readFile('utf8'),
+    };
+  } finally {
+    await handle.close();
+  }
+}
 
 const PROVISIONER_TOKEN = 'qa-prov-token-secret-9876543210';
 const CREATED_PASSWORD = 'QaPass!SuperSecretValue99';
@@ -177,10 +191,9 @@ describe('ttr external upskii qa bundle & teardown security', () => {
     expect(bundleOut).not.toContain(SESSION_COOKIE_VALUE);
 
     const ledgerPath = join(bundleDir, 'ledger.json');
-    expect((await stat(ledgerPath)).mode & 0o777).toBe(0o600);
-    const ledger = JSON.parse(
-      await readFile(ledgerPath, 'utf8')
-    ) as UpskiiQaLedger;
+    const ledgerFile = await readPrivate(ledgerPath);
+    expect(ledgerFile.mode).toBe(0o600);
+    const ledger = JSON.parse(ledgerFile.text) as UpskiiQaLedger;
     expect(ledger.seedClassId).toBe('cls-bundle-77');
     expect(ledger.users).toHaveLength(2);
 
