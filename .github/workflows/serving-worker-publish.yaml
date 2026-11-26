@@ -10,6 +10,10 @@ on:
         description: Same-run sealed artifact built at the production SHA
         type: string
         required: true
+      supersede:
+        description: Exact live SHA an ACKed catch-up may replace when it is not an ancestor
+        type: string
+        default: ''
 permissions:
   contents: read
   actions: read
@@ -37,6 +41,8 @@ jobs:
     env:
       APP: ${{ inputs.app }}
       SOURCE_SHA: ${{ github.sha }}
+      ARTIFACT_NAME: ${{ inputs.artifact }}
+      SERVING_SUPERSEDE: ${{ inputs.supersede }}
       CF_SEND_TELEMETRY: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -78,6 +84,11 @@ jobs:
         with:
           name: ${{ inputs.artifact }}
           path: ${{ runner.temp }}/serving-artifact
+      - name: Record the artifact digest for the receipt
+        if: steps.coordinator.outputs.publish != 'false'
+        run: |
+          digest="$(cd "$RUNNER_TEMP/serving-artifact" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+          echo "ARTIFACT_SHA256=$digest" >> "$GITHUB_ENV"
       - name: Restore, verify and convert the sealed artifact
         if: steps.coordinator.outputs.publish != 'false'
         env:

@@ -1,10 +1,23 @@
 name: Serving Workers Production
+# Single-app dispatches are partial rounds: the fleet gate skips
+# them by this name without reading their jobs.
+run-name: ${{ ((inputs.app || 'all') == 'all') && format('Serving Workers Production {0}', github.sha) || format('Serving Workers Production (partial {0})', inputs.app) }}
 # Republishes the already-serving Workers from each app's own sealed build at the
-# exact production SHA. Inert until both the repository variable
-# SERVING_WORKERS_PUBLICATION=enabled and the cloudflare-release-production
-# secret SERVING_WORKERS_CLOUDFLARE_API_TOKEN exist. Only apps whose public
+# exact production SHA. Inert until the repository variable
+# SERVING_WORKERS_PUBLICATION=enabled. Enable it only while the per-round
+# cloudflare-release-production secret SERVING_WORKERS_CLOUDFLARE_API_TOKEN
+# exists: without it every publish leg stops before any Cloudflare write and the
+# round ends RED. Only apps whose public
 # build is not the production SHA are built; scripts/ci/serving-workers.mjs owns
 # the upload, strict binding check, 0% smoke, expect-current assignment and rollback.
+# Every publish leg needs every build, so the legs reach the release environment
+# together and one approval admits the whole round. fleet-summary then reports the
+# whole production fleet (scripts/ci/production-fleet.mjs) and fails RED when an
+# active app is left stale. A RED round blocks the next full round until the
+# release owner sets FLEET_SUMMARY_ACK to that run id, or the RED run's
+# fleet-summary job is re-run green after a targeted fix. Single-app dispatches
+# are not gated and name their summary differently, so
+# they can neither clear nor set the gate.
 on:
   push:
     branches: [production]
@@ -15,19 +28,28 @@ on:
         type: choice
         options: [all, roadmap, learn, teach, nova, tools, lms]
         default: all
+      supersede:
+        description: Exact live 40-hex SHA an ACKed catch-up may replace when it is not an ancestor
+        type: string
+        default: ''
 permissions:
   contents: read
 concurrency:
   group: serving-workers-production-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
 jobs:
+  # No environment: planning reads public build-info and the policy only, so it
+  # never waits for an approval. The token is checked where it is used.
   plan:
     if: ${{ github.ref == 'refs/heads/production' && vars.SERVING_WORKERS_PUBLICATION == 'enabled' }}
     runs-on: ubuntu-latest
-    environment: cloudflare-release-production
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
     outputs:
       apps: ${{ steps.plan.outputs.apps || '[]' }}
+      matrix: ${{ steps.plan.outputs.matrix || '[]' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,17 +58,13 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
-      - id: token
+      - name: Refuse to start on an unacknowledged RED round
+        if: ${{ (inputs.app || 'all') == 'all' }}
         env:
-          PRESENT: ${{ secrets.SERVING_WORKERS_CLOUDFLARE_API_TOKEN != '' }}
-        run: |
-          if [ "$PRESENT" = true ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::SERVING_WORKERS_CLOUDFLARE_API_TOKEN is not set; nothing is built or published"
-          fi
+          GITHUB_TOKEN: ${{ github.token }}
+          FLEET_SUMMARY_ACK: ${{ vars.FLEET_SUMMARY_ACK }}
+        run: node scripts/ci/fleet-freshness.mjs gate
       - id: plan
-        if: steps.token.outputs.ready == 'true'
         env:
           ONLY: ${{ inputs.app || 'all' }}
         run: node scripts/ci/serving-workers.mjs plan "$GITHUB_SHA" "$ONLY"
@@ -62,8 +80,61 @@ jobs:
       pull-requests: read
     with:
       source_sha: ${{ github.sha }}
-  publish-roadmap:
-    needs: build-roadmap
+
+  build-learn:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'learn') }}
+    uses: ./.github/workflows/learn-cloudflare.yaml
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+
+  build-teach:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'teach') }}
+    uses: ./.github/workflows/teach-cloudflare.yaml
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+
+  build-nova:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'nova') }}
+    uses: ./.github/workflows/nova-cloudflare.yaml
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+
+  build-tools:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'tools') }}
+    uses: ./.github/workflows/tools-cloudflare.yaml
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+
+  build-lms:
+    needs: plan
+    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'lms') }}
+    uses: ./.github/workflows/lms-cloudflare.yaml
+    permissions:
+      actions: read
+      contents: read
+      deployments: read
+
+  publish:
+    needs: [plan, build-roadmap, build-learn, build-teach, build-nova, build-tools, build-lms]
+    # A skipped or failed build leaves its leg to fail at the artifact download,
+    # which the fleet summary then reports as FAILED.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.matrix != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
     uses: ./.github/workflows/serving-worker-publish.yaml
     permissions:
       contents: read
@@ -74,105 +145,51 @@ jobs:
     # them over. Without this line the publisher starts with an empty token.
     secrets: inherit
     with:
-      app: roadmap
-      artifact: roadmap-worker-${{ github.sha }}
+      app: ${{ matrix.app }}
+      artifact: ${{ matrix.artifact }}
+      supersede: ${{ inputs.supersede || '' }}
 
-  build-learn:
-    needs: plan
-    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'learn') }}
-    uses: ./.github/workflows/learn-cloudflare.yaml
-    permissions:
-      actions: read
-      contents: read
-      deployments: read
-  publish-learn:
-    needs: build-learn
-    uses: ./.github/workflows/serving-worker-publish.yaml
+  fleet-summary:
+    # Only a full publish round's summary is named fleet-summary, the job the
+    # next round's gate reads.
+    name: ${{ ((inputs.app || 'all') == 'all') && 'fleet-summary' || 'fleet-summary-partial' }}
+    needs: [plan, publish]
+    if: ${{ always() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    # The summary waits up to 10 minutes for special apps' pipelines.
+    timeout-minutes: 30
     permissions:
       contents: read
       actions: read
-      id-token: write
-    secrets: inherit
-    with:
-      app: learn
-      artifact: learn-cutover-production-${{ github.sha }}
-
-  build-teach:
-    needs: plan
-    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'teach') }}
-    uses: ./.github/workflows/teach-cloudflare.yaml
-    permissions:
-      actions: read
-      contents: read
-      deployments: read
-  publish-teach:
-    needs: build-teach
-    uses: ./.github/workflows/serving-worker-publish.yaml
-    permissions:
-      contents: read
-      actions: read
-      id-token: write
-    secrets: inherit
-    with:
-      app: teach
-      artifact: teach-cutover-production-${{ github.sha }}
-
-  build-nova:
-    needs: plan
-    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'nova') }}
-    uses: ./.github/workflows/nova-cloudflare.yaml
-    permissions:
-      actions: read
-      contents: read
-      deployments: read
-  publish-nova:
-    needs: build-nova
-    uses: ./.github/workflows/serving-worker-publish.yaml
-    permissions:
-      contents: read
-      actions: read
-      id-token: write
-    secrets: inherit
-    with:
-      app: nova
-      artifact: nova-cutover-production-${{ github.sha }}
-
-  build-tools:
-    needs: plan
-    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'tools') }}
-    uses: ./.github/workflows/tools-cloudflare.yaml
-    permissions:
-      actions: read
-      contents: read
-      deployments: read
-  publish-tools:
-    needs: build-tools
-    uses: ./.github/workflows/serving-worker-publish.yaml
-    permissions:
-      contents: read
-      actions: read
-      id-token: write
-    secrets: inherit
-    with:
-      app: tools
-      artifact: tools-cutover-${{ github.sha }}
-
-  build-lms:
-    needs: plan
-    if: ${{ contains(fromJSON(needs.plan.outputs.apps || '[]'), 'lms') }}
-    uses: ./.github/workflows/lms-cloudflare.yaml
-    permissions:
-      actions: read
-      contents: read
-      deployments: read
-  publish-lms:
-    needs: build-lms
-    uses: ./.github/workflows/serving-worker-publish.yaml
-    permissions:
-      contents: read
-      actions: read
-      id-token: write
-    secrets: inherit
-    with:
-      app: lms
-      artifact: lms-worker-${{ github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          # History without blobs: equivalence diffs the live build against the SHA.
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        continue-on-error: true
+        with:
+          pattern: serving-*-publication-${{ github.sha }}-${{ github.run_id }}-*
+          path: ${{ runner.temp }}/receipts
+      - name: Report every production app and fail on any stale one
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          FLEET_SCOPE: ${{ inputs.app || 'all' }}
+        run: node scripts/ci/fleet-freshness.mjs summary "$GITHUB_SHA" "$RUNNER_TEMP/receipts" "$RUNNER_TEMP/fleet-freshness.json"
+      - name: Retain the fleet freshness report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fleet-freshness-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/fleet-freshness.json
+          retention-days: 90
+          if-no-files-found: warn

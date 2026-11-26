@@ -7,6 +7,7 @@ import {
   SERVING_WORKERS,
   admission,
   buildCommit,
+  buildIdentityProblem,
   compareProbe,
   htmlAssets,
   plan,
@@ -125,6 +126,7 @@ function harness({
   overrideLag = 0,
   crons = [],
   liveCrons = crons,
+  candidateInfo = {},
 } = {}) {
   const state = {
     deployment: {
@@ -187,7 +189,11 @@ function harness({
       const lagging = override && state.lag++ < overrideLag;
       const serves = override && !lagging ? CANDIDATE : active;
       return new Response(
-        JSON.stringify({ commitHash: serves === CANDIDATE ? SHA : LIVE })
+        JSON.stringify(
+          serves === CANDIDATE
+            ? { commitHash: SHA, ...candidateInfo }
+            : { commitHash: LIVE }
+        )
       );
     }
     if (url.endsWith('.js') || url.endsWith('.css'))
@@ -344,4 +350,100 @@ test('a read-back waits out a listing that lags the write', async () => {
     publish('learn', SHA, never.out, never.options),
     /is not the active one \(d0\)/
   );
+});
+
+test('an ACKed supersede replaces exactly the named off-branch live build', () => {
+  assert.deepEqual(
+    sourceDecision(LIVE, SHA, () => false, LIVE),
+    {
+      action: 'publish',
+      superseded: LIVE,
+    }
+  );
+  assert.equal(sourceDecision(LIVE, SHA, () => false, SHA).action, 'refuse');
+  assert.equal(sourceDecision(LIVE, SHA, () => false, '').action, 'refuse');
+});
+
+test('a candidate built without PLATFORM_BUILD_* is refused', () => {
+  assert.equal(
+    buildIdentityProblem(JSON.stringify({ commitHash: SHA })),
+    undefined
+  );
+  assert.equal(
+    buildIdentityProblem(
+      JSON.stringify({ environment: 'production', refName: 'production' })
+    ),
+    undefined
+  );
+  assert.match(
+    buildIdentityProblem(JSON.stringify({ environment: 'local' })),
+    /environment is local/
+  );
+  assert.match(
+    buildIdentityProblem(
+      JSON.stringify({ environment: 'production', refName: 'local' })
+    ),
+    /refName is local/
+  );
+});
+
+test('a local-identity candidate fails the smoke and serving is restored', async () => {
+  const { state, out, options } = harness({
+    candidateInfo: { environment: 'local', refName: 'local' },
+  });
+  await assert.rejects(
+    publish('learn', SHA, out, options),
+    /environment is local/
+  );
+  assert.deepEqual(state.deployment.versions, servingOnly);
+});
+
+test('rehearse stops after the 0% smoke without moving traffic', async () => {
+  const { state, out, options } = harness();
+  const receipt = await publish('learn', SHA, out, {
+    ...options,
+    mode: 'rehearse',
+  });
+  assert.equal(receipt.outcome, 'rehearsed');
+  assert.equal(receipt.latestIsNotServing, true);
+  assert.deepEqual(state.writes, [
+    [
+      { version_id: SERVING, percentage: 100 },
+      { version_id: CANDIDATE, percentage: 0 },
+    ],
+    servingOnly,
+  ]);
+  assert.deepEqual(state.deployment.versions, servingOnly);
+});
+
+test('the v2 receipt carries the preimage, artifact and run identity', async () => {
+  const { out, options } = harness();
+  const receipt = await publish('learn', SHA, out, {
+    ...options,
+    artifact: { name: 'learn-cutover-production-x', sha256: 'f'.repeat(64) },
+    run: { id: '1', attempt: '1', event: 'push' },
+  });
+  assert.equal(receipt.schema, 2);
+  assert.equal(receipt.preimage.servingVersion, SERVING);
+  assert.equal(receipt.preimage.liveBuild, LIVE);
+  assert.equal(receipt.preimage.deploymentId, 'd0');
+  assert.equal(receipt.artifact.sha256, 'f'.repeat(64));
+  assert.equal(receipt.latestIsNotServing, false);
+  assert.equal(receipt.buildIdentity.commitHash, SHA);
+});
+
+test('an unknown mode is refused before any write', async () => {
+  const { state, out, options } = harness();
+  await assert.rejects(
+    publish('learn', SHA, out, { ...options, mode: 'promote' }),
+    /Unknown publication mode/
+  );
+  assert.deepEqual(state.writes, []);
+});
+
+test('supersede never replaces a live build that already contains the source', () => {
+  // live is a newer descendant of the source: not an ancestor of it, but the
+  // source is an ancestor of live.
+  const isAncestor = (a, b) => a === SHA && b === LIVE;
+  assert.equal(sourceDecision(LIVE, SHA, isAncestor, LIVE).action, 'refuse');
 });

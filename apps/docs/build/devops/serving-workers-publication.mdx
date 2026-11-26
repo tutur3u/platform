@@ -1,7 +1,7 @@
 ---
 title: "Serving Worker republication"
-description: "How production promotion republishes the Workers that already serve roadmap, learn, teach, nova, tools and lms, and how to stop, retry or roll one back."
-updatedAt: '2026-11-25'
+description: "How production promotion republishes the Workers that already serve roadmap, learn, teach, nova, tools and lms, how one approval admits a round, how the fleet summary fails on stale apps, and how to stop, retry or roll one back."
+updatedAt: '2026-11-26'
 audience: developers
 ---
 
@@ -28,15 +28,21 @@ and stops the publisher.
 
 On every push to `production`:
 
-1. `plan` runs in the `cloudflare-release-production` environment (production
-   branch only). Without the `SERVING_WORKERS_CLOUDFLARE_API_TOKEN` secret it
-   selects nothing. Otherwise it reads each app's public `/api/build-info` and
-   selects every app that does not serve the production SHA yet, so a failed or
-   skipped earlier promotion is retried by the next one.
+1. `plan` runs on the production branch only, with no environment, so it never
+   waits for an approval. It first refuses to start a publish round on top of an
+   unacknowledged RED fleet summary (see below). It then reads each app's public
+   `/api/build-info` and selects every app that does not serve the production
+   SHA yet, so a failed or skipped earlier promotion is retried by the next one.
 2. Each selected app's own workflow runs through `workflow_call` at the exact
    production SHA and seals its production artifact. Its qualification-only
    `native` jobs do not run on the production ref.
-3. `serving-worker-publish.yaml` runs one app at a time per
+3. One `publish` matrix job calls `serving-worker-publish.yaml` once per
+   selected app. Every leg needs every build, so all legs wait on the
+   `cloudflare-release-production` reviewer gate at the same moment, and one
+   approval (one `pending_deployments` call for the run) admits the whole round.
+   A build that failed or was skipped leaves its leg to fail at the artifact
+   download, and the fleet summary reports that app as `FAILED`.
+   `serving-worker-publish.yaml` runs one app at a time per
    `serving-worker-publish-<app>` concurrency group. It restores the sealed
    archive, reruns the seal verifier and converts the archive's own emitted
    config to cf Build Output with `void-cf-output.mjs`. Cron triggers stay
@@ -61,7 +67,71 @@ On every push to `production`:
    deployment is left in place and recorded.
 
 Every step lands in the `serving-<app>-publication-<sha>-<run>-<attempt>`
-artifact, retained 90 days, including the `rollbackVersion` that served before.
+artifact, retained 90 days. The receipt (schema 2) records:
+- the `preimage` (the serving deployment and version, that version's upload
+  message, the newest uploaded version, and the live build SHA);
+- the artifact name and digest, and the run identity;
+- the candidate's build-info and the smoke failures;
+- the `rollbackVersion` that served before;
+- `latestIsNotServing`. Cloudflare's `/settings` and `/secrets` writes build on
+  the newest uploaded version, not the serving one. After
+  a smoke failure that left serving in place, change a secret only after
+  checking this flag.
+
+The candidate's build-info must report `environment: production` and a
+`production` or `main` ref when those fields exist. A build made without the
+`PLATFORM_BUILD_*` variables reports `local` and fails the smoke.
+
+## Fleet summary
+
+`fleet-summary` runs after every enabled round with no environment and no
+Cloudflare token; it uses only the run's read-only `github.token`. It reads
+`scripts/ci/production-fleet.mjs`, which has one entry for every directory
+under `apps/`:
+
+| Class | Meaning | Verdicts |
+| --- | --- | --- |
+| `auto` | Published by this workflow | `FRESH`; `STALE`, `UNKNOWN` or `FAILED` fail the run |
+| `special` | Its own reviewed publisher (web, gateway, tasks, Meet, Cron, ...) | `FRESH` or `FRESH-EQUIVALENT` (the planner's affected-path rules see no input change since the live build); `STALE` or `UNKNOWN` fail the run, `PENDING` does not; no public identity is reported as `UNVERIFIED` |
+| `held` | A deliberate hold (Lettin, Parley, Colab, Track, Mind, Drive, Contacts and Whiteboards) | `HELD`, reported as held by policy |
+| `manual` | No automatic publisher yet; carries the slice that automates it and an `until` date | `MANUAL`; `EXPIRED` after the date, which fails the run |
+| `inactive` | Paused or not a Worker | `INACTIVE` |
+
+`scripts/ci/production-fleet.test.mjs` fails when a new app directory has no
+entry, or when the fleet's holds disagree with `productionAppExclusions` and the
+`held` entries of `productionPublicationPolicy`. The report is retained as
+`fleet-freshness-<sha>-<run>-<attempt>`.
+
+A RED summary rolls nothing back and does not undo apps already promoted in the
+round. The next full publish round that starts after the RED summary completes
+stops in `plan` until one of these happens (a round still awaiting approval
+when the next one starts is not consulted; the next round's own summary covers
+the whole fleet):
+
+- The release owner sets the repository variable `FLEET_SUMMARY_ACK` to the
+  RED run's id. Only the release owner sets it, as a recorded decision.
+- The cause is fixed: dispatch the affected app alone (single-app dispatches
+  are not gated), then re-run the RED run's `fleet-summary` job. When it
+  passes, the gate opens.
+
+Single-app dispatches are partial rounds: their run name
+contains `(partial` and their summary job is `fleet-summary-partial`, so they
+never clear or set the gate. An auto app that serves the SHA counts as fresh
+even when this run's receipt for it failed, so a re-run summary after a
+single-app fix passes. The summary waits up to 10 minutes for the pipelines that
+publish `special` apps (for example `vercel-production.yaml` for tasks and Meet)
+to finish. An app whose pipeline is still running after that is `PENDING` (not
+RED) only while that run is at most 45 minutes old and the pipeline's latest
+completed production push run succeeded. A `PENDING` summary passes and clears
+the gate; if the pipeline then fails, the next round's summary reports the app
+RED. Re-run the summary when the pipeline finishes to confirm it sooner. The
+age counts from the run attempt's `run_started_at`, which includes queued time,
+so a run queued behind earlier production pushes can turn `UNKNOWN`. That fails
+safe: re-run the summary after the pipeline finishes, or acknowledge the run. A
+stuck pipeline, or one whose previous production run did not succeed, is
+`UNKNOWN`, which is RED. A summary that times out or is cancelled blocks the
+next round like a failure. Receipts from re-run attempts are merged by keeping
+the latest attempt per app.
 
 ## Stop, retry and roll back
 
@@ -73,6 +143,11 @@ artifact, retained 90 days, including the `rollbackVersion` that served before.
   `rollbackVersion` as described below.
 - **Retry one app.** Dispatch `serving-workers-production.yaml` on `production`
   with that app. It rebuilds only if the app does not serve the SHA yet.
+- **Catch up an off-branch live build.** When the live build is not an
+  ancestor of the production SHA, the publisher refuses. An ACKed catch-up
+  dispatches with `supersede` set to that exact live SHA; the receipt records
+  the superseded build. A live build that already contains the source (a newer
+  build) is never replaced.
 - **Roll back.** Read `rollbackVersion` from the receipt and run
   `cf workers deployments create --worker <worker> --strategy percentage --versions '[{"version_id":"<rollbackVersion>","percentage":100}]'`.
   Routes, custom domains, schedules and the gateway are never changed by this
@@ -88,24 +163,28 @@ candidate from that SHA at 0%. While a pinned production SHA carries a known
 regression, keep the variable unset or move that app to `held` in
 `productionPublicationPolicy` until a fixed SHA is pinned.
 
-Publication needs both the repository variable `SERVING_WORKERS_PUBLICATION`
-set to `enabled` and the `SERVING_WORKERS_CLOUDFLARE_API_TOKEN` secret on the
-`cloudflare-release-production` environment. Setting either is a release-owner
-action. `scripts/ci/production-publication-coverage.test.mjs` counts these
-apps as publishing automatically because it reads source, not repository
-variables, so while either is missing they stay on their last version without
-a failing check. After a promotion, a skipped `plan` job means the variable
-is not `enabled`, and a `plan` notice means the token is missing; each app's
-`/api/build-info` shows the SHA it serves.
-
 ## Credentials
 
-`SERVING_WORKERS_CLOUDFLARE_API_TOKEN` is an environment secret on
-`cloudflare-release-production`, scoped to Workers Scripts edit on the
-production account only, with no zone permissions. The publisher runs in the
+Enable `SERVING_WORKERS_PUBLICATION` only while the round's token exists.
+Without it, every publish leg stops at "Cloudflare deploy credentials are not
+configured" before any Cloudflare write, and the round ends RED.
+
+`SERVING_WORKERS_CLOUDFLARE_API_TOKEN` is a per-round environment secret on
+`cloudflare-release-production`:
+- A mint child mints it at round start, scoped to Workers Scripts edit and read
+  on the production account only. Zone permissions are added only when an app's
+  routes need them, and that needs a per-round ACK.
+- It expires at the end of the round plus two hours.
+- It is revoked after the round, and custody is deleted only after a
+  verification call returns 401.
+- No standing or weekly token exists, and CI holds no token that can mint
+  others.
+
+Between rounds the secret is absent and `SERVING_WORKERS_PUBLICATION` is
+`disabled`. The publisher runs in the
 called workflow `serving-worker-publish.yaml`, and a called workflow reads a
 secret, environment ones included, only when its caller hands secrets over, so
-every `publish-<app>` job in `serving-workers-production.yaml` sets
+the `publish` matrix job in `serving-workers-production.yaml` sets
 `secrets: inherit`. A publish job without it starts with an empty token and
 stops at "Cloudflare deploy credentials are not configured" before any
 Cloudflare write; `scripts/ci/serving-workers-workflow.test.mjs` guards it. `CLOUDFLARE_ACCOUNT_ID` and

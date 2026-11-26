@@ -60,6 +60,22 @@ function callsWorkflow(caller: string, workflow: string): boolean {
     .some((line) => line.trim() === `uses: ./.github/workflows/${workflow}`);
 }
 
+function hasServingWorkerPublisher(workflow: string, app: string): boolean {
+  const jobs = workflow.split('\njobs:\n')[1] ?? '';
+  const publish = /^  publish:\n((?: {4}[^\n]*\n|\n)+)/m.exec(
+    jobs + '\n'
+  )?.[1];
+  if (!publish) return false;
+  const needs = /^    needs: \[([^\]]+)\]$/m.exec(publish)?.[1];
+  return Boolean(
+    new RegExp(`^  build-${app}:$`, 'm').test(jobs) &&
+      needs?.split(/,\s*/).includes(`build-${app}`) &&
+      callsWorkflow(publish, 'serving-worker-publish.yaml') &&
+      publish.includes('fromJSON(needs.plan.outputs.matrix)') &&
+      publish.includes('app: ${{ matrix.app }}')
+  );
+}
+
 export function activeProductionApps(): string[] {
   return [
     ...new Set([
@@ -109,8 +125,8 @@ export function productionPublicationCoverage(
         route = 'planner';
       }
     } else if (Object.hasOwn(SERVING_WORKERS, app)) {
-      if (!new RegExp(`^  publish-${app}:\\s*$`, 'm').test(serving)) {
-        gaps.push('serving-workers-production.yaml has no publish job');
+      if (!hasServingWorkerPublisher(serving, app)) {
+        gaps.push('serving-workers-production.yaml has no publish matrix leg');
       } else if (!hold) {
         route = 'serving-workers';
       }

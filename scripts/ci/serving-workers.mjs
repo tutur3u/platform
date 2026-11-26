@@ -2,6 +2,8 @@
 //   node scripts/ci/serving-workers.mjs plan <sha>
 //   node scripts/ci/serving-workers.mjs restore <app> <sha> <artifact-dir> <cf-output-dir>
 //   node scripts/ci/serving-workers.mjs publish <app> <sha> <cf-output-dir>
+//     env: SERVING_MODE=publish|rehearse, SERVING_SUPERSEDE=<live sha>,
+//          ARTIFACT_NAME, ARTIFACT_SHA256 (recorded in the receipt)
 //
 // Republishes an already-serving Worker from the sealed artifact its own
 // workflow built at the exact production SHA, through the cf Build Output path
@@ -15,24 +17,24 @@
 // - moves traffic only while serving is still the captured version, waits for
 //   the public build, and restores the captured version on any failure.
 // The receipt keeps the serving version as the one-step rollback.
+// Rehearse mode stops after the 0% smoke and unstage: no traffic moves.
 import { execFileSync } from 'node:child_process';
 import {
   appendFileSync,
   existsSync,
   mkdtempSync,
   readFileSync,
-  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { appConfig, SERVING_WORKERS } from './serving-workers-apps.mjs';
+import { restore, run, SCHEDULES } from './serving-workers-restore.mjs';
 
-export { SERVING_WORKERS };
+export { restore, SERVING_WORKERS };
 
 const SHA = /^[0-9a-f]{40}$/;
-const SCHEDULES = 'serving-schedules.json';
 
 /** Stop fence, credentials and source policy, checked before every mutation. */
 export function admission(app, env, hold) {
@@ -45,17 +47,43 @@ export function admission(app, env, hold) {
 }
 
 /** Skip when live already serves the source; refuse anything but a fast-forward. */
-export function sourceDecision(live, sha, isAncestor) {
+export function sourceDecision(live, sha, isAncestor, supersede = '') {
   if (!SHA.test(live ?? ''))
     return { action: 'refuse', reason: 'live build identity unreadable' };
   if (live === sha)
     return { action: 'skip', reason: 'live already serves the source' };
-  if (!isAncestor(live, sha))
+  if (!isAncestor(live, sha)) {
+    // An ACKed catch-up names the exact off-branch build it replaces; a live
+    // build that already contains the source is never replaced.
+    if (supersede && supersede === live && !isAncestor(sha, live))
+      return { action: 'publish', superseded: live };
     return {
       action: 'refuse',
       reason: `live ${live} is not an ancestor of ${sha}`,
     };
+  }
   return { action: 'publish' };
+}
+
+/**
+ * A candidate's build-info must name a production build: a build without the
+ * PLATFORM_BUILD_* environment reports environment/refName "local".
+ */
+export function buildIdentityProblem(body) {
+  let info;
+  try {
+    info = JSON.parse(body);
+  } catch {
+    return 'build-info is not JSON';
+  }
+  if (info.environment !== undefined && info.environment !== 'production')
+    return `build-info environment is ${info.environment}, not production`;
+  if (
+    info.refName !== undefined &&
+    !['production', 'main'].includes(info.refName)
+  )
+    return `build-info refName is ${info.refName}`;
+  return undefined;
 }
 
 /** Same-origin script and stylesheet references a page's HTML loads. */
@@ -145,6 +173,15 @@ function createCloudflare(env, fetchImpl, sleep) {
   };
   return {
     deployment,
+    /** Newest uploaded version: /settings and /secrets writes follow it. */
+    async latestVersion(worker) {
+      const result = await call(`${worker}/versions`);
+      return (result.items ?? result)[0]?.id ?? null;
+    },
+    async versionMessage(worker, version) {
+      const result = await call(`${worker}/versions/${version}`);
+      return result.annotations?.['workers/message'] ?? null;
+    },
     async schedules(worker) {
       const result = await call(`${worker}/schedules`);
       return (result.schedules ?? []).map(({ cron }) => cron).sort();
@@ -198,101 +235,7 @@ function probe(url, override, fetchImpl, sleep) {
   );
 }
 
-function run(command, args, options = {}) {
-  const output = execFileSync(command, args, {
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'inherit'],
-    maxBuffer: 16 * 1024 * 1024,
-    ...options,
-  });
-  if (output.trim()) console.log(output.trim());
-  return output;
-}
-
 const readJson = (file) => JSON.parse(readFileSync(file, 'utf8'));
-
-/**
- * Restore and verify the sealed archive, then emit cf Build Output from its
- * own emitted config. Cron triggers stay configured on the Worker and versions
- * never change them, so they are recorded for the publish-time schedule check
- * and left out of the uploaded config.
- */
-export function restore(app, sha, artifactDir, outDir, exec = run) {
-  const config = appConfig(app);
-  if (!SHA.test(sha ?? ''))
-    throw new Error('Supply the exact 40-hex production SHA');
-  const archive = path.join(artifactDir, config.archive);
-  const appDir = path.resolve('apps', app);
-  let emitted;
-  if (config.restore === 'roadmap') {
-    exec('tar', ['-xzf', archive, '-C', appDir]);
-    const verifier = pathToFileURL(
-      path.join(appDir, 'scripts/seal-artifact.mjs')
-    );
-    exec('node', [
-      '--input-type=module',
-      '-e',
-      `import { verifySealedArtifact } from ${JSON.stringify(verifier.href)}; verifySealedArtifact(${JSON.stringify(`${appDir}/`)}, ${JSON.stringify(sha)});`,
-    ]);
-    emitted = readJson(
-      path.join(appDir, 'roadmap-artifact.json')
-    ).emittedConfig;
-  } else {
-    const { script, profile, env } = config.restore;
-    // A private directory: a predictable shared temp path could be
-    // pre-created as a symlink or rewritten to redirect configPath.
-    const receiptDir = mkdtempSync(
-      path.join(process.env.RUNNER_TEMP || tmpdir(), 'serving-workers-restore-')
-    );
-    const receipt = path.join(receiptDir, `${app}-${sha}-restored.json`);
-    const flags = profile ? ['--profile', 'production'] : [];
-    const options = { env: { ...process.env, ...env(sha) } };
-    try {
-      exec(
-        'python3',
-        [
-          script,
-          ...flags,
-          'restore',
-          appDir,
-          '--archive',
-          archive,
-          '--receipt',
-          receipt,
-        ],
-        options
-      );
-      exec(
-        'python3',
-        [script, ...flags, 'verify', appDir, '--receipt', receipt],
-        options
-      );
-      emitted = readJson(receipt).configPath;
-    } finally {
-      rmSync(receiptDir, { force: true, recursive: true });
-    }
-  }
-  if (typeof emitted !== 'string' || emitted.includes('..'))
-    throw new Error('sealed receipt names no emitted config');
-  let configPath = path.join(appDir, emitted);
-  const emittedConfig = readJson(configPath);
-  const crons = [...(emittedConfig.triggers?.crons ?? [])].sort();
-  if (emittedConfig.triggers) {
-    const { triggers: _triggers, ...versioned } = emittedConfig;
-    configPath = path.join(path.dirname(configPath), 'serving-version.json');
-    writeFileSync(configPath, `${JSON.stringify(versioned, null, 2)}\n`);
-  }
-  exec('node', [
-    'scripts/ci/void-cf-output.mjs',
-    '--config',
-    configPath,
-    '--out',
-    outDir,
-    '--sha',
-    sha,
-  ]);
-  writeFileSync(path.join(outDir, SCHEDULES), `${JSON.stringify({ crons })}\n`);
-}
 
 /** Apps whose public build is not the production SHA yet. */
 export async function plan(sha, { fetchImpl = fetch, sleep = wait } = {}) {
@@ -321,13 +264,23 @@ export async function publish(
     exec = run,
     isAncestor,
     sleep = wait,
+    mode = 'publish',
+    supersede = '',
+    artifact = {},
+    run: runIdentity = {},
   } = {}
 ) {
   const config = appConfig(app);
+  if (!['publish', 'rehearse'].includes(mode))
+    throw new Error(`Unknown publication mode: ${mode}`);
   const receipt = {
+    schema: 2,
     app,
     worker: config.worker,
     sourceSha: sha,
+    mode,
+    run: runIdentity,
+    artifact,
     outcome: 'started',
     steps: [],
   };
@@ -416,7 +369,20 @@ export async function publish(
     serving = before.versions[0].version_id;
     receipt.rollbackVersion = serving;
     const live = buildCommit((await get(`${primary}/api/build-info`)).body);
-    const decision = sourceDecision(live, sha, isAncestor);
+    // Preimage: what serves before this run touches anything. The version
+    // reads are evidence only, so an unreadable one is recorded as null.
+    const optional = (read) => read().catch(() => null);
+    receipt.preimage = {
+      deploymentId: before.id,
+      servingVersion: serving,
+      servingMessage: await optional(() =>
+        cf.versionMessage(config.worker, serving)
+      ),
+      latestVersion: await optional(() => cf.latestVersion(config.worker)),
+      liveBuild: live,
+      capturedAt: new Date().toISOString(),
+    };
+    const decision = sourceDecision(live, sha, isAncestor, supersede);
     record('source', { live, deployment: before.id, ...decision });
     if (decision.action === 'skip') {
       receipt.outcome = 'current';
@@ -476,10 +442,16 @@ export async function publish(
           const info = await get(`${primary}/api/build-info`, override);
           if (buildCommit(info.body) !== sha)
             throw new Error(`override does not reach ${version} yet`);
+          receipt.buildIdentity = info.body;
         },
         { attempts: 12, delayMs: 5000, sleep, linear: true }
       );
       const failures = [];
+      const identity = buildIdentityProblem(receipt.buildIdentity);
+      if (identity) failures.push(identity);
+      try {
+        receipt.buildIdentity = JSON.parse(receipt.buildIdentity);
+      } catch {}
       for (const origin of config.origins) {
         const info = await get(`${origin}/api/build-info`, override);
         if (buildCommit(info.body) !== sha)
@@ -514,6 +486,14 @@ export async function publish(
     }
     if (smokeError) throw smokeError;
     await settle(servingOnly(), 'unstaged serving deployment');
+    // The uploaded version stays the newest one: a /settings or /secrets
+    // write now would build on it rather than on serving.
+    receipt.latestIsNotServing = true;
+    if (mode === 'rehearse') {
+      receipt.outcome = 'rehearsed';
+      record('done');
+      return receipt;
+    }
 
     fence();
     try {
@@ -540,10 +520,12 @@ export async function publish(
       throw error;
     }
     receipt.outcome = 'published';
+    receipt.latestIsNotServing = false;
     record('verified');
     return receipt;
   } catch (error) {
     receipt.outcome = 'failed';
+    if (receipt.version) receipt.latestIsNotServing = true;
     record('error', { message: error.message });
     throw error;
   }
@@ -572,10 +554,16 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
         !productionPublicationHold(`${app}-cloudflare.yaml`)
     );
     console.log(`stale: ${stale.join(', ') || 'none'}`);
+    // One matrix leg per app: every leg waits for every build, so all of them
+    // reach the release environment together and one approval admits the round.
+    const matrix = stale.map((app) => ({
+      app,
+      artifact: SERVING_WORKERS[app].artifact(args[0]),
+    }));
     if (process.env.GITHUB_OUTPUT)
       appendFileSync(
         process.env.GITHUB_OUTPUT,
-        `apps=${JSON.stringify(stale)}\n`
+        `apps=${JSON.stringify(stale)}\nmatrix=${JSON.stringify(matrix)}\n`
       );
   } else if (mode === 'restore') {
     const [app, sha, artifactDir, outDir] = args;
@@ -596,6 +584,17 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
         `${app}-serving-publication.json`
       ),
       isAncestor: gitAncestor,
+      mode: process.env.SERVING_MODE || 'publish',
+      supersede: process.env.SERVING_SUPERSEDE || '',
+      artifact: {
+        name: process.env.ARTIFACT_NAME || null,
+        sha256: process.env.ARTIFACT_SHA256 || null,
+      },
+      run: {
+        id: process.env.GITHUB_RUN_ID || null,
+        attempt: process.env.GITHUB_RUN_ATTEMPT || null,
+        event: process.env.GITHUB_EVENT_NAME || null,
+      },
     });
     console.log(
       `${app}: ${result.outcome}${result.version ? ` ${result.version}` : ''}; rollback ${result.rollbackVersion}`
