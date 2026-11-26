@@ -231,7 +231,12 @@ export function setup(
         false,
         'Replay fence must span all source SHAs'
       );
-      const run = { id: 123, head_sha: sha, head_branch: 'production' };
+      const run = {
+        id: 123,
+        head_sha: sha,
+        head_branch: 'production',
+        run_attempt: 1,
+      };
       return Response.json({
         total_count: state.prior ? 2 : 1,
         workflow_runs: state.prior

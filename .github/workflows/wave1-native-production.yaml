@@ -377,7 +377,7 @@ jobs:
       - name: Read-only production preflight
         id: preflight
         if: steps.coordinator.outputs.publish != 'false'
-        timeout-minutes: 2
+        timeout-minutes: 4
         env:
           WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN: ${{ secrets.WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}

@@ -40,6 +40,23 @@ every Cloudflare write.
    SHA must be proven, from the serving version's annotation or from the
    accepted receipt that wrote it. When it is newer than the candidate, the
    attempt records `superseded` and uploads nothing.
+
+   The history reads each run one attempt at a time, in pages of 30 jobs,
+   because GitHub answers the all-attempts listing of a much-rerun run with a
+   502. A rerun lists each job it did not run again as a copy under the new
+   attempt number, with a new job id. A listed job counts as a copy only when
+   GitHub created its record after the job ended and an earlier attempt lists
+   the same runner, commit, times, outcome, labels and step list. The upload
+   then counts once, under the attempt that ran it, which is the attempt its
+   receipt names. Any difference is a separate upload attempt. A
+   read retries a 5xx, a timeout or a dropped connection at most twice, within
+   one cap for the whole walk. A history that cannot be read, a run with more
+   than 15 attempts, or 100 runs without a proven upload stops the publish:
+   an unread history never proves that nothing was uploaded.
+
+   The preflight error keeps only the HTTP status. To find the failing request,
+   repeat the history reads with the same URLs and a read token: GitHub and
+   Cloudflare both answer through this step.
 2. **Version upload.** `cf workers versions create --prebuilt` creates the
    version with no traffic. The publisher then reads the version's module
    names back (`?include=modules`, streamed with the content discarded and the

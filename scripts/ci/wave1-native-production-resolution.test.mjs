@@ -76,6 +76,7 @@ function fixture(resolution) {
               id: state.pendingId,
               head_sha: 'b'.repeat(40),
               head_branch: 'production',
+              run_attempt: 1,
             },
           ]
         : [];
@@ -108,9 +109,19 @@ function fixture(resolution) {
       });
     }
     const runs = [
-      { id: currentId, head_sha: currentSha, head_branch: 'production' },
+      {
+        id: currentId,
+        head_sha: currentSha,
+        head_branch: 'production',
+        run_attempt: 1,
+      },
       ...extra,
-      { id: original, head_sha: resolution.sha, head_branch: 'production' },
+      {
+        id: original,
+        head_sha: resolution.sha,
+        head_branch: 'production',
+        run_attempt: 1,
+      },
     ];
     return Response.json({ total_count: runs.length, workflow_runs: runs });
   };

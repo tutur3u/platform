@@ -94,7 +94,7 @@ export async function main({
   fetcher = fetch,
   exec,
   appRoot,
-  preflightTimeoutMs = 90_000,
+  preflightTimeoutMs = 150_000,
   settingsTiming,
   readWorkerConfig,
   servingTopology,
@@ -429,6 +429,9 @@ export async function main({
     );
     validate();
     deadline.throwIfAborted();
+    // The upload accepts a young preflight only. Its age runs from this last
+    // topology confirmation, not from before the history walk.
+    record.preflightAt = Date.now();
     writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
       mode: 0o600,
     });

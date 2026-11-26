@@ -4,7 +4,6 @@ import test from 'node:test';
 import {
   assertNoEarlierUpload,
   isPublicationJob,
-  maxJobPages,
   plannerPublicationSince,
   publicationReceipt,
   publicationRunSources,
@@ -83,8 +82,13 @@ function fixture() {
     return Response.json({
       total_count: 2,
       workflow_runs: [
-        { id: 123, head_sha: sha, head_branch: 'production' },
-        { id: 122, head_sha: earlierSha, head_branch: 'production' },
+        { id: 123, head_sha: sha, head_branch: 'production', run_attempt: 1 },
+        {
+          id: 122,
+          head_sha: earlierSha,
+          head_branch: 'production',
+          run_attempt: 1,
+        },
       ],
     });
   };
@@ -343,6 +347,7 @@ test('history that never reaches an accepted upload within its page bound fails 
         id: page === 1 && index === 0 ? current : first - index,
         head_sha: page === 1 && index === 0 ? sha : earlierSha,
         head_branch: 'production',
+        run_attempt: 1,
       })),
     });
   };
@@ -438,10 +443,23 @@ function mailHistory({ failedJobs, receiptState = 'accepted-private' }) {
             id: failedRun,
             head_sha: 'c'.repeat(40),
             head_branch: 'production',
+            run_attempt: 1,
           },
-          { id: acceptedRun, head_sha: earlierSha, head_branch: 'production' },
+          {
+            id: acceptedRun,
+            head_sha: earlierSha,
+            head_branch: 'production',
+            run_attempt: 1,
+          },
         ]
-      : [{ id: currentRun, head_sha: sha, head_branch: 'production' }];
+      : [
+          {
+            id: currentRun,
+            head_sha: sha,
+            head_branch: 'production',
+            run_attempt: 1,
+          },
+        ];
     return Response.json({ total_count: runs.length, workflow_runs: runs });
   };
   return {
@@ -565,8 +583,9 @@ function listing(runs) {
         : [];
       return Response.json({ total_count: jobs.length, jobs });
     }
+    const distinct = new Set(runs.map((run) => run.id)).size;
     return Response.json({
-      total_count: url.includes('vercel-production') ? runs.length : 0,
+      total_count: url.includes('vercel-production') ? distinct : 0,
       workflow_runs: url.includes('vercel-production') ? runs : [],
     });
   };
@@ -574,7 +593,12 @@ function listing(runs) {
 
 test('a repeated run from a shifted page is skipped once', async () => {
   const p = fixture();
-  const run = { id: 123, head_sha: sha, head_branch: 'production' };
+  const run = {
+    id: 123,
+    head_sha: sha,
+    head_branch: 'production',
+    run_attempt: 1,
+  };
   p.fetcher = listing([run, run, { ...run, id: 100, head_sha: earlierSha }]);
   await p.run();
 });
@@ -588,42 +612,27 @@ test('runs listed out of order fail closed', async () => {
     // Page two lists a run newer than the last run of page one.
     const pages = {
       1: [
-        { id: 123, head_sha: sha, head_branch: 'production' },
-        { id: 90, head_sha: earlierSha, head_branch: 'production' },
+        { id: 123, head_sha: sha, head_branch: 'production', run_attempt: 1 },
+        {
+          id: 90,
+          head_sha: earlierSha,
+          head_branch: 'production',
+          run_attempt: 1,
+        },
       ],
-      2: [{ id: 110, head_sha: earlierSha, head_branch: 'production' }],
+      2: [
+        {
+          id: 110,
+          head_sha: earlierSha,
+          head_branch: 'production',
+          run_attempt: 1,
+        },
+      ],
     };
     const runs = pages[Number(/[?&]page=(\d+)/.exec(url)[1])] ?? [];
     return Response.json({ total_count: 3, workflow_runs: runs });
   };
   await assert.rejects(p.run(), /out of order/);
-});
-
-test('a planner run with many rerun attempts pages through all of its jobs', async () => {
-  const p = fixture();
-  const jobs = Array.from({ length: 450 }, (_, index) => ({
-    name: `deploy-other / job-${index}`,
-    run_id: 122,
-    run_attempt: 1 + (index % 5),
-    status: 'completed',
-    conclusion: 'success',
-    steps: [],
-  }));
-  jobs.push(p.state.previous);
-  const fetcher = p.fetcher;
-  p.fetcher = async (url, options) => {
-    if (url.includes('/runs/122/jobs?')) {
-      const page = Number(/[?&]page=(\d+)/.exec(url)[1]);
-      return Response.json({
-        total_count: jobs.length,
-        jobs: jobs.slice((page - 1) * 100, page * 100),
-      });
-    }
-    return fetcher(url, options);
-  };
-  await p.run();
-  assert.equal(p.state.reads, 1);
-  assert.ok(jobs.length > 300 && jobs.length <= maxJobPages * 100);
 });
 
 for (const state of [

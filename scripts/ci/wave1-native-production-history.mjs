@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import {
+  historyReader,
+  originalExecutions,
+  runJobs,
+} from './wave1-native-history-reads.mjs';
 import { isResolvedFailedNoWrite } from './wave1-native-production-resolution.mjs';
-import { boundedJson } from './wave1-native-publish.mjs';
 
 export const uploadStepName = 'Upload once without attaching serving topology';
 const limit = 1024 * 1024;
@@ -82,32 +86,69 @@ export const publicationRunSources = [
   },
 ];
 const maxPages = 10;
+// The walk ends at the newest proven upload. Reaching this many runs without
+// one means the history cannot be proven, so it fails closed.
+export const maxRunsWalked = 100;
 const incompleteHistory = 'Unbounded or incomplete publication history';
+const changedHistory =
+  'Publication history lost a run during the walk; start a fresh preflight';
 
-function runReader({ base, source, env, fetcher }) {
+function runReader({ base, source, read }) {
   let page = 0;
   let seen = 0;
   let total;
+  let firstTotal;
+  let previousIds;
+  const listed = new Set();
   let buffer = [];
+  const readPage = async (number) => {
+    const runs = await read(
+      `${base}/workflows/${source.workflow}/runs?branch=production${source.filter}&per_page=100&page=${number}`
+    );
+    assert.ok(
+      Array.isArray(runs.workflow_runs) &&
+        Number.isSafeInteger(runs.total_count) &&
+        runs.workflow_runs.length <= 100,
+      incompleteHistory
+    );
+    return runs;
+  };
+  // Pages are read by offset, so a run that leaves the listing moves a run not
+  // yet read onto a page already read. A shrinking total shows it. A deletion
+  // offset by a new run keeps the total, so the page before is read again and
+  // every run it listed must still be there or have moved to this page.
+  const assertNothingLeft = async (runs) => {
+    assert.ok(total === undefined || runs.total_count >= total, changedHistory);
+    if (!previousIds) return;
+    const again = await readPage(page - 1);
+    assert.ok(again.total_count >= runs.total_count, changedHistory);
+    const present = new Set(
+      [...again.workflow_runs, ...runs.workflow_runs].map((run) => run.id)
+    );
+    assert.ok(
+      previousIds.every((id) => present.has(id)),
+      changedHistory
+    );
+  };
   return async function next() {
     if (!buffer.length) {
       if (total !== undefined && seen >= total) return undefined;
       page += 1;
       assert.ok(page <= maxPages, incompleteHistory);
-      const runs = await boundedJson(
-        `${base}/workflows/${source.workflow}/runs?branch=production${source.filter}&per_page=100&page=${page}`,
-        env.GITHUB_TOKEN,
-        fetcher
-      );
+      const runs = await readPage(page);
+      await assertNothingLeft(runs);
       assert.ok(
-        Array.isArray(runs.workflow_runs) &&
-          Number.isSafeInteger(runs.total_count) &&
-          runs.workflow_runs.length <= 100 &&
-          (runs.workflow_runs.length > 0 || seen >= runs.total_count),
+        runs.workflow_runs.length > 0 || seen >= runs.total_count,
         incompleteHistory
       );
+      previousIds = runs.workflow_runs.map((run) => run.id);
       total = runs.total_count;
-      seen += runs.workflow_runs.length;
+      firstTotal ??= total;
+      for (const run of runs.workflow_runs) listed.add(run.id);
+      // A run created mid-walk shifts the pages: one run repeats and the total
+      // grows with each new run. Any other repeat is not progress, so a page
+      // served twice never completes the history.
+      seen = listed.size + (total - firstTotal);
       buffer = [...runs.workflow_runs].sort((a, b) => b.id - a.id);
       if (!buffer.length) return undefined;
     }
@@ -142,37 +183,6 @@ async function* productionRuns(context) {
     last = run.id;
     yield run;
   }
-}
-
-// Planner runs carry every app's jobs and each rerun adds a full attempt, so
-// a run may list up to maxJobPages pages of jobs before the walk fails closed.
-export const maxJobPages = 10;
-
-async function runJobs({ base, run, env, fetcher }) {
-  const jobs = [];
-  for (let page = 1; page <= maxJobPages; page += 1) {
-    const response = await boundedJson(
-      `${base}/runs/${run.id}/jobs?filter=all&per_page=100&page=${page}`,
-      env.GITHUB_TOKEN,
-      fetcher
-    );
-    assert.ok(
-      Array.isArray(response.jobs) &&
-        Number.isSafeInteger(response.total_count) &&
-        response.total_count <= maxJobPages * 100,
-      'Unknown earlier upload status; never replay'
-    );
-    jobs.push(...response.jobs);
-    if (jobs.length >= response.total_count || !response.jobs.length) {
-      assert.equal(
-        jobs.length,
-        response.total_count,
-        'Unknown earlier upload status; never replay'
-      );
-      return jobs;
-    }
-  }
-  assert.fail('Unknown earlier upload status; never replay');
 }
 
 /**
@@ -242,12 +252,17 @@ export async function assertNoEarlierUpload({
   rollback,
   fetcher,
   readReceipt = publicationReceipt,
+  readOptions,
 }) {
   const base = `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/actions`;
+  const read = historyReader({ ...readOptions, env, fetcher });
+  let walked = 0;
   let sawCurrent = false;
   const assertCurrentSeen = () =>
     assert.ok(sawCurrent, 'Current production run missing from history');
-  for await (const run of productionRuns({ base, env, fetcher })) {
+  for await (const run of productionRuns({ base, read })) {
+    walked += 1;
+    assert.ok(walked <= maxRunsWalked, incompleteHistory);
     if (String(run.id) === env.GITHUB_RUN_ID) {
       assert.ok(
         run.head_sha === sha && run.head_branch === 'production',
@@ -256,10 +271,8 @@ export async function assertNoEarlierUpload({
       sawCurrent = true;
     }
     if (run.head_branch !== 'production') continue;
-    const jobs = await runJobs({ base, run, env, fetcher });
-    const publishers = jobs
-      .filter((job) => isPublicationJob(job.name, app))
-      .sort((a, b) => b.run_attempt - a.run_attempt);
+    const jobs = await runJobs({ base, run, read });
+    const publishers = jobs.filter((job) => isPublicationJob(job.name, app));
     // The walk trusts job names only after it recognizes this attempt's own
     // publish job: a renamed caller or job would otherwise hide every
     // earlier upload.
@@ -270,7 +283,7 @@ export async function assertNoEarlierUpload({
         ),
         'This run has no recognized publish job; never trust the history walk'
       );
-    for (const job of publishers) {
+    for (const job of originalExecutions(publishers)) {
       assert.equal(job.run_id, run.id, 'Malformed publication job run');
       assert.ok(
         Number.isSafeInteger(job.run_attempt) && job.run_attempt > 0,
@@ -284,10 +297,8 @@ export async function assertNoEarlierUpload({
       if (job.conclusion === 'skipped' || job.status === 'queued') continue;
       if (uploadNeverStarted(job)) continue;
       const name = `wave1-${app}-production-publication-${run.head_sha}-${run.id}-${job.run_attempt}`;
-      const artifacts = await boundedJson(
-        `${base}/runs/${run.id}/artifacts?name=${name}&per_page=100`,
-        env.GITHUB_TOKEN,
-        fetcher
+      const artifacts = await read(
+        `${base}/runs/${run.id}/artifacts?name=${name}&per_page=100`
       );
       assert.ok(
         Array.isArray(artifacts.artifacts) &&
