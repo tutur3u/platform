@@ -112,6 +112,39 @@ export function upskiiLessonsHelp(): string {
   ].join('\n');
 }
 
+function normalizeClassEntry(
+  entry: Record<string, unknown>
+): Record<string, unknown> {
+  const nested = Object.hasOwn(entry, 'class') ? entry.class : undefined;
+  if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+    const classObj = nested as Record<string, unknown>;
+    return {
+      ...classObj,
+      ...(Object.hasOwn(entry, 'membership')
+        ? { membership: entry.membership }
+        : {}),
+      ...(Object.hasOwn(entry, 'publishedLessonCount')
+        ? { publishedLessonCount: entry.publishedLessonCount }
+        : {}),
+      ...(Object.hasOwn(entry, 'studentCount')
+        ? { studentCount: entry.studentCount }
+        : {}),
+    };
+  }
+  return entry;
+}
+
+function requireClassId(id: string | undefined, action: string): string {
+  if (!id) {
+    throw new CliError({
+      code: 'MISSING_CLASS_ID',
+      exitCode: CLI_EXIT.usage,
+      message: `Pass a class ID: \`ttr external upskii classes ${action} <classId>\`.`,
+    });
+  }
+  return id;
+}
+
 export async function runUpskiiClassesCommand(
   options: UpskiiClassesLessonsOptions
 ): Promise<void> {
@@ -130,11 +163,33 @@ export async function runUpskiiClassesCommand(
   if (action === 'list' || action === 'ls') {
     const res = await client.requestJson<{
       classes?: Array<Record<string, unknown>>;
+      enrolled?: Array<Record<string, unknown>>;
+      publicClasses?: Array<Record<string, unknown>>;
     }>({
       command: 'external.upskii.classes.list',
       path: `${client.apiBase}/classes`,
     });
-    let classes = Array.isArray(res.data.classes) ? res.data.classes : [];
+    const hasEdu = Array.isArray(res.data.classes);
+    const hasLearn = Array.isArray(res.data.enrolled);
+    if (
+      (client.experience === 'learn' && hasEdu && !hasLearn) ||
+      (client.experience === 'educator' && hasLearn && !hasEdu)
+    ) {
+      throw new CliError({
+        code: 'UPSKII_EXPERIENCE_MISMATCH',
+        exitCode: CLI_EXIT.conflict,
+        message: `Requested --experience ${client.experience}, but the authenticated Upskii session returned ${hasLearn ? 'learn' : 'educator'} classes.`,
+      });
+    }
+    const rawClasses =
+      client.experience === 'learn'
+        ? hasLearn
+          ? res.data.enrolled!
+          : []
+        : hasEdu
+          ? res.data.classes!
+          : [];
+    let classes = rawClasses.map(normalizeClassEntry);
     if (flags['qa-only'] === true) {
       classes = classes.filter(
         (entry) =>
@@ -143,7 +198,18 @@ export async function runUpskiiClassesCommand(
     }
     if (json) {
       write(
-        `${JSON.stringify({ classes, count: classes.length, d1Telemetry: res.d1Telemetry }, null, 2)}\n`
+        `${JSON.stringify(
+          {
+            classes,
+            count: classes.length,
+            d1Telemetry: res.d1Telemetry,
+            ...(Array.isArray(res.data.publicClasses)
+              ? { publicClassesCount: res.data.publicClasses.length }
+              : {}),
+          },
+          null,
+          2
+        )}\n`
       );
       return;
     }
@@ -162,51 +228,30 @@ export async function runUpskiiClassesCommand(
   }
 
   if (action === 'get' || action === 'show') {
-    if (!id) {
-      throw new CliError({
-        code: 'MISSING_CLASS_ID',
-        exitCode: CLI_EXIT.usage,
-        message:
-          'Pass a class ID: `ttr external upskii classes get <classId>`.',
-      });
-    }
+    const classId = requireClassId(id, 'get');
     const res = await client.requestJson<Record<string, unknown>>({
       command: 'external.upskii.classes.get',
-      path: `${client.apiBase}/classes/${encodeURIComponent(id)}`,
+      path: `${client.apiBase}/classes/${encodeURIComponent(classId)}`,
     });
     write(`${JSON.stringify(res.data, null, 2)}\n`);
     return;
   }
 
   if (action === 'overview') {
-    if (!id) {
-      throw new CliError({
-        code: 'MISSING_CLASS_ID',
-        exitCode: CLI_EXIT.usage,
-        message:
-          'Pass a class ID: `ttr external upskii classes overview <classId>`.',
-      });
-    }
+    const classId = requireClassId(id, 'overview');
     const res = await client.requestJson<Record<string, unknown>>({
       command: 'external.upskii.classes.overview',
-      path: `${client.apiBase}/classes/${encodeURIComponent(id)}/overview`,
+      path: `${client.apiBase}/classes/${encodeURIComponent(classId)}/overview`,
     });
     write(`${JSON.stringify(res.data, null, 2)}\n`);
     return;
   }
 
   if (action === 'join-code') {
-    if (!id) {
-      throw new CliError({
-        code: 'MISSING_CLASS_ID',
-        exitCode: CLI_EXIT.usage,
-        message:
-          'Pass a class ID: `ttr external upskii classes join-code <classId>`.',
-      });
-    }
+    const classId = requireClassId(id, 'join-code');
     const res = await client.requestJson<Record<string, unknown>>({
       command: 'external.upskii.classes.join-code',
-      path: `${client.apiBase}/classes/join-code?classId=${encodeURIComponent(id)}`,
+      path: `${client.apiBase}/classes/join-code?classId=${encodeURIComponent(classId)}`,
     });
     write(`${JSON.stringify(res.data, null, 2)}\n`);
     return;
@@ -267,6 +312,14 @@ export async function runUpskiiClassesCommand(
   }
 
   if (action === 'join') {
+    if (client.experience !== 'learn') {
+      throw new CliError({
+        code: 'UPSKII_EXPERIENCE_MISMATCH',
+        exitCode: CLI_EXIT.usage,
+        hint: 'Pass --experience learn with a learner Upskii session.',
+        message: 'Upskii class join is only supported in the learn experience.',
+      });
+    }
     const code = requiredFlag(flags, 'code');
     const gate = await requireMutationGate({
       explicitEnvFlag: options.explicitEnvFlag,
@@ -274,7 +327,7 @@ export async function runUpskiiClassesCommand(
       json,
       noColor,
       preview: {
-        applyHint: `ttr external upskii classes join --env ${env} --code <joinCode> --yes`,
+        applyHint: `ttr external upskii classes join --experience learn --env ${env} --code <joinCode> --yes`,
         changes: [{ after: '***', field: 'joinCode' }],
         env,
         origin: client.origins.app,
@@ -286,14 +339,33 @@ export async function runUpskiiClassesCommand(
     });
     if (!gate.applied) return;
 
-    const res = await client.requestJson<Record<string, unknown>>({
-      body: { code },
+    const res = await client.requestJson<Record<string, unknown> | null>({
+      body: { value: code },
       command: 'external.upskii.classes.join',
       method: 'POST',
-      path: '/workspace/learn/api/upskii/classes/join',
+      path: `${client.apiBase}/classes/join`,
       reason: gate.reason,
     });
-    write(`${JSON.stringify(res.data, null, 2)}\n`);
+    const payload =
+      res.data && typeof res.data === 'object' && !Array.isArray(res.data)
+        ? res.data
+        : null;
+    if (!payload || payload.ok !== true) {
+      const reason =
+        typeof payload?.error === 'string'
+          ? payload.error
+          : typeof payload?.message === 'string'
+            ? payload.message
+            : typeof payload?.reason === 'string'
+              ? payload.reason
+              : 'Class join was not accepted by Upskii.';
+      throw new CliError({
+        code: 'UPSKII_CLASS_JOIN_FAILED',
+        exitCode: CLI_EXIT.conflict,
+        message: reason,
+      });
+    }
+    write(`${JSON.stringify(payload, null, 2)}\n`);
     return;
   }
 

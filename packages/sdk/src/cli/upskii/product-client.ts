@@ -18,19 +18,144 @@ const KNOWN_CREDENTIAL_PATTERN =
   /(?:upskii_cli_[ar]_[A-Za-z0-9_-]{8,}|(?:__Secure-)?[a-zA-Z0-9._-]*session[a-zA-Z0-9._-]*=[^\s;,"']{8,}|ttr_app_[A-Za-z0-9._-]{12,}|Bearer\s+[A-Za-z0-9._~+/=-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})/u;
 
 const SECRET_JSON_KEY_PATTERN =
-  /^(?:access_?token|refresh_?token|session_?token|id_?token|auth_?token|api_?key|client_?secret|secret|password|passwd|cookie|set_?cookie|authorization|bearer_?token|private_?key|jwt)$/iu;
+  /^(?:access_?token|refresh_?token|session_?token|id_?token|auth_?token|token|api_?key|client_?secret|secret|password|passwd|cookie|set_?cookie|authorization|bearer_?token|private_?key|jwt)$/iu;
+
+const SAFE_D1_COUNT_PATTERN = /^\d{1,12}$/u;
+const SAFE_D1_MS_PATTERN = /^\d{1,9}(?:\.\d{1,3})?$/u;
+const SAFE_D1_REGION_PATTERN =
+  /^[A-Z]{2,6}(?:-[A-Z0-9]{1,8})?(?:,[A-Z]{2,6}(?:-[A-Z0-9]{1,8})?){0,7}$/u;
 
 const SAFE_D1_METRIC_PATTERNS: Readonly<Record<string, RegExp>> = Object.freeze(
   {
-    'x-upskii-d1-duration-ms': /^\d+(?:\.\d{1,3})?$/u,
-    'x-upskii-d1-queries': /^\d{1,9}$/u,
-    'x-upskii-d1-region': /^[A-Z]{2,6}(?:-[A-Z0-9]{1,8})?$/u,
-    'x-upskii-d1-rows-read': /^\d{1,12}$/u,
-    'x-upskii-d1-rows-written': /^\d{1,12}$/u,
-    'x-upskii-d1-served-by': /^[A-Z]{2,6}(?:-[A-Z0-9]{1,8})?$/u,
+    'x-upskii-d1-all-call-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-await-max-ms': SAFE_D1_MS_PATTERN,
+    'x-upskii-d1-await-sample-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-await-sum-ms': SAFE_D1_MS_PATTERN,
+    'x-upskii-d1-batch-call-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-batch-statement-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-binding-call-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-database-duration-ms': SAFE_D1_MS_PATTERN,
+    'x-upskii-d1-duration-ms': SAFE_D1_MS_PATTERN,
+    'x-upskii-d1-max-query-duration-ms': SAFE_D1_MS_PATTERN,
+    'x-upskii-d1-meta-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-primary-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-queries': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-query-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-region': SAFE_D1_REGION_PATTERN,
+    'x-upskii-d1-regions': SAFE_D1_REGION_PATTERN,
+    'x-upskii-d1-replica-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-retried-count': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-rows-read': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-rows-written': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-served-by': SAFE_D1_REGION_PATTERN,
     'x-upskii-d1-size-after': /^\d{1,15}$/u,
+    'x-upskii-d1-total-attempts': SAFE_D1_COUNT_PATTERN,
+    'x-upskii-d1-unknown-count': SAFE_D1_COUNT_PATTERN,
   }
 );
+
+type BetterAuthResponseMode = 'get-session' | 'list-sessions';
+
+function assertSafeJsonDepth(value: unknown, depth = 0): void {
+  if (depth > 32) {
+    throw new CliError({
+      code: 'UPSKII_RESPONSE_TOO_DEEP',
+      exitCode: CLI_EXIT.policy,
+      message: 'Upskii response JSON nesting exceeded safe depth limit.',
+    });
+  }
+  if (value === null || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    for (const item of value) assertSafeJsonDepth(item, depth + 1);
+    return;
+  }
+  for (const key of Object.keys(value as Record<string, unknown>)) {
+    assertSafeJsonDepth((value as Record<string, unknown>)[key], depth + 1);
+  }
+}
+
+function cloneWithoutOwnStringToken(
+  record: Record<string, unknown>
+): Record<string, unknown> {
+  const out = Object.create(null) as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    const val = record[key];
+    if (key === 'token' && typeof val === 'string') continue;
+    Object.defineProperty(out, key, {
+      configurable: true,
+      enumerable: true,
+      value: val,
+      writable: true,
+    });
+  }
+  return out;
+}
+
+function cloneNullProtoRecord(
+  record: Record<string, unknown>,
+  overrides?: Record<string, unknown>
+): Record<string, unknown> {
+  const out = Object.create(null) as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    const val =
+      overrides && Object.hasOwn(overrides, key) ? overrides[key] : record[key];
+    Object.defineProperty(out, key, {
+      configurable: true,
+      enumerable: true,
+      value: val,
+      writable: true,
+    });
+  }
+  return out;
+}
+
+function stripBetterAuthSessionTokens(
+  parsed: unknown,
+  mode: BetterAuthResponseMode
+): unknown {
+  assertSafeJsonDepth(parsed);
+  if (parsed === null || typeof parsed !== 'object') return parsed;
+
+  if (mode === 'get-session' && !Array.isArray(parsed)) {
+    const root = parsed as Record<string, unknown>;
+    const rawSession = Object.hasOwn(root, 'session')
+      ? root.session
+      : undefined;
+    if (
+      rawSession &&
+      typeof rawSession === 'object' &&
+      !Array.isArray(rawSession)
+    ) {
+      return cloneNullProtoRecord(root, {
+        session: cloneWithoutOwnStringToken(
+          rawSession as Record<string, unknown>
+        ),
+      });
+    }
+    return cloneNullProtoRecord(root);
+  }
+
+  if (mode === 'list-sessions') {
+    const stripArray = (items: unknown[]) =>
+      items.map((entry) =>
+        entry && typeof entry === 'object' && !Array.isArray(entry)
+          ? cloneWithoutOwnStringToken(entry as Record<string, unknown>)
+          : entry
+      );
+    if (Array.isArray(parsed)) return stripArray(parsed);
+    const root = parsed as Record<string, unknown>;
+    const overrides = Object.create(null) as Record<string, unknown>;
+    if (Object.hasOwn(root, 'sessions') && Array.isArray(root.sessions)) {
+      overrides.sessions = stripArray(root.sessions);
+    }
+    if (Object.hasOwn(root, 'items') && Array.isArray(root.items)) {
+      overrides.items = stripArray(root.items);
+    }
+    return cloneNullProtoRecord(root, overrides);
+  }
+
+  return parsed;
+}
 
 function collectKnownEnvSecrets(
   envVars: Record<string, string | undefined> | undefined
@@ -81,8 +206,9 @@ function assertNoSecretJsonKeys(value: unknown, depth = 0): void {
   for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
     if (
       SECRET_JSON_KEY_PATTERN.test(key) &&
-      typeof entry === 'string' &&
-      entry.trim().length > 0
+      entry !== null &&
+      entry !== undefined &&
+      (typeof entry !== 'string' || entry.trim().length > 0)
     ) {
       throw new CliError({
         code: 'CREDENTIAL_LEAK_BLOCKED',
@@ -199,10 +325,32 @@ export function extractUpskiiD1Telemetry(
   return telemetry;
 }
 
-export function resolveExperiencePrefix(experience: UpskiiExperience): string {
-  return experience === 'learn'
-    ? '/workspace/learn/api/upskii'
-    : '/workspace/educator/api/upskii';
+export function resolveExperiencePrefix(_experience: UpskiiExperience): string {
+  // On app.upskii.com, both Educator and Learn APIs are mounted at /api/upskii;
+  // the Upskii gateway routes by the authenticated session's active experience.
+  return '/api/upskii';
+}
+
+export function rethrowUnavailableEndpoint(
+  error: unknown,
+  label: string,
+  env: CliEnv,
+  path: string
+): never {
+  if (
+    error instanceof CliError &&
+    (error.code === 'UPSKII_HTTP_404' || error.code === 'UPSKII_HTTP_405')
+  ) {
+    const status = error.code === 'UPSKII_HTTP_405' ? 405 : 404;
+    throw new CliError({
+      code: 'UPSKII_ENDPOINT_UNAVAILABLE',
+      exitCode: CLI_EXIT.notFound,
+      hint: `Upskii endpoint ${path} returned HTTP ${status} on "${env}" (disabled, write-only, or not yet deployed).`,
+      message: `${label} is not available on "${env}" (HTTP ${status}).`,
+      requestId: error.requestId,
+    });
+  }
+  throw error;
 }
 
 export function buildPinnedUrl(origin: string, path: string): string {
@@ -279,6 +427,7 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
   ];
 
   async function requestJson<T>(input: {
+    betterAuthResponseMode?: BetterAuthResponseMode;
     body?: unknown;
     command: string;
     discardResponseBody?: boolean;
@@ -341,13 +490,13 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
     }
 
     const text = await response.text();
-    assertSafeTextAndPatterns(text, requestSecrets);
     const d1Telemetry = screenAndProjectD1Telemetry(
       response.headers,
       requestSecrets
     );
 
     if (!response.ok) {
+      assertSafeTextAndPatterns(text, requestSecrets);
       if (input.fixedErrorMessage) {
         throw new CliError({
           code: `UPSKII_HTTP_${response.status}`,
@@ -381,7 +530,28 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
     let data: T;
     if (!text.trim()) {
       data = {} as T;
+    } else if (input.betterAuthResponseMode) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        assertSafeTextAndPatterns(text, requestSecrets);
+        throw new CliError({
+          code: 'UPSKII_INVALID_JSON',
+          exitCode: CLI_EXIT.unavailable,
+          message: `Upskii returned non-JSON payload for ${input.command}.`,
+          requestId: headers['X-TTR-Request-Id'],
+        });
+      }
+      const sanitized = stripBetterAuthSessionTokens(
+        parsed,
+        input.betterAuthResponseMode
+      );
+      assertSafeValueAndPatterns(sanitized, requestSecrets);
+      assertSafeTextAndPatterns(JSON.stringify(sanitized), requestSecrets);
+      data = sanitized as T;
     } else {
+      assertSafeTextAndPatterns(text, requestSecrets);
       try {
         data = JSON.parse(text) as T;
       } catch {

@@ -7,7 +7,10 @@ import { formatTable } from '../ui/table';
 import { createTheme } from '../ui/theme';
 import { parseWatchInterval, runWatchLoop } from '../ui/watch';
 import { assertSafeResponseText } from './http';
-import type { UpskiiProductClient } from './product-client';
+import {
+  rethrowUnavailableEndpoint,
+  type UpskiiProductClient,
+} from './product-client';
 
 export interface UpskiiRuntimeCommandOptions {
   args: string[];
@@ -536,10 +539,23 @@ export async function runUpskiiStatusCommand(
   }
 
   if (action === 'link-readiness') {
-    const res = await client.requestJson<Record<string, unknown>>({
-      command: 'external.upskii.status.link-readiness',
-      path: `${client.apiBase}/integrations/tuturuuu`,
-    });
+    const linkPath = `${client.apiBase}/integrations/tuturuuu`;
+    let res: Awaited<
+      ReturnType<typeof client.requestJson<Record<string, unknown>>>
+    >;
+    try {
+      res = await client.requestJson<Record<string, unknown>>({
+        command: 'external.upskii.status.link-readiness',
+        path: linkPath,
+      });
+    } catch (error) {
+      rethrowUnavailableEndpoint(
+        error,
+        'Upskii <-> Tuturuuu account link readiness endpoint',
+        env,
+        linkPath
+      );
+    }
     write(`${JSON.stringify({ env, ...res.data }, null, 2)}\n`);
     return;
   }

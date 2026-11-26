@@ -4,7 +4,10 @@ import type { CliEnv } from '../cli-env';
 import { rejectSecretFlags } from '../credential-store';
 import { requireMutationGate } from '../safety-gate';
 import { formatTable } from '../ui/table';
-import type { UpskiiProductClient } from './product-client';
+import {
+  rethrowUnavailableEndpoint,
+  type UpskiiProductClient,
+} from './product-client';
 
 export interface UpskiiAccountsCommandOptions {
   args: string[];
@@ -122,6 +125,29 @@ export function upskiiAdminHelp(): string {
   ].join('\n');
 }
 
+const ownField = (r: Record<string, unknown>, k: string): unknown =>
+  Object.hasOwn(r, k) ? r[k] : undefined;
+
+function pickOwnString(r: Record<string, unknown>, ...keys: string[]) {
+  for (const k of keys) {
+    const v = ownField(r, k);
+    if (typeof v === 'string') return v;
+  }
+  return null;
+}
+
+function pickOwnBoolean(r: Record<string, unknown>, ...keys: string[]) {
+  for (const k of keys) {
+    const v = ownField(r, k);
+    if (typeof v === 'boolean') return v;
+  }
+  return null;
+}
+
+function isPlainRecord(v: unknown): v is Record<string, unknown> {
+  return Boolean(v) && typeof v === 'object' && !Array.isArray(v);
+}
+
 export async function runUpskiiAccountsCommand(
   options: UpskiiAccountsCommandOptions
 ): Promise<void> {
@@ -139,17 +165,72 @@ export async function runUpskiiAccountsCommand(
   const { client, env, json, noColor } = options;
 
   if (action === 'profile') {
-    const res = await client.requestJson<Record<string, unknown>>({
+    const res = await client.requestJson<{
+      session?: Record<string, unknown> | null;
+      user?: Record<string, unknown> | null;
+      [key: string]: unknown;
+    } | null>({
+      betterAuthResponseMode: 'get-session',
       command: 'external.upskii.accounts.profile',
-      path: `${client.apiBase}/profile`,
+      path: '/api/auth/get-session?disableCookieCache=true&disableRefresh=true',
     });
+    if (!res.data || typeof res.data !== 'object' || Array.isArray(res.data)) {
+      throw new CliError({
+        code: 'UPSKII_SESSION_EXPIRED',
+        exitCode: CLI_EXIT.auth,
+        hint: 'Re-authenticate or supply a fresh Upskii session credential.',
+        message: 'Upskii session is missing or expired.',
+      });
+    }
+    const rawUserCandidate = ownField(res.data, 'user');
+    const rawUser =
+      rawUserCandidate &&
+      typeof rawUserCandidate === 'object' &&
+      !Array.isArray(rawUserCandidate)
+        ? (rawUserCandidate as Record<string, unknown>)
+        : null;
+    const userId = rawUser ? pickOwnString(rawUser, 'id')?.trim() : undefined;
+    if (!rawUser || !userId) {
+      throw new CliError({
+        code: 'UPSKII_SESSION_EXPIRED',
+        exitCode: CLI_EXIT.auth,
+        hint: 'Re-authenticate or supply a fresh Upskii session credential.',
+        message: 'Upskii session is missing or expired.',
+      });
+    }
+    const profile = {
+      createdAt: pickOwnString(rawUser, 'createdAt', 'created_at'),
+      email: pickOwnString(rawUser, 'email'),
+      emailVerified: pickOwnBoolean(rawUser, 'emailVerified', 'email_verified'),
+      id: userId,
+      name: pickOwnString(rawUser, 'name', 'displayName'),
+      updatedAt: pickOwnString(rawUser, 'updatedAt', 'updated_at'),
+    };
+    const rawSessionCandidate = ownField(res.data, 'session');
+    const rawSession =
+      rawSessionCandidate &&
+      typeof rawSessionCandidate === 'object' &&
+      !Array.isArray(rawSessionCandidate)
+        ? (rawSessionCandidate as Record<string, unknown>)
+        : null;
+    const session = rawSession
+      ? {
+          createdAt: pickOwnString(rawSession, 'createdAt', 'created_at'),
+          expiresAt: pickOwnString(rawSession, 'expiresAt', 'expires_at'),
+          id: pickOwnString(rawSession, 'id'),
+          ipAddress: pickOwnString(rawSession, 'ipAddress', 'ip_address'),
+          updatedAt: pickOwnString(rawSession, 'updatedAt', 'updated_at'),
+          userAgent: pickOwnString(rawSession, 'userAgent', 'user_agent'),
+          userId: pickOwnString(rawSession, 'userId', 'user_id'),
+        }
+      : null;
     if (json) {
       write(
-        `${JSON.stringify({ d1Telemetry: res.d1Telemetry, env, profile: res.data }, null, 2)}\n`
+        `${JSON.stringify({ d1Telemetry: res.d1Telemetry, env, profile, ...(session ? { session } : {}) }, null, 2)}\n`
       );
       return;
     }
-    write(renderSummaryTable(res.data, 'No profile data returned.', noColor));
+    write(renderSummaryTable(profile, 'No profile data returned.', noColor));
     return;
   }
 
@@ -163,29 +244,84 @@ export async function runUpskiiAccountsCommand(
         message: `Unknown accounts sessions action "${verb}".`,
       });
     }
-    const res = await client.requestJson<{
-      items?: Array<Record<string, unknown>>;
-      sessions?: Array<Record<string, unknown>>;
-    }>({
+    const res = await client.requestJson<
+      | Array<Record<string, unknown>>
+      | {
+          items?: Array<Record<string, unknown>>;
+          sessions?: Array<Record<string, unknown>>;
+        }
+      | null
+    >({
+      betterAuthResponseMode: 'list-sessions',
       command: 'external.upskii.accounts.sessions.list',
-      path: `${client.apiBase}/account/sessions`,
+      path: '/api/auth/list-sessions',
     });
-    const rawSessions = Array.isArray(res.data.sessions)
-      ? res.data.sessions
-      : Array.isArray(res.data.items)
-        ? res.data.items
-        : [];
-    const sessions = rawSessions.map((session) => ({
-      createdAt: session.createdAt ?? session.created_at ?? null,
-      current: session.current === true,
-      expiresAt: session.expiresAt ?? session.expires_at ?? null,
-      id: session.id ?? null,
-      lastActiveAt: session.lastActiveAt ?? session.last_active_at ?? null,
-      userAgent: session.userAgent ?? session.user_agent ?? null,
-    }));
+    const rawSessions = Array.isArray(res.data)
+      ? res.data
+      : res.data &&
+          typeof res.data === 'object' &&
+          Array.isArray(ownField(res.data, 'sessions'))
+        ? (ownField(res.data, 'sessions') as Array<Record<string, unknown>>)
+        : res.data &&
+            typeof res.data === 'object' &&
+            Array.isArray(ownField(res.data, 'items'))
+          ? (ownField(res.data, 'items') as Array<Record<string, unknown>>)
+          : [];
+    const validRawSessions = rawSessions.filter(
+      (entry): entry is Record<string, unknown> =>
+        Boolean(entry) && typeof entry === 'object' && !Array.isArray(entry)
+    );
+    let currentSessionId: string | null = null;
+    const needsCurrentLookup = validRawSessions.some(
+      (entry) => pickOwnBoolean(entry, 'current') === null
+    );
+    if (needsCurrentLookup) {
+      const currentRes = await client.requestJson<{
+        session?: Record<string, unknown> | null;
+      } | null>({
+        betterAuthResponseMode: 'get-session',
+        command: 'external.upskii.accounts.sessions.current',
+        path: '/api/auth/get-session?disableCookieCache=true&disableRefresh=true',
+      });
+      const currentSessionObj = isPlainRecord(currentRes.data)
+        ? ownField(currentRes.data, 'session')
+        : null;
+      if (isPlainRecord(currentSessionObj)) {
+        currentSessionId =
+          pickOwnString(currentSessionObj, 'id')?.trim() || null;
+      }
+    }
+    const sessions = validRawSessions.map((session) => {
+      const sessionId = pickOwnString(session, 'id')?.trim() || null;
+      const explicitCurrent = pickOwnBoolean(session, 'current');
+      const current: boolean | null =
+        explicitCurrent !== null
+          ? explicitCurrent
+          : currentSessionId !== null && sessionId !== null
+            ? sessionId === currentSessionId
+            : null;
+      return {
+        createdAt: pickOwnString(session, 'createdAt', 'created_at'),
+        current,
+        expiresAt: pickOwnString(session, 'expiresAt', 'expires_at'),
+        id: sessionId,
+        ipAddress: pickOwnString(session, 'ipAddress', 'ip_address'),
+        lastActiveAt: pickOwnString(
+          session,
+          'lastActiveAt',
+          'last_active_at',
+          'updatedAt',
+          'updated_at'
+        ),
+        userAgent: pickOwnString(session, 'userAgent', 'user_agent'),
+      };
+    });
+    const currentSessionResolved = sessions.every(
+      (entry) => typeof entry.current === 'boolean'
+    );
     if (json) {
       write(
-        `${JSON.stringify({ count: sessions.length, d1Telemetry: res.d1Telemetry, env, sessions }, null, 2)}\n`
+        `${JSON.stringify({ count: sessions.length, currentSessionResolved, d1Telemetry: res.d1Telemetry, env, sessions }, null, 2)}\n`
       );
       return;
     }
@@ -193,7 +329,12 @@ export async function runUpskiiAccountsCommand(
       formatTable(
         sessions.map((session) => ({
           CreatedAt: String(session.createdAt ?? ''),
-          Current: session.current ? 'yes' : 'no',
+          Current:
+            session.current === true
+              ? 'yes'
+              : session.current === false
+                ? 'no'
+                : 'unknown',
           ExpiresAt: String(session.expiresAt ?? ''),
           Id: String(session.id ?? ''),
         })),
@@ -204,22 +345,24 @@ export async function runUpskiiAccountsCommand(
   }
 
   if (action === 'usage') {
-    const daysRaw = getFlag(flags, 'days');
     let query = '';
-    if (daysRaw !== undefined) {
-      const days = Number(daysRaw);
-      if (!Number.isInteger(days) || days < 1 || days > 365) {
+    if (Object.hasOwn(flags, 'days')) {
+      const daysRaw = getFlag(flags, 'days')?.trim() ?? '';
+      const days = /^\d+$/u.test(daysRaw) ? Number(daysRaw) : Number.NaN;
+      if (!Number.isInteger(days) || days < 1 || days > 90) {
         throw new CliError({
           code: 'INVALID_DAYS',
           exitCode: CLI_EXIT.usage,
-          message: '--days must be an integer between 1 and 365.',
+          message: '--days must be an integer between 1 and 90.',
         });
       }
-      query = `?days=${encodeURIComponent(String(days))}`;
+      query = `days=${encodeURIComponent(String(days))}`;
     }
     const res = await client.requestJson<Record<string, unknown>>({
       command: 'external.upskii.accounts.usage',
-      path: `${client.apiBase}/account/usage${query}`,
+      path: query
+        ? `${client.apiBase}/usage/analytics?${query}`
+        : `${client.apiBase}/usage/analytics`,
     });
     if (json) {
       write(
@@ -261,12 +404,25 @@ export async function runUpskiiAccountsCommand(
     });
     if (!gate.applied) return;
 
-    const res = await client.requestJson<Record<string, unknown>>({
-      command: 'external.upskii.accounts.revoke-session',
-      method: 'DELETE',
-      path: `${client.apiBase}/account/sessions/${encodeURIComponent(sessionId)}`,
-      reason: gate.reason,
-    });
+    const revokePath = `${client.apiBase}/account/sessions/${encodeURIComponent(sessionId)}`;
+    let res: Awaited<
+      ReturnType<typeof client.requestJson<Record<string, unknown>>>
+    >;
+    try {
+      res = await client.requestJson<Record<string, unknown>>({
+        command: 'external.upskii.accounts.revoke-session',
+        method: 'DELETE',
+        path: revokePath,
+        reason: gate.reason,
+      });
+    } catch (error) {
+      rethrowUnavailableEndpoint(
+        error,
+        'Upskii session revocation by ID',
+        env,
+        revokePath
+      );
+    }
     write(
       `${JSON.stringify({ applied: true, env, result: res.data, revoked: true, sessionId }, null, 2)}\n`
     );

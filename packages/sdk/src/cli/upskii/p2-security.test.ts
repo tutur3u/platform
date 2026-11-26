@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createCredentialStore } from '../credential-store';
+import { cookieDomainMatchesOrigin } from './http';
 import { type RunUpskiiCommandDeps, runUpskiiCommand } from './index';
 
 const tempDirs: string[] = [];
@@ -237,22 +238,56 @@ describe('ttr external upskii P2 credential and output screening', () => {
     );
     expect(settingsFixedErr.stderr).toContain('Upskii settings update failed.');
 
-    // Account sessions list projects safe fields and blocks secret-named keys.
+    // Better Auth profile & sessions strip raw `token` fields (never echoed) while still blocking other secret keys.
+    const profileRes = await execCli('accounts profile --env staging --json', {
+      credentialStore: store,
+      fetch: async () =>
+        jsonResp({
+          session: {
+            id: 'sess-safe-1',
+            token: 'better-auth-raw-session-token-must-never-leak',
+            userId: 'u-safe-1',
+          },
+          user: {
+            email: 'qa-fleet+teacher@tuturuuu.com',
+            id: 'u-safe-1',
+            name: 'QA Teacher',
+          },
+        }),
+    });
+    expect(profileRes.exitCode).toBeUndefined();
+    expect(profileRes.stdout).not.toContain(
+      'better-auth-raw-session-token-must-never-leak'
+    );
+    expect(JSON.parse(profileRes.stdout).profile.id).toBe('u-safe-1');
+    expect(JSON.parse(profileRes.stdout).session).not.toHaveProperty('token');
+
+    // Account sessions list projects safe fields, strips Better Auth `token`, and blocks secret-named keys.
     const sessionsRes = await execCli(
       'accounts sessions list --env staging --json',
       {
         credentialStore: store,
         fetch: async () =>
-          jsonResp({
-            sessions: [
-              { current: true, id: 'sess-safe-1', opaqueField: 'drop-me' },
-            ],
-          }),
+          jsonResp([
+            {
+              current: true,
+              id: 'sess-safe-1',
+              opaqueField: 'drop-me',
+              token: 'better-auth-other-session-token-never-leak',
+            },
+          ]),
       }
     );
+    expect(sessionsRes.exitCode).toBeUndefined();
     expect(sessionsRes.stdout).not.toContain('drop-me');
+    expect(sessionsRes.stdout).not.toContain(
+      'better-auth-other-session-token-never-leak'
+    );
     expect(JSON.parse(sessionsRes.stdout).sessions[0]).not.toHaveProperty(
       'opaqueField'
+    );
+    expect(JSON.parse(sessionsRes.stdout).sessions[0]).not.toHaveProperty(
+      'token'
     );
 
     const sessionsLeak = await execCli(
@@ -306,25 +341,181 @@ describe('ttr external upskii P2 credential and output screening', () => {
     expect(d1Leak.exitCode).toBe(6);
     expect(d1Leak.stderr).toContain('CREDENTIAL_LEAK_BLOCKED');
 
-    // D1 telemetry rejects non-numeric/opaque strings in metric headers and omits d1Telemetry on settings update.
+    // Better Auth non-string `token` values (even with benign nested keys), __proto__ smuggling, and error `token` are still screened.
+    const nestedTokenLeak = await execCli(
+      'accounts profile --env staging --json',
+      {
+        credentialStore: store,
+        fetch: async () =>
+          jsonResp({
+            session: {
+              id: 's-nested',
+              token: { opaque: 'benign-nested-value' },
+            },
+            user: { id: 'u-1' },
+          }),
+      }
+    );
+    expect(nestedTokenLeak.exitCode).toBe(6);
+    expect(nestedTokenLeak.stderr).toContain('CREDENTIAL_LEAK_BLOCKED');
+
+    const numericTokenLeak = await execCli(
+      'accounts profile --env staging --json',
+      {
+        credentialStore: store,
+        fetch: async () =>
+          jsonResp({
+            session: { id: 's-num', token: 123456 },
+            user: { id: 'u-1' },
+          }),
+      }
+    );
+    expect(numericTokenLeak.exitCode).toBe(6);
+    expect(numericTokenLeak.stderr).toContain('CREDENTIAL_LEAK_BLOCKED');
+
+    const protoProfile = await execCli(
+      'accounts profile --env staging --json',
+      {
+        credentialStore: store,
+        fetch: async () =>
+          new Response(
+            '{"__proto__":{"user":{"id":"polluted-id"}},"user":{"id":"real-id"},"session":{"id":"s-1","token":"raw-tok"}}',
+            { headers: { 'Content-Type': 'application/json' }, status: 200 }
+          ),
+      }
+    );
+    expect(protoProfile.exitCode).toBeUndefined();
+    expect(JSON.parse(protoProfile.stdout).profile.id).toBe('real-id');
+
+    const errTokenLeak = await execCli(
+      'accounts profile --env staging --json',
+      {
+        credentialStore: store,
+        fetch: async () =>
+          jsonResp({ error: 'unauthorized', token: 'error-raw-token' }, 401),
+      }
+    );
+    expect(errTokenLeak.exitCode).toBe(6);
+    expect(errTokenLeak.stderr).toContain('CREDENTIAL_LEAK_BLOCKED');
+
+    // D1 telemetry accepts live production metric headers, rejects over-long/non-numeric values, and omits on settings update.
     const d1Opaque = await execCli('workspaces list --env staging --json', {
       credentialStore: store,
       fetch: async () =>
         new Response(JSON.stringify({ workspaces: [] }), {
           headers: {
             'Content-Type': 'application/json',
+            'x-upskii-d1-await-max-ms': '123456789012345',
             'x-upskii-d1-bookmark': 'opaque-secret-smuggle-value',
+            'x-upskii-d1-database-duration-ms': '4.748',
             'x-upskii-d1-queries': 'opaque-not-a-number',
+            'x-upskii-d1-query-count': '12',
+            'x-upskii-d1-regions': 'APAC',
             'x-upskii-d1-rows-read': '42',
+            'x-upskii-d1-rows-written': '0',
           },
           status: 200,
         }),
     });
     expect(d1Opaque.stdout).not.toContain('opaque-secret-smuggle-value');
     expect(d1Opaque.stdout).not.toContain('opaque-not-a-number');
+    expect(d1Opaque.stdout).not.toContain('123456789012345');
     expect(JSON.parse(d1Opaque.stdout).d1Telemetry).toEqual({
+      'x-upskii-d1-database-duration-ms': '4.748',
+      'x-upskii-d1-query-count': '12',
+      'x-upskii-d1-regions': 'APAC',
       'x-upskii-d1-rows-read': '42',
+      'x-upskii-d1-rows-written': '0',
     });
+
+    // .upskii.com / upskii.com cookie domain is accepted ONLY for exact prod app.upskii.com, never apex/staging/sandbox.
+    expect(
+      cookieDomainMatchesOrigin('.upskii.com', 'https://app.upskii.com')
+    ).toBe(true);
+    expect(cookieDomainMatchesOrigin('.upskii.com', 'https://upskii.com')).toBe(
+      false
+    );
+    expect(cookieDomainMatchesOrigin('upskii.com', 'https://upskii.com')).toBe(
+      false
+    );
+    expect(
+      cookieDomainMatchesOrigin('.upskii.com', 'https://staging.app.upskii.com')
+    ).toBe(false);
+    expect(
+      cookieDomainMatchesOrigin('.upskii.com', 'https://sandbox.app.upskii.com')
+    ).toBe(false);
+    const prodDotStateFile = join(settingsDir, 'prod-dot-state.json');
+    await writeFile(
+      prodDotStateFile,
+      JSON.stringify({
+        cookies: [
+          {
+            domain: '.upskii.com',
+            httpOnly: true,
+            name: '__Secure-upskii.session_token',
+            path: '/',
+            sameSite: 'Lax',
+            secure: true,
+            value: 'prod-dot-session-cookie-secret-4444',
+          },
+        ],
+        origins: [],
+      }),
+      { mode: 0o600 }
+    );
+    const prodDotOk = await execCli(
+      [
+        'workspaces',
+        'list',
+        '--env',
+        'prod',
+        '--session-file',
+        prodDotStateFile,
+        '--json',
+      ],
+      {
+        credentialStore: store,
+        fetch: async () => jsonResp({ workspaces: [{ id: 'ws-prod-1' }] }),
+      }
+    );
+    expect(prodDotOk.exitCode).toBeUndefined();
+    expect(JSON.parse(prodDotOk.stdout).count).toBe(1);
+
+    const stagingDotRejected = await execCli(
+      [
+        'workspaces',
+        'list',
+        '--env',
+        'staging',
+        '--session-file',
+        prodDotStateFile,
+        '--json',
+      ],
+      {
+        credentialStore: store,
+        fetch: async () => jsonResp({ workspaces: [] }),
+      }
+    );
+    expect(stagingDotRejected.exitCode).toBe(3);
+    expect(stagingDotRejected.stderr).toContain('SESSION_COOKIE_NOT_FOUND');
+
+    const sandboxDotRejected = await execCli(
+      [
+        'workspaces',
+        'list',
+        '--env',
+        'sandbox',
+        '--session-file',
+        prodDotStateFile,
+        '--json',
+      ],
+      {
+        credentialStore: store,
+        fetch: async () => jsonResp({ workspaces: [] }),
+      }
+    );
+    expect(sandboxDotRejected.exitCode).toBe(3);
+    expect(sandboxDotRejected.stderr).toContain('SESSION_COOKIE_NOT_FOUND');
 
     // Deeply nested JSON (>32 levels) fails closed instead of bypassing secret-key screening.
     let nested: Record<string, unknown> = { secret: 'deeply-nested-secret' };

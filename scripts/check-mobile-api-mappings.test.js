@@ -195,3 +195,16 @@ test('keys route owners by app key when the directory differs', (t) => {
     []
   );
 });
+
+test('expands composed apiBase Upskii CLI templates into canonical /api/upskii paths', () => {
+  const paths = collectMobileApiPaths(
+    [
+      'const a = `${client.apiBase}/classes/${encodeURIComponent(id)}/overview`;',
+      'const b = `${apiBase}/settings/${encodeURIComponent(section)}`;',
+    ].join('\n')
+  );
+  assert.deepEqual([...paths].sort(), [
+    '/api/upskii/classes/:*/overview',
+    '/api/upskii/settings/:*',
+  ]);
+});

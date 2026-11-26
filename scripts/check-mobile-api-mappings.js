@@ -47,8 +47,12 @@ function normalizeClientPath(rawPath) {
 }
 
 function collectApiPaths(source) {
+  const normalizedSource = source.replace(
+    /\$\{(?:[A-Za-z_$][\w$]*\.)?apiBase\}\//gu,
+    '/api/upskii/'
+  );
   return new Set(
-    [...source.matchAll(/([`'"])(\/api\/[\s\S]*?)\1/gu)]
+    [...normalizedSource.matchAll(/([`'"])(\/api\/[\s\S]*?)\1/gu)]
       .map((match) => normalizeClientPath(match[2]))
       .filter((route) => route.startsWith('/api/'))
   );
@@ -156,7 +160,11 @@ function collectOwnedApiRoutesByApp({ rootDir = ROOT_DIR } = {}) {
 }
 
 // CLI-only registrations name reserved local paths or external Upskii routes.
-const UPSKII_CLI_OWNERS = new Set(['upskii-admin', 'upskii-auth']);
+const UPSKII_CLI_OWNERS = new Set([
+  'upskii-admin',
+  'upskii-app',
+  'upskii-auth',
+]);
 
 function hasCliRouteOwner(entry, rootDir) {
   if (entry.status === 'external') {

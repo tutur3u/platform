@@ -110,8 +110,11 @@ describe('ttr external upskii P2 subfamilies', () => {
           members: [{ email: 'u@example.com', id: 'm-1', role: 'owner' }],
         });
       }
-      if (url.endsWith('/settings/display-preferences')) {
+      if (url.endsWith('/admin/display-preferences')) {
         return jsonResp({ theme: 'dark' });
+      }
+      if (url.endsWith('/settings/membership')) {
+        return jsonResp({ locale: 'en', scope: 'workspace' });
       }
       return jsonResp({ locale: 'en' });
     };
@@ -140,6 +143,10 @@ describe('ttr external upskii P2 subfamilies', () => {
     expect(wsList.stdout).not.toContain(userToken);
     expect(seen).toHaveLength(5);
     expect(seen.every((r) => r.method === 'GET')).toBe(true);
+    expect(seen.every((r) => r.url.includes('/api/upskii/'))).toBe(true);
+    expect(seen.every((r) => !r.url.includes('/workspace/educator/'))).toBe(
+      true
+    );
     expect(seen.every((r) => r.auth === `Bearer ${userToken}`)).toBe(true);
     expect(seen.every((r) => r.cookie === null)).toBe(true);
   });
@@ -147,12 +154,18 @@ describe('ttr external upskii P2 subfamilies', () => {
   it('previews mutations by default, enforces --dry-run over --yes, and requires --reason on prod settings update', async () => {
     const userToken = 'upskii_cli_a_user_mutation_secret_0002';
     const { store } = await makeStore({ env: 'staging', user: userToken });
-    const calls: Array<{ body?: unknown; method: string; url: string }> = [];
+    const calls: Array<{
+      body?: unknown;
+      method: string;
+      origin: string | null;
+      url: string;
+    }> = [];
 
     const mockFetch: typeof globalThis.fetch = async (input, init) => {
       calls.push({
         body: init?.body ? JSON.parse(String(init.body)) : undefined,
         method: init?.method ?? 'GET',
+        origin: new Headers(init?.headers).get('origin'),
         url: typeof input === 'string' ? input : input.toString(),
       });
       return jsonResp({ ok: true });
@@ -167,20 +180,30 @@ describe('ttr external upskii P2 subfamilies', () => {
     expect(calls).toHaveLength(0);
 
     const dryRun = await execCli(
-      'settings update --section display --key compact --value true --env staging --yes --dry-run --json',
+      'settings update --section display --key hideVersionBadge --value true --env staging --yes --dry-run --json',
       deps
     );
     expect(JSON.parse(dryRun.stdout).applied).toBe(false);
     expect(calls).toHaveLength(0);
 
-    const applied = await execCli(
+    const unsupportedDisplay = await execCli(
       'settings update --section display --key compact --value true --env staging --yes --json',
+      deps
+    );
+    expect(unsupportedDisplay.exitCode).toBe(1);
+    expect(unsupportedDisplay.stderr).toContain('INVALID_DISPLAY_PREFERENCE');
+    expect(calls).toHaveLength(0);
+
+    const applied = await execCli(
+      'settings update --section display --key hideVersionBadge --value true --env staging --yes --json',
       deps
     );
     expect(JSON.parse(applied.stdout).applied).toBe(true);
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.method).toBe('PATCH');
-    expect(calls[0]?.body).toEqual({ compact: true });
+    expect(calls[0]?.method).toBe('PUT');
+    expect(calls[0]?.origin).toBe('https://staging.app.upskii.com');
+    expect(calls[0]?.url).toContain('/api/upskii/admin/display-preferences');
+    expect(calls[0]?.body).toEqual({ hideVersionBadge: true });
 
     const prodNoReason = await execCli(
       'settings update --key locale --value vi --env prod --yes --json',
@@ -216,7 +239,7 @@ describe('ttr external upskii P2 subfamilies', () => {
         return jsonResp({ sessions: [{ classId: 'cls-1', id: 'ts-1' }] });
       }
       if (url.endsWith('/tutor/sessions/ts-1')) return jsonResp({ id: 'ts-1' });
-      if (url.endsWith('/tutor/prompts')) {
+      if (url.endsWith('/prompt-library')) {
         return jsonResp({ prompts: [{ id: 'p-1', title: 'Step by step' }] });
       }
       if (url.endsWith('/tutor/smoke')) {
@@ -361,11 +384,29 @@ describe('ttr external upskii P2 subfamilies', () => {
         method: init?.method ?? 'GET',
         url,
       });
-      if (url.endsWith('/profile')) return jsonResp({ id: 'u-1' });
-      if (url.endsWith('/account/sessions')) {
-        return jsonResp({ sessions: [{ current: true, id: 'sess-42' }] });
+      if (url.includes('/api/auth/get-session')) {
+        return jsonResp({
+          session: {
+            id: 'sess-42',
+            token: 'raw-better-auth-token-must-be-stripped',
+            userId: 'u-1',
+          },
+          user: { email: 'teacher@tuturuuu.com', id: 'u-1', name: 'Teacher' },
+        });
       }
-      if (url.includes('/account/usage'))
+      if (url.endsWith('/api/auth/list-sessions')) {
+        return jsonResp([
+          {
+            id: 'sess-42',
+            token: 'raw-better-auth-list-token-must-be-stripped',
+          },
+          {
+            id: 'sess-99',
+            token: 'raw-other-session-token-must-be-stripped',
+          },
+        ]);
+      }
+      if (url.includes('/api/upskii/usage/analytics'))
         return jsonResp({ totalRequests: 12 });
       if (url.endsWith('/account/sessions/sess-42')) {
         return jsonResp({ revoked: true });
@@ -394,12 +435,15 @@ describe('ttr external upskii P2 subfamilies', () => {
         (await execCli('accounts profile --env staging --json', deps)).stdout
       ).profile.id
     ).toBe('u-1');
-    expect(
-      JSON.parse(
-        (await execCli('accounts sessions list --env staging --json', deps))
-          .stdout
-      ).count
-    ).toBe(1);
+    const sessionsOut = JSON.parse(
+      (await execCli('accounts sessions list --env staging --json', deps))
+        .stdout
+    ) as { count: number; sessions: Array<{ current: boolean; id: string }> };
+    expect(sessionsOut.count).toBe(2);
+    expect(sessionsOut.sessions).toEqual([
+      expect.objectContaining({ current: true, id: 'sess-42' }),
+      expect.objectContaining({ current: false, id: 'sess-99' }),
+    ]);
     expect(
       JSON.parse(
         (await execCli('accounts usage --days 7 --env staging --json', deps))

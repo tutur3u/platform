@@ -5,7 +5,11 @@ import { rejectSecretFlags } from '../credential-store';
 import { requireMutationGate } from '../safety-gate';
 import { formatTable } from '../ui/table';
 import { assertNoUntrustedPathSymlinks, readPrivateJsonFile } from './http';
-import type { UpskiiExperience, UpskiiProductClient } from './product-client';
+import {
+  rethrowUnavailableEndpoint,
+  type UpskiiExperience,
+  type UpskiiProductClient,
+} from './product-client';
 
 export interface UpskiiWorkspacesSettingsOptions {
   args: string[];
@@ -151,12 +155,33 @@ export function upskiiWorkspacesHelp(): string {
   ].join('\n');
 }
 
+const VALID_DISPLAY_PREFERENCE_KEYS = new Set([
+  'hideVersionBadge',
+  'marketplaceEnabled',
+  'slideStudioEnabled',
+]);
+
+function validateDisplayPreferencePayload(
+  payload: Record<string, unknown>
+): void {
+  for (const [key, value] of Object.entries(payload)) {
+    if (!VALID_DISPLAY_PREFERENCE_KEYS.has(key) || typeof value !== 'boolean') {
+      throw new CliError({
+        code: 'INVALID_DISPLAY_PREFERENCE',
+        exitCode: CLI_EXIT.usage,
+        hint: `Supported boolean display preferences: ${[...VALID_DISPLAY_PREFERENCE_KEYS].join(', ')}.`,
+        message: `Unsupported display preference "${key}" or non-boolean value.`,
+      });
+    }
+  }
+}
+
 export function upskiiSettingsHelp(): string {
   return [
     'ttr external upskii settings — read and update Upskii account settings and preferences',
     '',
     'Usage:',
-    '  ttr external upskii settings get [--section profile|assessment|class|membership|models|seats|tutor|voice|display] [--json]',
+    '  ttr external upskii settings get [--section profile|assessment|class|membership|models|seats|tutor|voice|display] [--class <classId>] [--json]',
     '  ttr external upskii settings preferences [--json]',
     '  ttr external upskii settings update [--section <section>] (--key <k> --value <v> | --json-payload <json> | --file <path>) [--yes] [--json]',
     '',
@@ -337,6 +362,13 @@ export async function runUpskiiWorkspacesCommand(
   });
 }
 
+function resolveSettingsPath(apiBase: string, section: string): string {
+  if (section === 'display') return `${apiBase}/admin/display-preferences`;
+  if (section === 'class') return `${apiBase}/settings/class-settings`;
+  if (section === 'profile') return `${apiBase}/profile`;
+  return `${apiBase}/settings/${encodeURIComponent(section)}`;
+}
+
 export async function runUpskiiSettingsCommand(
   options: UpskiiWorkspacesSettingsOptions
 ): Promise<void> {
@@ -354,17 +386,40 @@ export async function runUpskiiSettingsCommand(
   const { client, env, json, noColor } = options;
 
   if (action === 'get' || action === 'show') {
-    const section = validateSettingsSection(getFlag(flags, 'section'));
-    const path = section
-      ? `${client.apiBase}/settings/${encodeURIComponent(section)}`
-      : `${client.apiBase}/settings`;
-    const res = await client.requestJson<Record<string, unknown>>({
-      command: 'external.upskii.settings.get',
-      path,
-    });
+    const section =
+      validateSettingsSection(getFlag(flags, 'section')) ?? 'membership';
+    let path = resolveSettingsPath(client.apiBase, section);
+    if (section === 'class') {
+      const classId = getFlag(flags, 'class')?.trim();
+      if (!classId) {
+        throw new CliError({
+          code: 'MISSING_FLAG',
+          exitCode: CLI_EXIT.usage,
+          hint: 'Pass --class <classId> to select the class for settings get --section class.',
+          message: 'Missing required flag --class for class settings.',
+        });
+      }
+      path = `${path}?classId=${encodeURIComponent(classId)}`;
+    }
+    let res: Awaited<
+      ReturnType<typeof client.requestJson<Record<string, unknown>>>
+    >;
+    try {
+      res = await client.requestJson<Record<string, unknown>>({
+        command: 'external.upskii.settings.get',
+        path,
+      });
+    } catch (error) {
+      rethrowUnavailableEndpoint(
+        error,
+        `Upskii settings section "${section}"`,
+        env,
+        path
+      );
+    }
     if (json) {
       write(
-        `${JSON.stringify({ d1Telemetry: res.d1Telemetry, env, section: section ?? 'all', settings: res.data }, null, 2)}\n`
+        `${JSON.stringify({ d1Telemetry: res.d1Telemetry, env, section, settings: res.data }, null, 2)}\n`
       );
       return;
     }
@@ -373,10 +428,23 @@ export async function runUpskiiSettingsCommand(
   }
 
   if (action === 'preferences' || action === 'prefs') {
-    const res = await client.requestJson<Record<string, unknown>>({
-      command: 'external.upskii.settings.preferences',
-      path: `${client.apiBase}/settings/display-preferences`,
-    });
+    const path = `${client.apiBase}/admin/display-preferences`;
+    let res: Awaited<
+      ReturnType<typeof client.requestJson<Record<string, unknown>>>
+    >;
+    try {
+      res = await client.requestJson<Record<string, unknown>>({
+        command: 'external.upskii.settings.preferences',
+        path,
+      });
+    } catch (error) {
+      rethrowUnavailableEndpoint(
+        error,
+        'Upskii display preferences read endpoint',
+        env,
+        path
+      );
+    }
     if (json) {
       write(
         `${JSON.stringify({ d1Telemetry: res.d1Telemetry, env, preferences: res.data }, null, 2)}\n`
@@ -390,7 +458,8 @@ export async function runUpskiiSettingsCommand(
   }
 
   if (action === 'update' || action === 'set') {
-    const section = validateSettingsSection(getFlag(flags, 'section'));
+    const section =
+      validateSettingsSection(getFlag(flags, 'section')) ?? 'membership';
     const payload = await resolveSettingsPayload(flags);
     const keys = Object.keys(payload);
     if (keys.length === 0) {
@@ -400,6 +469,9 @@ export async function runUpskiiSettingsCommand(
         message: 'Settings update payload must include at least one field.',
       });
     }
+    if (section === 'display') {
+      validateDisplayPreferencePayload(payload);
+    }
 
     const gate = await requireMutationGate({
       explicitEnvFlag: options.explicitEnvFlag,
@@ -407,34 +479,45 @@ export async function runUpskiiSettingsCommand(
       json,
       noColor,
       preview: {
-        applyHint: `ttr external upskii settings update${section ? ` --section ${section}` : ''} --env ${env}${env === 'prod' ? ' --reason "<reason>"' : ''} --yes`,
+        applyHint: `ttr external upskii settings update --section ${section} --env ${env}${env === 'prod' ? ' --reason "<reason>"' : ''} --yes`,
         changes: keys.map((field) => ({ after: '[redacted]', field })),
         env,
         origin: client.origins.app,
-        target: section ? `settings:${section}` : 'settings:default',
+        target: `settings:${section}`,
         tier: 1,
-        title: section
-          ? `Update Upskii ${section} settings`
-          : 'Update Upskii settings',
+        title: `Update Upskii ${section} settings`,
       },
       write,
     });
     if (!gate.applied) return;
 
-    const path = section
-      ? `${client.apiBase}/settings/${encodeURIComponent(section)}`
-      : `${client.apiBase}/settings`;
-    const res = await client.requestJson<Record<string, unknown>>({
-      body: payload,
-      command: 'external.upskii.settings.update',
-      discardResponseBody: true,
-      fixedErrorMessage: 'Upskii settings update failed.',
-      method: 'PATCH',
-      path,
-      reason: gate.reason,
-    });
+    const path = resolveSettingsPath(client.apiBase, section);
+    let res: Awaited<
+      ReturnType<typeof client.requestJson<Record<string, unknown>>>
+    >;
+    try {
+      res = await client.requestJson<Record<string, unknown>>({
+        body: payload,
+        command: 'external.upskii.settings.update',
+        discardResponseBody: true,
+        ...(section === 'display'
+          ? { extraHeaders: { Origin: client.origins.app } }
+          : {}),
+        fixedErrorMessage: 'Upskii settings update failed.',
+        method: section === 'display' ? 'PUT' : 'PATCH',
+        path,
+        reason: gate.reason,
+      });
+    } catch (error) {
+      rethrowUnavailableEndpoint(
+        error,
+        `Upskii settings section "${section}"`,
+        env,
+        path
+      );
+    }
     write(
-      `${JSON.stringify({ applied: true, env, section: section ?? 'default', status: res.status, updatedFields: keys }, null, 2)}\n`
+      `${JSON.stringify({ applied: true, env, section, status: res.status, updatedFields: keys }, null, 2)}\n`
     );
     return;
   }

@@ -5,7 +5,10 @@ import { rejectSecretFlags } from '../credential-store';
 import { requireMutationGate } from '../safety-gate';
 import { formatTable } from '../ui/table';
 import { formatQaMarker } from './http';
-import type { UpskiiProductClient } from './product-client';
+import {
+  rethrowUnavailableEndpoint,
+  type UpskiiProductClient,
+} from './product-client';
 
 export interface UpskiiAssessmentsTutorOptions {
   args: string[];
@@ -53,7 +56,7 @@ export function upskiiTutorHelp(): string {
     'Usage:',
     '  ttr external upskii tutor sessions list [--class <classId>] [--json]',
     '  ttr external upskii tutor get <sessionId> [--json]',
-    '  ttr external upskii tutor prompts list [--class <classId>] [--json]',
+    '  ttr external upskii tutor prompts list [--json]',
     '  ttr external upskii tutor smoke --class <classId> [--prompt <text>] [--max-latency-ms 20000] [--expect-stream] [--yes] [--json]',
     '',
     'Tutor smoke previews unless --yes is passed (and --dry-run always previews).',
@@ -330,13 +333,30 @@ export async function runUpskiiTutorCommand(
     const path = classId
       ? `${client.apiBase}/tutor/sessions?classId=${encodeURIComponent(classId)}`
       : `${client.apiBase}/tutor/sessions`;
-    const res = await client.requestJson<{
-      items?: Array<Record<string, unknown>>;
-      sessions?: Array<Record<string, unknown>>;
-    }>({
-      command: 'external.upskii.tutor.sessions.list',
-      path,
-    });
+    let res: Awaited<
+      ReturnType<
+        typeof client.requestJson<{
+          items?: Array<Record<string, unknown>>;
+          sessions?: Array<Record<string, unknown>>;
+        }>
+      >
+    >;
+    try {
+      res = await client.requestJson<{
+        items?: Array<Record<string, unknown>>;
+        sessions?: Array<Record<string, unknown>>;
+      }>({
+        command: 'external.upskii.tutor.sessions.list',
+        path,
+      });
+    } catch (error) {
+      rethrowUnavailableEndpoint(
+        error,
+        'Upskii tutor session listing',
+        env,
+        path
+      );
+    }
     const sessions = Array.isArray(res.data.sessions)
       ? res.data.sessions
       : Array.isArray(res.data.items)
@@ -377,16 +397,22 @@ export async function runUpskiiTutorCommand(
         message: `Unknown tutor prompts action "${verb}".`,
       });
     }
-    const classId = getFlag(flags, 'class');
-    const path = classId
-      ? `${client.apiBase}/tutor/prompts?classId=${encodeURIComponent(classId)}`
-      : `${client.apiBase}/tutor/prompts`;
+    if (Object.hasOwn(flags, 'class')) {
+      throw new CliError({
+        code: 'UNSUPPORTED_FILTER',
+        exitCode: CLI_EXIT.usage,
+        hint: 'Omit --class; /api/upskii/prompt-library returns the global prompt catalog.',
+        message:
+          'Filtering tutor prompts by --class is not supported by /api/upskii/prompt-library.',
+      });
+    }
     const res = await client.requestJson<{
+      categories?: Array<Record<string, unknown>>;
       items?: Array<Record<string, unknown>>;
       prompts?: Array<Record<string, unknown>>;
     }>({
       command: 'external.upskii.tutor.prompts.list',
-      path,
+      path: `${client.apiBase}/prompt-library`,
     });
     const prompts = Array.isArray(res.data.prompts)
       ? res.data.prompts
@@ -395,7 +421,7 @@ export async function runUpskiiTutorCommand(
         : [];
     if (json) {
       write(
-        `${JSON.stringify({ classId: classId ?? null, count: prompts.length, d1Telemetry: res.d1Telemetry, env, prompts }, null, 2)}\n`
+        `${JSON.stringify({ count: prompts.length, d1Telemetry: res.d1Telemetry, env, prompts }, null, 2)}\n`
       );
       return;
     }

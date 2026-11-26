@@ -53,6 +53,210 @@
       "canonicalApp": "upskii-admin",
       "status": "external",
       "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/auth/get-session",
+      "canonicalApp": "upskii-auth",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/auth/list-sessions",
+      "canonicalApp": "upskii-auth",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/upskii",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/product-client.ts"
+    },
+    {
+      "routePath": "/api/upskii/account-workspaces",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/account-workspaces/:*",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/account-workspaces/:*/members",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/account-workspaces/:*/switch",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/account/sessions/:*",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/admin/display-preferences",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/ai-chat",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/chat-credits-status-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/ai-model-catalog",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/chat-credits-status-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/assessments",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/assessments/:*",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/assessments/:*/publish",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/assessments/:*/submissions",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/classes",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/classes/:*",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/classes/:*/overview",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/classes/join",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/classes/join-code",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/integrations/tuturuuu",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/link-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/lessons/:*",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/lessons/manual",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/lessons/modules",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/lessons/publish",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/classes-lessons-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/profile",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/prompt-library",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/settings/:*",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/settings/class-settings",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/workspaces-settings-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/tutor/sessions",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/tutor/sessions/:*",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/tutor/smoke",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/assessments-tutor-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/usage/analytics",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/chat-credits-status-command.ts"
+    },
+    {
+      "routePath": "/api/upskii/usage/credits",
+      "canonicalApp": "upskii-app",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/chat-credits-status-command.ts"
     }
   ]
 }

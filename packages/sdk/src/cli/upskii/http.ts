@@ -620,10 +620,13 @@ export function cookieDomainMatchesOrigin(
   const targetHost = new URL(expectedOrigin).hostname.toLowerCase();
   const normalized = cookieDomain.trim().toLowerCase().replace(/^\./u, '');
   if (!normalized) return false;
-  if (normalized === targetHost) return true;
-  // Never allow a broad ".upskii.com" cookie to satisfy staging/sandbox or vice versa
-  // unless the exact subdomain matches.
-  return false;
+  if (normalized === 'upskii.com') {
+    // Production Upskii browser sessions issue ".upskii.com" cookies for app.upskii.com.
+    // Accept upskii.com / .upskii.com ONLY for exact production app.upskii.com — never
+    // for apex upskii.com, staging.app.upskii.com, sandbox.app.upskii.com, or any other host.
+    return targetHost === 'app.upskii.com';
+  }
+  return normalized === targetHost;
 }
 
 export async function readCookieFromStorageState(

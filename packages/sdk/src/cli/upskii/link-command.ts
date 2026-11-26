@@ -5,7 +5,10 @@ import { requireMutationGate } from '../safety-gate';
 import { formatTable } from '../ui/table';
 import { parseWatchInterval, runWatchLoop } from '../ui/watch';
 import { assertSafeParsedValue, assertSafeResponseText } from './http';
-import type { UpskiiProductClient } from './product-client';
+import {
+  rethrowUnavailableEndpoint,
+  type UpskiiProductClient,
+} from './product-client';
 
 const TUTURUUU_UPSKII_LINK_PATH = '/api/v1/integrations/upskii/link';
 
@@ -63,14 +66,33 @@ export async function runUpskiiLinkCommand(
   if (action === 'status' || action === 'verify') {
     const watchSeconds = parseWatchInterval(flags.watch, 15);
     const readSnapshot = async () => {
-      const upskiiRes = await client.requestJson<{
-        confirmed?: boolean;
-        enabled?: boolean;
-        link?: Record<string, unknown> | null;
-      }>({
-        command: `external.upskii.link.${action}`,
-        path: `${client.apiBase}/integrations/tuturuuu`,
-      });
+      const linkPath = `${client.apiBase}/integrations/tuturuuu`;
+      let upskiiRes: Awaited<
+        ReturnType<
+          typeof client.requestJson<{
+            confirmed?: boolean;
+            enabled?: boolean;
+            link?: Record<string, unknown> | null;
+          }>
+        >
+      >;
+      try {
+        upskiiRes = await client.requestJson<{
+          confirmed?: boolean;
+          enabled?: boolean;
+          link?: Record<string, unknown> | null;
+        }>({
+          command: `external.upskii.link.${action}`,
+          path: linkPath,
+        });
+      } catch (error) {
+        rethrowUnavailableEndpoint(
+          error,
+          'Upskii <-> Tuturuuu account link endpoint',
+          env,
+          linkPath
+        );
+      }
 
       let tuturuuuSide: Record<string, unknown> | null = null;
       if (options.tuturuuuAccessToken) {
