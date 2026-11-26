@@ -60,6 +60,7 @@ import 'package:mobile/features/storefront/view/storefront_detail_page.dart';
 import 'package:mobile/features/storefront/view/storefronts_page.dart';
 import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dart';
 import 'package:mobile/features/task_settings/view/task_settings_section_page.dart';
+import 'package:mobile/features/tasks/view/tasks_progress_page.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
@@ -473,6 +474,10 @@ GoRouter createAppRouter(
             builder: (context, state) => const NotificationsPage.archive(),
           ),
           ...appSettingsAliasRoutes(),
+          GoRoute(
+            path: Routes.tasksProgress,
+            builder: (_, _) => const TasksProgressPage(),
+          ),
           ...AppRegistry.routes,
           ...mastermindTabRoutes,
           GoRoute(

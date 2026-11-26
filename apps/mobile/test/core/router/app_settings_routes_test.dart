@@ -124,7 +124,7 @@ void main() {
     }
   });
 
-  test('the real app router resolves app settings before detail routes', () {
+  test('the real app router resolves static paths before detail routes', () {
     final auth = _Auth();
     final workspaces = _Workspaces();
     final habits = _Habits();
@@ -150,6 +150,7 @@ void main() {
     // `/calendar/:eventId` comes from the app registry; the aliases win.
     expect(leaf('/calendar/settings'), '/calendar/settings');
     expect(leaf('/calendar/evt-1'), Routes.calendarEventDetail);
+    expect(leaf('/tasks/progress'), '/tasks/progress');
     for (final root in ['/tasks', '/finance', '/timer']) {
       expect(leaf('$root/settings'), '$root/settings');
     }
