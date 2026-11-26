@@ -88,13 +88,6 @@ const LEGACY_OWNERS = Object.freeze([
     TARGETS.cronTrigger,
     'Cron Control job pay-products; later a Worker processor for the Polar catalog sync.'
   ),
-  vercelCron(
-    'apps/tasks',
-    '/api/cron/tasks/cleanup-media',
-    '17 3 * * *',
-    TARGETS.cronTrigger,
-    'Cron Control job tasks-cleanup-media; later a Worker processor with a durable workspace cursor.'
-  ),
 
   // Cron catalogs feed sync-web-crons and the Infrastructure cron monitor.
   // Enabled entries are schedule definitions in their own right.
@@ -246,7 +239,6 @@ const LEGACY_OWNERS = Object.freeze([
     ['apps/pay', 'payment/products'],
     ['apps/pay', 'payment/subscriptions'],
     ['apps/tasks', 'tasks/cleanup-media', TARGETS.workerProcessor],
-    ['apps/tasks', 'tasks/generate-embeddings', TARGETS.queueConsumer],
     ['apps/web', 'ai/sync-models'],
     ['apps/web', 'discord/daily-report'],
     ['apps/web', 'discord/wol/daily/remind'],

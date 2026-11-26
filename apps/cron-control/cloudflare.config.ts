@@ -46,7 +46,7 @@ export default defineConfig({
       // The meet-attendance-* jobs are no-ops until the database owner opens
       // private.meet_attendance_retention_control.
       CRON_CONTROL_ENABLED_JOBS: bindings.text(
-        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare'
+        'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare,tasks-cleanup-media'
       ),
       // Cron Control is web's only scheduler (apps/web/vercel.json has no
       // crons). 'active' dispatches the five web-* jobs; 'off' stops only

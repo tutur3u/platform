@@ -50,14 +50,20 @@ export async function taskMediaIsReferenced(
   return !!tasks.data?.length || !!drafts.data?.length;
 }
 
+/**
+ * Deletes `path` when no task or draft in its workspace references it.
+ * Returns whether it was (or, with `dryRun`, would be) deleted.
+ */
 export async function removeUnreferencedTaskMedia(
   admin: TypedSupabaseClient,
-  path: string
+  path: string,
+  { dryRun = false }: { dryRun?: boolean } = {}
 ): Promise<boolean> {
   const filename = taskMediaFilename(path);
   if (!filename) throw new Error('Invalid task media path');
   if (await taskMediaIsReferenced(admin, path.split('/')[0] ?? '', filename))
     return false;
+  if (dryRun) return true;
 
   const { error } = await admin.storage.from('workspaces').remove([path]);
   if (error) throw error;

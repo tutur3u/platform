@@ -26,15 +26,9 @@ export const SESSIONLESS_API_ROUTES: readonly SessionlessApiRoute[] = [
     methods: ['POST'],
     keepAuthorization: false,
   },
-  // Cron routes checking `authorization: Bearer <CRON_SECRET>`; cleanup-media
-  // is the daily media cleanup, generate-embeddings has no scheduler.
+  // Cron Control job `tasks-cleanup-media`: `authorization: Bearer <CRON_SECRET>`.
   {
     path: '/api/cron/tasks/cleanup-media',
-    methods: ['GET'],
-    keepAuthorization: true,
-  },
-  {
-    path: '/api/cron/tasks/generate-embeddings',
     methods: ['GET'],
     keepAuthorization: true,
   },

@@ -172,8 +172,19 @@ it. This includes media removed from an existing description and uploads left
 behind when a browser closes before the discard request completes. References
 in task version history do not retain media after removal from the current
 description.
-The Tasks Vercel project schedules `/api/cron/tasks/cleanup-media` at 03:17 UTC;
-the route requires `CRON_SECRET` or `VERCEL_CRON_SECRET`.
+Cron Control job `tasks-cleanup-media` calls `/api/cron/tasks/cleanup-media` at
+03:17 UTC with `authorization: Bearer <CRON_SECRET_TASKS>`, which must equal the
+Tasks Worker's `CRON_SECRET`. Each pass is bounded: it stops at 200 workspace
+folder list calls, 500 checked files, 200 deletions or 240 seconds and reports
+`capped`, and a root listing of at least 10,000 entries fails the pass; the next daily
+pass starts from a workspace a prime stride further on. A workspace
+whose old, still-referenced files exceed one pass's check cap is only partly
+covered until a cursor-based Worker processor replaces the route. The route only
+counts what it would delete (`removable`) until `TASKS_MEDIA_CLEANUP_MODE` is
+exactly `delete`; `off` stops the job before any storage read. Each pass logs its
+report. Regression coverage:
+`apps/tasks/src/lib/task-media-cleanup-run.test.ts` and
+`apps/tasks/src/app/api/cron/tasks/cleanup-media/route.test.ts`.
 
 ## Task read RPC identity
 
@@ -258,15 +269,14 @@ deployment and use the same value in the Supabase Database Webhook header
 configuration. Use a secret placeholder in local examples and operational
 documentation; never record the deployed value.
 
-The Tasks API proxy runs this webhook, the CI alert sink and two cron routes
-without an app session: `GET /api/cron/tasks/cleanup-media` (the daily cleanup
-above; Cron Control defines `tasks-cleanup-media` but does not enable it) and
-`GET /api/cron/tasks/generate-embeddings`, which has no scheduler. Both cron
-routes check `authorization: Bearer <CRON_SECRET>` (or `VERCEL_CRON_SECRET`). Each
-route is listed by exact path and method in
+The Tasks API proxy runs this webhook, the CI alert sink and the daily media
+cleanup (`GET /api/cron/tasks/cleanup-media`, Cron Control job
+`tasks-cleanup-media`) without an app session. The cleanup checks
+`authorization: Bearer <CRON_SECRET>`, falling back to `VERCEL_CRON_SECRET`
+when `CRON_SECRET` is unset. Each route is listed by exact path and method in
 `apps/tasks/src/sessionless-api.ts`. Cookies are stripped, and `authorization`
-is kept only for the two cron routes. Any other method or path variant takes
-the normal session path.
+is kept only for the cleanup. Any other method or path variant takes the normal
+session path.
 
 The webhook route fails closed before parsing the payload or creating an admin
 Supabase client. Missing or empty server configuration returns a server configuration

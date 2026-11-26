@@ -126,18 +126,18 @@ describe('Tasks proxy sessionless API routes', () => {
     expect(request.headers.has('cookie')).toBe(true);
   });
 
-  it.each([
-    ['/api/cron/tasks/cleanup-media'],
-    ['/api/cron/tasks/generate-embeddings'],
-  ])('GET %s keeps its CRON_SECRET bearer without a session', async (path) => {
-    for (const request of [subdomain('GET', path), mounted('GET', path)]) {
-      await proxy(request);
-      expect(request.headers.has('cookie')).toBe(false);
-      expect(request.headers.get('authorization')).toBe('Bearer user-token');
+  it.each([['/api/cron/tasks/cleanup-media']])(
+    'GET %s keeps its CRON_SECRET bearer without a session',
+    async (path) => {
+      for (const request of [subdomain('GET', path), mounted('GET', path)]) {
+        await proxy(request);
+        expect(request.headers.has('cookie')).toBe(false);
+        expect(request.headers.get('authorization')).toBe('Bearer user-token');
+      }
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.resolveMountedTasksSession).not.toHaveBeenCalled();
     }
-    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-    expect(mocks.resolveMountedTasksSession).not.toHaveBeenCalled();
-  });
+  );
 
   it('matches only exact paths and methods', () => {
     expect(findSessionlessApiRoute('/api/v1/ci/alerts', 'POST')).not.toBeNull();

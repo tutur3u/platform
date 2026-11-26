@@ -9,7 +9,6 @@ export const appApiPatterns = [
   "/api/auth/refresh-app-session",
   "/api/auth/verify-app-token",
   "/api/cron/tasks/cleanup-media",
-  "/api/cron/tasks/generate-embeddings",
   "/api/v1/ci/alerts",
   "/api/v1/mira/tasks",
   "/api/v1/mira/tasks/complete",

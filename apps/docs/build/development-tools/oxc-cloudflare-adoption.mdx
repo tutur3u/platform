@@ -379,6 +379,38 @@ reservation delete, a restart, a refusal of either delete, and a timeout during
 either delete. Hosted stop and billing evidence are still outstanding, so
 production runs the job with `FORMS_UPLOAD_CLEANUP_MODE` set to `off`.
 
+The daily `tasks-cleanup-media` slot makes one HTTP call to the Tasks Worker on
+the existing `17 3 * * *` trigger. Cron Control retries it only on 502, 503 or a
+network error, up to the job's attempt limit, and checks the stop fence between
+attempts. A deadline is not retried. Each pass makes at most 100 Storage list
+calls for the root workspace listing, 200 more for workspace folders, 500
+reference checks (two PostgREST reads each) and 200 Storage deletes. That is at
+most 1,500 subrequests from one Tasks Worker invocation, and the pass starts no
+new request after 240 seconds; with the second attempt a slot makes at most
+3,000. A root listing of at least 10,000 entries fails the pass (HTTP 500)
+rather than reporting a silent `ok`. The pass checks files page
+by page, steps back for deleted files and emptied folders, reports `capped`, and
+leaves the rest to the next slot, whose starting workspace advances by a prime
+stride (the first of 97, 89, 83, 79 and 73 that does not divide the workspace
+count). A workspace whose old,
+still-referenced files exceed one pass's check cap is only partly covered, and a
+dry-run pass recounts from the same starting files, until the planned
+cursor-based Worker processor replaces the route. Any failed file or listing
+fails the pass (HTTP 500), so five consecutive failures stop the job until an
+operator resumes it.
+Deletes cover only unreferenced media older than 30 days, so passes are
+idempotent. `TASKS_MEDIA_CLEANUP_MODE` other than exactly `delete` only counts
+(reported as `removable`), and `off` stops before any Storage read. Every pass
+logs its report (`Task media cleanup pass`), because Cron Control keeps only the
+outcome. The job reports `misconfigured` and
+sends nothing until `CRON_SECRET_TASKS` is installed.
+`task-media-cleanup-run.test.ts` covers every cap (including nested folders and
+the root budget), the time budget, dry-run, page-by-page checking, emptied and
+already-empty folder offsets, the daily starting offset and stride fallback, and
+a second idempotent pass. Hosted stop and billing
+evidence are still outstanding, so production runs the cleanup without
+`TASKS_MEDIA_CLEANUP_MODE`, which counts only.
+
 The daily `external-app-exchange-audit-retention` slot makes at most eight
 1,000-row purge RPCs and ten ledger operations (claim, eight fence checks,
 outcome), on an existing trigger. While the purge function is missing it makes

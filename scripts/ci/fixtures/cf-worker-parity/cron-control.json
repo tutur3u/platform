@@ -38,7 +38,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare,tasks-cleanup-media",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
       "FORMS_UPLOAD_CLEANUP_MODE": "off",
@@ -112,7 +112,7 @@
     "vars": {
       "AI_STUDIO_RETENTION_MODE": "dry-run",
       "CLOUDFLARE_ACCOUNT_ID": "e8912e2867beecc673d171907bf09649",
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare",
       "CRON_CONTROL_WEB_MODE": "active",
       "CRON_CONTROL_WORKER_PROCESSORS": "inventory-checkout-expiry",
       "FORMS_UPLOAD_CLEANUP_MODE": "off",
@@ -149,7 +149,7 @@
     }
   },
   "transition": {
-    "decision": "OBSERVABILITY-COLLECTORS-1: enable observability-retention (*/10), observability-slo-burn (*/15) and observability-cloudflare (*/15). The Cloudflare collector stays a no-op until the database owner moves its private.observability_source_control row from 'off' to 'dry_run' and then 'on'; every run is bounded by max_requests_per_run, the daily row budget and the Cron Control stop fence. CLOUDFLARE_ANALYTICS_API_TOKEN is an optional operator-installed secret; observability-github-actions stays disabled pending a bot credential. The previous stage is the live MEET-FORMS-ATTENDANCE-ACTIVATION-1 identity published in R15.",
+    "decision": "TASKS-CLEANUP-MEDIA-1: enable tasks-cleanup-media (17 3 * * *) against Tasks /api/cron/tasks/cleanup-media. The job reports misconfigured and sends no request until CRON_SECRET_TASKS is installed; each pass is bounded (list calls, checked files, deletions and a 240 s budget under the 310 s timeout), and the Tasks route only counts until TASKS_MEDIA_CLEANUP_MODE is exactly 'delete' ('off' stops it). The previous stage is the live OBSERVABILITY-COLLECTORS-1 identity.",
     "fields": ["vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."

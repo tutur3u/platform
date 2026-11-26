@@ -3733,11 +3733,7 @@
   },
   {
     "file": "apps/tasks/src/app/api/cron/tasks/cleanup-media/route.ts",
-    "digest": "bfb733ef6d42eefab2d0b349afe2426be4a293f6c1edc6fcb9834193bc7c838c"
-  },
-  {
-    "file": "apps/tasks/src/app/api/cron/tasks/generate-embeddings/route.ts",
-    "digest": "d88ad23777555ca94f03fb54b33a13fbae01bb5624cf66d3b6c00c062b6ae4e8"
+    "digest": "f7ad5e41f5f31460451dc32ba8d25bf3e2d6f5d849e7b32f385cd6c22714e564"
   },
   {
     "file": "apps/tasks/src/app/api/v1/ci/alerts/route.ts",
