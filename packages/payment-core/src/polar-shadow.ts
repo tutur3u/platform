@@ -38,7 +38,8 @@ type PolarShadowResult =
         | 'unknown_workspace_product'
         | 'invalid_seats'
         | 'invalid_timestamp'
-        | 'unsupported_price';
+        | 'unsupported_price'
+        | 'invalid_amount';
     }
   | { kind: 'observed'; observation: PolarShadowObservation };
 
@@ -91,11 +92,24 @@ export function observePolarSubscription({
     ? statuses[subscription.status]
     : undefined;
   if (!status) return { kind: 'exception', reason: 'unknown_status' };
-  if (subscription.prices.length > 1) {
+  const currency = subscription.currency.toLowerCase();
+  if (
+    !/^[a-z]{3}$/.test(currency) ||
+    !Number.isSafeInteger(subscription.amount) ||
+    subscription.amount < 0
+  ) {
+    return { kind: 'exception', reason: 'invalid_amount' };
+  }
+  const matchingPrices = subscription.prices.filter((price) =>
+    'priceCurrency' in price
+      ? price.priceCurrency.toLowerCase() === currency
+      : subscription.prices.length === 1
+  );
+  if (subscription.prices.length && matchingPrices.length !== 1) {
     return { kind: 'exception', reason: 'ambiguous_price' };
   }
 
-  const price = subscription.prices[0];
+  const price = matchingPrices[0];
   if (price && !['seat_based', 'fixed', 'free'].includes(price.amountType)) {
     return { kind: 'exception', reason: 'unsupported_price' };
   }
@@ -133,6 +147,7 @@ export function observePolarSubscription({
         basePlanId: null,
         offerId: null,
       },
+      nativeAmount: { currency, minorAmount: subscription.amount },
       status,
       nativeStatus: subscription.status,
       ordering: {

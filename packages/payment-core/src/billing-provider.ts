@@ -34,6 +34,7 @@ export type BillingStatus =
 export interface BillingObservation<P extends BillingProviderId> {
   reference: BillingSubscriptionReference<P>;
   item: BillingCatalogItem;
+  nativeAmount: { currency: string; minorAmount: number } | null;
   status: BillingStatus;
   nativeStatus: string;
   ordering: {

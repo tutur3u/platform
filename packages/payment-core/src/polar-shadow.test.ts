@@ -8,6 +8,8 @@ const periodStart = new Date('2026-11-01T00:00:00Z');
 const periodEnd = new Date('2026-12-01T00:00:00Z');
 const polar = {
   id: 'subscription',
+  amount: 1000,
+  currency: 'usd',
   metadata: { wsId: 'workspace' },
   product: {
     id: 'product',
@@ -119,4 +121,16 @@ it('rejects invalid seats and malformed timestamps without throwing', () => {
       observedAt,
     }).kind
   ).toBe('observed');
+});
+
+it('retains VND minor amounts without converting to USD or scaling decimals', () => {
+  const result = observePolarSubscription({
+    subscription: { ...polar, currency: 'vnd', amount: 249_000 },
+    scope,
+    observedAt: periodStart.toISOString(),
+  });
+  expect(result).toMatchObject({
+    kind: 'observed',
+    observation: { nativeAmount: { currency: 'vnd', minorAmount: 249_000 } },
+  });
 });
