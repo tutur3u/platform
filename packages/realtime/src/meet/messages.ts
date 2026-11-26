@@ -67,6 +67,8 @@ export const meetRoomViewSchema = z.discriminatedUnion('surface', [
   z.object({ surface: z.literal('stage') }),
   z.object({ surface: z.literal('programming') }),
   z.object({ surface: z.literal('document') }),
+  /** The meeting's Tuturuuu Whiteboard pane. */
+  z.object({ surface: z.literal('board') }),
   z.object({
     surface: z.literal('tool'),
     toolId: z.string().regex(/^[a-z0-9-]{1,40}$/),

@@ -22,6 +22,7 @@ describe('whiteboardPolicy', () => {
           })
         ).toEqual({
           offerBoard: true,
+          memberBoard: false,
           guestBoard: false,
           penBoardFirst: false,
         });
@@ -30,6 +31,7 @@ describe('whiteboardPolicy', () => {
   it('keeps guests on the pen board while the switch is off', () => {
     expect(whiteboardPolicy({ ...base, requiresAccount: true })).toEqual({
       offerBoard: false,
+      memberBoard: false,
       guestBoard: false,
       penBoardFirst: false,
     });
@@ -38,6 +40,7 @@ describe('whiteboardPolicy', () => {
   it('opens the pen board for everyone in a room with a guest while off', () => {
     expect(whiteboardPolicy({ ...base, guestsPresent: true })).toEqual({
       offerBoard: true,
+      memberBoard: true,
       guestBoard: false,
       penBoardFirst: true,
     });
@@ -48,10 +51,22 @@ describe('whiteboardPolicy', () => {
     const on = { ...base, guestWhiteboard: true, guestsPresent: true };
     expect(whiteboardPolicy({ ...on, requiresAccount: true })).toEqual({
       offerBoard: true,
+      memberBoard: false,
       guestBoard: true,
       penBoardFirst: false,
     });
     expect(whiteboardPolicy(on).penBoardFirst).toBe(false);
+  });
+});
+
+describe('a members-only room', () => {
+  it('gives the host and every member the same Tuturuuu Whiteboard', () => {
+    // The host and a member with no room tools: both open the board.
+    const host = whiteboardPolicy(base);
+    const member = whiteboardPolicy(base);
+    expect(host.offerBoard && member.offerBoard).toBe(true);
+    expect(member.memberBoard).toBe(true);
+    expect(member.penBoardFirst).toBe(false);
   });
 });
 

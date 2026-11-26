@@ -4882,7 +4882,8 @@
       "surfaces": {
         "stage": "the stage",
         "programming": "Co-Programming",
-        "document": "Live document"
+        "document": "Live document",
+        "board": "Whiteboard"
       },
       "navigation": {
         "someone": "Someone",

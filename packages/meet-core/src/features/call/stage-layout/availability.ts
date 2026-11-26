@@ -12,6 +12,8 @@ export interface ActivityAvailability {
   live: boolean;
   /** May use Co-Programming and the live document. */
   collaboration: boolean;
+  /** May open the Tuturuuu Whiteboard; follows `collaboration` when unset. */
+  board?: boolean;
   classroom: boolean;
   /** Ids of the registered tools. */
   toolIds: readonly string[];
@@ -21,11 +23,9 @@ export function isActivityAvailable(
   activityId: string,
   availability: ActivityAvailability
 ) {
-  if (
-    activityId === PROGRAMMING_ACTIVITY ||
-    activityId === DOCUMENT_ACTIVITY ||
-    activityId === BOARD_ACTIVITY
-  )
+  if (activityId === BOARD_ACTIVITY)
+    return availability.board ?? availability.collaboration;
+  if (activityId === PROGRAMMING_ACTIVITY || activityId === DOCUMENT_ACTIVITY)
     return availability.collaboration;
   const toolId = toolIdOf(activityId);
   if (toolId) return availability.live && availability.toolIds.includes(toolId);

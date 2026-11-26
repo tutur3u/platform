@@ -5789,6 +5789,7 @@
         "title": "Đưa mọi người đến {surface}"
       },
       "surfaces": {
+        "board": "Bảng trắng",
         "document": "Tài liệu trực tiếp",
         "programming": "Lập trình cùng nhau",
         "stage": "sân khấu"

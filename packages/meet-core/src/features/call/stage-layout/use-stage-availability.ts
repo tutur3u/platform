@@ -12,11 +12,14 @@ import { allowedToolIds, isActivityAvailable } from './availability';
 export function useStageAvailability({
   live,
   collaboration,
+  board,
   classroom,
   tools,
 }: {
   live: boolean;
   collaboration: boolean;
+  /** May open the Tuturuuu Whiteboard; follows `collaboration` when unset. */
+  board?: boolean;
   classroom: boolean;
   tools: { available: boolean; activitiesOnly: boolean };
 }) {
@@ -37,10 +40,11 @@ export function useStageAvailability({
       isActivityAvailable(activityId, {
         live,
         collaboration,
+        board,
         classroom,
         toolIds,
       }),
-    [live, collaboration, classroom, toolIds]
+    [live, collaboration, board, classroom, toolIds]
   );
   const summon = useCallback(
     (activityId: string) =>

@@ -29,6 +29,7 @@ export const CLASSROOM_ACTIVITIES = ['whiteboard', 'breakouts'] as const;
 export function viewOfActivity(activityId: string | null): MeetRoomView | null {
   if (activityId === PROGRAMMING_ACTIVITY) return { surface: 'programming' };
   if (activityId === DOCUMENT_ACTIVITY) return { surface: 'document' };
+  if (activityId === BOARD_ACTIVITY) return { surface: 'board' };
   const toolId = toolIdOf(activityId);
   return toolId ? { surface: 'tool', toolId } : null;
 }

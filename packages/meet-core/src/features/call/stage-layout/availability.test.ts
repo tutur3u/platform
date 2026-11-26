@@ -25,6 +25,14 @@ describe('stage availability', () => {
     ).toBe(false);
   });
 
+  it('opens the board to a member without room tools when allowed', () => {
+    const member = { ...base, collaboration: false, board: true, toolIds: [] };
+    expect(isActivityAvailable('board', member)).toBe(true);
+    // Co-Programming and the document still need the room's tools.
+    expect(isActivityAvailable('programming', member)).toBe(false);
+    expect(isActivityAvailable('document', member)).toBe(false);
+  });
+
   it('drops a host-only tool when the person is demoted, even from a saved layout', () => {
     const host = allowedToolIds(['live-qa', 'live-game', 'timers'], []);
     const participant = allowedToolIds([], []);

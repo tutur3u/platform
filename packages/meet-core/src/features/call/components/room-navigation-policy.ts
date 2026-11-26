@@ -3,6 +3,7 @@ import type {
   MeetRoomView,
   MeetStageLayoutSnapshot,
 } from '@tuturuuu/realtime/meet';
+import { BOARD_ACTIVITY } from '../stage-layout/activity-ids';
 
 /** What the call shows this person right now, as call-shell tracks it. */
 export interface CallSurfaceState {
@@ -10,7 +11,7 @@ export interface CallSurfaceState {
   document: boolean;
   /** A side drawer such as chat or people; it is not a surface. */
   drawer: string | null;
-  /** The tool activity in focus, as `tool:<id>`. */
+  /** The activity to open or focus: a tool as `tool:<id>`, or the board. */
   tool?: string | null;
 }
 
@@ -65,6 +66,13 @@ export function surfaceFromView(
         drawer: keepDrawer,
         tool: `tool:${view.toolId}`,
       };
+    case 'board':
+      return {
+        programming: false,
+        document: false,
+        drawer: keepDrawer,
+        tool: BOARD_ACTIVITY,
+      };
     default:
       return { programming: false, document: false, drawer: keepDrawer };
   }
@@ -76,6 +84,8 @@ export interface RoomViewAccess {
   browse: boolean;
   /** Signed in: Co-Programming and the live document need an account. */
   account: boolean;
+  /** May open the Tuturuuu Whiteboard; follows `account` when unset. */
+  board?: boolean;
   /** Tool panels exist for this call right now. */
   tools: boolean;
   /** Tool ids the registry knows; an unknown id opens nothing. */
@@ -96,6 +106,7 @@ export function canOpenRoomView(
   if (!forced && !access.browse) return false;
   if (view.surface === 'tool')
     return access.tools && access.toolIds.includes(view.toolId);
+  if (view.surface === 'board') return access.board ?? access.account;
   return access.account;
 }
 

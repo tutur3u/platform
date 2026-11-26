@@ -126,6 +126,27 @@ describe('room views', () => {
   });
 });
 
+describe('the Tuturuuu Whiteboard view', () => {
+  const access = { browse: false, account: true, tools: true, toolIds: [] };
+  it('opens the board pane and needs an account or board access', () => {
+    expect(surfaceFromView({ surface: 'board' }, 'chat')).toEqual({
+      programming: false,
+      document: false,
+      drawer: 'chat',
+      tool: 'board',
+    });
+    // A host brings a member without room tools; an invitation does not.
+    expect(canOpenRoomView({ surface: 'board' }, access, true)).toBe(true);
+    expect(canOpenRoomView({ surface: 'board' }, access, false)).toBe(false);
+    const guest = { ...access, account: false };
+    expect(canOpenRoomView({ surface: 'board' }, guest, true)).toBe(false);
+    // Unless the server lets guests open the board.
+    expect(
+      canOpenRoomView({ surface: 'board' }, { ...guest, board: true }, true)
+    ).toBe(true);
+  });
+});
+
 describe('decideNavigation', () => {
   it('moves people for hosts and invites them otherwise', () => {
     expect(decideNavigation(event({ forced: true }), context)).toEqual({

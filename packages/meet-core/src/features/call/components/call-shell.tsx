@@ -272,9 +272,19 @@ function CallShellContent({
     available: roomTools.canUse || runsRoomActivities(state),
     activitiesOnly: !roomTools.canUse,
   };
+  // Meet UX v2: one Timer pane with the room timer, and one Whiteboard whose
+  // board depends on guests and the guest switch (see `whiteboardPolicy`).
+  const merged = useMeetCallUx();
+  const whiteboard = whiteboardPolicy({
+    merged,
+    guestWhiteboard,
+    requiresAccount: requiresAccount || !canReadWorkspace,
+    guestsPresent: Object.values(state.participants).some(isOutsideWorkspace),
+  });
   const availability = useStageAvailability({
     live: liveTools,
     collaboration: canCollaborate,
+    board: canCollaborate || whiteboard.memberBoard,
     classroom: !!classroomToolsEnabled,
     tools: toolAccess,
   });
@@ -289,15 +299,6 @@ function CallShellContent({
   const showProgramming = stage.isOpen(PROGRAMMING_ACTIVITY);
   const showDocument = stage.isOpen(DOCUMENT_ACTIVITY);
   const showBoard = stage.isOpen(BOARD_ACTIVITY);
-  // Meet UX v2: one Timer pane with the room timer, and one Whiteboard whose
-  // board depends on guests and the guest switch (see `whiteboardPolicy`).
-  const merged = useMeetCallUx();
-  const whiteboard = whiteboardPolicy({
-    merged,
-    guestWhiteboard,
-    requiresAccount: requiresAccount || !canReadWorkspace,
-    guestsPresent: Object.values(state.participants).some(isOutsideWorkspace),
-  });
   const tools = useMeetTools({
     stage,
     meetingId,
@@ -631,6 +632,7 @@ function CallShellContent({
               }
             : undefined
         }
+        memberBoard={whiteboard.memberBoard}
         penBoardFirst={whiteboard.penBoardFirst}
         layout={layout}
         setLayout={(next) => {

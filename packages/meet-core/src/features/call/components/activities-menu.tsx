@@ -54,6 +54,7 @@ export function ActivitiesMenu({
   openToolIds,
   onTool,
   collaboration,
+  board,
   extra = [],
   pages = [],
   preview,
@@ -74,6 +75,11 @@ export function ActivitiesMenu({
     document: { active: boolean; toggle: () => void };
     board?: { active: boolean; toggle: () => void };
   };
+  /**
+   * The Tuturuuu Whiteboard for a member who may not use the room's tools
+   * (`whiteboardPolicy` `memberBoard`), so they reach the host's board.
+   */
+  board?: { active: boolean; toggle: () => void };
   preview?: { onFeedback: () => void };
   /** Whether this person may Follow and Summon (`nav.allowed`). */
   navigationAllowed?: boolean;
@@ -119,6 +125,7 @@ export function ActivitiesMenu({
     all.has(tool.label) ? all(tool.label) : tool.label;
   const describe = (id: string) =>
     t.has(`descriptions.${id}`) ? t(`descriptions.${id}`) : undefined;
+  const boardAction = collaboration?.board ?? board;
   const entries: ActivityTile[] = [
     ...(collaboration || preview
       ? [
@@ -138,18 +145,18 @@ export function ActivitiesMenu({
             active: !!collaboration?.document.active,
             open: collaboration?.document.toggle,
           },
-          ...(collaboration?.board
-            ? [
-                {
-                  id: 'board',
-                  stageId: BOARD_ACTIVITY,
-                  label: collaborationT('board'),
-                  icon: Presentation,
-                  active: collaboration.board.active,
-                  open: collaboration.board.toggle,
-                },
-              ]
-            : []),
+        ]
+      : []),
+    ...(boardAction
+      ? [
+          {
+            id: 'board',
+            stageId: BOARD_ACTIVITY,
+            label: collaborationT('board'),
+            icon: Presentation,
+            active: boardAction.active,
+            open: boardAction.toggle,
+          },
         ]
       : []),
     ...tools.map((tool) => ({

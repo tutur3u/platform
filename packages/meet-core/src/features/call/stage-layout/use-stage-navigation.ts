@@ -30,9 +30,8 @@ export function canMirrorActivity(
   forced: boolean,
   guestBoard = false
 ) {
-  const board = id === BOARD_ACTIVITY;
-  const view = board ? ({ surface: 'document' } as const) : viewOfActivity(id);
-  const allowed = board && guestBoard ? { ...access, account: true } : access;
+  const view = viewOfActivity(id);
+  const allowed = guestBoard ? { ...access, board: true } : access;
   return !view || canOpenRoomView(view, allowed, forced);
 }
 
@@ -146,7 +145,11 @@ export function useStageNavigation({
         if (focused && reached.surface !== 'stage') notify(focused);
         return { reached };
       }
-      if (forced && (next.programming || next.document)) onBroughtIn();
+      if (
+        forced &&
+        (next.programming || next.document || next.tool === BOARD_ACTIVITY)
+      )
+        onBroughtIn();
       const target = next.programming
         ? PROGRAMMING_ACTIVITY
         : next.document
@@ -154,7 +157,8 @@ export function useStageNavigation({
           : next.tool;
       onDrawer(next.drawer);
       if (target) {
-        if (forced && next.tool) onSummoned?.(next.tool);
+        if (forced && next.tool && next.tool !== BOARD_ACTIVITY)
+          onSummoned?.(next.tool);
         // Going back returns to the activity the person was in, and closes
         // the one they were brought to if it was not open before.
         const drawerBefore = drawer;
@@ -181,7 +185,8 @@ export function useStageNavigation({
       // The stage view opens nothing: the person stays on what they have open.
       return { reached: currentRoomView(surface) };
     },
-    access,
+    // A guest the server lets open the board may be brought to it too.
+    access: guestBoard ? { ...access, board: true } : access,
   });
   const following = !!navigation.following;
   const setLocked = stage.setLocked;

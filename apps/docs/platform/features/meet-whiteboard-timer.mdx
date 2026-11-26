@@ -23,7 +23,7 @@ board's host controls (link, create, guest access, remove) are unchanged; see
 
 | Order | Older entry | Stage id | Who has it |
 | --- | --- | --- | --- |
-| 1 | Saved whiteboard | `board` | People who may use the room's tools; anonymous guests only while `MEET_GUEST_WHITEBOARD` is on, view-only until `MEET_GUEST_WHITEBOARD_DRAW` is approved |
+| 1 | Saved whiteboard | `board` | Every workspace member, whoever may use the room's tools, so the host and every member draw on the same board; anonymous guests only while `MEET_GUEST_WHITEBOARD` is on, view-only until `MEET_GUEST_WHITEBOARD_DRAW` is approved |
 | 2 | Pen whiteboard | `tool:pen-whiteboard` | People who browse the tools, including activity runners in host-only rooms and guests where tools are open to everyone |
 | 3 | Classroom whiteboard | `whiteboard` | Rooms with classroom tools |
 
@@ -39,9 +39,12 @@ panes is titled **Whiteboard** with the pen icon.
 
 **Exceptions.**
 
-- Summon has no room view for the Tuturuuu Whiteboard, so it is shared through
-  Follow (layout mirroring) only. This is a known limit; the pen board keeps
-  Summon.
+- The Tuturuuu Whiteboard has its own room view (`board`), so its entry offers
+  **Bring everyone** and **Choose people** like the other activities. A host's
+  Summon opens it for members without room tools and for guests the guest
+  switch admits; an invitation from someone else opens it only for people who
+  may already browse the room's activities. Clients older than the `board`
+  view ignore such a Summon.
 - Opening the Whiteboard shows the boards linked to the meeting. The host links
   an existing workspace whiteboard or creates one from that picker; nothing is
   created automatically.
@@ -316,7 +319,13 @@ Under `packages/meet-core/src/features/call`:
 - `components/activities-merge.test.ts`: one Whiteboard and one Class timer, the
   fallbacks, and the Activities groups.
 - `components/activities-menu-merged.test.tsx`: the Activities menu with and
-  without `MEET_UX_V2`, and no "saved" wording.
+  without `MEET_UX_V2`, no "saved" wording, and the host and member catalogs
+  both opening the Tuturuuu Whiteboard.
+- `components/activities-dialog.test.tsx`: Bring everyone on the Tuturuuu
+  Whiteboard entry.
+- `components/room-navigation-policy.test.ts` and
+  `stage-layout/availability.test.ts`: the `board` room view and who it opens
+  for.
 - `stage-layout/room-stage-merged.test.tsx`: pane titles for every older id.
 - `components/timer-modes.test.tsx`: the switch defaults, Everyone through the
   class timer command, Just me without room writes, and the disabled reason.
@@ -329,8 +338,8 @@ Under `packages/meet-core/src/features/call`:
 - `whiteboard/socket-transport.test.ts`: a new line or arrow is held back
   until its second point; deletions and known lines always go out, and a
   closed socket forgets what it sent.
-- `stage-layout/whiteboard-policy.test.ts`: which board guests and hosts get
-  with the guest switch on and off.
+- `stage-layout/whiteboard-policy.test.ts`: which board guests, hosts and
+  members get with the guest switch on and off.
 - `components/call-account-gates.test.tsx`: the guest board pane and the
   sign-in state.
 - `stage-layout/use-stage-navigation.test.tsx`: guests follow onto the board

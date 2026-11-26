@@ -73,6 +73,7 @@ export function CallControlDock({
   programming,
   document,
   board,
+  memberBoard = false,
   penBoardFirst,
   layout,
   setLayout,
@@ -109,6 +110,8 @@ export function CallControlDock({
   document: Toggle;
   /** Absent where the person cannot use the board, such as a v2 guest. */
   board?: Toggle;
+  /** Lists the board without room tools (`whiteboardPolicy` `memberBoard`). */
+  memberBoard?: boolean;
   /** The Whiteboard entry opens the pen board first (`whiteboardPolicy`). */
   penBoardFirst?: boolean;
   layout: CallLayout;
@@ -159,6 +162,7 @@ export function CallControlDock({
       collaboration={
         roomTools.canUse ? { programming, document, board } : undefined
       }
+      board={!roomTools.canUse && memberBoard ? board : undefined}
       preview={
         roomTools.showPreview
           ? { onFeedback: () => onDrawer('feedback') }

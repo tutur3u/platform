@@ -22,6 +22,11 @@ export const isOutsideWorkspace = (person: {
 export interface WhiteboardPolicy {
   /** The Tuturuuu Whiteboard is listed for this person. */
   offerBoard: boolean;
+  /**
+   * A workspace member may open the Tuturuuu Whiteboard whoever may use the
+   * room's tools, so the host and every member draw on the same board.
+   */
+  memberBoard: boolean;
   /** The guest may open the Tuturuuu Whiteboard pane instead of sign-in. */
   guestBoard: boolean;
   /**
@@ -33,10 +38,11 @@ export interface WhiteboardPolicy {
 
 /**
  * Which whiteboard a person gets. Without Meet UX v2 nothing changes: the
- * board is listed and guests see the sign-in state. With it, guests use the
- * Tuturuuu Whiteboard only while the server switch is on; while it is off,
- * guests are offered the pen board, and so is everyone in a room with a guest,
- * so the room draws on one board.
+ * board is listed and guests see the sign-in state. With it, every workspace
+ * member gets the Tuturuuu Whiteboard, room tools or not; guests use it only
+ * while the server switch is on; while it is off, guests are offered the pen
+ * board, and so is everyone in a room with a guest, so the room draws on one
+ * board.
  */
 export function whiteboardPolicy({
   merged,
@@ -45,15 +51,22 @@ export function whiteboardPolicy({
   guestsPresent,
 }: WhiteboardPolicyInput): WhiteboardPolicy {
   if (!merged)
-    return { offerBoard: true, guestBoard: false, penBoardFirst: false };
+    return {
+      offerBoard: true,
+      memberBoard: false,
+      guestBoard: false,
+      penBoardFirst: false,
+    };
   if (requiresAccount)
     return {
       offerBoard: guestWhiteboard,
+      memberBoard: false,
       guestBoard: guestWhiteboard,
       penBoardFirst: false,
     };
   return {
     offerBoard: true,
+    memberBoard: true,
     guestBoard: false,
     penBoardFirst: guestsPresent && !guestWhiteboard,
   };

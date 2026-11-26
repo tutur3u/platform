@@ -384,6 +384,26 @@ it('shows Bring everyone in the split menu and summons the selected activity', (
   expect(navigation.reveal).toHaveBeenCalledWith('tool:polls');
 });
 
+it('offers Bring everyone for the Tuturuuu Whiteboard', () => {
+  const navigation = activityNavigation(true);
+  const action = { active: false, toggle: vi.fn() };
+  const boardLabel = messages.meet.collaboration.board;
+  renderMenu({
+    navigation,
+    collaboration: { programming: action, document: action, board: action },
+  });
+  open();
+  fireEvent.keyDown(
+    screen.getByRole('button', { name: `More ways to open ${boardLabel}` }),
+    { key: 'Enter' }
+  );
+  fireEvent.click(screen.getByRole('menuitem', { name: a.bring_everyone }));
+  expect(navigation.summon).toHaveBeenCalledWith('everyone', {
+    surface: 'board',
+  });
+  expect(navigation.reveal).toHaveBeenCalledWith('board');
+});
+
 it('keeps local Open available when the room disallows navigation', () => {
   const navigation = activityNavigation(false);
   renderMenu({ navigation });

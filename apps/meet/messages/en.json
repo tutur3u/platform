@@ -5789,6 +5789,7 @@
         "title": "Bring people to {surface}"
       },
       "surfaces": {
+        "board": "Whiteboard",
         "document": "Live document",
         "programming": "Co-Programming",
         "stage": "the stage"
