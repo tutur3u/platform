@@ -79,14 +79,14 @@ select public.open_upskii_live_class_room(
   (select id from public.workspaces where personal is true and creator_id = 'e3a54000-0000-4000-8000-000000009711'),
   'Live class'
 )->>'meetingId' as meeting_id \gset
-select isnt(:'meeting_id', null, 'a granted teacher opens a canonical room');
+select isnt(:'meeting_id'::uuid, null::uuid, 'a granted teacher opens a canonical room');
 select is(
   public.open_upskii_live_class_room(
     's4-test-class', 'e3a54000-0000-4000-8000-000000009731', 'live-class-teacher-1',
     'e3a54000-0000-4000-8000-000000009711',
     (select id from public.workspaces where personal is true and creator_id = 'e3a54000-0000-4000-8000-000000009711'),
     'Updated title'
-  )->>'meetingId', :'meeting_id', 'repeat open returns the same meeting'
+  )->>'meetingId', :'meeting_id'::text, 'repeat open returns the same meeting'
 );
 select is(
   public.open_upskii_live_class_room(
@@ -132,13 +132,13 @@ select ok(
 );
 select is(
   (select count(*) from private.upskii_live_class_releases
-   where class_id = 's4-test-class' and meeting_id = :'meeting_id'
+   where class_id = 's4-test-class' and meeting_id = :'meeting_id'::uuid
      and reason = 'Correct workshop class binding'),
   1::bigint, 'successful release records its class, room and reason'
 );
 select ok(
   not exists (select 1 from private.upskii_live_class_rooms where class_id = 's4-test-class')
-  and exists (select 1 from public.workspace_meetings where id = :'meeting_id'),
+  and exists (select 1 from public.workspace_meetings where id = :'meeting_id'::uuid),
   'service role can release the mapping while preserving the Meet room'
 );
 reset role;

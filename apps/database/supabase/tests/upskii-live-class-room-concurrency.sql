@@ -53,7 +53,7 @@ $$;
 select ok(pg_temp.await_s4_lock(:'first_pid'::integer, :'second_pid'::integer), 'second start waits on the first transaction');
 select extensions.dblink_exec('s4_first', 'commit');
 select meeting_id from extensions.dblink_get_result('s4_second') as result(meeting_id text) \gset second_
-select is(:'second_meeting_id', :'first_meeting_id', 'both starts return the same server-issued room');
+select is(:'second_meeting_id'::text, :'first_meeting_id'::text, 'both starts return the same server-issued room');
 select is(
   (select count(*) from public.workspace_meetings
    where creator_id = 'e3a54000-0000-4000-8000-000000009741'),
