@@ -8,10 +8,7 @@ import viMessages from '../../../../../apps/meet/messages/vi.json';
 const mocks = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: mocks.error } }));
 
-import {
-  roomMiraFailureContext,
-  showMeetingAiFailure,
-} from './failure-toast';
+import { roomMiraFailureContext, showMeetingAiFailure } from './failure-toast';
 
 afterEach(() => {
   cleanup();
