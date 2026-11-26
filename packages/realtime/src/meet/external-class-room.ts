@@ -75,6 +75,7 @@ export function applyExternalClassRoom(
       ...state,
       externalClassInitialized: true,
       settings: {
+        shareNotes: false,
         ...state.settings,
         allowAnonymousGuests: true,
         skipLobby: true,
