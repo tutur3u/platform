@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "When Teachers Become Students · EduFest 2026",
-    "description": "Workshop 4 at EduFest 2026, RMIT University Vietnam (SGS), 5 December 2026. Take an agentic AI class as a student, then flip to the teacher seat. 90 minutes, 50 seats."
+    "description": "Workshop 4 at EduFest 2026, RMIT University Vietnam (SGS), 5 December 2026. Take an agentic AI class as a student, then flip to the teacher seat. 45 minutes, 50 seats."
   },
   "seo": {
     "crumbHome": "Tuturuuu",
@@ -18,7 +18,7 @@
     "eyebrow": "EduFest 2026 · Workshop 4",
     "title": "When Teachers Become Students",
     "titleAccent": "Step Inside the Agentic AI Classroom",
-    "subtitle": "For 90 minutes, take an agentic AI class as a student on your own phone or laptop, then flip to the teacher seat to see how it was built. The lesson is AI-native teaching 101: AI that helps students learn rather than answer for them.",
+    "subtitle": "For 45 minutes, take an agentic AI class as a student on your own phone or laptop, then flip to the teacher seat to see how it was built. The lesson is AI-native teaching 101: AI that helps students learn rather than answer for them.",
     "date": "Date",
     "venue": "Venue",
     "toBeAnnounced": "To be announced",
@@ -55,39 +55,39 @@
     "title": "Run of show",
     "subtitle": "From a traditional setup to a cloud- and AI-native classroom. Upskii before class, Meet in class, Tasks after.",
     "host": "Workshop 4 · Vietnam Education Festival 2026",
-    "timesNote": "Minutes from the start",
+    "timesNote": "Doors 09:40 · Workshop 10:00–10:45 · 10:45–11:00 for overrun or extra Q&A. Hard stop at 11:00 (GMT+7).",
     "items": {
       "s0": {
         "title": "Doors: sign in as a student",
-        "body": "Scan the QR code or open the short link, then sign in to Upskii with Google or Microsoft. Floor helpers and backup cards cover Wi-Fi and sign-in."
+        "body": "Scan the QR code or open ttr.gg/edufest, sign in and join “AI-native teaching 101” before 10:00. Floor helpers have backup account cards."
       },
       "s1": {
         "title": "Today you are the students",
-        "body": "A traditional classroom in 60 seconds next to an agentic one, and what the room will try in the next 90 minutes."
+        "body": "Phúc invites you to open the class on your device and work through Lesson 2 with Cường."
       },
       "s2": {
         "title": "In the student seat",
-        "body": "Join the class by link, read Hints, not answers, ask the AI tutor (hints only), take the five-question AI quiz and explain your class AI rule to the English coach."
+        "body": "Read Lesson 2, ask the AI tutor for a hint in Guided mode and try the next step yourself. Submit the three-question Lesson 3 quiz."
       },
       "s3": {
         "title": "Flip to the teacher seat",
-        "body": "How the class was built: AI lessons from a five-line outline, live; AI-generated assessments; the results of the quiz you just took; the invite link."
+        "body": "Cường shows the outline beside the pre-generated AI lesson, then opens the results of the quiz you just took. If the student segment runs over, he covers both on one slide in two minutes."
       },
       "s4": {
         "title": "The class moves live",
-        "body": "Settings → Integrations shows Upskii linked to Tuturuuu, and starting the live class opens Meet. Everyone joins from the same link, guests included, and chooses at join whether Mira takes part."
+        "body": "Phúc selects “Start live class” to open Meet. Tap “Join live class” in Upskii, or scan the projected Meet room QR as a fallback."
       },
       "s5": {
         "title": "A live agentic classroom",
-        "body": "The responsible-AI lesson from Upskii with Follow me, a poll, a three-minute pair-talk timer, a whiteboard and the Upskii quiz in Quiz Arena. Q&A, transcript and notes run throughout."
+        "body": "Follow Lesson 4 with Follow me (4 min), vote in one poll (2 min), then play one Quiz Arena round with three questions from the Tuturuuu Teach course (5 min). Three minutes are reserved for slack. The presenter-room transcript runs throughout."
       },
       "s6": {
         "title": "Q&A, still live",
-        "body": "The meeting stays open while the moderator brings up the top-voted questions from Meet Q&A."
+        "body": "Phúc and Cường answer the top-voted Meet Q&A questions while the meeting is still open."
       },
       "s7": {
         "title": "After class",
-        "body": "End the meeting: AI notes become action items on the class project board, each linked back to the meeting, with what changed since last time. Keep the class, your quiz result and your lesson-plan task."
+        "body": "End the meeting, review the AI notes, choose an action item and save it to the class Project board. Take home your quiz result and a task to draft your own lesson."
       }
     },
     "seats": {
@@ -102,8 +102,6 @@
     },
     "leadBy": "Led by {lead}",
     "time": {
-      "before": "{n} min before",
-      "range": "{start}–{end} min",
       "duration": "{n} min"
     },
     "handover": "Handover",

@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Khi nhà giáo trở thành học sinh · EduFest 2026",
-    "description": "Workshop 4 về AI cho giáo dục tại EduFest 2026, Đại học RMIT Việt Nam (SGS), 05/12/2026. Học một lớp Agentic AI ở ghế học sinh, rồi đổi sang ghế giáo viên. 90 phút, 50 suất."
+    "description": "Workshop 4 về AI cho giáo dục tại EduFest 2026, Đại học RMIT Việt Nam (SGS), 05/12/2026. Học một lớp Agentic AI ở ghế học sinh, rồi đổi sang ghế giáo viên. 45 phút, 50 suất."
   },
   "seo": {
     "crumbHome": "Tuturuuu",
@@ -18,7 +18,7 @@
     "eyebrow": "EduFest 2026 · Workshop 4",
     "title": "Khi nhà giáo trở thành học sinh",
     "titleAccent": "Trải nghiệm lớp học với tác nhân AI",
-    "subtitle": "Trong 90 phút, thầy cô học một lớp với tác nhân AI ở ghế học sinh ngay trên điện thoại hoặc laptop, rồi đổi sang ghế giáo viên để xem lớp được dựng thế nào. Bài học là Dạy học AI-native nhập môn: AI giúp học sinh học chứ không làm bài thay.",
+    "subtitle": "Trong 45 phút, thầy cô học một lớp với tác nhân AI ở ghế học sinh ngay trên điện thoại hoặc laptop, rồi đổi sang ghế giáo viên để xem lớp được dựng thế nào. Bài học là Dạy học AI-native nhập môn: AI giúp học sinh học chứ không làm bài thay.",
     "date": "Thời gian",
     "venue": "Địa điểm",
     "toBeAnnounced": "Sẽ thông báo sớm",
@@ -55,39 +55,39 @@
     "title": "Kịch bản buổi học",
     "subtitle": "Từ cách dạy truyền thống đến lớp học trên nền tảng đám mây và AI. Upskii trước giờ học, Meet trong giờ học, Tasks sau giờ học.",
     "host": "Workshop 4 · Ngày hội Nhà giáo sáng tạo 2026",
-    "timesNote": "Tính theo phút từ lúc bắt đầu",
+    "timesNote": "09:40 mở cửa · 10:00–10:45 buổi học · 10:45–11:00 dự phòng hoặc hỏi đáp thêm. Kết thúc lúc 11:00 (GMT+7).",
     "items": {
       "s0": {
         "title": "Đón khách: đăng nhập như học sinh",
-        "body": "Quét mã QR hoặc mở đường dẫn ngắn, rồi đăng nhập Upskii bằng Google hoặc Microsoft. Đội hỗ trợ và thẻ tài khoản dự phòng giúp kết nối Wi-Fi và đăng nhập."
+        "body": "Quét mã QR hoặc mở ttr.gg/edufest, đăng nhập và tham gia lớp “Dạy học AI-native 101” trước 10:00. Đội hỗ trợ có thẻ tài khoản dự phòng."
       },
       "s1": {
         "title": "Hôm nay thầy cô là học sinh",
-        "body": "Một lớp học truyền thống trong 60 giây đặt cạnh một lớp học với tác nhân AI, và những gì cả phòng sẽ trải nghiệm trong 90 phút."
+        "body": "Phúc mời thầy cô mở lớp trên điện thoại hoặc máy tính để cùng học Bài 2 với Cường."
       },
       "s2": {
         "title": "Ở ghế học sinh",
-        "body": "Vào lớp bằng đường dẫn, đọc bài Gợi ý thay cho đáp án, hỏi gia sư AI (chỉ nhận gợi ý), làm bài kiểm tra AI năm câu và giải thích quy định dùng AI của lớp mình với trợ lý luyện tiếng Anh."
+        "body": "Đọc Bài 2, xin gia sư AI một gợi ý ở chế độ Guided rồi tự làm bước tiếp theo. Nộp bài kiểm tra 3 câu ở Bài 3."
       },
       "s3": {
         "title": "Đổi sang ghế giáo viên",
-        "body": "Lớp học được dựng thế nào: bài học AI từ dàn ý năm dòng, ngay tại chỗ; bài kiểm tra do AI tạo; kết quả bài kiểm tra vừa làm; đường dẫn mời vào lớp."
+        "body": "Cường đặt dàn ý cạnh bài học AI đã soạn sẵn, rồi mở kết quả bài kiểm tra cả phòng vừa nộp. Nếu phần trước kéo dài, Cường trình bày cả hai ý trên một slide trong 2 phút."
       },
       "s4": {
         "title": "Lớp học chuyển sang trực tuyến",
-        "body": "Cài đặt → Tích hợp cho thấy Upskii đã liên kết với Tuturuuu, và bắt đầu lớp trực tuyến sẽ mở Meet. Mọi người vào bằng cùng đường dẫn, kể cả khách, và tự chọn có để Mira tham gia khi vào lớp."
+        "body": "Phúc bấm “Bắt đầu lớp trực tiếp” để mở Meet. Thầy cô bấm “Vào lớp trực tiếp” trong Upskii hoặc quét mã QR của phòng Meet nếu cần."
       },
       "s5": {
         "title": "Lớp học trực tiếp với tác nhân AI",
-        "body": "Bài học về AI có trách nhiệm từ Upskii với Theo dõi tôi, bình chọn, hẹn giờ ba phút thảo luận cặp, bảng trắng và bài kiểm tra Upskii trong Quiz Arena. Hỏi đáp, bản ghi lời và ghi chú chạy suốt buổi."
+        "body": "Học Bài 4 với “Theo tôi” (4 phút), bình chọn một lần (2 phút), rồi chơi một vòng Quiz Arena với 3 câu từ khóa Tuturuuu Teach (5 phút). Có 3 phút dự phòng. Phòng diễn giả duy trì bản ghi lời nói suốt phần này."
       },
       "s6": {
         "title": "Hỏi đáp khi lớp vẫn trực tuyến",
-        "body": "Cuộc họp vẫn mở trong khi người điều phối đưa lên các câu hỏi được bình chọn nhiều nhất từ Hỏi đáp trong Meet."
+        "body": "Phúc và Cường trả lời các câu hỏi được bình chọn nhiều nhất trong Meet khi phòng vẫn mở."
       },
       "s7": {
         "title": "Sau giờ học",
-        "body": "Kết thúc cuộc họp: ghi chú AI thành việc cần làm trên bảng dự án của lớp, mỗi việc liên kết ngược về cuộc họp, kèm những gì thay đổi từ lần trước. Thầy cô giữ lại lớp học, kết quả bài kiểm tra và việc soạn giáo án."
+        "body": "Kết thúc buổi họp, xem ghi chú AI, chọn việc cần làm và lưu vào bảng công việc của dự án lớp. Thầy cô mang về kết quả bài kiểm tra và nhiệm vụ phác thảo một tiết học."
       }
     },
     "seats": {
@@ -102,8 +102,6 @@
     },
     "leadBy": "Dẫn dắt: {lead}",
     "time": {
-      "before": "{n} phút trước giờ",
-      "range": "Phút {start}–{end}",
       "duration": "{n} phút"
     },
     "handover": "Chuyển tiếp",

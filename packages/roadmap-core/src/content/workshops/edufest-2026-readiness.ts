@@ -37,8 +37,8 @@ export const VERDICTS: Readonly<Partial<Record<RunStepId, Verdict>>> = {
     owner: 'upskii',
     nextEta: null,
     left: {
-      en: 'Waits on the next Upskii release, then a live check of the class link, AI tutor, AI quiz and English coach.',
-      vi: 'Chờ bản phát hành Upskii tiếp theo, rồi kiểm tra thật đường dẫn lớp, gia sư AI, bài kiểm tra AI và trợ lý tiếng Anh.',
+      en: 'Waits on the next Upskii release, then a live check of the class link, guided L2 tutor and three-question quiz.',
+      vi: 'Chờ bản phát hành Upskii tiếp theo, rồi kiểm tra thật đường dẫn lớp, gia sư ở chế độ gợi ý trong Bài 2 và bài kiểm tra 3 câu.',
     },
   },
   s3: {
@@ -47,8 +47,8 @@ export const VERDICTS: Readonly<Partial<Record<RunStepId, Verdict>>> = {
     owner: 'upskii',
     nextEta: null,
     left: {
-      en: 'Waits on the next Upskii release, then a live check of AI lesson and quiz generation.',
-      vi: 'Chờ bản phát hành Upskii tiếp theo, rồi kiểm tra thật việc tạo bài học và bài kiểm tra bằng AI.',
+      en: 'Waits on the next Upskii release, then a live check of the prepared lesson and the class quiz results.',
+      vi: 'Chờ bản phát hành Upskii tiếp theo, rồi kiểm tra thật bài học đã soạn sẵn và kết quả bài kiểm tra của lớp.',
     },
   },
   s4: {

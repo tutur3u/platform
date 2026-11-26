@@ -4,13 +4,13 @@ import { useMemo } from 'react';
 import { VERDICTS } from '../../content/workshops/edufest-2026-readiness';
 import {
   type Lead,
-  minutesLabel,
   type Product,
   RUN_OF_SHOW,
   type RunStep,
   shortDate,
   stepReadiness,
   vietnamDay,
+  workshopTime,
 } from '../../content/workshops/edufest-2026-run';
 import { type BugFeed, groupBugs } from '../../live/edufest-bugs';
 import type { Lang } from '../shared';
@@ -43,14 +43,11 @@ function StepLead({ step, t }: { step: RunStep; t: EduMessages }) {
 }
 
 function StepTime({ step, t }: { step: RunStep; t: EduMessages }) {
-  const label = minutesLabel(step);
   return (
     <div className="ws-run-time">
       <span className="ws-run-code">{step.id.toUpperCase()}</span>
       <span className="ws-run-mins">
-        {label.kind === 'before'
-          ? fill(t.agenda.time.before, { n: label.minutes })
-          : fill(t.agenda.time.range, { start: label.start, end: label.end })}
+        {workshopTime(step.start)}–{workshopTime(step.end)}
       </span>
       <span className="ws-run-len">
         {fill(t.agenda.time.duration, { n: step.end - step.start })}

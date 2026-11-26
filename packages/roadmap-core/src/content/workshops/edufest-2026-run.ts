@@ -1,5 +1,5 @@
 /**
- * EduFest 2026 workshop: the 90-minute run of show and how ready each step
+ * EduFest 2026 workshop: the 45-minute run of show and how ready each step
  * is. Text lives in messages/edufest-2026.{en,vi}.json (agenda.items); the
  * curated rehearsal verdicts live in edufest-2026-readiness.ts. The derived
  * status always comes from the roadmap deliverables a step depends on.
@@ -74,10 +74,10 @@ const step = (
  */
 export const RUN_OF_SHOW: readonly RunStep[] = [
   step('s0', [-20, 0], 'student', ['crew'], ['upskii'], ['shortener-workers']),
-  step('s1', [0, 6], 'everyone', ['phuc'], [], []),
+  step('s1', [0, 3], 'everyone', ['phuc'], [], []),
   step(
     's2',
-    [6, 28],
+    [3, 13],
     'student',
     ['cuong'],
     ['upskii'],
@@ -85,7 +85,7 @@ export const RUN_OF_SHOW: readonly RunStep[] = [
   ),
   step(
     's3',
-    [28, 40],
+    [13, 18],
     'teacher',
     ['cuong'],
     ['upskii'],
@@ -93,9 +93,9 @@ export const RUN_OF_SHOW: readonly RunStep[] = [
   ),
   step(
     's4',
-    [40, 45],
+    [18, 20],
     'everyone',
-    ['cuong', 'phuc'],
+    ['phuc'],
     ['upskii', 'meet'],
     [
       'upskii-account-linking',
@@ -108,9 +108,9 @@ export const RUN_OF_SHOW: readonly RunStep[] = [
   ),
   step(
     's5',
-    [45, 70],
+    [20, 34],
     'student',
-    ['phuc', 'cuong'],
+    ['phuc'],
     ['meet', 'upskii'],
     [
       'meet-upskii-presenter',
@@ -122,7 +122,7 @@ export const RUN_OF_SHOW: readonly RunStep[] = [
   ),
   step(
     's6',
-    [70, 82],
+    [34, 40],
     'everyone',
     ['phuc', 'cuong'],
     ['meet'],
@@ -130,7 +130,7 @@ export const RUN_OF_SHOW: readonly RunStep[] = [
   ),
   step(
     's7',
-    [82, 90],
+    [40, 45],
     'teacher',
     ['phuc'],
     ['meet', 'tasks'],
@@ -139,7 +139,7 @@ export const RUN_OF_SHOW: readonly RunStep[] = [
   ),
 ];
 
-export const SESSION_MINUTES = 90;
+export const SESSION_MINUTES = 45;
 
 const RANK: Record<WorkshopStatus, number> = {
   planned: 0,
@@ -229,11 +229,11 @@ export function stepReadiness(
   return { kind: 'checked', derived, verdict, overdue };
 }
 
-/** "8–22" style minutes; the doors step reads as minutes before the start. */
-export function minutesLabel(step: Pick<RunStep, 'start' | 'end'>) {
-  return step.start < 0
-    ? { kind: 'before' as const, minutes: -step.start }
-    : { kind: 'range' as const, start: step.start, end: step.end };
+/** Local workshop time in ICT, relative to the 10:00 start. */
+export function workshopTime(offset: number): string {
+  const minutes = 10 * 60 + offset;
+  const hour = Math.floor(minutes / 60);
+  return `${String(hour).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
 }
 
 /** A short date in Vietnam time: "24 Nov" in English, "24/11" in Vietnamese. */

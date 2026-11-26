@@ -18,7 +18,6 @@ import type { WorkshopStatus } from './edufest-2026.ts';
 import { VERDICTS } from './edufest-2026-readiness.ts';
 import {
   LEADS,
-  minutesLabel,
   READINESS,
   RUN_OF_SHOW,
   RUN_STEPS,
@@ -27,6 +26,7 @@ import {
   stepReadiness,
   TEAMS,
   type Verdict,
+  workshopTime,
   worstOf,
 } from './edufest-2026-run.ts';
 
@@ -37,7 +37,7 @@ const deliverables = new Map(
 );
 
 describe('EduFest run of show: structure', () => {
-  it('runs S0 to S7 back to back, from doors to the 90-minute close', () => {
+  it('runs S0 to S7 back to back, from doors to the 45-minute close', () => {
     assert.deepEqual(
       RUN_OF_SHOW.map((step) => step.id),
       [...RUN_STEPS]
@@ -68,13 +68,13 @@ describe('EduFest run of show: structure', () => {
     assert.ok(firstStudent < firstTeacher);
   });
 
-  it('names a lead for every step, and two on each handover', () => {
+  it('names a lead for every step, with Phúc opening the live room', () => {
     for (const step of RUN_OF_SHOW) {
       assert.ok(step.leads.length > 0, step.id);
       for (const lead of step.leads) assert.ok(LEADS.includes(lead), step.id);
     }
     const s4 = RUN_OF_SHOW.find((step) => step.id === 's4');
-    assert.deepEqual(s4?.leads, ['cuong', 'phuc']);
+    assert.deepEqual(s4?.leads, ['phuc']);
   });
 
   it('takes questions while the meeting is live, before it ends', () => {
@@ -130,16 +130,12 @@ describe('EduFest run of show: structure', () => {
     }
   });
 
-  it('labels minutes from the start, and doors as before it', () => {
-    assert.deepEqual(minutesLabel({ start: -20, end: 0 }), {
-      kind: 'before',
-      minutes: 20,
-    });
-    assert.deepEqual(minutesLabel({ start: 8, end: 22 }), {
-      kind: 'range',
-      start: 8,
-      end: 22,
-    });
+  it('shows ICT slot times from doors to the 10:45 close', () => {
+    assert.deepEqual(
+      RUN_OF_SHOW.map((step) => workshopTime(step.start)),
+      ['09:40', '10:00', '10:03', '10:13', '10:18', '10:20', '10:34', '10:40']
+    );
+    assert.equal(workshopTime(SESSION_MINUTES), '10:45');
     assert.equal(shortDate('2026-11-24', 'en'), '24 Nov');
     assert.equal(shortDate('2026-11-24', 'vi'), '24/11');
     // 20:00 UTC is already the next day in Vietnam.
