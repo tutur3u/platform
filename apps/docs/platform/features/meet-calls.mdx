@@ -2204,17 +2204,18 @@ Operating requirements:
   per-IP budget. Each guest read is checked against three budgets in this
   order, and the first exhausted window refuses it without charging the
   budgets after it:
-  1. the guest: 120 reads a minute, 4,000 an hour, 30,000 a day, and 30
+  1. the guest: 120 reads a minute, 6,000 an hour, 45,000 a day, and 30
      writes a minute, 300 an hour, 1,500 a day
      (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`), so a guest
      over it charges nothing shared;
   2. the network: 75 guests' minute and hour budget combined (9,000 reads a
-     minute, 300,000 an hour; 2,250 writes a minute, 22,500 an hour), so a
+     minute, 450,000 an hour; 2,250 writes a minute, 22,500 an hour), so a
      class of about 50 guests behind one school NAT keeps working at the
      call's worst-case polling with at least 1.5x headroom while many sessions from one
      address stay bounded. An IPv6 client counts as its /64, so rotating
      addresses inside it opens no fresh cap;
-  3. the meeting: 100 guests' minute and hour budget combined, so minting
+  3. the meeting: 100 guests' minute and hour budget combined (12,000 reads a
+     minute, 600,000 an hour; 3,000 writes a minute, 30,000 an hour), so minting
      guest sessions for one meeting cannot multiply its traffic. A network
      over its own cap never charges it, so one network adds at most 9,000
      reads a minute to a meeting and exhausting a meeting's 12,000 takes more
@@ -2231,11 +2232,15 @@ Operating requirements:
   `packages/meet-core/src/features/call/lib/guest-rate-limit-actor.test.ts` and
   `guest-polling-budget.test.ts` (two guests behind one address through a
   60-minute class at the call's polling intervals) and
-  `guest-network-aggregate.test.ts` (50 guests behind one network through a
-  60-minute class at the worst-case polling: a live poll, the classroom pen
-  board, the board list, a running transcript and Room Mira, with board
-  ticket renewals, votes and pen strokes as writes; peak demand is 3,100 reads
-  a minute and 186,000 an hour, 200 writes a minute and 12,000 an hour).
+  `guest-network-aggregate.test.ts` (50 guests behind one network: five
+  minutes in the lobby polling the join seed every 20 seconds, then a 60-minute
+  class at the worst-case polling: a live poll, the classroom pen board, the
+  board list, a running transcript and Room Mira, with a 30-second Mira
+  settling burst every 2 seconds, and board ticket renewals, votes and pen
+  strokes as writes. One guest peaks at 77 reads a minute and 3,735 an hour,
+  at least 1.5x under its own budget, and 4 writes a minute and 240 an hour;
+  the class peaks at 3,850 reads a minute and 186,750 an hour, 200 writes a
+  minute and 12,000 an hour).
 - In-call polling intervals: polls every 15 seconds, or every 3 seconds while
   the polls panel is open or a poll runs; transcript consent every 5 seconds
   while a transcript runs or a choice is needed, else every 20 seconds; Room

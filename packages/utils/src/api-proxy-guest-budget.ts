@@ -61,9 +61,11 @@ export const GUEST_ADDRESS_MULTIPLIER = 75;
 export const GUEST_SCOPE_MULTIPLIER = 100;
 
 /**
- * One guest's budget. In-call polling (polls, transcript consent, Room Mira,
- * the board list or the classroom pen board) stays under a minute's and an
- * hour's allowance with room to spare.
+ * One guest's budget. At the call's worst-case polling (a live poll, the
+ * classroom pen board, the board list, a running transcript and Room Mira,
+ * with a Mira settling burst and the lobby's polling before admission) a
+ * guest keeps at least 1.5x headroom on its minute and hour reads, and the
+ * day's reads cover about twelve such hours.
  */
 export function guestRateLimits(): RateLimitProfile {
   const config = (
@@ -79,8 +81,8 @@ export function guestRateLimits(): RateLimitProfile {
   return {
     get: [
       config('minute', '1 m', 120, 'API_PROXY_GUEST_READ_LIMIT_MINUTE'),
-      config('hour', '1 h', 4000, 'API_PROXY_GUEST_READ_LIMIT_HOUR'),
-      config('day', '1 d', 30_000, 'API_PROXY_GUEST_READ_LIMIT_DAY'),
+      config('hour', '1 h', 6000, 'API_PROXY_GUEST_READ_LIMIT_HOUR'),
+      config('day', '1 d', 45_000, 'API_PROXY_GUEST_READ_LIMIT_DAY'),
     ],
     mutate: [
       config('minute', '1 m', 30, 'API_PROXY_GUEST_MUTATE_LIMIT_MINUTE'),
