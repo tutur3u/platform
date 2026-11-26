@@ -1,15 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const isIPBlocked = vi.fn();
+const mocks = vi.hoisted(() => ({ isIPBlocked: vi.fn() }));
 vi.mock('../index', () => ({
-  isIPBlocked: (...args: unknown[]) => isIPBlocked(...args),
+  isIPBlocked: (...args: unknown[]) => mocks.isIPBlocked(...args),
 }));
 
-const {
+import {
   isIPBlockedReusingRecentClear,
   RECENT_IP_CLEAR_TTL_MS,
   resetRecentIpClears,
-} = await import('../recent-ip-block');
+} from '../recent-ip-block';
+
+const { isIPBlocked } = mocks;
 
 const block = {
   id: 'block-1',
