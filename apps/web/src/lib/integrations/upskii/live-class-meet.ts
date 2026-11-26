@@ -57,9 +57,9 @@ async function roomCommand(
 }
 
 export async function initializeLiveClassRoom(room: RoomIdentity) {
-  z.object({ ready: z.literal(true) }).parse(
-    await roomCommand(room, 'external-class.initialize')
-  );
+  return z
+    .object({ ready: z.boolean() })
+    .parse(await roomCommand(room, 'external-class.initialize')).ready;
 }
 
 export async function isLiveClassRoomOpen(room: RoomIdentity) {

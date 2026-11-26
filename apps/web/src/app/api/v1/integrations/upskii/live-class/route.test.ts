@@ -98,6 +98,7 @@ describe('Upskii live class integration', () => {
     });
     fixtures.openRoom.mockResolvedValue({ kind: 'room', meetingId });
     fixtures.isLive.mockResolvedValue(true);
+    fixtures.initializeRoom.mockResolvedValue(true);
   });
 
   it('returns the canonical Meet URL using only the transactional room ID', async () => {
@@ -149,6 +150,26 @@ describe('Upskii live class integration', () => {
     expect(fixtures.limitStatus).toHaveBeenCalledWith('class-1');
     expect(fixtures.findRoom).not.toHaveBeenCalled();
     expect(fixtures.isLive).not.toHaveBeenCalled();
+  });
+
+  it('uses an independent credential lane for status', async () => {
+    const statuses = await Promise.all(
+      Array.from({ length: 100 }, () => send(status))
+    );
+    const opened = await send(start);
+    expect(statuses.every((response) => response.status === 200)).toBe(true);
+    expect(fixtures.credentials.mock.calls.map(([, lane]) => lane)).toEqual([
+      ...Array(100).fill('live-class-status'),
+      'live-class',
+    ]);
+    expect(opened.status).toBe(200);
+  });
+
+  it('returns no URL when the canonical room has ended and cannot restart', async () => {
+    fixtures.initializeRoom.mockResolvedValueOnce(false);
+    const response = await send(start);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ code: 'ROOM_CLOSED' });
   });
 
   it('refuses start retry by a different teacher', async () => {

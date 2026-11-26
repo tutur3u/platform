@@ -41,7 +41,8 @@ export function roomService(
     state,
     token,
     input,
-    formsEnv.connectedUsers ?? new Set()
+    formsEnv.connectedUsers ?? new Set(),
+    features
   );
   if (externalClass) return externalClass;
   if (token.scopes.includes(MEET_EXTERNAL_CLASS_SCOPE)) {

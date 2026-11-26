@@ -3,21 +3,22 @@
 select plan(4);
 
 begin;
-insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data)
-values ('00000000-0000-4000-8000-000000009741', 'live-class-race@example.com', now(), '{}'::jsonb);
+select set_config('request.jwt.claims', '{}', true);
+insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
+values ('e3a54000-0000-4000-8000-000000009741', 'live-class-race@example.com', now(), '{}'::jsonb, '{}'::jsonb);
 insert into public.workspaces (id, name, personal, creator_id)
-select '00000000-0000-4000-8000-000000009742', 'Live class race', true, '00000000-0000-4000-8000-000000009741'
+select 'e3a54000-0000-4000-8000-000000009742', 'Live class race', true, 'e3a54000-0000-4000-8000-000000009741'
 where not exists (
-  select from public.workspaces where personal is true and creator_id = '00000000-0000-4000-8000-000000009741'
+  select from public.workspaces where personal is true and creator_id = 'e3a54000-0000-4000-8000-000000009741'
 );
 insert into public.workspace_members (ws_id, user_id, type)
 select id, creator_id, 'MEMBER' from public.workspaces
-where personal is true and creator_id = '00000000-0000-4000-8000-000000009741'
+where personal is true and creator_id = 'e3a54000-0000-4000-8000-000000009741'
 on conflict do nothing;
 insert into private.external_account_links (id, provider, external_subject, user_id)
-values ('00000000-0000-4000-8000-000000009743', 'upskii', 'live-class-race-teacher', '00000000-0000-4000-8000-000000009741');
+values ('e3a54000-0000-4000-8000-000000009743', 'upskii', 'live-class-race-teacher', 'e3a54000-0000-4000-8000-000000009741');
 insert into private.upskii_live_class_grants (link_id)
-values ('00000000-0000-4000-8000-000000009743');
+values ('e3a54000-0000-4000-8000-000000009743');
 commit;
 
 select extensions.dblink_connect('s4_first', pg_temp.fixture_dblink_connstr());
@@ -30,10 +31,10 @@ returns text language sql as $$
   select $query$
     select public.open_upskii_live_class_room(
       's4-concurrency-fixture',
-      '00000000-0000-4000-8000-000000009743',
+      'e3a54000-0000-4000-8000-000000009743',
       'live-class-race-teacher',
-      '00000000-0000-4000-8000-000000009741',
-      (select id from public.workspaces where personal is true and creator_id = '00000000-0000-4000-8000-000000009741'),
+      'e3a54000-0000-4000-8000-000000009741',
+      (select id from public.workspaces where personal is true and creator_id = 'e3a54000-0000-4000-8000-000000009741'),
       'S4 concurrency fixture'
     )->>'meetingId'
   $query$;
@@ -63,17 +64,17 @@ select meeting_id from extensions.dblink_get_result('s4_second') as result(meeti
 select is(:'second_meeting_id', :'first_meeting_id', 'both starts return the same server-issued room');
 select is(
   (select count(*) from public.workspace_meetings
-   where creator_id = '00000000-0000-4000-8000-000000009741'),
+   where creator_id = 'e3a54000-0000-4000-8000-000000009741'),
   1::bigint, 'concurrent starts persist one meeting'
 );
 
 select extensions.dblink_disconnect('s4_second');
 select extensions.dblink_disconnect('s4_first');
 begin;
-delete from public.workspace_meetings where creator_id = '00000000-0000-4000-8000-000000009741';
-delete from auth.users where id = '00000000-0000-4000-8000-000000009741';
-delete from public.workspaces where personal is true and creator_id = '00000000-0000-4000-8000-000000009741';
-delete from public.users where id = '00000000-0000-4000-8000-000000009741';
+delete from public.workspace_meetings where creator_id = 'e3a54000-0000-4000-8000-000000009741';
+delete from auth.users where id = 'e3a54000-0000-4000-8000-000000009741';
+delete from public.workspaces where personal is true and creator_id = 'e3a54000-0000-4000-8000-000000009741';
+delete from public.users where id = 'e3a54000-0000-4000-8000-000000009741';
 commit;
 
 select * from finish();

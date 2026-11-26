@@ -3,6 +3,8 @@ import {
   applyExternalClassRoom,
   MEET_EXTERNAL_CLASS_SCOPE,
 } from './external-class-room';
+import { admitOrHold } from './room-admission';
+import { endMeetRoom } from './room-ending';
 import { createMeetPresence, createMeetRoomSnapshot } from './room';
 import { meetRealtimeTokenPayloadSchema } from './primitives';
 
@@ -78,6 +80,35 @@ describe('external class room service', () => {
     expect(
       applyExternalClassRoom(result.state, token, status, connected)?.body
     ).toEqual({ live: true });
+  });
+
+  it('restarts an ended session within its original room allowance and preserves settings', () => {
+    const now = new Date().toISOString();
+    const joined = admitOrHold(createMeetRoomSnapshot(), token, now).state;
+    const ended = endMeetRoom(
+      {
+        ...joined,
+        settings: {
+          allowAnonymousGuests: false,
+          shareNotes: false,
+          skipLobby: false,
+        },
+      },
+      now
+    );
+    const reopened = applyExternalClassRoom(ended, token, initialize, empty);
+    expect(reopened?.body).toEqual({ ready: true });
+    expect(reopened?.state.ended).toBe(false);
+    expect(reopened?.state.budget?.expiresAt).toBe(ended.budget?.expiresAt);
+    expect(reopened?.state.settings).toEqual(ended.settings);
+    expect(
+      applyExternalClassRoom(
+        { ...ended, budget: undefined },
+        token,
+        initialize,
+        empty
+      )?.body
+    ).toEqual({ ready: false });
   });
 
   it('requires the dedicated service scope', () => {

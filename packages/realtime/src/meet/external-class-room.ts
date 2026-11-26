@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import type { MeetClassFeatures } from './class-features';
 import type { MeetRealtimeTokenPayload } from './primitives';
+import { applyRoomRestore } from './room-lifecycle';
 import type { RoomServiceResult, RoomServiceState } from './room-service';
 
 export const MEET_EXTERNAL_CLASS_SCOPE = 'meet:external-class';
@@ -12,7 +14,8 @@ export function applyExternalClassRoom(
   state: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
-  connected: ReadonlySet<string>
+  connected: ReadonlySet<string>,
+  features?: MeetClassFeatures
 ): RoomServiceResult | null {
   const parsed = command.safeParse(input);
   if (!parsed.success) return null;
@@ -40,8 +43,27 @@ export function applyExternalClassRoom(
     return { state, body: { live } };
   }
 
+  if (state.ended) {
+    const restored = applyRoomRestore(
+      state,
+      token,
+      {
+        action: 'room.restore',
+        expectedVersion: state.lifecycle?.version ?? 0,
+      },
+      Date.now(),
+      features
+    );
+    return restored && !restored.status
+      ? {
+          state: { ...restored.state, externalClassInitialized: true },
+          body: { ready: true },
+        }
+      : { state, body: { ready: false } };
+  }
+
   if (state.externalClassInitialized) return { state, body: { ready: true } };
-  if (state.ended || state.lifecycle?.hadConnection || state.budget) {
+  if (state.lifecycle?.hadConnection || state.budget) {
     return {
       state: { ...state, externalClassInitialized: true },
       body: { ready: true },

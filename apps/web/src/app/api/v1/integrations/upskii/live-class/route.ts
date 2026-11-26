@@ -164,11 +164,12 @@ async function linkedAction(
   )
     return refusal('START_DENIED', 403);
 
-  await initializeLiveClassRoom({
+  const ready = await initializeLiveClassRoom({
     meetingId: result.meetingId,
     userId: link.user_id,
     wsId,
   });
+  if (!ready) return refusal('ROOM_CLOSED', 409);
   if (
     !(await activeLink(admin, link.id, link.external_subject)) ||
     !(await store.hasGrant(link.id))
@@ -182,10 +183,45 @@ async function linkedAction(
   });
 }
 
+async function readLiveClassBody(request: NextRequest): Promise<unknown> {
+  const reader = request.body?.getReader();
+  if (!reader) return null;
+  const decoder = new TextDecoder();
+  let bytes = 0;
+  let text = '';
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    void reader.cancel().catch(() => undefined);
+  }, 2000);
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (timedOut) return null;
+      if (done) return JSON.parse(text + decoder.decode());
+      bytes += value.byteLength;
+      if (bytes > 16_384) {
+        void reader.cancel().catch(() => undefined);
+        return null;
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+    reader.releaseLock();
+  }
+}
+
 export async function POST(request: NextRequest) {
-  const auth = await requireUpskiiAppCredentials(request, 'live-class');
+  const parsed = bodySchema.safeParse(await readLiveClassBody(request));
+  const route =
+    parsed.success && parsed.data.action === 'status'
+      ? 'live-class-status'
+      : 'live-class';
+  const auth = await requireUpskiiAppCredentials(request, route);
   if (!auth.ok) return auth.response;
-  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return refusal('INVALID_REQUEST', 400);
   try {
     return await (parsed.data.action === 'status'

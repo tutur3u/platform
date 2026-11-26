@@ -1,3 +1,4 @@
+import { UPSKII_APP_ID } from './constants';
 import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
 import { secretKeyPart } from '@/lib/external-apps/exchange-rate-limit';
 import {
@@ -11,6 +12,7 @@ export type AccountLinkRoute =
   | 'link'
   | 'link-status'
   | 'live-class'
+  | 'live-class-status'
   | 'unlink';
 
 function prefix(route: AccountLinkRoute) {
@@ -33,18 +35,29 @@ export function admitAccountLinkRequest({
   ip: string;
   route: AccountLinkRoute;
 }) {
-  return consume([
+  // A valid-shaped status credential gets an isolated pre-auth secret bucket.
+  // Invalid secrets still meet the source lock and failure pacing in access.ts.
+  const statusCredential =
+    route === 'live-class-status' && appId === UPSKII_APP_ID && !!appSecret;
+  const counters = [
     {
-      bucket: 'accountLinkIp',
-      failClosed: true,
-      key: `${prefix(route)}:ip:${keyPart(guardSourceBucket(ip))}`,
-    },
-    {
-      bucket: 'accountLinkAttempt',
+      bucket: statusCredential ? 'liveClassStatusApp' : 'accountLinkAttempt',
       failClosed: true,
       key: `${prefix(route)}:app:${keyPart(appId)}:secret:${secretKeyPart(appSecret)}`,
     },
-  ]);
+  ] satisfies Parameters<typeof consume>[0];
+  return consume(
+    statusCredential
+      ? counters
+      : [
+          {
+            bucket: 'accountLinkIp',
+            failClosed: true,
+            key: `${prefix(route)}:ip:${keyPart(guardSourceBucket(ip))}`,
+          },
+          ...counters,
+        ]
+  );
 }
 
 /** Counts a request whose app credentials verified, per app and user. */
@@ -59,7 +72,8 @@ export function limitVerifiedAccountLinkRequest({
 }) {
   return consume([
     {
-      bucket: 'accountLinkApp',
+      bucket:
+        route === 'live-class-status' ? 'liveClassStatusApp' : 'accountLinkApp',
       failClosed: true,
       key: `${prefix(route)}:app:${keyPart(appId)}`,
     },
@@ -81,7 +95,7 @@ export function limitLiveClassStatus(classId: string) {
     {
       bucket: 'liveClassStatus',
       failClosed: true,
-      key: `${prefix('live-class')}:class:${keyPart(classId)}`,
+      key: `${prefix('live-class-status')}:class:${keyPart(classId)}`,
     },
   ]);
 }
