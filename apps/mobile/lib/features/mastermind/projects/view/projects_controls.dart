@@ -158,8 +158,9 @@ class _StatusLine extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: colors.mutedForeground),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
             ),
           ),
         ],

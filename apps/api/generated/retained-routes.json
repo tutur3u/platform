@@ -2194,7 +2194,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/reply-attachments/[uploadId]/route.ts",
-    "sourceSha256": "4c445e66050e88499b0d3d9da4651671a1809df3fcf70cf858563d9541e90f5e",
+    "sourceSha256": "01d48b5546d7e84f62f873d7c500dc0beb1f4bf9ccdb821f39a3ae699bd8c237",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2264,7 +2264,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/messages/route.ts",
-    "sourceSha256": "d0c7a8acce1d326ca86ab4d5c349371be135507e88ac0c3a12ad7c739c6ddb5e",
+    "sourceSha256": "fd3549c72130d0da2e7e59daed7856c8efe9148906967c30b409b2f9913c0b14",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

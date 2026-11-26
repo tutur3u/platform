@@ -52,8 +52,9 @@ class HttpProjectsRepository implements ProjectsRepository {
     final live = await _api.getJson('/api/v1/mastermind/fleet/live');
     final listed = [
       for (final raw in live['machines'] as List<dynamic>? ?? const [])
-        if (raw case {'machineId': final String id}
-            when _machineId.hasMatch(id))
+        if (raw case {
+          'machineId': final String id,
+        } when _machineId.hasMatch(id))
           (id: id, connected: raw['connected'] == true),
     ];
     final bridge =

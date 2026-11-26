@@ -69,12 +69,15 @@ void main() {
         'idempotencyKey': _reply,
         'attachments': [upload],
       };
-      when(() => api.postJson(reservePath, reserve))
-          .thenAnswer((_) async => {'uploadId': upload});
-      when(() => api.putBytes(uploadPath, file.bytes))
-          .thenThrow(const ApiException.transport(message: 'timeout'));
-      when(() => api.getJson(uploadPath))
-          .thenAnswer((_) async => {'uploadId': upload, 'state': 'ready'});
+      when(
+        () => api.postJson(reservePath, reserve),
+      ).thenAnswer((_) async => {'uploadId': upload});
+      when(
+        () => api.putBytes(uploadPath, file.bytes),
+      ).thenThrow(const ApiException.transport(message: 'timeout'));
+      when(
+        () => api.getJson(uploadPath),
+      ).thenAnswer((_) async => {'uploadId': upload, 'state': 'ready'});
       when(() => api.postJson(replyPath, reply)).thenAnswer(
         (_) async => {
           'id': _reply,
@@ -168,10 +171,9 @@ void main() {
 
   test('reads projects, machines and history', () async {
     when(() => api.getJson(any())).thenAnswer((invocation) async {
-      final path = Uri.parse(invocation.positionalArguments.first as String)
-          .path
-          .split('/')
-          .last;
+      final path = Uri.parse(
+        invocation.positionalArguments.first as String,
+      ).path.split('/').last;
       return switch (path) {
         'projects' => {
           'machineId': 'skr-m4',
@@ -302,8 +304,9 @@ void main() {
   );
 
   test('records a read marker', () async {
-    when(() => api.postJson(any(), any()))
-        .thenAnswer((_) async => {'saved': true});
+    when(
+      () => api.postJson(any(), any()),
+    ).thenAnswer((_) async => {'saved': true});
     final marker = repository.markRead(
       machineId: 'skr-m4',
       environmentId: 'env-2',
@@ -329,8 +332,9 @@ void main() {
       itemCount: 12,
     );
     // Web lost a race with another marker: the badge must stay.
-    when(() => api.postJson(any(), any()))
-        .thenAnswer((_) async => {'saved': false});
+    when(
+      () => api.postJson(any(), any()),
+    ).thenAnswer((_) async => {'saved': false});
     expect(await mark(), isFalse);
     when(() => api.postJson(any(), any())).thenAnswer((_) async => {});
     await expectLater(
