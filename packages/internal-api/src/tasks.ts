@@ -2,7 +2,6 @@ export {
   createWorkspaceTaskProject,
   updateWorkspaceTaskProject,
 } from './task-project-mutations';
-
 import { getCurrentUserTask } from './tasks-dashboard';
 export * from './tasks-dashboard';
 
