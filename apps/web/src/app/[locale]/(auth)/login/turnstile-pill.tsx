@@ -62,14 +62,14 @@ export function TurnstilePill({
       data-turnstile-state={state}
     >
       <div className="flex min-h-9 items-center gap-1">
-        <p
+        <div
           aria-live="polite"
           className="inline-flex min-h-8 items-center gap-2 rounded-full bg-secondary px-3.5 font-semibold text-muted-foreground text-xs"
           role="status"
         >
           <PillIcon state={state} />
           <span>{t(TURNSTILE_PILL_LABEL_KEYS[state])}</span>
-        </p>
+        </div>
         {state === 'failed' && onRetry ? (
           <button
             className="inline-flex min-h-8 items-center gap-1.5 rounded-full px-3 font-semibold text-foreground text-xs underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2"

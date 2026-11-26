@@ -28,12 +28,11 @@ it('serves only exact request hashes with origin-locked bridge and strict CSP', 
     )
   );
   expect(response.status).toBe(200);
-  expect(response.headers.get('content-security-policy')).toContain(
-    "default-src 'none'"
-  );
-  expect(response.headers.get('content-security-policy')).toContain(
-    'frame-ancestors https://tuturuuu.com'
-  );
+  const csp = response.headers.get('content-security-policy') ?? '';
+  expect(csp).toContain("default-src 'none'");
+  expect(csp).toContain('connect-src https://challenges.cloudflare.com');
+  expect(csp).not.toContain('data:');
+  expect(csp).toContain('frame-ancestors https://tuturuuu.com');
   const html = await response.text();
   expect(html).toContain('window.__tuturuuuNativeIntegrityResult=result');
   expect(html).toContain('"action":"native_integrity"');

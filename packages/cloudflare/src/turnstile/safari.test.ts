@@ -31,6 +31,19 @@ describe('withTurnstileCsp', () => {
     const policy = `script-src ${TURNSTILE_ORIGIN}`;
     expect(withTurnstileCsp(policy)).toBe(policy);
   });
+
+  it('adds only the Turnstile origin to connect-src and never widens it with data:', () => {
+    const policy = withTurnstileCsp(
+      "default-src 'self'; script-src 'self'; frame-src 'self'; connect-src 'self'"
+    );
+    const connectSrc = policy
+      .split(';')
+      .map((directive) => directive.trim())
+      .find((directive) => directive.startsWith('connect-src '));
+
+    expect(connectSrc).toBe(`connect-src 'self' ${TURNSTILE_ORIGIN}`);
+    expect(connectSrc).not.toContain('data:');
+  });
 });
 
 describe('createTurnstileRetryScheduler', () => {

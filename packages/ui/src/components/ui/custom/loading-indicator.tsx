@@ -2,7 +2,7 @@ import { cn } from '@tuturuuu/utils/format';
 
 export function LoadingIndicator({ className }: { className?: string }) {
   return (
-    <div className="inline-flex items-center rounded-md border border-transparent text-base">
+    <span className="inline-flex items-center rounded-md border border-transparent text-base">
       <svg
         className={cn('animate-spin text-foreground', className || 'h-4')}
         xmlns="http://www.w3.org/2000/svg"
@@ -26,6 +26,6 @@ export function LoadingIndicator({ className }: { className?: string }) {
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
       </svg>
-    </div>
+    </span>
   );
 }

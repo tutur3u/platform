@@ -12,7 +12,15 @@
 export const TURNSTILE_ORIGIN = 'https://challenges.cloudflare.com';
 export const TURNSTILE_SCRIPT_URL = `${TURNSTILE_ORIGIN}/turnstile/v0/api.js`;
 
-/** CSP directives Turnstile needs: its script, challenge iframe and API calls. */
+/**
+ * CSP directives Turnstile needs: its script, challenge iframe and API calls.
+ *
+ * Only `https://challenges.cloudflare.com` is required by Cloudflare's
+ * documented Turnstile CSP. Console `connect-src` violations for `data:,`
+ * during Turnstile init originate inside Cloudflare's cross-origin challenge
+ * iframe under Cloudflare's own CSP header (which a host document's CSP cannot
+ * override), so `data:` is intentionally never added to `connect-src`.
+ */
 export const TURNSTILE_CSP_DIRECTIVES = [
   'script-src',
   'frame-src',

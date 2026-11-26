@@ -76,6 +76,18 @@ describe('web next config headers', () => {
       "frame-ancestors 'none'"
     );
   });
+
+  it.each(['/login', '/vi/login'])(
+    'keeps %s on anti-framing CSP without widening connect-src with data:',
+    async (pathname) => {
+      const headers = await finalConfigHeaders(pathname);
+      const csp = headers.get('content-security-policy');
+
+      expect(csp).toBe("frame-ancestors 'none'");
+      expect(csp).not.toContain('connect-src');
+      expect(csp).not.toContain('data:');
+    }
+  );
 });
 
 describe('locale-optional auth shell header sources', () => {
