@@ -85,6 +85,14 @@ final class WatchCompanionPlugin: NSObject, FlutterPlugin, WCSessionDelegate {
     pushApplicationContext(latestContext)
   }
 
+  func sessionWatchStateDidChange(_ session: WCSession) {
+    guard session.activationState == .activated,
+          session.isPaired,
+          session.isWatchAppInstalled,
+          let latestContext else { return }
+    pushApplicationContext(latestContext)
+  }
+
   func sessionDidBecomeInactive(_ session: WCSession) {}
 
   func sessionDidDeactivate(_ session: WCSession) {

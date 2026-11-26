@@ -48,8 +48,10 @@
 		W10000010000000000000024 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000124 /* Localizable.strings */; };
 		W10000010000000000000025 /* TuturuuuWatchKit in Frameworks */ = {isa = PBXBuildFile; productRef = W10000010000000000000062 /* TuturuuuWatchKit */; };
 		W10000010000000000000026 /* TuturuuuWatchWidgets.appex in Embed Watch Extensions */ = {isa = PBXBuildFile; fileRef = W10000010000000000000131 /* TuturuuuWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		W10000010000000000000041 /* TuturuuuWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = W10000010000000000000130 /* TuturuuuWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };		W10000010000000000000027 /* WatchSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000140 /* WatchSnapshotTests.swift */; };
-		W10000010000000000000028 /* TuturuuuWatchKit in Frameworks */ = {isa = PBXBuildFile; productRef = W10000010000000000000063 /* TuturuuuWatchKit */; };/* End PBXBuildFile section */
+		W10000010000000000000041 /* TuturuuuWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = W10000010000000000000130 /* TuturuuuWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		W10000010000000000000027 /* WatchSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000140 /* WatchSnapshotTests.swift */; };
+		W10000010000000000000028 /* TuturuuuWatchKit in Frameworks */ = {isa = PBXBuildFile; productRef = W10000010000000000000063 /* TuturuuuWatchKit */; };
+/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		331C8085294A63A400263BE5 /* PBXContainerItemProxy */ = {
@@ -79,13 +81,15 @@
 			proxyType = 1;
 			remoteGlobalIDString = W10000010000000000000031;
 			remoteInfo = TuturuuuWatchWidgets;
-		};		W10000010000000000000047 /* PBXContainerItemProxy */ = {
+		};
+		W10000010000000000000047 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = W10000010000000000000030;
 			remoteInfo = TuturuuuWatch;
-		};/* End PBXContainerItemProxy section */
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		824060ABAB12F1E4B3F14B3B /* Embed Live Broadcast Extension */ = {
@@ -130,7 +134,8 @@
 			);
 			name = "Embed Watch Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
-		};/* End PBXCopyFilesBuildPhase section */
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		1E15D0010000000000000002 /* IrisDeviceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisDeviceKey.swift; sourceTree = "<group>"; };
@@ -208,9 +213,11 @@
 		W1000001000000000000012D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		W1000001000000000000012E /* TuturuuuWatchWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TuturuuuWatchWidgets.entitlements; sourceTree = "<group>"; };
 		W10000010000000000000130 /* TuturuuuWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuturuuuWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		W10000010000000000000131 /* TuturuuuWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TuturuuuWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };		W10000010000000000000140 /* WatchSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSnapshotTests.swift; sourceTree = "<group>"; };
+		W10000010000000000000131 /* TuturuuuWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TuturuuuWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		W10000010000000000000140 /* WatchSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSnapshotTests.swift; sourceTree = "<group>"; };
 		W10000010000000000000141 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		W10000010000000000000132 /* TuturuuuWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TuturuuuWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };/* End PBXFileReference section */
+		W10000010000000000000132 /* TuturuuuWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TuturuuuWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		36FDFC6325B3091320E36D1B /* Frameworks */ = {
@@ -251,14 +258,16 @@
 				W10000010000000000000025 /* TuturuuuWatchKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-		};		W10000010000000000000057 /* Frameworks */ = {
+		};
+		W10000010000000000000057 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				W10000010000000000000028 /* TuturuuuWatchKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-		};/* End PBXFrameworksBuildPhase section */
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		0511706EB5F8088D3641FBDB /* LiveScreenBroadcast */ = {
@@ -424,7 +433,8 @@
 			name = TuturuuuWatchWidgets;
 			path = TuturuuuWatchWidgets;
 			sourceTree = "<group>";
-		};		W10000010000000000000072 /* TuturuuuWatchTests */ = {
+		};
+		W10000010000000000000072 /* TuturuuuWatchTests */ = {
 			isa = PBXGroup;
 			children = (
 				W10000010000000000000141 /* Info.plist */,
@@ -433,7 +443,8 @@
 			name = TuturuuuWatchTests;
 			path = TuturuuuWatchTests;
 			sourceTree = "<group>";
-		};/* End PBXGroup section */
+		};
+/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		331C8080294A63A400263BE5 /* RunnerTests */ = {
@@ -545,7 +556,8 @@
 			productName = TuturuuuWatchWidgets;
 			productReference = W10000010000000000000131 /* TuturuuuWatchWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
-		};		W10000010000000000000032 /* TuturuuuWatchTests */ = {
+		};
+		W10000010000000000000032 /* TuturuuuWatchTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = W10000010000000000000082 /* Build configuration list for PBXNativeTarget "TuturuuuWatchTests" */;
 			buildPhases = (
@@ -565,7 +577,8 @@
 			productName = TuturuuuWatchTests;
 			productReference = W10000010000000000000132 /* TuturuuuWatchTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
-		};/* End PBXNativeTarget section */
+		};
+/* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		97C146E61CF9000F007C117D /* Project object */ = {
@@ -664,13 +677,15 @@
 				W10000010000000000000024 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-		};		W10000010000000000000059 /* Resources */ = {
+		};
+		W10000010000000000000059 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-		};/* End PBXResourcesBuildPhase section */
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		39E73A02078E6A4CE204F684 /* [CP] Copy Pods Resources */ = {
@@ -903,14 +918,16 @@
 				W10000010000000000000022 /* TasksLeftWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-		};		W10000010000000000000058 /* Sources */ = {
+		};
+		W10000010000000000000058 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				W10000010000000000000027 /* WatchSnapshotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
-		};/* End PBXSourcesBuildPhase section */
+		};
+/* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		331C8086294A63A400263BE5 /* PBXTargetDependency */ = {
@@ -935,12 +952,14 @@
 			name = TuturuuuWatchWidgets;
 			target = W10000010000000000000031 /* TuturuuuWatchWidgets */;
 			targetProxy = W10000010000000000000045 /* PBXContainerItemProxy */;
-		};		W10000010000000000000048 /* PBXTargetDependency */ = {
+		};
+		W10000010000000000000048 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = TuturuuuWatch;
 			target = W10000010000000000000030 /* TuturuuuWatch */;
 			targetProxy = W10000010000000000000047 /* PBXContainerItemProxy */;
-		};/* End PBXTargetDependency section */
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
@@ -994,7 +1013,8 @@
 			);
 			name = Localizable.strings;
 			sourceTree = "<group>";
-		};/* End PBXVariantGroup section */
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		22721E4B8B3B7AB63013A07E /* Profile-development */ = {
@@ -2939,7 +2959,8 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Release-production";
-		};		W10000010000000000000082 /* Build configuration list for PBXNativeTarget "TuturuuuWatchTests" */ = {
+		};
+		W10000010000000000000082 /* Build configuration list for PBXNativeTarget "TuturuuuWatchTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				W10000010000000000000401 /* Debug-development */,
@@ -2954,7 +2975,8 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Release-production";
-		};/* End XCConfigurationList section */
+		};
+/* End XCConfigurationList section */
 /* Begin XCLocalSwiftPackageReference section */
 		W10000010000000000000060 /* XCLocalSwiftPackageReference "TuturuuuWatchKit" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -2977,7 +2999,8 @@
 			isa = XCSwiftPackageProductDependency;
 			package = W10000010000000000000060 /* XCLocalSwiftPackageReference "TuturuuuWatchKit" */;
 			productName = TuturuuuWatchKit;
-		};/* End XCSwiftPackageProductDependency section */
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97C146E61CF9000F007C117D /* Project object */;
 }

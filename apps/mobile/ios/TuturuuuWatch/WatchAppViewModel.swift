@@ -96,11 +96,25 @@ final class WatchAppViewModel: ObservableObject {
   }
 
   func reloadFromLocalStores() {
+    let previousUserId = metadata?.userId
     let loadedMetadata = snapshotStore.readMetadata()
     let hasToken = (secretStore.readAccessToken()?.isEmpty == false)
+    let nextSignedIn = hasToken && loadedMetadata != nil
+    let switchedAccount = previousUserId != nil && loadedMetadata?.userId != previousUserId
+
     metadata = loadedMetadata
     snapshot = snapshotStore.readSnapshot()
-    isSignedIn = hasToken && loadedMetadata != nil
+    isSignedIn = nextSignedIn
+
+    if !nextSignedIn || switchedAccount {
+      miraConversationId = nil
+      miraLastPrompt = nil
+      miraReply = ""
+      miraError = nil
+      isAskingMira = false
+      statusMessage = nil
+      completingTaskIds.removeAll()
+    }
   }
 
   func syncFromPhone() async {
@@ -127,12 +141,15 @@ final class WatchAppViewModel: ObservableObject {
 
     do {
       let fresh = try await apiClient.fetchTodaySnapshot(metadata: activeMetadata)
+      guard isSignedIn, self.metadata?.userId == activeMetadata.userId else { return }
       snapshot = fresh
       try? snapshotStore.saveSnapshot(fresh)
       WidgetCenter.shared.reloadAllTimelines()
     } catch WatchAPIError.unauthorized {
+      guard isSignedIn, self.metadata?.userId == activeMetadata.userId else { return }
       statusMessage = text(.signedOutTitle)
     } catch {
+      guard isSignedIn, self.metadata?.userId == activeMetadata.userId else { return }
       if snapshot == nil {
         statusMessage = text(.taskCompleteFailed)
       }
@@ -141,6 +158,7 @@ final class WatchAppViewModel: ObservableObject {
 
   func markTaskDone(_ task: WatchTaskItem) async {
     guard let metadata, isSignedIn, !completingTaskIds.contains(task.id) else { return }
+    let requestUserId = metadata.userId
     let previousSnapshot = snapshot
     completingTaskIds.insert(task.id)
     defer { completingTaskIds.remove(task.id) }
@@ -164,9 +182,11 @@ final class WatchAppViewModel: ObservableObject {
 
     do {
       try await apiClient.markTaskCompleted(task: task, metadata: metadata)
+      guard isSignedIn, self.metadata?.userId == requestUserId else { return }
       WKInterfaceDevice.current().play(.success)
       statusMessage = text(.taskCompleted)
     } catch {
+      guard isSignedIn, self.metadata?.userId == requestUserId else { return }
       snapshot = previousSnapshot
       if let previousSnapshot {
         try? snapshotStore.saveSnapshot(previousSnapshot)
@@ -179,6 +199,7 @@ final class WatchAppViewModel: ObservableObject {
 
   func quickCaptureTask(title: String, priority: WatchTaskPriority) async -> Bool {
     guard let metadata, isSignedIn else { return false }
+    let requestUserId = metadata.userId
     do {
       let created = try await apiClient.quickCaptureTask(
         name: title,
@@ -186,6 +207,7 @@ final class WatchAppViewModel: ObservableObject {
         dueToday: true,
         metadata: metadata
       )
+      guard isSignedIn, self.metadata?.userId == requestUserId else { return false }
       if let current = snapshot {
         let updated = WatchTodaySnapshot(
           workspaceId: current.workspaceId,
@@ -203,6 +225,7 @@ final class WatchAppViewModel: ObservableObject {
       statusMessage = text(.quickCaptureSaved)
       return true
     } catch {
+      guard isSignedIn, self.metadata?.userId == requestUserId else { return false }
       WKInterfaceDevice.current().play(.failure)
       statusMessage = text(.quickCaptureFailed)
       return false
@@ -211,6 +234,7 @@ final class WatchAppViewModel: ObservableObject {
 
   func askMira(prompt: String, startNewConversation: Bool = false) async {
     guard let metadata, isSignedIn else { return }
+    let requestUserId = metadata.userId
     let trimmed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return }
 
@@ -230,14 +254,17 @@ final class WatchAppViewModel: ObservableObject {
         metadata: metadata,
         onDelta: { [weak self] partial in
           Task { @MainActor in
-            self?.miraReply = partial
+            guard let self, self.isSignedIn, self.metadata?.userId == requestUserId else { return }
+            self.miraReply = partial
           }
         }
       )
+      guard isSignedIn, self.metadata?.userId == requestUserId else { return }
       miraConversationId = result.conversationId
       miraReply = result.reply
       WKInterfaceDevice.current().play(.success)
     } catch {
+      guard isSignedIn, self.metadata?.userId == requestUserId else { return }
       miraError = text(.miraError)
       WKInterfaceDevice.current().play(.failure)
     }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -300,3 +301,52 @@ test('manual builds keep the Flutter IPA export', (t) => {
   assert.ok(flutter.includes('--export-options-plist=ios/ExportOptions.plist'));
   assert.ok(!flutter.includes('--config-only'));
 });
+
+test(
+  'omit-watch-targets removes Runner watch embed without leaving dangling IDs',
+  {
+    skip: process.platform !== 'darwin',
+  },
+  (t) => {
+    const root = mkdtempSync(join(tmpdir(), 'omit-watch-test-'));
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    const projectCopy = join(root, 'Runner.xcodeproj');
+    cpSync(resolve('apps/mobile/ios/Runner.xcodeproj'), projectCopy, {
+      recursive: true,
+    });
+
+    const omitResult = spawnSync(
+      'swift',
+      [join(scriptsDir, 'omit-watch-targets.swift'), projectCopy],
+      { encoding: 'utf8' }
+    );
+    assert.equal(omitResult.status, 0, omitResult.stderr);
+
+    const pbxPath = join(projectCopy, 'project.pbxproj');
+    const lintResult = spawnSync('plutil', ['-lint', pbxPath], {
+      encoding: 'utf8',
+    });
+    assert.equal(lintResult.status, 0, lintResult.stdout + lintResult.stderr);
+
+    const pbx = readFileSync(pbxPath, 'utf8');
+    for (const removedId of [
+      'W10000010000000000000040',
+      'W10000010000000000000041',
+      'W10000010000000000000042',
+    ]) {
+      assert.ok(!pbx.includes(removedId), `expected ${removedId} removed`);
+    }
+
+    // Every remaining Watch-prefixed object reference must resolve to a definition.
+    const definedIds = new Set(
+      [...pbx.matchAll(/^\s*(W1000001[0-9A-F]{16})\b[^=\n]*=/gm)].map(
+        (m) => m[1]
+      )
+    );
+    const referencedIds = new Set(
+      [...pbx.matchAll(/\b(W1000001[0-9A-F]{16})\b/g)].map((m) => m[1])
+    );
+    const dangling = [...referencedIds].filter((id) => !definedIds.has(id));
+    assert.deepEqual(dangling, [], `dangling watch pbxproj IDs: ${dangling}`);
+  }
+);

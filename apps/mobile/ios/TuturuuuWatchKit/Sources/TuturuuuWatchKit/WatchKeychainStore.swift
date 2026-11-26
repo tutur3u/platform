@@ -15,7 +15,8 @@ public enum WatchKeychainError: Error, Equatable {
 }
 
 /// Keychain-backed store for short-lived Supabase Bearer tokens on watchOS/iOS.
-/// Tokens are never written to UserDefaults or unencrypted files.
+/// Tokens are persisted exclusively in the Watch Keychain (`AfterFirstUnlockThisDeviceOnly`)
+/// and never stored in App Group UserDefaults, snapshots, or logs.
 public final class WatchKeychainStore: WatchSecretStore, @unchecked Sendable {
   private let service: String
   private let account: String
