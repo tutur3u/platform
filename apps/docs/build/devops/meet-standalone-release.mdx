@@ -131,10 +131,12 @@ To roll them back, see [Rolling back a flag](#rolling-back-a-flag).
 
 ## Rolling back a flag
 
-A release refuses a commit that is already live (`MEET_RELEASE_ALREADY_LIVE`)
-and one older than the live commit (`MEET_RELEASE_STALE`), so a flag cannot be
-changed by dispatching the live SHA again. A flag value reaches the Workers only
-with a release of a newer green main commit.
+Dispatching the live SHA, or one older than it, does not redeploy. On the
+production ref the run completes as `MEET_RELEASE_SUPERSEDED` without deploying
+or writing a success marker; a standalone dispatch stops with
+`MEET_RELEASE_ALREADY_LIVE` for the live SHA and `MEET_RELEASE_STALE` for an
+older one. A flag value reaches the Workers only with a release of a newer green
+main commit.
 
 To turn a flag off at once, roll Cloudflare back to the previous Meet app and
 `meet-realtime` version pair captured for the release (see

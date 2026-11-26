@@ -128,6 +128,15 @@ describe('room views', () => {
 
 describe('the Tuturuuu Whiteboard view', () => {
   const access = { browse: false, account: true, tools: true, toolIds: [] };
+  it('is the room view while the board is focused, even with a tool drawer', () => {
+    const onBoard = { programming: false, document: false, tool: 'board' };
+    expect(currentRoomView({ ...onBoard, drawer: null })).toEqual({
+      surface: 'board',
+    });
+    expect(currentRoomView({ ...onBoard, drawer: 'tool:live-qa' })).toEqual({
+      surface: 'board',
+    });
+  });
   it('opens the board pane and needs an account or board access', () => {
     expect(surfaceFromView({ surface: 'board' }, 'chat')).toEqual({
       programming: false,

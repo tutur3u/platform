@@ -27,10 +27,11 @@ export interface NavigationEvent {
 
 export type NavigationTargets = 'everyone' | string[];
 
-/** The surface a leader would bring people to: collaboration first, then a tool panel. */
+/** The surface a leader would bring people to: collaboration, the board, then a tool panel. */
 export function currentRoomView(surface: CallSurfaceState): MeetRoomView {
   if (surface.programming) return { surface: 'programming' };
   if (surface.document) return { surface: 'document' };
+  if (surface.tool === BOARD_ACTIVITY) return { surface: 'board' };
   const focusedTool = surface.tool ?? surface.drawer;
   const toolId = focusedTool?.startsWith('tool:')
     ? focusedTool.slice('tool:'.length)

@@ -73,6 +73,15 @@ it('shares the activity in the focused pane as the room view', () => {
   expect(navigation().surface.drawer).toBe('chat');
 });
 
+it('shares the Tuturuuu Whiteboard as the board view for Summon and Follow', () => {
+  act(() => {
+    stage.open('board');
+  });
+  expect(navigation().surface.tool).toBe('board');
+  // The people panel summons and follows to this same view.
+  expect(currentRoomView(navigation().surface)).toEqual({ surface: 'board' });
+});
+
 it('opens a summoned activity beside what is open and keeps the chat drawer', () => {
   act(() => {
     stage.open('programming');

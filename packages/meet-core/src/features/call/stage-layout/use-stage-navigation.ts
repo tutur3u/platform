@@ -93,7 +93,11 @@ export function useStageNavigation({
   const surface = {
     programming: stage.focused === PROGRAMMING_ACTIVITY,
     document: stage.focused === DOCUMENT_ACTIVITY,
-    tool: stage.focused?.startsWith(toolActivityId('')) ? stage.focused : null,
+    tool:
+      stage.focused === BOARD_ACTIVITY ||
+      stage.focused?.startsWith(toolActivityId(''))
+        ? stage.focused
+        : null,
     drawer,
   };
   const mirror = (layout: MeetStageLayoutSnapshot, forced: boolean) => {
