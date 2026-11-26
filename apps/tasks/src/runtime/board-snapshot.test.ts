@@ -100,6 +100,16 @@ describe('loadBoardSnapshot request decisions', () => {
 
     await expect(load()).resolves.toBeNull();
     expect(mocks.readTaskBoardDetail).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('reads nothing when an api_abuse block and a suspension coincide', async () => {
+    mocks.isIPBlocked.mockResolvedValue(block('api_abuse'));
+    mocks.readUserSuspension.mockResolvedValue({ reason: 'abuse' });
+
+    await expect(load()).resolves.toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.readTaskBoardDetail).not.toHaveBeenCalled();
   });
 
   it('denies an api_abuse block too, as the API proxy guard does', async () => {
