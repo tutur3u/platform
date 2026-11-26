@@ -29,7 +29,7 @@ fallback page for denied members (they get 404).
 
 ## Information architecture
 
-| Section | Routes (under `/admin/<wsId>`) |
+| Section | Routes (under `/admin/internal`) |
 | --- | --- |
 | Overview | `/` |
 | Users and accounts | `/users`, `/internal-accounts`, `/account-benefits`, `/auth-recovery`, `/parley` |
@@ -44,8 +44,11 @@ fallback page for denied members (they get 404).
 | Integrations | `/external-apps`, `/external-chat-lab`, `/app-coordination`, `/calendar-sync`, `/cron/whitelist/domains` |
 | Settings and audit log | `/timezones`, `/translations`, `/holidays`, `/changelog`, `/secrets` |
 
-Every route keeps its path, so links into `infrastructure.tuturuuu.com/<path>`
-map one to one onto `tuturuuu.com/admin/<path>`. Navigation entries live in
+Legacy page links keep their suffix under `/admin`. Links with the old `root`
+workspace segment redirect to `internal`, including locale-prefixed links and
+query strings. The canonical account permalinks are
+`/admin/internal/internal-accounts` and `/admin/internal/account-benefits`.
+Navigation entries live in
 `src/app/[locale]/(dashboard)/[wsId]/navigation.tsx` with aliases, icons and
 permissions.
 

@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { legacyHostRedirectEnabled, legacyHostResponse } from './legacy-host';
+import {
+  legacyHostRedirectEnabled,
+  legacyHostResponse,
+  mountedRootWorkspaceResponse,
+} from './legacy-host';
 
 const PRODUCTION = { mountHosts: ['tuturuuu.com'] };
 const STAGING = { mountHosts: [] };
@@ -183,5 +187,38 @@ describe('legacy-host redirect switch', () => {
     expect(
       legacyHostRedirectEnabled({ TUTURUUU_LEGACY_HOST_REDIRECT: 'true' })
     ).toBe(false);
+  });
+});
+
+describe('root workspace permalinks', () => {
+  it.each(['', '/en', '/vi'])('preserves the %s locale and query', (locale) => {
+    const path = `${locale}/root/internal-accounts?tab=review&q=a%2Bb&q=2`;
+    const target = `https://tuturuuu.com/admin${path.replace('/root/', '/internal/')}`;
+
+    expectMounted(redirect(`${LEGACY}${path}`), target);
+    expectMounted(
+      mountedRootWorkspaceResponse(
+        new Request(`https://tuturuuu.com/admin${path}`, { method: 'HEAD' })
+      ),
+      target
+    );
+    expect(mountedRootWorkspaceResponse(new Request(target))).toBeNull();
+  });
+
+  it.each([
+    'https://tuturuuu.com/admin/rooted/internal-accounts',
+    'https://tuturuuu.com/admin/api/root/internal-accounts',
+    'https://tuturuuu.com/root/internal-accounts',
+    'https://unrelated.example/admin/root/internal-accounts',
+  ])('leaves %s alone', (url) => {
+    expect(mountedRootWorkspaceResponse(new Request(url))).toBeNull();
+  });
+
+  it('leaves non-read methods alone', () => {
+    expect(
+      mountedRootWorkspaceResponse(
+        new Request('https://tuturuuu.com/admin/root', { method: 'POST' })
+      )
+    ).toBeNull();
   });
 });

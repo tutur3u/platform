@@ -1,7 +1,7 @@
 /**
  * The production legacy host: `infrastructure.tuturuuu.com` moves browser
  * navigations to the apex Admin mount. GET/HEAD page requests get a permanent,
- * path-preserving 301 to `https://tuturuuu.com/admin<path><query>` before any
+ * permalink-preserving 301 to `https://tuturuuu.com/admin<path><query>` before any
  * auth, locale or app handling. Machine traffic keeps being served on the
  * subdomain: every `/api` request (cron, mobile and desktop deployment
  * bundles, devbox and SDK callers send bearer credentials that HTTP clients
@@ -35,6 +35,28 @@ function mountPathname(pathname: string) {
   const path = pathname.replace(/^[/\\]+/u, '/');
   if (path === MOUNT_BASE || path.startsWith(`${MOUNT_BASE}/`)) return path;
   return path === '/' ? MOUNT_BASE : `${MOUNT_BASE}${path}`;
+}
+
+function canonicalWorkspacePath(pathname: string) {
+  return pathname.replace(
+    /^(\/admin(?:\/(?:en|vi))?)\/root(?=\/|$)/u,
+    '$1/internal'
+  );
+}
+
+export function mountedRootWorkspaceResponse(
+  request: Request
+): Response | null {
+  const url = new URL(request.url);
+  if (url.hostname !== MOUNT_HOST || !isPageRead(request)) return null;
+
+  const pathname = canonicalWorkspacePath(url.pathname);
+  if (pathname === url.pathname) return null;
+  return mountRedirect(pathname, request.url);
+}
+
+function isPageRead(request: Request) {
+  return request.method === 'GET' || request.method === 'HEAD';
 }
 
 function insideMount(target: URL) {
@@ -74,14 +96,18 @@ export function legacyHostResponse(
     return null;
   const url = new URL(request.url);
   if (url.hostname.toLowerCase() !== LEGACY_HOST) return null;
-  const method = request.method.toUpperCase();
-  if ((method !== 'GET' && method !== 'HEAD') || isApiPath(url.pathname))
-    return null;
+  if (!isPageRead(request) || isApiPath(url.pathname)) return null;
 
+  return mountRedirect(
+    canonicalWorkspacePath(mountPathname(url.pathname)),
+    request.url
+  );
+}
+
+function mountRedirect(pathname: string, requestUrl: string): Response {
   const target = new URL(MOUNT_ORIGIN);
-  target.pathname = mountPathname(url.pathname);
-  const query = rawQuery(request.url);
-  const location = `${target.origin}${target.pathname}${query}`;
+  target.pathname = pathname;
+  const location = `${target.origin}${target.pathname}${rawQuery(requestUrl)}`;
   if (!insideMount(target) || !insideMount(new URL(location)))
     return new Response(null, {
       status: 400,

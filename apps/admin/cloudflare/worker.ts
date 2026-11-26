@@ -18,6 +18,7 @@ import { configureInfrastructureAbuseGuard } from '../src/runtime/abuse-guard';
 import {
   legacyHostRedirectEnabled,
   legacyHostResponse,
+  mountedRootWorkspaceResponse,
 } from '../src/runtime/legacy-host';
 
 export interface InfrastructureEnvironment {
@@ -89,7 +90,11 @@ export default {
         response =
           (legacyHostRedirectEnabled(env)
             ? legacyHostResponse(request, mounts)
-            : null) ?? (await (await handler)(request, env, ctx));
+            : null) ??
+          mountedRootWorkspaceResponse(request) ??
+          (await (
+            await handler
+          )(request, env, ctx));
       } catch (error) {
         // Even a failed route load answers through the response policy.
         console.error('[start-bridge] worker failed', error);
