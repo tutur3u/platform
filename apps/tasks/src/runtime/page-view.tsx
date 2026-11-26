@@ -1,17 +1,19 @@
 import VerifyTokenPage from '@tuturuuu/satellite/verify-token-page';
 import { SatelliteWorkspaceInvitationCard } from '@tuturuuu/satellite/workspace-invitation/card';
-import { TaskCalendarPageShell } from '@tuturuuu/tasks-ui/calendar/task-calendar-page-shell';
-import { TaskProgressPage } from '@tuturuuu/tasks-ui/progress/task-progress-page';
-import { CyclePlanningView } from '@tuturuuu/tasks-ui/tu-do/cycles/planning/cycle-planning-view';
-import { TaskCyclesView } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-view';
 import { BoardClient } from '@tuturuuu/tasks-ui/tu-do/shared/board-client';
-import { TaskLegacyRouteRecovery } from '@tuturuuu/tasks-ui/tu-do/shared/task-legacy-route-recovery';
-import { SkeletonCard } from '@tuturuuu/ui/skeleton';
+import { SkeletonCard, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { useLocale, useTranslations } from 'next-intl';
-import { Suspense } from 'react';
-import SharedTaskContent from '../app/[locale]/shared/task/[shareCode]/content';
-import PublicTaskBoardContent from '../app/[locale]/shared/task-boards/[code]/content';
-import { TaskPlanComposer } from '../components/task-plan-composer';
+import { type ReactNode, Suspense } from 'react';
+import {
+  CyclePlanningView,
+  PublicTaskBoardContent,
+  SharedTaskContent,
+  TaskCalendarPageShell,
+  TaskCyclesView,
+  TaskLegacyRouteRecovery,
+  TaskPlanComposer,
+  TaskProgressPage,
+} from './lazy-pages';
 import type { TasksPage, TasksPageModel } from './page-model.server';
 import { WorkspaceView } from './workspace-view';
 
@@ -42,7 +44,26 @@ function PublicBoardMissing() {
   );
 }
 
+/** Holds a lazily loaded page's place while its chunk downloads. */
+function PageChunk({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<SkeletonList className="p-2" rows={6} withTrailing />}>
+      {children}
+    </Suspense>
+  );
+}
+
 function WorkspacePageView({ page }: { page: WorkspacePage }) {
+  return page.kind === 'board' || page.kind === 'new-task' ? (
+    <WorkspacePageContent page={page} />
+  ) : (
+    <PageChunk>
+      <WorkspacePageContent page={page} />
+    </PageChunk>
+  );
+}
+
+function WorkspacePageContent({ page }: { page: WorkspacePage }) {
   const locale = useLocale();
   switch (page.kind) {
     case 'progress':
@@ -139,16 +160,22 @@ export function PageView({ model }: { model: TasksPageModel }) {
         </WorkspaceView>
       );
     case 'public-board':
-      return <PublicTaskBoardContent payload={page.payload} />;
+      return (
+        <PageChunk>
+          <PublicTaskBoardContent payload={page.payload} />
+        </PageChunk>
+      );
     case 'public-board-missing':
       return <PublicBoardMissing />;
     case 'shared-task':
       return (
-        <SharedTaskContent
-          response={page.response}
-          shareCode={page.shareCode}
-          currentUser={page.currentUser}
-        />
+        <PageChunk>
+          <SharedTaskContent
+            response={page.response}
+            shareCode={page.shareCode}
+            currentUser={page.currentUser}
+          />
+        </PageChunk>
       );
     case 'shared-task-missing':
       return (

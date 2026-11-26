@@ -90,6 +90,12 @@ Sidebar links preload their destination's page model on hover, focus or touch
 in every native app whose router sets `defaultPreload: 'intent'`, so a tab
 switch usually finds its data ready.
 
+The board is the only page in the native page chunk. Calendar, cycles,
+progress, shared task views and the plan composer load as their own chunks
+(`apps/tasks/src/runtime/lazy-pages.tsx`). The task editor and the settings
+dialog load when first opened; the editor chunk is warmed while the browser is
+idle so the first opened task does not wait on it.
+
 | Budget | Limit | Regression coverage |
 | --- | --- | --- |
 | Browser requests before kanban tasks show | 0 (board, first pages and preferences ship with the page) | `packages/tasks-ui/src/tu-do/shared/__tests__/board-client.test.tsx` |
