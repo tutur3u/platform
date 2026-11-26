@@ -16,7 +16,7 @@ const INSTALLED = Symbol.for('tuturuuu.workersFetch.installed');
 const WORKERS_CACHE_MODES = new Set<RequestCache>(['no-store']);
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
-type Fetch = typeof fetch;
+type Fetch = (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>;
 
 /** `fetchImpl` without `init.cache` values workerd rejects. */
 export function withWorkersCacheModes(fetchImpl: Fetch): Fetch {
