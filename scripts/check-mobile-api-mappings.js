@@ -155,8 +155,26 @@ function collectOwnedApiRoutesByApp({ rootDir = ROOT_DIR } = {}) {
   return routesByApp;
 }
 
-// Reserved CLI paths name an owner without claiming that a handler is deployed.
-// These exact registrations do not satisfy mobile runtime route ownership.
+// CLI-only registrations name reserved local paths or external Upskii routes.
+const UPSKII_CLI_OWNERS = new Set(['upskii-admin', 'upskii-auth']);
+
+function hasCliRouteOwner(entry, rootDir) {
+  if (entry.status === 'external') {
+    return (
+      UPSKII_CLI_OWNERS.has(entry.canonicalApp) &&
+      entry.clientFile.startsWith('packages/sdk/src/cli/upskii/')
+    );
+  }
+
+  return (
+    entry.status === 'reserved' &&
+    typeof entry.canonicalApp === 'string' &&
+    /^[a-z0-9-]+$/u.test(entry.canonicalApp) &&
+    fs.existsSync(
+      path.join(rootDir, 'apps', appDirectory(entry.canonicalApp), 'src/app')
+    )
+  );
+}
 function collectReservedCliApiRoutes({ rootDir = ROOT_DIR } = {}) {
   const manifest = JSON.parse(
     fs.readFileSync(path.join(rootDir, CLI_ROUTE_OWNERSHIP), 'utf8')
@@ -167,28 +185,23 @@ function collectReservedCliApiRoutes({ rootDir = ROOT_DIR } = {}) {
   const routes = new Set();
   for (const entry of manifest.routes) {
     if (
-      entry.status !== 'reserved' ||
       typeof entry.routePath !== 'string' ||
-      !/^\/api\/[a-zA-Z0-9/_-]+$/u.test(entry.routePath) ||
-      typeof entry.canonicalApp !== 'string' ||
-      !/^[a-z0-9-]+$/u.test(entry.canonicalApp) ||
-      !fs.existsSync(
-        path.join(rootDir, 'apps', appDirectory(entry.canonicalApp), 'src/app')
-      ) ||
+      !/^\/api(?:\/(?:[a-zA-Z0-9_-]+|:\*))+$/u.test(entry.routePath) ||
       typeof entry.clientFile !== 'string' ||
-      !/^packages\/sdk\/src\/[a-zA-Z0-9/_-]+\.ts$/u.test(entry.clientFile)
+      !/^packages\/sdk\/src\/[a-zA-Z0-9/_-]+\.ts$/u.test(entry.clientFile) ||
+      !hasCliRouteOwner(entry, rootDir)
     ) {
-      throw new Error('Invalid reserved CLI API ownership registration.');
+      throw new Error('Invalid CLI API ownership registration.');
     }
     const client = fs.readFileSync(
       path.join(rootDir, entry.clientFile),
       'utf8'
     );
     if (!collectApiPaths(client).has(entry.routePath)) {
-      throw new Error('Reserved CLI API ownership must match its client path.');
+      throw new Error('CLI API ownership must match its client path.');
     }
     const route = canonicalizeRoute(entry.routePath);
-    if (routes.has(route)) throw new Error('Duplicate reserved CLI API owner.');
+    if (routes.has(route)) throw new Error('Duplicate CLI API owner.');
     routes.add(route);
   }
   return routes;
@@ -367,7 +380,7 @@ function main() {
     process.exit(1);
   }
   console.log(
-    `Client API mappings verified: ${result.mobilePaths.size} Flutter paths and ${result.cliSdkPaths.size} CLI SDK paths resolve to ${result.ownedRoutes.size} canonical API routes and ${result.reservedCliRoutes.size} reserved CLI paths across ${result.originRouting.configuredApps.size} mobile satellite origins (${result.sharedClientPaths.size} exact overlaps).`
+    `Client API mappings verified: ${result.mobilePaths.size} Flutter paths and ${result.cliSdkPaths.size} CLI SDK paths resolve to ${result.ownedRoutes.size} canonical API routes and ${result.reservedCliRoutes.size} CLI-only paths across ${result.originRouting.configuredApps.size} mobile satellite origins (${result.sharedClientPaths.size} exact overlaps).`
   );
 }
 

@@ -1,3 +1,28 @@
 {
-  "routes": []
+  "routes": [
+    {
+      "routePath": "/api/admin/qa/users",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/qa-command.ts"
+    },
+    {
+      "routePath": "/api/admin/qa/users/:*",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/qa-command.ts"
+    },
+    {
+      "routePath": "/api/admin/qa/users/:*/purge",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/qa-command.ts"
+    },
+    {
+      "routePath": "/api/auth/password",
+      "canonicalApp": "upskii-auth",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/qa-command.ts"
+    }
+  ]
 }
