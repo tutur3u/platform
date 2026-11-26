@@ -191,9 +191,11 @@ export async function runUpskiiCommand(
     const store =
       deps.credentialStore ?? createCredentialStore({ env: deps.envVars });
     const explicitEnvFlag = getFlag(flags, 'env');
-    const config = await (deps.readConfig ?? readCliConfig)().catch(
-      () => undefined
-    );
+    const hasExplicitEnvFlag = Boolean(explicitEnvFlag?.trim());
+    const needsCliConfig = !hasExplicitEnvFlag || subfamily === 'link';
+    const config = needsCliConfig
+      ? await (deps.readConfig ?? readCliConfig)().catch(() => undefined)
+      : undefined;
     const env = resolveCliEnv({
       configuredEnv: (config as { defaultEnv?: CliEnv } | undefined)
         ?.defaultEnv,
@@ -203,7 +205,6 @@ export async function runUpskiiCommand(
     });
     const profile = getFlag(flags, 'profile') ?? 'default';
     const subArgs = argv.slice(argv.indexOf(subfamily) + 1);
-    const hasExplicitEnvFlag = Boolean(explicitEnvFlag?.trim());
 
     if (subfamily === 'auth') {
       await runUpskiiAuthCommand({

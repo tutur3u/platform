@@ -1,9 +1,10 @@
 #!/usr/bin/env bun
 /**
- * Cleanup CLI for the Upskii production E2E workflow:
- *   bun apps/web/e2e-upskii-production/cli.ts sweep    # before tests, daily
- *   bun apps/web/e2e-upskii-production/cli.ts cleanup  # always, after tests
- *   bun apps/web/e2e-upskii-production/cli.ts verify   # fails on any leak
+ * CLI for the Upskii production E2E workflow:
+ *   bun apps/web/e2e-upskii-production/cli.ts preflight # read-only ttr check
+ *   bun apps/web/e2e-upskii-production/cli.ts sweep     # before tests, daily
+ *   bun apps/web/e2e-upskii-production/cli.ts cleanup   # always, after tests
+ *   bun apps/web/e2e-upskii-production/cli.ts verify    # fails on any leak
  * It prints only keys, kinds and status codes; never cookies or tokens.
  */
 import { appendFileSync } from 'node:fs';
@@ -11,6 +12,11 @@ import { forgetActors } from './actors';
 import { cleanup, type CleanupDeps, sweep, verify } from './cleanup';
 import { Ledger } from './ledger';
 import { QA_PURPOSE, readRunConfig, required } from './policy';
+import {
+  formatPreflightSummary,
+  parsePreflightArgs,
+  runUpskiiPreflight,
+} from './preflight';
 import { githubOidcAuth, tuturuuuQaClient } from './tuturuuu-qa';
 import { upskiiProvisioner } from './upskii';
 
@@ -41,7 +47,34 @@ async function residual(deps: CleanupDeps) {
   ];
 }
 
-async function main(command: string | undefined) {
+async function main(command: string | undefined, restArgs: readonly string[]) {
+  if (command === 'preflight') {
+    const options = parsePreflightArgs(restArgs, process.env);
+    const report = await runUpskiiPreflight(options);
+    const lines = formatPreflightSummary(report);
+    if (options.json) {
+      const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+      if (summaryFile) appendFileSync(summaryFile, `${lines.join('\n')}\n`);
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      summary(lines);
+    }
+    if (!report.ok) {
+      if (!options.json) {
+        const failedLines = report.checks
+          .filter((c) => c.status === 'fail')
+          .map((c) => `${c.name}: ${c.detail}`);
+        for (const line of failedLines) {
+          console.log(
+            `::error title=Upskii read-only pre-flight failed::${line}`
+          );
+        }
+      }
+      process.exitCode = 1;
+    }
+    return;
+  }
+
   const config = readRunConfig(process.env);
   const deps: CleanupDeps = {
     tuturuuu: tuturuuuQaClient(githubOidcAuth(process.env)),
@@ -77,11 +110,18 @@ async function main(command: string | undefined) {
     else summary(['Cleanup verified: no QA data remains']);
     return;
   }
-  throw new Error('Usage: cli.ts sweep|cleanup|verify');
+  throw new Error('Usage: cli.ts preflight|sweep|cleanup|verify');
 }
 
-main(process.argv[2]).catch((error: unknown) => {
-  fail('Production E2E cleanup crashed', [
-    error instanceof Error ? error.message : 'unknown error',
-  ]);
+const preflightJsonMode =
+  process.argv[2] === 'preflight' && process.argv.includes('--json');
+
+main(process.argv[2], process.argv.slice(3)).catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : 'unknown error';
+  if (preflightJsonMode) {
+    console.error(JSON.stringify({ error: message, ok: false }));
+    process.exitCode = 1;
+    return;
+  }
+  fail('Production E2E CLI crashed', [message]);
 });

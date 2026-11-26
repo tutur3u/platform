@@ -225,12 +225,10 @@ jobs:
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Type-check the suites before touching production
         run: bun x --no-install tsc --noEmit -p apps/web/tsconfig.upskii-production.json
-      - name: Install Chromium
-        if: env.MODE == 'run'
-        working-directory: apps/web
-        run: bun x playwright install --with-deps chromium
 
       # Earlier failed runs: remove their QA owners before creating new ones.
+      # Runs ahead of pre-flight so scheduled and manual sweep-only runs stay
+      # reachable even when Upskii host health or provisioner checks fail.
       - name: Sweep orphans from earlier runs
         timeout-minutes: 6
         env:
@@ -238,6 +236,20 @@ jobs:
           # installation and lifecycle scripts never do.
           UPSKII_QA_PROVISIONER_TOKEN: ${{ secrets.UPSKII_QA_PROVISIONER_TOKEN }}
         run: bun apps/web/e2e-upskii-production/cli.ts sweep
+
+      - name: Read-only Upskii pre-flight (ttr external upskii)
+        if: env.MODE == 'run'
+        timeout-minutes: 3
+        env:
+          # Only the steps that call the provisioner see the token; dependency
+          # installation and lifecycle scripts never do.
+          UPSKII_QA_PROVISIONER_TOKEN_PROD: ${{ secrets.UPSKII_QA_PROVISIONER_TOKEN }}
+        run: bun apps/web/e2e-upskii-production/cli.ts preflight --require-provisioner
+
+      - name: Install Chromium
+        if: env.MODE == 'run'
+        working-directory: apps/web
+        run: bun x playwright install --with-deps chromium
 
       - name: Run production suites
         id: suites

@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, realpath } from 'node:fs/promises';
-import { dirname, parse as parsePath, resolve } from 'node:path';
+import {
+  basename,
+  dirname,
+  join,
+  parse as parsePath,
+  resolve,
+} from 'node:path';
 import { z } from 'zod';
 import { installedBuildIdentity } from '../build-identity';
 import { CLI_EXIT, CliError, type CliTraceHeaders } from '../cli-contracts';
@@ -592,9 +598,10 @@ export async function readPrivateJsonFile(
     });
   });
   await assertTrustedDirectoryAncestors(parentReal);
+  const anchoredPath = join(parentReal, basename(resolved));
   let parsed: unknown;
   try {
-    parsed = await readPrivateJsonFileStrict(resolved);
+    parsed = await readPrivateJsonFileStrict(anchoredPath);
   } catch (error) {
     throw new CliError({
       cause: error,

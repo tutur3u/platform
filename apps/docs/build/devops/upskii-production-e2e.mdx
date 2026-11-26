@@ -23,6 +23,34 @@ examples use `edufest-ws-01`. Put files under `$TMPDIR` in a directory you
 created with mode `0700`. The CLI writes Playwright storage state as `0600`
 and refuses symlink paths.
 
+### 0. Read-only pre-flight (walkthrough & CI)
+
+Before provisioning QA seats or running the EduFest walkthrough, run the
+strictly read-only `ttr external upskii` pre-flight through the production E2E
+CLI. It runs `ttr doctor --family upskii --env prod`, probes `app.upskii.com`,
+`upskii.com`, and `admin.upskii.com` (`status health`), and — when a
+prod-scoped provisioner token (`UPSKII_QA_PROVISIONER_TOKEN_PROD` or
+`UPSKII_QA_PROVISIONER_TOKEN` with `UPSKII_QA_PROVISIONER_TOKEN_ENV=prod`) is
+present or `--require-provisioner` is passed — probes the QA provisioner window
+(`status provisioner --probe`). It disables child `.env` autoloading, never
+requires `UPSKII_PRODUCTION_E2E_ENABLED=true`, and never mutates production
+state. In CI it runs on `mode: run` after orphan cleanup and before Chromium
+installation so scheduled and manual `mode: sweep` runs always stay reachable.
+
+```sh
+# Public host health + CLI doctor (plus provisioner probe if token is set)
+bun apps/web/e2e-upskii-production/cli.ts preflight
+
+# Enforce an open QA provisioner window (used by CI before Chromium install)
+bun apps/web/e2e-upskii-production/cli.ts preflight --require-provisioner
+
+# Optional 1 Dec walkthrough rehearsal with read-only teacher/student storageState
+bun apps/web/e2e-upskii-production/cli.ts preflight \
+  --teacher-session-file "$TMPDIR/teacher.storage-state.json" \
+  --student-session-file "$TMPDIR/student.storage-state.json" \
+  --json
+```
+
 ### 1. Authenticate the QA provisioner
 
 ```sh
@@ -244,6 +272,7 @@ the task and resolves it. No public GitHub issue is opened.
 
 | Failed step | Meaning | Next step |
 | --- | --- | --- |
+| `Read-only Upskii pre-flight (ttr external upskii)` | An Upskii production host is unhealthy or the QA provisioner window is closed | Inspect the summary for `status: health` or `status: provisioner`; check Upskii host health and `QA_PROVISIONER_ENABLED` before re-running |
 | `Sweep orphans from earlier runs` | A provisioner or cleanup API refused or timed out | Check the provisioner switches and Tuturuuu `/api/v1/admin/qa/test-users` health; dispatch `mode: sweep` |
 | `Run production suites` | A product regression or an environment change | The job summary and JUnit report name the suite and test; screenshots are in the run artifact |
 | `Clean up this run` | An owner could not be deleted | Dispatch `mode: sweep`; if it keeps failing, the cleanup API is broken and needs a fix |
@@ -252,10 +281,14 @@ the task and resolves it. No public GitHub issue is opened.
 Run locally only with an operator's explicit approval: the suites write to
 production. Set the same variables, then run
 `bun x playwright test --config playwright.upskii-production.config.ts` from
-`apps/web`. The `cli.ts` commands are `sweep`, `cleanup` and `verify`.
+`apps/web`. The `cli.ts` commands are `preflight` (read-only), `sweep`, `cleanup` and `verify`.
 
 ## Regression coverage
 
+- `apps/web/e2e-upskii-production/preflight.test.ts` covers the read-only
+  `ttr external upskii` pre-flight argument validation, fail-fast provisioner
+  gating, scoped secret isolation and redaction, optional teacher/learner
+  read-only walkthrough checks, and the read-only command invariant.
 - `apps/web/e2e-upskii-production/harness.test.ts` covers the kill switch,
   QA-only addresses, the host and egress fences, the ledger fold, cleanup
   order and idempotency, purge looping, leak detection and the sweep's

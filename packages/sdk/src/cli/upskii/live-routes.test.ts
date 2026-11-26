@@ -354,5 +354,26 @@ describe('ttr external upskii live-route contracts', () => {
       expect(res.stderr).toContain('UPSKII_ENDPOINT_UNAVAILABLE');
       expect(res.stderr).toContain('not available on');
     }
+
+    // Explicit --env prod on status link-readiness must not read saved Tuturuuu CLI config.
+    let readConfigCalls = 0;
+    const linkReadiness = await execCli(
+      'status link-readiness --env prod --json',
+      {
+        credentialStore: store,
+        fetch: async () => jsonResp({ enabled: true, link: null }),
+        readConfig: async () => {
+          readConfigCalls += 1;
+          return { baseUrl: 'https://tuturuuu.com' };
+        },
+      }
+    );
+    expect(linkReadiness.exitCode).toBeUndefined();
+    expect(readConfigCalls).toBe(0);
+    expect(JSON.parse(linkReadiness.stdout)).toEqual({
+      enabled: true,
+      env: 'prod',
+      link: null,
+    });
   });
 });
