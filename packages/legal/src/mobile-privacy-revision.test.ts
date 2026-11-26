@@ -23,27 +23,32 @@ describe('mobile privacy release separate from the commercial proposal', () => {
         upcomingLegalRevision.version
       );
       const section = b.sections.find((item) => item.id === 'privacy-mobile');
+      const liveSection = current.sections.find(
+        (item) => item.id === 'privacy-mobile'
+      );
       expect(section).toBeDefined();
+      expect(liveSection).toBeDefined();
+      expect(liveSection?.content).toContain(section?.content ?? '');
       expect(a).toEqual({
         ...current,
         ...upcomingMobilePrivacyRevision,
-        sections: [...current.sections, section],
+        sections: current.sections,
       });
-      expect(a.sections.at(-1)).toEqual(section);
+      expect(a.sections.at(-1)).toEqual(liveSection);
       expect(a).toMatchSnapshot();
-      expect(a.effectiveDate).toBeNull();
-      expect(a.published).toBe(false);
+      expect(a.effectiveDate).toBe('2026-11-26');
+      expect(a.published).toBe(true);
       expect(
         a.sections.some((item) => item.id?.startsWith('privacy-proposal'))
       ).toBe(false);
-      expect(section?.content).toContain(
+      expect(liveSection?.content).toContain(
         locale === 'en'
           ? 'including a Firebase installation identifier'
           : 'gồm mã định danh bản cài đặt Firebase'
       );
       // Existing in-force transfer/registry text is retained verbatim.
       // The new section and A summary make no processor-list claim.
-      expect(section?.content).not.toMatch(
+      expect(liveSection?.content).not.toMatch(
         /processor|registry|danh sách|bên xử lý/iu
       );
       expect(legalRevisionChangesCopy[locale].mobile).not.toMatch(

@@ -2,6 +2,7 @@ export * from './classroom-revision';
 export * from './changes';
 export * from './diff';
 export * from './documents';
+export * from './mobile-privacy-revision-2026-11-26';
 export * from './notice';
 export { legalNoticeCopy } from './notice-copy';
 export * from './proposed';

@@ -49,16 +49,16 @@ const hashes = {
 } as const;
 const meetPublicationHashes = {
   en: {
-    privacy: 'c6fa4d0d0e90fcd4635f9ea3c6138b9cef691c3ef66615606934854a6c94072a',
+    privacy: '087b7cf68e837692dfd4ee3ec5bea65b6faff9edd976d91faad7df113a2ab23d',
     terms: 'ea66220bcf79da35a338f9b2f01deffee031e7dcb82d62042423e73d8d54b038',
     subprocessors:
-      '84bd25819c73538963defa626719bf1ee00e79d9f42ee1017f86fd287a392af4',
+      '2d0e2b2edc81b146e2f936094cb4b736d8eec24cbcaf8695d17ed64387ab7277',
   },
   vi: {
-    privacy: '3956121e0a80f90e5d1a440e89b2e8b32786856459e2ef5b7523ce8177c8ed9a',
+    privacy: 'cf48c4eb8d12f71fc2e5b1cc6cf01f73211564b05e6fac1ca1dfbbbb1a95a24c',
     terms: '4a854bc70815c268a0b3bfdc7dd1cdf44a3a31debe682776f72fea604283f837',
     subprocessors:
-      '122ba105e557b937aa0b2777c7abd0341a54948dd3f6fcdf9daacc5488961a29',
+      'b8ace31386edeb5bc6a41d3dcdcfc77f8ef65f27595bf32df2e51925f7320073',
   },
 } as const;
 describe('effective legal publications', () => {
@@ -89,26 +89,40 @@ describe('effective legal publications', () => {
       });
     }
     for (const kind of ['privacy', 'terms', 'subprocessors'] as const) {
-      it(`${locale}/${kind} consumes the proposed dated Meet publication`, () => {
+      it(`${locale}/${kind} consumes the proposed dated canonical publications`, () => {
         const baseline = LEGAL_DOCUMENTS[locale][kind];
         const document = getLegalDocument(kind, locale);
-        const date = kind === 'privacy' ? '2026-11-21' : '2026-11-12';
+        const date =
+          kind === 'privacy' || kind === 'subprocessors'
+            ? '2026-11-26'
+            : '2026-11-12';
         expect(document.effectiveDate).toBe(date);
         expect(document.publishedDate).toBe(date);
         expect(document.version).toBe(date);
         expect(document.reviewRequired).toBe(true);
         expect(document.footer).toBe(baseline.footer);
         expect(document.summaryRows).toEqual(baseline.summaryRows);
-        expect(document.sections.slice(0, baseline.sections.length)).toEqual(
-          baseline.sections
-        );
+        expect(
+          document.sections
+            .slice(0, baseline.sections.length)
+            .map((section) => section.id)
+        ).toEqual(baseline.sections.map((section) => section.id));
+        if (kind === 'terms') {
+          expect(document.sections.slice(0, baseline.sections.length)).toEqual(
+            baseline.sections
+          );
+        }
         const additions = document.sections.slice(baseline.sections.length);
         expect(additions.length).toBeGreaterThan(0);
         expect(
           additions.every(
             (section) =>
               section.id?.startsWith('meet-ai-') ||
-              (kind === 'privacy' && section.id === 'mail-google-user-data')
+              (kind === 'privacy' &&
+                (section.id === 'mail-google-user-data' ||
+                  section.id === 'privacy-mobile')) ||
+              (kind === 'subprocessors' &&
+                section.id?.startsWith('subprocessors-mobile-'))
           )
         ).toBe(true);
         const text = JSON.stringify({
@@ -148,11 +162,9 @@ describe('effective legal publications', () => {
         locale,
         upcomingMobilePrivacyRevision.version
       );
-      expect(mobile.sections.slice(0, current.sections.length)).toEqual(
-        current.sections
-      );
-      expect(mobile.effectiveDate).toBeNull();
-      expect(mobile.published).toBe(false);
+      expect(mobile.sections).toEqual(current.sections);
+      expect(mobile.effectiveDate).toBe('2026-11-26');
+      expect(mobile.published).toBe(true);
       expect(mobile.reviewRequired).toBe(true);
     });
     for (const kind of ['acceptable-use', 'community-guidelines'] as const) {

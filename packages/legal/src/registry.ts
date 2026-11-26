@@ -49,13 +49,16 @@ export const PUBLIC_APP_SERVICE_CATEGORY = {
 } as const satisfies Record<string, PublicServiceCategory>;
 
 export const CONFIGURED_EXTERNAL_PROCESSORS = [
+  'Anthropic',
+  'AWS SES',
   'Cloudflare',
+  'Firebase (Google)',
   'Google Cloud',
   'Microsoft',
   'OpenAI',
   'Polar',
   'Resend',
-  'Sentry',
   'Supabase',
+  'Upstash',
   'Vercel',
 ] as const;

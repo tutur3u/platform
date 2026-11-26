@@ -69,10 +69,12 @@ describe('upcoming legal changes', () => {
         expect(a?.textContent).toContain(
           legalRevisionChangesCopy[locale].mobile
         );
-        expect(a?.textContent).toContain(
+        expect(a?.textContent).not.toContain(
           legalRevisionChangesCopy[locale].pendingDate
         );
-        expect(a?.querySelector('time')).toBeNull();
+        expect(a?.querySelector('time')?.dateTime).toBe(
+          upcomingMobilePrivacyRevision.effectiveDate
+        );
         expect(b?.textContent).toContain(
           legalRevisionChangesCopy[locale].processors
         );
@@ -331,9 +333,9 @@ describe('upcoming legal changes', () => {
         const effectiveDate =
           kind === 'acceptable-use' || kind === 'community-guidelines'
             ? '2026-02-06'
-            : kind === 'privacy'
-              ? '2026-11-21'
-              : kind === 'terms' || kind === 'subprocessors'
+            : kind === 'privacy' || kind === 'subprocessors'
+              ? '2026-11-26'
+              : kind === 'terms'
                 ? '2026-11-12'
                 : '2026-08-15';
         expect(page.querySelector('time')?.dateTime).toBe(effectiveDate);

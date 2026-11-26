@@ -13,9 +13,9 @@ export const upcomingLegalRevision = {
 export const upcomingMobilePrivacyRevision = {
   version: '2026-11-02-mobile',
   kind: 'privacy',
-  published: false,
-  effectiveDate: null,
-  publishedDate: '2026-11-02',
+  published: true,
+  effectiveDate: '2026-11-26',
+  publishedDate: '2026-11-26',
 } as const;
 
 type CommercialProposedVersion =
@@ -79,10 +79,15 @@ export function getLegalRevision(
     if (kind !== 'privacy')
       throw new Error('Mobile revision supports privacy only');
     const current = getLegalDocument('privacy', locale);
+    const hasMobileSection = current.sections.some(
+      (section) => section.id === 'privacy-mobile'
+    );
     return {
       ...current,
       ...upcomingMobilePrivacyRevision,
-      sections: [...current.sections, mobileSection(current.locale)],
+      sections: hasMobileSection
+        ? current.sections
+        : [...current.sections, mobileSection(current.locale)],
     };
   }
   const draft =

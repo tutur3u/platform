@@ -3,13 +3,13 @@
 exports[`mobile privacy release separate from the commercial proposal > en A is exactly in-force privacy plus the shared mobile section 1`] = `
 {
   "badge": "Privacy & Data",
-  "effectiveDate": null,
+  "effectiveDate": "2026-11-26",
   "footer": "Questions and rights requests may be sent to privacy@tuturuuu.com. This draft requires legal review before production publication.",
   "highlightedWord": "Policy",
   "kind": "privacy",
   "locale": "en",
-  "published": false,
-  "publishedDate": "2026-11-02",
+  "published": true,
+  "publishedDate": "2026-11-26",
   "reviewRequired": true,
   "sections": [
     {
@@ -51,14 +51,14 @@ Data may be processed in countries where Tuturuuu or subprocessors operate. Wher
     {
       "content": "Tuturuuu does **not** use customer prompts, outputs, files or evaluation datasets for general-purpose model training by default. Applicable no-training or data-control settings are propagated to supported providers. AI features can produce inaccurate, incomplete or biased output and may involve automated processing, but customers remain responsible for consequential decisions and appropriate human review.
 
-We do not sell personal information or share it for cross-context behavioral advertising, subject to final provider and advertising-technology audit before publication. Optional integrations process data under their own terms and are enabled by users or workspace administrators.",
+We do not sell personal information or share it for cross-context behavioral advertising, and our mobile applications do not collect advertising identifiers (IDFA or Android Advertising ID) or track users across third-party apps or websites. Optional integrations process data under their own terms and are enabled by users or workspace administrators.",
       "icon": "code",
       "id": "privacy-section-5",
       "title": "AI, automated processing, and integrations",
       "tone": "cyan",
     },
     {
-      "content": "Depending on location and applicable thresholds or exemptions, individuals may request access, correction, deletion, portability, restriction, objection, withdrawal of consent, or appeal. Rights under Vietnam's Decree 13/2023, the GDPR and UK GDPR, and applicable United States state laws—including California access, correction, deletion, portability, opt-out and non-discrimination rights—apply only to the extent the relevant law governs the processing.
+      "content": "Depending on location and applicable thresholds or exemptions, individuals may request access, correction, deletion, portability, restriction, objection, withdrawal of consent, or appeal. Rights under Vietnam's Law on Personal Data Protection No. 91/2025/QH15 (effective 1 January 2026) and its implementing rules, the GDPR and UK GDPR, and applicable United States state laws—including California access, correction, deletion, portability, opt-out and non-discrimination rights—apply only to the extent the relevant law governs the processing.
 
 Users should normally contact their workspace administrator first for customer-controlled content. Tuturuuu will assist controllers under the DPA. The Services are not directed to children below the minimum lawful age; administrators and guardians must obtain required consent, and AI features may have higher age restrictions.",
       "icon": "scale",
@@ -97,7 +97,9 @@ Users should normally contact their workspace administrator first for customer-c
     {
       "content": "**Push notifications.** If you sign in and turn on push notifications, your device is registered with Google Firebase Cloud Messaging and Firebase Installations so we can deliver notifications. This sends a push token and an installation identifier to Google; we link the push token to your account on our servers so we can send you notifications, and Google delivers the notification content to your device. It happens only after you sign in and turn on push, and it does not depend on your analytics choice. Before you sign in, the app does not contact Firebase. You can turn push off in the app or in your device settings.
 
-**Analytics and crash reports.** Firebase Analytics and Crashlytics are off until you choose Allow. If you do not allow, no analytics or crash data is sent. If you allow, we receive app and device identifiers (including a Firebase installation identifier), usage events, crash reports and device and operating-system information to understand how the app is used and to fix crashes. Google keeps this data for at most two months at the user level; we have turned off Google's advertising and data-sharing features for it. You can change your choice at any time in Settings > Preferences > Privacy > Share analytics and crash reports; when you turn it off, collection stops and unsent crash reports are deleted. Test builds do not collect.",
+**Analytics and crash reports.** Firebase Analytics and Crashlytics are off until you choose Allow. If you do not allow, no analytics or crash data is sent. If you allow, we receive app and device identifiers (including a Firebase installation identifier), usage events, crash reports and device and operating-system information to understand how the app is used and to fix crashes. Google keeps this data for at most two months at the user level; we have turned off Google's advertising and data-sharing features for it. You can change your choice at any time in Settings > Preferences > Privacy > Share analytics and crash reports; when you turn it off, collection stops and unsent crash reports are deleted. Test builds do not collect.
+
+**Device identifiers for authentication and security.** When you sign in, approve multi-factor authentication or QR login, or register a device for push notifications, the mobile app sends a first-party device identifier (such as Apple's identifierForVendor on iOS or Android ID on Android) to Tuturuuu servers, linked to your account for authentication security, anti-abuse protection and push-device registration.",
       "icon": "bell",
       "id": "privacy-mobile",
       "title": "Mobile app",
@@ -132,13 +134,13 @@ Users should normally contact their workspace administrator first for customer-c
 exports[`mobile privacy release separate from the commercial proposal > vi A is exactly in-force privacy plus the shared mobile section 1`] = `
 {
   "badge": "Quyền riêng tư & Dữ liệu",
-  "effectiveDate": null,
+  "effectiveDate": "2026-11-26",
   "footer": "Gửi câu hỏi hoặc yêu cầu về quyền dữ liệu đến privacy@tuturuuu.com. Bản dự thảo này cần được rà soát pháp lý trước khi công bố.",
   "highlightedWord": "Riêng tư",
   "kind": "privacy",
   "locale": "vi",
-  "published": false,
-  "publishedDate": "2026-11-02",
+  "published": true,
+  "publishedDate": "2026-11-26",
   "reviewRequired": true,
   "sections": [
     {
@@ -180,14 +182,14 @@ Dữ liệu có thể được xử lý tại quốc gia nơi Tuturuuu hoặc b�
     {
       "content": "Tuturuuu **không** dùng lời nhắc, đầu ra, tệp hoặc bộ dữ liệu đánh giá của khách hàng để huấn luyện mô hình đa mục đích theo mặc định. Các tùy chọn không huấn luyện và kiểm soát dữ liệu được chuyển tới nhà cung cấp có hỗ trợ. Đầu ra AI có thể sai, thiếu hoặc thiên lệch; khách hàng phải duy trì việc xem xét của con người.
 
-Chúng tôi không bán thông tin cá nhân hoặc chia sẻ cho quảng cáo hành vi xuyên bối cảnh, với điều kiện tuyên bố này được xác nhận trong kiểm toán cuối cùng về nhà cung cấp và công nghệ quảng cáo. Tích hợp tùy chọn chịu điều khoản riêng và chỉ chạy khi người dùng hoặc quản trị viên bật.",
+Chúng tôi không bán thông tin cá nhân hoặc chia sẻ cho quảng cáo hành vi xuyên bối cảnh; ứng dụng di động của chúng tôi không thu thập mã định danh quảng cáo (IDFA hoặc Android Advertising ID) và không theo dõi người dùng xuyên suốt ứng dụng hay trang web của bên thứ ba. Tích hợp tùy chọn chịu điều khoản riêng và chỉ chạy khi người dùng hoặc quản trị viên bật.",
       "icon": "code",
       "id": "privacy-section-5",
       "title": "AI, xử lý tự động và tích hợp",
       "tone": "cyan",
     },
     {
-      "content": "Tùy nơi cư trú, ngưỡng áp dụng và ngoại lệ, cá nhân có thể yêu cầu truy cập, sửa, xóa, chuyển, hạn chế, phản đối, rút đồng ý hoặc khiếu nại. Quyền theo Nghị định 13/2023 của Việt Nam, GDPR/UK GDPR và luật tiểu bang Hoa Kỳ áp dụng—bao gồm California—chỉ trong phạm vi luật tương ứng điều chỉnh hoạt động xử lý.
+      "content": "Tùy nơi cư trú, ngưỡng áp dụng và ngoại lệ, cá nhân có thể yêu cầu truy cập, sửa, xóa, chuyển, hạn chế, phản đối, rút đồng ý hoặc khiếu nại. Quyền theo Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 của Việt Nam (có hiệu lực từ ngày 01/01/2026) và các văn bản hướng dẫn thi hành, GDPR/UK GDPR và luật tiểu bang Hoa Kỳ áp dụng—bao gồm California—chỉ trong phạm vi luật tương ứng điều chỉnh hoạt động xử lý.
 
 Với nội dung do khách hàng kiểm soát, người dùng thường nên liên hệ quản trị viên trước. Tuturuuu hỗ trợ bên kiểm soát theo DPA. Dịch vụ không hướng tới trẻ dưới độ tuổi hợp pháp tối thiểu; quản trị viên và người giám hộ phải có đồng ý cần thiết, và tính năng AI có thể yêu cầu độ tuổi cao hơn.",
       "icon": "scale",
@@ -226,7 +228,9 @@ Với nội dung do khách hàng kiểm soát, người dùng thường nên li�
     {
       "content": "**Thông báo đẩy.** Nếu bạn đăng nhập và bật thông báo đẩy, thiết bị của bạn được đăng ký với Google Firebase Cloud Messaging và Firebase Installations để chúng tôi gửi thông báo. Việc này gửi mã thông báo đẩy và mã định danh bản cài đặt đến Google; chúng tôi gắn mã thông báo đẩy với tài khoản của bạn trên máy chủ của chúng tôi để gửi thông báo cho bạn, và Google chuyển nội dung thông báo đến thiết bị của bạn. Chỉ xảy ra sau khi bạn đăng nhập và bật thông báo đẩy, và không phụ thuộc vào lựa chọn phân tích của bạn. Trước khi đăng nhập, ứng dụng không kết nối đến Firebase. Bạn có thể tắt thông báo đẩy trong ứng dụng hoặc trong cài đặt thiết bị.
 
-**Phân tích và báo cáo sự cố.** Firebase Analytics và Crashlytics tắt cho đến khi bạn chọn Cho phép. Nếu không cho phép, không có dữ liệu phân tích hoặc sự cố nào được gửi. Nếu cho phép, chúng tôi nhận mã định danh ứng dụng và thiết bị (gồm mã định danh bản cài đặt Firebase), sự kiện sử dụng, báo cáo sự cố và thông tin thiết bị, hệ điều hành để hiểu cách ứng dụng được dùng và sửa lỗi sập ứng dụng. Google giữ dữ liệu này tối đa hai tháng ở cấp người dùng; chúng tôi đã tắt các tính năng quảng cáo và chia sẻ dữ liệu của Google cho dữ liệu này. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư > Chia sẻ dữ liệu phân tích và báo cáo sự cố; khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa. Bản dựng thử nghiệm không thu thập.",
+**Phân tích và báo cáo sự cố.** Firebase Analytics và Crashlytics tắt cho đến khi bạn chọn Cho phép. Nếu không cho phép, không có dữ liệu phân tích hoặc sự cố nào được gửi. Nếu cho phép, chúng tôi nhận mã định danh ứng dụng và thiết bị (gồm mã định danh bản cài đặt Firebase), sự kiện sử dụng, báo cáo sự cố và thông tin thiết bị, hệ điều hành để hiểu cách ứng dụng được dùng và sửa lỗi sập ứng dụng. Google giữ dữ liệu này tối đa hai tháng ở cấp người dùng; chúng tôi đã tắt các tính năng quảng cáo và chia sẻ dữ liệu của Google cho dữ liệu này. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư > Chia sẻ dữ liệu phân tích và báo cáo sự cố; khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa. Bản dựng thử nghiệm không thu thập.
+
+**Mã định danh thiết bị cho xác thực và bảo mật.** Khi bạn đăng nhập, phê duyệt xác thực đa yếu tố hoặc đăng nhập bằng mã QR, hoặc đăng ký thiết bị nhận thông báo đẩy, ứng dụng di động gửi mã định danh thiết bị bên thứ nhất (như identifierForVendor trên iOS hoặc Android ID trên Android) đến máy chủ Tuturuuu, gắn với tài khoản của bạn để bảo mật xác thực, chống lạm dụng và đăng ký thiết bị nhận thông báo đẩy.",
       "icon": "bell",
       "id": "privacy-mobile",
       "title": "Ứng dụng di động",

@@ -47,21 +47,36 @@ describe('Mail Google user data disclosure', () => {
   it.each(['en', 'vi'] as const)(
     'dates the %s Privacy Policy and keeps every earlier section in order',
     (locale) => {
+      const mailPublished = proposeMailGoogleLegalPublication(
+        LEGAL_DOCUMENTS[locale].privacy
+      );
+      expect(mailPublished.effectiveDate).toBe(MAIL_GOOGLE_LEGAL_DATE);
+      expect(mailPublished.publishedDate).toBe(MAIL_GOOGLE_LEGAL_DATE);
+      expect(mailPublished.version).toBe(MAIL_GOOGLE_LEGAL_DATE);
+      expect(mailPublished.reviewRequired).toBe(true);
+      expect(mailPublished.badge).toBe(LEGAL_DOCUMENTS[locale].privacy.badge);
+      expect(mailPublished.sections.at(-1)?.id).toBe('mail-google-user-data');
+
       const document = getLegalDocument('privacy', locale);
-      expect(document.effectiveDate).toBe(MAIL_GOOGLE_LEGAL_DATE);
-      expect(document.publishedDate).toBe(MAIL_GOOGLE_LEGAL_DATE);
-      expect(document.version).toBe(MAIL_GOOGLE_LEGAL_DATE);
       expect(document.reviewRequired).toBe(true);
       expect(document.badge).toBe(LEGAL_DOCUMENTS[locale].privacy.badge);
-      expect(document.sections.at(-1)?.id).toBe('mail-google-user-data');
       expect(
         document.sections.filter(
           (section) => section.id === 'mail-google-user-data'
         )
       ).toHaveLength(1);
-      expect(
-        document.sections.some((section) => section.id === 'meet-ai-inputs')
-      ).toBe(true);
+      const mailIndex = document.sections.findIndex(
+        (section) => section.id === 'mail-google-user-data'
+      );
+      const meetIndex = document.sections.findIndex(
+        (section) => section.id === 'meet-ai-inputs'
+      );
+      const mobileIndex = document.sections.findIndex(
+        (section) => section.id === 'privacy-mobile'
+      );
+      expect(meetIndex).toBeGreaterThanOrEqual(0);
+      expect(mailIndex).toBeGreaterThan(meetIndex);
+      expect(mobileIndex).toBeGreaterThan(mailIndex);
     }
   );
 
