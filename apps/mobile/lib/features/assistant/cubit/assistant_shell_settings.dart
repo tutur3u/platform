@@ -35,9 +35,11 @@ extension _AssistantShellSettings on AssistantShellCubit {
 
   Future<bool> _selectModel(AssistantGatewayModel model) async {
     final workspace = state.workspace;
-    if (workspace == null ||
-        _settingsSelectionPending ||
-        !_acceptsSettingsChanges) {
+    if (workspace == null || _settingsSelectionPending) return false;
+    if (!_acceptsSettingsChanges) {
+      // The picker can stay open across a session change; say why the
+      // choice did not apply.
+      _onSettingsSelectionFailure?.call(AssistantSettingsDisposition.stale);
       return false;
     }
     final creditWsId = state.creditSource == AssistantCreditSource.personal

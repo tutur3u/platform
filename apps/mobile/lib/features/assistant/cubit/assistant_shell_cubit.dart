@@ -86,8 +86,15 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
   /// before it emits; a change that settles later still applies itself.
   final Duration selectionSettleWait;
 
-  /// Whether a settings change may start now.
-  bool get _acceptsSettingsChanges => _sessionLoaded;
+  /// Whether a settings change may start now: the session's first load has
+  /// emitted and the session still belongs to the current actor.
+  bool get _acceptsSettingsChanges =>
+      _sessionLoaded && _sessionScope?.actorId == _repository.currentActorId;
+
+  /// Whether the composer's model and mode controls can change settings:
+  /// the session has loaded and the last load or change did not fail.
+  bool get settingsReady =>
+      _acceptsSettingsChanges && state.status == AssistantShellStatus.loaded;
   final Object? Function()? _currentSettingsToken;
   final void Function(AssistantSettingsDisposition)?
   _onSettingsSelectionFailure;
@@ -128,8 +135,25 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
       _openConversation = null;
     }
     final appliedAtStart = _appliedSelections;
+    // A new session drops the previous account's model, credits and
+    // conversation, so nothing sent while it loads carries them.
+    final base = newSession
+        ? state.copyWith(
+            personalWorkspaceId: null,
+            workspaceCredits: const AssistantCredits(),
+            personalCredits: const AssistantCredits(),
+            activeCredits: const AssistantCredits(),
+            availableModels: const [],
+            selectedModel: _defaultAssistantModel,
+            conversationSettings: null,
+            thinkingMode: _sessionThinkingMode,
+            creditSource: AssistantCreditSource.workspace,
+            workspaceCreditLocked: false,
+            isPersonalDashboardWorkspace: false,
+          )
+        : state;
     _emitIfOpen(
-      state.copyWith(
+      base.copyWith(
         status: AssistantShellStatus.loading,
         workspace: workspace,
         clearError: true,
@@ -209,13 +233,20 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         await pending.done.timeout(selectionSettleWait, onTimeout: () {});
         if (isClosed || requestVersion != _requestVersion) return;
       }
+      // A change still saving after the wait owns the stored preferences.
+      final stillSaving = _pendingSelection?.epoch == _scopeEpoch;
       // Only a change within this same session can win; a new session's
       // first load always applies its own settings.
       final changed = !newSession && _appliedSelections != appliedAtStart;
       final open = _openConversationFor(workspace.id);
-      final creditSource = changed
+      // Locked workspace credits always resolve to personal credits.
+      final creditSource = workspaceCreditLocked
+          ? AssistantCreditSource.personal
+          : changed
           ? state.creditSource
           : open?.creditSource ?? activeCreditSource;
+      // Ready before the emit, so the composer sees it with the loaded state.
+      _sessionLoaded = true;
       _emitIfOpen(
         state.copyWith(
           status: AssistantShellStatus.loaded,
@@ -226,9 +257,11 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
           calendarInsight: calendar,
           workspaceCredits: workspaceCredits,
           personalCredits: personalCredits,
-          activeCredits: changed && creditSource != activeCreditSource
-              ? state.activeCredits
-              : activeCredits,
+          activeCredits: creditSource == activeCreditSource
+              ? activeCredits
+              : creditSource == AssistantCreditSource.personal
+              ? personalCredits
+              : workspaceCredits,
           availableModels: models,
           selectedModel: changed
               ? state.selectedModel
@@ -246,14 +279,15 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
         ),
       );
 
-      _sessionLoaded = true;
-      if (!changed) {
+      if (!changed && !stillSaving) {
         unawaited(_preferences.saveModel(workspace.id, selectedModel));
         unawaited(
           _preferences.saveCreditSource(workspace.id, activeCreditSource),
         );
       }
-    } on Exception catch (error) {
+    } on Object catch (error) {
+      // Any failure, not only an Exception, ends the load so the shell never
+      // stays in loading.
       if (isClosed || requestVersion != _requestVersion) return;
       _emitIfOpen(
         state.copyWith(

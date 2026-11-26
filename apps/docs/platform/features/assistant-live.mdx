@@ -758,13 +758,17 @@ sends the mode with each request, changes it locally without a settings write.
 The selector waits while a reply is in flight or messages are queued, so a
 change never stops a reply or drops queued messages, and a change still being
 saved wins over a workspace refresh that lands meanwhile; the refresh waits up
-to three seconds for it, and a change that settles later still applies itself.
-The model and mode controls wait while a session's workspace settings load, so
-no change is built from the previous session's model or credit source. Live
-keeps its own model choice. Regression coverage:
-`assistant_shell_recovery_test.dart`, `assistant_shell_kept_settings_test.dart`,
-`assistant_legacy_chat_test.dart`, `assistant_thinking_mode_switch_test.dart`
-and `assistant_home_render_test.dart`.
+to three seconds for it, and a change that settles later still applies itself. A
+new session starts without the previous account's model, credits or
+conversation, so nothing sent while it loads carries them. The model and mode
+controls wait until the session's workspace settings load successfully, so no
+change is built from another session's model or credit source, and locked
+workspace credits always resolve to personal credits. Live keeps its own model
+choice. Regression coverage: `assistant_shell_recovery_test.dart`,
+`assistant_shell_kept_settings_test.dart`,
+`assistant_shell_session_gate_test.dart`, `assistant_legacy_chat_test.dart`,
+`assistant_thinking_mode_switch_test.dart` and
+`assistant_home_render_test.dart`.
 
 Model selection defaults to hiding locked or disabled models; users can reveal
 them for inspection but cannot select them. Model and attachment sheets use the
