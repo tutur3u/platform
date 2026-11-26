@@ -22,6 +22,7 @@ vi.mock(
 );
 vi.mock('next/headers', () => ({
   cookies: async () => ({ get: () => ({ value: 'guest-cookie' }) }),
+  headers: async () => new Headers(),
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
   getMeetGuestCallAccess: mocks.guestAccess,
@@ -294,7 +295,11 @@ it('opens the call for a verified guest cookie in the lobby only', async () => {
   const result = callResult(
     await RoomPage({ params: Promise.resolve({ code, locale: 'en' }) })
   );
-  expect(mocks.guestAccess).toHaveBeenCalledWith(id, 'guest-cookie');
+  expect(mocks.guestAccess).toHaveBeenCalledWith(
+    id,
+    'guest-cookie',
+    expect.any(Headers)
+  );
   expect(result.props).toMatchObject({
     accountId: actorId,
     canReadWorkspace: false,

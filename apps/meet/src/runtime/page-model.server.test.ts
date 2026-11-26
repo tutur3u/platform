@@ -109,6 +109,7 @@ vi.mock('./request-context', () => ({
 }));
 
 import { encodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
+import { invalidateMeetGuestHostCache } from '@tuturuuu/utils/meet-guest-host-cache';
 import { loadPageModel } from './page-model.server';
 
 const meetingId = '00000000-0000-4000-8000-000000000001';
@@ -152,6 +153,7 @@ function signIn(id: string | null) {
 }
 
 beforeEach(() => {
+  invalidateMeetGuestHostCache(meetingRow.id);
   mocks.responseHeaders.delete('cache-control');
   vi.clearAllMocks();
   mocks.tables = {};

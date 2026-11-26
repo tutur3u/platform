@@ -29,7 +29,7 @@
   "packages/internal-api/src/meetings.ts": "11bedc777e4670345ccc10817910ee713c2c6630c7d3e3f33de10e6ea87f287b",
   "packages/legal/src/meet-ai-revision-2026-11-12.ts": "0bbac7403fcfdee5d2be6a4330e3d8c01ee65adc0a40fd64d54189bea2785645",
   "packages/meet-core/src/features/call/components/ended-notes-panel.tsx": "561a59e3b90dbb8ecdc95a9fba5e535aa9cdb23d212cb1b6998e27f771c1f4e4",
-  "packages/meet-core/src/features/meeting-ai/meeting-ai-panel.tsx": "22652f9ea182e0ec1f21ac121422e06dab5f9bbd2afc656e97d3b008e066139c",
+  "packages/meet-core/src/features/meeting-ai/meeting-ai-panel.tsx": "bc8c6664a2046727fbf5bee85449818d52a9fd6beb2a8e17db0c6587bf877724",
   "packages/meet-core/src/features/meeting-ai/meeting-live-notes.tsx": "3f0b03a17c3ba3805582e854a9bfa1117852eaeb59bdaa732884e2053cf47a0f",
   "packages/meet-core/src/features/meeting-ai/meeting-transcript.tsx": "1f8d1475dadb4b02d1e8ebf5d6de4661423ebf3fc65e75a167bcb23c6254c25d",
   "packages/meet-core/src/features/meeting-ai/server/chunks.ts": "02baf8669df50cfdb57e572ebaaf05014be76eda77b4bad80c279ea8b5e11f3f",
