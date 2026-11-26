@@ -53,6 +53,9 @@ defers are listed under Release gates.
   per-speaker command when its own copy is off. The uploader path also requires
   `MEETING_APP === 'meet'` and a same-origin request. The existing kill switch
   `MEET_AI_DISABLED` overrides both.
+  The production Meet workflow sets the switch on both Workers and passes
+  the same `MEET_AI_PER_SPEAKER_WORKSPACES` repository variable to both.
+  An unset variable deploys an empty allowlist and admits no workspace.
 - The room Durable Object stores the capture mode per meeting
   (`transcript.mode`, host or co-host only). It refuses a mode change while a
   session is active or draining.

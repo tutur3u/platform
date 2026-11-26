@@ -739,6 +739,7 @@ jobs:
           MEET_AI_RELEASE: ${{ vars.MEET_AI_RELEASE || 'contained' }}
           MEET_GUEST_WHITEBOARD: ${{ vars.MEET_GUEST_WHITEBOARD || 'false' }}
           MEET_GUEST_WHITEBOARD_DRAW: ${{ vars.MEET_GUEST_WHITEBOARD_DRAW || 'false' }}
+          MEET_AI_PER_SPEAKER_WORKSPACES: ${{ vars.MEET_AI_PER_SPEAKER_WORKSPACES || '' }}
         id: signaling
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
@@ -749,7 +750,8 @@ jobs:
           contain=()
           if [ "$MEET_AI_RELEASE" = contained ]; then contain=(--var MEET_AI_DISABLED:true); fi
           bun x --no-install wrangler deploy --no-bundle -c apps/meet-realtime/dist/worker/wrangler.json --message "$SOURCE_SHA" "${contain[@]}" \
-            --var "MEET_GUEST_WHITEBOARD:$MEET_GUEST_WHITEBOARD" --var "MEET_GUEST_WHITEBOARD_DRAW:$MEET_GUEST_WHITEBOARD_DRAW"
+            --var "MEET_GUEST_WHITEBOARD:$MEET_GUEST_WHITEBOARD" --var "MEET_GUEST_WHITEBOARD_DRAW:$MEET_GUEST_WHITEBOARD_DRAW" \
+            --var MEET_AI_PER_SPEAKER:true --var "MEET_AI_PER_SPEAKER_WORKSPACES:$MEET_AI_PER_SPEAKER_WORKSPACES"
       - name: Deploy the verified frontend
         if: steps.admission.outputs.superseded != 'true'
         env:
@@ -766,6 +768,7 @@ jobs:
           MEET_UX_V2: ${{ vars.MEET_UX_V2 || 'false' }}
           MEET_GUEST_WHITEBOARD: ${{ vars.MEET_GUEST_WHITEBOARD || 'false' }}
           MEET_GUEST_WHITEBOARD_DRAW: ${{ vars.MEET_GUEST_WHITEBOARD_DRAW || 'false' }}
+          MEET_AI_PER_SPEAKER_WORKSPACES: ${{ vars.MEET_AI_PER_SPEAKER_WORKSPACES || '' }}
           PAID_TIER_SECRET: ${{ steps.secret-names.outputs.paid_tier_secret }}
         id: frontend
         working-directory: apps/meet
@@ -785,7 +788,9 @@ jobs:
             --var "TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS"
             --var "MEET_UX_V2=$MEET_UX_V2"
             --var "MEET_GUEST_WHITEBOARD=$MEET_GUEST_WHITEBOARD"
-            --var "MEET_GUEST_WHITEBOARD_DRAW=$MEET_GUEST_WHITEBOARD_DRAW")
+            --var "MEET_GUEST_WHITEBOARD_DRAW=$MEET_GUEST_WHITEBOARD_DRAW"
+            --var MEET_AI_PER_SPEAKER=true
+            --var "MEET_AI_PER_SPEAKER_WORKSPACES=$MEET_AI_PER_SPEAKER_WORKSPACES")
           if [ "$MEET_AI_RELEASE" = contained ]; then
             output_args+=(--var MEET_AI_DISABLED=true)
           fi
