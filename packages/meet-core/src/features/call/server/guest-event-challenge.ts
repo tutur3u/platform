@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import {
   signRealtimePayload,
   verifyRealtimePayload,
@@ -24,8 +24,14 @@ type TicketContext = {
   displayName: string;
 };
 
-function binding(context: TicketContext) {
-  return createHash('sha256')
+function workKey(secret: string, purpose: 'ticket' | 'binding') {
+  return createHmac('sha256', secret.trim())
+    .update(`meet-event-work:v1:${purpose}`)
+    .digest('base64url');
+}
+
+function binding(context: TicketContext, secret: string) {
+  return createHmac('sha256', workKey(secret, 'binding'))
     .update(
       JSON.stringify([
         networkSubject(context.network ?? 'unknown'),
@@ -52,10 +58,10 @@ export function issueMeetGuestWork(
       meetingId: context.meetingId,
       eventExpiresAt: context.eventExpiresAt,
       expiresAt,
-      binding: binding(context),
+      binding: binding(context, secret),
       difficulty,
     },
-    secret
+    workKey(secret, 'ticket')
   );
   return { ticket, difficulty, expiresAt };
 }
@@ -69,20 +75,20 @@ export async function redeemMeetGuestWork(
   minimumDifficulty = 19
 ) {
   const parsed = ticketSchema.safeParse(
-    verifyRealtimePayload(work.ticket, secret)
+    verifyRealtimePayload(work.ticket, workKey(secret, 'ticket'))
   );
   if (!parsed.success) return null;
   const ticket = parsed.data;
   if (
     ticket.meetingId !== context.meetingId ||
     ticket.eventExpiresAt !== context.eventExpiresAt ||
-    ticket.binding !== binding(context) ||
+    ticket.binding !== binding(context, secret) ||
     ticket.difficulty < minimumDifficulty ||
     ticket.expiresAt <= now() ||
     !(await matchesGuestWork(work.ticket, work.nonce, ticket.difficulty))
   )
     return null;
   const ttlMs = ticket.expiresAt - now();
-  if (ttlMs <= 0 || !(await consume(ticket.id, ttlMs))) return null;
+  if (ttlMs <= 0 || !(await consume(ticket.id, ttlMs + 60_000))) return null;
   return ticket.id;
 }

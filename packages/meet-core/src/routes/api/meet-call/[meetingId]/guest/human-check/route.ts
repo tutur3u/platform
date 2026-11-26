@@ -8,6 +8,8 @@ import {
   meetHumanCheckSecret,
 } from '@tuturuuu/meet-core/features/call/server/guest-human-check';
 import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
+import { meetEventClientIp } from '../../../../../../features/call/server/guest-event-network';
+import { networkSubject } from '@tuturuuu/utils/network-subject';
 import { z } from 'zod';
 
 const headers = { 'Cache-Control': 'private, no-store' };
@@ -36,10 +38,11 @@ export async function POST(
       { error: 'Puzzle unavailable', code: 'MEET_HUMAN_CHECK_UNAVAILABLE' },
       { status: 503, headers }
     );
-  const network = extractTurnstileRemoteIp(request);
+  const legacyNetwork = extractTurnstileRemoteIp(request);
+  const guard = await meetHumanCheckGuard();
   const charge = await chargeMeetHumanCheck(
-    { meetingId, network },
-    await meetHumanCheckGuard()
+    { meetingId, network: legacyNetwork },
+    guard
   );
   if (!charge.ok)
     return Response.json(
@@ -58,13 +61,16 @@ export async function POST(
       { error: 'Guest join is unavailable', code: 'MEET_GUEST_UNAVAILABLE' },
       { status: 403, headers }
     );
+  const event = state.eventExpiresAt;
+  const ip = event ? meetEventClientIp(request.headers) : legacyNetwork;
+  const network = event && ip ? networkSubject(ip) : ip;
   const risk = await assessMeetGuestUnverifiedJoin(request, {
     meetingId,
-    network,
+    network: ip,
     kind: 'human-check',
     ...(state.eventExpiresAt ? { event: true } : {}),
   });
-  if (!risk.allowed)
+  if (!risk.allowed || (event && !risk.decision))
     return Response.json(
       {
         error: 'Verification required',
@@ -72,11 +78,25 @@ export async function POST(
       },
       { status: 403, headers }
     );
+  const eventCharge = event
+    ? await chargeMeetHumanCheck({ meetingId, network, event: true }, guard)
+    : charge;
+  if (!eventCharge.ok)
+    return Response.json(
+      { error: 'Too many puzzles', code: 'MEET_GUEST_RATE_LIMITED' },
+      {
+        status: 429,
+        headers: {
+          ...headers,
+          'Retry-After': String(eventCharge.retryAfterSeconds),
+        },
+      }
+    );
   const challenge = await createJigsawChallenge({
     secret,
-    scope: meetHumanCheckScope(meetingId),
+    scope: meetHumanCheckScope(meetingId, event),
     subject: network ?? 'unknown',
-    level: charge.level,
+    level: eventCharge.level,
   });
   return Response.json(challenge, { headers });
 }

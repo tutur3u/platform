@@ -59,14 +59,14 @@ export function canReadRoomNotes(
       (state.ended
         ? state.settings?.shareNotesAfterMeeting
         : state.settings?.shareNotes) &&
-        (state.presence[token.userId] ||
-          Object.values(state.presence).some(
-            (person) =>
-              (person.accountId ?? person.userId) ===
-              (token.accountId ?? token.userId)
-          ) ||
-          state.approved?.[token.accountId ?? token.userId] ||
-          state.approved?.[token.userId])
+      (state.presence[token.userId] ||
+        Object.values(state.presence).some(
+          (person) =>
+            (person.accountId ?? person.userId) ===
+            (token.accountId ?? token.userId)
+        ) ||
+        state.approved?.[token.accountId ?? token.userId] ||
+        state.approved?.[token.userId])
     )
   );
 }
@@ -227,10 +227,13 @@ export function applyRoomControl(
       eventModeExpiresAt
         ? {
             ...state,
-            eventAdmissionAudit: [
-              ...(state.eventAdmissionAudit ?? []).slice(-255),
+            eventActivationAudit: [
+              ...(state.eventActivationAudit ?? []).slice(-255),
               {
                 action: 'event_enabled',
+                roomId: token.roomId,
+                meetingId: token.meetingId,
+                wsId: token.wsId,
                 actorId: token.accountId ?? token.userId,
                 at: now,
                 expiresAt: eventModeExpiresAt,
@@ -301,7 +304,8 @@ export function applyRoomControl(
 export function rememberAdmission(
   state: MeetRoomSnapshot,
   person: MeetRealtimePresence,
-  promotion?: 'promoted'
+  promotion?: 'promoted',
+  eventProof?: number
 ) {
   if (person.role === 'host') return state.approved;
   const accountId = person.accountId ?? person.userId;
@@ -318,6 +322,7 @@ export function rememberAdmission(
       avatarUrl: person.avatarUrl,
       ...(classMediaRole ? { classMediaRole } : {}),
       ...(person.guest ? { guest: true as const } : {}),
+      ...(eventProof ? { eventProof } : {}),
       ...(person.external ? { external: true as const } : {}),
     },
   };

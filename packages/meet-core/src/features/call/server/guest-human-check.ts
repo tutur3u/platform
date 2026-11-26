@@ -17,7 +17,8 @@ export const MEET_HUMAN_CHECK_NETWORK_TOTAL_LIMIT = 20;
 export const MEET_HUMAN_CHECK_PLACEMENT_LIMIT = 6;
 const WINDOW_MS = 10 * 60_000;
 
-export const meetHumanCheckScope = (meetingId: string) => `meet:${meetingId}`;
+export const meetHumanCheckScope = (meetingId: string, event?: number) =>
+  event ? `meet:${meetingId}:event:${event}` : `meet:${meetingId}`;
 
 /** The sealing and signing secret, or null when the puzzle is not configured. */
 export function meetHumanCheckSecret() {
@@ -49,8 +50,16 @@ const localStore = createMemoryStore();
  * bound any replay.
  */
 export function meetHumanCheckStore(
-  guard: GuardClient | null
+  guard: GuardClient | null,
+  durable = false
 ): HumanCheckStore {
+  if (durable)
+    return {
+      incr: async (key, ttlMs) => {
+        if (!guard) throw new Error('Meet check guard unavailable');
+        return (await guard.incr(key, 1, ttlMs + 60_000)).n;
+      },
+    };
   if (!guard) return localStore;
   return {
     incr: async (key, ttlMs) => {
@@ -68,11 +77,12 @@ export function meetHumanCheckStore(
 
 export function meetHumanCheckWindows(
   meetingId: string,
-  network: string
+  network: string,
+  prefix = 'meet-human-check'
 ): GuardWindowSubject[] {
   return [
     {
-      partition: `meet-human-check-ip:${network}`,
+      partition: `${prefix}-ip:${network}`,
       windows: [
         {
           key: `issue:${meetingId}:10m`,
@@ -83,7 +93,7 @@ export function meetHumanCheckWindows(
       ],
     },
     {
-      partition: `meet-human-check-net:${network}`,
+      partition: `${prefix}-net:${network}`,
       windows: [
         {
           key: 'issue:all:10m',
@@ -94,7 +104,7 @@ export function meetHumanCheckWindows(
       ],
     },
     {
-      partition: `meet-human-check-room:${meetingId}`,
+      partition: `${prefix}-room:${meetingId}`,
       windows: [
         {
           key: 'issue:10m',
@@ -124,7 +134,7 @@ export type MeetHumanCheckIssuance =
  * down until the window resets.
  */
 export async function chargeMeetHumanCheck(
-  input: { meetingId: string; network: string | undefined },
+  input: { meetingId: string; network: string | undefined; event?: true },
   guard: MeetGuestJoinLimiter | null,
   now: () => number = Date.now
 ): Promise<MeetHumanCheckIssuance> {
@@ -133,7 +143,11 @@ export async function chargeMeetHumanCheck(
   if (guard) {
     try {
       const outcome = await guard.hitWindows(
-        meetHumanCheckWindows(input.meetingId, network)
+        meetHumanCheckWindows(
+          input.meetingId,
+          network,
+          input.event ? 'meet-event-human-check' : undefined
+        )
       );
       if (!outcome.ok)
         return {
@@ -152,6 +166,7 @@ export async function chargeMeetHumanCheck(
       });
     }
   }
+  if (input.event) return { ok: false, retryAfterSeconds: 60 };
   const at = now();
   const networkKey = `ip:${input.meetingId}:${network}`;
   const totalKey = `net:${network}`;
@@ -175,14 +190,15 @@ export async function chargeMeetHumanCheck(
 export async function chargeMeetHumanCheckPlacement(
   network: string | undefined,
   guard: MeetGuestJoinLimiter | null,
-  now: () => number = Date.now
+  now: () => number = Date.now,
+  event = false
 ): Promise<{ ok: true } | { ok: false; retryAfterSeconds: number }> {
   const subject = network?.trim() || 'unknown';
   if (guard) {
     try {
       const outcome = await guard.hitWindows([
         {
-          partition: `meet-human-check-place:${subject}`,
+          partition: `${event ? 'meet-event-human-check' : 'meet-human-check'}-place:${subject}`,
           windows: [
             {
               key: 'place:10m',
@@ -211,6 +227,7 @@ export async function chargeMeetHumanCheckPlacement(
       );
     }
   }
+  if (event) return { ok: false, retryAfterSeconds: 60 };
   const at = now();
   const key = `place:${subject}`;
   const used = localIssued.get(key, at) ?? 0;

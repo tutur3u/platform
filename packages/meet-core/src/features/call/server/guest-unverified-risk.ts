@@ -1,4 +1,3 @@
-import { isIPBlocked } from '@tuturuuu/utils/abuse-protection';
 import {
   classifyPotentialSpamUserAgent,
   extractUserAgentFromHeaders,
@@ -10,6 +9,8 @@ import {
   resolveAbuseRiskDecision,
 } from '@tuturuuu/utils/abuse-protection/reputation';
 import { MEET_GUEST_UNVERIFIED_NETWORK_LIMIT } from '../lib/guest-unverified-limit';
+
+import { meetEventNetworkAllowed } from './guest-event-network';
 
 export const MEET_GUEST_UNVERIFIED_ROUTE = '/api/meet-call/guest/unverified';
 export const MEET_GUEST_HUMAN_CHECK_ROUTE = '/api/meet-call/guest/human-check';
@@ -28,6 +29,7 @@ export type MeetGuestUnverifiedRisk =
 type RiskSources = {
   resolve?: typeof resolveAbuseRiskDecision;
   record?: typeof recordAbuseActivitySignal;
+  eventNetworkAllowed?: typeof meetEventNetworkAllowed;
 };
 
 /**
@@ -79,7 +81,9 @@ export async function assessMeetGuestUnverifiedJoin(
     (classifyPotentialSpamUserAgent(
       extractUserAgentFromHeaders(request.headers)
     ).riskLevel === 'block' ||
-      (input.network && (await isIPBlocked(input.network))));
+      !(await (sources.eventNetworkAllowed ?? meetEventNetworkAllowed)(
+        input.network
+      )));
   const refused =
     !!hardBlocked ||
     decision?.tier === 'restricted' ||

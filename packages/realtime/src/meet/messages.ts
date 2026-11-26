@@ -191,6 +191,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('admission.decideAll'),
+    confirmedEventExpiresAt: z.number().int().positive().optional(),
     requestId,
     admit: z.boolean(),
   }),

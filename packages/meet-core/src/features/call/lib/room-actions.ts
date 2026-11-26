@@ -106,8 +106,12 @@ export function createRoomActions(
         tileHeights,
       };
     },
-    admitAllWaiting: () =>
-      signaling.current?.send({ type: 'admission.decideAll', admit: true }),
+    admitAllWaiting: (confirmedEventExpiresAt?: number) =>
+      signaling.current?.send({
+        type: 'admission.decideAll',
+        admit: true,
+        confirmedEventExpiresAt,
+      }),
     denyAllWaiting: () =>
       signaling.current?.send({ type: 'admission.decideAll', admit: false }),
     setMediaOverride: (
@@ -218,7 +222,7 @@ export function createRoomActions(
         });
         if (
           !settingsApplied(settings, held) ||
-          (eventMode && (held.eventModeExpiresAt ?? 0) <= Date.now())
+          (eventMode && !held.eventModeExpiresAt)
         )
           throw new Error('settings_not_applied');
       } catch (error) {

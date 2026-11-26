@@ -122,6 +122,7 @@ export function SidePanel({
             room ? room.state.role === 'host' : (controls?.isHost ?? canManage)
           }
           settings={settings}
+          settingsClockSkew={room?.state.settingsClockSkew}
           onAdmitAll={onAdmitAll ?? actions?.admitAllWaiting}
           onDenyAll={actions?.denyAllWaiting}
           onCamerasLockedChange={onCamerasLockedChange}

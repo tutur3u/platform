@@ -90,7 +90,13 @@ function fixture() {
   const send = (socket: WebSocket, message: object) =>
     room.webSocketMessage(socket, JSON.stringify(message));
   const snapshot = () => values.get('snapshot') as MeetRoomSnapshot;
-  return { join, send, snapshot };
+  const readEventAudit = (token: ReturnType<typeof tokenFor>) =>
+    room.fetch(
+      new Request('https://meet.test/room-state?eventAudit=1', {
+        headers: { 'x-meet-token': JSON.stringify(token) },
+      })
+    );
+  return { join, send, snapshot, readEventAudit };
 }
 
 const heldSettings = (messages: MeetRealtimeServerMessage[]) =>
@@ -168,4 +174,22 @@ test('a refused settings write names its request', async () => {
     member.messages.filter((message) => message.type === 'error'),
     [{ type: 'error', error: 'permission_denied', requestId: 'denied' }]
   );
+});
+
+test('reads persisted event audit records only for authenticated staff hosts', async () => {
+  const { join, send, snapshot, readEventAudit } = fixture();
+  const staff = tokenFor(1, { eventHost: true });
+  const host = await join(staff);
+  await send(host.socket, {
+    type: 'room.settings.update',
+    settings: { eventMode: true },
+  });
+  const allowed = await readEventAudit(staff);
+  assert.equal(allowed.status, 200);
+  assert.deepEqual(await allowed.json(), {
+    activations: snapshot().eventActivationAudit,
+    admissions: [],
+  });
+  assert.equal((await readEventAudit(tokenFor(1))).status, 403);
+  assert.equal((await readEventAudit(tokenFor(2))).status, 403);
 });

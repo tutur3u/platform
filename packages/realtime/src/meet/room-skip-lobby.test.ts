@@ -157,10 +157,20 @@ describe('event room admission', () => {
     const state = eventRoom();
     const expiresAt = Date.parse(now) + 6 * 60 * 60_000;
     expect(state.settings?.eventModeExpiresAt).toBe(expiresAt);
-    expect(state.eventAdmissionAudit).toEqual([
-      { action: 'event_enabled', actorId: staff.userId, at: now, expiresAt },
+    expect(state.eventActivationAudit).toEqual([
+      {
+        action: 'event_enabled',
+        roomId: staff.roomId,
+        meetingId: staff.meetingId,
+        wsId: staff.wsId,
+        actorId: staff.userId,
+        at: now,
+        expiresAt,
+      },
     ]);
-    expect(run(state, enable, staff).state.eventAdmissionAudit).toHaveLength(1);
+    expect(run(state, enable, staff).state.eventActivationAudit).toHaveLength(
+      1
+    );
     expect(
       admitOrHold(state, guest, new Date(expiresAt).toISOString()).state
         .waiting[guest.userId]
@@ -192,9 +202,16 @@ describe('event room admission', () => {
     expect(
       admitOrHold(waiting, member, now).state.presence[member.userId]
     ).toBeDefined();
+    expect(
+      run(waiting, { type: 'admission.decideAll', admit: true }, staff).state
+    ).toBe(waiting);
     const admitted = run(
       waiting,
-      { type: 'admission.decideAll', admit: true },
+      {
+        type: 'admission.decideAll',
+        admit: true,
+        confirmedEventExpiresAt: state.settings?.eventModeExpiresAt,
+      },
       staff
     ).state;
     expect(admitted.presence[guest.userId]).toBeDefined();
@@ -203,6 +220,58 @@ describe('event room admission', () => {
       actorId: staff.userId,
       admitted: 1,
     });
+  });
+
+  it('counts one event slot per guest account and requires fresh approval after a tier change', () => {
+    const room = eventRoom();
+    const eventProof = room.settings?.eventModeExpiresAt;
+    const guestToken = { ...guest, guestEventProof: eventProof };
+    const waiting = admitOrHold(room, guestToken, now).state;
+    const duplicate = token(15, {
+      guest: true,
+      accountId: guestToken.accountId,
+      guestEventProof: eventProof,
+    });
+    expect(admitOrHold(waiting, duplicate, now).disconnect).toContain(
+      duplicate.userId
+    );
+    const stored = {
+      ...room,
+      approved: {
+        [guest.userId]: {
+          userId: guest.userId,
+          displayName: 'Guest',
+          guest: true as const,
+        },
+      },
+    };
+    expect(
+      admitOrHold(stored, guestToken, now).state.waiting[guest.userId]
+    ).toBeDefined();
+    const admitted = run(
+      waiting,
+      { type: 'admission.decide', userId: guest.userId, admit: true },
+      staff
+    ).state;
+    expect(admitted.approved?.[guest.userId]?.eventProof).toBe(eventProof);
+    const noop = run(
+      admitted,
+      {
+        type: 'admission.decideAll',
+        admit: true,
+        confirmedEventExpiresAt: eventProof,
+      },
+      staff
+    ).state;
+    expect(noop.eventAdmissionAudit).toBeUndefined();
+    expect(noop.eventActivationAudit).toBe(room.eventActivationAudit);
+    const expired = applyMeetRoomCommand(waiting, {
+      message: { type: 'admission.decide', userId: guest.userId, admit: true },
+      token: staff,
+      now: new Date(eventProof!).toISOString(),
+    });
+    expect(expired.state.waiting[guest.userId]).toBeUndefined();
+    expect(expired.disconnect).toContain(guest.userId);
   });
 
   it('caps simultaneous waiting and admitted guest connections only during the event', () => {

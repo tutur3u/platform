@@ -25,7 +25,8 @@ it('verifies real work and consumes the same signed ticket at most once', async 
   const nonce = await solveGuestWork(ticket, difficulty);
   if (nonce === null) throw new Error('No work solution');
   const consumed = new Set<string>();
-  const consume = async (id: string) => {
+  const consume = async (id: string, ttlMs: number) => {
+    expect(ttlMs).toBe(180_000);
     if (consumed.has(id)) return false;
     consumed.add(id);
     return true;

@@ -120,7 +120,8 @@ async function roomModel(code: string, locale: string, url: URL) {
           const guest = await getMeetGuestCallAccess(
             meetingId,
             (await cookies()).get(MEET_GUEST_COOKIE)?.value,
-            guestSources
+            guestSources,
+            await headers()
           );
           if (guest) {
             // Guest HTML carries a per-browser identity; never cache it.

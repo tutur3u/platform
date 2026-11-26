@@ -13,6 +13,9 @@ vi.mock('next/headers', () => ({
   cookies: async () => ({ get: mocks.cookie }),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('../../../../../features/call/server/guest-event-network', () => ({
+  meetEventClientIp: () => '203.0.113.4',
+}));
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
   resolveMeetGuestJoin: mocks.resolve,
 }));

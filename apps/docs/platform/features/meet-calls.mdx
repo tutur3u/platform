@@ -1313,9 +1313,13 @@ cross-room limits, browser-check budgets and room capacity rules still apply.
 Event-specific limits stop applying at expiry.
 
 A host can confirm **Admit all waiting**. Per-person approval and denial remain
-available. The room's durable snapshot retains the latest 256 event activation
-and bulk admission audit entries, including the actor, timestamp, event expiry
-and admitted count where applicable. See `room-skip-lobby.test.ts` and
+available. The room's durable snapshot retains up to 256 staff activations and
+256 successful bulk admissions in separate logs. Staff hosts can read both
+through the realtime room-state endpoint with `eventAudit=1` and a current
+room bearer token. Records identify the room, meeting, workspace, actor,
+timestamp and event expiry. Bulk admission records include the admitted count.
+Event guest access requires a trusted proxy IP and an available proxy block
+store and persisted block lookup. Each guest identity has one event slot. See `room-skip-lobby.test.ts` and
 `guest-unverified-risk.test.ts` for admission and risk-tier regression coverage.
 
 ### Who can read transcripts and notes

@@ -353,3 +353,18 @@ export function extractIPFromRequest(
 ): string {
   return resolveClientIp(headers, config);
 }
+
+/** Event admission requires an authoritative answer from the proxy block store. */
+export async function hasRequiredProxyIpBlock(subject: string) {
+  const store = await getEdgeRedisClient();
+  if (!store) throw new Error('Proxy block store unavailable');
+  const cached = await store.get<{ expiresAt: string } | string>(
+    REDIS_KEYS.IP_BLOCKED(subject)
+  );
+  if (cached == null) return false;
+  const value = typeof cached === 'string' ? JSON.parse(cached) : cached;
+  const expiresAt = Date.parse(value?.expiresAt);
+  if (!Number.isFinite(expiresAt))
+    throw new Error('Invalid proxy block record');
+  return expiresAt > Date.now();
+}

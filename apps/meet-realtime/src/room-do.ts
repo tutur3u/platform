@@ -1,5 +1,6 @@
 import {
   accountRoomTime,
+  activeMeetEvent,
   admitOrHold,
   applyMeetRoomSettings,
   MeetPresencePublisher,
@@ -310,6 +311,20 @@ export class MeetRoomDurableObject implements DurableObject {
       });
     }
     if (url.pathname === '/room-state') {
+      if (
+        request.method === 'GET' &&
+        url.searchParams.get('eventAudit') === '1'
+      ) {
+        if (token.role !== 'host' || !token.eventHost)
+          return new Response(null, { status: 403 });
+        return Response.json(
+          {
+            activations: this.snapshot.eventActivationAudit ?? [],
+            admissions: this.snapshot.eventAdmissionAudit ?? [],
+          },
+          { headers: { 'Cache-Control': 'private, no-store' } }
+        );
+      }
       if (request.method === 'PATCH') {
         const settings = resolveRoomSettingsPatch(
           await request.json().catch(() => null),
@@ -373,6 +388,19 @@ export class MeetRoomDurableObject implements DurableObject {
       meetClassFeatures(this.env)
     );
     this.snapshot = outcome.state;
+    if (
+      token.guest &&
+      activeMeetEvent(this.snapshot.settings?.eventModeExpiresAt) &&
+      !outcome.disconnect.includes(token.userId)
+    ) {
+      const accountId = token.accountId ?? token.userId;
+      for (const socket of this.sockets()) {
+        if (socket === server || socket.readyState !== WebSocket.OPEN) continue;
+        const prior = this.delivery.tokenOf(socket);
+        if (prior?.guest && (prior.accountId ?? prior.userId) === accountId)
+          socket.close(1000, 'guest connection replaced');
+      }
+    }
     this.snapshot = this.connectionState(undefined, token);
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());

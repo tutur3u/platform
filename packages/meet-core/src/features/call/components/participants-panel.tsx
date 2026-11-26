@@ -46,6 +46,7 @@ export function ParticipantsPanel({
   onForget,
   canManage,
   onAdmitAll,
+  settingsClockSkew = 0,
   onDenyAll,
   onSettingsChange,
   onCamerasLockedChange,
@@ -66,7 +67,8 @@ export function ParticipantsPanel({
   miraActive?: boolean;
   onForget: (userId: string) => void;
   canManage: boolean;
-  onAdmitAll?: () => void;
+  onAdmitAll?: (confirmedEventExpiresAt?: number) => void;
+  settingsClockSkew?: number;
   onDenyAll?: () => void;
   onSettingsChange?: (settings: Partial<MeetRoomSettings>) => void;
   onCamerasLockedChange?: (locked: boolean) => void;
@@ -88,7 +90,8 @@ export function ParticipantsPanel({
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
-  const event = (settings?.eventModeExpiresAt ?? 0) > Date.now();
+  const event =
+    (settings?.eventModeExpiresAt ?? 0) > Date.now() + settingsClockSkew;
   const presenceOnly = settings?.transport === 'presence';
   const [search, setSearch] = useState('');
   const query = participants.length > 8 ? search.trim().toLowerCase() : '';
@@ -136,7 +139,11 @@ export function ParticipantsPanel({
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                          <AlertDialogAction onClick={onAdmitAll}>
+                          <AlertDialogAction
+                            onClick={() =>
+                              onAdmitAll(settings?.eventModeExpiresAt)
+                            }
+                          >
                             {t('guest_join.event_admit_all')}
                           </AlertDialogAction>
                         </AlertDialogFooter>
@@ -144,7 +151,7 @@ export function ParticipantsPanel({
                     </AlertDialog>
                   )}
                   {onAdmitAll && !event && (
-                    <Button size="sm" onClick={onAdmitAll}>
+                    <Button size="sm" onClick={() => onAdmitAll()}>
                       {labels('admit_all', { count: waiting.length })}
                     </Button>
                   )}

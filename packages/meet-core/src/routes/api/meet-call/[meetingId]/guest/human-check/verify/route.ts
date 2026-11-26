@@ -15,6 +15,10 @@ import {
   buildAbuseRiskSubjects,
   recordAbuseActivitySignal,
 } from '@tuturuuu/utils/abuse-protection/reputation';
+import { meetEventClientIp } from '../../../../../../../features/call/server/guest-event-network';
+import { resolveMeetGuestJoin } from '@tuturuuu/meet-core/features/call/lib/guest-access';
+import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
+import { networkSubject } from '@tuturuuu/utils/network-subject';
 import { z } from 'zod';
 
 const headers = { 'Cache-Control': 'private, no-store' };
@@ -59,9 +63,9 @@ export async function POST(
       { error: 'Puzzle unavailable', code: 'MEET_HUMAN_CHECK_UNAVAILABLE' },
       { status: 503, headers }
     );
-  const network = extractTurnstileRemoteIp(request);
+  const legacyNetwork = extractTurnstileRemoteIp(request);
   const guard = await meetHumanCheckGuard();
-  const placement = await chargeMeetHumanCheckPlacement(network, guard);
+  const placement = await chargeMeetHumanCheckPlacement(legacyNetwork, guard);
   if (!placement.ok)
     return Response.json(
       { error: 'Too many attempts', code: 'MEET_GUEST_RATE_LIMITED' },
@@ -73,13 +77,57 @@ export async function POST(
         },
       }
     );
+  const state = await resolveMeetGuestJoin(meetingId);
+  const event = state.kind === 'available' ? state.eventExpiresAt : undefined;
+  const ip = event ? meetEventClientIp(request.headers) : legacyNetwork;
+  const network = event && ip ? networkSubject(ip) : ip;
+  if (event) {
+    const risk = await assessMeetGuestUnverifiedJoin(request, {
+      meetingId,
+      network: ip,
+      event: true,
+      kind: 'human-check',
+    });
+    if (!risk.allowed || !risk.decision)
+      return Response.json(
+        {
+          error: 'Verification required',
+          code: 'MEET_GUEST_VERIFICATION_REQUIRED',
+        },
+        { status: 403, headers }
+      );
+  }
+  if (event) {
+    const budget = await chargeMeetHumanCheckPlacement(
+      network,
+      guard,
+      Date.now,
+      true
+    );
+    if (!budget.ok)
+      return Response.json(
+        { error: 'Too many attempts', code: 'MEET_GUEST_RATE_LIMITED' },
+        {
+          status: 429,
+          headers: {
+            ...headers,
+            'Retry-After': String(budget.retryAfterSeconds),
+          },
+        }
+      );
+  }
   const verdict = await verifyJigsawAttempt({
     secret,
-    store: meetHumanCheckStore(guard),
-    scope: meetHumanCheckScope(meetingId),
+    store: meetHumanCheckStore(guard, Boolean(event)),
+    scope: meetHumanCheckScope(meetingId, event),
     subject: network ?? 'unknown',
     ...parsed.data,
-  });
+  }).catch(() => null);
+  if (!verdict)
+    return Response.json(
+      { error: 'Verification unavailable' },
+      { status: 503, headers }
+    );
   const subjects = buildAbuseRiskSubjects({
     headers: request.headers,
     ipAddress: network ?? null,

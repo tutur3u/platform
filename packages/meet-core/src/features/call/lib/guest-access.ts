@@ -8,6 +8,8 @@ import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
+import { meetEventClientIp } from '../server/guest-event-network';
+import { assessMeetGuestUnverifiedJoin } from '../server/guest-unverified-risk';
 import { getMeetRealtimeTokenSecret } from './call-session';
 import { assertMeetGuestAdmissionAllowed } from './guest-admission';
 import { verifyMeetGuestSession } from './guest-session';
@@ -41,7 +43,7 @@ export function isMeetGuestTurnstileConfigured(
   if (env.NODE_ENV === 'development') return true;
   return Boolean(
     env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() &&
-      env.TURNSTILE_SECRET_KEY?.trim()
+    env.TURNSTILE_SECRET_KEY?.trim()
   );
 }
 
@@ -83,7 +85,9 @@ export async function resolveMeetGuestJoin(
     if (parley) return { kind: 'unavailable' };
     const { data: meeting, error } = sources.meeting
       ? await sources.meeting()
-      : await (await createAdminClient({ noCookie: true }))
+      : await (
+          await createAdminClient({ noCookie: true })
+        )
           .from('workspace_meetings')
           .select('id, name, creator_id, ws_id')
           .eq('id', meetingId)
@@ -145,7 +149,8 @@ export type MeetGuestCallAccess = {
 export async function getMeetGuestCallAccess(
   meetingId: string,
   cookieValue: string | undefined | null,
-  sources: MeetGuestJoinSources = {}
+  sources: MeetGuestJoinSources = {},
+  requestHeaders?: Headers
 ): Promise<MeetGuestCallAccess | null> {
   const session = await verifyMeetGuestSession(
     cookieValue,
@@ -163,6 +168,19 @@ export async function getMeetGuestCallAccess(
     )
   )
     return null;
+  if (state.eventExpiresAt && requestHeaders) {
+    const risk = await assessMeetGuestUnverifiedJoin(
+      new Request('https://meet.invalid', { headers: requestHeaders }),
+      { meetingId, network: meetEventClientIp(requestHeaders), event: true }
+    );
+    if (
+      !risk.allowed ||
+      !risk.decision ||
+      (risk.decision.tier === 'challenge_required' &&
+        session.eventProof !== state.eventExpiresAt)
+    )
+      return null;
+  }
   const access: MeetGuestCallAccess = {
     guest: true,
     ...(state.eventExpiresAt ? { eventExpiresAt: state.eventExpiresAt } : {}),

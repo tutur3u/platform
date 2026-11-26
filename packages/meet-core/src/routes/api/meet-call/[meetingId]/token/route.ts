@@ -1,4 +1,4 @@
-import { extractTurnstileRemoteIp } from '@tuturuuu/cloudflare/turnstile/server';
+import { meetEventClientIp } from '../../../../../features/call/server/guest-event-network';
 import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
@@ -37,7 +37,7 @@ export async function POST(
         { error: 'Invalid device session' },
         { status: 400, headers }
       );
-    const { deviceId, joinMode } = parsed.data;
+    const { deviceId: requestedDeviceId, joinMode } = parsed.data;
     const locale =
       (await cookies()).get(LOCALE_COOKIE_NAME)?.value === 'vi' ? 'vi' : 'en';
     const t = await getTranslations({ locale, namespace: 'meet.call' });
@@ -56,10 +56,12 @@ export async function POST(
       });
     const { user, meeting, isHost, admission, displayName, avatarUrl, guest } =
       resolved;
+    const eventGuest = resolved.guest && Boolean(resolved.eventExpiresAt);
+    const deviceId = eventGuest ? undefined : requestedDeviceId;
     if (resolved.guest && resolved.eventExpiresAt) {
       const risk = await assessMeetGuestUnverifiedJoin(request, {
         meetingId,
-        network: extractTurnstileRemoteIp(request),
+        network: meetEventClientIp(request.headers),
         event: true,
       });
       if (

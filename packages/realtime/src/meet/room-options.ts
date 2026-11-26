@@ -84,6 +84,7 @@ export type MeetRoomSettings = z.infer<typeof meetRoomSettingsSchema>;
 export type MeetApprovedParticipant = {
   userId: string;
   displayName: string;
+  eventProof?: number;
   avatarUrl?: string;
   classMediaRole?: 'viewer' | 'speaker' | 'promoted';
   /** Anonymous guest without a Tuturuuu account. Labelling only. */

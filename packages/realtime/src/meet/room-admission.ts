@@ -112,6 +112,34 @@ export function admitOrHold(
       reply: [{ type: 'error', error: 'permission_denied' }],
       disconnect: [token.userId],
     });
+  if (event && token.guest) {
+    const accountId = token.accountId ?? token.userId;
+    if (
+      token.guestEventProof !== undefined &&
+      state.presence[token.userId] &&
+      state.approved?.[accountId]?.eventProof !== token.guestEventProof
+    )
+      return outcome(state, {
+        reply: [{ type: 'error', error: 'awaiting_admission' }],
+        disconnect: [token.userId],
+      });
+    const occupied = [
+      ...Object.values(state.presence),
+      ...Object.values(state.waiting),
+    ];
+    if (
+      occupied.some(
+        (person) =>
+          person.guest &&
+          person.userId !== token.userId &&
+          (person.accountId ?? person.userId) === accountId
+      )
+    )
+      return outcome(state, {
+        reply: [{ type: 'error', error: 'participant_limit_reached' }],
+        disconnect: [token.userId],
+      });
+  }
   if (
     event &&
     token.guest &&
@@ -139,7 +167,10 @@ export function admitOrHold(
   if (
     (token.guest || token.admission === 'lobby') &&
     !state.presence[token.userId] &&
-    !state.approved?.[token.accountId ?? token.userId] &&
+    (token.guestEventProof !== undefined
+      ? state.approved?.[token.accountId ?? token.userId]?.eventProof !==
+        token.guestEventProof
+      : !state.approved?.[token.accountId ?? token.userId]) &&
     !(!token.guest && skipsLobby(state, token.accountId ?? token.userId)) &&
     !skipsLobbyAsVerifiedGuest(state, token, Date.parse(now))
   ) {
@@ -231,7 +262,12 @@ export function admitOrHold(
     ...state,
     ...(attendance ? attendancePatch(state, attendance) : {}),
     waiting,
-    approved: rememberAdmission(state, person),
+    approved: rememberAdmission(
+      state,
+      person,
+      undefined,
+      token.guestEventProof
+    ),
     presence: {
       ...state.presence,
       [token.userId]: person,
@@ -309,6 +345,21 @@ function buildReady(
   };
 }
 
+function dropInvalidEventWaiter(
+  state: MeetRoomSnapshot,
+  userId: string,
+  requestId?: string
+) {
+  const waiting = { ...state.waiting };
+  delete waiting[userId];
+  const next = { ...state, waiting };
+  return outcome(next, {
+    ...denied(next, 'permission_denied', requestId),
+    toManagers: [meetAdmissionPendingMessage(next)],
+    disconnect: [userId],
+  });
+}
+
 function decideParticipant(
   state: MeetRoomSnapshot,
   targetId: string,
@@ -333,7 +384,7 @@ function decideParticipant(
     pending.guest &&
     !acceptsMeetGuestProof(event, pending.eventProof, pending.verified)
   )
-    return denied(state, 'permission_denied', requestId);
+    return dropInvalidEventWaiter(state, targetId, requestId);
   const waiting = { ...state.waiting };
   delete waiting[targetId];
 
@@ -425,7 +476,7 @@ function decideParticipant(
               : 0),
         }
       : undefined,
-    approved: rememberAdmission(state, person),
+    approved: rememberAdmission(state, person, undefined, pending.eventProof),
   };
 
   return outcome(next, {
@@ -499,7 +550,7 @@ export function decideRoomAdmission(
     (event &&
       message.type === 'admission.decideAll' &&
       message.admit &&
-      token.role !== 'host') ||
+      (token.role !== 'host' || message.confirmedEventExpiresAt !== event)) ||
     !canMeetRealtimeManageParticipants(token) ||
     (message.type === 'admission.decideAll' && !state.presence[token.userId])
   )
@@ -530,7 +581,11 @@ export function decideRoomAdmission(
       undefined,
       features
     );
-    if (next.reply.length) continue;
+    if (next.reply.length) {
+      result.state = next.state;
+      result.disconnect.push(...next.disconnect);
+      continue;
+    }
     result.state = next.state;
     result.direct.push(...next.direct);
     result.disconnect.push(...next.disconnect);
@@ -543,13 +598,16 @@ export function decideRoomAdmission(
     denied: message.admit ? 0 : decided,
     remaining: waiting.length - decided,
   });
-  if (event && message.admit) {
+  if (event && message.admit && decided > 0) {
     result.state = {
       ...result.state,
       eventAdmissionAudit: [
         ...(result.state.eventAdmissionAudit ?? []).slice(-255),
         {
           action: 'admit_all_waiting',
+          roomId: token.roomId,
+          meetingId: token.meetingId,
+          wsId: token.wsId,
           actorId: token.accountId ?? token.userId,
           at: now,
           expiresAt: event,
@@ -558,8 +616,8 @@ export function decideRoomAdmission(
       ],
     };
   }
-  if (decided) {
-    if (message.admit)
+  if (decided || result.disconnect.length) {
+    if (message.admit && decided)
       result.broadcast.push(meetPresenceMessage(result.state, token.roomId));
     result.toManagers.push(meetAdmissionPendingMessage(result.state));
     if (message.admit)

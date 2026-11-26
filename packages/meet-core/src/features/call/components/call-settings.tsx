@@ -340,7 +340,8 @@ export function CallSettings({
                   variant="outline"
                   onClick={() => room.updateSettings({ eventMode: true })}
                   disabled={
-                    (room.state.settings?.eventModeExpiresAt ?? 0) > Date.now()
+                    (room.state.settings?.eventModeExpiresAt ?? 0) >
+                    Date.now() + (room.state.settingsClockSkew ?? 0)
                   }
                 >
                   {t('guest_join.event_mode_enable')}

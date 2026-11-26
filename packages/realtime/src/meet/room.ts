@@ -48,9 +48,19 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 // Historical boundary retained for regression tests; open sockets no longer expire.
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
+type MeetEventAdmissionAudit = {
+  action: 'event_enabled' | 'admit_all_waiting';
+  roomId: string;
+  meetingId: string;
+  wsId: string;
+  actorId: string;
+  at: string;
+  expiresAt: number;
+  admitted?: number;
+};
+
 export interface MeetRoomSnapshot
-  extends TranscriptionRoomState,
-    RoomFormsState {
+  extends TranscriptionRoomState, RoomFormsState {
   lifecycle?: import('./room-lifecycle').MeetRoomLifecycle;
   liveAssistant?: import('./room-live').RoomLiveState;
   budget?: RoomBudget;
@@ -59,13 +69,8 @@ export interface MeetRoomSnapshot
   mediaQuality?: import('./room-media-quality').RoomMediaQuality;
   approved?: Record<string, MeetApprovedParticipant>;
   settings?: MeetRoomSettings;
-  eventAdmissionAudit?: Array<{
-    action: 'event_enabled' | 'admit_all_waiting';
-    actorId: string;
-    at: string;
-    expiresAt: number;
-    admitted?: number;
-  }>;
+  eventActivationAudit?: MeetEventAdmissionAudit[];
+  eventAdmissionAudit?: MeetEventAdmissionAudit[];
   ended?: boolean;
   lastReactionAt?: Record<string, number>;
   /** Sender user id -> last accepted Follow/Summon request (epoch ms). */

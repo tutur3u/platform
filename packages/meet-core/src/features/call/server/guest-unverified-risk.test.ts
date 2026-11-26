@@ -130,8 +130,9 @@ it.each([
   await expect(
     assessMeetGuestUnverifiedJoin(
       browser,
-      { meetingId, network: undefined, event: true },
+      { meetingId, network: '203.0.113.4', event: true },
       {
+        eventNetworkAllowed: async () => true,
         resolve: vi.fn().mockResolvedValue(decision(tier)),
         record: vi.fn().mockResolvedValue(undefined),
       }

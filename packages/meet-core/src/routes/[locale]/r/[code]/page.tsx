@@ -31,7 +31,7 @@ import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/s
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
@@ -76,19 +76,20 @@ export default async function RoomPage({
         if (error.status === 401) {
           const guest = await getMeetGuestCallAccess(
             meetingId,
-            (await cookies()).get(MEET_GUEST_COOKIE)?.value
+            (await cookies()).get(MEET_GUEST_COOKIE)?.value,
+            undefined,
+            await headers()
           );
           if (guest) return guest;
           const invite = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
           const info = await getMeetingPublicInfo(code);
           const siteKey = meetGuestTurnstileSiteKey();
-          if (
-            siteKey &&
-            (await resolveMeetGuestJoin(meetingId)).kind === 'available'
-          )
+          const join = siteKey ? await resolveMeetGuestJoin(meetingId) : null;
+          if (siteKey && join?.kind === 'available')
             return {
               guestJoin: {
                 siteKey,
+                eventMode: Boolean(join.eventExpiresAt),
                 title: info?.title,
                 miraBoxTickedByDefault:
                   await readMiraBoxTickedByDefaultForMeeting(meetingId),
@@ -109,6 +110,7 @@ export default async function RoomPage({
     return (
       <MeetGuestJoin
         meetingId={meetingId}
+        eventMode={access.guestJoin.eventMode}
         meetingTitle={access.guestJoin.title}
         returnTo={access.returnTo}
         siteKey={access.guestJoin.siteKey}

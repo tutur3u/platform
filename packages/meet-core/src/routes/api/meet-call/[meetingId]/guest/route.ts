@@ -31,6 +31,8 @@ import {
   issueMeetGuestWork,
   redeemMeetGuestWork,
 } from '../../../../../features/call/server/guest-event-challenge';
+import { meetEventClientIp } from '../../../../../features/call/server/guest-event-network';
+import { networkSubject } from '@tuturuuu/utils/network-subject';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 
@@ -107,9 +109,13 @@ export async function POST(
       { error: 'Invalid verification' },
       { status: 400, headers }
     );
-  const network = extractTurnstileRemoteIp(request);
+  const legacyNetwork = extractTurnstileRemoteIp(request);
+  const trustedNetwork = meetEventClientIp(request.headers);
   const limiter = await guestJoinLimiter();
-  const limit = await checkMeetGuestJoinLimit({ meetingId, network }, limiter);
+  const limit = await checkMeetGuestJoinLimit(
+    { meetingId, network: legacyNetwork },
+    limiter
+  );
   if (!limit.ok)
     return Response.json(
       { error: 'Too many join attempts', code: 'MEET_GUEST_RATE_LIMITED' },
@@ -128,6 +134,15 @@ export async function POST(
       { status: 403, headers }
     );
   const event = state.eventExpiresAt;
+  const network = event ? trustedNetwork : legacyNetwork;
+  if (event && !network)
+    return Response.json(
+      {
+        error: 'Verification required',
+        code: 'MEET_GUEST_VERIFICATION_REQUIRED',
+      },
+      { status: 403, headers }
+    );
   const requestWork =
     beginEventWork ||
     (hostApproval &&
@@ -136,6 +151,24 @@ export async function POST(
   let manualProof: number | undefined;
   let difficulty: 19 | 20 | 22 = 19;
   if (event) {
+    const trustedBudget =
+      network === legacyNetwork
+        ? limit
+        : await checkMeetGuestJoinLimit(
+            { meetingId, network, requireSharedStore: true },
+            limiter
+          );
+    if (!trustedBudget.ok)
+      return Response.json(
+        { error: 'Too many join attempts', code: 'MEET_GUEST_RATE_LIMITED' },
+        {
+          status: 429,
+          headers: {
+            ...headers,
+            'Retry-After': String(trustedBudget.retryAfterSeconds),
+          },
+        }
+      );
     const eventLimit = await checkMeetGuestJoinLimit(
       {
         meetingId,
@@ -192,6 +225,11 @@ export async function POST(
   const respondWithSession = async (
     session: Parameters<typeof guestSessionResponse>[0]
   ) => {
+    if (event && Date.now() >= event)
+      return Response.json(
+        { error: 'Event expired', code: 'MEET_GUEST_VERIFICATION_REQUIRED' },
+        { status: 403, headers }
+      );
     if (event) {
       const budget = await checkMeetGuestJoinLimit(
         {
@@ -214,6 +252,11 @@ export async function POST(
           }
         );
     }
+    if (event && Date.now() >= event)
+      return Response.json(
+        { error: 'Event expired', code: 'MEET_GUEST_VERIFICATION_REQUIRED' },
+        { status: 403, headers }
+      );
     return guestSessionResponse(session);
   };
   if (eventWork || beginEventWork || (event && requestWork)) {
@@ -272,15 +315,18 @@ export async function POST(
   const humanPassToken = parsed.data.humanPassToken?.trim();
   if (!turnstileToken && humanPassToken) {
     const secret = meetHumanCheckSecret();
-    const network = extractTurnstileRemoteIp(request);
     const pass = secret
       ? await redeemPassToken({
           secret,
-          store: meetHumanCheckStore(await meetHumanCheckGuard()),
+          store: meetHumanCheckStore(
+            await meetHumanCheckGuard(),
+            Boolean(event)
+          ),
           token: humanPassToken,
-          scope: meetHumanCheckScope(meetingId),
-          subject: network ?? 'unknown',
-        })
+          scope: meetHumanCheckScope(meetingId, event),
+          subject:
+            event && network ? networkSubject(network) : (network ?? 'unknown'),
+        }).catch(() => ({ ok: false }) as const)
       : ({ ok: false } as const);
     if (!pass.ok)
       return Response.json(
@@ -346,6 +392,7 @@ export async function POST(
   try {
     await verifyTurnstileToken(request, turnstileToken, {
       devMode,
+      ...(event ? { remoteIp: network } : {}),
       expectedHostname: new URL(request.url).hostname,
     });
   } catch {

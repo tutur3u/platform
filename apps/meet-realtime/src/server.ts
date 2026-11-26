@@ -105,6 +105,7 @@ async function handleMessage(
       message: parsed.data,
       now: new Date().toISOString(),
       token: ws.data.token,
+      requireAdmission: true,
     },
     {
       read: () => room.snapshot,
@@ -255,7 +256,8 @@ export function createMeetRealtimeServer(
         sendToManagers(token.roomId, outcome.toManagers);
 
         disconnectUsers(token.roomId, outcome.disconnect);
-        if (room.snapshot.ended || room.snapshot.waiting[token.userId]) return;
+        if (room.snapshot.ended || !room.snapshot.presence[token.userId])
+          return;
 
         send(ws, meetPresenceMessage(room.snapshot, token.roomId));
         for (const track of remoteMeetTracks(room.snapshot, token.userId)) {
