@@ -94,6 +94,7 @@
     "../../packages/realtime/src/meet/command-executor.ts",
     "../../packages/realtime/src/meet/csv-cell.ts",
     "../../packages/realtime/src/meet/endpoint.ts",
+    "../../packages/realtime/src/meet/external-class-room.ts",
     "../../packages/realtime/src/meet/index.ts",
     "../../packages/realtime/src/meet/live-activities.ts",
     "../../packages/realtime/src/meet/live-activities-schema.ts",
