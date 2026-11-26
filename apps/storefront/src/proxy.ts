@@ -20,6 +20,7 @@ import {
 } from '@tuturuuu/auth/proxy';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -46,6 +47,17 @@ const PUBLIC_SQUARE_WEBHOOK_API_PATTERN =
   /^\/api\/v1\/inventory\/square\/webhook(?:\/[^/]+)?\/?$/u;
 const PUBLIC_SQUARE_POS_CALLBACK_API_PATTERN =
   /^\/api\/v1\/inventory\/square\/pos\/callback\/?$/u;
+// Published WebGL builds: central serves them without a session and checks
+// workspace access itself for unpublished ones, so the satellite passes them
+// through with their cookies untouched, behind the API abuse guard only.
+const isPublicWebglAssetPath = createFramablePathMatcher();
+
+function isPublicWebglAssetRequest(request: NextRequest) {
+  return (
+    (request.method === 'GET' || request.method === 'HEAD') &&
+    isPublicWebglAssetPath(request.nextUrl.pathname)
+  );
+}
 
 function setLocaleCookie(
   response: NextResponse,
@@ -174,6 +186,13 @@ function isPublicStorefrontApiRequest(request: NextRequest) {
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
+    if (isPublicWebglAssetRequest(request)) {
+      return (
+        (await guardApiProxyRequest(request, {
+          prefixBase: 'proxy:storefront:api',
+        })) ?? NextResponse.next()
+      );
+    }
     const isBuildInfoRead =
       request.nextUrl.pathname === '/api/build-info' &&
       (request.method === 'GET' || request.method === 'HEAD');

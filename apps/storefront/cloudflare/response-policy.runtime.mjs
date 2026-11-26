@@ -95,7 +95,16 @@ test(
       assert.ok(
         upstream.includes(`https://inventory.invalid${publicPath}${query}`)
       );
-      const webPath = '/api/storefront-probe.json';
+      // A dotted API path outside the public allow-list still needs a session.
+      const protectedPath = '/api/storefront-probe.json';
+      const denied = await worker.fetch(`${base}${protectedPath}${query}`);
+      assert.equal(denied.status, 401);
+      await denied.body?.cancel();
+      assert.ok(
+        !upstream.includes(`https://central.invalid${protectedPath}${query}`)
+      );
+      const webPath =
+        '/api/v1/workspaces/fixture/external-projects/assets/fixture/webgl/storefront-probe.json';
       const web = await worker.fetch(`${base}${webPath}${query}`);
       assert.equal(web.status, 200);
       await web.body?.cancel();
@@ -121,15 +130,19 @@ test(
     assert.equal(sandboxed.headers['content-security-policy'], sandbox);
     assert.equal(sandboxed.headers['x-frame-options'], undefined);
     assert.ok(upstream.includes(`https://central.invalid${webgl}`));
-    const neighbouring = await worker.request(
-      webgl.replace('/webgl/', '/webgl-other/')
-    );
-    assert.equal(neighbouring.status, 200);
-    assert.equal(
-      neighbouring.headers['content-security-policy'],
-      `${sandbox}; frame-ancestors 'none'`
+    // A lookalike of the public WebGL path is neither public nor framable:
+    // the signed-out request stops at the session gate and is never framed.
+    // Upstream CSP merging on such paths is covered by
+    // src/lib/native-response-policy.test.ts.
+    const neighbour = webgl.replace('/webgl/', '/webgl-other/');
+    const neighbouring = await worker.request(neighbour);
+    assert.equal(neighbouring.status, 401);
+    assert.match(
+      neighbouring.headers['content-security-policy'] ?? '',
+      /frame-ancestors 'none'/
     );
     assert.equal(neighbouring.headers['x-frame-options'], 'DENY');
+    assert.ok(!upstream.includes(`https://central.invalid${neighbour}`));
     for (const path of ['/assets/client.js', '/robots.txt']) {
       for (const method of ['POST', 'PUT']) {
         const response = await worker.request(path, { method });

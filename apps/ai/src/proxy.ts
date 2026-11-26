@@ -16,6 +16,7 @@ import {
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
+import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -29,6 +30,10 @@ const LOCAL_AUTH_API_PATHS = new Set([
   '/api/auth/refresh-app-session',
   '/api/auth/verify-app-token',
 ]);
+// Published WebGL builds: central serves them without a session and checks
+// workspace access itself for unpublished ones, so the satellite passes them
+// through with their cookies untouched, behind the API abuse guard only.
+const isPublicWebglAssetPath = createFramablePathMatcher();
 const LOCALE_COOKIE_OPTIONS = {
   maxAge: 365 * 24 * 60 * 60,
   path: '/',
@@ -96,6 +101,16 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   }
 
   if (request.nextUrl.pathname.startsWith('/api')) {
+    if (
+      (request.method === 'GET' || request.method === 'HEAD') &&
+      isPublicWebglAssetPath(request.nextUrl.pathname)
+    ) {
+      return (
+        (await guardApiProxyRequest(request, {
+          prefixBase: 'proxy:ai:api',
+        })) ?? NextResponse.next()
+      );
+    }
     const isBuildInfoRead =
       request.nextUrl.pathname === '/api/build-info' &&
       (request.method === 'GET' || request.method === 'HEAD');

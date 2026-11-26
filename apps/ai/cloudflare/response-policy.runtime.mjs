@@ -59,7 +59,13 @@ test(
         assert.match(response.headers.vary ?? '', /(?:^|,\s*)cookie(?:,|$)/i);
       }
     }
-    const publicPath = '/api/cache-policy-fixture.json';
+    // A dotted API path outside the public allow-list still needs a session.
+    const protectedPath = '/api/cache-policy-fixture.json';
+    const protectedResponse = await worker.request(protectedPath);
+    assert.equal(protectedResponse.status, 401);
+    assert.ok(!upstream.includes(`https://central.invalid${protectedPath}`));
+    const publicPath =
+      '/api/v1/workspaces/fixture/external-projects/assets/fixture/webgl/cache-policy-fixture.json';
     const publicResponse = await worker.request(publicPath);
     assert.equal(publicResponse.status, 200);
     assert.equal(publicResponse.headers['cache-control'], 'private, no-store');
@@ -76,16 +82,21 @@ test(
       assert.equal(sandboxed.status, 200);
       assert.equal(sandboxed.headers['content-security-policy'], sandbox);
       assert.equal(sandboxed.headers['x-frame-options'], undefined);
-      const neighbouring = await worker.request(
-        `${base}${webgl.replace('/webgl/', '/webgl-other/')}`,
-        { host }
-      );
-      assert.equal(neighbouring.status, 200);
-      assert.equal(
-        neighbouring.headers['content-security-policy'],
-        `${sandbox}; frame-ancestors 'none', frame-ancestors 'none'`
+      // A lookalike of the public WebGL path is neither public nor framable:
+      // the signed-out request stops at the session gate and is never framed.
+      // Upstream CSP merging is covered by the start-bridge response-policy
+      // unit tests.
+      const neighbour = webgl.replace('/webgl/', '/webgl-other/');
+      const neighbouring = await worker.request(`${base}${neighbour}`, {
+        host,
+      });
+      assert.equal(neighbouring.status, 401);
+      assert.match(
+        neighbouring.headers['content-security-policy'] ?? '',
+        /frame-ancestors 'none'/
       );
       assert.equal(neighbouring.headers['x-frame-options'], 'DENY');
+      assert.ok(!upstream.includes(`https://central.invalid${neighbour}`));
     }
     assert.ok(upstream.includes(`https://central.invalid${webgl}`));
     const mountedRobots = await worker.request('/ai/robots.txt', {
