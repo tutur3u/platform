@@ -178,10 +178,10 @@ describe('task board GET', () => {
     expect(body.board.name).toBe('Roadmap');
     expect(maybeSingle).toHaveBeenCalledTimes(3);
     // The guest-share count runs alongside, so only the board selects count.
-    const boardSelects = query.select.mock.calls
-      .map(([columns]: [unknown]) => columns)
+    const boardSelects = (query.select.mock.calls as unknown[][])
+      .map((call) => call[0])
       .filter(
-        (columns: unknown): columns is string =>
+        (columns): columns is string =>
           typeof columns === 'string' && columns.includes('task_lists(')
       );
     expect(boardSelects).toHaveLength(3);
