@@ -12,8 +12,12 @@ const live = vi.hoisted(() => ({
 vi.mock('../lib/polls-client', () => ({
   useCallPolls: () => ({ data: live.poll }),
 }));
+const arenaHook = vi.hoisted(() => vi.fn());
 vi.mock('../lib/quiz-arena-client', () => ({
-  useCallQuizArena: () => ({ data: live.arena }),
+  useCallQuizArena: (...args: unknown[]) => {
+    arenaHook(...args);
+    return { data: live.arena };
+  },
 }));
 vi.mock('./forms/meet-forms-activity', () => ({
   MeetFormsActivity: ({ open }: { open: boolean }) => (
@@ -24,11 +28,18 @@ afterEach(cleanup);
 
 let activities: ReturnType<typeof useCallActivities>;
 const open = new Set<string>();
-function Harness({ shortcuts = false }: { shortcuts?: boolean }) {
+function Harness({
+  shortcuts = false,
+  guest = false,
+}: {
+  shortcuts?: boolean;
+  guest?: boolean;
+}) {
   activities = useCallActivities({
     meetingId: 'm',
     accountId: 'a',
     enabled: true,
+    requiresAccount: guest,
     formsEnabled: true,
     formsAccess: { canManage: true, canReadWorkspace: true },
     showTools: false,
@@ -81,4 +92,21 @@ it('lists a live poll and a live Quiz Arena together in the shortcuts', () => {
   live.arena = undefined;
   expect(screen.getByRole('button', { name: /poll/i })).toBeTruthy();
   expect(screen.getByRole('button', { name: /quiz arena/i })).toBeTruthy();
+});
+
+it('never polls Quiz Arena for a guest, who would only get a 401', () => {
+  arenaHook.mockClear();
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <Harness guest />
+    </NextIntlClientProvider>
+  );
+  expect(arenaHook).toHaveBeenLastCalledWith('m', 'a', false, false);
+  cleanup();
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <Harness />
+    </NextIntlClientProvider>
+  );
+  expect(arenaHook).toHaveBeenLastCalledWith('m', 'a', true, false);
 });

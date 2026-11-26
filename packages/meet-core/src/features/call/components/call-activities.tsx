@@ -78,10 +78,12 @@ export function useCallActivities({
   const canUseForms = enabled && formsEnabled && !requiresAccount;
   const classroomAvailable = enabled && classroomToolsEnabled;
   const polls = useCallPolls(meetingId, accountId, enabled, isOpen('polls'));
+  // Quiz Arena needs an account, so a guest never polls it (it would only
+  // answer 401).
   const arena = useCallQuizArena(
     meetingId,
     accountId,
-    enabled,
+    enabled && !requiresAccount,
     isOpen('quiz-arena')
   );
   const toggle = (next: ActivityDrawer) => {
