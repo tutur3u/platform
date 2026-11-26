@@ -33,6 +33,14 @@ class RunnerTests: XCTestCase {
     XCTAssertNil(IrisSignPolicy.mustPrompt(Data([0xC3, 0x28]), sensitive: false))
   }
 
+  func testWatchCompanionWireEnvelope() {
+    XCTAssertNil(WatchCompanionWire.makeApplicationContext(jsonPayload: "   "))
+    let envelope = WatchCompanionWire.makeApplicationContext(jsonPayload: #"{"signedOut":true}"#)
+    XCTAssertEqual(envelope?["v"] as? Int, WatchCompanionWire.currentVersion)
+    let payloadData = envelope?["payload"] as? Data
+    XCTAssertEqual(payloadData.flatMap { String(data: $0, encoding: .utf8) }, #"{"signedOut":true}"#)
+  }
+
   func testExample() {
     // If you add code to the Runner application, consider adding tests here.
     // See https://developer.apple.com/documentation/xctest for more information about using XCTest.

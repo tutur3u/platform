@@ -18,6 +18,7 @@ import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/feature_flags/mobile_flags.dart';
 import 'package:mobile/core/observability/mobile_diagnostics.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
+import 'package:mobile/core/platform/watch_companion_service.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
@@ -128,6 +129,7 @@ part 'app_push_navigation.dart';
 part 'app_inventory_warmup.dart';
 part 'app_offline_preparation.dart';
 part 'app_workspace_access.dart';
+part 'app_watch_companion.dart';
 
 class App extends StatefulWidget {
   const App({
@@ -192,6 +194,7 @@ class _AppState extends State<App> {
   late final AppLinks _appLinks;
   late final GoRouter _router;
   late final AppLockLifecycle _appLockLifecycle;
+  late final WatchCompanionService _watchCompanion;
   late final VoidCallback _unbindSmartSync;
   StreamSubscription<Uri>? _appLinkSubscription;
   StreamSubscription<MobileFlagsState>? _timeTrackerOfflineFlags;
@@ -288,6 +291,7 @@ class _AppState extends State<App> {
       notificationCopy: _pomodoroNotificationCopy,
     );
     _appLinks = AppLinks();
+    _watchCompanion = WatchCompanionService()..attach();
     _registerAppLockLifecycle();
     _registerWarmupTasks();
     _registerOfflinePreparation();
@@ -494,6 +498,7 @@ class _AppState extends State<App> {
     _unregisterOfflinePreparation();
     _unbindSmartSync();
     _appLockLifecycle.dispose();
+    _watchCompanion.dispose();
     unawaited(_appLinkSubscription?.cancel());
     _router.dispose();
     unawaited(_authCubit.close());
@@ -587,7 +592,9 @@ class _AppState extends State<App> {
                   );
                   unawaited(_loadWorkspacesWithReminders());
                   unawaited(_openPendingDeepLinkIfReady());
+                  _syncWatchCompanion();
                 } else if (state.status == AuthStatus.unauthenticated) {
+                  unawaited(_watchCompanion.clearSession());
                   unawaited(ReminderService.instance.stopSession());
                   context.read<AppLockCubit>().resetLockState();
                   unawaited(context.read<ShellProfileCubit>().clear());
@@ -606,6 +613,7 @@ class _AppState extends State<App> {
                 _syncOfflinePreparationScope();
                 _bindAudienceMode();
                 _syncWorkspaceAccess(state.currentWorkspace?.id);
+                _syncWatchCompanion();
                 if (!_recordAccountWorkspace(state)) return;
                 unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
                 unawaited(_openPendingDeepLinkIfReady());

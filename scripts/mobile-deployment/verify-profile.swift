@@ -23,15 +23,29 @@ do {
     try require((profile["ProvisionsAllDevices"] as? Bool) != true, "Enterprise profiles cannot be used for TestFlight")
     try require((entitlements["get-task-allow"] as? Bool) != true, "Distribution profiles cannot allow debugging")
     try require((profile["TeamIdentifier"] as? [String])?.contains(team) == true, "Profile team does not match the vault")
-    let broadcast = environment["APPLE_PROFILE_KIND"] == "broadcast"
-    let identifier = broadcast ? "\(bundle).LiveScreenBroadcast" : bundle
+    let kind = environment["APPLE_PROFILE_KIND"] ?? "ios"
+    let identifier: String
+    switch kind {
+    case "broadcast":
+        identifier = "\(bundle).LiveScreenBroadcast"
+    case "watch":
+        identifier = "\(bundle).watchkitapp"
+    case "watch-widgets":
+        identifier = "\(bundle).watchkitapp.widgets"
+    default:
+        identifier = bundle
+    }
     try require(entitlements["application-identifier"] as? String == "\(team).\(identifier)", "Profile application id does not match the vault")
-    if !broadcast {
+    if kind == "ios" {
         try require(entitlements["aps-environment"] as? String == "production", "Production push notification entitlement is missing")
     }
-    if broadcast || environment["APPLE_LIVE_SCREEN_GROUP_REQUIRED"] == "true" {
+    if kind == "broadcast" || (kind == "ios" && environment["APPLE_LIVE_SCREEN_GROUP_REQUIRED"] == "true") {
         try require((entitlements["com.apple.security.application-groups"] as? [String])?.contains("group.\(bundle).live") == true,
                     "Live screen-sharing App Group is missing from the provisioning profile")
+    }
+    if kind == "watch" || kind == "watch-widgets" {
+        try require((entitlements["com.apple.security.application-groups"] as? [String])?.contains("group.\(bundle).watch") == true,
+                    "Apple Watch App Group is missing from the provisioning profile")
     }
     try require(UUID(uuidString: profile["UUID"] as? String ?? "") != nil, "Profile UUID is invalid")
     print("Verified App Store provisioning profile and required entitlements.")

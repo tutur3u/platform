@@ -107,5 +107,39 @@ test(
         `live fixture ${index}: ${result.stderr}`
       );
     }
+    const watchGroup =
+      '<key>com.apple.security.application-groups</key><array><string>group.com.tuturuuu.app.mobile.watch</string></array>';
+    const watchBase = base
+      .replace('<key>aps-environment</key><string>production</string>', '')
+      .replace(
+        '<key>get-task-allow</key>',
+        `${watchGroup}<key>get-task-allow</key>`
+      );
+    const watchApp = watchBase.replace(
+      'TESTTEAM01.com.tuturuuu.app.mobile</string>',
+      'TESTTEAM01.com.tuturuuu.app.mobile.watchkitapp</string>'
+    );
+    const watchWidgets = watchBase.replace(
+      'TESTTEAM01.com.tuturuuu.app.mobile</string>',
+      'TESTTEAM01.com.tuturuuu.app.mobile.watchkitapp.widgets</string>'
+    );
+    for (const [index, [profile, extraEnv, status]] of [
+      [watchApp, { APPLE_PROFILE_KIND: 'watch' }, 0],
+      [watchApp.replace(watchGroup, ''), { APPLE_PROFILE_KIND: 'watch' }, 1],
+      [watchWidgets, { APPLE_PROFILE_KIND: 'watch-widgets' }, 0],
+      [watchApp, { APPLE_PROFILE_KIND: 'watch-widgets' }, 1],
+    ].entries()) {
+      const path = join(root, `watch-${index}.plist`);
+      writeFileSync(path, profile);
+      const result = spawnSync(executable, [path], {
+        env: { ...env, ...extraEnv },
+        encoding: 'utf8',
+      });
+      assert.equal(
+        result.status,
+        status,
+        `watch fixture ${index}: ${result.stderr}`
+      );
+    }
   }
 );

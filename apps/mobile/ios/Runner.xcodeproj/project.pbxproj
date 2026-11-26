@@ -30,7 +30,26 @@
 		E6E79E6687FB6C866E0BC4D6 /* LiveScreenCapturePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C73A09E54185340E167D49B3 /* LiveScreenCapturePlugin.swift */; };
 		EB5303CF837D875CD804AAF7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = BF8F1777CC86A04CCD67BADC /* Localizable.strings */; };
 		E7230A000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E7230A000000000000000002 /* PrivacyInfo.xcprivacy */; };
-/* End PBXBuildFile section */
+		W10000010000000000000001 /* WatchCompanionPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000002 /* WatchCompanionPlugin.swift */; };
+		W10000010000000000000010 /* TuturuuuWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000110 /* TuturuuuWatchApp.swift */; };
+		W10000010000000000000011 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000111 /* WatchConnectivityManager.swift */; };
+		W10000010000000000000012 /* WatchAppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000112 /* WatchAppViewModel.swift */; };
+		W10000010000000000000013 /* TodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000113 /* TodayView.swift */; };
+		W10000010000000000000014 /* QuickCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000114 /* QuickCaptureView.swift */; };
+		W10000010000000000000015 /* MiraQuickAskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000115 /* MiraQuickAskView.swift */; };
+		W10000010000000000000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000116 /* Assets.xcassets */; };
+		W10000010000000000000017 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000117 /* PrivacyInfo.xcprivacy */; };
+		W10000010000000000000018 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000118 /* Localizable.strings */; };
+		W10000010000000000000019 /* TuturuuuWatchKit in Frameworks */ = {isa = PBXBuildFile; productRef = W10000010000000000000061 /* TuturuuuWatchKit */; };
+		W10000010000000000000020 /* TuturuuuWatchWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000120 /* TuturuuuWatchWidgetsBundle.swift */; };
+		W10000010000000000000021 /* NextEventWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000121 /* NextEventWidget.swift */; };
+		W10000010000000000000022 /* TasksLeftWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000122 /* TasksLeftWidget.swift */; };
+		W10000010000000000000023 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000123 /* PrivacyInfo.xcprivacy */; };
+		W10000010000000000000024 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000124 /* Localizable.strings */; };
+		W10000010000000000000025 /* TuturuuuWatchKit in Frameworks */ = {isa = PBXBuildFile; productRef = W10000010000000000000062 /* TuturuuuWatchKit */; };
+		W10000010000000000000026 /* TuturuuuWatchWidgets.appex in Embed Watch Extensions */ = {isa = PBXBuildFile; fileRef = W10000010000000000000131 /* TuturuuuWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		W10000010000000000000041 /* TuturuuuWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = W10000010000000000000130 /* TuturuuuWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };		W10000010000000000000027 /* WatchSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = W10000010000000000000140 /* WatchSnapshotTests.swift */; };
+		W10000010000000000000028 /* TuturuuuWatchKit in Frameworks */ = {isa = PBXBuildFile; productRef = W10000010000000000000063 /* TuturuuuWatchKit */; };/* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		331C8085294A63A400263BE5 /* PBXContainerItemProxy */ = {
@@ -47,7 +66,26 @@
 			remoteGlobalIDString = A19C66805954405385732FBE;
 			remoteInfo = LiveScreenBroadcast;
 		};
-/* End PBXContainerItemProxy section */
+		W10000010000000000000043 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = W10000010000000000000030;
+			remoteInfo = TuturuuuWatch;
+		};
+		W10000010000000000000045 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = W10000010000000000000031;
+			remoteInfo = TuturuuuWatchWidgets;
+		};		W10000010000000000000047 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = W10000010000000000000030;
+			remoteInfo = TuturuuuWatch;
+		};/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		824060ABAB12F1E4B3F14B3B /* Embed Live Broadcast Extension */ = {
@@ -71,7 +109,28 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXCopyFilesBuildPhase section */
+		W10000010000000000000040 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				W10000010000000000000041 /* TuturuuuWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		W10000010000000000000046 /* Embed Watch Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				W10000010000000000000026 /* TuturuuuWatchWidgets.appex in Embed Watch Extensions */,
+			);
+			name = "Embed Watch Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		1E15D0010000000000000002 /* IrisDeviceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisDeviceKey.swift; sourceTree = "<group>"; };
@@ -125,7 +184,33 @@
 		EF78764FB0D9F4B5176102D3 /* Pods-Runner.release-production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release-production.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release-production.xcconfig"; sourceTree = "<group>"; };
 		F3FA6597EEAE7846EBE6B191 /* Pods-RunnerTests.debug-development.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug-development.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug-development.xcconfig"; sourceTree = "<group>"; };
 		E7230A000000000000000002 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		W10000010000000000000002 /* WatchCompanionPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompanionPlugin.swift; sourceTree = "<group>"; };
+		W10000010000000000000110 /* TuturuuuWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuturuuuWatchApp.swift; sourceTree = "<group>"; };
+		W10000010000000000000111 /* WatchConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityManager.swift; sourceTree = "<group>"; };
+		W10000010000000000000112 /* WatchAppViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAppViewModel.swift; sourceTree = "<group>"; };
+		W10000010000000000000113 /* TodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/TodayView.swift; sourceTree = "<group>"; };
+		W10000010000000000000114 /* QuickCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/QuickCaptureView.swift; sourceTree = "<group>"; };
+		W10000010000000000000115 /* MiraQuickAskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/MiraQuickAskView.swift; sourceTree = "<group>"; };
+		W10000010000000000000116 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		W10000010000000000000117 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		W1000001000000000000011A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		W1000001000000000000011B /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		W1000001000000000000011C /* Build.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Build.xcconfig; sourceTree = "<group>"; };
+		W1000001000000000000011D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		W1000001000000000000011E /* TuturuuuWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TuturuuuWatch.entitlements; sourceTree = "<group>"; };
+		W10000010000000000000120 /* TuturuuuWatchWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuturuuuWatchWidgetsBundle.swift; sourceTree = "<group>"; };
+		W10000010000000000000121 /* NextEventWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextEventWidget.swift; sourceTree = "<group>"; };
+		W10000010000000000000122 /* TasksLeftWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksLeftWidget.swift; sourceTree = "<group>"; };
+		W10000010000000000000123 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		W1000001000000000000012A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		W1000001000000000000012B /* vi */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = vi; path = vi.lproj/Localizable.strings; sourceTree = "<group>"; };
+		W1000001000000000000012C /* Build.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Build.xcconfig; sourceTree = "<group>"; };
+		W1000001000000000000012D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		W1000001000000000000012E /* TuturuuuWatchWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TuturuuuWatchWidgets.entitlements; sourceTree = "<group>"; };
+		W10000010000000000000130 /* TuturuuuWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TuturuuuWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		W10000010000000000000131 /* TuturuuuWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TuturuuuWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };		W10000010000000000000140 /* WatchSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSnapshotTests.swift; sourceTree = "<group>"; };
+		W10000010000000000000141 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		W10000010000000000000132 /* TuturuuuWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TuturuuuWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		36FDFC6325B3091320E36D1B /* Frameworks */ = {
@@ -151,7 +236,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXFrameworksBuildPhase section */
+		W10000010000000000000051 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000019 /* TuturuuuWatchKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		W10000010000000000000052 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000025 /* TuturuuuWatchKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};		W10000010000000000000057 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000028 /* TuturuuuWatchKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		0511706EB5F8088D3641FBDB /* LiveScreenBroadcast */ = {
@@ -221,6 +328,9 @@
 				973D65262FA52DB98BD0FC63 /* GoogleService-Info.plist */,
 				F68E757E8BFC60757A3597C8 /* LiveScreenShared */,
 				0511706EB5F8088D3641FBDB /* LiveScreenBroadcast */,
+				W10000010000000000000070 /* TuturuuuWatch */,
+				W10000010000000000000071 /* TuturuuuWatchWidgets */,
+				W10000010000000000000072 /* TuturuuuWatchTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -230,6 +340,9 @@
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 				7EEC2E263407FF8E44517594 /* LiveScreenBroadcast.appex */,
+				W10000010000000000000130 /* TuturuuuWatch.app */,
+				W10000010000000000000131 /* TuturuuuWatchWidgets.appex */,
+				W10000010000000000000132 /* TuturuuuWatchTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -253,6 +366,7 @@
 				5EC2E7010000000000000004 /* MastermindSecretPlugin.swift */,
 				5EC2E7010000000000000006 /* MastermindSecretStore.swift */,
 				DE1100010000000000000002 /* DeliveredInboxNotificationsPlugin.swift */,
+				W10000010000000000000002 /* WatchCompanionPlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -275,7 +389,51 @@
 			path = LiveScreenShared;
 			sourceTree = "<group>";
 		};
-/* End PBXGroup section */
+		W10000010000000000000070 /* TuturuuuWatch */ = {
+			isa = PBXGroup;
+			children = (
+				W1000001000000000000011C /* Build.xcconfig */,
+				W1000001000000000000011D /* Info.plist */,
+				W1000001000000000000011E /* TuturuuuWatch.entitlements */,
+				W10000010000000000000116 /* Assets.xcassets */,
+				W10000010000000000000117 /* PrivacyInfo.xcprivacy */,
+				W10000010000000000000118 /* Localizable.strings */,
+				W10000010000000000000110 /* TuturuuuWatchApp.swift */,
+				W10000010000000000000111 /* WatchConnectivityManager.swift */,
+				W10000010000000000000112 /* WatchAppViewModel.swift */,
+				W10000010000000000000113 /* TodayView.swift */,
+				W10000010000000000000114 /* QuickCaptureView.swift */,
+				W10000010000000000000115 /* MiraQuickAskView.swift */,
+			);
+			name = TuturuuuWatch;
+			path = TuturuuuWatch;
+			sourceTree = "<group>";
+		};
+		W10000010000000000000071 /* TuturuuuWatchWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				W1000001000000000000012C /* Build.xcconfig */,
+				W1000001000000000000012D /* Info.plist */,
+				W1000001000000000000012E /* TuturuuuWatchWidgets.entitlements */,
+				W10000010000000000000123 /* PrivacyInfo.xcprivacy */,
+				W10000010000000000000124 /* Localizable.strings */,
+				W10000010000000000000120 /* TuturuuuWatchWidgetsBundle.swift */,
+				W10000010000000000000121 /* NextEventWidget.swift */,
+				W10000010000000000000122 /* TasksLeftWidget.swift */,
+			);
+			name = TuturuuuWatchWidgets;
+			path = TuturuuuWatchWidgets;
+			sourceTree = "<group>";
+		};		W10000010000000000000072 /* TuturuuuWatchTests */ = {
+			isa = PBXGroup;
+			children = (
+				W10000010000000000000141 /* Info.plist */,
+				W10000010000000000000140 /* WatchSnapshotTests.swift */,
+			);
+			name = TuturuuuWatchTests;
+			path = TuturuuuWatchTests;
+			sourceTree = "<group>";
+		};/* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
 		331C8080294A63A400263BE5 /* RunnerTests */ = {
@@ -302,6 +460,7 @@
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
 				824060ABAB12F1E4B3F14B3B /* Embed Live Broadcast Extension */,
+				W10000010000000000000040 /* Embed Watch Content */,
 				845192D4B704CDF3C8795531 /* [CP] Check Pods Manifest.lock */,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
@@ -319,6 +478,7 @@
 			);
 			dependencies = (
 				EECB2BD339C5C44A211914BA /* PBXTargetDependency */,
+				W10000010000000000000042 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
@@ -344,7 +504,68 @@
 			productReference = 7EEC2E263407FF8E44517594 /* LiveScreenBroadcast.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-/* End PBXNativeTarget section */
+		W10000010000000000000030 /* TuturuuuWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = W10000010000000000000080 /* Build configuration list for PBXNativeTarget "TuturuuuWatch" */;
+			buildPhases = (
+				W10000010000000000000053 /* Sources */,
+				W10000010000000000000051 /* Frameworks */,
+				W10000010000000000000055 /* Resources */,
+				W10000010000000000000046 /* Embed Watch Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				W10000010000000000000044 /* PBXTargetDependency */,
+			);
+			name = TuturuuuWatch;
+			packageProductDependencies = (
+				W10000010000000000000061 /* TuturuuuWatchKit */,
+			);
+			productName = TuturuuuWatch;
+			productReference = W10000010000000000000130 /* TuturuuuWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		W10000010000000000000031 /* TuturuuuWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = W10000010000000000000081 /* Build configuration list for PBXNativeTarget "TuturuuuWatchWidgets" */;
+			buildPhases = (
+				W10000010000000000000054 /* Sources */,
+				W10000010000000000000052 /* Frameworks */,
+				W10000010000000000000056 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TuturuuuWatchWidgets;
+			packageProductDependencies = (
+				W10000010000000000000062 /* TuturuuuWatchKit */,
+			);
+			productName = TuturuuuWatchWidgets;
+			productReference = W10000010000000000000131 /* TuturuuuWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};		W10000010000000000000032 /* TuturuuuWatchTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = W10000010000000000000082 /* Build configuration list for PBXNativeTarget "TuturuuuWatchTests" */;
+			buildPhases = (
+				W10000010000000000000058 /* Sources */,
+				W10000010000000000000057 /* Frameworks */,
+				W10000010000000000000059 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				W10000010000000000000048 /* PBXTargetDependency */,
+			);
+			name = TuturuuuWatchTests;
+			packageProductDependencies = (
+				W10000010000000000000063 /* TuturuuuWatchKit */,
+			);
+			productName = TuturuuuWatchTests;
+			productReference = W10000010000000000000132 /* TuturuuuWatchTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};/* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		97C146E61CF9000F007C117D /* Project object */ = {
@@ -362,6 +583,10 @@
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
 					};
+					W10000010000000000000032 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = W10000010000000000000030;
+					};
 				};
 			};
 			buildConfigurationList = 97C146E91CF9000F007C117D /* Build configuration list for PBXProject "Runner" */;
@@ -374,6 +599,9 @@
 				Base,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
+			packageReferences = (
+				W10000010000000000000060 /* XCLocalSwiftPackageReference "TuturuuuWatchKit" */,
+			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -381,6 +609,9 @@
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 				A19C66805954405385732FBE /* LiveScreenBroadcast */,
+				W10000010000000000000030 /* TuturuuuWatch */,
+				W10000010000000000000031 /* TuturuuuWatchWidgets */,
+				W10000010000000000000032 /* TuturuuuWatchTests */,
 			);
 		};
 /* End PBXProject section */
@@ -415,7 +646,31 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXResourcesBuildPhase section */
+		W10000010000000000000055 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000016 /* Assets.xcassets in Resources */,
+				W10000010000000000000017 /* PrivacyInfo.xcprivacy in Resources */,
+				W10000010000000000000018 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		W10000010000000000000056 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000023 /* PrivacyInfo.xcprivacy in Resources */,
+				W10000010000000000000024 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};		W10000010000000000000059 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		39E73A02078E6A4CE204F684 /* [CP] Copy Pods Resources */ = {
@@ -612,6 +867,7 @@
 				5EC2E7010000000000000003 /* MastermindSecretPlugin.swift in Sources */,
 				5EC2E7010000000000000005 /* MastermindSecretStore.swift in Sources */,
 				DE1100010000000000000001 /* DeliveredInboxNotificationsPlugin.swift in Sources */,
+				W10000010000000000000001 /* WatchCompanionPlugin.swift in Sources */,
 				1E3FC0D9F09D51E98AFEEC0C /* LiveScreenSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -625,7 +881,36 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-/* End PBXSourcesBuildPhase section */
+		W10000010000000000000053 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000010 /* TuturuuuWatchApp.swift in Sources */,
+				W10000010000000000000011 /* WatchConnectivityManager.swift in Sources */,
+				W10000010000000000000012 /* WatchAppViewModel.swift in Sources */,
+				W10000010000000000000013 /* TodayView.swift in Sources */,
+				W10000010000000000000014 /* QuickCaptureView.swift in Sources */,
+				W10000010000000000000015 /* MiraQuickAskView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		W10000010000000000000054 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000020 /* TuturuuuWatchWidgetsBundle.swift in Sources */,
+				W10000010000000000000021 /* NextEventWidget.swift in Sources */,
+				W10000010000000000000022 /* TasksLeftWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};		W10000010000000000000058 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				W10000010000000000000027 /* WatchSnapshotTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};/* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		331C8086294A63A400263BE5 /* PBXTargetDependency */ = {
@@ -639,7 +924,23 @@
 			target = A19C66805954405385732FBE /* LiveScreenBroadcast */;
 			targetProxy = AD4AB1B48DAC70C90A369810 /* PBXContainerItemProxy */;
 		};
-/* End PBXTargetDependency section */
+		W10000010000000000000042 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TuturuuuWatch;
+			target = W10000010000000000000030 /* TuturuuuWatch */;
+			targetProxy = W10000010000000000000043 /* PBXContainerItemProxy */;
+		};
+		W10000010000000000000044 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TuturuuuWatchWidgets;
+			target = W10000010000000000000031 /* TuturuuuWatchWidgets */;
+			targetProxy = W10000010000000000000045 /* PBXContainerItemProxy */;
+		};		W10000010000000000000048 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TuturuuuWatch;
+			target = W10000010000000000000030 /* TuturuuuWatch */;
+			targetProxy = W10000010000000000000047 /* PBXContainerItemProxy */;
+		};/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
@@ -676,7 +977,24 @@
 			name = Localizable.strings;
 			sourceTree = "<group>";
 		};
-/* End PBXVariantGroup section */
+		W10000010000000000000118 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				W1000001000000000000011A /* en */,
+				W1000001000000000000011B /* vi */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		W10000010000000000000124 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				W1000001000000000000012A /* en */,
+				W1000001000000000000012B /* vi */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		22721E4B8B3B7AB63013A07E /* Profile-development */ = {
@@ -1809,6 +2127,720 @@
 			};
 			name = "Release-production";
 		};
+		W10000010000000000000201 /* Debug-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+			};
+			name = "Debug-development";
+		};
+		W10000010000000000000301 /* Debug-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+			};
+			name = "Debug-development";
+		};
+		W10000010000000000000202 /* Profile-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+			};
+			name = "Profile-development";
+		};
+		W10000010000000000000302 /* Profile-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+			};
+			name = "Profile-development";
+		};
+		W10000010000000000000203 /* Release-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+			};
+			name = "Release-development";
+		};
+		W10000010000000000000303 /* Release-development */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.dev;
+			};
+			name = "Release-development";
+		};
+		W10000010000000000000204 /* Debug-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+			};
+			name = "Debug-staging";
+		};
+		W10000010000000000000304 /* Debug-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+			};
+			name = "Debug-staging";
+		};
+		W10000010000000000000205 /* Profile-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+			};
+			name = "Profile-staging";
+		};
+		W10000010000000000000305 /* Profile-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+			};
+			name = "Profile-staging";
+		};
+		W10000010000000000000206 /* Release-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+			};
+			name = "Release-staging";
+		};
+		W10000010000000000000306 /* Release-staging */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile.stg;
+			};
+			name = "Release-staging";
+		};
+		W10000010000000000000207 /* Debug-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				ENABLE_TESTABILITY = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+			};
+			name = "Debug-production";
+		};
+		W10000010000000000000307 /* Debug-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+			};
+			name = "Debug-production";
+		};
+		W10000010000000000000208 /* Profile-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+			};
+			name = "Profile-production";
+		};
+		W10000010000000000000308 /* Profile-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+			};
+			name = "Profile-production";
+		};
+		W10000010000000000000209 /* Release-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000011C /* Build.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatch/TuturuuuWatch.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatch/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_APP_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+			};
+			name = "Release-production";
+		};
+		W10000010000000000000309 /* Release-production */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = W1000001000000000000012C /* Build.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = TuturuuuWatchWidgets/TuturuuuWatchWidgets.entitlements;
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchWidgets/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "$(WATCH_WIDGETS_PROFILE_UUID)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCH_HOST_BUNDLE_ID = com.tuturuuu.app.mobile;
+			};
+			name = "Release-production";
+		};
+		W10000010000000000000401 /* Debug-development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Debug-development";
+		};
+		W10000010000000000000402 /* Profile-development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Profile-development";
+		};
+		W10000010000000000000403 /* Release-development */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.dev.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Release-development";
+		};
+		W10000010000000000000404 /* Debug-staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Debug-staging";
+		};
+		W10000010000000000000405 /* Profile-staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Profile-staging";
+		};
+		W10000010000000000000406 /* Release-staging */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.stg.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Release-staging";
+		};
+		W10000010000000000000407 /* Debug-production */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Debug-production";
+		};
+		W10000010000000000000408 /* Profile-production */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Profile-production";
+		};
+		W10000010000000000000409 /* Release-production */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 8H6TTBD6T8;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TuturuuuWatchTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.tuturuuu.app.mobile.watchkitapp.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TuturuuuWatch.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TuturuuuWatch";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = "Release-production";
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1876,7 +2908,76 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = "Release-production";
 		};
-/* End XCConfigurationList section */
+		W10000010000000000000080 /* Build configuration list for PBXNativeTarget "TuturuuuWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				W10000010000000000000201 /* Debug-development */,
+				W10000010000000000000202 /* Profile-development */,
+				W10000010000000000000203 /* Release-development */,
+				W10000010000000000000204 /* Debug-staging */,
+				W10000010000000000000205 /* Profile-staging */,
+				W10000010000000000000206 /* Release-staging */,
+				W10000010000000000000207 /* Debug-production */,
+				W10000010000000000000208 /* Profile-production */,
+				W10000010000000000000209 /* Release-production */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Release-production";
+		};
+		W10000010000000000000081 /* Build configuration list for PBXNativeTarget "TuturuuuWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				W10000010000000000000301 /* Debug-development */,
+				W10000010000000000000302 /* Profile-development */,
+				W10000010000000000000303 /* Release-development */,
+				W10000010000000000000304 /* Debug-staging */,
+				W10000010000000000000305 /* Profile-staging */,
+				W10000010000000000000306 /* Release-staging */,
+				W10000010000000000000307 /* Debug-production */,
+				W10000010000000000000308 /* Profile-production */,
+				W10000010000000000000309 /* Release-production */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Release-production";
+		};		W10000010000000000000082 /* Build configuration list for PBXNativeTarget "TuturuuuWatchTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				W10000010000000000000401 /* Debug-development */,
+				W10000010000000000000402 /* Profile-development */,
+				W10000010000000000000403 /* Release-development */,
+				W10000010000000000000404 /* Debug-staging */,
+				W10000010000000000000405 /* Profile-staging */,
+				W10000010000000000000406 /* Release-staging */,
+				W10000010000000000000407 /* Debug-production */,
+				W10000010000000000000408 /* Profile-production */,
+				W10000010000000000000409 /* Release-production */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = "Release-production";
+		};/* End XCConfigurationList section */
+/* Begin XCLocalSwiftPackageReference section */
+		W10000010000000000000060 /* XCLocalSwiftPackageReference "TuturuuuWatchKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = TuturuuuWatchKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		W10000010000000000000061 /* TuturuuuWatchKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = W10000010000000000000060 /* XCLocalSwiftPackageReference "TuturuuuWatchKit" */;
+			productName = TuturuuuWatchKit;
+		};
+		W10000010000000000000062 /* TuturuuuWatchKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = W10000010000000000000060 /* XCLocalSwiftPackageReference "TuturuuuWatchKit" */;
+			productName = TuturuuuWatchKit;
+		};
+		W10000010000000000000063 /* TuturuuuWatchKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = W10000010000000000000060 /* XCLocalSwiftPackageReference "TuturuuuWatchKit" */;
+			productName = TuturuuuWatchKit;
+		};/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97C146E61CF9000F007C117D /* Project object */;
 }

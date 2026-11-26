@@ -567,6 +567,10 @@ jobs:
         if: steps.existing.outputs.present != 'true'
         run: ruby ../../scripts/mobile-deployment/omit-broadcast-extension.rb ios/Runner.xcodeproj
 
+      - name: Omit Apple Watch companion when manual profiles are absent
+        if: steps.existing.outputs.present != 'true' && env.MOBILE_WATCH_EMBEDDED != 'true'
+        run: swift ../../scripts/mobile-deployment/omit-watch-targets.swift ios/Runner.xcodeproj
+
       - name: Verify release backend URLs are https
         if: steps.existing.outputs.present != 'true'
         run: node ../../scripts/mobile-validate-dart-defines.js .env.github
@@ -633,6 +637,18 @@ jobs:
             fi
           fi
           test ! -e "$app_path/PlugIns/LiveScreenBroadcast.appex"
+          if [ "${MOBILE_WATCH_EMBEDDED:-false}" = true ]; then
+            watch_app="$app_path/Watch/TuturuuuWatch.app"
+            test -d "$watch_app"
+            codesign --verify --deep --strict "$watch_app"
+            test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$watch_app/Info.plist")" = "$APPLE_BUNDLE_ID.watchkitapp"
+            test "$(/usr/libexec/PlistBuddy -c 'Print WKCompanionAppBundleIdentifier' "$watch_app/Info.plist")" = "$APPLE_BUNDLE_ID"
+            test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$watch_app/Info.plist")" = "$EXPECTED_BUILD_NUMBER"
+            test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$watch_app/Info.plist")" = "$EXPECTED_BUILD_NAME"
+            test -d "$watch_app/PlugIns/TuturuuuWatchWidgets.appex"
+          else
+            test ! -e "$app_path/Watch/TuturuuuWatch.app"
+          fi
 
       - name: Verify and upload iOS Crashlytics symbols
         if: steps.existing.outputs.present != 'true'
@@ -719,6 +735,12 @@ jobs:
           fi
           if [ -n "${MOBILE_BROADCAST_PROFILE_UUID:-}" ]; then
             rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${MOBILE_BROADCAST_PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "${MOBILE_WATCH_PROFILE_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${MOBILE_WATCH_PROFILE_UUID}.mobileprovision"
+          fi
+          if [ -n "${MOBILE_WATCH_WIDGETS_PROFILE_UUID:-}" ]; then
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/${MOBILE_WATCH_WIDGETS_PROFILE_UUID}.mobileprovision"
           fi
           if [ -n "${APP_STORE_CONNECT_PRIVATE_KEY_PATH:-}" ]; then
             rm -f "$APP_STORE_CONNECT_PRIVATE_KEY_PATH"

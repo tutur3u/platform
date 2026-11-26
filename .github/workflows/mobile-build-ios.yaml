@@ -76,11 +76,15 @@ jobs:
           python3 ../../scripts/mobile-deployment/test_firebase_service_config.py
           python3 ../../scripts/mobile-deployment/firebase-service-config.py --platform ios
 
+      - name: Run Apple Watch data layer Swift tests
+        run: swift test --package-path ios/TuturuuuWatchKit --parallel
+
       - name: Build iOS (development flavor, simulator)
         run: flutter build ios --flavor development --target lib/main_development.dart --simulator
 
       - name: Archive iOS app bundle
         run: |
+          test -d build/ios/iphonesimulator/Runner.app/Watch/TuturuuuWatch.app
           python3 ../../scripts/mobile-deployment/firebase-service-config.py --platform ios --app build/ios/iphonesimulator/Runner.app
           ditto -c -k --sequesterRsrc --keepParent build/ios/iphonesimulator/Runner.app "$RUNNER_TEMP/ios-dev-app.zip"
 

@@ -246,6 +246,50 @@ test('cloud builds archive and export with App Store Connect authentication', (t
   assert.doesNotMatch(result.stdout + result.stderr, new RegExp(keySecret));
 });
 
+test('manual signing degrades cleanly when watch profiles are absent and embeds when present', (t) => {
+  const { app, files, read, run } = fixture(t);
+  const degraded = run(signingScript, ['manual'], {
+    STUB_TIME_SENSITIVE: 'true',
+  });
+  assert.equal(degraded.status, 0, degraded.stderr);
+  assert.match(
+    degraded.stdout,
+    /::warning title=Apple Watch companion omitted::/
+  );
+  assert.match(
+    readFileSync(files.env, 'utf8'),
+    /^MOBILE_WATCH_EMBEDDED=false$/m
+  );
+
+  const watchProfilePath = join(app, '..', 'watch.mobileprovision');
+  const widgetsProfilePath = join(app, '..', 'watch-widgets.mobileprovision');
+  writeFileSync(watchProfilePath, 'watch-profile');
+  writeFileSync(widgetsProfilePath, 'widgets-profile');
+
+  const embedded = run(signingScript, ['manual'], {
+    STUB_TIME_SENSITIVE: 'true',
+    APPLE_WATCH_PROFILES_READY: 'true',
+    APPLE_WATCH_PROVISIONING_PROFILE_PATH: watchProfilePath,
+    APPLE_WATCH_WIDGETS_PROVISIONING_PROFILE_PATH: widgetsProfilePath,
+  });
+  assert.equal(embedded.status, 0, embedded.stderr);
+  assert.doesNotMatch(embedded.stdout, /Apple Watch companion omitted/);
+  assert.match(
+    readFileSync(files.env, 'utf8'),
+    /^MOBILE_WATCH_EMBEDDED=true$/m
+  );
+  const options = read('ios/ExportOptions.plist');
+  assert.match(options, /com\.tuturuuu\.app\.mobile\.watchkitapp<\/key>/);
+  assert.match(
+    options,
+    /com\.tuturuuu\.app\.mobile\.watchkitapp\.widgets<\/key>/
+  );
+  assert.match(
+    read('ios/Flutter/StoreSigning.xcconfig'),
+    /WATCH_APP_PROFILE_UUID =/
+  );
+});
+
 test('manual builds keep the Flutter IPA export', (t) => {
   const { run } = fixture(t);
   const result = run(buildScript, ['manual', '0.27.40', '1000013']);

@@ -230,7 +230,39 @@ async function main() {
   );
   exportEnv('APP_STORE_CONNECT_PRIVATE_KEY_PATH', p8Path);
   exportEnv('API_PRIVATE_KEYS_DIR', privateKeysDirectory);
+  await hydrateAppleWatchProfiles(bundle, runnerTemp);
   await hydrateMacAppStore(bundle, runnerTemp);
+}
+
+const APPLE_WATCH_PROFILE_FILES = [
+  'apple_watch_app_store_provisioning_profile',
+  'apple_watch_widgets_app_store_provisioning_profile',
+];
+
+async function hydrateAppleWatchProfiles(bundle, runnerTemp) {
+  const present = APPLE_WATCH_PROFILE_FILES.filter(
+    (kind) => bundle.files[kind]
+  );
+  if (present.length === 0) {
+    exportEnv('APPLE_WATCH_PROFILES_READY', 'false');
+    return;
+  }
+  if (present.length !== APPLE_WATCH_PROFILE_FILES.length) {
+    fail('Apple Watch provisioning profile bundle entries are incomplete');
+  }
+  const watchAppPath = await writeBundleFile(
+    bundle,
+    'apple_watch_app_store_provisioning_profile',
+    join(runnerTemp, 'mobile-deployment/watch-app-store.mobileprovision')
+  );
+  const watchWidgetsPath = await writeBundleFile(
+    bundle,
+    'apple_watch_widgets_app_store_provisioning_profile',
+    join(runnerTemp, 'mobile-deployment/watch-widgets-store.mobileprovision')
+  );
+  exportEnv('APPLE_WATCH_PROVISIONING_PROFILE_PATH', watchAppPath);
+  exportEnv('APPLE_WATCH_WIDGETS_PROVISIONING_PROFILE_PATH', watchWidgetsPath);
+  exportEnv('APPLE_WATCH_PROFILES_READY', 'true');
 }
 
 // The Mac App Store reuses the Apple Distribution identity and API key above.

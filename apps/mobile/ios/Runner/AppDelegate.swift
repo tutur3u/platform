@@ -240,6 +240,9 @@ import UserNotifications
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MastermindSecretPlugin") {
       MastermindSecretPlugin.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "WatchCompanionPlugin") {
+      WatchCompanionPlugin.register(with: registrar)
+    }
   }
 }
 

@@ -28,12 +28,20 @@ if ! [[ "$APPLE_TEAM_ID" =~ ^[A-Z0-9]{10}$ ]]; then
 fi
 
 write_export_options() {
-  local signing_style="$1" profile_uuid="${2:-}" profiles=''
+  local signing_style="$1" profile_uuid="${2:-}" watch_uuid="${3:-}" watch_widgets_uuid="${4:-}" profiles=''
   if [ -n "$profile_uuid" ]; then
+    local watch_entries=''
+    if [ -n "$watch_uuid" ] && [ -n "$watch_widgets_uuid" ]; then
+      watch_entries="
+    <key>${APPLE_BUNDLE_ID}.watchkitapp</key>
+    <string>${watch_uuid}</string>
+    <key>${APPLE_BUNDLE_ID}.watchkitapp.widgets</key>
+    <string>${watch_widgets_uuid}</string>"
+    fi
     profiles="  <key>provisioningProfiles</key>
   <dict>
     <key>${APPLE_BUNDLE_ID}</key>
-    <string>${profile_uuid}</string>
+    <string>${profile_uuid}</string>${watch_entries}
   </dict>"
   fi
   cat > ios/ExportOptions.plist <<EOF
@@ -71,6 +79,7 @@ EOF
     write_export_options automatic
     # Xcode adds the capability to the App ID while it manages signing.
     echo "MOBILE_TIME_SENSITIVE_ENTITLEMENT=true" >> "$GITHUB_ENV"
+    echo "MOBILE_WATCH_EMBEDDED=true" >> "$GITHUB_ENV"
     echo "Prepared Xcode-managed (cloud) distribution signing."
     ;;
   manual)
@@ -126,13 +135,43 @@ EOF
     mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
     cp "$APPLE_PROVISIONING_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${profile_uuid}.mobileprovision"
     echo "MOBILE_PROFILE_UUID=$profile_uuid" >> "$GITHUB_ENV"
+
+    watch_profile_uuid=''
+    watch_widgets_profile_uuid=''
+    if [ "${APPLE_WATCH_PROFILES_READY:-false}" = true ] \
+      && [ -n "${APPLE_WATCH_PROVISIONING_PROFILE_PATH:-}" ] \
+      && [ -n "${APPLE_WATCH_WIDGETS_PROVISIONING_PROFILE_PATH:-}" ]; then
+      watch_plist="$RUNNER_TEMP/mobile-deployment/watch-profile.plist"
+      watch_widgets_plist="$RUNNER_TEMP/mobile-deployment/watch-widgets-profile.plist"
+      security cms -D -i "$APPLE_WATCH_PROVISIONING_PROFILE_PATH" > "$watch_plist"
+      APPLE_PROFILE_KIND=watch swift ../../scripts/mobile-deployment/verify-profile.swift "$watch_plist"
+      security cms -D -i "$APPLE_WATCH_WIDGETS_PROVISIONING_PROFILE_PATH" > "$watch_widgets_plist"
+      APPLE_PROFILE_KIND=watch-widgets swift ../../scripts/mobile-deployment/verify-profile.swift "$watch_widgets_plist"
+      watch_profile_uuid="$("$plist_buddy" -c 'Print UUID' "$watch_plist")"
+      watch_widgets_profile_uuid="$("$plist_buddy" -c 'Print UUID' "$watch_widgets_plist")"
+      cp "$APPLE_WATCH_PROVISIONING_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${watch_profile_uuid}.mobileprovision"
+      cp "$APPLE_WATCH_WIDGETS_PROVISIONING_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/${watch_widgets_profile_uuid}.mobileprovision"
+      echo "MOBILE_WATCH_PROFILE_UUID=$watch_profile_uuid" >> "$GITHUB_ENV"
+      echo "MOBILE_WATCH_WIDGETS_PROFILE_UUID=$watch_widgets_profile_uuid" >> "$GITHUB_ENV"
+      echo "MOBILE_WATCH_EMBEDDED=true" >> "$GITHUB_ENV"
+    else
+      echo "MOBILE_WATCH_EMBEDDED=false" >> "$GITHUB_ENV"
+      echo "::warning title=Apple Watch companion omitted::Manual signing mode has no Watch app or Watch Widgets App Store provisioning profiles in the Mobile Deployment vault. Shipping iOS without TuturuuuWatch. Upload apple_watch_app_store_provisioning_profile and apple_watch_widgets_app_store_provisioning_profile or switch IOS_SIGNING_MODE to cloud to embed the Watch app."
+      if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+        echo "- Apple Watch companion omitted: manual signing vault lacks Watch app and Widgets App Store profiles." >> "$GITHUB_STEP_SUMMARY"
+      fi
+    fi
+
     cat > ios/Flutter/StoreSigning.xcconfig <<EOF
 CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY[sdk=iphoneos*] = Apple Distribution
+CODE_SIGN_IDENTITY[sdk=watchos*] = Apple Distribution
 DEVELOPMENT_TEAM = ${APPLE_TEAM_ID}
 PROVISIONING_PROFILE_SPECIFIER = ${profile_uuid}
+WATCH_APP_PROFILE_UUID = ${watch_profile_uuid}
+WATCH_WIDGETS_PROFILE_UUID = ${watch_widgets_profile_uuid}
 EOF
-    write_export_options manual "$profile_uuid"
+    write_export_options manual "$profile_uuid" "$watch_profile_uuid" "$watch_widgets_profile_uuid"
     ;;
   *)
     echo "::error title=Unknown iOS signing mode::Use manual or cloud." >&2

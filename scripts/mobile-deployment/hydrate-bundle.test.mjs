@@ -265,4 +265,21 @@ test('Mac App Store entries are optional but must be complete', async () => {
     ),
     'fixture-apple_mac_app_store_provisioning_profile'
   );
+  assert.match(env, /APPLE_WATCH_PROFILES_READY<<[^\n]+\nfalse\n/);
+
+  files.apple_watch_app_store_provisioning_profile = entry(
+    'apple_watch_app_store_provisioning_profile'
+  );
+  assert.throws(
+    run,
+    /Apple Watch provisioning profile bundle entries are incomplete/
+  );
+
+  files.apple_watch_widgets_app_store_provisioning_profile = entry(
+    'apple_watch_widgets_app_store_provisioning_profile'
+  );
+  const watchEnv = run();
+  assert.match(watchEnv, /APPLE_WATCH_PROFILES_READY<<[^\n]+\ntrue\n/);
+  assert.match(watchEnv, /APPLE_WATCH_PROVISIONING_PROFILE_PATH/);
+  assert.match(watchEnv, /APPLE_WATCH_WIDGETS_PROVISIONING_PROFILE_PATH/);
 });
