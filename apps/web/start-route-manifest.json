@@ -12,18 +12,18 @@
   },
   "crons": [],
   "summary": {
-    "total": 903,
+    "total": 905,
     "categories": {
-      "api": 703,
+      "api": 704,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 169,
+      "page": 170,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 891 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 893 }
   },
   "routes": [
     {
@@ -1312,6 +1312,14 @@
     {
       "pattern": "/[locale]/u/[username]",
       "source": "apps/web/src/app/[locale]/(marketing)/u/[username]/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/upskii/live-class-permission",
+      "source": "apps/web/src/app/[locale]/(marketing)/upskii/live-class-permission/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -3024,6 +3032,14 @@
     {
       "pattern": "/api/v1/integrations/upskii/link",
       "source": "apps/web/src/app/api/v1/integrations/upskii/link/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/integrations/upskii/live-class",
+      "source": "apps/web/src/app/api/v1/integrations/upskii/live-class/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

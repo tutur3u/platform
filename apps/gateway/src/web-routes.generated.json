@@ -1032,6 +1032,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/integrations/upskii/live-class"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/integrations/upskii/unlink"
     },
     {
@@ -4403,6 +4408,11 @@
       "family": "web-rest",
       "localized": true,
       "pattern": "/integrations"
+    },
+    {
+      "family": "web-rest",
+      "localized": true,
+      "pattern": "/upskii/live-class-permission"
     },
     {
       "family": "web-rest",
