@@ -79,8 +79,15 @@ server request, in-process, as the verified actor: the board, the first
 50-task page of every list, and the actor's list preferences (persist
 collapsed, hide empty, auto-collapse, pinned special lists). The browser seeds
 these into its query cache before the first render, so columns skip their
-first request and the board shows tasks as soon as it hydrates. The server
-pages replace any browser-cached copy of the board. The snapshot starts
+first request and the board shows tasks as soon as it hydrates. The snapshot
+carries the time its reads started (`capturedAt`). A cached query is replaced
+only when it was last written no later than that time, so a preloaded or
+cached route never overwrites edits made in the tab since; lists the server
+could not read keep their cached tasks. Task pages seed once per mounted
+board, and a snapshot older than five seconds at mount, or one skipped for a
+newer cache, triggers one background revalidation of the loaded lists. The
+older browser copy (`readTaskBoardCache`) is not used when server pages were
+supplied. The snapshot starts
 alongside the workspace guard and is used only after the guard admits the same
 actor. A list whose page cannot be read loads in the browser as before. The
 shell profile (user menu) is one direct database read for the verified actor

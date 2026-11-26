@@ -10,7 +10,6 @@ import type {
 } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { getUserWorkspaceConfigQueryKey } from '@tuturuuu/ui/hooks/use-user-workspace-config';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
 import {
@@ -19,7 +18,6 @@ import {
   Suspense,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -30,11 +28,7 @@ import {
   setActiveBoardRefresh,
   setActiveBroadcast,
 } from './board-broadcast-context';
-import {
-  BOARD_USER_CONFIG_DEFAULTS,
-  BOARD_WORKSPACE_CONFIG_IDS,
-  type BoardPreferenceSeed,
-} from './board-preference-seed';
+import type { BoardPreferenceSeed } from './board-preference-seed';
 import { getBoardSprintsQueryKey } from './board-sprints/use-board-sprints';
 import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
@@ -50,9 +44,9 @@ import {
 } from './task-board-cache-scheduler';
 import { TaskBoardLoadingState } from './task-board-loading-state';
 import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
+import { useBoardServerSeed } from './use-board-server-seed';
 import {
   type BoardFirstListPage,
-  seedFromFirstListPages,
   useProgressiveBoardLoader,
 } from './use-progressive-board-loader';
 
@@ -86,48 +80,21 @@ interface Props {
   instantSyncEnabled?: boolean;
 }
 
-type SeedEntry = { key: readonly unknown[]; data: unknown };
-
-/** The preference queries the kanban waits for before its first paint. */
-function preferenceSeedEntries(
-  workspaceId: string,
-  seed: BoardPreferenceSeed
-): SeedEntry[] {
-  const entries: SeedEntry[] = [];
-  for (const [configId, fallback] of Object.entries(
-    BOARD_USER_CONFIG_DEFAULTS
-  )) {
-    if (!Object.hasOwn(seed.userConfigs, configId)) continue;
-    entries.push({
-      key: ['user-config', configId],
-      data: seed.userConfigs[configId] ?? fallback,
-    });
-  }
-  for (const configId of BOARD_WORKSPACE_CONFIG_IDS) {
-    if (!Object.hasOwn(seed.workspaceConfigs, configId)) continue;
-    entries.push({
-      key: getUserWorkspaceConfigQueryKey(workspaceId, configId),
-      data: seed.workspaceConfigs[configId] ?? null,
-    });
-  }
-  return entries;
-}
-
 /**
- * Whether a server copy read at `snapshotAt` is newer than the cached query.
- * A preloaded or back-navigated page model can be older than edits made in
- * this tab since, and must not replace them.
+ * One mounted body per user, workspace and board, so board-scoped state (the
+ * server seed, the browser copy, per-list pagination) never carries over when
+ * a caller reuses the component for another board.
  */
-function isServerCopyNewer(
-  queryClient: ReturnType<typeof useQueryClient>,
-  key: readonly unknown[],
-  snapshotAt: number
-) {
-  const state = queryClient.getQueryState(key);
-  return state?.data === undefined || state.dataUpdatedAt < snapshotAt;
+export function BoardClient(props: Props) {
+  return (
+    <BoardClientBody
+      key={`${props.currentUserId ?? ''}:${props.workspace.id}:${props.boardId}`}
+      {...props}
+    />
+  );
 }
 
-export function BoardClient({
+function BoardClientBody({
   boardId,
   initialBoard,
   initialListPages,
@@ -153,74 +120,25 @@ export function BoardClient({
   const [cachedSnapshot, setCachedSnapshot] = useState<ReturnType<
     typeof readTaskBoardCache
   > | null>(null);
-  // Server-read pages and preferences replace older cached copies, so the
-  // columns skip their initial browser request. Rendering only creates
-  // queries absent from the cache; replacing an older cached copy waits for
-  // the layout effects below, before paint.
-  const boardWorkspaceKey = initialBoard?.ws_id ?? workspace.id;
-  const preferenceSeed = useMemo(
-    () =>
-      initialBoard?.id === boardId && initialPreferences
-        ? {
-            entries: preferenceSeedEntries(
-              boardWorkspaceKey,
-              initialPreferences
-            ),
-            snapshotAt: initialSnapshotAt,
-          }
-        : null,
-    [
-      boardId,
-      boardWorkspaceKey,
-      initialBoard?.id,
-      initialPreferences,
-      initialSnapshotAt,
-    ]
+  const boardQueryKey = useMemo(
+    () => ['task-board', workspace.id, boardId] as const,
+    [boardId, workspace.id]
   );
-  // Task pages seed once per mount, paired with the time they were read: a
-  // later reload of the same board leaves the live cache (realtime, loaded
-  // pages, local edits) alone.
-  const [serverSeed] = useState(() => {
-    for (const { key, data } of preferenceSeed?.entries ?? []) {
-      if (queryClient.getQueryState(key) !== undefined) continue;
-      queryClient.setQueryData(key, data, {
-        updatedAt: preferenceSeed?.snapshotAt,
-      });
-    }
-    if (initialBoard?.id !== boardId || !initialListPages) return null;
-    return {
-      boardId,
-      snapshotAt: initialSnapshotAt,
-      tasks: isServerCopyNewer(
-        queryClient,
-        ['tasks', boardId],
-        initialSnapshotAt
-      )
-        ? seedFromFirstListPages(initialListPages)
-        : null,
-    };
+  const initialBoardForQuery =
+    initialBoard?.id === boardId && initialBoard.ws_id === workspace.id
+      ? initialBoard
+      : undefined;
+  // Server-read board, first pages and preferences replace older cached
+  // copies, so the columns skip their initial browser request.
+  const seed = useBoardServerSeed({
+    boardId,
+    boardQueryKey,
+    seedBoardQuery: initialBoardForQuery !== undefined,
+    initialBoard,
+    initialListPages,
+    initialPreferences,
+    snapshotAt: initialSnapshotAt,
   });
-  useLayoutEffect(() => {
-    if (!preferenceSeed) return;
-    for (const { key, data } of preferenceSeed.entries) {
-      if (isServerCopyNewer(queryClient, key, preferenceSeed.snapshotAt))
-        queryClient.setQueryData(key, data, {
-          updatedAt: preferenceSeed.snapshotAt,
-        });
-    }
-  }, [preferenceSeed, queryClient]);
-  useLayoutEffect(() => {
-    if (!serverSeed?.tasks) return;
-    const tasksKey = ['tasks', serverSeed.boardId];
-    if (isServerCopyNewer(queryClient, tasksKey, serverSeed.snapshotAt)) {
-      queryClient.setQueryData(tasksKey, serverSeed.tasks.tasks, {
-        updatedAt: serverSeed.snapshotAt,
-      });
-    }
-  }, [queryClient, serverSeed]);
-  // The seed belongs to the board it was read for, even if a caller reuses
-  // this instance for another board.
-  const boardSeed = serverSeed?.boardId === boardId ? serverSeed : null;
 
   useEffect(() => {
     // A shared browser keeps only the signed-in user's board snapshots.
@@ -228,7 +146,7 @@ export function BoardClient({
     if (currentUserId) purgeOtherUserTaskBoardCaches(currentUserId);
     // Server pages were either seeded or skipped for a newer live cache; the
     // browser copy is older than both.
-    if (boardSeed) return;
+    if (seed.hasServerPages) return;
     const snapshot = readTaskBoardCache(cacheScopeId, boardId);
     if (!snapshot) return;
 
@@ -247,7 +165,7 @@ export function BoardClient({
     cacheScopeId,
     currentUserId,
     queryClient,
-    boardSeed,
+    seed.hasServerPages,
     workspace.id,
   ]);
 
@@ -256,16 +174,17 @@ export function BoardClient({
     error: boardError,
     isLoading: boardLoading,
   } = useQuery({
-    queryKey: ['task-board', workspace.id, boardId],
+    queryKey: boardQueryKey,
     queryFn: async () => {
       const result = await getWorkspaceTaskBoard(workspace.id, boardId);
       return result.board as WorkspaceTaskBoard;
     },
     // The server already authorized this exact board for the current request.
     // Reuse it through hydration instead of paying for the same API read twice.
-    initialData:
-      initialBoard?.id === boardId && initialBoard.ws_id === workspace.id
-        ? initialBoard
+    initialData: initialBoardForQuery,
+    initialDataUpdatedAt:
+      initialBoardForQuery && initialSnapshotAt > 0
+        ? initialSnapshotAt
         : undefined,
     refetchOnMount: true,
     staleTime: initialBoard ? 30_000 : 0,
@@ -288,7 +207,7 @@ export function BoardClient({
   const progressiveLoader = useProgressiveBoardLoader(
     boardWorkspaceId,
     boardId,
-    boardSeed?.tasks?.pagination ?? cachedSnapshot?.pagination
+    seed.pagination ?? cachedSnapshot?.pagination
   );
 
   // Tasks start empty and are populated progressively per-list.
@@ -301,8 +220,8 @@ export function BoardClient({
       return queryClient.getQueryData<Task[]>(['tasks', boardId]) ?? [];
     },
     gcTime: 7 * 24 * 60 * 60_000,
-    initialData: boardSeed?.tasks?.tasks ?? cachedSnapshot?.tasks ?? [],
-    initialDataUpdatedAt: boardSeed?.tasks ? boardSeed.snapshotAt : undefined,
+    initialData: seed.initialTasks ?? cachedSnapshot?.tasks ?? [],
+    initialDataUpdatedAt: seed.initialTasksUpdatedAt,
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -375,7 +294,7 @@ export function BoardClient({
     window.addEventListener('online', onOnline);
     window.addEventListener('pageshow', onPageShow);
     document.addEventListener('visibilitychange', onVisibilityChange);
-    if (cachedSnapshot) revalidateLoadedLists();
+    if (cachedSnapshot || seed.revalidateOnMount) revalidateLoadedLists();
 
     return () => {
       window.removeEventListener('focus', onFocus);
@@ -388,6 +307,7 @@ export function BoardClient({
     cachedSnapshot,
     progressiveLoader.revalidateLoadedLists,
     queryClient,
+    seed.revalidateOnMount,
     workspace.id,
   ]);
 

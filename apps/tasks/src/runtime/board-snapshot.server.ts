@@ -30,7 +30,8 @@ export interface BoardSnapshotListPage {
 
 export interface BoardSnapshot {
   board: BoardSnapshotBoard;
-  listPages: Record<string, BoardSnapshotListPage>;
+  /** Absent when no list page could be read. */
+  listPages?: Record<string, BoardSnapshotListPage>;
   preferences: BoardPreferenceSeed;
   /** When the reads started (ms), so the browser keeps newer local edits. */
   capturedAt: number;
@@ -187,5 +188,13 @@ export async function loadBoardSnapshot({
     const page = pages[index];
     if (page) listPages[list.id] = page;
   });
-  return { board, listPages, preferences, capturedAt };
+  // No list read succeeded: send no pages, so the browser keeps its cached
+  // copy and the columns load their own, instead of seeding an empty board.
+  const anyPageRead = lists.length === 0 || Object.keys(listPages).length > 0;
+  return {
+    board,
+    listPages: anyPageRead ? listPages : undefined,
+    preferences,
+    capturedAt,
+  };
 }

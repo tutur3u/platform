@@ -127,6 +127,7 @@ describe('BoardClient server seed', () => {
             },
             'list-2': { tasks: [], count: 0 },
           }}
+          initialSnapshotAt={Date.now()}
           initialPreferences={{
             userConfigs: {
               TASK_PERSIST_COLLAPSED_LISTS: 'false',
@@ -258,12 +259,17 @@ describe('BoardClient server seed', () => {
     expect(
       queryClient.getQueryData(['user-config', 'TASK_PERSIST_COLLAPSED_LISTS'])
     ).toBe('false');
-    // Kept local tasks leave the columns to load their own pages.
+    // Columns keep the server's first-page state and the kept, newer cache
+    // is revalidated once in the background instead of showing skeletons.
     expect(useProgressiveBoardLoaderMock).toHaveBeenCalledWith(
       'board-ws-uuid',
       'board-1',
-      undefined
+      expect.objectContaining({
+        'list-1': expect.objectContaining({ page: 0, isInitialLoad: false }),
+      })
     );
+    await act(async () => {});
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
     queryClient.clear();
   });
 
@@ -341,11 +347,11 @@ describe('BoardClient server seed', () => {
     await act(async () => {});
 
     expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([]);
-    expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
     queryClient.clear();
   });
 
-  it('never seeds another board with the mount board pages', async () => {
+  it('gives each board its own seed when a caller reuses the component', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -377,12 +383,108 @@ describe('BoardClient server seed', () => {
     rerender(view('board-2'));
     await act(async () => {});
 
-    expect(queryClient.getQueryData(['tasks', 'board-2'])).not.toEqual([
-      { id: 'board-1-task', list_id: 'list-1' },
+    expect(queryClient.getQueryData(['tasks', 'board-2'])).toEqual([
+      { id: 'board-2-task', list_id: 'list-1' },
     ]);
     expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([
       { id: 'board-1-task', list_id: 'list-1' },
     ]);
+    queryClient.clear();
+  });
+
+  it('keeps cached tasks of lists the server could not read', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    queryClient.setQueryData(
+      ['tasks', 'board-1'],
+      [
+        { id: 'old-1', list_id: 'list-1' },
+        { id: 'kept-2', list_id: 'list-2' },
+      ],
+      { updatedAt: 500 }
+    );
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          currentUserId="user-1"
+          workspace={{ id: 'board-ws-uuid', personal: false } as any}
+          initialBoard={
+            {
+              id: 'board-1',
+              ws_id: 'board-ws-uuid',
+              task_lists: [],
+              access_type: 'member',
+            } as any
+          }
+          initialListPages={{
+            'list-1': {
+              tasks: [{ id: 'new-1', list_id: 'list-1' } as any],
+              count: 1,
+            },
+          }}
+          initialSnapshotAt={Date.now()}
+        />
+      </QueryClientProvider>
+    );
+    await act(async () => {});
+
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([
+      { id: 'kept-2', list_id: 'list-2' },
+      { id: 'new-1', list_id: 'list-1' },
+    ]);
+    queryClient.clear();
+  });
+
+  it('replaces older cached board details but keeps newer local ones', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const key = ['task-board', 'board-ws-uuid', 'board-1'];
+    // Real times: the board query refetches data older than its stale time.
+    const now = Date.now();
+    const serverBoard = {
+      id: 'board-1',
+      name: 'Server',
+      ws_id: 'board-ws-uuid',
+      task_lists: [],
+      access_type: 'member',
+    } as any;
+    const view = (snapshotAt: number) => (
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          currentUserId="user-1"
+          workspace={{ id: 'board-ws-uuid', personal: false } as any}
+          initialBoard={serverBoard}
+          initialListPages={{}}
+          initialSnapshotAt={snapshotAt}
+        />
+      </QueryClientProvider>
+    );
+    queryClient.setQueryData(
+      key,
+      { ...serverBoard, name: 'Old' },
+      {
+        updatedAt: now - 2_000,
+      }
+    );
+    const { unmount } = render(view(now - 1_000));
+    await act(async () => {});
+    expect(queryClient.getQueryData<any>(key)?.name).toBe('Server');
+    unmount();
+
+    queryClient.setQueryData(
+      key,
+      { ...serverBoard, name: 'Renamed' },
+      {
+        updatedAt: now,
+      }
+    );
+    render(view(now - 500));
+    await act(async () => {});
+    expect(queryClient.getQueryData<any>(key)?.name).toBe('Renamed');
     queryClient.clear();
   });
 });
