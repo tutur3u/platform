@@ -1,7 +1,7 @@
 ---
 title: "Tasks - Task Management"
 description: "Hierarchical task management with bucket dump and cross-board coordination"
-updatedAt: "2026-10-31"
+updatedAt: "2026-11-26"
 audience: users
 ---
 
@@ -395,6 +395,48 @@ Scope: the shared task dialog in `@tuturuuu/tasks-ui` (Web, Tasks, Calendar, Wor
 - The status control lists the board's own lists grouped under Backlog, Todo, In progress, Review, Done and Cancelled. A list maps to Backlog when it is not started and named like "backlog", to Todo for other not-started lists, and by list status otherwise. Resolving a status to a single list (as the CLI does) prefers the board default done or closed list and otherwise the lowest-position list of that status.
 
 Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/collaboration/*.test.tsx` and `task-activity-section.timeline.test.tsx`.
+
+## Mobile task collaboration and sharing
+
+Scope: the board task detail on Tuturuuu Mobile, for tasks that live in the
+board's workspace (a personal-board task placed from another workspace shows
+none of this). It uses the same task routes on the Tasks origin as the shared
+dialog, with the same copy.
+
+- The task sheet stays a quick view: it offers **Share task** and a
+  **Comments, links and activity** row that opens the task detail screen. The
+  detail screen shows Comments, Linked resources and Activity under the
+  relationships.
+- Comments are oldest first and render Markdown; only https links open. The
+  viewer edits and deletes their own comments (delete asks first), as the
+  dialog offers. The comment routes also let `manage_projects` holders delete
+  others' comments, which neither surface offers today.
+- Linked resources group by kind with state badges. Adding accepts https
+  addresses only and the server infers the kind; legacy `task_resources`
+  entries show without a remove control.
+- Activity reads the timeline route 50 events at a time (newest first) with
+  **Load more**. Task changes (creation, field updates, assignees, labels and
+  projects) offer **View snapshot & revert**: the snapshot route's state is
+  compared with the task now, every differing field starts selected, and the
+  revert route restores the selected ones as a new history entry. The server
+  decides who may revert; a refusal is shown and the sheet stays open.
+- **Share task** reads the task's single share link (created on first read),
+  shares it through the system share sheet or copies it, and invites people by
+  email as viewers, with their permission changeable and removable. Public
+  access and invite-only follow the route: both change only in the internal
+  workspace, elsewhere public access explains that it is internal-only, and
+  invite-only turns public access off. **Revoke link** asks first; the next
+  read issues a new code.
+- **Share board** (board actions) enables or disables the board's public
+  read-only link, shares or copies it, and invites direct guests by email with
+  view or edit. A viewer without the route's manage rights sees the permission
+  message instead of the controls.
+- Every section shows loading, empty and failure states. Offline requests say
+  so and offer retry; refused requests say the viewer lacks permission.
+
+Regression coverage: `apps/mobile/test/features/tasks_boards/collaboration/*`
+(data, cubits, sections, sharing sheets, task detail integration, and the
+`collab_render_test.dart` light and dark renders).
 
 ## Mobile Task settings
 

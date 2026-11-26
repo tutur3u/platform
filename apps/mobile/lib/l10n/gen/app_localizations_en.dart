@@ -21542,4 +21542,372 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryProductWholeNumber => 'Enter a whole number';
+
+  @override
+  String get taskCollabComments => 'Comments';
+
+  @override
+  String get taskCollabNoComments => 'No comments yet';
+
+  @override
+  String get taskCollabCommentsLoadFailed => 'Failed to load comments';
+
+  @override
+  String get taskCollabCommentPlaceholder => 'Write a comment in Markdown';
+
+  @override
+  String get taskCollabComment => 'Comment';
+
+  @override
+  String get taskCollabCommentFailed => 'Could not save the comment';
+
+  @override
+  String get taskCollabEdited => 'edited';
+
+  @override
+  String get taskCollabDeleteCommentTitle => 'Delete this comment?';
+
+  @override
+  String get taskCollabDeleteCommentDescription => 'This comment will be removed from the task. This cannot be undone.';
+
+  @override
+  String get taskCollabUnknownUser => 'Unknown user';
+
+  @override
+  String get taskCollabLinkedResources => 'Linked resources';
+
+  @override
+  String get taskCollabAddLink => 'Add link';
+
+  @override
+  String get taskCollabLinkUrlPlaceholder => 'Paste a link';
+
+  @override
+  String get taskCollabLinkUrlInvalid => 'Enter a valid https link';
+
+  @override
+  String get taskCollabAdd => 'Add';
+
+  @override
+  String get taskCollabNoLinks => 'No linked resources';
+
+  @override
+  String get taskCollabLinksLoadFailed => 'Failed to load linked resources';
+
+  @override
+  String get taskCollabLinkFailed => 'Could not update the linked resource';
+
+  @override
+  String get taskCollabRemoveLink => 'Remove link';
+
+  @override
+  String get taskCollabLegacyLinkHint => 'Edited through the task links field';
+
+  @override
+  String taskCollabLinkKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(
+      kind,
+      {
+        'pullRequest': 'Pull requests',
+        'commit': 'Commits',
+        'ciRun': 'CI runs',
+        'issue': 'Issues',
+        'doc': 'Docs',
+        'other': 'Links',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskCollabLinkState(String state) {
+    String _temp0 = intl.Intl.selectLogic(
+      state,
+      {
+        'open': 'Open',
+        'closed': 'Closed',
+        'merged': 'Merged',
+        'draft': 'Draft',
+        'success': 'Success',
+        'failure': 'Failure',
+        'pending': 'Pending',
+        'cancelled': 'Cancelled',
+        'other': '',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskCollabActivity => 'Activity';
+
+  @override
+  String get taskCollabNoActivity => 'No activity yet';
+
+  @override
+  String get taskCollabActivityLoadFailed => 'Failed to load activity';
+
+  @override
+  String taskCollabEvent(String type) {
+    String _temp0 = intl.Intl.selectLogic(
+      type,
+      {
+        'comment_added': 'commented',
+        'comment_updated': 'edited a comment',
+        'comment_deleted': 'deleted a comment',
+        'link_added': 'linked',
+        'link_removed': 'removed the link',
+        'external_imported': 'imported from',
+        'external_event': 'updated the issue',
+        'task_created': 'created task',
+        'assignee_added': 'assigned',
+        'assignee_removed': 'unassigned',
+        'label_added': 'added label',
+        'label_removed': 'removed label',
+        'project_linked': 'linked to project',
+        'project_unlinked': 'unlinked from project',
+        'other': 'made an unknown change',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskCollabFieldUpdated(String field) {
+    String _temp0 = intl.Intl.selectLogic(
+      field,
+      {
+        'name': 'updated the name',
+        'description': 'updated the description',
+        'priority': 'changed priority',
+        'end_date': 'updated due date',
+        'start_date': 'set start date',
+        'estimation_points': 'updated estimation',
+        'list_id': 'moved task',
+        'completed': 'changed status',
+        'other': 'updated a field',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskCollabViewSnapshot => 'View snapshot & revert';
+
+  @override
+  String get taskCollabSnapshotTitle => 'Task Snapshot';
+
+  @override
+  String get taskCollabSnapshotLoadFailed => 'Failed to load snapshot';
+
+  @override
+  String get taskCollabNoChanges => 'No changes from current';
+
+  @override
+  String taskCollabFieldsChanged(int count) {
+    return '$count fields different';
+  }
+
+  @override
+  String get taskCollabSelectAll => 'Select all';
+
+  @override
+  String get taskCollabDeselectAll => 'Deselect all';
+
+  @override
+  String get taskCollabRevertWarning => 'This action will create a new history entry recording the revert.';
+
+  @override
+  String taskCollabRevertSelected(int count) {
+    return 'Revert $count fields';
+  }
+
+  @override
+  String get taskCollabReverting => 'Reverting...';
+
+  @override
+  String get taskCollabRevertSuccess => 'Successfully reverted selected fields';
+
+  @override
+  String get taskCollabRevertFailed => 'Revert failed';
+
+  @override
+  String taskCollabField(String field) {
+    String _temp0 = intl.Intl.selectLogic(
+      field,
+      {
+        'name': 'Name',
+        'description': 'Description',
+        'priority': 'Priority',
+        'startDate': 'Start Date',
+        'endDate': 'Due Date',
+        'estimationPoints': 'Estimation',
+        'listId': 'List',
+        'completed': 'Completed',
+        'assignees': 'Assignees',
+        'labels': 'Labels',
+        'projects': 'Projects',
+        'other': 'Field',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskCollabCompleted => 'Completed';
+
+  @override
+  String get taskCollabIncomplete => 'Incomplete';
+
+  @override
+  String get taskCollabContentChanged => 'Content changed';
+
+  @override
+  String get taskCollabNone => 'None';
+
+  @override
+  String get taskCollabOffline => 'You\'re offline. Try again when you\'re connected.';
+
+  @override
+  String get taskCollabForbidden => 'You don\'t have permission to do this.';
+
+  @override
+  String get taskCollabNotFound => 'This is no longer available.';
+
+  @override
+  String get taskShareTitle => 'Share task';
+
+  @override
+  String get taskShareAddPeople => 'Add people';
+
+  @override
+  String get taskShareEmailHint => 'Email or name';
+
+  @override
+  String get taskSharePeopleWithAccess => 'People with access';
+
+  @override
+  String get taskShareViewer => 'Viewer';
+
+  @override
+  String get taskShareEditor => 'Editor';
+
+  @override
+  String get taskShareRemove => 'Remove';
+
+  @override
+  String get taskShareCopyLink => 'Copy link';
+
+  @override
+  String get taskShareShareLink => 'Share link';
+
+  @override
+  String get taskShareAnyoneCanView => 'Anyone with the link can view';
+
+  @override
+  String get taskShareOnlyInvited => 'Only invited people';
+
+  @override
+  String get taskSharePublicAccess => 'Public access';
+
+  @override
+  String get taskShareInviteOnly => 'Invite-only';
+
+  @override
+  String get taskSharePublicAccessInternalOnly => 'Public access for tasks is currently only available to internal teams.';
+
+  @override
+  String get taskShareRevokeLink => 'Revoke link';
+
+  @override
+  String get taskShareRevokeLinkTitle => 'Revoke this link?';
+
+  @override
+  String get taskShareRevokeLinkDescription => 'The current link stops working. Sharing again creates a new link.';
+
+  @override
+  String get taskShareLinkCopied => 'Link copied to clipboard';
+
+  @override
+  String get taskShareCreated => 'Share created successfully';
+
+  @override
+  String get taskShareRemoved => 'Share removed';
+
+  @override
+  String get taskSharePermissionUpdated => 'Permission updated';
+
+  @override
+  String get taskShareLinkUpdated => 'Share link updated';
+
+  @override
+  String get taskShareLinkDeleted => 'Share link deleted';
+
+  @override
+  String get taskShareInvalidEmail => 'Please enter a valid email address';
+
+  @override
+  String get taskShareFailed => 'Failed to update sharing';
+
+  @override
+  String get taskShareLoadFailed => 'This section could not be loaded. Check your connection and try again.';
+
+  @override
+  String get boardShareAction => 'Share board';
+
+  @override
+  String boardShareTitle(Object name) {
+    return 'Share $name';
+  }
+
+  @override
+  String get boardSharePublicTitle => 'Public link';
+
+  @override
+  String get boardSharePublicDescription => 'Anyone with this link can view a sanitized read-only board without signing in.';
+
+  @override
+  String get boardSharePublicEnable => 'Enable public link';
+
+  @override
+  String get boardSharePublicDisable => 'Disable';
+
+  @override
+  String get boardSharePublicEnabled => 'Public board link enabled';
+
+  @override
+  String get boardSharePublicDisabled => 'Public board link disabled';
+
+  @override
+  String get boardSharePublicCopied => 'Public board link copied';
+
+  @override
+  String get boardShareGuestsTitle => 'Direct board guests';
+
+  @override
+  String get boardShareGuestsDescription => 'Invite specific people by email to this board without making them workspace members.';
+
+  @override
+  String get boardShareEmailPlaceholder => 'guest@example.com';
+
+  @override
+  String get boardShareCanView => 'Can view';
+
+  @override
+  String get boardShareCanEdit => 'Can edit';
+
+  @override
+  String get boardShareEmpty => 'This board has not been shared directly with anyone yet.';
+
+  @override
+  String get boardShareSaved => 'Board share saved';
+
+  @override
+  String get boardShareRemoved => 'Board share removed';
+
+  @override
+  String get boardSharePermissionError => 'You don\'t have permission to view this. Ask a workspace admin for project management access.';
+
+  @override
+  String get taskCollabOpenDiscussion => 'Comments, links and activity';
 }

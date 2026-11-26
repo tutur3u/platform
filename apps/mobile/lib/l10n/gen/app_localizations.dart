@@ -39300,6 +39300,558 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a whole number'**
   String get inventoryProductWholeNumber;
+
+  /// No description provided for @taskCollabComments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get taskCollabComments;
+
+  /// No description provided for @taskCollabNoComments.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet'**
+  String get taskCollabNoComments;
+
+  /// No description provided for @taskCollabCommentsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load comments'**
+  String get taskCollabCommentsLoadFailed;
+
+  /// No description provided for @taskCollabCommentPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a comment in Markdown'**
+  String get taskCollabCommentPlaceholder;
+
+  /// No description provided for @taskCollabComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get taskCollabComment;
+
+  /// No description provided for @taskCollabCommentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the comment'**
+  String get taskCollabCommentFailed;
+
+  /// No description provided for @taskCollabEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'edited'**
+  String get taskCollabEdited;
+
+  /// No description provided for @taskCollabDeleteCommentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this comment?'**
+  String get taskCollabDeleteCommentTitle;
+
+  /// No description provided for @taskCollabDeleteCommentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This comment will be removed from the task. This cannot be undone.'**
+  String get taskCollabDeleteCommentDescription;
+
+  /// No description provided for @taskCollabUnknownUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown user'**
+  String get taskCollabUnknownUser;
+
+  /// No description provided for @taskCollabLinkedResources.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked resources'**
+  String get taskCollabLinkedResources;
+
+  /// No description provided for @taskCollabAddLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add link'**
+  String get taskCollabAddLink;
+
+  /// No description provided for @taskCollabLinkUrlPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a link'**
+  String get taskCollabLinkUrlPlaceholder;
+
+  /// No description provided for @taskCollabLinkUrlInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid https link'**
+  String get taskCollabLinkUrlInvalid;
+
+  /// No description provided for @taskCollabAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get taskCollabAdd;
+
+  /// No description provided for @taskCollabNoLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked resources'**
+  String get taskCollabNoLinks;
+
+  /// No description provided for @taskCollabLinksLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load linked resources'**
+  String get taskCollabLinksLoadFailed;
+
+  /// No description provided for @taskCollabLinkFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the linked resource'**
+  String get taskCollabLinkFailed;
+
+  /// No description provided for @taskCollabRemoveLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove link'**
+  String get taskCollabRemoveLink;
+
+  /// No description provided for @taskCollabLegacyLinkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited through the task links field'**
+  String get taskCollabLegacyLinkHint;
+
+  /// No description provided for @taskCollabLinkKind.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind, select, pullRequest{Pull requests} commit{Commits} ciRun{CI runs} issue{Issues} doc{Docs} other{Links}}'**
+  String taskCollabLinkKind(String kind);
+
+  /// No description provided for @taskCollabLinkState.
+  ///
+  /// In en, this message translates to:
+  /// **'{state, select, open{Open} closed{Closed} merged{Merged} draft{Draft} success{Success} failure{Failure} pending{Pending} cancelled{Cancelled} other{}}'**
+  String taskCollabLinkState(String state);
+
+  /// No description provided for @taskCollabActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get taskCollabActivity;
+
+  /// No description provided for @taskCollabNoActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet'**
+  String get taskCollabNoActivity;
+
+  /// No description provided for @taskCollabActivityLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load activity'**
+  String get taskCollabActivityLoadFailed;
+
+  /// No description provided for @taskCollabEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'{type, select, comment_added{commented} comment_updated{edited a comment} comment_deleted{deleted a comment} link_added{linked} link_removed{removed the link} external_imported{imported from} external_event{updated the issue} task_created{created task} assignee_added{assigned} assignee_removed{unassigned} label_added{added label} label_removed{removed label} project_linked{linked to project} project_unlinked{unlinked from project} other{made an unknown change}}'**
+  String taskCollabEvent(String type);
+
+  /// No description provided for @taskCollabFieldUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'{field, select, name{updated the name} description{updated the description} priority{changed priority} end_date{updated due date} start_date{set start date} estimation_points{updated estimation} list_id{moved task} completed{changed status} other{updated a field}}'**
+  String taskCollabFieldUpdated(String field);
+
+  /// No description provided for @taskCollabViewSnapshot.
+  ///
+  /// In en, this message translates to:
+  /// **'View snapshot & revert'**
+  String get taskCollabViewSnapshot;
+
+  /// No description provided for @taskCollabSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Task Snapshot'**
+  String get taskCollabSnapshotTitle;
+
+  /// No description provided for @taskCollabSnapshotLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load snapshot'**
+  String get taskCollabSnapshotLoadFailed;
+
+  /// No description provided for @taskCollabNoChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'No changes from current'**
+  String get taskCollabNoChanges;
+
+  /// No description provided for @taskCollabFieldsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fields different'**
+  String taskCollabFieldsChanged(int count);
+
+  /// No description provided for @taskCollabSelectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get taskCollabSelectAll;
+
+  /// No description provided for @taskCollabDeselectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Deselect all'**
+  String get taskCollabDeselectAll;
+
+  /// No description provided for @taskCollabRevertWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This action will create a new history entry recording the revert.'**
+  String get taskCollabRevertWarning;
+
+  /// No description provided for @taskCollabRevertSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert {count} fields'**
+  String taskCollabRevertSelected(int count);
+
+  /// No description provided for @taskCollabReverting.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverting...'**
+  String get taskCollabReverting;
+
+  /// No description provided for @taskCollabRevertSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Successfully reverted selected fields'**
+  String get taskCollabRevertSuccess;
+
+  /// No description provided for @taskCollabRevertFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Revert failed'**
+  String get taskCollabRevertFailed;
+
+  /// No description provided for @taskCollabField.
+  ///
+  /// In en, this message translates to:
+  /// **'{field, select, name{Name} description{Description} priority{Priority} startDate{Start Date} endDate{Due Date} estimationPoints{Estimation} listId{List} completed{Completed} assignees{Assignees} labels{Labels} projects{Projects} other{Field}}'**
+  String taskCollabField(String field);
+
+  /// No description provided for @taskCollabCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get taskCollabCompleted;
+
+  /// No description provided for @taskCollabIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete'**
+  String get taskCollabIncomplete;
+
+  /// No description provided for @taskCollabContentChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Content changed'**
+  String get taskCollabContentChanged;
+
+  /// No description provided for @taskCollabNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get taskCollabNone;
+
+  /// No description provided for @taskCollabOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Try again when you\'re connected.'**
+  String get taskCollabOffline;
+
+  /// No description provided for @taskCollabForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to do this.'**
+  String get taskCollabForbidden;
+
+  /// No description provided for @taskCollabNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This is no longer available.'**
+  String get taskCollabNotFound;
+
+  /// No description provided for @taskShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share task'**
+  String get taskShareTitle;
+
+  /// No description provided for @taskShareAddPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Add people'**
+  String get taskShareAddPeople;
+
+  /// No description provided for @taskShareEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or name'**
+  String get taskShareEmailHint;
+
+  /// No description provided for @taskSharePeopleWithAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'People with access'**
+  String get taskSharePeopleWithAccess;
+
+  /// No description provided for @taskShareViewer.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewer'**
+  String get taskShareViewer;
+
+  /// No description provided for @taskShareEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Editor'**
+  String get taskShareEditor;
+
+  /// No description provided for @taskShareRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get taskShareRemove;
+
+  /// No description provided for @taskShareCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get taskShareCopyLink;
+
+  /// No description provided for @taskShareShareLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link'**
+  String get taskShareShareLink;
+
+  /// No description provided for @taskShareAnyoneCanView.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with the link can view'**
+  String get taskShareAnyoneCanView;
+
+  /// No description provided for @taskShareOnlyInvited.
+  ///
+  /// In en, this message translates to:
+  /// **'Only invited people'**
+  String get taskShareOnlyInvited;
+
+  /// No description provided for @taskSharePublicAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Public access'**
+  String get taskSharePublicAccess;
+
+  /// No description provided for @taskShareInviteOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite-only'**
+  String get taskShareInviteOnly;
+
+  /// No description provided for @taskSharePublicAccessInternalOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Public access for tasks is currently only available to internal teams.'**
+  String get taskSharePublicAccessInternalOnly;
+
+  /// No description provided for @taskShareRevokeLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke link'**
+  String get taskShareRevokeLink;
+
+  /// No description provided for @taskShareRevokeLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke this link?'**
+  String get taskShareRevokeLinkTitle;
+
+  /// No description provided for @taskShareRevokeLinkDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The current link stops working. Sharing again creates a new link.'**
+  String get taskShareRevokeLinkDescription;
+
+  /// No description provided for @taskShareLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied to clipboard'**
+  String get taskShareLinkCopied;
+
+  /// No description provided for @taskShareCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Share created successfully'**
+  String get taskShareCreated;
+
+  /// No description provided for @taskShareRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Share removed'**
+  String get taskShareRemoved;
+
+  /// No description provided for @taskSharePermissionUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Permission updated'**
+  String get taskSharePermissionUpdated;
+
+  /// No description provided for @taskShareLinkUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link updated'**
+  String get taskShareLinkUpdated;
+
+  /// No description provided for @taskShareLinkDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link deleted'**
+  String get taskShareLinkDeleted;
+
+  /// No description provided for @taskShareInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address'**
+  String get taskShareInvalidEmail;
+
+  /// No description provided for @taskShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update sharing'**
+  String get taskShareFailed;
+
+  /// No description provided for @taskShareLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This section could not be loaded. Check your connection and try again.'**
+  String get taskShareLoadFailed;
+
+  /// No description provided for @boardShareAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Share board'**
+  String get boardShareAction;
+
+  /// No description provided for @boardShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share {name}'**
+  String boardShareTitle(Object name);
+
+  /// No description provided for @boardSharePublicTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Public link'**
+  String get boardSharePublicTitle;
+
+  /// No description provided for @boardSharePublicDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with this link can view a sanitized read-only board without signing in.'**
+  String get boardSharePublicDescription;
+
+  /// No description provided for @boardSharePublicEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable public link'**
+  String get boardSharePublicEnable;
+
+  /// No description provided for @boardSharePublicDisable.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable'**
+  String get boardSharePublicDisable;
+
+  /// No description provided for @boardSharePublicEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Public board link enabled'**
+  String get boardSharePublicEnabled;
+
+  /// No description provided for @boardSharePublicDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Public board link disabled'**
+  String get boardSharePublicDisabled;
+
+  /// No description provided for @boardSharePublicCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Public board link copied'**
+  String get boardSharePublicCopied;
+
+  /// No description provided for @boardShareGuestsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct board guests'**
+  String get boardShareGuestsTitle;
+
+  /// No description provided for @boardShareGuestsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite specific people by email to this board without making them workspace members.'**
+  String get boardShareGuestsDescription;
+
+  /// No description provided for @boardShareEmailPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'guest@example.com'**
+  String get boardShareEmailPlaceholder;
+
+  /// No description provided for @boardShareCanView.
+  ///
+  /// In en, this message translates to:
+  /// **'Can view'**
+  String get boardShareCanView;
+
+  /// No description provided for @boardShareCanEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Can edit'**
+  String get boardShareCanEdit;
+
+  /// No description provided for @boardShareEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'This board has not been shared directly with anyone yet.'**
+  String get boardShareEmpty;
+
+  /// No description provided for @boardShareSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Board share saved'**
+  String get boardShareSaved;
+
+  /// No description provided for @boardShareRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Board share removed'**
+  String get boardShareRemoved;
+
+  /// No description provided for @boardSharePermissionError.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to view this. Ask a workspace admin for project management access.'**
+  String get boardSharePermissionError;
+
+  /// No description provided for @taskCollabOpenDiscussion.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments, links and activity'**
+  String get taskCollabOpenDiscussion;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

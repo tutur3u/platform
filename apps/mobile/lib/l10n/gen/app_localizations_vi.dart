@@ -21283,4 +21283,372 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryProductWholeNumber => 'Nhập số nguyên';
+
+  @override
+  String get taskCollabComments => 'Bình luận';
+
+  @override
+  String get taskCollabNoComments => 'Chưa có bình luận';
+
+  @override
+  String get taskCollabCommentsLoadFailed => 'Không thể tải bình luận';
+
+  @override
+  String get taskCollabCommentPlaceholder => 'Viết bình luận bằng Markdown';
+
+  @override
+  String get taskCollabComment => 'Bình luận';
+
+  @override
+  String get taskCollabCommentFailed => 'Không thể lưu bình luận';
+
+  @override
+  String get taskCollabEdited => 'đã sửa';
+
+  @override
+  String get taskCollabDeleteCommentTitle => 'Xóa bình luận này?';
+
+  @override
+  String get taskCollabDeleteCommentDescription => 'Bình luận này sẽ bị xóa khỏi công việc. Hành động này không thể hoàn tác.';
+
+  @override
+  String get taskCollabUnknownUser => 'Người dùng không xác định';
+
+  @override
+  String get taskCollabLinkedResources => 'Tài nguyên liên kết';
+
+  @override
+  String get taskCollabAddLink => 'Thêm liên kết';
+
+  @override
+  String get taskCollabLinkUrlPlaceholder => 'Dán liên kết';
+
+  @override
+  String get taskCollabLinkUrlInvalid => 'Nhập liên kết https hợp lệ';
+
+  @override
+  String get taskCollabAdd => 'Thêm';
+
+  @override
+  String get taskCollabNoLinks => 'Chưa có tài nguyên liên kết';
+
+  @override
+  String get taskCollabLinksLoadFailed => 'Không thể tải tài nguyên liên kết';
+
+  @override
+  String get taskCollabLinkFailed => 'Không thể cập nhật tài nguyên liên kết';
+
+  @override
+  String get taskCollabRemoveLink => 'Gỡ liên kết';
+
+  @override
+  String get taskCollabLegacyLinkHint => 'Chỉnh sửa qua trường liên kết của công việc';
+
+  @override
+  String taskCollabLinkKind(String kind) {
+    String _temp0 = intl.Intl.selectLogic(
+      kind,
+      {
+        'pullRequest': 'Pull request',
+        'commit': 'Commit',
+        'ciRun': 'Lượt chạy CI',
+        'issue': 'Issue',
+        'doc': 'Tài liệu',
+        'other': 'Liên kết',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskCollabLinkState(String state) {
+    String _temp0 = intl.Intl.selectLogic(
+      state,
+      {
+        'open': 'Đang mở',
+        'closed': 'Đã đóng',
+        'merged': 'Đã gộp',
+        'draft': 'Bản nháp',
+        'success': 'Thành công',
+        'failure': 'Thất bại',
+        'pending': 'Đang chờ',
+        'cancelled': 'Đã hủy',
+        'other': '',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskCollabActivity => 'Hoạt động';
+
+  @override
+  String get taskCollabNoActivity => 'Chưa có hoạt động nào';
+
+  @override
+  String get taskCollabActivityLoadFailed => 'Không thể tải hoạt động';
+
+  @override
+  String taskCollabEvent(String type) {
+    String _temp0 = intl.Intl.selectLogic(
+      type,
+      {
+        'comment_added': 'đã bình luận',
+        'comment_updated': 'đã sửa một bình luận',
+        'comment_deleted': 'đã xóa một bình luận',
+        'link_added': 'đã liên kết',
+        'link_removed': 'đã gỡ liên kết',
+        'external_imported': 'đã nhập từ',
+        'external_event': 'đã cập nhật issue',
+        'task_created': 'đã tạo công việc',
+        'assignee_added': 'đã giao cho',
+        'assignee_removed': 'đã hủy giao cho',
+        'label_added': 'đã thêm nhãn',
+        'label_removed': 'đã xóa nhãn',
+        'project_linked': 'đã liên kết với dự án',
+        'project_unlinked': 'đã hủy liên kết với dự án',
+        'other': 'đã thực hiện một thay đổi không xác định',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String taskCollabFieldUpdated(String field) {
+    String _temp0 = intl.Intl.selectLogic(
+      field,
+      {
+        'name': 'đã cập nhật tên',
+        'description': 'đã cập nhật mô tả',
+        'priority': 'đã thay đổi mức độ ưu tiên',
+        'end_date': 'đã cập nhật hạn chót',
+        'start_date': 'đã đặt ngày bắt đầu',
+        'estimation_points': 'đã cập nhật ước lượng',
+        'list_id': 'đã di chuyển công việc',
+        'completed': 'đã thay đổi trạng thái',
+        'other': 'đã cập nhật một trường',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskCollabViewSnapshot => 'Xem ảnh chụp & khôi phục';
+
+  @override
+  String get taskCollabSnapshotTitle => 'Ảnh Chụp Công Việc';
+
+  @override
+  String get taskCollabSnapshotLoadFailed => 'Không thể tải ảnh chụp';
+
+  @override
+  String get taskCollabNoChanges => 'Không có thay đổi so với hiện tại';
+
+  @override
+  String taskCollabFieldsChanged(int count) {
+    return '$count trường khác biệt';
+  }
+
+  @override
+  String get taskCollabSelectAll => 'Chọn tất cả';
+
+  @override
+  String get taskCollabDeselectAll => 'Bỏ chọn tất cả';
+
+  @override
+  String get taskCollabRevertWarning => 'Thao tác này sẽ tạo mục lịch sử mới ghi nhận việc khôi phục.';
+
+  @override
+  String taskCollabRevertSelected(int count) {
+    return 'Khôi phục $count trường';
+  }
+
+  @override
+  String get taskCollabReverting => 'Đang khôi phục...';
+
+  @override
+  String get taskCollabRevertSuccess => 'Đã khôi phục thành công các trường đã chọn';
+
+  @override
+  String get taskCollabRevertFailed => 'Khôi phục thất bại';
+
+  @override
+  String taskCollabField(String field) {
+    String _temp0 = intl.Intl.selectLogic(
+      field,
+      {
+        'name': 'Tên',
+        'description': 'Mô tả',
+        'priority': 'Mức độ ưu tiên',
+        'startDate': 'Ngày bắt đầu',
+        'endDate': 'Ngày đến hạn',
+        'estimationPoints': 'Ước tính',
+        'listId': 'Danh sách',
+        'completed': 'Hoàn thành',
+        'assignees': 'Người được giao',
+        'labels': 'Nhãn',
+        'projects': 'Dự án',
+        'other': 'Trường',
+      },
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get taskCollabCompleted => 'Hoàn thành';
+
+  @override
+  String get taskCollabIncomplete => 'Chưa hoàn thành';
+
+  @override
+  String get taskCollabContentChanged => 'Nội dung đã thay đổi';
+
+  @override
+  String get taskCollabNone => 'Không có';
+
+  @override
+  String get taskCollabOffline => 'Bạn đang ngoại tuyến. Hãy thử lại khi có kết nối.';
+
+  @override
+  String get taskCollabForbidden => 'Bạn không có quyền thực hiện thao tác này.';
+
+  @override
+  String get taskCollabNotFound => 'Mục này không còn nữa.';
+
+  @override
+  String get taskShareTitle => 'Chia sẻ công việc';
+
+  @override
+  String get taskShareAddPeople => 'Thêm người';
+
+  @override
+  String get taskShareEmailHint => 'Email hoặc tên';
+
+  @override
+  String get taskSharePeopleWithAccess => 'Người có quyền truy cập';
+
+  @override
+  String get taskShareViewer => 'Người xem';
+
+  @override
+  String get taskShareEditor => 'Người chỉnh sửa';
+
+  @override
+  String get taskShareRemove => 'Xóa';
+
+  @override
+  String get taskShareCopyLink => 'Sao chép liên kết';
+
+  @override
+  String get taskShareShareLink => 'Chia sẻ liên kết';
+
+  @override
+  String get taskShareAnyoneCanView => 'Bất kỳ ai có liên kết đều có thể xem';
+
+  @override
+  String get taskShareOnlyInvited => 'Chỉ người được mời';
+
+  @override
+  String get taskSharePublicAccess => 'Truy cập công khai';
+
+  @override
+  String get taskShareInviteOnly => 'Chỉ người được mời';
+
+  @override
+  String get taskSharePublicAccessInternalOnly => 'Truy cập công khai cho công việc hiện chỉ dành cho các nhóm nội bộ.';
+
+  @override
+  String get taskShareRevokeLink => 'Thu hồi liên kết';
+
+  @override
+  String get taskShareRevokeLinkTitle => 'Thu hồi liên kết này?';
+
+  @override
+  String get taskShareRevokeLinkDescription => 'Liên kết hiện tại sẽ ngừng hoạt động. Chia sẻ lại sẽ tạo liên kết mới.';
+
+  @override
+  String get taskShareLinkCopied => 'Đã sao chép liên kết';
+
+  @override
+  String get taskShareCreated => 'Đã tạo chia sẻ thành công';
+
+  @override
+  String get taskShareRemoved => 'Đã xóa chia sẻ';
+
+  @override
+  String get taskSharePermissionUpdated => 'Đã cập nhật quyền';
+
+  @override
+  String get taskShareLinkUpdated => 'Đã cập nhật liên kết chia sẻ';
+
+  @override
+  String get taskShareLinkDeleted => 'Đã xóa liên kết chia sẻ';
+
+  @override
+  String get taskShareInvalidEmail => 'Vui lòng nhập địa chỉ email hợp lệ';
+
+  @override
+  String get taskShareFailed => 'Không thể cập nhật chia sẻ';
+
+  @override
+  String get taskShareLoadFailed => 'Không thể tải mục này. Hãy kiểm tra kết nối và thử lại.';
+
+  @override
+  String get boardShareAction => 'Chia sẻ bảng';
+
+  @override
+  String boardShareTitle(Object name) {
+    return 'Chia sẻ $name';
+  }
+
+  @override
+  String get boardSharePublicTitle => 'Liên kết công khai';
+
+  @override
+  String get boardSharePublicDescription => 'Bất kỳ ai có liên kết này đều có thể xem bảng chỉ đọc đã được lược bỏ dữ liệu riêng tư mà không cần đăng nhập.';
+
+  @override
+  String get boardSharePublicEnable => 'Bật liên kết công khai';
+
+  @override
+  String get boardSharePublicDisable => 'Tắt';
+
+  @override
+  String get boardSharePublicEnabled => 'Đã bật liên kết bảng công khai';
+
+  @override
+  String get boardSharePublicDisabled => 'Đã tắt liên kết bảng công khai';
+
+  @override
+  String get boardSharePublicCopied => 'Đã sao chép liên kết bảng công khai';
+
+  @override
+  String get boardShareGuestsTitle => 'Khách trực tiếp của bảng';
+
+  @override
+  String get boardShareGuestsDescription => 'Mời người cụ thể bằng email vào bảng này mà không thêm họ làm thành viên không gian làm việc.';
+
+  @override
+  String get boardShareEmailPlaceholder => 'khach@example.com';
+
+  @override
+  String get boardShareCanView => 'Có thể xem';
+
+  @override
+  String get boardShareCanEdit => 'Có thể sửa';
+
+  @override
+  String get boardShareEmpty => 'Bảng này chưa được chia sẻ trực tiếp với ai.';
+
+  @override
+  String get boardShareSaved => 'Đã lưu chia sẻ bảng';
+
+  @override
+  String get boardShareRemoved => 'Đã xóa chia sẻ bảng';
+
+  @override
+  String get boardSharePermissionError => 'Bạn không có quyền xem mục này. Hãy yêu cầu quản trị viên cấp quyền quản lý dự án.';
+
+  @override
+  String get taskCollabOpenDiscussion => 'Bình luận, liên kết và hoạt động';
 }

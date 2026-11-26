@@ -6,7 +6,8 @@ const double _taskDetailSplitWidth = 720;
 
 /// The task detail building blocks in reading order: the title, one line
 /// of property chips, the description, every property as rows (folded by
-/// default), relationships, then the destructive actions apart at the end.
+/// default), relationships, sharing, comments, linked resources and
+/// activity, then the destructive actions apart at the end.
 /// Opening a task reads its description first; the chips change a
 /// property in one tap without unfolding the full list.
 ///
@@ -95,6 +96,15 @@ class _TaskDetailContent extends StatelessWidget {
             collapsible: inSheet,
             onNavigateRelatedTask: actions.onNavigateRelatedTask,
           );
+    final collaboration = board == null
+        ? null
+        : _TaskDetailCollaboration(
+            task: task,
+            board: board,
+            enabled: enabled,
+            inSheet: inSheet,
+            onOpenDetails: actions.onOpenDetails,
+          );
     final danger = _TaskDetailDangerZone(
       task: task,
       enabled: enabled,
@@ -126,6 +136,10 @@ class _TaskDetailContent extends StatelessWidget {
           const SizedBox(height: AppLayout.sectionGap),
           relationships,
         ],
+        if (collaboration != null) ...[
+          const SizedBox(height: AppLayout.sectionGap),
+          collaboration,
+        ],
         const SizedBox(height: AppLayout.sectionGap * 2),
         danger,
       ],
@@ -151,6 +165,10 @@ class _TaskDetailContent extends StatelessWidget {
                   if (relationships != null) ...[
                     const SizedBox(height: AppLayout.sectionGap),
                     relationships,
+                  ],
+                  if (collaboration != null) ...[
+                    const SizedBox(height: AppLayout.sectionGap),
+                    collaboration,
                   ],
                 ],
               ),
