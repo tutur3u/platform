@@ -7,6 +7,7 @@ import { fixtureApp, SHA } from './web-vinext-seal.fixture.mjs';
 import { sealFamily, writeReceipt } from './web-vinext-seal.mjs';
 import { SealError } from './web-vinext-sealed-artifact.mjs';
 import {
+  checkArtifacts,
   ENVIRONMENT,
   PROVENANCE_EXIT,
   REPOSITORY,
@@ -181,6 +182,25 @@ test('a zip that differs from the GitHub digest is refused', (t) => {
     PROVENANCE_EXIT.artifact
   );
   assertCode(harness(t, { artifacts: { artifacts: [] } }), PROVENANCE_EXIT.artifact);
+});
+
+test('unsafe artifact name suffixes are refused before any zip download', () => {
+  for (const suffix of ['../../outside', '', 'A-family', '1family', 'a'.repeat(64)]) {
+    const artifacts = {
+      artifacts: [{
+        name: `web-vinext-sealed-${suffix}`,
+        id: 1,
+        digest: `sha256:${'1'.repeat(64)}`,
+      }],
+    };
+    assert.throws(
+      () => checkArtifacts(artifacts),
+      (error) =>
+        error instanceof SealError &&
+        error.code === PROVENANCE_EXIT.artifact &&
+        /unexpected artifact/u.test(error.message)
+    );
+  }
 });
 
 test('a missing or foreign attestation is refused', (t) => {

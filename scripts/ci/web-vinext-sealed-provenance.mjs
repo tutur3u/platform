@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  FAMILY,
   familyDirsUnder,
   SealError,
   sha256,
@@ -106,8 +107,14 @@ export function checkArtifacts(list) {
   const E = PROVENANCE_EXIT;
   const artifacts = {};
   for (const artifact of list?.artifacts ?? []) {
-    if (!artifact.name?.startsWith(ARTIFACT_PREFIX)) {
-      fail(E.artifact, `unexpected artifact ${artifact.name}`);
+    const name = artifact?.name;
+    if (
+      typeof name !== 'string' ||
+      !name.startsWith(ARTIFACT_PREFIX) ||
+      (name !== RECEIPT_ARTIFACT &&
+        !FAMILY.test(name.slice(ARTIFACT_PREFIX.length)))
+    ) {
+      fail(E.artifact, `unexpected artifact ${name}`);
     }
     if (artifacts[artifact.name]) fail(E.artifact, `${artifact.name} repeats`);
     if (artifact.expired) fail(E.artifact, `${artifact.name} expired`);

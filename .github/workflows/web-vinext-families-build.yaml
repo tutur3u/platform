@@ -228,6 +228,7 @@ jobs:
     permissions:
       actions: read
       attestations: write
+      contents: read
       id-token: write
     steps:
       - name: List the sealed artifact digests

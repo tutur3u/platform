@@ -69,6 +69,7 @@ test('only the attest job signs, and it runs no pin code', () => {
   assert.deepEqual(permissionsOf(attest), [
     'actions: read',
     'attestations: write',
+    'contents: read',
     'id-token: write',
   ]);
   assert.match(attest, /^ {4}needs: \[plan, receipt\]$/mu);

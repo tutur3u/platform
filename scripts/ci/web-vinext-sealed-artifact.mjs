@@ -46,7 +46,7 @@ export const EXIT = Object.freeze({
 });
 
 const SHA = /^[0-9a-f]{40}$/u;
-const FAMILY = /^[a-z][a-z0-9-]{0,62}$/u;
+export const FAMILY = /^[a-z][a-z0-9-]{0,62}$/u;
 const MODULE = /\.(?:m?js)$/u;
 
 export class SealError extends Error {
