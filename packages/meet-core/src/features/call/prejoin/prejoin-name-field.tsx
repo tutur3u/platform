@@ -24,6 +24,7 @@ export function PrejoinNameField({
   id,
   label,
   value,
+  defaultValue,
   onChange,
   onBlur,
   placeholder,
@@ -36,6 +37,7 @@ export function PrejoinNameField({
   label: string;
   /** Leave unset for an uncontrolled field that survives a slow hydration. */
   value?: string;
+  defaultValue?: string;
   inputRef?: Ref<HTMLInputElement>;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -50,6 +52,7 @@ export function PrejoinNameField({
       <Label htmlFor={id}>{label}</Label>
       <Input
         autoComplete="name"
+        defaultValue={defaultValue}
         disabled={disabled}
         id={id}
         ref={inputRef}

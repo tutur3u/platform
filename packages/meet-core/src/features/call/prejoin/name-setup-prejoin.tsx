@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useCallback, useRef, useState, useTransition } from 'react';
 import { useProfileNameSave } from '../hooks/use-profile-name-save';
 import { prepareParticipantName } from '../lib/participant-name';
 import { ParticipantNameCheck } from '../components/participant-name-check';
@@ -27,7 +27,14 @@ export function NameSetupPrejoin({
   const router = useRouter();
   const capture = usePrejoin();
   const info = usePrejoinInfo();
-  const [name, setName] = useState(prepareParticipantName(initialName));
+  const defaultName = prepareParticipantName(initialName);
+  const [name, setName] = useState(defaultName);
+  const nameInput = useRef<HTMLInputElement | null>(null);
+  const attachNameInput = useCallback((input: HTMLInputElement | null) => {
+    nameInput.current = input;
+    // Hydration can attach after the browser has already filled this field.
+    if (input) setName(input.value);
+  }, []);
   const [refreshing, startTransition] = useTransition();
   const nameSave = useProfileNameSave({
     siteKey,
@@ -51,12 +58,13 @@ export function NameSetupPrejoin({
       fields={
         <>
           <PrejoinNameField
+            defaultValue={defaultName}
             disabled={saving}
             id="prejoin-profile-name"
+            inputRef={attachNameInput}
             label={t('your_name')}
             onChange={setName}
             placeholder={t('lobby_guest_name_placeholder')}
-            value={name}
           />
           <div className={state.kind === 'verifying' ? 'space-y-2' : 'sr-only'}>
             {/* Mounted from the start so its text is announced when the check opens. */}
@@ -97,8 +105,11 @@ export function NameSetupPrejoin({
       }
       name={name}
       onSubmit={() => {
-        if (!trimmed || saving) return;
-        void save(trimmed);
+        const currentName = prepareParticipantName(
+          nameInput.current?.value ?? name
+        );
+        if (!currentName || saving) return;
+        void save(currentName);
       }}
       phase={phase}
       title={info.meetingName}

@@ -1,17 +1,25 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, render, screen } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 
 const mocks = vi.hoisted(() => ({
   token: vi.fn(() => new Promise(() => {})),
+  saveName: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', () => ({
   createMeetCallRealtimeToken: mocks.token,
-  updateCurrentUserProfile: vi.fn(),
+  updateCurrentUserProfile: mocks.saveName,
   InternalApiError: class extends Error {},
 }));
 vi.mock('next/dynamic', () => ({
@@ -46,14 +54,18 @@ const base = {
   wsId: 'ws',
 };
 
-function show(props: Partial<Parameters<typeof CallShell>[0]> = {}) {
-  render(
+function gate(props: Partial<Parameters<typeof CallShell>[0]> = {}) {
+  return (
     <QueryClientProvider client={new QueryClient()}>
       <NextIntlClientProvider locale="en" messages={messages}>
         <CallShell {...base} {...props} />
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
+}
+
+function show(props: Partial<Parameters<typeof CallShell>[0]> = {}) {
+  render(gate(props));
 }
 
 afterEach(() => {
@@ -146,4 +158,49 @@ it('asks for the name before it opens a session', () => {
   expect(
     screen.getByRole('button', { name: call.save_name_continue })
   ).toHaveProperty('disabled', false);
+});
+
+it('preserves and saves a name filled into the server field before hydration', async () => {
+  const tree = gate({ meetUxV2: true, nameSetup: { initialName: '' } });
+  const container = document.createElement('div');
+  container.innerHTML = renderToString(tree);
+  document.body.append(container);
+
+  const field = screen.getByRole<HTMLInputElement>('textbox', {
+    name: call.your_name,
+  });
+  const save = screen.getByRole('button', { name: call.save_name_continue });
+  expect(save).toHaveProperty('disabled', true);
+
+  // Browsers may fill the server-rendered input before React can observe events.
+  field.value = '  Linh Tran  ';
+  render(tree, { container, hydrate: true });
+
+  expect(screen.getByRole('textbox', { name: call.your_name })).toBe(field);
+  expect(field.value).toBe('  Linh Tran  ');
+  expect(save).toHaveProperty('disabled', false);
+  expect(mocks.token).not.toHaveBeenCalled();
+
+  fireEvent.click(save);
+  await waitFor(() =>
+    expect(mocks.saveName).toHaveBeenCalledWith(
+      { display_name: 'Linh Tran' },
+      undefined,
+      undefined
+    )
+  );
+
+  fireEvent.change(field, { target: { value: '' } });
+  expect(save).toHaveProperty('disabled', true);
+  fireEvent.change(field, { target: { value: 'Bo' } });
+  expect(save).toHaveProperty('disabled', false);
+
+  fireEvent.click(save);
+  await waitFor(() =>
+    expect(mocks.saveName).toHaveBeenLastCalledWith(
+      { display_name: 'Bo' },
+      undefined,
+      undefined
+    )
+  );
 });
