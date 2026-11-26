@@ -1,0 +1,199 @@
+---
+title: "ttr external upskii"
+description: "Upskii control plane for QA seats, classes, lessons, links, chat smoke, and credits. Staging is the default. Production requires an explicit --env prod."
+updatedAt: "2026-11-27"
+audience: developers
+---
+
+`ttr external upskii` is the Upskii control plane inside the Tuturuuu CLI. It
+does not require a Tuturuuu `ttr login` session unless the command reads the
+Tuturuuu side of an account link. P1 covers QA, classes, lessons, link, chat,
+credits, and status. P2 covers workspaces, assessments, tutor, settings,
+accounts, and admin.
+
+```sh
+ttr external upskii <subfamily> <action> [options]
+ttr external upskii --help
+```
+
+## Environment
+
+The default environment is `staging`. `ttr external upskii qa` refuses `prod`
+unless the process was started with an explicit `--env prod` flag
+(`PROD_ENV_EXPLICIT_REQUIRED`, exit code 6). A saved default or `TTR_ENV` is
+not enough for that production path.
+
+| `--env` | Meaning |
+| --- | --- |
+| `staging` | Default. QA, lessons, chat smoke, and credits run here unless you opt into production. |
+| `prod` | Production Upskii hosts. Every command in the run must pass `--env prod`. |
+| `sandbox` | Sandbox origins from the CLI environment map. |
+| `local` | Loopback origins from the CLI environment map. |
+
+Tuturuuu origins for `staging` and `sandbox` come from `resolveTuturuuuOrigins`
+and use `*.tutur3u.com`. The CLI does not call a removed apex staging hostname.
+Upskii product calls use the app, admin, and web origins for the same `--env`.
+Pass `--session-file` when a command should use a Playwright storage state
+instead of the keychain user session. Pass `--experience educator` or
+`--experience learn` (default `educator`).
+
+## OS keychain auth
+
+Credentials are stored per family, environment, and profile (default profile
+`default`). The OS keychain is the default store. `--store file` writes a
+private `0600` file instead. Accepted modes are `qa`, `user`, and `admin`.
+
+There is no `--token`, `--password`, `--secret`, or other secret flag. The CLI
+rejects those names before it runs the command, so the value never lands in
+shell history or `ps`. Pipe the secret on stdin:
+
+```sh
+ttr external upskii auth login --mode qa --env staging --token-stdin --yes
+ttr external upskii auth status --env staging --json
+ttr external upskii auth whoami --env staging --json
+ttr external upskii auth logout --mode qa --env staging
+```
+
+A headless QA job may supply `TTR_UPSKII_QA_TOKEN_<ENV>` in the environment.
+The CLI prints credential metadata (profile, family, environment, scopes,
+expiry). It does not print the secret.
+
+## Preview, `--yes`, and `--confirm`
+
+Mutating commands are preview-only until `--yes` is present. A preview exits 0
+with `applied: false` and prints the exact apply command. `--dry-run` always
+wins: if it is set, the command stays a preview even when `--yes` is also set.
+
+| Tier | Examples | Guard |
+| --- | --- | --- |
+| Read | `users list`, `lessons list`, `credits balance`, `status health` | Read scope only |
+| Scoped write | `qa bundle create`, `lessons seed`, `chat smoke` | `--yes` |
+| Destructive | `users disable`, `users purge`, `bundle teardown --mode apply`, `sweep`, `link unlink` | `--yes` and `--confirm <exact token>` |
+
+Confirmation tokens are exact:
+
+- `users disable` and `users purge --mode apply` use `--confirm <userId>`.
+- `bundle teardown --mode apply` uses `--confirm <runLabel>`.
+- `sweep` uses `--confirm SWEEP_UPSKII_QA`.
+- `link unlink` uses `--confirm UNLINK_UPSKII`.
+
+`--reason <text>` is the operator reason sent as `X-TTR-Reason` when a command
+requires one. It is not a secret.
+
+## P1 families
+
+| Family | What it does |
+| --- | --- |
+| `auth` | `login`, `logout`, `status`, `whoami`, `profiles` |
+| `qa` | Provision seats, seed a class, export storage state, tear a bundle down, sweep |
+| `classes` | `list`, `get`, `overview`, `create`, `join`, `join-code` |
+| `lessons` | `list`, `get`, `create`, `seed`, `publish`, `unpublish`, `modules` |
+| `link` | `status`, `verify`, `connect-url`, `unlink` |
+| `chat` | Conversation list, model catalog, bounded `smoke` |
+| `credits` | `balance`, `check`, `usage` |
+| `status` | `health`, `provisioner`, `link-readiness` |
+
+Lesson seed templates are `edufest-workshop`, `basic`, and `qa-smoke`. A `--run`
+label must be 4–31 characters, lowercase letters, digits, and hyphens, and must
+start with a letter or digit. Seeded titles are prefixed with
+`[QA-E2E <run>]`.
+
+```sh
+ttr external upskii lessons seed \
+  --env staging --class "$CLASS_ID" --run edufest-ws-01 \
+  --template edufest-workshop --session-file "$TEACHER_STATE" --yes --json
+```
+
+`chat smoke` is one bounded model call. Keep `--budget-guard 1` for EduFest.
+`credits check` compares a balance snapshot from `--compare-before` and can
+require `--min-remaining`.
+
+`link verify` reads both sides of the E3 link for the session file. It does not
+bypass PKCE or consent. `link connect-url` prints the canonical connect URL.
+
+## QA provisioner, bundles, and sweep
+
+QA commands talk to the Upskii admin provisioner with the `upskii-qa`
+credential. Create is preview-first:
+
+```sh
+ttr external upskii qa bundle create \
+  --env staging --run edufest-ws-01 \
+  --teachers 1 --students 2 --outsiders 0 \
+  --seed-class --ttl 2h \
+  --out-dir "$TMPDIR/e2e-edufest-ws-01" \
+  --json
+
+ttr external upskii qa bundle create \
+  --env staging --run edufest-ws-01 \
+  --teachers 1 --students 2 --outsiders 0 \
+  --seed-class --ttl 2h \
+  --out-dir "$TMPDIR/e2e-edufest-ws-01" \
+  --yes --json
+```
+
+The JSON result contains user ids and storage-state paths. It does not contain
+passwords. Apply mode for teardown purges every ledger user, then verifies the
+purge. The ledger environment must match `--env`.
+
+```sh
+ttr external upskii qa bundle teardown \
+  --env staging \
+  --ledger "$TMPDIR/e2e-edufest-ws-01/ledger.json" \
+  --mode apply --yes --confirm edufest-ws-01 --json
+
+ttr external upskii qa sweep \
+  --env staging --run edufest-ws-01 --expired \
+  --yes --confirm SWEEP_UPSKII_QA --json
+```
+
+`--mode` is `dry-run`, `apply`, or `verify`. Omit `--yes` to preview. A sweep
+without `--confirm SWEEP_UPSKII_QA` does not apply.
+
+Other QA verbs:
+
+```sh
+ttr external upskii qa users create --run edufest-ws-01 --role teacher --ttl 2h --out-dir "$TMPDIR/qa-one" --yes
+ttr external upskii qa users list --run edufest-ws-01 --json
+ttr external upskii qa users disable <userId> --yes --confirm <userId>
+ttr external upskii qa users purge <userId> --mode apply --yes --confirm <userId>
+ttr external upskii qa seed-class <teacherUserId> --yes
+ttr external upskii qa session <userId> --credentials <file> --format storage-state --out <file> --yes
+```
+
+## Playwright storage state
+
+`qa bundle create` and `qa session --format storage-state` write Playwright
+storage state JSON:
+
+- The parent directory is private (`0700`) and must not be a symlink.
+- The file mode is `0600`, written atomically.
+- The cookie is host-only for the target app hostname, `httpOnly`, `sameSite: Lax`, and `secure` on HTTPS.
+- Staging and production cookies are not interchangeable. The domain is the host for that `--env`, not a parent domain.
+
+Point Playwright at the path from the bundle JSON (`storageStatePaths` or the
+per-user `storageStatePath`). Product commands take the same file as
+`--session-file`. Standard output and standard error are scanned and refused if
+they would echo the session secret.
+
+## P2 families
+
+P2 uses the same gates as P1. Preview until `--yes`. `--dry-run` wins.
+Destructive actions require `--confirm`. A production mutation also requires
+`--reason`. Admin commands need an `upskii-admin` bearer credential and refuse
+a user session cookie.
+
+| Family | Commands |
+| --- | --- |
+| `workspaces` | `list`, `get <wsId>`, `members <wsId>`, `switch <wsId> --yes` |
+| `assessments` | `list --class`, `get`, `submissions`, `create --yes`, `publish --yes` |
+| `tutor` | `sessions list`, `get`, `prompts list`, `smoke --class --yes` |
+| `settings` | `get`, `preferences`, `update --yes` |
+| `accounts` | `profile`, `sessions list`, `usage`, `revoke-session <sessionId> --yes --confirm <sessionId>` |
+| `admin` | `overview`, `users list`, `users get`, `flags list`, `flags set <key> --value <v> --yes --confirm <key>` |
+
+## Global output flags
+
+`--json` prints one JSON object. `--jsonl` is for `--watch` ticks.
+`--watch [seconds]` polls status, credits, and link commands. `--no-color`
+disables ANSI. `--profile <name>` selects the keychain profile.

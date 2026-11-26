@@ -2,15 +2,166 @@ import { installedBuildIdentity } from '../build-identity';
 import { CLI_EXIT, CliError, type CliTraceHeaders } from '../cli-contracts';
 import {
   type CliEnv,
+  CLI_ENVS,
   resolveTuturuuuOrigins,
   resolveUpskiiOrigins,
   type UpskiiOrigins,
 } from '../cli-env';
+import { ENV_VAR_BY_FAMILY } from '../credential-store';
 import {
   assertSafeParsedValue,
   assertSafeResponseText,
   readCookieFromStorageState,
 } from './http';
+
+const KNOWN_CREDENTIAL_PATTERN =
+  /(?:upskii_cli_[ar]_[A-Za-z0-9_-]{8,}|(?:__Secure-)?[a-zA-Z0-9._-]*session[a-zA-Z0-9._-]*=[^\s;,"']{8,}|ttr_app_[A-Za-z0-9._-]{12,}|Bearer\s+[A-Za-z0-9._~+/=-]{16,}|eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})/u;
+
+const SECRET_JSON_KEY_PATTERN =
+  /^(?:access_?token|refresh_?token|session_?token|id_?token|auth_?token|api_?key|client_?secret|secret|password|passwd|cookie|set_?cookie|authorization|bearer_?token|private_?key|jwt)$/iu;
+
+const SAFE_D1_METRIC_PATTERNS: Readonly<Record<string, RegExp>> = Object.freeze(
+  {
+    'x-upskii-d1-duration-ms': /^\d+(?:\.\d{1,3})?$/u,
+    'x-upskii-d1-queries': /^\d{1,9}$/u,
+    'x-upskii-d1-region': /^[A-Z]{2,6}(?:-[A-Z0-9]{1,8})?$/u,
+    'x-upskii-d1-rows-read': /^\d{1,12}$/u,
+    'x-upskii-d1-rows-written': /^\d{1,12}$/u,
+    'x-upskii-d1-served-by': /^[A-Z]{2,6}(?:-[A-Z0-9]{1,8})?$/u,
+    'x-upskii-d1-size-after': /^\d{1,15}$/u,
+  }
+);
+
+function collectKnownEnvSecrets(
+  envVars: Record<string, string | undefined> | undefined
+): string[] {
+  if (!envVars) return [];
+  const found: string[] = [];
+  for (const names of Object.values(ENV_VAR_BY_FAMILY)) {
+    for (const base of names) {
+      if (envVars[base]) found.push(envVars[base]!);
+      for (const env of CLI_ENVS) {
+        const scoped = envVars[`${base}_${env.toUpperCase()}`];
+        if (scoped) found.push(scoped);
+      }
+    }
+  }
+  return found;
+}
+
+function unescapeJsonUnicode(text: string): string {
+  return text.replace(/\\u([0-9a-fA-F]{4})/gu, (_, hex: string) =>
+    String.fromCharCode(Number.parseInt(hex, 16))
+  );
+}
+
+function assertNoKnownCredentialPatterns(text: string): void {
+  if (KNOWN_CREDENTIAL_PATTERN.test(text)) {
+    throw new CliError({
+      code: 'CREDENTIAL_LEAK_BLOCKED',
+      exitCode: CLI_EXIT.policy,
+      message: 'Credential output blocked.',
+    });
+  }
+}
+
+function assertNoSecretJsonKeys(value: unknown, depth = 0): void {
+  if (depth > 32) {
+    throw new CliError({
+      code: 'UPSKII_RESPONSE_TOO_DEEP',
+      exitCode: CLI_EXIT.policy,
+      message: 'Upskii response JSON nesting exceeded safe depth limit.',
+    });
+  }
+  if (value === null || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    for (const item of value) assertNoSecretJsonKeys(item, depth + 1);
+    return;
+  }
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (
+      SECRET_JSON_KEY_PATTERN.test(key) &&
+      typeof entry === 'string' &&
+      entry.trim().length > 0
+    ) {
+      throw new CliError({
+        code: 'CREDENTIAL_LEAK_BLOCKED',
+        exitCode: CLI_EXIT.policy,
+        message: 'Credential output blocked.',
+      });
+    }
+    assertNoSecretJsonKeys(entry, depth + 1);
+  }
+}
+
+function assertSafeTextAndPatterns(
+  text: string,
+  secrets: readonly (string | undefined | null)[]
+): void {
+  assertSafeResponseText(text, secrets);
+  assertNoKnownCredentialPatterns(text);
+  if (text.includes('\\u')) {
+    const decoded = unescapeJsonUnicode(text);
+    assertSafeResponseText(decoded, secrets);
+    assertNoKnownCredentialPatterns(decoded);
+  }
+}
+
+function assertSafeValueAndPatterns(
+  value: unknown,
+  secrets: readonly (string | undefined | null)[]
+): void {
+  if (value === null || value === undefined) return;
+  assertSafeParsedValue(value, secrets);
+  assertNoSecretJsonKeys(value);
+  assertNoKnownCredentialPatterns(JSON.stringify(value));
+}
+
+function screenAndProjectD1Telemetry(
+  headers: Headers,
+  secrets: readonly (string | undefined | null)[]
+): Record<string, string> {
+  const raw: Record<string, string> = {};
+  headers.forEach((value, key) => {
+    const lower = key.toLowerCase();
+    if (lower.startsWith('x-upskii-d1-')) raw[lower] = value;
+  });
+  if (Object.keys(raw).length > 0) {
+    assertSafeTextAndPatterns(JSON.stringify(raw), secrets);
+  }
+  const safe: Record<string, string> = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const pattern = SAFE_D1_METRIC_PATTERNS[key];
+    if (pattern?.test(value)) {
+      safe[key] = value;
+    }
+  }
+  return safe;
+}
+
+function assertSafeSseBuffer(
+  combined: string,
+  secrets: readonly (string | undefined | null)[]
+): void {
+  assertSafeTextAndPatterns(combined, secrets);
+  for (const rawLine of combined.split(/\r?\n/u)) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+    const candidate = trimmed.startsWith('data:')
+      ? trimmed.slice(5).trim()
+      : trimmed;
+    if (!candidate) continue;
+    assertSafeTextAndPatterns(candidate, secrets);
+    if (candidate.startsWith('{') || candidate.startsWith('[')) {
+      try {
+        const parsed: unknown = JSON.parse(candidate);
+        assertSafeValueAndPatterns(parsed, secrets);
+      } catch (error) {
+        if (error instanceof CliError) throw error;
+      }
+    }
+  }
+}
 
 export type UpskiiExperience = 'educator' | 'learn';
 
@@ -22,6 +173,7 @@ export interface UpskiiAuthMaterial {
 export interface UpskiiProductClientOptions {
   auth?: UpskiiAuthMaterial;
   env: CliEnv;
+  envVars?: Record<string, string | undefined>;
   experience?: UpskiiExperience;
   fetch?: typeof globalThis.fetch;
   origins?: UpskiiOrigins;
@@ -120,18 +272,28 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
     });
   }
 
-  const activeSecrets = [auth.bearerToken, auth.cookiePair];
+  const activeSecrets = [
+    auth.bearerToken,
+    auth.cookiePair,
+    ...collectKnownEnvSecrets(options.envVars ?? process.env),
+  ];
 
   async function requestJson<T>(input: {
     body?: unknown;
     command: string;
+    discardResponseBody?: boolean;
     extraHeaders?: Record<string, string>;
+    extraSecrets?: readonly (string | undefined | null)[];
+    fixedErrorMessage?: string;
     method?: string;
     origin?: string;
     path: string;
     reason?: string;
     timeoutMs?: number;
   }): Promise<UpskiiApiResult<T>> {
+    const requestSecrets = input.extraSecrets?.length
+      ? [...activeSecrets, ...input.extraSecrets]
+      : activeSecrets;
     const targetOrigin = input.origin ?? origins.app;
     const url = buildPinnedUrl(targetOrigin, input.path);
     const headers: Record<string, string> = {
@@ -160,14 +322,40 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
       signal: AbortSignal.timeout(input.timeoutMs ?? timeoutMs),
     });
 
-    const text = await response.text();
-    assertSafeResponseText(text, activeSecrets);
-    const d1Telemetry = extractUpskiiD1Telemetry(response.headers);
-    if (Object.keys(d1Telemetry).length > 0) {
-      assertSafeResponseText(JSON.stringify(d1Telemetry), activeSecrets);
+    if (input.discardResponseBody) {
+      await response.body?.cancel().catch(() => undefined);
+      if (!response.ok) {
+        throw new CliError({
+          code: `UPSKII_HTTP_${response.status}`,
+          exitCode: exitCodeFromStatus(response.status),
+          message: `${input.fixedErrorMessage ?? `Upskii request failed (${input.command}).`} (HTTP ${response.status})`,
+          requestId: headers['X-TTR-Request-Id'],
+        });
+      }
+      return {
+        d1Telemetry: {},
+        data: {} as T,
+        headers: response.headers,
+        status: response.status,
+      };
     }
 
+    const text = await response.text();
+    assertSafeTextAndPatterns(text, requestSecrets);
+    const d1Telemetry = screenAndProjectD1Telemetry(
+      response.headers,
+      requestSecrets
+    );
+
     if (!response.ok) {
+      if (input.fixedErrorMessage) {
+        throw new CliError({
+          code: `UPSKII_HTTP_${response.status}`,
+          exitCode: exitCodeFromStatus(response.status),
+          message: `${input.fixedErrorMessage} (HTTP ${response.status})`,
+          requestId: headers['X-TTR-Request-Id'],
+        });
+      }
       let detail = `HTTP ${response.status}`;
       try {
         const parsed = JSON.parse(text) as {
@@ -175,13 +363,13 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
           error?: string;
           message?: string;
         };
-        assertSafeParsedValue(parsed, activeSecrets);
+        assertSafeValueAndPatterns(parsed, requestSecrets);
         detail = parsed.error || parsed.message || parsed.code || detail;
       } catch (error) {
         if (error instanceof CliError) throw error;
         // Keep HTTP status message without echoing raw HTML
       }
-      assertSafeResponseText(detail, activeSecrets);
+      assertSafeTextAndPatterns(detail, requestSecrets);
       throw new CliError({
         code: `UPSKII_HTTP_${response.status}`,
         exitCode: exitCodeFromStatus(response.status),
@@ -204,7 +392,7 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
           requestId: headers['X-TTR-Request-Id'],
         });
       }
-      assertSafeParsedValue(data, activeSecrets);
+      assertSafeValueAndPatterns(data, requestSecrets);
     }
 
     return {
@@ -252,7 +440,7 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
     });
     if (!response.ok) {
       const errText = await response.text().catch(() => '');
-      assertSafeResponseText(errText, activeSecrets);
+      assertSafeTextAndPatterns(errText, activeSecrets);
       throw new CliError({
         code: `UPSKII_HTTP_${response.status}`,
         exitCode: exitCodeFromStatus(response.status),
@@ -286,11 +474,11 @@ export function createUpskiiProductClient(options: UpskiiProductClientOptions) {
         firstChunkMs = Date.now() - started;
       }
     }
-    assertSafeResponseText(combined, activeSecrets);
-    const d1Telemetry = extractUpskiiD1Telemetry(response.headers);
-    if (Object.keys(d1Telemetry).length > 0) {
-      assertSafeResponseText(JSON.stringify(d1Telemetry), activeSecrets);
-    }
+    assertSafeSseBuffer(combined, activeSecrets);
+    const d1Telemetry = screenAndProjectD1Telemetry(
+      response.headers,
+      activeSecrets
+    );
 
     return {
       chunks,

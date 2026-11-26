@@ -23,6 +23,36 @@
       "canonicalApp": "upskii-auth",
       "status": "external",
       "clientFile": "packages/sdk/src/cli/upskii/qa-command.ts"
+    },
+    {
+      "routePath": "/api/admin/experimental-features",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/admin/experimental-features/:*",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/admin/snapshot",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/admin/users",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
+    },
+    {
+      "routePath": "/api/admin/users/:*",
+      "canonicalApp": "upskii-admin",
+      "status": "external",
+      "clientFile": "packages/sdk/src/cli/upskii/accounts-admin-command.ts"
     }
   ]
 }

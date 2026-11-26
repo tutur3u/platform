@@ -217,6 +217,11 @@
     {
       "family": "api-ops",
       "localized": false,
+      "pattern": "/api/v1/infrastructure/db-readonly"
+    },
+    {
+      "family": "api-ops",
+      "localized": false,
       "pattern": "/api/v1/infrastructure/internal-accounts/address-migrations/adopt-retained"
     },
     {

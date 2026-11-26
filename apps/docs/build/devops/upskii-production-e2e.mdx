@@ -1,7 +1,147 @@
 ---
-title: Upskii production E2E
-description: What the Upskii production end-to-end workflow checks, how to read a failure, the kill switch, and the cleanup guarantees.
+title: "Upskii production E2E"
+description: "Run the EduFest Workshop end-to-end flow with ttr external upskii against staging or production, then tear the QA bundle down. Includes the production workflow kill switch and cleanup guarantees."
+updatedAt: "2026-11-27"
+audience: developers
 ---
+
+## EduFest Workshop runbook
+
+Use `ttr external upskii` to provision a disposable QA class, seed the EduFest
+Workshop lessons, verify the Tuturuuu link, run one bounded chat smoke, check
+credits, and tear everything down. Staging is the default. Production requires
+`--env prod` on every command in the run. The QA family also refuses production
+when that flag is missing, even if `TTR_ENV` or the saved default is `prod`.
+
+Secrets never go in argv. Store the provisioner token with `--token-stdin`.
+Mutations print a preview until `--yes`. `--dry-run` wins over `--yes`, so do
+not leave it on the apply commands below. Teardown and sweep are tier 2: they
+need `--confirm` as well.
+
+Run labels are 4–31 characters, lowercase letters, digits, and hyphens. The
+examples use `edufest-ws-01`. Put files under `$TMPDIR` in a directory you
+created with mode `0700`. The CLI writes Playwright storage state as `0600`
+and refuses symlink paths.
+
+### 1. Authenticate the QA provisioner
+
+```sh
+ttr external upskii auth login --mode qa --env staging --token-stdin --yes
+ttr external upskii status provisioner --env staging --json
+```
+
+For production, change both commands to `--env prod` and confirm the kill
+switch in the workflow section below is on. A local production run still needs
+an operator's explicit approval.
+
+### 2. Create the bundle
+
+Preview first, then apply. `--out-dir` is required. `--seed-class` asks the
+provisioner to seed the teacher class. Create the directory before redirecting
+stdout, and tighten the umask so the redirected JSON is not world-readable.
+The CLI's own ledger and storage-state files are `0600` even if you forget.
+
+```sh
+mkdir -m 700 "$TMPDIR/e2e-edufest-ws-01"
+umask 077
+ttr external upskii qa bundle create \
+  --env staging --run edufest-ws-01 \
+  --teachers 1 --students 2 --outsiders 0 \
+  --seed-class --ttl 2h \
+  --out-dir "$TMPDIR/e2e-edufest-ws-01" \
+  --json
+
+ttr external upskii qa bundle create \
+  --env staging --run edufest-ws-01 \
+  --teachers 1 --students 2 --outsiders 0 \
+  --seed-class --ttl 2h \
+  --out-dir "$TMPDIR/e2e-edufest-ws-01" \
+  --yes --json > "$TMPDIR/e2e-edufest-ws-01/bundle.json"
+```
+
+Read the class id and teacher storage state from that JSON. The file contains
+paths and ids, not passwords. The cookie inside the storage state is host-only
+for the target app host, `httpOnly`, `sameSite: Lax`, and `secure` on HTTPS.
+
+```sh
+CLASS_ID=$(jq -r '.seedClassId' "$TMPDIR/e2e-edufest-ws-01/bundle.json")
+TEACHER_STATE=$(jq -r '.storageStatePaths["teacher-1"]' "$TMPDIR/e2e-edufest-ws-01/bundle.json")
+```
+
+If `seedClassId` is empty, use the class id returned by
+`ttr external upskii classes list --env staging --session-file "$TEACHER_STATE" --json`.
+
+### 3. Seed the workshop lessons
+
+```sh
+ttr external upskii lessons seed \
+  --env staging --class "$CLASS_ID" --run edufest-ws-01 \
+  --template edufest-workshop --session-file "$TEACHER_STATE" \
+  --yes --json
+```
+
+Titles are tagged `[QA-E2E edufest-ws-01]`. Templates are `edufest-workshop`,
+`basic`, and `qa-smoke`. Omit `--yes` to preview the lesson list.
+
+### 4. Verify the account link
+
+Run this after the Playwright consent step. It does not bypass PKCE.
+
+```sh
+ttr external upskii link verify \
+  --env staging --session-file "$TEACHER_STATE" --json
+```
+
+### 5. Credits and one chat smoke
+
+Educator and learner suites allow one model call per run. `--budget-guard 1`
+keeps the smoke inside that cap.
+
+```sh
+ttr external upskii credits balance \
+  --env staging --session-file "$TEACHER_STATE" --json \
+  > "$TMPDIR/e2e-edufest-ws-01/credits-before.json"
+
+ttr external upskii chat smoke \
+  --env staging --class "$CLASS_ID" --session-file "$TEACHER_STATE" \
+  --prompt "Summarize lesson 1 in two bullet points." \
+  --max-latency-ms 15000 --expect-stream --budget-guard 1 \
+  --yes --json
+
+ttr external upskii credits check \
+  --env staging --session-file "$TEACHER_STATE" \
+  --min-remaining 1 \
+  --compare-before "$TMPDIR/e2e-edufest-ws-01/credits-before.json" \
+  --json
+```
+
+### 6. Mandatory teardown and sweep
+
+Apply teardown confirms the run label from the ledger. Sweep confirms the
+fixed token `SWEEP_UPSKII_QA`. Run both even when a later assertion failed.
+`--mode apply` purges each ledger user and then verifies the purge. The ledger
+environment must match `--env`.
+
+```sh
+ttr external upskii qa bundle teardown \
+  --env staging \
+  --ledger "$TMPDIR/e2e-edufest-ws-01/ledger.json" \
+  --mode apply --yes --confirm edufest-ws-01 --json
+
+ttr external upskii qa sweep \
+  --env staging --run edufest-ws-01 --expired \
+  --yes --confirm SWEEP_UPSKII_QA --json
+```
+
+Production is the same sequence with `--env prod` on every command, including
+login, seed, verify, smoke, check, teardown, and sweep. Do not point a staging
+storage state at production, or the reverse. Tuturuuu staging origins stay on
+`*.tutur3u.com`.
+
+Preview a teardown without deleting by omitting `--yes`, or by passing
+`--dry-run`. A command that includes both `--dry-run` and `--yes` stays a preview.
+
+## Production workflow
 
 The `Upskii Production E2E` workflow
 (`.github/workflows/upskii-production-e2e.yaml`) runs Playwright suites

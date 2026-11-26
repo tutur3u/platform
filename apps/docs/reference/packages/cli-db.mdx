@@ -1,0 +1,109 @@
+---
+title: "ttr db"
+description: "Read-only migration status, allowlisted SELECT inspection, generated-type checks, and a local RLS audit. Production database writes are impossible from this CLI."
+updatedAt: "2026-11-27"
+audience: developers
+---
+
+`ttr db` inspects database state. It cannot write to a database. Applying a
+migration stays on the gated `supabase-production.yaml` workflow. `sb:push`,
+`sb:linkpush`, `push`, `reset`, `seed`, `migrate`, `exec`, and `write` are
+refused with exit code 6 (`DB_WRITE_FORBIDDEN`).
+
+```sh
+ttr db migrations <list|status>
+ttr db query --sql "<SELECT ...>" [--env staging] [--limit 100] [--dry-run]
+ttr db types check
+ttr db rls-check [--strict]
+```
+
+The default environment for `query` is staging. `--env prod` must be typed on
+that command. A saved default does not select production. Staging Tuturuuu
+origins use `*.tutur3u.com`. There is no `--password` or `--token` flag. The
+bearer token comes from the OS keychain or the current CLI session, and it is
+sent only to the origin for that environment.
+
+## Hard prohibitions
+
+The CLI and the read-only endpoint enforce the same fail-closed parser and
+reject:
+
+- Any statement that is not a single-table `SELECT` against an allowlisted `public` table.
+- All SQL comments (`--` and `/* ... */`), multiple statements, dollar-quoted literals, and `U&` escapes.
+- Every DML, DDL, locking, join, CTE, `EXPLAIN`, `SHOW`, and server-admin keyword.
+- Tables outside the allowlist, non-identifier column expressions, and any reference to `auth`, `private`, `vault`, `extensions`, `realtime`, `storage`, or `supabase_functions`.
+
+Exit code 6 is the policy refusal.
+
+## Migrations
+
+`migrations` reads local regular SQL files only (symlinks and special files are
+refused). It does not connect to a database and does not apply files.
+
+```sh
+ttr db migrations list --json
+ttr db migrations list --dir apps/database/supabase/migrations --limit 20
+ttr db migrations status --json
+```
+
+`list` prints file name and parsed timestamp. `status` reports the count, the
+latest timestamp, duplicate timestamps, and whether names increase
+monotonically. A bad file stays in the report with `ok: false`. It does not
+apply or rewrite anything.
+
+## Query, allowlist, and read-only endpoint
+
+`query` parses the statement into a structured single-table `SELECT` plan
+locally, then (unless `--dry-run` is set) POSTs the canonical query to
+`/api/v1/infrastructure/db-readonly`. The route requires a verified
+`@tuturuuu.com` root-workspace admin with `manage_workspace_roles` or
+`manage_workspace_secrets`, re-parses the statement with the same fail-closed
+grammar, and executes it via PostgREST read-only `GET` selection with a
+database-enforced row limit (`<= 500`) and a 5-second abort timeout. Raw SQL is
+never executed.
+
+```sh
+ttr db query \
+  --sql "SELECT id, name FROM public.workspaces ORDER BY id DESC LIMIT 20" \
+  --env staging --limit 20 --json
+
+ttr db query --sql "SELECT id FROM public.workspaces" --env staging --dry-run
+```
+
+`--limit` defaults to 100 and cannot exceed 500. The allowlisted `public`
+tables are `task_lists`, `task_projects`, `tasks`, `workspace_boards`,
+`workspace_settings`, `workspace_task_labels`, and `workspaces`. Everything else
+is rejected before the request is sent and again on the server.
+
+The endpoint logs a SHA-256 of the canonical SQL, the actor ID, and the row
+count with `Cache-Control: no-store`. It never logs result rows or tokens.
+Standard output is refused if it would contain active credentials.
+
+## Types
+
+`types check` validates the target path is a bounded non-symlink regular file
+and reports its metadata. It does not generate or rewrite the file. Any other
+`types` action is a usage error.
+
+```sh
+ttr db types check --json
+ttr db types check --file packages/types/src/supabase.ts
+```
+
+## RLS check
+
+`rls-check` is a static read of bounded regular local migration SQL files. It
+reports tables created without `ENABLE ROW LEVEL SECURITY` or without a policy.
+It does not open a database connection. `--strict` exits non-zero when a finding
+exists. Without `--strict`, findings are reported and the command still exits 0.
+
+```sh
+ttr db rls-check --json
+ttr db rls-check --dir apps/database/supabase/migrations --strict
+```
+
+## Output
+
+`--json` prints one object. Failures use `ok: false` and `error.code`. Exit
+codes are 1 usage, 2 drift or digest conflict, 3 auth, 4 not found, 5
+unavailable, and 6 policy. `--yes` does not unlock a write.

@@ -96,6 +96,44 @@ function isLeftoverDirectory(dir) {
   return fs.readdirSync(dir).every((entry) => LEFTOVER_ENTRIES.has(entry));
 }
 
+function extractExportedHttpMethods(source) {
+  const found = new Set();
+  for (const match of source.matchAll(
+    /\bexport\s+(?:async\s+)?(?:function|const|let|var)\s+(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\b/g
+  )) {
+    found.add(match[1]);
+  }
+  for (const match of source.matchAll(
+    /\bexport\s+(?:const|let|var)\s*\{([^}]+)\}/g
+  )) {
+    for (const item of match[1].split(',')) {
+      const bound = item.trim().split('=')[0]?.trim().split(':').pop()?.trim();
+      if (
+        bound &&
+        /^(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)$/u.test(bound)
+      ) {
+        found.add(bound);
+      }
+    }
+  }
+  for (const match of source.matchAll(/\bexport\s*\{([^}]+)\}/g)) {
+    for (const item of match[1].split(',')) {
+      const exported = item
+        .trim()
+        .split(/\s+as\s+/u)
+        .pop()
+        ?.trim();
+      if (
+        exported &&
+        /^(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)$/u.test(exported)
+      ) {
+        found.add(exported);
+      }
+    }
+  }
+  return [...found].sort().join(', ');
+}
+
 function collect(root = ROOT) {
   const manifests = [];
   const apps = [];
@@ -132,19 +170,7 @@ function collect(root = ROOT) {
                 .join('/');
               const api = /\/route\.[jt]sx?$/.test(file);
               const source = fs.readFileSync(file, 'utf8');
-              const methods = api
-                ? [
-                    ...new Set(
-                      [
-                        ...source.matchAll(
-                          /\b(?:GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD)\b/g
-                        ),
-                      ].map((match) => match[0])
-                    ),
-                  ]
-                    .sort()
-                    .join(', ')
-                : 'Page';
+              const methods = api ? extractExportedHttpMethods(source) : 'Page';
               return {
                 file: path.relative(root, file).split(path.sep).join('/'),
                 pathname: routePath(relative),

@@ -8,7 +8,10 @@ export function isDelegatedCommand(command: string | undefined) {
     command === 'git' ||
     command === 'check' ||
     command === 'doctor' ||
-    command === 'env'
+    command === 'env' ||
+    command === 'infra' ||
+    command === 'db' ||
+    command === 'completions'
   );
 }
 
@@ -19,6 +22,14 @@ export async function runDelegatedCommand(argv: string[]) {
     return (await import('./doctor.js')).runDoctorCommand(argv.slice(1));
   if (argv[0] === 'env')
     return (await import('./env-command.js')).runEnvCommand(argv.slice(1));
+  if (argv[0] === 'infra')
+    return (await import('./infra/index.js')).runInfraCommand(argv.slice(1));
+  if (argv[0] === 'db')
+    return (await import('./db/index.js')).runDbCommand(argv.slice(1));
+  if (argv[0] === 'completions')
+    return (await import('./completions.js')).runCompletionsCommand(
+      argv.slice(1)
+    );
   if (argv[0] === 'git')
     return (await import('./git-guard.js')).runGitCommand(argv.slice(1));
   if (argv[0] === 'check') {

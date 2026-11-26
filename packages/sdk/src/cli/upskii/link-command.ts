@@ -7,6 +7,8 @@ import { parseWatchInterval, runWatchLoop } from '../ui/watch';
 import { assertSafeParsedValue, assertSafeResponseText } from './http';
 import type { UpskiiProductClient } from './product-client';
 
+const TUTURUUU_UPSKII_LINK_PATH = '/api/v1/integrations/upskii/link';
+
 export interface UpskiiLinkCommandOptions {
   args: string[];
   client: UpskiiProductClient;
@@ -74,7 +76,7 @@ export async function runUpskiiLinkCommand(
       if (options.tuturuuuAccessToken) {
         const fetchImpl = options.fetch ?? globalThis.fetch;
         const tRes = await fetchImpl(
-          `${client.tuturuuuOrigins.web}/api/v1/integrations/upskii/link`,
+          `${client.tuturuuuOrigins.web}${TUTURUUU_UPSKII_LINK_PATH}`,
           {
             headers: {
               Accept: 'application/json',
@@ -218,7 +220,7 @@ export async function runUpskiiLinkCommand(
       }
       const fetchImpl = options.fetch ?? globalThis.fetch;
       const tRes = await fetchImpl(
-        `${client.tuturuuuOrigins.web}/api/v1/integrations/upskii/link`,
+        `${client.tuturuuuOrigins.web}${TUTURUUU_UPSKII_LINK_PATH}`,
         {
           headers: {
             Authorization: `Bearer ${options.tuturuuuAccessToken}`,

@@ -1,0 +1,101 @@
+---
+title: "ttr infra"
+description: "Read-only Cloudflare, Worker, deploy, DNS, runner, and host inventory, plus Exact-ACK change packets that never call a provider write."
+updatedAt: "2026-11-27"
+audience: developers
+---
+
+`ttr infra` reads infrastructure and writes change packets to disk only.
+Inventory commands do not deploy a Worker, edit DNS, drain a runner, or
+promote a release. `packet create` prints a canonical JSON document and a
+`sha256` digest. A file is written only when you pass both `--out` and
+`--yes`, and `--dry-run` still skips that write.
+
+```sh
+ttr infra <cloudflare|workers|deploys|dns-readonly|runners|hosts> ...
+ttr infra packet <create|verify|show> ...
+```
+
+The default environment is staging. `packet create` refuses `prod` unless the
+command line includes `--env prod`. Staging Tuturuuu origins use `*.tutur3u.com`.
+There is no secret flag. Cloudflare inventory reads `TTR_INFRA_CF_ACCOUNT_ID`
+from the environment.
+
+## Read-only inventory
+
+| Family | Commands | What you get |
+| --- | --- | --- |
+| `cloudflare` | `zones`, `overview` | Zone name, status, type, and id. Overview counts zones by status. |
+| `workers` | `list`, `get <name>` | Worker id, timestamps, and compatibility date. `get` looks up one id in the configured account. |
+| `deploys` | `list [--worker <project>] [--watch]` | Deployment rows. `--watch` polls from 10 to 3600 seconds. |
+| `dns-readonly` | `list --zone <id> [--type A\|AAAA\|CNAME\|TXT\|MX]` | Record type, name, content, and TTL. No write verb exists. |
+| `runners` | `list`, `status [--watch]` | Runner id, name, status, heartbeat, and drained state. |
+| `hosts` | `list`, `status` | Host id, name, status, heartbeat, and resource limits. |
+
+```sh
+ttr infra cloudflare zones --json
+ttr infra workers get <worker-id> --json
+ttr infra deploys list --worker <project> --watch 15 --json
+ttr infra dns-readonly list --zone <zone-id> --type CNAME --json
+ttr infra runners status --json
+ttr infra hosts list --json
+```
+
+`--json` with `--watch` prints one JSON object per poll. Binding secrets and
+API tokens are not part of these rows.
+
+## Exact-ACK change packet
+
+```sh
+ttr infra packet create \
+  --provider cloudflare \
+  --target <worker-or-host> \
+  --action <action> \
+  --summary "<what changes>" \
+  --rollback "<how to undo>" \
+  --reason "<why>" \
+  --changes '[]' \
+  --json
+
+ttr infra packet verify --file <path> --expected-digest 'sha256:<64 lowercase hex>'
+ttr infra packet show --file <path> --json
+```
+
+`--provider` is `cloudflare`, `tuturuuu-infra`, or `github-runners`.
+`--changes` is a JSON array and defaults to `[]`. `--reason` defaults to the
+summary. `create` always prints the packet. It writes `--out` only when
+`--yes` is set and `--dry-run` is not set.
+
+The output directory must already exist, must not be a symlink, and must be
+mode `0700`. The file is written atomically as mode `0600`. `verify` and
+`show` read that file. They do not call a provider.
+
+The digest is `sha256:` plus the SHA-256 of the canonical JSON for every field
+except `digest`. Object keys are sorted. `verify` checks that embedded digest.
+`--expected-digest` must match it or the command exits 2.
+
+```json
+{
+  "version": 1,
+  "env": "staging",
+  "target": "<target>",
+  "provider": "cloudflare",
+  "action": "<action>",
+  "summary": "<what changes>",
+  "reason": "<why>",
+  "changes": [],
+  "rollbackPlan": "<how to undo>",
+  "createdAt": "2026-11-27T01:00:00.000Z",
+  "digest": "sha256:<64 lowercase hex>"
+}
+```
+
+Approval is the exact digest. The packet does not contain a secret value, and
+the writer refuses a packet whose text contains a known credential.
+
+## What this command will not do
+
+- No Cloudflare, DNS, deploy, or runner write from the CLI.
+- No production packet unless `--env prod` is present on that command.
+- No packet file when `--dry-run` is set, or when `--yes` is missing.
+- No `--token` or `--password` flag.

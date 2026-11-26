@@ -573,9 +573,28 @@ export async function readPrivateJsonFile(
   filePath: string,
   label: string
 ): Promise<unknown> {
+  const resolved = resolve(filePath);
+  await assertNoUntrustedPathSymlinks(resolved);
+  const parentReal = await realpath(dirname(resolved)).catch((error) => {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new CliError({
+        cause: error,
+        code: 'FILE_NOT_FOUND',
+        exitCode: CLI_EXIT.notFound,
+        message: `Missing ${label} file: ${filePath}`,
+      });
+    }
+    throw new CliError({
+      cause: error,
+      code: 'UNSAFE_OUTPUT_DIR',
+      exitCode: CLI_EXIT.policy,
+      message: `Failed to verify parent directory for ${label} file: ${filePath}`,
+    });
+  });
+  await assertTrustedDirectoryAncestors(parentReal);
   let parsed: unknown;
   try {
-    parsed = await readPrivateJsonFileStrict(resolve(filePath));
+    parsed = await readPrivateJsonFileStrict(resolved);
   } catch (error) {
     throw new CliError({
       cause: error,
