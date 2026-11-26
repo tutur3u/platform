@@ -12,6 +12,8 @@ coverage
 **/test-results/
 **/blob-report/
 **/e2e/.auth/
+/.e2e/*
+!/.e2e/cache/
 
 # next.js
 .next

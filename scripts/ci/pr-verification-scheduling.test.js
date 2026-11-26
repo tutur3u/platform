@@ -28,6 +28,7 @@ const heavy = {
     'build-check',
     'matrix-test',
   ],
+  'e2e-framework-report-only.yaml': ['e2e-strict-cache'],
   'external-internal-packages.yaml': ['Build'],
   'external-project-page-versions-contract.yaml': ['contract'],
   'external-project-storage-analytics-contract.yaml': ['contract'],

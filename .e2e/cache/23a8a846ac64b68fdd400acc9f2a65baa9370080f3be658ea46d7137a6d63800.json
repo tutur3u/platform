@@ -1,0 +1,120 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-26T18:27:38.073Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "typeSecret",
+        "summary": "fill secret \"fleet-email\" into textbox \"Email or username\"",
+        "target": {
+          "role": "textbox",
+          "name": "Email or username",
+          "placeholder": "Enter your email or username",
+          "inputPurpose": "username"
+        },
+        "secret": "fleet-email"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Continue with email\"",
+        "target": {
+          "role": "button",
+          "name": "Continue with email"
+        }
+      },
+      {
+        "name": "typeSecret",
+        "summary": "fill secret \"fleet.password\" into textbox \"Password\"",
+        "target": {
+          "role": "textbox",
+          "name": "Password",
+          "placeholder": "Enter your password",
+          "inputPurpose": "password"
+        },
+        "secret": "fleet.password"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Sign In\"",
+        "target": {
+          "role": "button",
+          "name": "Sign In"
+        }
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-local-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/fleet-sign-in.e2e.ts::signs%20in%20with%20the%20fleet%20test%20identity%20from%20env%20names%20only",
+      "targetId": "web-chromium",
+      "instructionDigest": "2ae97d0710399185a2b90b05d1889ee59b1b27263f635970c1e1395be7d39917",
+      "paramsDigest": "4103968127783377f9dccb42ec37e262bf683ca1d4ba31e6f751c48ee64dd7a8",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Signed in with fleet identity",
+    "startPath": "/en/login",
+    "endPath": "/en/personal",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "Signed in"
+      },
+      {
+        "role": "link",
+        "name": "Overview"
+      },
+      {
+        "role": "link",
+        "name": "Tasks"
+      },
+      {
+        "role": "heading",
+        "name": "Personal Workspace"
+      },
+      {
+        "role": "document",
+        "name": "Personal Workspace | Tuturuuu"
+      },
+      {
+        "role": "navigation",
+        "name": "Workspace navigation"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "heading",
+        "name": "Sign in to your account"
+      },
+      {
+        "text": "Email or username"
+      },
+      {
+        "role": "textbox",
+        "name": "Email or username",
+        "placeholder": "Enter your email or username",
+        "inputPurpose": "username"
+      },
+      {
+        "role": "button",
+        "name": "Continue with email"
+      },
+      {
+        "role": "document",
+        "name": "Sign in | Tuturuuu"
+      }
+    ],
+    "endWaitMs": 10304,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

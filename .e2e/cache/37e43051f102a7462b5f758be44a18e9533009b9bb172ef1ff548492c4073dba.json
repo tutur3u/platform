@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-26T18:27:38.741Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"E2E Guest\" into textbox \"Display name\"",
+        "target": {
+          "role": "textbox",
+          "name": "Display name",
+          "placeholder": "Your name"
+        },
+        "value": "E2E Guest"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Ask to join\"",
+        "target": {
+          "role": "button",
+          "name": "Ask to join"
+        }
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-local-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/meet-guest-join.e2e.ts::joins%20a%20Meet%20room%20as%20a%20guest%20and%20waits%20in%20the%20lobby",
+      "targetId": "web-chromium",
+      "instructionDigest": "4ffbc766446facb6db6e3b8b953d445d574f2e874d19b69ed559030f7ca6dfb8",
+      "paramsDigest": "0da598ba538760790d208c322f155af11004db660d3e0959dfeba911285b4770",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Requested to join Meet room as guest",
+    "startPath": "/en/r/e2e-guest-room",
+    "endPath": "/en/r/e2e-guest-room",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "Waiting for the host to admit you"
+      },
+      {
+        "role": "heading",
+        "name": "Waiting in lobby"
+      },
+      {
+        "text": "Guest: E2E Guest",
+        "testId": "meet-guest-badge"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Tuturuuu Meet"
+      },
+      {
+        "role": "heading",
+        "name": "Join meeting"
+      },
+      {
+        "text": "Display name"
+      },
+      {
+        "role": "textbox",
+        "name": "Display name",
+        "placeholder": "Your name"
+      },
+      {
+        "text": "Human check passed"
+      },
+      {
+        "role": "button",
+        "name": "Ask to join"
+      },
+      {
+        "role": "link",
+        "name": "Sign in with Tuturuuu"
+      }
+    ],
+    "endWaitMs": 10178,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

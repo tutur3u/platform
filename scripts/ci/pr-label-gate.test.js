@@ -62,6 +62,7 @@ const PROTECTED_TRIGGERS = {
   'devbox-control-cloudflare.yaml': 'bdd013d87e7c6568',
   'discord-python-ci.yml': 'df10679b45d420bb',
   'docs-seo-check.yaml': '78c7f5ff99020ac9',
+  'e2e-framework-report-only.yaml': '828cd174e48c89fe',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-page-versions-contract.yaml': '0a3cc2c97958f5cd',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',

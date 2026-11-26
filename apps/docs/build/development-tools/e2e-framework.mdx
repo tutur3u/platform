@@ -1,0 +1,247 @@
+---
+title: 'Agentic E2E Framework (`e2e`)'
+description: 'Write, record, replay, and run deterministic end-to-end tests with e2e, committed .e2e/cache traces, headless Chromium rules, and npx --no-install e2e mcp for coding agents.'
+updatedAt: '2026-11-27'
+audience: developers
+---
+
+Tuturuuu adopts [`e2e`](https://github.com/e2e-inc/e2e) (npm `e2e` +
+`@e2e-dev/web`, Apache-2.0) alongside the existing Playwright suites under
+`apps/web/e2e/`. Existing Playwright configurations and specs stay untouched;
+new `e2e` tests live under `apps/web/e2e-agent/` and replay from committed
+`.e2e/cache/` recordings in CI with zero model calls.
+
+## Shared configuration and headless rules
+
+The repository root [`e2e.config.ts`](https://github.com/tutur3u/platform/blob/main/e2e.config.ts)
+delegates to
+[`scripts/e2e/shared-web-config.ts`](https://github.com/tutur3u/platform/blob/main/scripts/e2e/shared-web-config.ts),
+which enforces Tuturuuu's web headless browser rules:
+
+- **Playwright Chromium, headless by default.** Pass `--headed` only for local
+  interactive debugging, never in CI.
+- **No User-Agent spoofing or challenge bypasses.** The config leaves
+  `userAgent` and bypass headers unset so adaptive abuse controls
+  (`ABUSE_CHALLENGE_REQUIRED`) and Cloudflare Turnstile remain authentic. See
+  [QA test users](/build/development-tools/qa-test-users).
+- **Credential and trace hygiene.** `video` is `'off'` and `trace` is
+  `'retain-on-failure'` so session cookies and secrets are never captured in
+  routine uploads. Local `.e2e/results/` failure traces are gitignored; do not
+  share them when running locally with real credentials.
+- **Stable project and app identity.** `projectId: 'tuturuuu-platform'` and
+  `app.identity: 'tuturuuu-web'` keep loopback replay cache keys identical
+  across worktrees and dynamic loopback ports (`e2e` keys non-loopback hosts
+  under `environment: 'production'` unless `app.environment` is set explicitly,
+  so committed traces apply to the deterministic loopback `test` environment).
+- **Fail-closed offline default.** `e2e.config.ts` uses `offlineReplayExecutor`,
+  which refuses uncached steps instead of calling any external API. Committed
+  `.e2e/cache/` entries replay before the executor is invoked.
+
+## Fleet test identity from environment variables only
+
+Never commit emails, passwords, TOTP seeds, or session cookies in tests,
+configs, or `.e2e/cache/` files. `shared-web-config.ts` resolves the `fleet`
+identity strictly from environment variable names:
+
+| Role | Environment variable names (checked in order) |
+| --- | --- |
+| Fleet email | `E2E_SECRET_FLEET_EMAIL`, `E2E_USER_FLEET_USERNAME`, `E2E_FLEET_EMAIL`, `TUTURUUU_FLEET_SMOKE_EMAIL`, or `TUTURUUU_FLEET_SMOKE_ID` (`qa-automation+<uuid>@smoke.tuturuuu.com`) |
+| Fleet password | `E2E_USER_FLEET_PASSWORD`, `E2E_FLEET_PASSWORD`, `TUTURUUU_FLEET_SMOKE_PASSWORD` |
+
+Pass both email and password as opaque `e2e` handles (`secrets.get('fleet-email')`
+and `credentials.user('fleet').password`) so `.e2e/cache/` recordings store only
+secret names (`fleet-email`, `fleet.password`) and resolve values dynamically at
+replay time.
+
+## Writing a test
+
+Place new web tests in `apps/web/e2e-agent/*.e2e.ts`. Combine natural-language
+`agent.act(...)` steps with deterministic `expect(...)` checks so `e2e` can
+verify and cache every action trace:
+
+```ts
+import { test } from '@e2e-dev/web';
+import { credentials, expect, secrets } from 'e2e';
+
+test('signs in with the fleet test identity from env names only', async ({
+  agent,
+  app,
+  browser,
+  screen,
+}) => {
+  const fleet = credentials.user('fleet');
+
+  await app.open('/en/login');
+  await expect(
+    screen.getByPlaceholder('Enter your email or username')
+  ).toBeVisible();
+
+  await agent.act(
+    'enter the fleet email and continue to the password step, then submit the fleet password to sign in',
+    {
+      params: {
+        email: secrets.get('fleet-email'),
+        password: fleet.password,
+      },
+    }
+  );
+
+  await expect(browser).toHaveURL(/\/en\/personal(?:\/|$)/);
+  await expect(screen.getByRole('heading', 'Personal Workspace')).toBeVisible();
+});
+```
+
+Every `agent.act()` call must be followed by a deterministic verification
+(`expect(locator)...`, `expect(browser).toHaveURL(...)`, or `locator.waitFor()`).
+Without a verification check, `e2e` marks the step `unconfirmed` and will not
+write a replay cache entry.
+
+## Running and recording `.e2e/cache`
+
+### Verify committed recordings deterministically (zero model calls)
+
+```bash
+# Install Chromium for @e2e-dev/web once per machine
+bun x e2e-web install chromium --with-deps
+
+# Run against the deterministic loopback fixture server with --strict-cache
+CI=1 E2E_TELEMETRY_DISABLED=1 \
+  E2E_SECRET_FLEET_EMAIL="qa-fixture@example.invalid" \
+  E2E_USER_FLEET_PASSWORD="ephemeral-local-fixture-password" \
+  npx --no-install e2e run --strict-cache
+```
+
+To target a running local production build of `apps/web` (`next start` on a
+build-allowed host; never a dev server for verification) instead of the
+loopback fixture server, set `E2E_APP_URL`:
+
+```bash
+E2E_APP_URL=http://localhost:7803 \
+  E2E_SECRET_FLEET_EMAIL="..." \
+  E2E_USER_FLEET_PASSWORD="..." \
+  npx --no-install e2e run --strict-cache
+```
+
+Note that the committed fixture recordings expect fixture-shaped data (a board
+named `Personal Board` at `/en/personal/tasks/boards/default`, a guest-enabled
+room at `/en/r/e2e-guest-room`, and password sign-in without TOTP); targeting a
+live deployment with different fixtures or TOTP requires matching test data or
+freshly recorded traces.
+
+### Record or refresh a stale trace
+
+When a UI flow intentionally changes, `--strict-cache` fails with
+`REPLAY_STALE` (exit code `2`) instead of silently paying for CI model calls.
+Because `e2e.config.ts` pins `offlineReplayExecutor` to prevent accidental
+model calls, record updated traces with a temporary, uncommitted local config
+that calls `createTuturuuuWebE2EConfig` with your model provider or custom
+`executor`:
+
+1. Create an untracked local recording config (for example
+   `tmp/e2e.record.config.ts`) that spreads or calls
+   `createTuturuuuWebE2EConfig` with your configured model/subscription or
+   recording executor, then run in `read-write` mode without `--strict-cache`:
+   ```bash
+   npx --no-install e2e run --config tmp/e2e.record.config.ts apps/web/e2e-agent/<file>.e2e.ts
+   ```
+2. Delete the temporary config, inspect the recorded cache entries, and verify
+   no secrets or personal text were captured verbatim:
+   ```bash
+   npx --no-install e2e cache ls
+   npx --no-install e2e cache stats
+   git diff .e2e/cache/
+   ```
+3. Re-verify zero-model deterministic replay against the committed `e2e.config.ts`
+   before committing:
+   ```bash
+   CI=1 E2E_TELEMETRY_DISABLED=1 \
+     E2E_SECRET_FLEET_EMAIL="qa-fixture@example.invalid" \
+     E2E_USER_FLEET_PASSWORD="ephemeral-local-fixture-password" \
+     npx --no-install e2e run --strict-cache
+   ```
+
+Runtime outputs under `.e2e/` (`report.json`, `junit.xml`, `results/`,
+`timings.json`) are gitignored; only `.e2e/cache/` is committed.
+
+## CI workflow (report-only)
+
+`.github/workflows/e2e-framework-report-only.yaml` runs
+`npx --no-install e2e run --strict-cache --reporter list,junit` on pull requests
+and pushes to `main` that touch the e2e config, suites, fixture server, or cache.
+
+- **Report-only initially:** the job sets `continue-on-error: true` and is not
+  a required merge check while suite coverage expands.
+- **Zero model calls, zero secrets:** no AI API key or repository secret is
+  passed to the workflow. Ephemeral per-run fixture credentials are generated in
+  memory for the loopback fixture server.
+- **Artifacts:** `.e2e/report.json` and `.e2e/junit.xml` are uploaded for 7
+  days; `.e2e/results/` traces upload only on failure.
+
+## Agent MCP setup (`npx --no-install e2e mcp`)
+
+`npx --no-install e2e mcp` exposes a live browser session over stdio so coding
+agents can inspect the screen, verify locators, walk flows, and copy verified
+test lines directly into `apps/web/e2e-agent/*.e2e.ts` without needing a model
+API key.
+
+<Note>
+  `.mcp.json` and `.codex/config.*` are gitignored in this repository so local
+  agent configs stay machine-specific. Register the server locally using the
+  snippets below from the repository root after `bun install`.
+</Note>
+
+### Claude Code
+
+```bash
+claude mcp add --scope project e2e -- npx --no-install e2e mcp
+```
+
+Or add to local `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "e2e": {
+      "command": "npx",
+      "args": ["--no-install", "e2e", "mcp"]
+    }
+  }
+}
+```
+
+### Cursor
+
+Add to `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "e2e": {
+      "command": "npx",
+      "args": ["--no-install", "e2e", "mcp"]
+    }
+  }
+}
+```
+
+### Codex
+
+Add to local `.codex/config.toml`:
+
+```toml
+[mcp_servers.e2e]
+command = "npx"
+args = ["--no-install", "e2e", "mcp"]
+```
+
+To target a running local `apps/web` server during an MCP session, pass
+`E2E_APP_URL=http://localhost:7803` in the MCP server environment.
+
+## Supply-chain notes
+
+`e2e`, `@e2e-dev/core`, and `@e2e-dev/web` are Apache-2.0 packages published via
+GitHub Actions OIDC trusted publishing from `e2e-inc/e2e` with SLSA Provenance
+v1 attestations and zero lifecycle install scripts (`preinstall`/`install`/`postinstall`).
+They are installed through `bun add -D` and obey the repository's
+`minimumReleaseAge` policy in `bunfig.toml` without requiring
+`trustedDependencies` or release-age exemptions.

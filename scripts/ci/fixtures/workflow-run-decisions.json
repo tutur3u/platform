@@ -47,6 +47,7 @@
   "docker-setup-check.yaml": ["path-filters"],
   "docs-seo-check.yaml": ["planner-job"],
   "drive-cloudflare-artifact.yaml": ["path-filters"],
+  "e2e-framework-report-only.yaml": ["path-filters"],
   "e2e-smoke-report-only.yaml": ["path-filters"],
   "e2e-tests.yaml": ["path-filters"],
   "employee-schema-contract.yaml": ["always"],
