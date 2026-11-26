@@ -88,14 +88,17 @@ class MindProductionInputsTest(unittest.TestCase):
             "github.ref == 'refs/heads/main' && "
             "(github.event_name == 'push' || github.event_name == 'workflow_dispatch')"
         )
-        production_if = next(line for line in self.cutover.splitlines() if "if:" in line)
-        fixture_if = next(line for line in self.fixture.splitlines() if "if:" in line)
+        production_if = next(line for line in self.cutover.splitlines() if line.lstrip().startswith("if:"))
+        fixture_if = next(line for line in self.fixture.splitlines() if line.lstrip().startswith("if:"))
         self.assertIn(f"&& ({trusted})", production_if)
         self.assertIn(f"&& !({trusted})", fixture_if)
         self.assertIn(MIND_FIXTURE_URL, self.fixture)
         self.assertIn(MIND_FIXTURE_KEY, self.fixture)
         self.assertIn("bun run build:cloudflare", self.fixture)
-        for forbidden in ("vars.PRODUCTION_", " seal ", " pack ", "upload-artifact"):
+        for forbidden in (
+            "vars.", "secrets.", "mind-native-artifact.py", " seal ", " pack ",
+            "upload-artifact", " deploy ", " publish ", "PLATFORM_BUILD_ENVIRONMENT: production",
+        ):
             self.assertNotIn(forbidden, self.fixture)
 
     def test_cutover_bakes_the_apex_app_url(self):

@@ -194,7 +194,7 @@ jobs:
 
   mind-cutover-artifact:
     needs: [check-ci, affected-gate]
-    if: ${{ ((needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) && (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) }}
+    if: ${{ ((needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -313,7 +313,7 @@ jobs:
 
   mind-cutover-fixture:
     needs: [check-ci, affected-gate]
-    if: ${{ ((needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))) && !(github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) }}
+    if: ${{ ((needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && !(github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -325,7 +325,6 @@ jobs:
       NEXT_PUBLIC_APP_URL: https://tuturuuu.com/mind
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       VITE_MIND_NATIVE_PROFILE: production
-      WRANGLER_SEND_METRICS: 'false'
       NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
