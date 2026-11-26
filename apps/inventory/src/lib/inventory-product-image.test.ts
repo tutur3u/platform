@@ -109,7 +109,12 @@ describe('inventory product image paths', () => {
   );
 
   it('keeps the signed URL when the storage key has no workspace UUID', () => {
-    for (const fullPath of [null, IMAGE, `personal/${IMAGE}`, `${WS}/other.png`]) {
+    for (const fullPath of [
+      null,
+      IMAGE,
+      `personal/${IMAGE}`,
+      `${WS}/other.png`,
+    ]) {
       expect(
         inventoryUploadStoredValue({
           fullPath,

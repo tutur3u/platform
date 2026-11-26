@@ -91,9 +91,7 @@ export function parseStoredInventoryProductImage(
 
   const mediaIndex = segments.findIndex(
     (segment, index) =>
-      index > 0 &&
-      segment === 'inventory' &&
-      segments[index + 1] === 'media'
+      index > 0 && segment === 'inventory' && segments[index + 1] === 'media'
   );
   if (mediaIndex < 1) return null;
   const path = segments.slice(mediaIndex).join('/');

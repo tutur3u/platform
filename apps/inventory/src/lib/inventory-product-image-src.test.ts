@@ -45,7 +45,11 @@ describe('inventory product image src', () => {
   it('routes stored workspace images, including slug-named ones', () => {
     for (const avatarUrl of [share(IMAGE), share(IMAGE, 'personal')]) {
       expect(
-        inventoryProductImageSrc({ avatarUrl, productId: 'p-1', wsId: 'personal' })
+        inventoryProductImageSrc({
+          avatarUrl,
+          productId: 'p-1',
+          wsId: 'personal',
+        })
       ).toBe('/api/v1/workspaces/personal/products/p-1/image');
     }
     expect(
@@ -56,7 +60,11 @@ describe('inventory product image src', () => {
       })
     ).toBe('https://cdn.tuturuuu.com/a.png');
     expect(
-      inventoryProductImageSrc({ avatarUrl: share(IMAGE), productId: null, wsId: WS })
+      inventoryProductImageSrc({
+        avatarUrl: share(IMAGE),
+        productId: null,
+        wsId: WS,
+      })
     ).toBe(share(IMAGE));
     expect(
       inventoryProductImageSrc({ avatarUrl: null, productId: 'p', wsId: WS })

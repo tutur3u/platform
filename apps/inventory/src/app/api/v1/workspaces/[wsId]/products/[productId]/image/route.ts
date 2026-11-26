@@ -121,9 +121,8 @@ async function storedWorkspaceAliases(
   wsId: string,
   avatarUrl: string | null | undefined
 ): Promise<string[]> {
-  const workspace = parseStoredInventoryProductImage(
-    avatarUrl
-  )?.workspace.toLowerCase();
+  const workspace =
+    parseStoredInventoryProductImage(avatarUrl)?.workspace.toLowerCase();
   if (
     !workspace ||
     !(INVENTORY_WORKSPACE_SLUGS as readonly string[]).includes(workspace)
