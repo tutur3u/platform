@@ -2,7 +2,6 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
-import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
 import { useUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
@@ -80,11 +79,16 @@ export function TaskDialogManager({
   const previousStandaloneTaskIdRef = useRef(standaloneTaskId);
   const fullPage = openMode === 'page' && state.mode === 'edit';
 
-  // Code warm-up, not data: the first opened task should not wait on it.
-  const browserIdle = useAfterFirstPaint();
   useEffect(() => {
-    if (browserIdle) void loadTaskEditDialog().catch(() => {});
-  }, [browserIdle]);
+    // Code warm-up, not data: the first opened task should not wait on it.
+    const warm = () => void loadTaskEditDialog().catch(() => {});
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(warm, { timeout: 5_000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(warm, 2_000);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     const leftStandalonePage =
