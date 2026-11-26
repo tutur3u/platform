@@ -1196,10 +1196,12 @@ next token.
   automatically** is on.
   Media locks apply to guests, and everyone sees the guest marker described
   under Participant identity markers.
-- Each network may attempt 60 guest joins per meeting link every ten minutes,
-  so a class behind one school NAT can join together, and 120 guest joins an
-  hour across all meetings, so one address cannot mint guests over many
-  meetings (one school running two or three rooms fits). A network is an
+- Each network may attempt 200 guest joins per meeting link every ten
+  minutes, so a class of about 50 guests behind one school NAT can join in a
+  burst with retries, reconnects after a phone locks and failed Turnstile
+  checks, and 400 guest joins an hour across all meetings, so one address
+  cannot mint guests over many meetings (that class plus a second room on
+  the same network fits). A network is an
   IPv4 address or an IPv6 /64. Failed checks count, and an attempt over
   either limit is refused with 429 `MEET_GUEST_RATE_LIMITED` and a
   `Retry-After`, before Turnstile runs. The shared abuse-guard store decides
@@ -2206,15 +2208,17 @@ Operating requirements:
      writes a minute, 300 an hour, 1,500 a day
      (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`), so a guest
      over it charges nothing shared;
-  2. the network: 40 guests' minute and hour budget combined, so a classroom
-     behind one school NAT keeps working while many sessions from one address
-     stay bounded. An IPv6 client counts as its /64, so rotating addresses
-     inside it opens no fresh cap;
+  2. the network: 75 guests' minute and hour budget combined (9,000 reads a
+     minute, 300,000 an hour; 2,250 writes a minute, 22,500 an hour), so a
+     class of about 50 guests behind one school NAT keeps working at the
+     call's worst-case polling with at least 1.5x headroom while many sessions from one
+     address stay bounded. An IPv6 client counts as its /64, so rotating
+     addresses inside it opens no fresh cap;
   3. the meeting: 100 guests' minute and hour budget combined, so minting
      guest sessions for one meeting cannot multiply its traffic. A network
-     over its own cap never charges it, so one network adds at most 4,800
-     reads a minute to a meeting and exhausting a meeting's 12,000 takes at
-     least three networks.
+     over its own cap never charges it, so one network adds at most 9,000
+     reads a minute to a meeting and exhausting a meeting's 12,000 takes more
+     than one network.
 
   Every
   `API_PROXY_*` limit override must be a plain positive integer; a value such
@@ -2226,7 +2230,12 @@ Operating requirements:
   `packages/utils/src/__tests__/api-proxy-guest-budget.test.ts`,
   `packages/meet-core/src/features/call/lib/guest-rate-limit-actor.test.ts` and
   `guest-polling-budget.test.ts` (two guests behind one address through a
-  60-minute class at the call's polling intervals).
+  60-minute class at the call's polling intervals) and
+  `guest-network-aggregate.test.ts` (50 guests behind one network through a
+  60-minute class at the worst-case polling: a live poll, the classroom pen
+  board, the board list, a running transcript and Room Mira, with board
+  ticket renewals, votes and pen strokes as writes; peak demand is 3,100 reads
+  a minute and 186,000 an hour, 200 writes a minute and 12,000 an hour).
 - In-call polling intervals: polls every 15 seconds, or every 3 seconds while
   the polls panel is open or a poll runs; transcript consent every 5 seconds
   while a transcript runs or a choice is needed, else every 20 seconds; Room

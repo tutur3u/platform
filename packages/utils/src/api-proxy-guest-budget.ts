@@ -20,7 +20,8 @@
  * - the meeting, a larger fixed multiple of one guest, so minting many guest
  *   sessions for one meeting never multiplies its traffic past that cap. A
  *   network over its own cap never charges it, so one network adds at most
- *   its own cap to a meeting and starving a meeting takes several networks.
+ *   its own cap to a meeting and exhausting a meeting takes more than one
+ *   network.
  */
 import type { NextRequest, NextResponse } from 'next/server';
 import type { RateLimitConfig, RateLimitProfile } from './api-proxy-guard';
@@ -49,8 +50,13 @@ export type GuestActorResolver = (
 
 export const GUEST_CALLER_CLASS = 'guest';
 
-/** Guests sharing one address, e.g. a classroom behind one school NAT. */
-export const GUEST_ADDRESS_MULTIPLIER = 40;
+/**
+ * Guests' worth of traffic one network may carry: a class of about 50 guests
+ * behind one school NAT at the call's worst-case polling, with at least 1.5x
+ * headroom. It stays below the meeting's multiple, so one network alone never
+ * exhausts a meeting.
+ */
+export const GUEST_ADDRESS_MULTIPLIER = 75;
 /** Guests in one meeting whose combined traffic one meeting may carry. */
 export const GUEST_SCOPE_MULTIPLIER = 100;
 

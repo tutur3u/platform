@@ -295,7 +295,7 @@ it('refuses a spent or foreign puzzle pass', async () => {
   expect(mocks.risk).not.toHaveBeenCalled();
 });
 
-it('refuses the 61st join from one network with the existing rate-limit code', async () => {
+it('refuses the join after the limit from one network with the existing rate-limit code', async () => {
   const actual = await vi.importActual<
     typeof import('@tuturuuu/meet-core/features/call/lib/guest-rate-limit')
   >('@tuturuuu/meet-core/features/call/lib/guest-rate-limit');

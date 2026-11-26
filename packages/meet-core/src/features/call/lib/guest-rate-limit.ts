@@ -8,19 +8,20 @@ import { parsePositiveIntEnv } from '@tuturuuu/utils/positive-int-env';
 
 /**
  * Guest join attempts per network for one meeting link per window: an IPv4
- * address, or an IPv6 /64 (`networkSubject`). A
- * classroom behind one school NAT joins together, so this covers a full class
- * plus retries. Turnstile, the name checks and host admission stay the gate
- * for real access; this only bounds how fast one network can mint sessions.
+ * address, or an IPv6 /64 (`networkSubject`). It is sized for one class of
+ * about 50 guests behind one school NAT joining in a burst, with retries,
+ * reconnects after a phone locks and failed Turnstile checks all counting.
+ * Turnstile, the name checks and host admission stay the gate for real
+ * access; this only bounds how fast one network can mint sessions.
  */
-export const MEET_GUEST_JOIN_LIMIT = 60;
+export const MEET_GUEST_JOIN_LIMIT = 200;
 export const MEET_GUEST_JOIN_WINDOW_MS = 10 * 60_000;
 /**
  * Guest join attempts per network across every meeting per window, so one
- * address cannot mint guests over many meetings; it covers one school running
- * two or three rooms.
+ * address cannot mint guests over many meetings; it covers that class plus a
+ * second room on the same network.
  */
-export const MEET_GUEST_JOIN_NETWORK_LIMIT = 120;
+export const MEET_GUEST_JOIN_NETWORK_LIMIT = 400;
 export const MEET_GUEST_JOIN_NETWORK_WINDOW_MS = 60 * 60_000;
 /**
  * Overrides for the two limits, parsed like the proxy's limits: anything but

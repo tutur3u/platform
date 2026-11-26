@@ -25,13 +25,13 @@ describe('meet guest join limit', () => {
         windows: [
           {
             key: `join:${meetingId}:10m`,
-            limit: 60,
+            limit: 200,
             windowMs: 600_000,
             algo: 'fixed',
           },
           {
             key: 'join:all-meetings:1h',
-            limit: 120,
+            limit: 400,
             windowMs: 3_600_000,
             algo: 'fixed',
           },
@@ -82,24 +82,29 @@ describe('meet guest join limit', () => {
   const join = (meeting: string, at: number, network = '203.0.113.4') =>
     checkMeetGuestJoinLimit({ meetingId: meeting, network }, null, () => at);
 
-  it('lets a class of 40 behind one IP join one meeting within ten minutes', async () => {
-    for (let guest = 0; guest < 40; guest++)
-      await expect(join(meetingId, start + guest * 1000)).resolves.toEqual({
-        ok: true,
-      });
+  it('lets a class of 50 behind one IP join in a burst with retries', async () => {
+    // 50 guests in three minutes; about one in five tries again (a failed
+    // Turnstile check or a reconnect after the phone locked).
+    const attempts = 50 + 10;
+    for (let attempt = 0; attempt < attempts; attempt++)
+      await expect(
+        join(meetingId, start + Math.floor((attempt * 180_000) / attempts))
+      ).resolves.toEqual({ ok: true });
   });
 
-  it('refuses the 61st join in the same meeting and window', async () => {
+  it('refuses the join after the limit in the same meeting and window', async () => {
+    expect(MEET_GUEST_JOIN_LIMIT).toBe(200);
     for (let guest = 0; guest < MEET_GUEST_JOIN_LIMIT; guest++)
       await expect(join(meetingId, start + guest * 1000)).resolves.toEqual({
         ok: true,
       });
-    await expect(join(meetingId, start + 61_000)).resolves.toMatchObject({
+    const after = start + MEET_GUEST_JOIN_LIMIT * 1000;
+    await expect(join(meetingId, after)).resolves.toMatchObject({
       ok: false,
     });
     // Another meeting from the same IP still has room.
     await expect(
-      join('6c0e63bb-0a3d-4c43-9a3e-1d3b1f2a9e10', start + 62_000)
+      join('6c0e63bb-0a3d-4c43-9a3e-1d3b1f2a9e10', after + 1000)
     ).resolves.toEqual({ ok: true });
     // The next ten-minute window opens again.
     await expect(
@@ -109,13 +114,15 @@ describe('meet guest join limit', () => {
 
   it('holds the cross-meeting ceiling for one IP across many meetings', async () => {
     let at = start;
-    // 40 joins in each of three rooms uses the whole hour's ceiling.
-    for (let room = 0; room < 3; room++)
-      for (let guest = 0; guest < 40; guest++)
+    // Two rooms at their ten-minute limit use the whole hour's ceiling.
+    expect(MEET_GUEST_JOIN_NETWORK_LIMIT).toBe(400);
+    const perRoom = MEET_GUEST_JOIN_NETWORK_LIMIT / 2;
+    for (let room = 0; room < 2; room++)
+      for (let guest = 0; guest < perRoom; guest++)
         await expect(join(`room-${room}`, (at += 1000))).resolves.toEqual({
           ok: true,
         });
-    expect(MEET_GUEST_JOIN_NETWORK_LIMIT).toBe(120);
+    // The 401st join in the hour, in a meeting with room to spare.
     const refused = await join('room-3', (at += 1000));
     expect(refused).toMatchObject({ ok: false });
     // Until the hour ends.
