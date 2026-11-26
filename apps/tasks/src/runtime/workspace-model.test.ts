@@ -118,7 +118,10 @@ describe('workspaceModel', () => {
     await vi.waitFor(() =>
       expect(mocks.readShellProfile).toHaveBeenCalledWith(user)
     );
-    expect(mocks.getPermissions).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).toHaveBeenCalledWith({
+      user,
+      wsId: 'personal',
+    });
     finishWorkspace?.(workspace);
 
     await expect(model).resolves.toMatchObject({
@@ -127,6 +130,34 @@ describe('workspaceModel', () => {
       profile: { id: 'user-1' },
       canManageCycles: true,
     });
+  });
+
+  it('falls back to the resolved workspace id for permissions', async () => {
+    mocks.getPermissions
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ containsPermission: () => false });
+
+    await expect(workspaceModel('personal')).resolves.toMatchObject({
+      canManageCycles: false,
+    });
+    expect(mocks.getPermissions).toHaveBeenLastCalledWith({
+      user,
+      wsId: 'ws-1',
+    });
+  });
+
+  it('does not use early permissions when the guard rejects', async () => {
+    mocks.getPermissions.mockRejectedValueOnce(new Error('offline'));
+    mocks.getRequestWorkspace.mockResolvedValueOnce({
+      ...workspace,
+      joined: false,
+    });
+    mocks.getPendingWorkspaceInvitation.mockResolvedValueOnce(null);
+    mocks.redirect.mockImplementationOnce(() => {
+      throw new Error('REDIRECT');
+    });
+
+    await expect(workspaceModel('ws-1')).rejects.toThrow('REDIRECT');
   });
 
   it('keeps the guard decision when the early profile read fails', async () => {

@@ -25,6 +25,10 @@ export async function workspaceModel(id: string) {
   // settled and unused.
   const profilePromise = readShellProfile(user);
   profilePromise.catch(() => {});
+  // Permissions resolve the route id and authorize the actor on their own, so
+  // they overlap the workspace guard too and are read only once it passes.
+  const permissionsPromise = getPermissions({ user, wsId: id });
+  permissionsPromise.catch(() => {});
   const workspace = await getRequestWorkspace(id, { useAdmin: true, user });
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, await headers());
@@ -34,10 +38,17 @@ export async function workspaceModel(id: string) {
   if (!workspace.joined) redirect('/');
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
-  const [permissions, profile] = await Promise.all([
-    getPermissions({ user, wsId: workspace.id }),
+  const [routePermissions, profile] = await Promise.all([
+    permissionsPromise,
     profilePromise,
   ]);
+  // A route id the permission resolver does not know falls back to the
+  // workspace id the guard resolved.
+  const permissions =
+    routePermissions ??
+    (id === workspace.id
+      ? null
+      : await getPermissions({ user, wsId: workspace.id }));
   return {
     kind: 'workspace' as const,
     workspace,
