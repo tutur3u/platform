@@ -59,6 +59,34 @@ function show(props: Partial<Parameters<typeof CallShell>[0]> = {}) {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  sessionStorage.clear();
+  localStorage.clear();
+});
+
+const sessionDevice = (call: number) =>
+  (mocks.token.mock.calls[call] as unknown[] | undefined)?.[2] as
+    | { deviceId: string }
+    | undefined;
+
+it('asks for the session as the same device after the tab reloads', () => {
+  show();
+  const first = sessionDevice(0)?.deviceId;
+  expect(first).toBeTruthy();
+  expect(sessionStorage.getItem('meet:device:meeting:account')).toBe(first);
+  // Unmounting drops the page's claim the way unloading does.
+  cleanup();
+  show();
+  expect(sessionDevice(1)?.deviceId).toBe(first);
+});
+
+it('asks as a new device when another live page holds the tab id', () => {
+  sessionStorage.setItem('meet:device:meeting:account', 'copied-id');
+  localStorage.setItem(
+    'meet:device-claim:copied-id',
+    JSON.stringify({ nonce: 'original-tab', at: Date.now() })
+  );
+  show();
+  expect(sessionDevice(0)?.deviceId).not.toBe('copied-id');
 });
 
 it('keeps the full-screen loading step while the redesigned flow is off', () => {

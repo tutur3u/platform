@@ -545,6 +545,35 @@ One `MediaStream` is accumulated per participant, since their audio and video
 arrive as separate tracks but belong to one tile. The map and the streams are
 both cleared on reconnect, because mids are only meaningful within a session.
 
+## Devices and tabs
+
+Each browser tab joins a call as one device. The device id is kept per tab in
+`sessionStorage` under `meet:device:<meetingId>:<accountId>`, where the
+account is the signed-in user or the guest identity (`guest` when neither is
+known), so:
+
+- **A reload rejoins as the same device.** The token request carries the same
+  id, the room finds no other device for the account, and the connection
+  resumes the presence the room holds through its 30-second grace period. The
+  host sees one entry, and the reloaded tab does not ask "You're already in
+  this meeting".
+- **A new tab is a new device.** Its `sessionStorage` starts empty, so while
+  the account is in the call elsewhere the room offers **Switch to this
+  device** or **Join as another device**.
+- **A duplicated tab is a new device too.** Duplicating copies
+  `sessionStorage`, so each live page also holds a claim on its id in
+  `localStorage` (`meet:device-claim:<deviceId>`), renewed every 15 seconds. A
+  page whose stored id is claimed by another live page mints a new id. A page
+  drops its claim on `pagehide` and when the call unmounts; a claim nobody
+  renews for 75 seconds is treated as free.
+- **Without storage** (denied or unavailable) every load gets a fresh random
+  id and joins as a new device.
+
+The id stays in the browser; the realtime protocol and the room's one-device
+check are unchanged. Covered by
+[`tab-device-id.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/lib/tab-device-id.test.ts)
+and `device-session-gate.test.tsx`.
+
 ## Reconnection
 
 Signaling drops are expected: servers restart, networks blip, laptops sleep. The

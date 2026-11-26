@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type ComponentProps, useEffect, useState } from 'react';
+import { useTabDeviceId } from '../hooks/use-tab-device-id';
 import { retryStartup, startupErrorKey } from '../lib/startup-error';
 import { NameSetupPrejoin } from '../prejoin/name-setup-prejoin';
 import { PrejoinConnecting } from '../prejoin/prejoin-connecting';
@@ -62,7 +63,8 @@ function DeviceSessionGate({
 }: CallShellProps & { nameSetup?: CallShellNameSetup; prejoin?: boolean }) {
   const t = useTranslations('meet.call');
   const pathname = usePathname();
-  const [deviceId] = useState(() => crypto.randomUUID());
+  // Kept across reloads of this tab, so a reload resumes the same device.
+  const deviceId = useTabDeviceId(props.meetingId, props.accountId);
   const [mode, setMode] = useState<'switch' | 'additional' | undefined>();
   // Download media controls alongside the device check, not before first paint.
   useEffect(() => {
