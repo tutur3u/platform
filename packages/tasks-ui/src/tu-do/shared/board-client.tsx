@@ -155,49 +155,78 @@ export function BoardClient({
   > | null>(null);
   // Server-read pages and preferences replace older cached copies, so the
   // columns skip their initial browser request. Rendering only creates
-  // queries nothing observes yet; replacing an older cached copy waits for the
-  // layout effect below, before paint.
+  // queries absent from the cache; replacing an older cached copy waits for
+  // the layout effects below, before paint.
+  const boardWorkspaceKey = initialBoard?.ws_id ?? workspace.id;
+  const preferenceSeed = useMemo(
+    () =>
+      initialBoard?.id === boardId && initialPreferences
+        ? {
+            entries: preferenceSeedEntries(
+              boardWorkspaceKey,
+              initialPreferences
+            ),
+            snapshotAt: initialSnapshotAt,
+          }
+        : null,
+    [
+      boardId,
+      boardWorkspaceKey,
+      initialBoard?.id,
+      initialPreferences,
+      initialSnapshotAt,
+    ]
+  );
+  // Task pages seed once per mount, paired with the time they were read: a
+  // later reload of the same board leaves the live cache (realtime, loaded
+  // pages, local edits) alone.
   const [serverSeed] = useState(() => {
-    if (initialBoard?.id !== boardId) return null;
-    const preferences = initialPreferences
-      ? preferenceSeedEntries(
-          initialBoard.ws_id ?? workspace.id,
-          initialPreferences
-        )
-      : [];
-    for (const { key, data } of preferences) {
-      if (queryClient.getQueryState(key)?.data !== undefined) continue;
-      queryClient.setQueryData(key, data, { updatedAt: initialSnapshotAt });
-    }
-    const tasks =
-      initialListPages &&
-      isServerCopyNewer(queryClient, ['tasks', boardId], initialSnapshotAt)
-        ? seedFromFirstListPages(initialListPages)
-        : null;
-    return { preferences, tasks };
-  });
-  useLayoutEffect(() => {
-    if (!serverSeed) return;
-    for (const { key, data } of serverSeed.preferences) {
-      if (isServerCopyNewer(queryClient, key, initialSnapshotAt))
-        queryClient.setQueryData(key, data, { updatedAt: initialSnapshotAt });
-    }
-    const tasksKey = ['tasks', boardId];
-    if (
-      serverSeed.tasks &&
-      isServerCopyNewer(queryClient, tasksKey, initialSnapshotAt)
-    ) {
-      queryClient.setQueryData(tasksKey, serverSeed.tasks.tasks, {
-        updatedAt: initialSnapshotAt,
+    for (const { key, data } of preferenceSeed?.entries ?? []) {
+      if (queryClient.getQueryState(key) !== undefined) continue;
+      queryClient.setQueryData(key, data, {
+        updatedAt: preferenceSeed?.snapshotAt,
       });
     }
-  }, [boardId, initialSnapshotAt, queryClient, serverSeed]);
+    if (initialBoard?.id !== boardId || !initialListPages) return null;
+    return {
+      snapshotAt: initialSnapshotAt,
+      tasks: isServerCopyNewer(
+        queryClient,
+        ['tasks', boardId],
+        initialSnapshotAt
+      )
+        ? seedFromFirstListPages(initialListPages)
+        : null,
+    };
+  });
+  useLayoutEffect(() => {
+    if (!preferenceSeed) return;
+    for (const { key, data } of preferenceSeed.entries) {
+      if (isServerCopyNewer(queryClient, key, preferenceSeed.snapshotAt))
+        queryClient.setQueryData(key, data, {
+          updatedAt: preferenceSeed.snapshotAt,
+        });
+    }
+  }, [preferenceSeed, queryClient]);
+  useLayoutEffect(() => {
+    const tasksKey = ['tasks', boardId];
+    if (
+      serverSeed?.tasks &&
+      isServerCopyNewer(queryClient, tasksKey, serverSeed.snapshotAt)
+    ) {
+      queryClient.setQueryData(tasksKey, serverSeed.tasks.tasks, {
+        updatedAt: serverSeed.snapshotAt,
+      });
+    }
+  }, [boardId, queryClient, serverSeed]);
 
   useEffect(() => {
     // A shared browser keeps only the signed-in user's board snapshots.
     bindTaskBoardCacheSessionEnd();
     if (currentUserId) purgeOtherUserTaskBoardCaches(currentUserId);
-    if (serverSeed?.tasks) return;
+    // Server pages were either seeded or skipped for a newer live cache; the
+    // browser copy is older than both.
+    if (serverSeed) return;
     const snapshot = readTaskBoardCache(cacheScopeId, boardId);
     if (!snapshot) return;
 
@@ -271,7 +300,7 @@ export function BoardClient({
     },
     gcTime: 7 * 24 * 60 * 60_000,
     initialData: serverSeed?.tasks?.tasks ?? cachedSnapshot?.tasks ?? [],
-    initialDataUpdatedAt: serverSeed?.tasks ? initialSnapshotAt : undefined,
+    initialDataUpdatedAt: serverSeed?.tasks ? serverSeed.snapshotAt : undefined,
     refetchOnMount: false,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,

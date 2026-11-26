@@ -266,4 +266,82 @@ describe('BoardClient server seed', () => {
     );
     queryClient.clear();
   });
+
+  it('does not re-apply the mount snapshot when the same board reloads', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const board = {
+      id: 'board-1',
+      ws_id: 'board-ws-uuid',
+      task_lists: [],
+      access_type: 'member',
+    } as any;
+    const view = (snapshotAt: number, name: string) => (
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          currentUserId="user-1"
+          workspace={{ id: 'board-ws-uuid', personal: false } as any}
+          initialBoard={board}
+          initialListPages={{
+            'list-1': {
+              tasks: [{ id: 'task-1', name, list_id: 'list-1' } as any],
+              count: 1,
+            },
+          }}
+          initialSnapshotAt={snapshotAt}
+        />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(view(1_000, 'Mounted'));
+    queryClient.setQueryData(
+      ['tasks', 'board-1'],
+      [{ id: 'task-1', name: 'Edited', list_id: 'list-1' }],
+      { updatedAt: 2_000 }
+    );
+    rerender(view(5_000, 'Reloaded'));
+    await act(async () => {});
+
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([
+      { id: 'task-1', name: 'Edited', list_id: 'list-1' },
+    ]);
+    queryClient.clear();
+  });
+
+  it('ignores the browser copy when a newer live cache wins over server pages', async () => {
+    writeTaskBoardCache('user-1:board-ws-uuid', 'board-1', {
+      board: { id: 'board-1', ws_id: 'board-ws-uuid', task_lists: [] } as any,
+      pagination: {},
+      tasks: [{ id: 'deleted', name: 'Deleted', list_id: 'list-1' } as any],
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    queryClient.setQueryData(['tasks', 'board-1'], [], { updatedAt: 2_000 });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          currentUserId="user-1"
+          workspace={{ id: 'board-ws-uuid', personal: false } as any}
+          initialBoard={
+            {
+              id: 'board-1',
+              ws_id: 'board-ws-uuid',
+              task_lists: [],
+              access_type: 'member',
+            } as any
+          }
+          initialListPages={{ 'list-1': { tasks: [], count: 0 } }}
+          initialSnapshotAt={1_000}
+        />
+      </QueryClientProvider>
+    );
+    await act(async () => {});
+
+    expect(queryClient.getQueryData(['tasks', 'board-1'])).toEqual([]);
+    expect(revalidateLoadedListsMock).not.toHaveBeenCalled();
+    queryClient.clear();
+  });
 });
