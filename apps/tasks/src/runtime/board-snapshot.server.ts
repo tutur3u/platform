@@ -2,7 +2,10 @@ import '@tanstack/react-start/server-only';
 import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { headers } from '@tuturuuu/start-bridge/next/headers';
-import type { WorkspaceTasksResponse } from '@tuturuuu/internal-api';
+import type {
+  WorkspaceTaskBoardDetail,
+  WorkspaceTasksResponse,
+} from '@tuturuuu/internal-api/tasks';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -13,7 +16,6 @@ import {
   BOARD_WORKSPACE_CONFIG_IDS,
   type BoardPreferenceSeed,
 } from '@tuturuuu/tasks-ui/tu-do/shared/board-preference-seed';
-import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { abuseSubject } from '@tuturuuu/utils/abuse-protection/abuse-subject';
 import { isIPBlockedEdge } from '@tuturuuu/utils/abuse-protection/edge';
@@ -22,10 +24,7 @@ import { NextRequest } from '@tuturuuu/start-bridge/next/server';
 import { readTaskBoardDetail } from '../app/api/v1/workspaces/[wsId]/task-boards/[boardId]/board-detail';
 import { readUserSuspension } from '../lib/session-security-lookups';
 
-export type BoardSnapshotBoard = WorkspaceTaskBoard & {
-  access_type?: 'member' | 'guest';
-  task_lists?: { id: string; deleted?: boolean | null }[];
-};
+export type BoardSnapshotBoard = WorkspaceTaskBoardDetail;
 
 export interface BoardSnapshotListPage {
   tasks: NonNullable<WorkspaceTasksResponse['tasks']>;
