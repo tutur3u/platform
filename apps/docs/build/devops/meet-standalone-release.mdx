@@ -113,8 +113,7 @@ variable at release time and passes it as a declared `--var` override; any other
 value fails the frontend deploy step. A Worker var set by hand in the Cloudflare
 dashboard is not a declared override, so the next release drops it.
 
-To roll back, set the repository variable to `false` and dispatch the release
-again.
+To roll it back, see [Rolling back a flag](#rolling-back-a-flag).
 
 ## Guest whiteboard switches
 
@@ -128,8 +127,21 @@ output, `--var NAME:value` to the realtime `wrangler deploy`); any other value
 fails the deploy step. Guests draw on the whiteboard only when both switches are
 `true`.
 
-To roll back, set both repository variables to `false` (or delete them) and
-dispatch the release again for the same SHA.
+To roll them back, see [Rolling back a flag](#rolling-back-a-flag).
+
+## Rolling back a flag
+
+A release refuses a commit that is already live (`MEET_RELEASE_ALREADY_LIVE`)
+and one older than the live commit (`MEET_RELEASE_STALE`), so a flag cannot be
+changed by dispatching the live SHA again. A flag value reaches the Workers only
+with a release of a newer green main commit.
+
+To turn a flag off at once, roll Cloudflare back to the previous Meet app and
+`meet-realtime` version pair captured for the release (see
+[Artifacts and rollback](#artifacts-and-rollback)), which serves both previous
+versions with the flag values they were released with. Then set the repository
+variable to `false` (or delete it) so the next release of a newer green main
+commit keeps the flag off.
 
 ## Artifacts and rollback
 
