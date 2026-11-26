@@ -1,4 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  MIRA_TOOL_ACCESS_POLICY,
+  MIRA_TOOL_PERMISSIONS,
+} from './mira-tool-metadata';
+import { MIRA_TOOL_NAMES } from './mira-tool-names';
 import type { MiraToolContext } from './mira-tool-types';
 import { createMiraStreamTools } from './mira-tools';
 
@@ -78,4 +83,55 @@ it('pins every discovery permission check to one workspace', async () => {
   );
   expect(authorize.mock.calls.length).toBeGreaterThan(1);
   expect(authorize.mock.calls.every(([wsId]) => wsId === 'first')).toBe(true);
+});
+
+describe('Mira tool access policy coverage', () => {
+  it('classifies every registered Mira tool explicitly and requires manage_drive for create_qr_code', () => {
+    for (const toolName of MIRA_TOOL_NAMES) {
+      expect(MIRA_TOOL_ACCESS_POLICY[toolName]).toBeDefined();
+    }
+    expect(MIRA_TOOL_PERMISSIONS.create_qr_code).toBe('manage_drive');
+    expect(MIRA_TOOL_ACCESS_POLICY.create_qr_code).toBe('workspace_permission');
+  });
+
+  it('enforces authorizeWorkspaceTools on workspace_member tools such as time-tracking category mutations', async () => {
+    const authorize = vi.fn(async () => false);
+    const ctx = {
+      wsId: 'shared-ws',
+      userId: 'guest-user',
+      supabase: {},
+      authorizeWorkspaceTools: authorize,
+    } as unknown as MiraToolContext;
+    const tools = createMiraStreamTools(ctx, () => false);
+
+    expect(
+      await invoke(tools, 'delete_time_tracking_category', {
+        categoryId: 'cat-1',
+      })
+    ).toHaveProperty('error');
+    expect(authorize).toHaveBeenCalledWith('shared-ws', []);
+    expect(dispatch).not.toHaveBeenCalled();
+
+    expect(
+      await invoke(tools, 'create_qr_code', { value: 'https://tuturuuu.com' })
+    ).toHaveProperty('error');
+    expect(authorize).toHaveBeenCalledWith('shared-ws', ['manage_drive']);
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('denies workspace operations when authorizeWorkspaceTools is absent', async () => {
+    const ctx = {
+      wsId: 'shared-ws',
+      userId: 'user-1',
+      supabase: {},
+    } as unknown as MiraToolContext;
+    const tools = createMiraStreamTools(ctx, () => false);
+
+    expect(
+      await invoke(tools, 'delete_time_tracking_category', {
+        categoryId: 'cat-1',
+      })
+    ).toHaveProperty('error');
+    expect(dispatch).not.toHaveBeenCalled();
+  });
 });

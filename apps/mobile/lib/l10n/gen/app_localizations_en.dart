@@ -18528,6 +18528,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantReplyFailedAccess => 'Mira can\'t reply here. Check AI credits or workspace access.';
 
   @override
+  String get assistantReplyFailedPlan => 'This model or feature requires a higher plan. Your message is kept so you can switch models or upgrade.';
+
+  @override
+  String get assistantReplyFailedPlanApple => 'This model or feature isn\'t included with your current access. Your message is kept so you can switch models.';
+
+  @override
+  String get assistantReplyFailedCredits => 'You\'ve used all available AI credits for this workspace. Your message is kept so you can retry after topping up or upgrading.';
+
+  @override
+  String get assistantReplyFailedCreditsApple => 'You\'ve used all available AI credits for this workspace. Your message is kept so you can retry once more credits are available.';
+
+  @override
+  String get assistantReplyFailedDailyLimit => 'You\'ve reached today\'s AI usage limit on your current plan. Your message is kept—try again later or upgrade for higher limits.';
+
+  @override
+  String get assistantReplyFailedDailyLimitApple => 'You\'ve reached today\'s AI usage limit with your current access. Your message is kept so you can try again later.';
+
+  @override
+  String get assistantReplyDeniedUpgradeAction => 'Upgrade';
+
+  @override
+  String get assistantReplyDeniedLearnMoreAction => 'Learn more';
+
+  @override
+  String get assistantReplyDeniedInfoTitle => 'Why this request was blocked';
+
+  @override
   String get assistantReplyFailedBusy => 'Mira is busy. Wait a moment, then retry.';
 
   @override

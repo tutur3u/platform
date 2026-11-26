@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/models/assistant_reply_failure.dart';
 import 'package:mobile/features/assistant/widgets/assistant_chat_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_message_receipt.dart';
 import 'package:mobile/features/assistant/widgets/assistant_reply_preview.dart';
@@ -15,6 +16,8 @@ class AssistantTranscriptSection extends StatefulWidget {
     required this.liveState,
     required this.assistantName,
     this.onRetry,
+    this.onOpenBilling,
+    this.onLearnMore,
     this.documentLayout = false,
     this.actorId,
     this.canPersistMessage,
@@ -32,6 +35,8 @@ class AssistantTranscriptSection extends StatefulWidget {
   final AssistantLiveState liveState;
   final String assistantName;
   final VoidCallback? onRetry;
+  final VoidCallback? onOpenBilling;
+  final void Function(AssistantReplyFailure failure)? onLearnMore;
   final String? actorId;
   final bool Function(String)? canPersistMessage;
   final bool Function(String)? needsReactionRefresh;
@@ -189,6 +194,8 @@ class _AssistantTranscriptSectionState
           AssistantChatFeedback(
             state: widget.chatState,
             onRetry: widget.onRetry,
+            onOpenBilling: widget.onOpenBilling,
+            onLearnMore: widget.onLearnMore,
           ),
         if (widget.liveState.userDraft.isNotEmpty ||
             widget.liveState.userTranscript.isNotEmpty)

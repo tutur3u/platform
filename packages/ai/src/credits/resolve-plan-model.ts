@@ -53,7 +53,7 @@ function getDefaultModelField(capability: PlanModelCapability) {
 function getFallbackPlanModelId(
   tier: WorkspaceProductTier,
   capability: PlanModelCapability
-) {
+): string {
   if (capability === 'language') {
     return 'google/gemini-3.1-flash-lite';
   }
@@ -67,6 +67,8 @@ function getFallbackPlanModelId(
     case 'ULTRA':
     case 'ENTERPRISE':
       return 'google/imagen-4.0-generate-001';
+    default:
+      return 'google/imagen-4.0-fast-generate-001';
   }
 }
 
@@ -162,10 +164,10 @@ export async function resolvePlanModel(args: {
     .maybeSingle();
 
   if (allocationError) {
+    console.error('Failed to load AI credit allocation:', allocationError);
     throw new PlanModelResolutionError(
       'NO_ALLOCATION',
-      allocationError.message ||
-        `Failed to load AI credit allocation for ${tier}.`
+      'AI credits are not enabled for this workspace plan.'
     );
   }
 
@@ -199,9 +201,10 @@ export async function resolvePlanModel(args: {
     .in('id', Array.from(candidateIds));
 
   if (modelsError) {
+    console.error('Failed to load AI gateway model details:', modelsError);
     throw new PlanModelResolutionError(
       'DEFAULT_MODEL_INVALID',
-      modelsError.message || 'Failed to load AI gateway model details.'
+      'Failed to load AI gateway model details.'
     );
   }
 

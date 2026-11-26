@@ -8,11 +8,15 @@ const mocks = vi.hoisted(() => ({
   createMiraStreamTools: vi.fn(),
   getPermissions: vi.fn(),
   resolveWorkspaceContextState: vi.fn(),
+  verifyWorkspaceMembershipType: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),
+  verifyWorkspaceMembershipType: (
+    ...args: Parameters<typeof mocks.verifyWorkspaceMembershipType>
+  ) => mocks.verifyWorkspaceMembershipType(...args),
 }));
 
 vi.mock('../../tools/context-builder', () => ({
@@ -81,6 +85,11 @@ describe('prepareMiraRuntime', () => {
     mocks.createMiraStreamTools.mockReset();
     mocks.getPermissions.mockReset();
     mocks.resolveWorkspaceContextState.mockReset();
+    mocks.verifyWorkspaceMembershipType.mockReset();
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      ok: true,
+      membershipType: 'MEMBER',
+    });
   });
 
   it('does not expose admin-backed tools or read context after workspace verification fails', async () => {

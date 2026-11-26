@@ -35,7 +35,8 @@ vi.mock('../../credits/resolve-plan-model', () => ({
     }
   },
 }));
-vi.mock('./route-credits', () => ({
+vi.mock('./route-credits', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./route-credits')>()),
   performCreditPreflight: mocks.creditPreflight,
 }));
 vi.mock('./route-auth', () => ({

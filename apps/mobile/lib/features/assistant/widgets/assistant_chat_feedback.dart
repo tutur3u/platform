@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/platform/apple_store_policy.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/mira_offline_reads.dart';
@@ -12,9 +14,19 @@ export 'package:mobile/features/assistant/local/assistant_remote_chat_actions.da
     show retryAssistantChat;
 
 class AssistantChatFeedback extends StatelessWidget {
-  const AssistantChatFeedback({required this.state, this.onRetry, super.key});
+  const AssistantChatFeedback({
+    required this.state,
+    this.onRetry,
+    this.onOpenBilling,
+    this.onLearnMore,
+    this.platform,
+    super.key,
+  });
   final AssistantChatState state;
   final VoidCallback? onRetry;
+  final VoidCallback? onOpenBilling;
+  final void Function(AssistantReplyFailure failure)? onLearnMore;
+  final TargetPlatform? platform;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +38,13 @@ class AssistantChatFeedback extends StatelessWidget {
         error: state.error,
         diagnostics: state.diagnostics,
       );
+      final targetPlatform = platform ?? defaultTargetPlatform;
+      final isDenial = assistantReplyFailureIsDenial(failure);
+      final showUpgrade =
+          assistantReplyFailureHasBillingAction(failure) &&
+          !isAppleStorePlatform(targetPlatform) &&
+          onOpenBilling != null;
+      final showLearnMore = isDenial && onLearnMore != null;
       final onRetry = assistantReplyFailureRetryable(failure)
           ? this.onRetry
           : null;
@@ -49,31 +68,74 @@ class AssistantChatFeedback extends StatelessWidget {
               AppSpacing.xs,
               AppSpacing.xs + 2,
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  LucideIcons.circleAlert,
-                  color: colors.destructive,
-                  size: 18,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(
-                    assistantReplyFailureLabel(context.l10n, failure),
-                    key: ValueKey('assistant-reply-failure-${failure.name}'),
-                    style: tokens.typography.uiSm.copyWith(
-                      color: colors.foreground,
+                Row(
+                  children: [
+                    Icon(
+                      isDenial ? LucideIcons.lock : LucideIcons.circleAlert,
+                      color: colors.destructive,
+                      size: 18,
                     ),
-                  ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        assistantReplyFailureLabel(
+                          context.l10n,
+                          failure,
+                          platform: targetPlatform,
+                        ),
+                        key: ValueKey(
+                          'assistant-reply-failure-${failure.name}',
+                        ),
+                        style: tokens.typography.uiSm.copyWith(
+                          color: colors.foreground,
+                        ),
+                      ),
+                    ),
+                    if (state.diagnostics case final diagnostics?)
+                      InternalDiagnosticsCopy(diagnostics: diagnostics),
+                    if (onRetry != null)
+                      AppIconButton(
+                        onPressed: onRetry,
+                        tooltip: context.l10n.commonRetry,
+                        icon: const Icon(LucideIcons.refreshCw),
+                      ),
+                  ],
                 ),
-                if (state.diagnostics case final diagnostics?)
-                  InternalDiagnosticsCopy(diagnostics: diagnostics),
-                if (onRetry != null)
-                  AppIconButton(
-                    onPressed: onRetry,
-                    tooltip: context.l10n.commonRetry,
-                    icon: const Icon(LucideIcons.refreshCw),
+                if (showUpgrade || showLearnMore) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      if (showUpgrade)
+                        AppButton.primary(
+                          key: const ValueKey(
+                            'assistant-reply-failure-upgrade',
+                          ),
+                          size: AppButtonSize.small,
+                          onPressed: onOpenBilling,
+                          child: Text(
+                            context.l10n.assistantReplyDeniedUpgradeAction,
+                          ),
+                        ),
+                      if (showLearnMore)
+                        AppButton.ghost(
+                          key: const ValueKey(
+                            'assistant-reply-failure-learn-more',
+                          ),
+                          size: AppButtonSize.small,
+                          onPressed: () => onLearnMore!(failure),
+                          child: Text(
+                            context.l10n.assistantReplyDeniedLearnMoreAction,
+                          ),
+                        ),
+                    ],
                   ),
+                ],
               ],
             ),
           ),

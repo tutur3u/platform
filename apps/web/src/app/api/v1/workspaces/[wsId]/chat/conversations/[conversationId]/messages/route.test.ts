@@ -356,25 +356,8 @@ describe('native AI chat message route', () => {
     expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();
   });
 
-  it('uses normal assistant mode for external accounts', async () => {
-    mocks.auth.user.email = 'tester@example.com';
-    const privateDetailsQuery = {
-      eq: vi.fn(() => privateDetailsQuery),
-      maybeSingle: vi.fn(async () => ({
-        data: { email: 'tester@example.com' },
-      })),
-      select: vi.fn(() => privateDetailsQuery),
-    };
-    const originalFrom = (
-      mocks.auth.supabase as { from: (table: string) => unknown }
-    ).from;
-    mocks.auth.supabase = {
-      from: vi.fn((table: string) =>
-        table === 'user_private_details'
-          ? privateDetailsQuery
-          : originalFrom(table)
-      ),
-    };
+  it('enables Mira mode for external accounts when requested', async () => {
+    mocks.auth.user.email = 'app-review@tutur3u.com';
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_send_user_message_idempotent') {
         return { message: userMessage, replayed: false };
@@ -396,7 +379,7 @@ describe('native AI chat message route', () => {
     });
 
     expect(response.status).toBe(201);
-    expect(mocks.aiRouteBodies.at(-1)).toMatchObject({ isMiraMode: false });
+    expect(mocks.aiRouteBodies.at(-1)).toMatchObject({ isMiraMode: true });
   });
 
   it('reuses an already persisted native assistant reply on retry', async () => {

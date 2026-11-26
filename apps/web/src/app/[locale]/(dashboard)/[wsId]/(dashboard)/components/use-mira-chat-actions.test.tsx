@@ -357,4 +357,68 @@ describe('Mira create response continuation admission', () => {
     expect(f.params.sendMessageWithCurrentConfig).toHaveBeenCalledTimes(2);
     f.client.clear();
   });
+
+  it('preserves the prompt and reports a denial when chat creation returns 403', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            code: 'CREDITS_EXHAUSTED',
+            error: 'AI credits have been used up',
+          },
+          { status: 403 }
+        )
+      )
+    );
+    const onRequestDenied = vi.fn();
+    const onRestorePrompt = vi.fn();
+    const f = fixture();
+    f.rerender({
+      ...f.params,
+      onRequestDenied,
+      onRestorePrompt,
+    });
+
+    let ok = true;
+    await act(async () => {
+      ok = await f.result.current.createChat(
+        'List three short tasks for a launch demo.'
+      );
+    });
+
+    expect(ok).toBe(false);
+    expect(onRestorePrompt).toHaveBeenCalledWith(
+      'List three short tasks for a launch demo.'
+    );
+    expect(onRequestDenied).toHaveBeenCalledWith({
+      code: 'CREDITS_EXHAUSTED',
+      kind: 'credits',
+      status: 403,
+    });
+    expect(f.result.current.pendingPrompt).toBeNull();
+    expect(f.params.setChat).not.toHaveBeenCalled();
+    expect(mocks.toast).not.toHaveBeenCalled();
+    f.client.clear();
+  });
+
+  it('falls back to setInput when chat creation returns 403 without onRestorePrompt', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ error: 'Workspace access denied' }, { status: 403 })
+        )
+    );
+    const f = fixture();
+
+    await act(async () => {
+      await f.result.current.createChat('Keep my prompt safe');
+    });
+
+    expect(f.params.setInput).toHaveBeenCalledWith('Keep my prompt safe');
+    expect(mocks.toast).toHaveBeenCalledWith('request_denied.permission.title');
+    f.client.clear();
+  });
 });

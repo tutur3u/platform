@@ -513,3 +513,94 @@ export async function releaseFixedAiCreditReservation(
     errorCode: row.error_code ?? null,
   };
 }
+
+export async function settleMeteredAiCreditReservation(
+  reservationId: string,
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    reasoningTokens?: number;
+    metadata?: Record<string, unknown>;
+  },
+  rpcCaller?: CreditReservationRpcCaller
+): Promise<CreditReservationCommitResult> {
+  const sbAdmin = await getRpcCaller(rpcCaller);
+  const wsId =
+    typeof usage.metadata?.wsId === 'string' ? usage.metadata.wsId : null;
+  const userId =
+    typeof usage.metadata?.userId === 'string' ? usage.metadata.userId : null;
+  let inFlightMarked = false;
+  const rpc = (sbAdmin.rpc as (...args: unknown[]) => unknown).bind(
+    sbAdmin
+  ) as (
+    fn: 'settle_metered_ai_credit_reservation',
+    args: {
+      p_reservation_id: string;
+      p_input_tokens: number;
+      p_output_tokens: number;
+      p_reasoning_tokens: number;
+      p_metadata: Json;
+    }
+  ) => Promise<{
+    data: CommitFixedCreditReservationRpcRow[] | null;
+    error: RpcError;
+  }>;
+
+  if (wsId && userId) {
+    inFlightMarked = await incrementAiCreditChargeInFlight({ wsId, userId });
+  }
+
+  let data: CommitFixedCreditReservationRpcRow[] | null = null;
+  let error: RpcError = null;
+  try {
+    const result = await rpc('settle_metered_ai_credit_reservation', {
+      p_reservation_id: reservationId,
+      p_input_tokens: Math.max(0, Math.round(usage.inputTokens)),
+      p_output_tokens: Math.max(0, Math.round(usage.outputTokens)),
+      p_reasoning_tokens: Math.max(0, Math.round(usage.reasoningTokens ?? 0)),
+      p_metadata: (usage.metadata ?? {}) as Json,
+    });
+    data = result.data;
+    error = result.error;
+  } catch (caughtError) {
+    data = null;
+    error = rpcErrorFromUnknown(caughtError);
+  } finally {
+    if (inFlightMarked && wsId && userId) {
+      await decrementAiCreditChargeInFlight({ wsId, userId });
+    }
+  }
+
+  if (error) {
+    console.error('Error settling metered AI credit reservation:', error);
+    return {
+      success: false,
+      creditsDeducted: 0,
+      remainingCredits: 0,
+      errorCode: 'SETTLEMENT_FAILED',
+    };
+  }
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) {
+    return {
+      success: false,
+      creditsDeducted: 0,
+      remainingCredits: 0,
+      errorCode: 'NO_RESULT',
+    };
+  }
+
+  const result = {
+    success: row.success ?? false,
+    creditsDeducted: Number(row.credits_deducted ?? 0),
+    remainingCredits: Number(row.remaining_credits ?? 0),
+    errorCode: row.error_code ?? null,
+  };
+
+  if (result.success && wsId && userId) {
+    await invalidateAiCreditSnapshot({ wsId, userId });
+  }
+
+  return result;
+}

@@ -38,7 +38,11 @@ import {
   toNativeAiUiMessages,
 } from './ai-message-shared';
 
-import { AiStreamError } from './ai-stream-error';
+import {
+  AiDenialError,
+  AiStreamError,
+  extractSafeAiDenial,
+} from './ai-stream-error';
 
 type AiAssistantMessageRow = {
   completion_tokens: number | null;
@@ -133,12 +137,25 @@ export function streamNativeAiConversationResponse({
         write({ messages: persistence.messages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
-        console.error('Failed to stream native Chat AI response', {
-          conversationId: conversation.id,
-          error,
-          userMessageId: userMessage.id,
-        });
+        console.error(
+          'Failed to stream native Chat AI response',
+          error instanceof AiDenialError
+            ? {
+                code: error.code,
+                conversationId: conversation.id,
+                status: error.status,
+                userMessageId: userMessage.id,
+              }
+            : {
+                conversationId: conversation.id,
+                errorName: error instanceof Error ? error.name : 'UnknownError',
+                userMessageId: userMessage.id,
+              }
+        );
         write({
+          ...(error instanceof AiDenialError
+            ? { code: error.code, status: error.status }
+            : {}),
           message: NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
           type: 'error',
         });
@@ -281,12 +298,16 @@ export async function sendNativeAiConversationMessages({
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text().catch(() => '');
+      const denial = extractSafeAiDenial(aiResponse.status, errorText);
       console.error('Native Chat AI response failed', {
         conversationId: conversation.id,
         status: aiResponse.status,
-        errorText,
+        ...(denial ? { code: denial.code } : {}),
       });
-      throw new Error(errorText || 'Failed to send AI chat message');
+      if (denial) {
+        throw denial;
+      }
+      throw new Error('Failed to send AI chat message');
     }
 
     // A provider error may follow a durably saved partial reply. Reconcile

@@ -1257,12 +1257,10 @@ export function createMindStreamTools(
             userId: ctx.userId,
             wsId: ctx.wsId,
           })
-          .catch((error) => ({
-            error:
-              error instanceof Error && error.message
-                ? error.message
-                : 'Patch application failed.',
-          }));
+          .catch((error) => {
+            console.error('Failed to apply Mind patch:', error);
+            return { error: 'Patch application failed.' };
+          });
 
         if (patch && 'error' in patch) {
           return { ok: false, reason: patch.error };
@@ -1440,12 +1438,10 @@ export function createMindStreamTools(
             userId: ctx.userId,
             wsId: ctx.wsId,
           })
-          .catch((error) => ({
-            error:
-              error instanceof Error && error.message
-                ? error.message
-                : 'Patch creation failed.',
-          }));
+          .catch((error) => {
+            console.error('Failed to create Mind patch:', error);
+            return { error: 'Patch creation failed.' };
+          });
 
         if (record && 'error' in record) {
           return { ok: false, reason: record.error };

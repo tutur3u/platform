@@ -7,13 +7,15 @@ import {
   ToolLoopAgent,
 } from 'ai';
 import { z } from 'zod';
-import { capMaxOutputTokensByCredits } from '../../credits/cap-output-tokens';
-import { checkAiCredits, deductAiCredits } from '../../credits/check-credits';
 import {
   GEMINI_31_FLASH_LITE_MODEL,
   isGoogleModelId,
   toBareModelName,
 } from '../../credits/model-mapping';
+import {
+  type NestedBudgetDenialCode,
+  reserveNestedModelBudget,
+} from '../../credits/nested-budget';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
@@ -22,6 +24,8 @@ import { withAiMemory } from '../../memory';
 import type { MiraToolContext } from '../mira-tools';
 
 const PARALLEL_CHECKS_MODEL = GEMINI_31_FLASH_LITE_MODEL;
+const PARALLEL_CHECKS_RESERVATION_PER_CHECK = 5;
+const PARALLEL_CHECKS_MAX_OUTPUT_PER_CHECK = 600;
 
 const ParallelChecksArgsSchema = z.object({
   question: z
@@ -49,28 +53,27 @@ type CheckKind = z.infer<typeof ParallelChecksArgsSchema>['checks'] extends
   ? T
   : never;
 
-type ParallelCheckResult = {
-  label: string;
-  finding: string;
-};
-
 type MeteredUsage = {
   inputTokens: number;
   outputTokens: number;
   reasoningTokens: number;
 };
 
-const CHECK_INSTRUCTIONS: Record<CheckKind, string> = {
-  assumptions:
-    'You identify hidden assumptions, missing premises, and unclear decision points. Return concise findings only.',
-  factuality:
-    'You check whether claims need verification, external evidence, or clearer source attribution. Return concise findings only.',
-  implementation:
-    'You review implementation feasibility, sequencing, interfaces, and likely integration risks. Return concise findings only.',
-  risk: 'You review failure modes, user-impact risks, regressions, and test gaps. Return concise findings only.',
-};
-
 const DEFAULT_CHECKS: CheckKind[] = ['assumptions', 'factuality', 'risk'];
+
+const PARALLEL_DENIAL_MESSAGES: Record<NestedBudgetDenialCode, string> = {
+  ACCESS_DENIED:
+    'Parallel checks are not available. Please check your AI credit settings.',
+  CREDIT_CHECK_FAILED:
+    'AI request budget could not be verified for parallel checks.',
+  CREDITS_EXHAUSTED: 'You have run out of AI credits for parallel checks.',
+  DAILY_LIMIT_REACHED: 'Daily AI credit limit reached for parallel checks.',
+  FEATURE_NOT_ALLOWED:
+    'Parallel checks are not available on your current plan.',
+  MODEL_NOT_ALLOWED:
+    'The parallel-checks model is not enabled for your workspace.',
+  NO_ALLOCATION: 'AI credits are not configured for your workspace.',
+};
 
 function buildPrompt({
   check,
@@ -92,27 +95,6 @@ ${context ? `Relevant context:\n${context}\n\n` : ''}Return:
 - "No material issues" if this perspective has nothing important`;
 }
 
-function getCreditCheckErrorMessage(creditCheck: {
-  errorCode?: string | null;
-  errorMessage?: string | null;
-}) {
-  const errorMessages: Record<string, string> = {
-    CREDIT_CHECK_FAILED: 'AI credit check failed. Please try again.',
-    CREDITS_EXHAUSTED: 'You have run out of AI credits for parallel checks.',
-    FEATURE_NOT_ALLOWED:
-      'Parallel checks are not available on your current plan.',
-    MODEL_NOT_ALLOWED:
-      'The parallel-checks model is not enabled for your workspace.',
-    NO_ALLOCATION: 'AI credits are not configured for your workspace.',
-  };
-
-  return (
-    creditCheck.errorMessage ??
-    errorMessages[creditCheck.errorCode ?? ''] ??
-    'Parallel checks are not available. Please check your AI credit settings.'
-  );
-}
-
 function normalizeTokenCount(value: number | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
   return Math.max(0, Math.trunc(value));
@@ -123,22 +105,13 @@ function extractMeteredUsage(usage: LanguageModelUsage): MeteredUsage {
     inputTokens: normalizeTokenCount(usage.inputTokens),
     outputTokens: normalizeTokenCount(usage.outputTokens),
     reasoningTokens: normalizeTokenCount(
-      usage.outputTokenDetails.reasoningTokens
+      usage.outputTokenDetails?.reasoningTokens
     ),
   };
 }
 
-function getPerCheckMaxOutputTokens(
-  cappedMaxOutput: number | null,
-  checkCount: number
-) {
-  if (cappedMaxOutput === null) return undefined;
-  return Math.max(1, Math.floor(cappedMaxOutput / checkCount));
-}
-
 async function runCheck({
   abortSignal,
-  billingWsId,
   check,
   context,
   maxOutputTokens,
@@ -147,80 +120,50 @@ async function runCheck({
   toolContext,
 }: {
   abortSignal?: AbortSignal;
-  billingWsId: string;
   check: CheckKind;
   context?: string;
-  maxOutputTokens?: number;
+  maxOutputTokens: number;
   modelId: string;
   question: string;
   toolContext: MiraToolContext;
-}): Promise<ParallelCheckResult> {
-  const useGoogleNativeModel = isGoogleModelId(modelId);
+}) {
+  const baseModel = isGoogleModelId(modelId)
+    ? google(toBareModelName(modelId))
+    : gateway(modelId);
+  const model = await withAiMemory({
+    addMemory: 'never',
+    customId: toolContext.chatId
+      ? `${toolContext.chatId}-parallel-check-${check}`
+      : `parallel-check-${check}`,
+    model: baseModel,
+    product: 'mira',
+    source: 'mira_parallel_checks_tool',
+    surface: 'mira_parallel_checks_tool',
+    userId: toolContext.userId,
+    wsId: toolContext.workspaceContext?.wsId ?? toolContext.wsId,
+  });
+
   const agent = new ToolLoopAgent({
-    model: await withAiMemory({
-      addMemory: 'never',
-      customId: toolContext.chatId
-        ? `${toolContext.chatId}-parallel-checks-${check}`
-        : `parallel-checks-${check}`,
-      model: useGoogleNativeModel
-        ? google(toBareModelName(modelId))
-        : gateway(modelId),
-      product: 'mira',
-      source: 'mira_parallel_checks_tool',
-      surface: 'mira_parallel_checks_tool',
-      userId: toolContext.userId,
-      wsId: toolContext.workspaceContext?.wsId ?? toolContext.wsId,
-    }),
-    instructions: CHECK_INSTRUCTIONS[check],
+    instructions:
+      'You are a concise verification subagent. Return short, factual, high-signal notes only. Do not invent facts or tool outputs.',
+    maxOutputTokens,
+    maxRetries: 0,
+    model,
     stopWhen: stepCountIs(2),
-    ...(useGoogleNativeModel
-      ? {
-          providerOptions: {
-            google: {
-              thinkingConfig: {
-                thinkingBudget: 0,
-                includeThoughts: false,
-              },
-            },
-          },
-        }
-      : {}),
+    temperature: 0.2,
   });
 
   const result = await agent.generate({
-    prompt: buildPrompt({ check, context, question }),
     abortSignal,
-    ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
+    prompt: buildPrompt({ check, context, question }),
   });
 
-  const usage = extractMeteredUsage(result.totalUsage);
-  const deduction = await deductAiCredits({
-    wsId: billingWsId,
-    userId: toolContext.userId,
-    modelId,
-    inputTokens: usage.inputTokens,
-    outputTokens: usage.outputTokens,
-    reasoningTokens: usage.reasoningTokens,
-    feature: 'chat',
-    metadata: {
-      source: 'mira_parallel_checks_tool',
-      check,
-      creditWsId: billingWsId,
-      routeWsId: toolContext.wsId,
-      ...(toolContext.chatId ? { chatId: toolContext.chatId } : {}),
-      ...(toolContext.workspaceContext?.wsId
-        ? { workspaceContextWsId: toolContext.workspaceContext.wsId }
-        : {}),
-    },
-  });
-
-  if (!deduction.success) {
-    throw new Error('Failed to deduct AI credits for parallel checks.');
-  }
+  const usage = extractMeteredUsage(result.totalUsage ?? result.usage);
 
   return {
     label: check,
     finding: result.text.trim() || 'No material issues.',
+    usage,
   };
 }
 
@@ -241,58 +184,99 @@ export async function executeParallelChecks(
   const checks = parsed.data.checks ?? DEFAULT_CHECKS;
   const billingWsId = ctx.creditWsId ?? ctx.wsId;
 
+  let modelId: string;
   try {
     const resolvedModel = await resolvePlanModel({
       capability: 'language',
       requestedModel: PARALLEL_CHECKS_MODEL,
       wsId: billingWsId,
     });
-    const modelId = resolvedModel.modelId;
-    const creditCheck = await checkAiCredits(billingWsId, modelId, 'chat', {
-      userId: ctx.userId,
-    });
-
-    if (!creditCheck.allowed) {
+    modelId = resolvedModel.modelId;
+  } catch (error) {
+    if (error instanceof PlanModelResolutionError) {
       return {
         ok: false,
-        error: getCreditCheckErrorMessage(creditCheck),
+        error: 'Parallel checks are not available on your current plan.',
       };
     }
+    return {
+      ok: false,
+      error: 'Parallel checks failed. Please try again.',
+    };
+  }
 
-    const sbAdmin = await createAdminClient();
-    const cappedMaxOutput = await capMaxOutputTokensByCredits(
-      sbAdmin,
-      modelId,
-      creditCheck.maxOutputTokens,
-      creditCheck.remainingCredits
-    );
+  const sbAdmin = await createAdminClient();
+  const samplePrompt = buildPrompt({
+    check: checks[0] ?? 'assumptions',
+    context,
+    question,
+  });
+  const budget = await reserveNestedModelBudget({
+    sbAdmin,
+    wsId: billingWsId,
+    userId: ctx.userId,
+    modelId,
+    feature: 'chat',
+    estimatedInputTokens: Math.max(
+      64,
+      Math.ceil((samplePrompt.length + 180) / 3)
+    ),
+    attemptCount: checks.length,
+    maxReserveCredits: checks.length * PARALLEL_CHECKS_RESERVATION_PER_CHECK,
+    maxOutputTokensLimit: PARALLEL_CHECKS_MAX_OUTPUT_PER_CHECK,
+    metadata: {
+      source: 'mira_parallel_checks_tool',
+      creditWsId: billingWsId,
+      routeWsId: ctx.wsId,
+      ...(ctx.chatId ? { chatId: ctx.chatId } : {}),
+      ...(ctx.workspaceContext?.wsId
+        ? { workspaceContextWsId: ctx.workspaceContext.wsId }
+        : {}),
+    },
+  });
 
-    if (cappedMaxOutput === null && creditCheck.remainingCredits <= 0) {
-      return {
-        ok: false,
-        error: 'You have run out of AI credits for parallel checks.',
-      };
-    }
+  if (!budget.ok) {
+    return {
+      ok: false,
+      error: PARALLEL_DENIAL_MESSAGES[budget.code],
+    };
+  }
 
-    const maxOutputTokens = getPerCheckMaxOutputTokens(
-      cappedMaxOutput,
-      checks.length
-    );
+  const usageTotals = { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 };
 
-    const results = await Promise.all(
+  try {
+    const settledRuns = await Promise.allSettled(
       checks.map((check) =>
         runCheck({
           abortSignal: options?.abortSignal,
-          billingWsId,
           check,
           context,
-          maxOutputTokens,
+          maxOutputTokens: budget.perAttemptMaxOutputTokens,
           modelId,
           question,
           toolContext: ctx,
         })
       )
     );
+
+    const results: Array<{ label: CheckKind; finding: string }> = [];
+    let firstError: unknown = null;
+    for (const entry of settledRuns) {
+      if (entry.status === 'fulfilled') {
+        usageTotals.inputTokens += entry.value.usage.inputTokens;
+        usageTotals.outputTokens += entry.value.usage.outputTokens;
+        usageTotals.reasoningTokens += entry.value.usage.reasoningTokens;
+        results.push({
+          label: entry.value.label,
+          finding: entry.value.finding,
+        });
+      } else if (!firstError) {
+        firstError = entry.reason;
+      }
+    }
+
+    await budget.settle(usageTotals);
+    if (firstError) throw firstError;
 
     const issueCount = results.filter(
       (result) => !/no material issues/i.test(result.finding)
@@ -307,12 +291,7 @@ export async function executeParallelChecks(
       checks: results,
     };
   } catch (error) {
-    if (error instanceof PlanModelResolutionError) {
-      return {
-        ok: false,
-        error: error.message,
-      };
-    }
+    await budget.settle(usageTotals).catch(() => undefined);
 
     if (error instanceof DOMException && error.name === 'AbortError') {
       return {
@@ -321,7 +300,6 @@ export async function executeParallelChecks(
       };
     }
 
-    console.error('executeParallelChecks provider error:', error);
     return {
       ok: false,
       error: 'Parallel checks failed. Please try again.',

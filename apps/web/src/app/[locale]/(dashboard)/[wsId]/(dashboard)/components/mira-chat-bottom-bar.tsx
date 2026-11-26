@@ -12,6 +12,7 @@ import type { CreditSource, ThinkingMode } from './mira-chat-constants';
 import MiraChatInputToolbar from './mira-chat-input-toolbar';
 
 interface MiraChatBottomBarProps {
+  denialBanner?: ReactNode;
   liveControls?: ReactNode;
   liveInputOpen?: boolean;
   liveEntry?: LiveEntryState;
@@ -53,6 +54,7 @@ interface MiraChatBottomBarProps {
 }
 
 export function MiraChatBottomBar({
+  denialBanner,
   liveControls,
   liveInputOpen,
   liveEntry,
@@ -96,6 +98,7 @@ export function MiraChatBottomBar({
       data-mira-composer=""
       className="relative z-10 flex min-w-0 max-w-full shrink-0 flex-col gap-2 p-3 sm:p-4"
     >
+      {denialBanner}
       <div
         data-mira-toolset=""
         hidden={!voiceActive && !toolbarShown}

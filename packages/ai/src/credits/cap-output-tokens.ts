@@ -2,35 +2,12 @@ import type { SupabaseClient } from '@tuturuuu/supabase';
 import { AI_REQUEST_MAX_OUTPUT_TOKENS } from './constants';
 import { resolveGatewayModelId } from './model-mapping';
 
-/**
- * Query the gateway model's output price per token from the database.
- * Returns the flat output_price_per_token. For tiered pricing, returns
- * the highest valid tier cost as a conservative upper bound.
- */
-async function getOutputPricePerToken(
-  sbAdmin: SupabaseClient,
-  modelId: string
-): Promise<number | null> {
-  const gatewayId = resolveGatewayModelId(modelId);
-  const privateDb = sbAdmin.schema('private');
-
-  const { data, error } = await privateDb
-    .from('ai_gateway_models')
-    .select('output_price_per_token, output_tiers')
-    .or(`id.eq.${gatewayId},id.eq.google/${modelId}`)
-    .eq('is_enabled', true)
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  // Without input-tier context, budget against the most expensive output tier.
-  if (
-    data.output_tiers &&
-    Array.isArray(data.output_tiers) &&
-    data.output_tiers.length > 0
-  ) {
-    const costs = data.output_tiers.map((tier) => {
+function resolveHighestTierCost(
+  tiers: unknown,
+  fallbackPrice: number | null | undefined
+): number | null {
+  if (tiers && Array.isArray(tiers) && tiers.length > 0) {
+    const costs = tiers.map((tier) => {
       const cost = (tier as { cost?: unknown } | null)?.cost;
       return typeof cost === 'number' ||
         (typeof cost === 'string' && cost.trim() !== '')
@@ -40,8 +17,146 @@ async function getOutputPricePerToken(
     if (costs.some((cost) => !Number.isFinite(cost) || cost <= 0)) return null;
     return Math.max(...costs);
   }
+  return fallbackPrice ?? null;
+}
 
-  return data.output_price_per_token ?? null;
+export type ModelTokenPrices = {
+  inputPricePerToken: number | null;
+  outputPricePerToken: number | null;
+  searchPrice?: number | null;
+};
+
+export type PlanBudgetPolicy = {
+  markupMultiplier: number;
+  dailyLimit: number | null;
+  maxRequestsPerDay: number | null;
+};
+
+export async function readPlanBudgetPolicy(
+  sbAdmin: SupabaseClient,
+  tier: string
+): Promise<PlanBudgetPolicy | null> {
+  if (typeof sbAdmin?.from !== 'function') {
+    return { markupMultiplier: 1.0, dailyLimit: null, maxRequestsPerDay: null };
+  }
+  const { data, error } = await sbAdmin
+    .from('ai_credit_plan_allocations')
+    .select('markup_multiplier, daily_limit, max_requests_per_day')
+    .eq('tier', tier as never)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  const rawMarkup = data.markup_multiplier;
+  const markupMultiplier =
+    typeof rawMarkup === 'number' &&
+    Number.isFinite(rawMarkup) &&
+    rawMarkup >= 1
+      ? rawMarkup
+      : 1.0;
+
+  return {
+    markupMultiplier,
+    dailyLimit:
+      typeof data.daily_limit === 'number' && Number.isFinite(data.daily_limit)
+        ? data.daily_limit
+        : null,
+    maxRequestsPerDay:
+      typeof data.max_requests_per_day === 'number' &&
+      Number.isFinite(data.max_requests_per_day)
+        ? data.max_requests_per_day
+        : null,
+  };
+}
+
+export async function readModelTokenPrices(
+  sbAdmin: SupabaseClient,
+  modelId: string
+): Promise<ModelTokenPrices> {
+  const gatewayId = resolveGatewayModelId(modelId);
+  const privateDb = sbAdmin.schema('private');
+
+  const { data, error } = await privateDb
+    .from('ai_gateway_models')
+    .select(
+      'input_price_per_token, input_tiers, output_price_per_token, output_tiers, search_price'
+    )
+    .or(`id.eq.${gatewayId},id.eq.google/${modelId}`)
+    .eq('is_enabled', true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) {
+    return {
+      inputPricePerToken: null,
+      outputPricePerToken: null,
+      searchPrice: null,
+    };
+  }
+
+  return {
+    inputPricePerToken: resolveHighestTierCost(
+      data.input_tiers,
+      data.input_price_per_token
+    ),
+    outputPricePerToken: resolveHighestTierCost(
+      data.output_tiers,
+      data.output_price_per_token
+    ),
+    searchPrice:
+      typeof data.search_price === 'number' &&
+      Number.isFinite(data.search_price) &&
+      data.search_price >= 0
+        ? data.search_price
+        : 0,
+  };
+}
+
+/**
+ * Query the gateway model's output price per token from the database.
+ * Returns the flat output_price_per_token. For tiered pricing, returns
+ * the highest valid tier cost as a conservative upper bound.
+ */
+async function getOutputPricePerToken(
+  sbAdmin: SupabaseClient,
+  modelId: string
+): Promise<number | null> {
+  const prices = await readModelTokenPrices(sbAdmin, modelId);
+  return prices.outputPricePerToken;
+}
+
+/** Estimate credit cost for token usage using the gateway pricing formula. */
+export function estimateTokenCredits({
+  inputTokens = 0,
+  outputTokens = 0,
+  reasoningTokens = 0,
+  inputPricePerToken,
+  outputPricePerToken,
+  markupMultiplier = 1.0,
+}: {
+  inputTokens?: number;
+  outputTokens?: number;
+  reasoningTokens?: number;
+  inputPricePerToken: number;
+  outputPricePerToken: number;
+  markupMultiplier?: number;
+}): number {
+  const safeInput = Math.max(0, inputTokens);
+  const safeOutput = Math.max(0, outputTokens) + Math.max(0, reasoningTokens);
+  if (
+    !Number.isFinite(inputPricePerToken) ||
+    inputPricePerToken < 0 ||
+    !Number.isFinite(outputPricePerToken) ||
+    outputPricePerToken <= 0 ||
+    !Number.isFinite(markupMultiplier) ||
+    markupMultiplier < 1
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const costUsd =
+    safeInput * inputPricePerToken + safeOutput * outputPricePerToken;
+  return (costUsd / 0.0001) * markupMultiplier;
 }
 
 /** Read-only price lookup. A price is not an allowance and never admits a request. */

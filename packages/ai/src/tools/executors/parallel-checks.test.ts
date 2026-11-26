@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  capMaxOutputTokensByCredits: vi.fn(),
-  checkAiCredits: vi.fn(),
   createAdminClient: vi.fn(),
-  deductAiCredits: vi.fn(),
   gateway: vi.fn(),
   generate: vi.fn(),
   google: vi.fn(),
+  release: vi.fn(),
+  reserveNestedModelBudget: vi.fn(),
   resolvePlanModel: vi.fn(),
+  settle: vi.fn(),
   stepCountIs: vi.fn(),
   toolLoopAgent: vi.fn(),
   withAiMemory: vi.fn(),
@@ -42,17 +42,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createAdminClient(...args),
 }));
 
-vi.mock('../../credits/cap-output-tokens', () => ({
-  capMaxOutputTokensByCredits: (
-    ...args: Parameters<typeof mocks.capMaxOutputTokensByCredits>
-  ) => mocks.capMaxOutputTokensByCredits(...args),
-}));
-
-vi.mock('../../credits/check-credits', () => ({
-  checkAiCredits: (...args: Parameters<typeof mocks.checkAiCredits>) =>
-    mocks.checkAiCredits(...args),
-  deductAiCredits: (...args: Parameters<typeof mocks.deductAiCredits>) =>
-    mocks.deductAiCredits(...args),
+vi.mock('../../credits/nested-budget', () => ({
+  reserveNestedModelBudget: (
+    ...args: Parameters<typeof mocks.reserveNestedModelBudget>
+  ) => mocks.reserveNestedModelBudget(...args),
 }));
 
 vi.mock('../../credits/resolve-plan-model', async (importOriginal) => {
@@ -83,20 +76,15 @@ describe('executeParallelChecks', () => {
       source: 'requested',
       tier: 'PRO',
     });
-    mocks.checkAiCredits.mockResolvedValue({
-      allowed: true,
-      errorCode: null,
-      errorMessage: null,
-      maxOutputTokens: 80,
-      remainingCredits: 500,
-      tier: 'PRO',
-    });
-    mocks.capMaxOutputTokensByCredits.mockResolvedValue(80);
-    mocks.deductAiCredits.mockResolvedValue({
-      creditsDeducted: 1,
-      errorCode: null,
-      remainingCredits: 499,
-      success: true,
+    mocks.settle.mockResolvedValue(undefined);
+    mocks.release.mockResolvedValue(undefined);
+    mocks.reserveNestedModelBudget.mockResolvedValue({
+      ok: true,
+      reservationId: 'pc-res-1',
+      heldCredits: 10,
+      perAttemptMaxOutputTokens: 40,
+      settle: mocks.settle,
+      release: mocks.release,
     });
     mocks.google.mockImplementation((modelId: string) => ({
       modelId,
@@ -133,7 +121,7 @@ describe('executeParallelChecks', () => {
     }));
   });
 
-  it('meters parallel check subagents against the billed workspace', async () => {
+  it('meters parallel check subagents against a held budget for the billed workspace', async () => {
     const result = await executeParallelChecks(
       {
         checks: ['assumptions', 'risk'],
@@ -154,98 +142,78 @@ describe('executeParallelChecks', () => {
       ok: true,
       summary: 'Parallel checks found 2 perspective(s) with material notes.',
     });
-    expect((result as { checks: Array<unknown> }).checks).toEqual([
-      {
-        finding: expect.stringContaining('Review this request'),
-        label: 'assumptions',
-      },
-      {
-        finding: expect.stringContaining('Review this request'),
-        label: 'risk',
-      },
-    ]);
     expect(mocks.resolvePlanModel).toHaveBeenCalledWith({
       capability: 'language',
       requestedModel: 'gemini-3.1-flash-lite',
       wsId: 'billing-workspace',
     });
-    expect(mocks.checkAiCredits).toHaveBeenCalledWith(
-      'billing-workspace',
-      'google/gemini-3.1-flash-lite',
-      'chat',
-      { userId: 'user-1' }
-    );
-    expect(mocks.capMaxOutputTokensByCredits).toHaveBeenCalledWith(
-      { admin: true },
-      'google/gemini-3.1-flash-lite',
-      80,
-      500
-    );
-    expect(mocks.google).toHaveBeenCalledWith('gemini-3.1-flash-lite');
-    expect(mocks.gateway).not.toHaveBeenCalled();
-    expect(mocks.generate).toHaveBeenCalledTimes(2);
-    expect(mocks.generate).toHaveBeenCalledWith(
-      expect.objectContaining({ maxOutputTokens: 40 }),
-      expect.any(Object)
-    );
-    expect(mocks.withAiMemory).toHaveBeenCalledWith(
+    expect(mocks.reserveNestedModelBudget).toHaveBeenCalledWith(
       expect.objectContaining({
-        product: 'mira',
-        source: 'mira_parallel_checks_tool',
+        attemptCount: 2,
+        modelId: 'google/gemini-3.1-flash-lite',
         userId: 'user-1',
-        wsId: 'context-workspace',
+        wsId: 'billing-workspace',
       })
     );
-    expect(mocks.deductAiCredits).toHaveBeenCalledTimes(2);
-    expect(mocks.deductAiCredits).toHaveBeenCalledWith({
-      wsId: 'billing-workspace',
-      userId: 'user-1',
-      modelId: 'google/gemini-3.1-flash-lite',
-      inputTokens: 11,
-      outputTokens: 7,
-      reasoningTokens: 2,
-      feature: 'chat',
-      metadata: {
-        source: 'mira_parallel_checks_tool',
-        check: 'assumptions',
-        chatId: 'chat-1',
-        creditWsId: 'billing-workspace',
-        routeWsId: 'route-workspace',
-        workspaceContextWsId: 'context-workspace',
-      },
+    expect(mocks.toolLoopAgent).toHaveBeenCalledWith(
+      expect.objectContaining({ maxOutputTokens: 40 })
+    );
+    expect(mocks.generate).toHaveBeenCalledTimes(2);
+    expect(mocks.settle).toHaveBeenCalledWith({
+      inputTokens: 22,
+      outputTokens: 14,
+      reasoningTokens: 4,
     });
   });
 
-  it('does not spawn subagents when the credit check rejects the model', async () => {
-    mocks.checkAiCredits.mockResolvedValueOnce({
-      allowed: false,
-      errorCode: 'MODEL_NOT_ALLOWED',
-      errorMessage: 'Model blocked for workspace.',
-      maxOutputTokens: null,
-      remainingCredits: 0,
-      tier: 'FREE',
-    });
-
-    const result = await executeParallelChecks(
-      {
-        checks: ['assumptions'],
-        question: 'Should we ship this change?',
-      },
-      {
-        creditWsId: 'billing-workspace',
-        supabase: {} as never,
-        userId: 'user-1',
-        wsId: 'route-workspace',
-      }
-    );
-
-    expect(result).toEqual({
+  it('fails closed with a fixed message when budget verification or model allowance fails', async () => {
+    mocks.reserveNestedModelBudget.mockResolvedValueOnce({
       ok: false,
-      error: 'Model blocked for workspace.',
+      code: 'CREDIT_CHECK_FAILED',
+      status: 503,
     });
-    expect(mocks.createAdminClient).not.toHaveBeenCalled();
-    expect(mocks.toolLoopAgent).not.toHaveBeenCalled();
+
+    expect(
+      await executeParallelChecks(
+        {
+          checks: ['assumptions'],
+          question: 'Should we ship this change?',
+        },
+        {
+          creditWsId: 'billing-workspace',
+          supabase: {} as never,
+          userId: 'user-1',
+          wsId: 'route-workspace',
+        }
+      )
+    ).toEqual({
+      ok: false,
+      error: 'AI request budget could not be verified for parallel checks.',
+    });
+
+    mocks.reserveNestedModelBudget.mockResolvedValueOnce({
+      ok: false,
+      code: 'MODEL_NOT_ALLOWED',
+      status: 403,
+    });
+
+    expect(
+      await executeParallelChecks(
+        {
+          checks: ['assumptions'],
+          question: 'Should we ship this change?',
+        },
+        {
+          creditWsId: 'billing-workspace',
+          supabase: {} as never,
+          userId: 'user-1',
+          wsId: 'route-workspace',
+        }
+      )
+    ).toEqual({
+      ok: false,
+      error: 'The parallel-checks model is not enabled for your workspace.',
+    });
     expect(mocks.generate).not.toHaveBeenCalled();
-    expect(mocks.deductAiCredits).not.toHaveBeenCalled();
   });
 });

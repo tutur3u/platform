@@ -376,34 +376,58 @@ describe('chat google new route', () => {
     expect(mocks.withAiMemory).not.toHaveBeenCalled();
   });
 
-  it('rejects unauthorized Mira access before resolving the selected workspace', async () => {
-    const from = vi.fn();
+  it('allows free external accounts to create personal Mira chats', async () => {
+    const id = '5d9feade-803b-4b3f-abd4-fa975b84c527';
+    const single = vi.fn().mockResolvedValue({ data: { id }, error: null });
+    const insert = vi
+      .fn()
+      .mockReturnValue({ select: vi.fn().mockReturnValue({ single }) });
+    const rpc = vi.fn().mockResolvedValue({ error: null });
     mocks.isInternalTuturuuuAiUser.mockResolvedValueOnce(false);
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: { email: 'app-review@tutur3u.com', id: 'free-user-1' },
+          },
+          error: null,
+        }),
+      },
+      from: vi.fn().mockReturnValue({ insert }),
+      rpc,
+    });
 
-    const response = await createPOST({
-      requireWorkspaceId: true,
-      resolveGatewayAuth: async () => ({
-        auth: {
-          supabase: { from } as never,
-          user: { email: 'external@example.com', id: 'rewise-user' } as never,
-        },
-        ok: true,
-      }),
-    })(
+    const response = await createPOST()(
       new Request('http://localhost/api/ai/chat/new', {
         body: JSON.stringify({
+          id,
           isMiraMode: true,
-          message: 'hello',
-          wsId: '11111111-1111-4111-8111-111111111111',
+          message:
+            'List three short tasks for a fictional launch demo using sample data only.',
+          model: 'google/gemini-3.1-flash-lite',
         }),
         method: 'POST',
       })
     );
 
-    expect(response.status).toBe(403);
-    expect(mocks.authorizeAiWorkspace).not.toHaveBeenCalled();
-    expect(mocks.resolveAiMemoryWorkspaceIdForUser).not.toHaveBeenCalled();
-    expect(mocks.generateText).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      id,
+      title: 'List three short tasks for a fictional launch demo using…',
+    });
+    expect(mocks.isInternalTuturuuuAiUser).not.toHaveBeenCalled();
+    expect(insert).toHaveBeenCalledWith({
+      creator_id: 'free-user-1',
+      id,
+      model: 'gemini-3.1-flash-lite',
+      title: 'List three short tasks for a fictional launch demo using…',
+    });
+    expect(rpc).toHaveBeenCalledWith('insert_ai_chat_message', {
+      chat_id: id,
+      message:
+        'List three short tasks for a fictional launch demo using sample data only.',
+      source: 'Mira',
+    });
   });
 
   it.each([

@@ -8,6 +8,7 @@ import { miraToolDefinitions } from './mira-tool-definitions';
 import { searchMiraTools } from './mira-tool-discovery';
 import { executeMiraTool } from './mira-tool-dispatcher';
 import {
+  MIRA_TOOL_ACCESS_POLICY,
   MIRA_TOOL_DIRECTORY,
   MIRA_TOOL_PERMISSIONS,
 } from './mira-tool-metadata';
@@ -85,17 +86,24 @@ export function createMiraStreamTools(
           ) as MiraToolName[]) {
             if (!isMiraToolAvailableToClient(candidate, ctx.clientCapabilities))
               continue;
+            const policy = MIRA_TOOL_ACCESS_POLICY[candidate];
+            if (!policy) continue;
             const permission = MIRA_TOOL_PERMISSIONS[candidate];
             const required = permission
               ? Array.isArray(permission)
                 ? permission
                 : [permission]
               : [];
+            if (policy === 'workspace_permission' && required.length === 0) {
+              continue;
+            }
+            if (policy === 'self') {
+              if (permittedNames.has(candidate)) allowed.add(candidate);
+              continue;
+            }
             if (
-              ctx.authorizeWorkspaceTools
-                ? !required.length ||
-                  (await ctx.authorizeWorkspaceTools(workspaceId, required))
-                : permittedNames.has(candidate)
+              ctx.authorizeWorkspaceTools &&
+              (await ctx.authorizeWorkspaceTools(workspaceId, required))
             )
               allowed.add(candidate);
           }
@@ -212,15 +220,26 @@ export function createMiraStreamTools(
                   : undefined,
               };
         const targetWsId = getWorkspaceContextWorkspaceId(executionCtx);
+        const policy = MIRA_TOOL_ACCESS_POLICY[name];
         const required = requiredPerm
           ? Array.isArray(requiredPerm)
             ? requiredPerm
             : [requiredPerm]
           : [];
         if (
-          required.length &&
-          ctx.authorizeWorkspaceTools &&
-          !(await ctx.authorizeWorkspaceTools(targetWsId, required))
+          !policy ||
+          (policy === 'workspace_permission' && required.length === 0)
+        ) {
+          return {
+            success: false,
+            error:
+              'The current workspace does not grant permission for this operation.',
+          };
+        }
+        if (
+          policy !== 'self' &&
+          (!ctx.authorizeWorkspaceTools ||
+            !(await ctx.authorizeWorkspaceTools(targetWsId, required)))
         )
           return {
             success: false,

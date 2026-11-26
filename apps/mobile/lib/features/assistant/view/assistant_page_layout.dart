@@ -91,6 +91,33 @@ extension _AssistantPageLayout on _AssistantPageState {
               ),
               BlocListener<AssistantChatCubit, AssistantChatState>(
                 listenWhen: (previous, current) =>
+                    previous.status != AssistantChatStatus.error &&
+                    current.status == AssistantChatStatus.error,
+                listener: (_, state) {
+                  final failure = classifyAssistantReplyFailure(
+                    error: state.error,
+                    diagnostics: state.diagnostics,
+                  );
+                  if (!assistantReplyFailureIsDenial(failure)) return;
+                  if (_inputController.text.trim().isNotEmpty) return;
+                  final lastUser = state.messages.reversed
+                      .where((message) => message.role == 'user')
+                      .firstOrNull;
+                  if (lastUser == null) return;
+                  final prompt = lastUser.parts
+                      .where((part) => part.type == 'text')
+                      .map((part) => part.text ?? '')
+                      .join('\n\n')
+                      .trim();
+                  if (prompt.isEmpty) return;
+                  _inputController.value = TextEditingValue(
+                    text: prompt,
+                    selection: TextSelection.collapsed(offset: prompt.length),
+                  );
+                },
+              ),
+              BlocListener<AssistantChatCubit, AssistantChatState>(
+                listenWhen: (previous, current) =>
                     _activeConversationKey(previous) !=
                     _activeConversationKey(current),
                 listener: (context, state) {
@@ -546,6 +573,10 @@ extension _AssistantPageLayout on _AssistantPageState {
   ) {
     final current = _messageActionScope(chatState);
     final remote = !_localCubit.state.local && !_localCubit.state.blocked;
+    final billingWsId =
+        shellState.sendCreditWorkspace(chatState.workspaceId ?? '') ??
+        _personalWorkspaceId() ??
+        chatState.workspaceId;
     return AssistantTranscriptSection(
       chatState: chatState,
       liveState: liveState,
@@ -562,11 +593,49 @@ extension _AssistantPageLayout on _AssistantPageState {
       onReact: (id, reaction) =>
           unawaited(_reactToMessage(id, reaction, current)),
       onRefreshReactions: (id) => unawaited(_reactToMessage(id, null, current)),
+      onOpenBilling: billingWsId == null || isAppleStorePlatform()
+          ? null
+          : () => unawaited(
+              openMobileLink(context, assistantLiveBillingUri(billingWsId)),
+            ),
+      onLearnMore: (failure) => unawaited(_handleDenialLearnMore(failure)),
       onRetry: () => _localCubit.state.local || _localCubit.state.blocked
           ? _localCubit.state.selectedModelId == null
                 ? _showLiveSettings()
                 : _localCubit.select(_localCubit.state.selectedModelId)
           : _retryRemote(shellState),
     );
+  }
+
+  Future<void> _handleDenialLearnMore(AssistantReplyFailure failure) async {
+    if (!mounted) return;
+    if (isAppleStorePlatform()) {
+      final l10n = context.l10n;
+      await showAppSheet<void>(
+        context: context,
+        builder: (sheetContext) => AppSheetScaffold(
+          title: l10n.assistantReplyDeniedInfoTitle,
+          showCloseButton: false,
+          actions: [
+            AppButton.primary(
+              onPressed: () => Navigator.of(sheetContext).maybePop(),
+              child: Text(l10n.assistantLiveBlockedGotIt),
+            ),
+          ],
+          child: Text(
+            assistantReplyFailureLabel(l10n, failure),
+            style: AppTokens.of(sheetContext).typography.p,
+          ),
+        ),
+      );
+      return;
+    }
+    final target = failure == AssistantReplyFailure.access
+        ? Uri.https(
+            'docs.tuturuuu.com',
+            '/platform/architecture/workspaces-permissions',
+          )
+        : Uri.https('tuturuuu.com', '/pricing');
+    await openMobileLink(context, target);
   }
 }

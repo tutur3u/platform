@@ -52,12 +52,14 @@ class ChatStreamDoneEvent extends ChatMessageStreamEvent {
 }
 
 class ChatStreamErrorEvent extends ChatMessageStreamEvent {
-  const ChatStreamErrorEvent(this.message);
+  const ChatStreamErrorEvent(this.message, {this.code, this.statusCode});
 
   final String message;
+  final String? code;
+  final int? statusCode;
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, code, statusCode];
 }
 
 class ChatNdjsonStreamParser {
@@ -199,8 +201,11 @@ class ChatNdjsonStreamParser {
       case 'done':
         return const ChatStreamDoneEvent();
       case 'error':
+        final rawStatus = decoded['status'];
         return ChatStreamErrorEvent(
           decoded['message']?.toString() ?? 'Chat stream failed',
+          code: decoded['code'] is String ? decoded['code'] as String : null,
+          statusCode: rawStatus is int ? rawStatus : null,
         );
       default:
         return null;

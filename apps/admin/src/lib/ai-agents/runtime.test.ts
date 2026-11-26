@@ -331,6 +331,24 @@ describe('AI agent runtime billing controls', () => {
         maxOutputTokens: 128,
       })
     );
+    expect(mocks.createMiraStreamTools).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authorizeWorkspaceTools: expect.any(Function),
+        wsId: 'workspace-1',
+      }),
+      expect.any(Function)
+    );
+    const authorizeWorkspaceTools = mocks.createMiraStreamTools.mock
+      .calls[0]?.[0]?.authorizeWorkspaceTools as (
+      targetWsId: string,
+      required: string[]
+    ) => Promise<boolean>;
+    await expect(
+      authorizeWorkspaceTools('workspace-1', ['manage_projects'])
+    ).resolves.toBe(true);
+    await expect(
+      authorizeWorkspaceTools('other-workspace', ['manage_projects'])
+    ).resolves.toBe(false);
     expect(thread.startTyping).toHaveBeenCalledOnce();
     expect(thread.post).toHaveBeenCalledWith('agent-stream');
     expect(mocks.deductAiCredits).toHaveBeenCalledWith(

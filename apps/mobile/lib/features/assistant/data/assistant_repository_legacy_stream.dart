@@ -102,9 +102,28 @@ Stream<AssistantStreamEvent> _streamAssistantLegacyChat({
     }, accept: 'text/event-stream');
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = await response.stream.bytesToString();
+      String? code;
+      String? parsedMessage;
+      if (body.trimLeft().startsWith('{')) {
+        try {
+          final decoded = jsonDecode(body);
+          if (decoded is Map<String, dynamic>) {
+            code = decoded['code'] is String ? decoded['code'] as String : null;
+            parsedMessage = decoded['error'] is String
+                ? decoded['error'] as String
+                : decoded['message'] is String
+                ? decoded['message'] as String
+                : null;
+          }
+        } on FormatException {
+          code = null;
+        }
+      }
       throw ApiException(
-        message: body.isEmpty ? 'Failed to stream chat' : body,
+        message:
+            parsedMessage ?? (body.isEmpty ? 'Failed to stream chat' : body),
         statusCode: response.statusCode,
+        code: code,
       );
     }
     final parser = AssistantSseParser();

@@ -22,7 +22,7 @@ import {
   readRecord,
   toAiChatUiMessages,
 } from './ai-message-shared';
-import { AiStreamError } from './ai-stream-error';
+import { AiStreamError, extractSafeAiDenial } from './ai-stream-error';
 
 export async function sendAiChatMessage({
   attachments,
@@ -170,8 +170,16 @@ export async function sendAiChatMessage({
   });
 
   if (!aiResponse.ok) {
+    const errorText =
+      aiResponse.status === 402 || aiResponse.status === 403
+        ? await aiResponse.text().catch(() => '')
+        : '';
+    const denial = extractSafeAiDenial(aiResponse.status, errorText);
     return NextResponse.json(
-      { message: new AiStreamError().message },
+      {
+        ...(denial ? { code: denial.code } : {}),
+        message: new AiStreamError().message,
+      },
       { status: aiResponse.status }
     );
   }

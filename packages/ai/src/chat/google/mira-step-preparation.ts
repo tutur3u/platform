@@ -1,4 +1,5 @@
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { shouldPresentWorkspaceArtifact } from '../mira-artifact-intent';
 import {
   buildActiveToolsFromSelected,
   countRenderUiAttemptsInSteps,
@@ -8,9 +9,36 @@ import {
   hasSuccessfulWorkspaceContextResolutionInSteps,
   hasToolCallInSteps,
   removeWorkspaceDiscoveryTools,
+  shouldForceGoogleSearchForLatestUserMessage,
+  shouldForceRenderUiForLatestUserMessage,
+  shouldForceWorkspaceMembersForLatestUserMessage,
+  shouldPreferMarkdownTablesForLatestUserMessage,
+  shouldResolveWorkspaceContextForLatestUserMessage,
+  shouldUseParallelChecksForLatestUserMessage,
   wasToolEverSelectedInSteps,
 } from '../mira-render-ui-policy';
 import { getMiraToolLoopReason } from '../mira-tool-loop-guard';
+
+export function buildMiraStepPolicyBase(
+  processedMessages: Parameters<typeof shouldPresentWorkspaceArtifact>[0],
+  needsDayOverview: boolean
+): Omit<PrepareMiraToolStepInput, 'steps'> {
+  return {
+    forceWorkspaceArtifact: shouldPresentWorkspaceArtifact(processedMessages),
+    forceRenderUi: shouldForceRenderUiForLatestUserMessage(processedMessages),
+    forceGoogleSearch:
+      shouldForceGoogleSearchForLatestUserMessage(processedMessages),
+    preferMarkdownTables:
+      shouldPreferMarkdownTablesForLatestUserMessage(processedMessages),
+    needsWorkspaceContextResolution:
+      shouldResolveWorkspaceContextForLatestUserMessage(processedMessages),
+    needsWorkspaceMembersTool:
+      shouldForceWorkspaceMembersForLatestUserMessage(processedMessages),
+    needsParallelChecks:
+      shouldUseParallelChecksForLatestUserMessage(processedMessages),
+    needsDayOverview,
+  };
+}
 
 export type PrepareMiraToolStepInput = {
   steps: unknown[];

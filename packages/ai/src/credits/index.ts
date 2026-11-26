@@ -1,7 +1,22 @@
 export {
   capMaxOutputTokensByCredits,
   computeAffordableTokens,
+  estimateTokenCredits,
+  readModelTokenPrices,
+  readPlanBudgetPolicy,
 } from './cap-output-tokens';
+export {
+  type DailyCapacityCheckResult,
+  type DailyCapacitySnapshot,
+  readActivePaygCredits,
+  readDailyCapacitySnapshot,
+  verifyDailyCapacityWithActiveHolds,
+} from './daily-capacity';
+export {
+  type NestedBudgetDenialCode,
+  type ReservedNestedModelBudget,
+  reserveNestedModelBudget,
+} from './nested-budget';
 export { checkAiCredits, deductAiCredits } from './check-credits';
 export {
   AI_FEATURES,
@@ -24,6 +39,7 @@ export {
   releaseMeteredEmbeddingCredits,
   reserveFixedAiCredits,
   reserveMeteredEmbeddingCredits,
+  settleMeteredAiCreditReservation,
 } from './reservations';
 export {
   type EffectivePlanModel,

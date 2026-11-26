@@ -21,6 +21,12 @@ import {
 import { MiraChatBottomBar } from './mira-chat-bottom-bar';
 import { getGreetingKey, STORAGE_KEY_PREFIX } from './mira-chat-constants';
 import { MiraChatConversation } from './mira-chat-conversation';
+import {
+  type MiraChatDenial,
+  parseMiraChatDenial,
+  restoreMiraPromptInput,
+} from './mira-chat-denial';
+import { MiraChatDenialBanner } from './mira-chat-denial-banner';
 import { MiraChatEmptyState } from './mira-chat-empty-state';
 import { MiraChatHeader } from './mira-chat-header';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
@@ -70,7 +76,11 @@ export default function MiraChatPanel({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
+  const [requestDenial, setRequestDenial] = useState<MiraChatDenial | null>(
+    null
+  );
   const [viewOnly, setViewOnly] = useState(false);
+  const lastSubmittedPromptRef = useRef<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -78,6 +88,15 @@ export default function MiraChatPanel({
   const toolbarContentRef = useRef<HTMLDivElement>(null);
   const greetingKey = useMemo(() => getGreetingKey(), []);
   const generativeUIStore = useMemo(() => createGenerativeUIAdapter(), []);
+
+  useEffect(() => {
+    setRequestDenial(null);
+    lastSubmittedPromptRef.current = null;
+  }, [wsId]);
+
+  const restorePrompt = useCallback((prompt: string) => {
+    setInput((current) => restoreMiraPromptInput(current, prompt));
+  }, []);
 
   useEffect(() => {
     if (autoFocusSignal === 0) return;
@@ -232,6 +251,7 @@ export default function MiraChatPanel({
     messages: initialMessages,
     transport,
     onFinish: ({ message }) => {
+      lastSubmittedPromptRef.current = null;
       if (
         message.parts.some(
           (part) => part.type === 'text' && part.text.length > 0
@@ -242,7 +262,24 @@ export default function MiraChatPanel({
     },
     onError(error) {
       timing.finish();
-      console.error('[Mira Chat] Stream error:', error);
+      const denial = parseMiraChatDenial(error);
+      if (denial) {
+        console.error('[Mira Chat] Request denied', {
+          code: denial.code,
+          kind: denial.kind,
+          status: denial.status,
+        });
+        setRequestDenial(denial);
+        const lastPrompt = lastSubmittedPromptRef.current;
+        if (lastPrompt) {
+          restorePrompt(lastPrompt);
+          lastSubmittedPromptRef.current = null;
+        }
+        return;
+      }
+      console.error('[Mira Chat] Stream failed', {
+        name: error instanceof Error ? error.name : 'UnknownError',
+      });
       toast.error(
         model.value.startsWith('chatgpt/')
           ? t('chatgpt.request_error')
@@ -291,17 +328,19 @@ export default function MiraChatPanel({
   const sendMessageWithCurrentConfig = useCallback(
     async (message: UIMessage, isCurrent?: () => boolean) => {
       if (model.disabled) return false;
+      const promptText = message.parts
+        .flatMap((part) => (part.type === 'text' ? [part.text] : []))
+        .join('\n');
       try {
         await flushLiveConversation();
       } catch {
         if (isCurrent && !isCurrent()) return false;
-        const unsent = message.parts
-          .flatMap((part) => (part.type === 'text' ? [part.text] : []))
-          .join('\n');
-        setInput((current) => [unsent, current].filter(Boolean).join('\n'));
+        restorePrompt(promptText);
         return false;
       }
       if (isCurrent && !isCurrent()) return false;
+      setRequestDenial(null);
+      lastSubmittedPromptRef.current = promptText || null;
       const identity = liveChatIdentity.current;
       const savedChatId =
         identity && identity.localId === stableChatId && identity.wsId === wsId
@@ -317,6 +356,7 @@ export default function MiraChatPanel({
       chatRequestBody,
       sendMessage,
       flushLiveConversation,
+      restorePrompt,
       stableChatId,
       wsId,
     ]
@@ -387,6 +427,8 @@ export default function MiraChatPanel({
       messageAttachments,
       messages,
       model,
+      onRequestDenied: setRequestDenial,
+      onRestorePrompt: restorePrompt,
       sendMessageWithCurrentConfig,
       setChat,
       setFallbackChatId,
@@ -416,7 +458,14 @@ export default function MiraChatPanel({
       status,
       stop,
     });
-  submitTextRef.current = handleSubmit;
+  const handlePromptSubmit = useCallback(
+    (value: string) => {
+      setRequestDenial(null);
+      handleSubmit(value);
+    },
+    [handleSubmit]
+  );
+  submitTextRef.current = handlePromptSubmit;
 
   const pendingDisplay =
     queuedText ??
@@ -455,6 +504,8 @@ export default function MiraChatPanel({
     if (status === 'submitted' || status === 'streaming') {
       stop();
     }
+    setRequestDenial(null);
+    lastSubmittedPromptRef.current = null;
     resetQueue();
     timing.cancel();
     void resetConversationState();
@@ -539,7 +590,7 @@ export default function MiraChatPanel({
                 isBusy={isBusy}
                 messageAttachments={messageAttachments}
                 messages={messages}
-                onAutoSubmitMermaidFix={handleSubmit}
+                onAutoSubmitMermaidFix={handlePromptSubmit}
                 pendingDisplay={pendingDisplay}
                 pendingPrompt={pendingPrompt}
                 queuedText={queuedText}
@@ -554,13 +605,22 @@ export default function MiraChatPanel({
                 assistantName={assistantName}
                 greetingKey={greetingKey}
                 greetingT={greetingT}
-                onQuickAction={handleSubmit}
+                onQuickAction={handlePromptSubmit}
                 t={t}
                 userName={userName}
               />
             )}
 
             <MiraChatBottomBar
+              denialBanner={
+                requestDenial ? (
+                  <MiraChatDenialBanner
+                    billingWsId={creditWsId ?? personalWorkspaceId ?? wsId}
+                    denial={requestDenial}
+                    onDismiss={() => setRequestDenial(null)}
+                  />
+                ) : null
+              }
               liveControls={live.content}
               liveInputOpen={live.inputOpen}
               liveEntry={live.entry}
@@ -590,7 +650,7 @@ export default function MiraChatPanel({
                         setInput('');
                       }
                     }
-                  : handleSubmit
+                  : handlePromptSubmit
               }
               onVoiceToggle={onVoiceToggle}
               voiceActive={voiceActive}

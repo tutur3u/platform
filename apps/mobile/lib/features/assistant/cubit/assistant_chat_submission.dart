@@ -589,14 +589,20 @@ extension _AssistantChatSubmission on AssistantChatCubit {
               _staleSubmission(clientRequestId);
               return;
             }
-            _unknownSubmission(clientRequestId);
+            final deniedCreation =
+                firstCreation != null &&
+                state.storedChatId == null &&
+                error is ApiException &&
+                (error.statusCode == 402 || error.statusCode == 403);
+            _unknownSubmission(clientRequestId, denied: deniedCreation);
             reportFailure(error);
             _emitIfOpen(
               state.copyWith(
-                // An unacknowledged first message matches the repository hold.
+                // An unacknowledged first message matches the repository hold,
+                // unless the server definitively denied the request (402/403).
                 creationOutcomeUnknown:
                     firstCreation != null && state.storedChatId == null
-                    ? true
+                    ? !deniedCreation
                     : null,
                 messages: _withoutEmptyAssistantReply(
                   state.messages,
@@ -634,18 +640,16 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         _staleSubmission(clientRequestId);
         return;
       }
-      _unknownSubmission(
-        clientRequestId,
-        denied:
-            phase == OperationalPhase.assistantCreate &&
-            error is ApiException &&
-            error.statusCode == 400 &&
-            error.code == 'chat_create_invalid_request',
-      );
       final deniedBeforeEffect =
           error is ApiException &&
-          error.statusCode == 400 &&
-          error.code == 'chat_create_invalid_request';
+          ((error.statusCode == 400 &&
+                  error.code == 'chat_create_invalid_request') ||
+              error.statusCode == 402 ||
+              error.statusCode == 403);
+      _unknownSubmission(
+        clientRequestId,
+        denied: phase == OperationalPhase.assistantCreate && deniedBeforeEffect,
+      );
       // Unknown only after a send attempt failed without an acknowledgement,
       // including a created chat whose selection could not be retained.
       final creationUnknown =

@@ -34063,6 +34063,60 @@ abstract class AppLocalizations {
   /// **'Mira can\'t reply here. Check AI credits or workspace access.'**
   String get assistantReplyFailedAccess;
 
+  /// No description provided for @assistantReplyFailedPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'This model or feature requires a higher plan. Your message is kept so you can switch models or upgrade.'**
+  String get assistantReplyFailedPlan;
+
+  /// No description provided for @assistantReplyFailedPlanApple.
+  ///
+  /// In en, this message translates to:
+  /// **'This model or feature isn\'t included with your current access. Your message is kept so you can switch models.'**
+  String get assistantReplyFailedPlanApple;
+
+  /// No description provided for @assistantReplyFailedCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used all available AI credits for this workspace. Your message is kept so you can retry after topping up or upgrading.'**
+  String get assistantReplyFailedCredits;
+
+  /// No description provided for @assistantReplyFailedCreditsApple.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used all available AI credits for this workspace. Your message is kept so you can retry once more credits are available.'**
+  String get assistantReplyFailedCreditsApple;
+
+  /// No description provided for @assistantReplyFailedDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached today\'s AI usage limit on your current plan. Your message is kept—try again later or upgrade for higher limits.'**
+  String get assistantReplyFailedDailyLimit;
+
+  /// No description provided for @assistantReplyFailedDailyLimitApple.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached today\'s AI usage limit with your current access. Your message is kept so you can try again later.'**
+  String get assistantReplyFailedDailyLimitApple;
+
+  /// No description provided for @assistantReplyDeniedUpgradeAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get assistantReplyDeniedUpgradeAction;
+
+  /// No description provided for @assistantReplyDeniedLearnMoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more'**
+  String get assistantReplyDeniedLearnMoreAction;
+
+  /// No description provided for @assistantReplyDeniedInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Why this request was blocked'**
+  String get assistantReplyDeniedInfoTitle;
+
   /// No description provided for @assistantReplyFailedBusy.
   ///
   /// In en, this message translates to:

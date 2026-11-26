@@ -3664,7 +3664,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
-    "sourceSha256": "b685c8709085703cafd647c0c13722bce953281e493c2fbd1e9cf67f7eca5777",
+    "sourceSha256": "5365ab6cdb5dfc9f8ee31d4f83f0b0735533cb70f86eb5c3bc9863d4f9b6b9fc",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

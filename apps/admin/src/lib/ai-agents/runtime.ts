@@ -228,6 +228,12 @@ async function createAgentTools({
   const sbAdmin = await createAdminClient();
   const tools = createMiraStreamTools(
     {
+      authorizeWorkspaceTools: async (targetWsId, required) => {
+        if (targetWsId !== channel.workspaceId) return false;
+        return required.every(
+          (permission) => !mappedUser.permissions.withoutPermission(permission)
+        );
+      },
       supabase: sbAdmin,
       userId: mappedUser.userId,
       workspaceContext: {

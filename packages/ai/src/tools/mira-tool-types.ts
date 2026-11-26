@@ -8,6 +8,7 @@ export interface MiraToolContext {
   wsId: string;
   creditWsId?: string;
   workspaceContext?: MiraWorkspaceContextState;
+  restrictToPersonalWorkspace?: boolean;
   chatId?: string;
   supabase: TypedSupabaseClient;
   timezone?: string;

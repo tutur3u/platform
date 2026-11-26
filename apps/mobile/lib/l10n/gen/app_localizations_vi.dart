@@ -18296,6 +18296,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantReplyFailedAccess => 'Mira chưa thể trả lời ở đây. Hãy kiểm tra tín dụng AI hoặc quyền truy cập không gian làm việc.';
 
   @override
+  String get assistantReplyFailedPlan => 'Mô hình hoặc tính năng này cần gói cao hơn. Tin nhắn của bạn vẫn được giữ lại để đổi mô hình hoặc nâng cấp.';
+
+  @override
+  String get assistantReplyFailedPlanApple => 'Quyền truy cập hiện tại không bao gồm mô hình hoặc tính năng này. Tin nhắn của bạn vẫn được giữ lại để đổi mô hình.';
+
+  @override
+  String get assistantReplyFailedCredits => 'Bạn đã dùng hết tín dụng AI khả dụng của không gian làm việc này. Tin nhắn của bạn vẫn được giữ lại để thử lại sau khi nạp thêm hoặc nâng cấp.';
+
+  @override
+  String get assistantReplyFailedCreditsApple => 'Bạn đã dùng hết tín dụng AI khả dụng của không gian làm việc này. Tin nhắn của bạn vẫn được giữ lại để thử lại khi có thêm tín dụng.';
+
+  @override
+  String get assistantReplyFailedDailyLimit => 'Bạn đã đạt giới hạn sử dụng AI hôm nay của gói hiện tại. Tin nhắn của bạn vẫn được giữ lại — hãy thử lại sau hoặc nâng cấp để có hạn mức cao hơn.';
+
+  @override
+  String get assistantReplyFailedDailyLimitApple => 'Bạn đã đạt giới hạn sử dụng AI hôm nay với quyền truy cập hiện tại. Tin nhắn của bạn vẫn được giữ lại để thử lại sau.';
+
+  @override
+  String get assistantReplyDeniedUpgradeAction => 'Nâng cấp';
+
+  @override
+  String get assistantReplyDeniedLearnMoreAction => 'Tìm hiểu thêm';
+
+  @override
+  String get assistantReplyDeniedInfoTitle => 'Vì sao yêu cầu này bị chặn';
+
+  @override
   String get assistantReplyFailedBusy => 'Mira đang bận. Hãy đợi giây lát rồi thử lại.';
 
   @override

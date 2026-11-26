@@ -107,6 +107,8 @@ extension _AssistantNativeStreamAdapter on _AssistantChatRepository {
           yield AssistantJsonStreamEvent({
             'type': 'error',
             'errorText': event.message,
+            if (event.code != null) 'code': event.code,
+            if (event.statusCode != null) 'status': event.statusCode,
           });
           continue;
         }

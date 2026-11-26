@@ -32,6 +32,23 @@ export async function executeMoveTimeTrackingSession(
   if (!sessionId) return { error: 'sessionId is required' };
   if (!targetWorkspaceId) return { error: 'targetWorkspaceId is required' };
 
+  if (ctx.restrictToPersonalWorkspace && targetWorkspaceId !== workspaceId) {
+    return { error: 'Target workspace access denied' };
+  }
+
+  if (ctx.authorizeWorkspaceTools) {
+    const [sourceAllowed, targetAllowed] = await Promise.all([
+      ctx.authorizeWorkspaceTools(workspaceId, []),
+      ctx.authorizeWorkspaceTools(targetWorkspaceId, []),
+    ]);
+    if (!sourceAllowed) {
+      return { error: 'Source workspace access denied' };
+    }
+    if (!targetAllowed) {
+      return { error: 'Target workspace access denied' };
+    }
+  }
+
   const [sourceCheck, targetCheck] = await Promise.all([
     verifyWorkspaceMembershipType({
       wsId: workspaceId,

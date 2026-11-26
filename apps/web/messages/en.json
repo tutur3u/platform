@@ -6807,6 +6807,27 @@
       "quick_tasks_desc": "Show pending items assigned to me",
       "reasoned": "Reasoned",
       "reasoning": "Reasoning...",
+      "request_denied": {
+        "credits": {
+          "description": "You have used all available AI credits for this billing workspace. Your prompt is still in the box so you can retry after topping up or upgrading.",
+          "title": "Out of AI credits"
+        },
+        "daily_limit": {
+          "description": "You have reached today's AI usage limit on your current plan. Your prompt is still in the box—try again later or upgrade for higher limits.",
+          "title": "Daily AI limit reached"
+        },
+        "dismiss": "Dismiss",
+        "learn_more": "Learn more",
+        "permission": {
+          "description": "Your account does not currently have permission to send Mira requests in this workspace. Your prompt is still in the box.",
+          "title": "Access denied"
+        },
+        "plan": {
+          "description": "This model or feature requires a higher plan. Your prompt is still in the box—switch models or upgrade to continue.",
+          "title": "Plan upgrade required"
+        },
+        "upgrade": "Upgrade"
+      },
       "response_status_checking": "Checking the right tools...",
       "response_status_drafting": "Drafting the first pass...",
       "response_status_starting": "Starting a quick reply...",

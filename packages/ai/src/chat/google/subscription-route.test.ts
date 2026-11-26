@@ -18,7 +18,8 @@ vi.mock('../../credits/resolve-plan-model', () => ({
   resolvePlanModel: mocks.resolvePlanModel,
   PlanModelResolutionError: class extends Error {},
 }));
-vi.mock('./route-credits', () => ({
+vi.mock('./route-credits', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./route-credits')>()),
   performCreditPreflight: mocks.creditPreflight,
 }));
 vi.mock('./route-auth', () => ({

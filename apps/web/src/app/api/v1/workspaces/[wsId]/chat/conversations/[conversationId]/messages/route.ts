@@ -1,8 +1,5 @@
 import { miraClientCapabilitiesInputSchema } from '@tuturuuu/ai/tools/mira-client-capabilities';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
-import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
@@ -44,6 +41,7 @@ import {
   NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
   publishChatRealtimeMessages,
 } from './ai-message-shared';
+import { AiDenialError } from './ai-stream-error';
 import { sendFirstAiChatMessage } from './first-ai-message';
 import {
   type NativeAiMessagePersistence,
@@ -199,18 +197,7 @@ export const POST = withSessionAuth<RouteParams>(
       sizeBytes: attachment.sizeBytes ?? null,
     }));
 
-    // Mira tools are currently restricted to internal accounts. Preserve the
-    // normal assistant reply for everyone else instead of forwarding a mode
-    // that the model endpoint would reject after their message has been saved.
-    let miraMode = false;
-    if (parsed.data.miraMode === true) {
-      miraMode = isVerifiedTuturuuuStaffSession(
-        await getVerifiedAuthUser(
-          await createAdminClient({ noCookie: true }),
-          auth.user.id
-        )
-      );
-    }
+    const miraMode = parsed.data.miraMode === true;
 
     if (parsed.data.initialConversation) {
       if (
@@ -543,18 +530,27 @@ export const POST = withSessionAuth<RouteParams>(
             userMessage: message,
           });
         } catch (error) {
+          const denial = error instanceof AiDenialError ? error : null;
           console.error(
             'Native Chat AI response failed after user message was saved',
-            {
-              conversationId: conversation.id,
-              error,
-              userMessageId: message.id,
-            }
+            denial
+              ? {
+                  code: denial.code,
+                  conversationId: conversation.id,
+                  status: denial.status,
+                  userMessageId: message.id,
+                }
+              : {
+                  conversationId: conversation.id,
+                  error,
+                  userMessageId: message.id,
+                }
           );
 
           return NextResponse.json(
             {
               assistantError: NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
+              ...(denial ? { code: denial.code } : {}),
               message,
               messages: [message],
             },

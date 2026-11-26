@@ -15,7 +15,6 @@ import { z } from 'zod';
 import { normalizeStableModelId } from '../../../credits/model-mapping';
 import {
   authorizeAiWorkspace,
-  isInternalTuturuuuAiUser,
   resolveSupabaseSessionUser,
 } from '../route-auth';
 
@@ -180,23 +179,6 @@ export function createPOST(options: CreatePostOptions = {}) {
           { error: 'Invalid workspace identifier' },
           { status: 422 }
         );
-      }
-
-      if (isMiraMode) {
-        const allowed = await isInternalTuturuuuAiUser({
-          ok: true,
-          supabase,
-          user,
-          ...(tempAuth.status === 'valid'
-            ? { tempAuthContext: tempAuth.context }
-            : {}),
-        });
-        if (!allowed) {
-          return NextResponse.json(
-            { error: 'Mira mode is limited to @tuturuuu.com accounts' },
-            { status: 403 }
-          );
-        }
       }
 
       if (wsId) {

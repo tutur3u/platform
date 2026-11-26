@@ -1,7 +1,10 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import type { PermissionId } from '@tuturuuu/types';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import {
   buildMiraClientCapabilityInstruction,
@@ -65,6 +68,8 @@ type PrepareMiraRuntimeParams = {
   getSteps?: () => unknown[];
   /** Start today's day overview now for read-only agenda asks. */
   prefetchDayOverview?: boolean;
+  /** Restrict workspace context and tool execution to the actor's personal workspace. */
+  restrictToPersonalWorkspace?: boolean;
 };
 
 function safeJsonForPrompt(value: unknown) {
@@ -171,6 +176,7 @@ export async function prepareMiraRuntime({
   clientCapabilities,
   getSteps,
   prefetchDayOverview,
+  restrictToPersonalWorkspace,
 }: PrepareMiraRuntimeParams): Promise<{
   miraSystemPrompt?: string;
   miraTools?: ReturnType<typeof createMiraStreamTools>;
@@ -191,6 +197,7 @@ export async function prepareMiraRuntime({
       userId,
       requestedWorkspaceContextId: workspaceContextId,
       fallbackWorkspaceId: wsId,
+      ...(restrictToPersonalWorkspace ? { restrictToPersonal: true } : {}),
     });
   } catch (workspaceContextErr) {
     console.error(
@@ -204,10 +211,26 @@ export async function prepareMiraRuntime({
   }
 
   const denyPermissionByDefault = () => true;
+  const membershipCache = new Map<string, Promise<boolean>>();
   const permissionCache = new Map<
     string,
     Promise<PermissionResultLike | null>
   >();
+  const verifyMemberWorkspace = (targetWsId: string) => {
+    let pending = membershipCache.get(targetWsId);
+    if (!pending) {
+      pending = verifyWorkspaceMembershipType({
+        wsId: targetWsId,
+        userId,
+        supabase: miraSupabase,
+        requiredType: 'MEMBER',
+      })
+        .then((result) => result.ok)
+        .catch(() => false);
+      membershipCache.set(targetWsId, pending);
+    }
+    return pending;
+  };
   const permissionsPromise = (async () => {
     try {
       const pending = getPermissions({
@@ -244,12 +267,27 @@ export async function prepareMiraRuntime({
     wsId,
     creditWsId,
     workspaceContext: resolvedWorkspaceContext,
+    ...(restrictToPersonalWorkspace
+      ? { restrictToPersonalWorkspace: true }
+      : {}),
     chatId,
     supabase: miraSupabase,
     timezone: resolvedTimezone,
     requestHeaders: request.headers,
     clientCapabilities: resolveMiraClientCapabilities(clientCapabilities),
     authorizeWorkspaceTools: async (targetWsId, permissions) => {
+      if (
+        restrictToPersonalWorkspace &&
+        targetWsId !== resolvedWorkspaceContext.wsId
+      ) {
+        return false;
+      }
+      if (!(await verifyMemberWorkspace(targetWsId))) {
+        return false;
+      }
+      if (permissions.length === 0) {
+        return true;
+      }
       let pending = permissionCache.get(targetWsId);
       if (!pending) {
         pending = getPermissions({

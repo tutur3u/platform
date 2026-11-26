@@ -135,6 +135,8 @@ extension _AssistantChatStreamEvents on AssistantChatCubit {
       case 'start-step':
         _appendPart(const AssistantMessagePart(type: 'step-start'));
       case 'error':
+        final rawStatus = payload['status'];
+        final rawCode = payload['code'];
         _emitIfOpen(
           state.copyWith(
             messages: _withoutEmptyAssistantReply(
@@ -144,7 +146,10 @@ extension _AssistantChatStreamEvents on AssistantChatCubit {
             status: AssistantChatStatus.error,
             error:
                 payload['errorText'] as String? ?? 'Assistant stream failed.',
-            diagnostics: const SafeErrorDiagnostics.streamFailure(),
+            diagnostics: SafeErrorDiagnostics.streamError(
+              status: rawStatus is int ? rawStatus : null,
+              code: rawCode is String ? rawCode : null,
+            ),
           ),
         );
       case 'finish':

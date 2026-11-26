@@ -6605,6 +6605,27 @@
       "quick_tasks_desc": "Hiển thị các mục đang chờ xử lý",
       "reasoned": "Đã suy luận",
       "reasoning": "Đang suy luận...",
+      "request_denied": {
+        "credits": {
+          "description": "Bạn đã dùng hết tín dụng AI khả dụng cho không gian làm việc thanh toán này. Nội dung bạn nhập vẫn được giữ lại để thử lại sau khi nạp thêm hoặc nâng cấp.",
+          "title": "Hết tín dụng AI"
+        },
+        "daily_limit": {
+          "description": "Bạn đã đạt giới hạn sử dụng AI hằng ngày của gói hiện tại. Nội dung bạn nhập vẫn được giữ lại — hãy thử lại sau hoặc nâng cấp để có hạn mức cao hơn.",
+          "title": "Đã đạt giới hạn AI hằng ngày"
+        },
+        "dismiss": "Đóng",
+        "learn_more": "Tìm hiểu thêm",
+        "permission": {
+          "description": "Tài khoản của bạn hiện chưa có quyền gửi yêu cầu Mira trong không gian làm việc này. Nội dung bạn nhập vẫn được giữ lại.",
+          "title": "Không có quyền truy cập"
+        },
+        "plan": {
+          "description": "Mô hình hoặc tính năng này yêu cầu gói cao hơn. Nội dung bạn nhập vẫn được giữ lại — hãy đổi mô hình hoặc nâng cấp để tiếp tục.",
+          "title": "Cần nâng cấp gói"
+        },
+        "upgrade": "Nâng cấp"
+      },
       "response_status_checking": "Đang chọn công cụ phù hợp...",
       "response_status_drafting": "Đang phác thảo phản hồi...",
       "response_status_starting": "Đang bắt đầu phản hồi nhanh...",

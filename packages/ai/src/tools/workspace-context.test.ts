@@ -121,11 +121,45 @@ describe('workspace context security', () => {
       'user_id',
       'user-1',
     ]);
+    expect(supabaseMock.states[0]?.filters).toContainEqual([
+      'eq',
+      'type',
+      'MEMBER',
+    ]);
     expect(supabaseMock.states[1]?.filters).toContainEqual([
       'in',
       'ws_id',
       ['personal-ws', 'team-ws'],
     ]);
+  });
+
+  it('restricts workspace discovery and context switching to the personal workspace when requested', async () => {
+    const supabaseMock = new WorkspaceContextSupabaseMock();
+    const supabase = supabaseMock as unknown as TypedSupabaseClient;
+
+    await expect(
+      listAccessibleWorkspaceSummaries(supabase, 'user-1', {
+        restrictToPersonal: true,
+      })
+    ).resolves.toEqual([
+      {
+        id: 'personal-ws',
+        memberCount: 0,
+        name: 'Personal',
+        personal: true,
+      },
+    ]);
+
+    await expect(
+      resolveWorkspaceContextState({
+        supabase,
+        userId: 'user-1',
+        requestedWorkspaceContextId: 'team-ws',
+        fallbackWorkspaceId: 'personal-ws',
+        strict: true,
+        restrictToPersonal: true,
+      })
+    ).rejects.toThrow('Workspace "team-ws" is not accessible for this user.');
   });
 
   it('rejects inaccessible workspace context switches in strict mode', async () => {

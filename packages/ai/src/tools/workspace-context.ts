@@ -59,7 +59,8 @@ function toWorkspaceContextState(
 
 export async function listAccessibleWorkspaceSummaries(
   supabase: TypedSupabaseClient,
-  userId: string
+  userId: string,
+  options?: { restrictToPersonal?: boolean }
 ): Promise<MiraWorkspaceSummary[]> {
   const { data: membershipData, error: membershipError } = await supabase
     .from('workspace_members')
@@ -73,7 +74,8 @@ export async function listAccessibleWorkspaceSummaries(
         )
       `
     )
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .eq('type', 'MEMBER');
 
   if (membershipError) {
     throw new Error(membershipError.message);
@@ -91,6 +93,7 @@ export async function listAccessibleWorkspaceSummaries(
       : membership.workspaces;
 
     if (!membership.ws_id || !workspace?.id) continue;
+    if (options?.restrictToPersonal && workspace.personal !== true) continue;
 
     workspaceMap.set(workspace.id, {
       id: workspace.id,
@@ -141,6 +144,7 @@ type ResolveWorkspaceContextParams = {
   requestedWorkspaceContextId?: string;
   fallbackWorkspaceId?: string;
   strict?: boolean;
+  restrictToPersonal?: boolean;
 };
 
 export async function resolveWorkspaceContextState({
@@ -149,10 +153,12 @@ export async function resolveWorkspaceContextState({
   requestedWorkspaceContextId,
   fallbackWorkspaceId,
   strict = false,
+  restrictToPersonal = false,
 }: ResolveWorkspaceContextParams): Promise<MiraWorkspaceContextState> {
   const accessibleWorkspaces = await listAccessibleWorkspaceSummaries(
     supabase,
-    userId
+    userId,
+    { restrictToPersonal }
   );
 
   if (accessibleWorkspaces.length === 0) {

@@ -128,6 +128,25 @@ class _PreStreamFailureRepository extends _Repository {
   }
 }
 
+class _DeniedCreateRepository extends _Repository {
+  @override
+  Future<AssistantChatRecord> createChat({
+    required String id,
+    required String wsId,
+    required String modelId,
+    required String message,
+    required String timezone,
+    ChatInitialAiSettings? initialSettings,
+    bool Function()? isCurrent,
+  }) async {
+    throw const ApiException(
+      message: 'AI credits have been used up',
+      statusCode: 403,
+      code: 'CREDITS_EXHAUSTED',
+    );
+  }
+}
+
 class _PreStreamFailurePreferences extends AssistantPreferences {
   _PreStreamFailurePreferences(this.failure);
   final String failure;
@@ -487,6 +506,35 @@ void main() {
       },
     );
   }
+  test(
+    '403 denial during chat creation preserves draft and avoids creation hold',
+    () async {
+      await chat.close();
+      await repository.body.close();
+      repository = _DeniedCreateRepository();
+      chat = AssistantChatCubit(
+        repository: repository,
+        preferences: AssistantPreferences(),
+        onWorkspaceContextChanged: (_) async {},
+        onSoulRefreshRequested: () async {},
+        onImmersiveModeChanged: (_) {},
+        onChatRestored: (_) async {},
+      );
+      chat.emit(
+        chat.state.copyWith(
+          workspaceId: ws,
+          composerAttachments: const [attachment],
+        ),
+      );
+      final result = await send();
+      expect(result, false);
+      expect(chat.state.composerAttachments, const [attachment]);
+      expect(chat.state.status, AssistantChatStatus.error);
+      expect(chat.state.creationOutcomeUnknown, false);
+      expect(chat.state.diagnostics?.status, 403);
+      expect(chat.state.diagnostics?.code, 'CREDITS_EXHAUSTED');
+    },
+  );
   test(
     'explicit retry supersedes the previous typed waiter with original ID',
     () async {

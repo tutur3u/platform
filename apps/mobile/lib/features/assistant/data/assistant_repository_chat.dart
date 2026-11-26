@@ -420,6 +420,8 @@ mixin _AssistantChatRepository {
             yield AssistantJsonStreamEvent({
               'type': 'error',
               'errorText': event.message,
+              if (event.code != null) 'code': event.code,
+              if (event.statusCode != null) 'status': event.statusCode,
             });
             continue;
           }
@@ -559,15 +561,12 @@ mixin _AssistantChatRepository {
 
   AssistantJsonStreamEvent _assistantEventFromChatPart(
     Map<String, dynamic> part,
-  ) {
-    if (part['type'] == 'reasoning') {
-      return AssistantJsonStreamEvent({
-        'type': 'reasoning-delta',
-        'delta': part['text']?.toString() ?? '',
-      });
-    }
-    return AssistantJsonStreamEvent(part);
-  }
+  ) => part['type'] == 'reasoning'
+      ? AssistantJsonStreamEvent({
+          'type': 'reasoning-delta',
+          'delta': part['text']?.toString() ?? '',
+        })
+      : AssistantJsonStreamEvent(part);
 
   String _latestUserText(List<AssistantMessage> messages) {
     for (final message in messages.reversed) {
@@ -585,8 +584,7 @@ mixin _AssistantChatRepository {
   String _titleFromPrompt(String message) {
     final compact = message.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (compact.isEmpty) return 'Assistant chat';
-    if (compact.length <= 64) return compact;
-    return '${compact.substring(0, 61)}...';
+    return compact.length <= 64 ? compact : '${compact.substring(0, 61)}...';
   }
 
   List<AssistantMessage> _restoreMessages(
@@ -619,10 +617,8 @@ mixin _AssistantChatRepository {
         .toList();
   }
 
-  String _normalizeRole(String? role) {
-    if (role == null) return 'assistant';
-    return role.toLowerCase() == 'user' ? 'user' : 'assistant';
-  }
+  String _normalizeRole(String? role) =>
+      role?.toLowerCase() == 'user' ? 'user' : 'assistant';
 
   String _creationScopeKey(String wsId) {
     final actor = _currentUserId();
@@ -689,8 +685,10 @@ mixin _AssistantChatRepository {
         initialSettings: initialSettings,
       );
     } on ApiException catch (error) {
-      if (error.statusCode == 400 &&
-          error.code == 'chat_create_invalid_request') {
+      if ((error.statusCode == 400 &&
+              error.code == 'chat_create_invalid_request') ||
+          error.statusCode == 402 ||
+          error.statusCode == 403) {
         await store.finishCreation(attempt, denial: error);
       }
       rethrow;

@@ -67,7 +67,8 @@ export async function executeListAccessibleWorkspaces(
   try {
     const workspaces = await listAccessibleWorkspaceSummaries(
       ctx.supabase,
-      ctx.userId
+      ctx.userId,
+      { restrictToPersonal: ctx.restrictToPersonalWorkspace === true }
     );
 
     return {
@@ -116,6 +117,7 @@ export async function executeSetWorkspaceContext(
       requestedWorkspaceContextId: workspaceId,
       fallbackWorkspaceId: getWorkspaceContextWorkspaceId(ctx),
       strict: true,
+      restrictToPersonal: ctx.restrictToPersonalWorkspace === true,
     });
 
     ctx.workspaceContext = resolvedContext;

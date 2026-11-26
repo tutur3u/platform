@@ -133,6 +133,23 @@ Regression coverage: `apps/discord/tests/test_markitdown_service.py` and
 
 ### Mira Dashboard Chat Agent Loop
 
+Personal Mira conversations are available across all plans, including `FREE`,
+within each billing workspace's AI credit allowance, allowed model list, and
+workspace tool permissions (decision 27 November 2026). Neither
+`/api/ai/chat/new`, `/api/ai/chat`, nor the native chat messages route restricts
+`isMiraMode` to `@tuturuuu.com` staff accounts. When a request is denied for
+plan, credit, daily-limit, or permission reasons, Web (`apps/web`,
+`apps/workspace`) and Mobile (`apps/mobile`) preserve the user's prompt text in
+the composer and show a bilingual EN/VI denial notice with the reason and an
+Upgrade or Learn more action (Apple store builds omit external upgrade/billing
+prompts and show an informational Learn more sheet instead). Regression
+coverage: `packages/ai/src/chat/google/new/route.test.ts`,
+`packages/ai/src/chat/google/mira-free-access.test.ts`,
+`apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.test.ts`,
+`apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/use-mira-chat-actions.test.tsx`,
+`apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/components/__tests__/mira-chat-denial.test.tsx`,
+and `apps/mobile/test/features/assistant/widgets/assistant_chat_feedback_denial_test.dart`.
+
 The dashboard Mira chat keeps the main assistant in fast mode by default. New
 sessions should ignore stale stored `thinking` preferences unless the user
 manually opts into the toolbar's deep-check mode for that active session.

@@ -16,6 +16,11 @@ import {
   WORKSPACE_CONTEXT_EVENT,
   WORKSPACE_CONTEXT_STORAGE_KEY_PREFIX,
 } from './mira-chat-constants';
+import {
+  type MiraChatDenial,
+  parseMiraChatDenial,
+  readMiraChatRequestError,
+} from './mira-chat-denial';
 import { exportMiraChat } from './mira-chat-export';
 
 interface UseMiraChatActionsParams {
@@ -28,6 +33,8 @@ interface UseMiraChatActionsParams {
   messageAttachments: Map<string, MessageFileAttachment[]>;
   messages: UIMessage[];
   model: AIModelUI;
+  onRequestDenied?: (denial: MiraChatDenial) => void;
+  onRestorePrompt?: (prompt: string) => void;
   sendMessageWithCurrentConfig: (
     message: UIMessage,
     isCurrent?: () => boolean
@@ -58,6 +65,8 @@ export function useMiraChatActions({
   messageAttachments,
   messages,
   model,
+  onRequestDenied,
+  onRestorePrompt,
   sendMessageWithCurrentConfig,
   setChat,
   setFallbackChatId,
@@ -132,7 +141,7 @@ export function useMiraChatActions({
       });
 
       if (!res.ok) {
-        throw new Error('Failed to create chat');
+        throw await readMiraChatRequestError(res);
       }
 
       const data = await res.json();
@@ -205,9 +214,23 @@ export function useMiraChatActions({
         );
         if (!current()) return false;
         return accepted !== false;
-      } catch {
+      } catch (error) {
         if (current()) {
-          toast.error(t('error'));
+          if (onRestorePrompt) {
+            onRestorePrompt(userInput);
+          } else {
+            setInput(userInput);
+          }
+          const denial = parseMiraChatDenial(error);
+          if (denial) {
+            if (onRequestDenied) {
+              onRequestDenied(denial);
+            } else {
+              toast.error(t(`request_denied.${denial.kind}.title`));
+            }
+          } else {
+            toast.error(t('error'));
+          }
         }
         return false;
       } finally {
@@ -216,6 +239,8 @@ export function useMiraChatActions({
     },
     [
       model.disabled,
+      onRequestDenied,
+      onRestorePrompt,
       setInput,
       setPendingPrompt,
       createChatMutation,

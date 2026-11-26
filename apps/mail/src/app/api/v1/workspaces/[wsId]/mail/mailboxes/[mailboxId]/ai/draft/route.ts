@@ -1,6 +1,14 @@
 import { google } from '@ai-sdk/google';
+import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
+import { reserveNestedModelBudget } from '@tuturuuu/ai/credits/nested-budget';
+import {
+  PlanModelResolutionError,
+  resolvePlanModel,
+} from '@tuturuuu/ai/credits/resolve-plan-model';
+import { normalizeAiTokenUsage } from '@tuturuuu/ai/credits/token-usage';
 import { withAiMemory } from '@tuturuuu/ai/memory';
-import { generateObject } from 'ai';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { generateObject, NoObjectGeneratedError } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { emailDraftSchema } from '@/app/api/ai/email-draft/schema';
 import { buildMailAiDraftPrompt } from '@/lib/mail/ai-draft';
@@ -9,6 +17,10 @@ import { parseJsonBody, withMailContext } from '@/lib/mail/route-utils';
 import { generateMailAiDraftSchema } from '@/lib/mail/schemas';
 
 type RouteParams = { mailboxId: string; wsId: string };
+
+const MAIL_DRAFT_MODEL = 'gemini-3.1-flash-lite';
+const MAIL_DRAFT_MAX_RESERVE_CREDITS = 15;
+const MAIL_DRAFT_MAX_OUTPUT_TOKENS = 2048;
 
 export async function POST(
   request: NextRequest,
@@ -35,6 +47,27 @@ export async function POST(
       return NextResponse.json({ error: 'Thread not found' }, { status: 404 });
     }
 
+    let modelId: string;
+    try {
+      const resolvedModel = await resolvePlanModel({
+        capability: 'language',
+        requestedModel: MAIL_DRAFT_MODEL,
+        wsId: ctx.normalizedWsId,
+      });
+      modelId = resolvedModel.modelId;
+    } catch (error) {
+      if (error instanceof PlanModelResolutionError) {
+        return NextResponse.json(
+          {
+            error: 'AI email drafting is not available on your current plan.',
+            code: 'NO_ALLOCATION',
+          },
+          { status: 403 }
+        );
+      }
+      throw error;
+    }
+
     const threadContext = (thread?.messages ?? [])
       .slice(-20)
       .map(
@@ -54,20 +87,75 @@ export async function POST(
       threadContext,
     });
 
-    const result = await generateObject({
-      model: await withAiMemory({
-        customId: `mail-compose-${mailboxId}-${body.data.threadId ?? ctx.user.id}`,
-        model: google('gemini-3.1-flash-lite'),
-        product: 'ai_chat',
+    const sbAdmin = await createAdminClient();
+    const budget = await reserveNestedModelBudget({
+      sbAdmin,
+      wsId: ctx.normalizedWsId,
+      userId: ctx.user.id,
+      modelId,
+      feature: 'chat',
+      estimatedInputTokens: Math.max(1, Math.ceil(prompt.length / 3)),
+      attemptCount: 1,
+      maxReserveCredits: MAIL_DRAFT_MAX_RESERVE_CREDITS,
+      maxOutputTokensLimit: MAIL_DRAFT_MAX_OUTPUT_TOKENS,
+      metadata: {
         source: 'mail_composer',
-        surface: 'mail_composer',
-        userId: ctx.user.id,
-        wsId: ctx.normalizedWsId,
-      }),
-      prompt,
-      schema: emailDraftSchema,
+        mailboxId,
+      },
     });
 
-    return NextResponse.json(result.object);
+    if (!budget.ok) {
+      return NextResponse.json(
+        {
+          error:
+            budget.status === 503
+              ? 'AI request budget could not be verified'
+              : 'You have run out of AI credits.',
+          code: budget.code,
+        },
+        { status: budget.status }
+      );
+    }
+
+    try {
+      const result = await generateObject({
+        model: await withAiMemory({
+          customId: `mail-compose-${mailboxId}-${body.data.threadId ?? ctx.user.id}`,
+          model: google(toBareModelName(modelId)),
+          product: 'ai_chat',
+          source: 'mail_composer',
+          surface: 'mail_composer',
+          userId: ctx.user.id,
+          wsId: ctx.normalizedWsId,
+        }),
+        prompt,
+        maxRetries: 0,
+        maxOutputTokens: budget.perAttemptMaxOutputTokens,
+        schema: emailDraftSchema,
+      });
+
+      const usage = normalizeAiTokenUsage(result.usage);
+      await budget.settle({
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        reasoningTokens: usage.reasoningTokens,
+      });
+
+      return NextResponse.json(result.object);
+    } catch (error) {
+      if (NoObjectGeneratedError.isInstance(error) && error.usage) {
+        const usage = normalizeAiTokenUsage(error.usage);
+        await budget
+          .settle({
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            reasoningTokens: usage.reasoningTokens,
+          })
+          .catch(() => undefined);
+      } else {
+        await budget.release().catch(() => undefined);
+      }
+      throw error;
+    }
   });
 }

@@ -115,6 +115,13 @@ type PersistAssistantResponseParams = {
   persistenceRequestId?: string;
   wsId?: string;
   skipCreditDeduction?: boolean;
+  settleCreditReservation?: (charge: {
+    chatMessageId?: string;
+    inputTokens: number;
+    outputTokens: number;
+    reasoningTokens: number;
+    searchCount: number;
+  }) => Promise<void>;
 };
 
 function collectToolData(steps: StepLike[]) {
@@ -484,6 +491,7 @@ export async function persistAssistantResponse({
   persistenceRequestId,
   wsId,
   skipCreditDeduction = false,
+  settleCreditReservation,
 }: PersistAssistantResponseParams): Promise<boolean> {
   if (skipCreditDeduction && response.finishReason !== 'stop') return false;
   const steps = response.steps ?? [];
@@ -504,6 +512,14 @@ export async function persistAssistantResponse({
   });
   if (!parts.some((part) => part.type !== 'step-start')) {
     console.warn('onFinish: no message parts — skipping DB save');
+    if (settleCreditReservation && !skipCreditDeduction) {
+      await settleCreditReservation({
+        inputTokens,
+        outputTokens,
+        reasoningTokens,
+        searchCount: countGoogleSearchQueries(model, response, allToolCalls),
+      });
+    }
     return false;
   }
 
@@ -567,6 +583,18 @@ export async function persistAssistantResponse({
   if (error) {
     console.log('ERROR ORIGIN: ROOT COMPLETION');
     console.log(error);
+    if (!skipCreditDeduction && settleCreditReservation) {
+      await settleCreditReservation({
+        inputTokens,
+        outputTokens,
+        reasoningTokens,
+        searchCount: countGoogleSearchQueries(model, response, allToolCalls),
+      }).catch((settleErr) => {
+        console.error('Failed to settle reservation after persistence error', {
+          error: settleErr,
+        });
+      });
+    }
     throw new Error(error.message);
   }
 
@@ -578,6 +606,17 @@ export async function persistAssistantResponse({
     console.log(
       `Google Search grounding detected: ${searchCount} search quer${searchCount === 1 ? 'y' : 'ies'}`
     );
+  }
+
+  if (!skipCreditDeduction && settleCreditReservation) {
+    await settleCreditReservation({
+      chatMessageId: messageData?.id,
+      inputTokens,
+      outputTokens,
+      reasoningTokens,
+      searchCount,
+    });
+    return true;
   }
 
   if (

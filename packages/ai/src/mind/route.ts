@@ -429,12 +429,17 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         resolvedModelId = normalizeStableModelId(resolvedPlanModel.modelId);
       } catch (error) {
         if (error instanceof PlanModelResolutionError) {
+          const isNoAlloc = error.code === 'NO_ALLOCATION';
           return NextResponse.json(
-            { code: error.code, error: error.message },
-            { status: error.code === 'NO_ALLOCATION' ? 503 : 500 }
+            {
+              code: error.code,
+              error: isNoAlloc
+                ? 'AI credits are not enabled for this workspace plan.'
+                : 'Failed to resolve Mind AI model',
+            },
+            { status: isNoAlloc ? 503 : 500 }
           );
         }
-
         return NextResponse.json(
           { error: 'Failed to resolve Mind AI model' },
           { status: 500 }
@@ -463,7 +468,6 @@ export function createPOST(callbacks: MindRouteCallbacks) {
           wsId: access.wsId,
         });
       }
-
       const creditPreflight = await performCreditPreflight({
         model: resolvedModelId,
         sbAdmin,
@@ -471,7 +475,6 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         wsId: billingWsId ?? access.wsId,
       });
       if ('error' in creditPreflight) return creditPreflight.error;
-
       const supportsThinking =
         resolvedModelId.includes('gemini-2.5') ||
         resolvedModelId.includes('gemini-3');
@@ -501,19 +504,14 @@ export function createPOST(callbacks: MindRouteCallbacks) {
       });
       const userGroupStorageAccessCache = new Map<string, boolean>();
       const miraFileTools = createMiraStreamTools({
+        authorizeWorkspaceTools: async (targetWsId) =>
+          targetWsId === access.wsId,
         chatId: threadId,
         creditWsId: billingWsId ?? access.wsId,
         canReadUserGroupStorage: async ({ groupId, storagePath, wsId }) => {
-          if (wsId !== access.wsId || storagePath.includes('..')) {
+          if (wsId !== access.wsId || storagePath.includes('..')) return false;
+          if (!permissions || permissions.withoutPermission('view_user_groups'))
             return false;
-          }
-
-          if (
-            !permissions ||
-            permissions.withoutPermission('view_user_groups')
-          ) {
-            return false;
-          }
 
           const expectedPrefix = `${access.wsId}/user-groups/${groupId}/`;
           if (!storagePath.startsWith(expectedPrefix)) {

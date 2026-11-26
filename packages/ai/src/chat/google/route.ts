@@ -13,21 +13,15 @@ import {
 } from '../../credits/resolve-plan-model';
 import { withAiMemory } from '../../memory';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
-import { shouldPresentWorkspaceArtifact } from '../mira-artifact-intent';
 import { shouldUseDayOverviewForLatestUserMessage } from '../mira-day-overview-intent';
-import {
-  shouldForceGoogleSearchForLatestUserMessage,
-  shouldForceRenderUiForLatestUserMessage,
-  shouldForceWorkspaceMembersForLatestUserMessage,
-  shouldPreferMarkdownTablesForLatestUserMessage,
-  shouldResolveWorkspaceContextForLatestUserMessage,
-  shouldUseParallelChecksForLatestUserMessage,
-} from '../mira-render-ui-policy';
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { resolveChatTools } from './chat-tools';
 import { systemInstruction } from './default-system-instruction';
 import { miraImmediateFirstTextTransform } from './mira-first-token-stream';
-import { prepareMiraToolStep } from './mira-step-preparation';
+import {
+  buildMiraStepPolicyBase,
+  prepareMiraToolStep,
+} from './mira-step-preparation';
 import { createGoogleChatProviderOptions } from './provider-options';
 import { resolveChatReasoningSettings } from './reasoning-settings';
 import {
@@ -45,7 +39,12 @@ import {
   moveTempFilesToThread,
   resolveChatIdForUser,
 } from './route-chat-resolution';
-import { performCreditPreflight } from './route-credits';
+import {
+  createChatReservationSettlement,
+  estimateProcessedMessagesInputTokens,
+  hasExhaustedChatCreditBudget,
+  performCreditPreflight,
+} from './route-credits';
 import {
   extractLatestUserMessageContent,
   mergeSystemInstructions,
@@ -95,6 +94,7 @@ export function createPOST(
 
   return async function handler(req: NextRequest): Promise<Response> {
     let releaseClaimedPersistenceLease: (() => Promise<void>) | null = null;
+    let releaseCreditReservation: (() => Promise<void>) | null = null;
     const serverTiming = emptyServerTiming();
     const stageStartedAt = () => performance.now();
     const recordStage = (stage: ServerTimingStage, startedAt: number) => {
@@ -179,12 +179,6 @@ export function createPOST(
         }
       }
 
-      if (isMiraMode && !(await isInternalTuturuuuAiUser(auth))) {
-        return NextResponse.json(
-          { error: 'Mira mode is limited to @tuturuuu.com accounts' },
-          { status: 403 }
-        );
-      }
       recordStage('auth', authStartedAt);
 
       const scopeStartedAt = stageStartedAt();
@@ -356,9 +350,15 @@ export function createPOST(
                 : error.code === 'NO_ALLOCATION'
                   ? 503
                   : 500;
+            const safeMessage =
+              error.code === 'WORKSPACE_ID_REQUIRED'
+                ? 'Workspace ID is required.'
+                : error.code === 'NO_ALLOCATION'
+                  ? 'AI credits are not enabled for this workspace plan.'
+                  : 'Failed to resolve chat model.';
             return {
               error: NextResponse.json(
-                { error: error.message, code: error.code },
+                { error: safeMessage, code: error.code },
                 { status }
               ),
             };
@@ -516,25 +516,41 @@ export function createPOST(
 
       const creditsStartedAt = stageStartedAt();
       const creditPreflight = subscriptionModel
-        ? { cappedMaxOutput: null }
+        ? { cappedMaxOutput: null, allowNativeSearch: false }
         : await performCreditPreflight({
             wsId: billingWsId ?? normalizedWsId ?? undefined,
             model: resolvedModelId,
             userId: user.id,
             sbAdmin,
+            estimatedInputTokens:
+              estimateProcessedMessagesInputTokens(processedMessages),
+            reserveCredits: true,
+            enableNativeSearch: !isMiraMode,
           });
       recordStage('credits', creditsStartedAt);
-      if ('error' in creditPreflight) {
-        return creditPreflight.error;
-      }
+      if ('error' in creditPreflight) return creditPreflight.error;
       const { cappedMaxOutput } = creditPreflight;
+      const reservationSettlement = createChatReservationSettlement({
+        budget: creditPreflight,
+        sbAdmin,
+        wsId: billingWsId ?? normalizedWsId ?? undefined,
+        userId: user.id,
+        modelId: resolvedModelId,
+        chargeKey: persistenceRequestId ?? undefined,
+      });
+      releaseCreditReservation = reservationSettlement.release;
 
       const stepsRef: { current: unknown[] } = { current: [] };
-
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
       const needsDayOverview =
         isMiraMode &&
         shouldUseDayOverviewForLatestUserMessage(processedMessages);
+      const restrictToPersonalWorkspace = Boolean(
+        isMiraMode &&
+        !subscriptionModel &&
+        creditPreflight.tier === 'FREE' &&
+        !(await isInternalTuturuuuAiUser(auth))
+      );
       // After the credit check: the memory consent read overlaps context.
       const contextStartedAt = stageStartedAt();
       const [miraRuntime, resolvedGatewayModel] = await Promise.all([
@@ -554,6 +570,7 @@ export function createPOST(
           clientCapabilities: parsedBody.data.clientCapabilities,
           getSteps: () => stepsRef.current,
           prefetchDayOverview: needsDayOverview,
+          restrictToPersonalWorkspace,
         }).finally(() => recordStage('context', contextStartedAt)),
         subscriptionModel ??
           withAiMemory({
@@ -570,37 +587,16 @@ export function createPOST(
         miraRuntime;
 
       const reasoningSettings = resolveChatReasoningSettings(thinkingMode);
-      const forceWorkspaceArtifact =
-        shouldPresentWorkspaceArtifact(processedMessages);
-      const forceRenderUi =
-        shouldForceRenderUiForLatestUserMessage(processedMessages);
-      const forceGoogleSearch =
-        shouldForceGoogleSearchForLatestUserMessage(processedMessages);
-      const preferMarkdownTables =
-        shouldPreferMarkdownTablesForLatestUserMessage(processedMessages);
-      const needsWorkspaceContextResolution =
-        shouldResolveWorkspaceContextForLatestUserMessage(processedMessages);
-      const needsWorkspaceMembersTool =
-        shouldForceWorkspaceMembersForLatestUserMessage(processedMessages);
-      const needsParallelChecks =
-        shouldUseParallelChecksForLatestUserMessage(processedMessages);
-
+      const stepPolicyBase = buildMiraStepPolicyBase(
+        processedMessages,
+        Boolean(needsDayOverview)
+      );
       type PrepareStep = NonNullable<
         NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
       >;
       const prepareStep: PrepareStep = async ({ steps }) => {
         stepsRef.current = steps;
-        const policy = prepareMiraToolStep({
-          forceWorkspaceArtifact,
-          needsDayOverview,
-          steps,
-          forceGoogleSearch,
-          forceRenderUi,
-          needsParallelChecks,
-          needsWorkspaceContextResolution,
-          needsWorkspaceMembersTool,
-          preferMarkdownTables,
-        });
+        const policy = prepareMiraToolStep({ ...stepPolicyBase, steps });
         return prepareMiraDiscoveryStep
           ? prepareMiraDiscoveryStep(policy)
           : policy;
@@ -615,7 +611,10 @@ export function createPOST(
           requestId: persistenceRequestId,
           source: effectiveSource,
         });
-      if (leaseResponse) return leaseResponse;
+      if (leaseResponse) {
+        await releaseCreditReservation().catch(() => undefined);
+        return leaseResponse;
+      }
       if (claimedLease) {
         releaseClaimedPersistenceLease = async () => {
           await releaseAiPersistenceRequest(sbAdmin, claimedLease);
@@ -629,6 +628,7 @@ export function createPOST(
         lease: claimedLease,
         onSettled: () => {
           releaseClaimedPersistenceLease = null;
+          releaseCreditReservation = null;
         },
         persist: (response) =>
           persistAssistantResponse({
@@ -641,8 +641,11 @@ export function createPOST(
             wsId: billingWsId ?? normalizedWsId ?? undefined,
             observabilityContext,
             skipCreditDeduction: !!subscriptionModel,
+            settleCreditReservation: reservationSettlement.settle,
             persistenceRequestId,
-          }),
+          }).finally(() =>
+            reservationSettlement.release().catch(() => undefined)
+          ),
       });
 
       const streamStartedAt = stageStartedAt();
@@ -658,14 +661,20 @@ export function createPOST(
           _options.serverSystemInstructions ?? null
         ),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
-        tools: subscriptionModel ? undefined : resolveChatTools(miraTools),
+        tools: subscriptionModel
+          ? undefined
+          : resolveChatTools(miraTools, {
+              allowNativeSearch: creditPreflight.allowNativeSearch,
+            }),
         ...(miraTools
           ? {
-              stopWhen: stepCountIs(25),
+              stopWhen: [
+                stepCountIs(25),
+                ({ steps }) =>
+                  hasExhaustedChatCreditBudget(steps, creditPreflight),
+              ],
               toolChoice: 'auto' as const,
-              prepareStep: prepareStep as NonNullable<
-                NonNullable<Parameters<typeof streamText>[0]>['prepareStep']
-              >,
+              prepareStep,
             }
           : {}),
         providerOptions: subscriptionModel
@@ -674,11 +683,7 @@ export function createPOST(
         onAbort: async ({ steps }) =>
           persistChatAssistantResponse(buildAbortedStreamFinishResponse(steps)),
         onFinish: persistChatAssistantResponse,
-        timeout: {
-          chunkMs: 20_000,
-          stepMs: 45_000,
-          totalMs: 120_000,
-        },
+        timeout: { chunkMs: 20_000, stepMs: 45_000, totalMs: 120_000 },
       });
 
       // consumeSseStream keeps consuming after a client abort so onFinish/onAbort
@@ -696,15 +701,12 @@ export function createPOST(
         serverTiming
       );
     } catch (error) {
-      if (releaseClaimedPersistenceLease) {
-        try {
-          await releaseClaimedPersistenceLease();
-        } catch (releaseError) {
-          console.error('Failed to release AI persistence request lease.', {
-            error: releaseError,
-          });
-        }
-      }
+      await releaseCreditReservation?.().catch(() => undefined);
+      await releaseClaimedPersistenceLease?.().catch((releaseError) => {
+        console.error('Failed to release AI persistence request lease.', {
+          error: releaseError,
+        });
+      });
       if (_options.subscription) {
         console.error('ChatGPT request failed', {
           errorType: error instanceof Error ? error.name : 'UnknownError',
@@ -716,11 +718,9 @@ export function createPOST(
       }
       // Keep stack traces in server logs; never return them to the client.
       console.error('AI chat request failed', error);
+      const safeError = 'Could not complete the request. Please try again.';
       return NextResponse.json(
-        {
-          error: 'Could not complete the request. Please try again.',
-          message: 'Could not complete the request. Please try again.',
-        },
+        { error: safeError, message: safeError },
         { status: 500 }
       );
     }
