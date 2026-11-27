@@ -32,6 +32,19 @@ test('the overlay preserves every upstream byte except bounded Meet ownership/ca
   assert.equal(createHash('sha256').update(upstream).digest('hex'), pinnedHash);
 });
 
+test('Flutter resolves the exact WebRTC version required by the overlay', () => {
+  const manifest = read('../../../pubspec.yaml');
+  const lock = read('../../../pubspec.lock');
+  const version = /version == "([^"]+)"/.exec(gradle)?.[1];
+  const directConstraint = /^  flutter_webrtc: ([^\r\n]+)$/m.exec(manifest)?.[1];
+  const lockedPackage = /^  flutter_webrtc:\n((?:^    .*\n)+)/m.exec(lock)?.[1];
+  const lockedVersion = /^    version: "([^"]+)"$/m.exec(lockedPackage ?? '')?.[1];
+
+  assert.ok(version);
+  assert.equal(directConstraint, version);
+  assert.equal(lockedVersion, version);
+});
+
 test('Gradle excludes the original, installs repository overlay and pins upstream inputs', () => {
   assert.ok(gradle.includes(`hash == "${pinnedHash}"`));
   assert.ok(gradle.includes('version == "1.6.2+hotfix.3"'));
