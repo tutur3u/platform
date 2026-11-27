@@ -18,8 +18,13 @@ import { parseAntigravityUsage } from '../antigravity-usage';
 import { assertSafeStateWrite, stateRoot } from '../state-root';
 import type { AccountUsage } from '../types';
 import { snapshotWindows } from '../usage-import';
+import { ANTIGRAVITY_ACCOUNT_TTL_MS } from '../window-freshness';
+import {
+  antigravityLogDirectory,
+  antigravityProfile,
+  oldAntigravityProfile,
+} from './antigravity-profile';
 
-export const ANTIGRAVITY_ACCOUNT_TTL_MS = 11 * 60_000;
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
 const cachePath = () =>
@@ -64,12 +69,7 @@ async function defaultAccount() {
   return accountAt(path);
 }
 
-async function instanceAccount(instanceId: string) {
-  const dir = stateRoot(
-    '.t3/userdata/providers/antigravity',
-    digest(instanceId),
-    'antigravity-acp/log'
-  );
+async function latestInstanceLog(dir: string) {
   const logs = (await readdir(dir))
     .filter((name) => /^acp-server-\d{8}_\d{6}-\d+\.log$/.test(name))
     .sort();
@@ -78,7 +78,7 @@ async function instanceAccount(instanceId: string) {
   const current = logs.filter(
     (name) => name.slice(0, 26) === latest.slice(0, 26)
   );
-  if (current.length === 1) return accountAt(join(dir, latest));
+  if (current.length === 1) return join(dir, latest);
   const candidates = await Promise.all(
     current.map(async (name) => {
       const path = join(dir, name);
@@ -87,8 +87,21 @@ async function instanceAccount(instanceId: string) {
   );
   candidates.sort((a, b) => b.time - a.time);
   const [first, second] = candidates;
-  if (!first || first.time === second?.time) return;
-  return accountAt(first.path);
+  if (!first || first.time === second?.time)
+    throw new Error('ambiguous-instance-log');
+  return first.path;
+}
+
+async function instanceAccount(instanceId: string, renameEntries: unknown) {
+  const root = stateRoot();
+  const current = antigravityProfile(root, instanceId);
+  const old = oldAntigravityProfile(root, instanceId, renameEntries);
+  for (const profile of old ? [current, old] : [current]) {
+    const dir = await antigravityLogDirectory(root, profile);
+    if (!dir) continue;
+    const log = await latestInstanceLog(dir);
+    if (log) return accountAt(log);
+  }
 }
 
 export async function refreshAntigravityAccount(binary: string) {
@@ -161,13 +174,22 @@ export async function collectAntigravityAccountMatches(
 ) {
   if (!accounts.some((account) => account.provider === 'antigravity'))
     return accounts;
-  const quota = await readMatchedQuota(now);
+  const [quota, renameEntries] = await Promise.all([
+    readMatchedQuota(now),
+    readFileBounded(
+      stateRoot('.t3/scratch/automations/provider-rename-map.json'),
+      128 * 1024
+    )
+      .then((contents): unknown => JSON.parse(contents))
+      .catch(() => undefined),
+  ]);
   return Promise.all(
     accounts.map(async (account) => {
       if (account.provider !== 'antigravity') return account;
-      const instance = await instanceAccount(account.instanceId).catch(
-        () => undefined
-      );
+      const instance = await instanceAccount(
+        account.instanceId,
+        renameEntries
+      ).catch(() => undefined);
       if (!instance) return account;
       const identified = {
         ...account,

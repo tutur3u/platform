@@ -1,6 +1,7 @@
 import type { UsageWindow } from './types';
 
 export const PROVIDER_USAGE_SNAPSHOT_MAX_AGE_MS = 5 * 60_000;
+export const ANTIGRAVITY_ACCOUNT_TTL_MS = 11 * 60_000;
 
 export function windowFreshnessTtlMs(
   window: Pick<UsageWindow, 'freshnessTtlMs'>,

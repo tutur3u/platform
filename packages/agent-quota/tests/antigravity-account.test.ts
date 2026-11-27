@@ -40,6 +40,7 @@ test('matches only the newest instance profile log and coalesces shared quota', 
     await writeFile(file, content);
   };
   vi.stubEnv('AGENT_QUOTA_STATE_ROOT', home);
+  vi.stubEnv('AGENT_QUOTA_RENAME_HOST', 'M4');
   try {
     const cli = join(home, '.gemini/antigravity-cli');
     await save(
@@ -160,6 +161,77 @@ test('matches only the newest instance profile log and coalesces shared quota', 
       collected.accounts.every((account) => account.windows.length === 4)
     ).toBe(true);
     expect(collected.accounts[0]?.windows[0]?.freshnessTtlMs).toBe(660_000);
+    const newId = 'antigravity_7';
+    const renamed = accounts.map((account, index) =>
+      index === 0 ? { ...account, instanceId: newId } : account
+    );
+    const mapFile = join(
+      home,
+      '.t3/scratch/automations/provider-rename-map.json'
+    );
+    const entry = {
+      host: 'M4',
+      old_key: 'antigravity',
+      new_key: newId,
+      old_data_dir: `~/.t3/userdata/providers/antigravity/${hash('antigravity')}`,
+      new_data_dir: `~/.t3/userdata/providers/antigravity/${hash(newId)}`,
+      migration_method: 'copy hash dir while idle',
+    };
+    const saveMap = (entries: unknown[]) =>
+      save(mapFile, JSON.stringify({ numbering: {}, entries }));
+    const newLogDir = dirname(instance(newId, latest));
+    await mkdir(newLogDir, { recursive: true });
+    const assertUnidentified = async () => {
+      const [account] = await collectAntigravityAccountMatches(renamed);
+      expect(account?.accountIdentityHash).toBeUndefined();
+      expect(account?.windows).toEqual([]);
+    };
+    await saveMap([{ ...entry, host: 'Studio' }]);
+    await assertUnidentified();
+    await saveMap([{ ...entry, old_data_dir: home }]);
+    await assertUnidentified();
+    await saveMap([{ ...entry, old_data_dir: 'relative' }]);
+    await assertUnidentified();
+    await saveMap([entry, { ...entry, old_key: 'antigravity_2' }]);
+    await assertUnidentified();
+    await save(mapFile, '{');
+    await assertUnidentified();
+    await save(mapFile, ' '.repeat(128 * 1024 + 1));
+    await assertUnidentified();
+
+    await saveMap([entry, { ...entry, host: 'Studio' }]);
+    const migrated = await collectAntigravityAccountMatches(renamed);
+    expect(migrated[0]?.instanceId).toBe(newId);
+    expect(migrated[0]?.accountIdentityHash).toBe(
+      migrated[1]?.accountIdentityHash
+    );
+    expect(migrated[0]?.windows[0]?.source).toBe(
+      `account-match:${instance('antigravity', latest)}`
+    );
+
+    await rm(newLogDir, { recursive: true });
+    await symlink(dirname(instance('antigravity', latest)), newLogDir);
+    await assertUnidentified();
+    await rm(newLogDir);
+    await save(
+      instance(newId, latest),
+      'ACP initialized without account evidence'
+    );
+    await assertUnidentified();
+
+    await save(instance(newId, latest), line('different@example.test'));
+    const copied = await collectAntigravityAccountMatches(renamed);
+    expect(copied[0]?.windows).toEqual([]);
+    expect(copied[0]?.accountIdentityHash).not.toBe(
+      copied[1]?.accountIdentityHash
+    );
+
+    await save(instance(newId, latest), line('shared@example.test'));
+    await save(mapFile, '{');
+    const current = await collectAntigravityAccountMatches(renamed);
+    expect(current[0]?.windows[0]?.source).toBe(
+      `account-match:${instance(newId, latest)}`
+    );
   } finally {
     vi.resetAllMocks();
     vi.unstubAllEnvs();

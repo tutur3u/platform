@@ -1,4 +1,3 @@
-import { ANTIGRAVITY_ACCOUNT_TTL_MS } from './collectors/antigravity-account';
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
 import { computeAccountPacing, type ObservationSample } from './pacing';
@@ -24,6 +23,7 @@ import type {
   TaskRequest,
 } from './types';
 import {
+  ANTIGRAVITY_ACCOUNT_TTL_MS,
   windowHasCurrentReset,
   windowObservationIsFresh,
   windowResetAt,

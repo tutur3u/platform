@@ -98,3 +98,14 @@ server log reports that account. Matching instances share one admission pool.
 The cached reading expires after eleven minutes, and each active window
 expires at its provider reset time. This command requires an existing CLI
 login and does not run a login command.
+
+During a T3 provider rename, the collector uses the current key's hashed
+profile when it has ACP logs. If the new profile has no server logs yet, it
+can read the retained old profile from Automations'
+`~/.t3/scratch/automations/provider-rename-map.json`. The collector validates
+the old and new directory paths against the key hashes and still requires
+matching account evidence in the provider logs. The map fallback is one hop
+and uses rows for the local hostname or its final hyphen-separated host label.
+Set `AGENT_QUOTA_RENAME_HOST` to the map's host label when the hostname differs.
+An existing current-profile log without account evidence, an ambiguous current
+log, or a redirected profile log directory leaves the account unidentified.
