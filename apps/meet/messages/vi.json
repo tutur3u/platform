@@ -5404,6 +5404,14 @@
       "preparing_call": "Đang thiết lập cuộc họp",
       "presence_only": "Chỉ hiện diện",
       "presence_roster": {
+        "live_join": "Tham gia",
+        "live_join_named": "Tham gia {name}",
+        "live_now": "Đang diễn ra",
+        "live_open": "Mở",
+        "live_open_named": "Mở {name}",
+        "live_participants": "{count, plural, other {# người đang tham gia}}",
+        "live_ready": "Chủ phòng đã bật",
+        "more_activities": "Hoạt động khác",
         "self": "{name} (bạn)",
         "title": "{count, plural, other {# người đang ở đây}}"
       },

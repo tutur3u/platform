@@ -5024,8 +5024,16 @@
         "open_state": "Open"
       },
       "presence_roster": {
-        "title": "{count, plural, one {# person here} other {# people here}}",
-        "self": "{name} (you)"
+        "live_join": "Join",
+        "live_join_named": "Join {name}",
+        "live_now": "Live now",
+        "live_open": "Open",
+        "live_open_named": "Open {name}",
+        "live_participants": "{count, plural, one {# active} other {# active}}",
+        "live_ready": "Host enabled",
+        "more_activities": "More activities",
+        "self": "{name} (you)",
+        "title": "{count, plural, one {# person here} other {# people here}}"
       },
       "layout_dialog_hint": "How video tiles fill the stage",
       "camera_effects_preview_off": "Turn on your camera to preview effects",

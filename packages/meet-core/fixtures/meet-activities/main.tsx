@@ -11,7 +11,8 @@ import { scheduleCollaborationCaretPlacement } from '@tuturuuu/ui/text-editor/co
 import { NextIntlClientProvider } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import messages from '../../../../apps/meet/messages/en.json';
+import enMessages from '../../../../apps/meet/messages/en.json';
+import viMessages from '../../../../apps/meet/messages/vi.json';
 import '../../../../packages/ui/src/globals.css';
 import { ParticipantTile } from '../../src/features/call/components/participant-tile';
 import { ActivityDockPresence } from '../../src/features/call/stage-layout/activity-presence';
@@ -23,6 +24,7 @@ import {
   QaPanel,
 } from '../../src/features/call/tools/live-activities/qa/qa-panel';
 import { createLiveQaClient } from '../../src/features/call/tools/live-activities/qa/qa-store';
+import { PresenceSceneFixture } from './presence-scene';
 
 // Mounts the real activity pane chrome, the real shared-document editor (Yjs +
 // tiptap with its sticky toolbar and remote caret plugin) and the real presence
@@ -276,11 +278,24 @@ function FixtureApp() {
   );
 }
 
+const locale = params.get('locale') === 'vi' ? 'vi' : 'en';
+const messages = locale === 'vi' ? viMessages : enMessages;
+const scene = params.get('scene');
+const canBrowse = params.get('canBrowse') !== '0';
+
 createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
-    <NextIntlClientProvider locale="en" messages={messages} timeZone="UTC">
+    <NextIntlClientProvider
+      locale={locale}
+      messages={messages}
+      timeZone="UTC"
+    >
       <LiveQaClientContext value={qaClient}>
-        <FixtureApp />
+        {scene === 'presence' ? (
+          <PresenceSceneFixture canBrowse={canBrowse} />
+        ) : (
+          <FixtureApp />
+        )}
       </LiveQaClientContext>
     </NextIntlClientProvider>
   </QueryClientProvider>

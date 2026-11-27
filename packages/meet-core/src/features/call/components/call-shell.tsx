@@ -546,13 +546,13 @@ function CallShellContent({
                   participants={participants}
                   selfUserId={state.selfUserId}
                   raisedHandUserIds={state.stage.raisedHandUserIds}
-                  tools={{
-                    tools: tools.shown,
-                    openToolIds: tools.openIds,
-                    onTool: tools.toggle,
-                  }}
+                  tools={tools.menuProps}
                   navigationAllowed={nav.allowed}
                   openFromDock={!!presentation}
+                  presenceByActivity={presenceByActivity}
+                  defaultActivity={state.settings.defaultActivity}
+                  isAvailable={availability.isAvailable}
+                  onOpenActivity={revealActivity}
                 />
               )
             }

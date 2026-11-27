@@ -2,7 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: 'meet-activities-ux.fixture.ts',
+  testMatch: [
+    'meet-activities-ux.fixture.ts',
+    'meet-presence-activities.fixture.ts',
+  ],
   fullyParallel: false,
   workers: 1,
   retries: 0,

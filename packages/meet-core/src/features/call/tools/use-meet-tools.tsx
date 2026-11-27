@@ -108,6 +108,7 @@ export function useMeetTools({
     /** Tools this person may browse now, for the Activities menu. */
     shown,
     toggle,
+    menuProps: { tools: shown, openToolIds: openIds, onTool: toggle },
     hub: shown.length ? (
       <MeetToolsHub tools={shown} activeId={activeId} onSelect={toggle} />
     ) : null,

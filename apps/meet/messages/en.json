@@ -5404,6 +5404,14 @@
       "preparing_call": "Setting up your meeting",
       "presence_only": "Presence only",
       "presence_roster": {
+        "live_join": "Join",
+        "live_join_named": "Join {name}",
+        "live_now": "Live now",
+        "live_open": "Open",
+        "live_open_named": "Open {name}",
+        "live_participants": "{count, plural, one {# active} other {# active}}",
+        "live_ready": "Host enabled",
+        "more_activities": "More activities",
         "self": "{name} (you)",
         "title": "{count, plural, one {# person here} other {# people here}}"
       },

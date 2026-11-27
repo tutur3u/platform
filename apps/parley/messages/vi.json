@@ -5024,8 +5024,16 @@
         "open_state": "Đang mở"
       },
       "presence_roster": {
-        "title": "{count, plural, other {# người đang ở đây}}",
-        "self": "{name} (bạn)"
+        "live_join": "Tham gia",
+        "live_join_named": "Tham gia {name}",
+        "live_now": "Đang diễn ra",
+        "live_open": "Mở",
+        "live_open_named": "Mở {name}",
+        "live_participants": "{count, plural, other {# người đang tham gia}}",
+        "live_ready": "Chủ phòng đã bật",
+        "more_activities": "Hoạt động khác",
+        "self": "{name} (bạn)",
+        "title": "{count, plural, other {# người đang ở đây}}"
       },
       "layout_dialog_hint": "Cách các ô video lấp đầy sân khấu",
       "camera_effects_preview_off": "Bật camera để xem trước hiệu ứng",
