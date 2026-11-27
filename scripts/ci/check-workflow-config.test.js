@@ -345,7 +345,7 @@ test('release-please workflow uses static switchboard gating', () => {
   );
 });
 
-test('Vercel app projects disable Vercel-owned GitHub builds', () => {
+test('Retained app configs disable provider-owned GitHub builds', () => {
   const appsRoot = path.join(repoRoot, 'apps');
   const vercelJsonPaths = fs
     .readdirSync(appsRoot)

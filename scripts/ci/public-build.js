@@ -117,13 +117,13 @@ function main() {
     status: 'FAIL',
   };
   try {
+    Object.assign(receipt, contract(app));
     receipt.adapterInputDigests = Object.fromEntries(
       [
         `apps/${app}/package.json`,
-        `apps/${app}/${app === 'meet' ? 'vite.config.ts' : 'vercel.json'}`,
+        `apps/${app}/vite.config.ts`,
       ].map((p) => [p, sha256(fs.readFileSync(p))])
     );
-    Object.assign(receipt, contract(app));
     receipt.publicInputSHA256 = sha256(JSON.stringify(publicInputs));
     receipt.inputDigests = Object.fromEntries(
       [

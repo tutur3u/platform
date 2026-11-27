@@ -248,8 +248,7 @@ reports when those behaviors change.
 ## CI and deployment
 
 Learn deploys to Cloudflare through `.github/workflows/learn-cloudflare.yaml`.
-Previews are Worker versions uploaded at a 0% stage; see the [native Start migration runbook](/build/devops/native-start-migration). `apps/learn/vercel.json` disables Vercel Git deployments and GitHub
-integration.
+Previews are Worker versions uploaded at a 0% stage; see the [native Start migration runbook](/build/devops/native-start-migration). GitHub Actions owns Worker publication.
 
 The full-bleed shell measures its mobile navigation header, including safe-area padding and wrapped rows, and reserves bottom safe-area space inside the viewport. Disabled Run and Submit controls expose their tooltips to keyboard focus. Font loading failures retain fallback editor metrics without unhandled rejections. Source regression coverage is in `apps/learn/tests/programming-workspace/review-regressions.node-test.mjs`; real mobile and Next build checks remain separate verification gates.
 

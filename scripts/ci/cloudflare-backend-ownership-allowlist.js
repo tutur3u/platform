@@ -74,13 +74,7 @@ const LEGACY_OWNERS = Object.freeze([
     TARGETS.cronTrigger,
     'Cron Control job calendar-smart-schedule through the Infrastructure gateway; later a Workflow.'
   ),
-  vercelCron(
-    'apps/inventory',
-    '/api/cron/inventory/checkout-expiry',
-    '*/5 * * * *',
-    TARGETS.workerProcessor,
-    'Cron Control job inventory-checkout-expiry; Worker processor calls the atomic expiry RPC directly.'
-  ),
+
   vercelCron(
     'apps/pay',
     '/api/cron/payment/products',
