@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import test from 'node:test';
+import { issueRoomAdmission } from '../../apps/worlds/src/multiplayer/admission.ts';
 import {
   createTuturuuuWebE2EConfig,
   FLEET_IDENTITY_ENV_NAMES,
@@ -185,6 +186,30 @@ test('login fixtures check runtime credentials and protect both localized destin
   });
 });
 
+const bypassHeaders = {
+  'x-e2e-bypass': 'true',
+  authorization: 'Bearer forged',
+};
+
+test('localized personal pages reject forged sessions and bypass inputs', async () => {
+  await withFixture(async ({ get }) => {
+    for (const locale of ['en', 'vi']) {
+      const personal = `/${locale}/personal`;
+      const forgedSession = { cookie: 'ttr_e2e_fixture_session=forged' };
+      for (const [path, headers] of [
+        [personal, forgedSession],
+        [personal, bypassHeaders],
+        [`${personal}?bypass=1`, {}],
+        [`${personal}?bypass=1`, { ...bypassHeaders, ...forgedSession }],
+      ]) {
+        const denied = await get(path, { headers });
+        assert.equal(denied.status, 302);
+        assert.equal(denied.headers.get('location'), `/${locale}/login`);
+      }
+    }
+  });
+});
+
 test('Kanban fixture links to a board with cards and the filtered-empty controls', async () => {
   await withFixture(async ({ get }) => {
     const index = await get('/en/personal/tasks/boards');
@@ -232,6 +257,33 @@ test('Meet fixture requires a display name and explicit media readiness before a
     const joined = await get(url, post(ready));
     assert.equal(joined.status, 200);
     assert.deepEqual(await joined.json(), { status: 'joined', ...ready });
+  });
+});
+
+test('EduFest room rejects invalid admission cookies and bypass inputs', async () => {
+  await withFixture(async ({ get }) => {
+    const wrongKeyGrant = await issueRoomAdmission(
+      { worldId: 'edufest-hall', revision: 'edufest-hall-v1', shard: 0 },
+      async () => ({
+        id: randomUUID(),
+        sessionExpiresAt: Math.floor(Date.now() / 1000) + 60,
+      }),
+      randomUUID()
+    );
+    assert.ok(wrongKeyGrant);
+    const room = '/api/e2e-fixture/worlds/room';
+    for (const [path, headers] of [
+      [room, {}],
+      [room, { cookie: 'ttr_e2e_hall_admission=' }],
+      [room, { cookie: 'ttr_e2e_hall_admission=forged' }],
+      [room, { cookie: `ttr_e2e_hall_admission=${wrongKeyGrant}` }],
+      [room, bypassHeaders],
+      [`${room}?bypass=1`, {}],
+    ]) {
+      const denied = await get(path, { headers });
+      assert.equal(denied.status, 401);
+      assert.deepEqual(await denied.json(), { error: 'Admission required' });
+    }
   });
 });
 

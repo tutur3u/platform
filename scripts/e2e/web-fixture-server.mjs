@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
 import http from 'node:http';
 import { pathToFileURL, URL } from 'node:url';
 import {
@@ -92,6 +92,18 @@ function parseCookies(req) {
     }
   }
   return map;
+}
+
+function getCookie(req, name) {
+  return parseCookies(req).get(name) ?? '';
+}
+
+function safeTokenEqual(provided, expected) {
+  if (typeof provided !== 'string') return false;
+  return timingSafeEqual(
+    createHash('sha256').update(provided, 'utf16le').digest(),
+    createHash('sha256').update(expected, 'utf16le').digest()
+  );
 }
 
 function loginPageHtml(locale) {
@@ -417,6 +429,13 @@ export function createFixtureServer(env = process.env) {
   const pendingHallGuests = new Map();
 
   return http.createServer(async (req, res) => {
+    if (
+      !['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(
+        req.socket?.remoteAddress
+      )
+    ) {
+      return reply(res, 403, 'Forbidden');
+    }
     const { pathname } = new URL(req.url ?? '/', 'http://127.0.0.1');
     try {
       if (req.method === 'GET') {
@@ -426,7 +445,10 @@ export function createFixtureServer(env = process.env) {
           const [, locale, page] = authRoute;
           if (page === 'login') return html(res, loginPageHtml(locale));
           if (
-            parseCookies(req).get('ttr_e2e_fixture_session') !== loginSession
+            !safeTokenEqual(
+              getCookie(req, 'ttr_e2e_fixture_session'),
+              loginSession
+            )
           ) {
             return reply(res, 302, undefined, { location: `/${locale}/login` });
           }
@@ -446,11 +468,22 @@ export function createFixtureServer(env = process.env) {
           return html(res, meetGuestJoinHtml(decodeURIComponent(meetRoom[1])));
         if (pathname === '/worlds') return html(res, edufestHallHtml());
         if (pathname === '/api/e2e-fixture/worlds/room') {
-          const grant = parseCookies(req).get('ttr_e2e_hall_admission');
-          const admission =
-            grant && (await verifyRoomAdmission(grant, hallKey));
-          const guest = admission && pendingHallGuests.get(admission.actorId);
-          if (!guest) return json(res, 401, { error: 'Admission required' });
+          const admission = await verifyRoomAdmission(
+            getCookie(req, 'ttr_e2e_hall_admission'),
+            hallKey
+          );
+          if (
+            !admission ||
+            admission.worldId !== hallScope.worldId ||
+            admission.revision !== hallScope.revision ||
+            admission.shard !== hallScope.shard
+          ) {
+            return json(res, 401, { error: 'Admission required' });
+          }
+          const guest = pendingHallGuests.get(admission.actorId);
+          if (!guest || guest.expiresAt <= Math.floor(Date.now() / 1000)) {
+            return json(res, 401, { error: 'Admission required' });
+          }
           pendingHallGuests.delete(admission.actorId);
           return json(res, 200, {
             type: 'ready',
@@ -471,8 +504,8 @@ export function createFixtureServer(env = process.env) {
           if (
             !expectedEmail ||
             !expectedPassword ||
-            body?.email !== expectedEmail ||
-            body?.password !== expectedPassword
+            !safeTokenEqual(body?.email, expectedEmail) ||
+            !safeTokenEqual(body?.password, expectedPassword)
           ) {
             return json(res, 401, { error: 'Invalid credentials' });
           }
