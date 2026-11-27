@@ -1,8 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { objectBounds, type World } from '@tuturuuu/worlds';
-import hall from '@tuturuuu/worlds/edufest-hall.json';
+import { objectBounds } from '@tuturuuu/worlds';
+import { edufestHall as world } from '@tuturuuu/worlds/edufest-hall';
 
-const world = hall as World;
 const copy = {
   en: {
     title: 'EduFest hall',

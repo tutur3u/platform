@@ -42,6 +42,11 @@ export function objectBounds(object: WorldObject) {
 export function objectsAt(world: World, point: Point): WorldObject[] {
   return world.objects.filter((object) => {
     const { min, max } = objectBounds(object);
-    return point.x >= min.x && point.x <= max.x && point.z >= min.z && point.z <= max.z;
+    return (
+      point.x >= min.x &&
+      point.x <= max.x &&
+      point.z >= min.z &&
+      point.z <= max.z
+    );
   });
 }

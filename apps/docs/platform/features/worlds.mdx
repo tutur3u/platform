@@ -19,7 +19,16 @@ coordinates, identifiers, and asset references at ingestion and publication befo
 accepting user-authored maps.
 
 The sample exports the B10 hall footprint, entrance, 55 booth positions and stage
-from EduFest revision `f3f20fa47fd15e57832b57ef51f55d370ae38341`.
+from the retained EduFest R70 integration checkout in `tutur3u/edufest` at
+`f3f20fa47fd15e57832b57ef51f55d370ae38341`. This is a local integration
+revision. The source blobs are:
+
+| File | Git blob |
+| --- | --- |
+| `data/booths-top50.json` | `74b44f90be9cecd9d01eeba64be56740163ee4e2` |
+| `src/booths.ts` | `8f7b9dc7759caa166190e38463a6dda751e4e931` |
+| `client/features/terrain.js` | `19f3e552da5eaaabc59a3150a53b7bb69a694e44` |
+
 Booth records contain geometry only. The sample omits seating, furniture, media,
 and event-specific interactions. Worlds owns its copy of the data.
 
