@@ -127,7 +127,7 @@ extension _ShellPageLayout on _ShellPageState {
         isMiniAppRoute && injectedMiniNavRegistration != null;
     final isCompact = _usesCompactNavigation(context);
     final selectedKey = useInjectedMiniNav
-        ? _injectedMiniSelectedKey(injectedMiniNavRegistration!)
+        ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
         ? _miniSelectedKey(context, activeMiniNavItems)
         : isSettingsRoute
@@ -206,7 +206,7 @@ extension _ShellPageLayout on _ShellPageState {
           ? _runBackNavigation(context)
           : useInjectedMiniNav ||
                 (injectedSettingsBack != null && key == backKey)
-          ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration!)
+          ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
           : isMiniAppRoute
           ? _onMiniAppItemTapped(key, context, activeModule, activeMiniNavItems)
           : _onItemTapped(_routeForRootKey(key), context),
