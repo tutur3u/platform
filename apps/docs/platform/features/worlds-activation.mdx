@@ -1,0 +1,140 @@
+---
+title: Worlds hostname activation
+description: Production cutover and rollback for the exact Worlds viewer hostname.
+---
+
+## Decision and scope
+
+**Hold activation.** Iris owns the release decision and supplies the approved
+provider target and artifact receipt. Automations rechecks the receipt and
+executes the authorized changes using a scoped identity.
+
+Attach only `worlds.tuturuuu.com`, the Worlds namespace apex, to the
+`tuturuuu-worlds` Worker as a Cloudflare Workers Custom Domain. The DNS zone to
+confirm is `tuturuuu.com`. The Worker is the origin, and Cloudflare manages the
+attachment's DNS record and edge certificate. This plan omits a zone Workers
+Route, origin DNS placeholders, wildcard records and routes, preview hostnames,
+and customer domains. A competing route can still intercept a Custom Domain,
+so inventory must cover all matching route patterns.
+[Cloudflare Workers Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
+
+## Preflight evidence
+
+Capture the following in the exact activation packet before requesting approval.
+
+| Item | Required evidence |
+| --- | --- |
+| DNS | Timestamped authoritative and recursive A, AAAA and CNAME answers, negative TTL if applicable, and the authenticated record inventory. |
+| TLS | Current provider certificate status and planned SNI, chain and validity probes. Check CAA before attachment. |
+| Provider target | Trusted account and zone IDs, existing service and active version, DNS records and matching routes, Worker Domain and SaaS hostname conflicts, and in-flight changes. |
+| Release artifact | Successful exact-commit CI build, immutable artifact location, SHA-256 manifest, sealed Worker and staging acceptance, and approved provider version or artifact-to-version mapping. |
+
+Use the cf Build Output for the accepted Vite+ viewer build. Record the worker
+and asset manifest separately from provider routing inventory. Check that the
+accepted artifact keeps workers.dev and previews disabled and has the required
+bindings for its release scope.
+
+## Iris approval and Automations execution
+
+1. Take a timestamped read-only snapshot immediately before approval. Confirm
+   the account owns the active zone and approved service. Record all DNS records
+   at the hostname, wildcard and exact routes that could match, any domain
+   attachments or delegated zone, certificate status, and the current
+   deployment and traffic allocation. Resolve any competing target or pending
+   change before proceeding. If an exact binding already points to the intended
+   service, reconcile its ID and deployment against the receipt without another
+   attach. Any replacement of existing state requires its own reviewed diff.
+2. Verify the staging receipt against the production artifact and effective
+   manifest. Iris records approval ID and expiry, artifact digest, account and
+   zone IDs, exact hostname/service, approved version or digest to version
+   mapping, planned provider operations and rollback. Set a deadline, a total
+   provider-operation cap including polls and rollback, and at most three
+   attempts per operation under the
+   [Automations deployment handoff](/platform/features/worlds-hosting).
+   Persist reservations and a durable stop fence. Reconcile ambiguous results
+   by readback before retrying. Stop on drift, expiry, exhausted budgets, or
+   unresolved outcomes.
+3. If the approved Worker version is absent, upload the sealed Worker and
+   assets and capture the provider version ID. If the service lacks the
+   approved active version, activate it under the approved deployment diff.
+   Require explicit first-deployment authorization if the service is absent.
+   Inventory existing service ingress before activating any version and keep
+   `workers.dev` and previews disabled. Reuse the approved version if it is
+   already active. Confirm version and bindings by provider readback before
+   attaching the hostname. Keep unrelated Worker versions and ingress intact.
+4. Attach the Worker Domain with `PUT /accounts/{account_id}/workers/domains`
+   using the approved `zone_id`, `hostname: worlds.tuturuuu.com`,
+   `service: tuturuuu-worlds`, `enabled: true` and
+   `previews_enabled: false`. Use the default production service environment
+   confirmed by inventory. Capture the returned domain ID and certificate ID
+   when present, and read back the exact attachment. This operation provisions
+   DNS and TLS through Cloudflare. The API call can start ingress before the
+   final probes, so attach only after staging acceptance and rollback rehearsal.
+   [Attach Worker Domain API](https://developers.cloudflare.com/api/resources/workers/subresources/domains/methods/update/)
+5. Verify the exact domain, zone and service association and the deployed
+   version. Query A, AAAA and CNAME from both authoritative servers and an
+   independent resolver. Allow for negative caching within the approved
+   deadline. Verify the SNI handshake, certificate SAN, chain and dates using
+   the real public hostname. Fetch `https://worlds.tuturuuu.com/` without
+   certificate overrides. Check the viewer marker and expected first-party
+   assets against the staging baseline and tie probes to the deployed version.
+   Verify that a spoofed forwarding header cannot change the result and that
+   sampled sibling or wildcard hostnames have gained no Worlds ingress.
+   Record timestamps, version ID, status, certificate identity and observed
+   DNS, then monitor viewer errors and latency for the approved watch period.
+
+## Rollback
+
+For a first attachment whose preflight confirmed absence, the one-step ingress
+rollback is detaching the newly created binding with
+`DELETE /accounts/{account_id}/workers/domains/{domain_id}`. Use the ID captured
+from the successful attach or reconciled by exact hostname, zone and service.
+Fence further writes first. Confirm the attachment is absent, managed DNS has
+returned to baseline and requests reaching a cached edge address cannot serve
+Worlds through the removed hostname. DNS caches may outlive detachment. Leave
+residual or conflicting DNS, routes and certificates for separately approved
+reconciliation.
+
+For an approved version change to an existing service, retain the prior immutable
+version or allocation and rehearse restoring it separately. For a greenfield
+service with no prior version, detachment restores the public ingress baseline.
+Preserve the service and storage for investigation. Worker rollback restores
+traffic allocation and code subject to Cloudflare lifecycle constraints. Storage
+state and Durable Object lifecycle changes require their own recovery plan.
+[Cloudflare Worker rollbacks](https://developers.cloudflare.com/workers/versions-and-deployments/rollbacks/)
+
+## Multiplayer dependencies
+
+The apex can serve the static EduFest floor-plan fixture independently of live
+multiplayer. For a multiplayer release, require an artifact with authenticated
+upgrade and admission wiring, the room class exported from its owning Worker,
+the namespace binding, and the admission secret. Capture the class, namespace
+identity, owning service, storage backend, and lifecycle metadata. Verify the
+binding and secret by identity and name only.
+
+Rehearse valid scoped WebSocket admission, rejection of invalid or cross-scope
+admission, and persistent room stop after reconnect or restart in staging.
+Class creation or migration must be separately approved and verified before
+traffic. Some lifecycle changes prevent rollback to versions on the other side
+of the change. Use a compatible retained version or rehearse ingress detachment
+while retaining room state. [Cloudflare Durable Object class exports](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/)
+
+## Later hostname phases
+
+Treat `<label>.worlds.tuturuuu.com` as a separate managed namespace rollout with
+explicit workspace and world assignments, TLS coverage at that depth, and an
+HTTP adapter that resolves trusted request hostnames. The viewer apex
+attachment grants no published-world binding.
+
+For customer-managed domains, approve Cloudflare for SaaS onboarding separately.
+Confirm the active fallback origin or exact custom origin and the customer DNS
+target, then provision each exact hostname and track the provider binding ID.
+Keep application routing disabled until the claim-specific ownership proof,
+provider hostname status and certificate status are current and active, DNS
+points to the approved target, and the hostname resolves to the authorized
+workspace/world release. Verify generic rejection for unknown, suspended,
+expired or unpublished bindings. Rollback fences the claim first, reconciles
+in-flight writes, then restores approved provider state and coordinates any DNS
+reversal with the customer. Follow the
+[Worlds hosting lifecycle](/platform/features/worlds-hosting) and
+[Cloudflare custom hostname statuses](https://developers.cloudflare.com/ssl/reference/certificate-statuses/).

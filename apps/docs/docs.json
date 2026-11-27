@@ -157,6 +157,7 @@
               "platform/features/meet-calls",
               "platform/features/worlds",
               "platform/features/worlds-hosting",
+              "platform/features/worlds-activation",
               "platform/features/meet-short-links",
               "platform/features/meet-media-quality",
               "platform/features/native-calendar-recurrence",
