@@ -4,7 +4,29 @@ set -euo pipefail
 # Flutter opens Secret Service at startup. Give this smoke run its own keyring
 # and session bus so an existing runner login cannot supply the credentials.
 sandbox=$(mktemp -d)
-trap 'rm -rf -- "$sandbox"' EXIT
+
+# Teardown keeps the wrapped command's exit status. xdg-document-portal mounts
+# FUSE at $XDG_RUNTIME_DIR/doc while the session bus lives, so detach it before
+# removing the sandbox. A teardown failure is reported, never turned into a
+# failed smoke step.
+cleanup() {
+  local status=$?
+  trap - EXIT
+  local portal="${XDG_RUNTIME_DIR:-}/doc"
+  if [[ -n "${XDG_RUNTIME_DIR:-}" ]] &&
+    command -v mountpoint >/dev/null 2>&1 && mountpoint -q "$portal"; then
+    { command -v fusermount3 >/dev/null 2>&1 &&
+      fusermount3 -uz -- "$portal"; } ||
+      { command -v fusermount >/dev/null 2>&1 &&
+        fusermount -uz -- "$portal"; } ||
+      echo "warning: could not unmount $portal" >&2
+  fi
+  if ! rm -rf -- "$sandbox"; then
+    echo "warning: could not remove the smoke sandbox; the smoke result is unchanged" >&2
+  fi
+  exit "$status"
+}
+trap cleanup EXIT
 export HOME="$sandbox"
 export XDG_CONFIG_HOME="$sandbox/config"
 export XDG_DATA_HOME="$sandbox/data"
