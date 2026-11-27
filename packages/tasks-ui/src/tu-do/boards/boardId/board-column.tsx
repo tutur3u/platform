@@ -194,7 +194,8 @@ interface BoardColumnProps {
   onSpecialPinnedChange?: (pinned: boolean) => void;
   onHoverTaskList?: (listId: string) => void;
   readOnly?: boolean;
-  pagesCovered?: boolean; // The board holds every task: no more pages.
+  pagesCovered?: boolean;
+  hasUnloadedTasks?: boolean;
 }
 
 export function BoardColumn({
@@ -229,6 +230,7 @@ export function BoardColumn({
   onHoverTaskList,
   readOnly = false,
   pagesCovered = false,
+  hasUnloadedTasks = false,
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -395,7 +397,6 @@ export function BoardColumn({
     }
   }, [isRefreshingList, loadColumnPage]);
 
-  // Helper to translate standard list names
   const translateListName = (name: string | null | undefined): string => {
     const normalized = normalizeBoardText(name).replace(/\s+/g, '');
     const translations: Record<string, string> = {
@@ -453,7 +454,7 @@ export function BoardColumn({
 
   const colorClass =
     colorClasses[column.color as SupportedColor] || colorClasses.GRAY;
-  const statusIcon = statusIcons[column.status];
+  const statusIcon = statusIcons[column.status as keyof typeof statusIcons];
   const visibleTasks = useMemo(() => {
     if (!isExternalStaging) return tasks;
 
@@ -937,10 +938,9 @@ export function BoardColumn({
         </div>
       </div>
 
-      {/* Column content: skeleton during initial load, tasks after */}
       {isInitialLoad ? (
         <TaskListLoadingSkeleton />
-      ) : (
+      ) : hasUnloadedTasks && visibleTasks.length === 0 ? null : (
         <VirtualizedTaskList
           tasks={visibleTasks}
           availableLists={availableLists}

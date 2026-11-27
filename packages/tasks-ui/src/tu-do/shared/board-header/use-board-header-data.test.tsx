@@ -36,6 +36,7 @@ function setup({
   boardLists = lists,
   pagination = {},
   tasks = [task],
+  assigneeValidationTasks,
   enabled = true,
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -44,6 +45,7 @@ function setup({
   boardLists?: TaskList[];
   pagination?: ProgressiveLoaderValue['pagination'];
   tasks?: Task[];
+  assigneeValidationTasks?: Task[];
   enabled?: boolean;
   queryClient?: QueryClient;
 } = {}) {
@@ -57,6 +59,7 @@ function setup({
       loader.pagination = pagination;
       return useBoardHeaderData({
         tasks,
+        assigneeValidationTasks,
         lists: boardLists,
         currentUserId: 'me',
         workspaceId: 'ws-1',
@@ -83,6 +86,21 @@ describe('useBoardHeaderData', () => {
     listMembers.mockResolvedValue({
       members: [me, later].map((person) => ({ ...person, user_id: person.id })),
     });
+  });
+
+  it('keeps task-only assignees in complete validation evidence', async () => {
+    const former = { ...me, id: 'former' };
+    const { result } = setup({
+      assigneeValidationTasks: [{ ...task, assignees: [former] }],
+    });
+    await waitFor(() =>
+      expect(result.current.assigneeValidationPeople).toEqual([
+        { id: 'me' },
+        { id: 'later' },
+        { id: 'former' },
+      ])
+    );
+    expect(result.current.people.map(({ id }) => id)).not.toContain('former');
   });
 
   it('includes a member assigned only beyond the first page and enables counts after all pages load', async () => {

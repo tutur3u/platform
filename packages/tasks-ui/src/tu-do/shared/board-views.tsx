@@ -44,13 +44,13 @@ import { useTaskDialog } from '../hooks/useTaskDialog';
 import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
-import { loadBoardConfig } from './board-config-storage';
+import { resolveBoardViewConfig } from './board-config-storage';
 import { boardHasFleetTasks, resolveEnabledViews } from './board-enabled-views';
 import {
+  clearBoardFilters,
   DEFAULT_BOARD_FILTERS,
+  hasActiveBoardFilters,
   listMatchesStatusFilter,
-  sanitizeListStatusFilter,
-  sanitizeSavedBoardFilters,
 } from './board-header/board-filter-state';
 import { useBoardHeaderData } from './board-header/use-board-header-data';
 import { useBoardSprintSurface } from './board-sprints/use-board-sprint-surface';
@@ -84,7 +84,6 @@ export type ViewType =
   | 'drafts'
   | 'recycle_bin';
 const HOTKEY_CREATE_TASK = 'C';
-const DEFAULT_TASK_FILTERS: TaskFilters = DEFAULT_BOARD_FILTERS;
 interface Props {
   workspace: Pick<Workspace, 'id' | 'personal'>;
   workspaceTier?: WorkspaceProductTier | null;
@@ -125,7 +124,8 @@ export function BoardViews({
   const queryClient = useQueryClient();
   const effectiveWorkspaceId = board.ws_id ?? workspace.id;
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
-  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_TASK_FILTERS);
+  const [filters, setFilters] = useState<TaskFilters>(DEFAULT_BOARD_FILTERS);
+  const [restoredFilters, setRestoredFilters] = useState<TaskFilters>();
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');
   const [taskOverrides, setTaskOverrides] = useState<
@@ -221,6 +221,7 @@ export function BoardViews({
     [enabledViews]
   );
   const {
+    baseComplete,
     baseTasks,
     filterOnServer,
     hasTaskFilters,
@@ -316,44 +317,17 @@ export function BoardViews({
     queryClient.setQueryData(['task_lists', board.id], initialTaskLists);
   }, [board.id, initialTaskLists, queryClient]);
   useLayoutEffect(() => {
-    const savedConfig = loadBoardConfig(board.id);
-    const requestedView =
-      typeof window === 'undefined' ||
-      !window.location.pathname.includes('/tasks/boards/')
-        ? null
-        : (new URLSearchParams(window.location.search).get(
-            'view'
-          ) as ViewType | null);
-    const fallbackView = enabledViews?.[0] ?? 'kanban';
-    const routeDefaultView =
-      defaultView && viewIsEnabled(defaultView) ? defaultView : null;
-    const effectiveDefaultView = routeDefaultView ?? fallbackView;
-    const initialView =
-      requestedView && viewIsEnabled(requestedView) ? requestedView : null;
-    if (!savedConfig) {
-      setCurrentView(initialView ?? effectiveDefaultView);
-      setFilters(
-        hideEmptyTaskListsByDefault
-          ? { ...DEFAULT_TASK_FILTERS, hideEmptyTaskLists: true }
-          : DEFAULT_TASK_FILTERS
-      );
-      setListStatusFilter('all');
-      return;
-    }
-    setCurrentView(
-      initialView ??
-        routeDefaultView ??
-        (viewIsEnabled(savedConfig.currentView)
-          ? savedConfig.currentView
-          : effectiveDefaultView)
-    );
-    const restoredFilters = sanitizeSavedBoardFilters(savedConfig.filters);
-    setFilters(
-      (savedConfig.filters.hideEmptyTaskLists ?? hideEmptyTaskListsByDefault)
-        ? { ...restoredFilters, hideEmptyTaskLists: true }
-        : restoredFilters
-    );
-    setListStatusFilter(sanitizeListStatusFilter(savedConfig.listStatusFilter));
+    const initial = resolveBoardViewConfig({
+      boardId: board.id,
+      defaultView,
+      enabledViews,
+      hideEmptyTaskListsByDefault,
+      viewIsEnabled,
+    });
+    setCurrentView(initial.currentView);
+    setFilters(initial.filters);
+    setRestoredFilters(initial.filters);
+    setListStatusFilter(initial.listStatusFilter);
   }, [
     board.id,
     defaultView,
@@ -568,6 +542,10 @@ export function BoardViews({
   }, [boardSprints.showsOnBoard, tasks]);
   const headerData = useBoardHeaderData({
     tasks: headerTasks,
+    assigneeValidationTasks:
+      baseComplete && listStatusFilter === 'all' && !filterOnServer
+        ? baseTasks
+        : undefined,
     lists,
     currentUserId,
     workspaceId: effectiveWorkspaceId,
@@ -728,10 +706,8 @@ export function BoardViews({
             publicView={publicView}
             readOnly={readOnly}
             titlePrefix={publicHeaderPrefix}
-            people={headerData.people}
-            unassignedCount={headerData.unassignedCount}
-            projectTaskCounts={headerData.projectTaskCounts}
-            countsComplete={headerData.countsComplete}
+            {...headerData}
+            restoredFilters={restoredFilters}
             onCreateTask={canCreateTask ? createTaskInBoard : undefined}
             planActive={sprintSurface.planActive}
             planTabs={sprintSurface.planTabs}
@@ -745,7 +721,25 @@ export function BoardViews({
         initialLayoutReady={initialKanbanLayoutReady}
       >
         {sprintSurface.planView ?? (
-          <BoardTaskPageFrame paging={pagination}>
+          <BoardTaskPageFrame
+            paging={pagination}
+            emptyAction={sprintSurface.searchEmptyAction}
+            onClearFilters={
+              taskSourceReady &&
+              !isSearching &&
+              !isFullTasksError &&
+              (hasActiveBoardFilters(filters, listStatusFilter) ||
+                filters.sortBy)
+                ? () => {
+                    setFilters(clearBoardFilters);
+                    setListStatusFilter('all');
+                  }
+                : undefined
+            }
+            emptyKanban={
+              currentView === 'kanban' && effectiveTasks.length === 0
+            }
+          >
             {renderView()}
           </BoardTaskPageFrame>
         )}

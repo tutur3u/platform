@@ -14128,11 +14128,13 @@
       "title_too_long": "This title is longer than 72 characters; move the notes into the description."
     },
     "header": {
+      "clear_filters": "Clear filters",
       "focus": "Focus",
       "focus_hint": "My open tasks, highest priority first",
       "more": "More board actions",
       "more_people": "{count} more",
       "new_task": "New task",
+      "no_matching_tasks": "No tasks match the current filters",
       "no_projects": "No projects yet",
       "project": "Project",
       "projects_selected": "{count} projects",

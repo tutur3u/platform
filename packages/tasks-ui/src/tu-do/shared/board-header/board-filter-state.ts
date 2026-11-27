@@ -214,8 +214,12 @@ export function sanitizeSavedBoardFilters(
   const sortBy = isBoardSortOption(saved?.sortBy) ? saved.sortBy : undefined;
   return {
     ...DEFAULT_BOARD_FILTERS,
-    assignees: Array.isArray(saved?.assignees) ? saved.assignees : [],
-    projects: Array.isArray(saved?.projects) ? saved.projects : [],
+    assignees: Array.isArray(saved?.assignees)
+      ? saved.assignees.filter((item) => typeof item?.id === 'string')
+      : [],
+    projects: Array.isArray(saved?.projects)
+      ? saved.projects.filter((item) => typeof item?.id === 'string')
+      : [],
     includeMyTasks: saved?.includeMyTasks === true,
     includeUnassigned: saved?.includeUnassigned === true,
     ...(saved?.hideEmptyTaskLists !== undefined
@@ -296,4 +300,24 @@ export function countUnassignedTasks(
   tasks: readonly { assignees?: unknown[] | null }[]
 ) {
   return tasks.filter((task) => (task.assignees?.length ?? 0) === 0).length;
+}
+
+/** Prune selectors only after the complete corresponding catalog is available. */
+export function pruneUnavailableBoardFilters(
+  filters: TaskFilters,
+  members?: readonly { id: string }[],
+  projects?: readonly { id: string }[]
+): TaskFilters {
+  const memberIds = members && new Set(members.map(({ id }) => id));
+  const projectIds = projects && new Set(projects.map(({ id }) => id));
+  const assignees = memberIds
+    ? filters.assignees.filter(({ id }) => memberIds.has(id))
+    : filters.assignees;
+  const selectedProjects = projectIds
+    ? filters.projects.filter(({ id }) => projectIds.has(id))
+    : filters.projects;
+  return assignees.length === filters.assignees.length &&
+    selectedProjects.length === filters.projects.length
+    ? filters
+    : { ...filters, assignees, projects: selectedProjects };
 }

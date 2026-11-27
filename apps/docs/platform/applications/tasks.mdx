@@ -71,6 +71,11 @@ cannot be combined with search, filters, counts or offsets. Explicit source
 scope filters and ticket searches use the sorted, offset-paged source query and
 load every matching page. Hide empty lists and auto-collapse wait for every
 board page, because a partly loaded board cannot show that a list is empty.
+When a filtered Kanban has no visible cards and a continuation, it tries up
+to three more page queries automatically and keeps **Load more** available
+if the cursor remains. After the cursor ends, an empty filtered Kanban offers
+**Clear filters**. The Filters button marks active selections, and a restored
+person or project selection is dropped once its catalog confirms it is unavailable.
 
 ### Kanban first paint
 

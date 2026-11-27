@@ -5738,11 +5738,13 @@
   },
   "ws-task-boards": {
     "header": {
+      "clear_filters": "Xóa bộ lọc",
       "focus": "Tập trung",
       "focus_hint": "Công việc đang mở của tôi, ưu tiên cao trước",
       "more": "Thêm thao tác bảng",
       "more_people": "Thêm {count}",
       "new_task": "Công việc mới",
+      "no_matching_tasks": "Không có nhiệm vụ nào phù hợp với bộ lọc hiện tại",
       "no_projects": "Chưa có dự án",
       "project": "Dự án",
       "projects_selected": "{count} dự án",

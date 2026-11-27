@@ -13,6 +13,7 @@ import { collectBoardPeople, countUnassignedTasks } from './board-filter-state';
  */
 export function useBoardHeaderData({
   tasks,
+  assigneeValidationTasks,
   lists,
   currentUserId,
   workspaceId,
@@ -20,6 +21,7 @@ export function useBoardHeaderData({
   enabled,
 }: {
   tasks: Task[];
+  assigneeValidationTasks?: Task[];
   lists: TaskList[];
   currentUserId?: string;
   workspaceId: string;
@@ -81,5 +83,29 @@ export function useBoardHeaderData({
     return counts;
   }, [visibleTasks]);
 
-  return { people, projectTaskCounts, unassignedCount, countsComplete };
+  // Only an uncapped member catalog plus a complete board snapshot can
+  // distinguish a missing assignee from an external or historical one.
+  const assigneeValidationPeople = useMemo(() => {
+    if (
+      !enabled ||
+      !members ||
+      members.length >= 1000 ||
+      !assigneeValidationTasks
+    )
+      return undefined;
+    const ids = new Set<string>(members.map(({ id }) => id));
+    for (const task of assigneeValidationTasks) {
+      for (const assignee of task.assignees ?? []) {
+        if (assignee?.id) ids.add(assignee.id);
+      }
+    }
+    return Array.from(ids, (id) => ({ id }));
+  }, [assigneeValidationTasks, enabled, members]);
+  return {
+    assigneeValidationPeople,
+    people,
+    projectTaskCounts,
+    unassignedCount,
+    countsComplete,
+  };
 }

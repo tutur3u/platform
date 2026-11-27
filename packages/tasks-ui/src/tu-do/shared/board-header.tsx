@@ -1,3 +1,5 @@
+import { useQuery } from '@tanstack/react-query';
+import { listWorkspaceTaskProjectsByIds } from '@tuturuuu/internal-api/tasks';
 import {
   ArrowLeft,
   Plus,
@@ -28,6 +30,7 @@ import {
   hasActiveBoardFilters,
   isFocusActive,
   type ListStatusFilter,
+  pruneUnavailableBoardFilters,
   toggleFocus,
 } from './board-header/board-filter-state';
 import { BoardMoreMenu } from './board-header/board-more-menu';
@@ -84,6 +87,8 @@ interface Props {
   onBoardSettingsIntent?: () => void;
   /** People pills; omitted hides them (for example on project pages). */
   people?: BoardPerson[];
+  assigneeValidationPeople?: readonly { id: string }[];
+  restoredFilters?: TaskFilters;
   unassignedCount?: number;
   /** Board task count per project; omitted hides the Project filter. */
   projectTaskCounts?: Map<string, number>;
@@ -125,6 +130,8 @@ export function BoardHeader({
   onBoardSettingsIntent,
   onUpdate,
   people,
+  assigneeValidationPeople,
+  restoredFilters,
   unassignedCount = 0,
   projectTaskCounts,
   countsComplete = true,
@@ -181,6 +188,44 @@ export function BoardHeader({
     onSearchChange: handleSearchChange,
     searchQuery: filters.searchQuery,
   });
+
+  const restoredProjects =
+    restoredFilters?.projects === filters.projects &&
+    filters.projects.length > 0;
+  const projectIds = filters.projects.map(({ id }) => id);
+  const { data: projects } = useQuery({
+    queryKey: ['board-restored-filter-projects', workspaceId, projectIds],
+    queryFn: async () => {
+      const projects = [];
+      for (let offset = 0; offset < projectIds.length; offset += 50) {
+        projects.push(
+          ...(await listWorkspaceTaskProjectsByIds(
+            workspaceId,
+            projectIds.slice(offset, offset + 50)
+          ))
+        );
+      }
+      return projects;
+    },
+    enabled: interactiveControlsVisible && restoredProjects,
+  });
+  useEffect(() => {
+    const validated = pruneUnavailableBoardFilters(
+      filters,
+      restoredFilters?.assignees === filters.assignees
+        ? assigneeValidationPeople
+        : undefined,
+      restoredProjects ? projects : undefined
+    );
+    if (validated !== filters) onFiltersChange(validated);
+  }, [
+    filters,
+    assigneeValidationPeople,
+    onFiltersChange,
+    projects,
+    restoredFilters,
+    restoredProjects,
+  ]);
 
   // Save board configuration to localStorage when it changes (excluding search)
   useEffect(() => {
@@ -325,6 +370,12 @@ export function BoardHeader({
               tone="neutral"
             >
               <SlidersHorizontal />
+              {filterTriggerActive ? (
+                <span
+                  aria-hidden
+                  className="size-1.5 shrink-0 rounded-full bg-primary"
+                />
+              ) : null}
               <span className="hidden @lg/board-header:inline">
                 {t('common.filters')}
               </span>

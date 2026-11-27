@@ -101,7 +101,8 @@ export function useBoardTaskSource({
       sourceBoardIds.length > 0,
     [filters, sourceBoardIds.length, sourceScope, sourceWorkspaceIds.length]
   );
-  const hasServerTaskQuery = hasTaskFilters || !!filters.sortBy;
+  const hasServerTaskQuery =
+    hasTaskFilters || !!filters.sortBy || listStatusFilter !== 'all';
   const ticketSearch = filters.searchQuery
     ? parseTaskIdentifierQuery(filters.searchQuery)?.ticketPrefix
     : null;
@@ -399,6 +400,7 @@ export function useBoardTaskSource({
   ]);
 
   return {
+    baseComplete,
     baseTasks: localBaseTasks,
     filterOnServer,
     hasTaskFilters,
@@ -421,7 +423,8 @@ export function useBoardTaskSource({
       activeQueryEnabled && (hasMore || loadingMore || pageFailed)
         ? {
             hasMore,
-            pending: loadingMore,
+            nextCursor: pages.data?.pages.at(-1)?.nextCursor,
+            pending: useBoardPages && pages.isFetching,
             failed: pageFailed,
             loadMore: () => {
               if (loadingMore || activeQuery.isFetching) return;

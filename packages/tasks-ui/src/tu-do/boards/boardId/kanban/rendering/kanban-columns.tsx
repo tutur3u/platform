@@ -75,7 +75,8 @@ interface KanbanColumnsProps {
   ) => void;
   onHoveredTaskListChange?: (listId: string | null) => void;
   readOnly?: boolean;
-  /** The board already holds every task; columns load no more pages. */
+  hasUnloadedTasks?: boolean;
+  /** Board-wide paging owns continuation; columns load no more pages. */
   pagesCovered?: boolean;
 }
 
@@ -149,6 +150,7 @@ export function KanbanColumns({
   onSpecialTaskListPinnedChange,
   onHoveredTaskListChange,
   readOnly = false,
+  hasUnloadedTasks = false,
   pagesCovered = false,
 }: KanbanColumnsProps) {
   const restoredScrollLayoutRef = useRef<string | null>(null);
@@ -358,6 +360,7 @@ export function KanbanColumns({
                 optimisticUpdateInProgress={optimisticUpdateInProgress}
                 filters={filters}
                 pagesCovered={pagesCovered}
+                hasUnloadedTasks={hasUnloadedTasks}
                 bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
                 workspaceId={workspaceId}
                 wsId={workspaceId}

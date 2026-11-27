@@ -514,6 +514,7 @@ export function KanbanBoard({
         >
           <KanbanColumns
             pagesCovered={pagesCovered}
+            hasUnloadedTasks={hasUnloadedTasks}
             columns={orderedColumns}
             tasks={tasks}
             boardId={boardId ?? ''}

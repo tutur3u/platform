@@ -8,6 +8,7 @@ import {
   hasActiveBoardFilters,
   isFocusActive,
   listMatchesStatusFilter,
+  pruneUnavailableBoardFilters,
   sanitizeListStatusFilter,
   sanitizeSavedBoardFilters,
   toggleFocus,
@@ -26,6 +27,29 @@ const minh = {
 const people = [me, minh];
 
 describe('board header filter state', () => {
+  it('drops stale saved selectors only when their catalogs are known', () => {
+    const saved = sanitizeSavedBoardFilters({
+      ...DEFAULT_BOARD_FILTERS,
+      assignees: [me, minh],
+      projects: [
+        { id: '11111111-1111-4111-8111-111111111111', name: 'Deleted' },
+        { id: '22222222-2222-4222-8222-222222222222', name: 'Keep' },
+      ],
+      sortBy: 'priority-high',
+    });
+    expect(pruneUnavailableBoardFilters(saved)).toBe(saved);
+    const restored = pruneUnavailableBoardFilters(
+      saved,
+      [me],
+      [{ id: '22222222-2222-4222-8222-222222222222' }]
+    );
+    expect(restored.assignees).toEqual([me]);
+    expect(restored.projects).toEqual([
+      { id: '22222222-2222-4222-8222-222222222222', name: 'Keep' },
+    ]);
+    expect(restored.sortBy).toBe('priority-high');
+  });
+
   it('treats picking only yourself as Mine', () => {
     const mine = togglePersonFilter(DEFAULT_BOARD_FILTERS, 'me', people, 'me');
     expect(mine.assignees.map((person) => person.id)).toEqual(['me']);
@@ -81,7 +105,10 @@ describe('board header filter state', () => {
   it('turns Focus on as my open tasks by priority and off again', () => {
     const focused = toggleFocus({
       currentUser: me,
-      filters: { ...DEFAULT_BOARD_FILTERS, projects: [{ id: 'p', name: 'P' }] },
+      filters: {
+        ...DEFAULT_BOARD_FILTERS,
+        projects: [{ id: '33333333-3333-4333-8333-333333333333', name: 'P' }],
+      },
       listStatusFilter: 'all',
     });
     expect(focused.listStatusFilter).toBe('open');
@@ -134,7 +161,7 @@ describe('board header filter state', () => {
       dueDateRange: { from: new Date() },
       sourceScope: 'current_board',
       sortBy: 'due-date-asc',
-      projects: [{ id: 'p', name: 'P' }],
+      projects: [{ id: '33333333-3333-4333-8333-333333333333', name: 'P' }],
       hideEmptyTaskLists: true,
     });
     expect(restored).toMatchObject({
@@ -142,7 +169,7 @@ describe('board header filter state', () => {
       priorities: [],
       dueDateRange: null,
       sourceScope: 'all_visible',
-      projects: [{ id: 'p', name: 'P' }],
+      projects: [{ id: '33333333-3333-4333-8333-333333333333', name: 'P' }],
       hideEmptyTaskLists: true,
     });
     expect(restored.sortBy).toBeUndefined();

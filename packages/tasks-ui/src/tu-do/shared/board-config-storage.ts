@@ -1,6 +1,11 @@
 'use client';
 
+import { z } from 'zod';
 import type { TaskFilters } from '../boards/boardId/task-filter';
+import {
+  sanitizeListStatusFilter,
+  sanitizeSavedBoardFilters,
+} from './board-header/board-filter-state';
 
 export type StoredBoardView =
   | 'kanban'
@@ -36,6 +41,7 @@ export function loadBoardConfig(boardId: string): BoardViewConfig | null {
       parsed === null ||
       typeof parsed.currentView !== 'string' ||
       typeof parsed.filters !== 'object' ||
+      parsed.filters === null ||
       typeof parsed.listStatusFilter !== 'string'
     ) {
       console.warn('Invalid board config structure, ignoring');
@@ -92,4 +98,47 @@ export function saveBoardConfig(
   } catch (error) {
     console.error('Failed to save board config to localStorage:', error);
   }
+}
+
+export function resolveBoardViewConfig({
+  boardId,
+  defaultView,
+  enabledViews,
+  hideEmptyTaskListsByDefault,
+  viewIsEnabled,
+}: {
+  boardId: string;
+  defaultView?: StoredBoardView;
+  enabledViews: readonly StoredBoardView[] | null;
+  hideEmptyTaskListsByDefault: boolean;
+  viewIsEnabled: (view: StoredBoardView) => boolean;
+}): BoardViewConfig {
+  const saved = loadBoardConfig(boardId);
+  const requestedView =
+    typeof window !== 'undefined' &&
+    window.location.pathname.includes('/tasks/boards/')
+      ? (new URLSearchParams(window.location.search).get(
+          'view'
+        ) as StoredBoardView | null)
+      : null;
+  const filters = sanitizeSavedBoardFilters(saved?.filters);
+  // The local restore verifies projects through the API's UUID lookup.
+  const projectId = z.guid();
+  filters.projects = filters.projects.filter(
+    ({ id }) => projectId.safeParse(id).success
+  );
+  const savedView = saved?.currentView;
+  return {
+    currentView:
+      (requestedView && viewIsEnabled(requestedView) && requestedView) ||
+      (defaultView && viewIsEnabled(defaultView) && defaultView) ||
+      (savedView && viewIsEnabled(savedView) && savedView) ||
+      enabledViews?.[0] ||
+      'kanban',
+    filters:
+      (filters.hideEmptyTaskLists ?? hideEmptyTaskListsByDefault)
+        ? { ...filters, hideEmptyTaskLists: true }
+        : filters,
+    listStatusFilter: sanitizeListStatusFilter(saved?.listStatusFilter),
+  };
 }
