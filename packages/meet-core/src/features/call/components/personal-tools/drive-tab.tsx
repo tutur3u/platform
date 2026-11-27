@@ -65,8 +65,7 @@ export function PersonalDriveTab({
 
   const isTransientError =
     query.isError && personalToolsFailureKeepsSnapshot(query.error);
-  const snapshot =
-    query.isError && !isTransientError ? null : query.data;
+  const snapshot = query.isError && !isTransientError ? null : query.data;
   const isStale =
     snapshot?.status === 'stale' ||
     (isTransientError && Boolean(snapshot?.items));

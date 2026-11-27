@@ -407,10 +407,9 @@ describe('PersonalToolsPanel security and isolation boundaries', () => {
       );
       expect(source, `${name} must set gcTime: 0`).toMatch(/\bgcTime:\s*0\b/);
       if (name !== 'personal-tools-panel.tsx') {
-        expect(
-          source,
-          `${name} must include workspace.id in queryKey`
-        ).toMatch(/'meet-personal-tools',\s*accountId,\s*workspace\.id/);
+        expect(source, `${name} must include workspace.id in queryKey`).toMatch(
+          /'meet-personal-tools',\s*accountId,\s*workspace\.id/
+        );
       }
     }
   });
