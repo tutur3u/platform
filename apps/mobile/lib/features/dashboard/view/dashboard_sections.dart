@@ -209,8 +209,8 @@ class _UpcomingEventsBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _HomeSection(
-    title: context.l10n.homeSectionCalendar,
-    actionLabel: context.l10n.homeSeeAll,
+    title: context.l10n.calendarAgendaView,
+    actionLabel: context.l10n.homeSectionCalendar,
     onOpen: () => context.go(Routes.calendar),
     dividerInset: _EventRow.dividerInset,
     children:
@@ -220,7 +220,7 @@ class _UpcomingEventsBlock extends StatelessWidget {
           failed: status == CalendarStatus.error && events.isEmpty,
           empty: events.isEmpty,
           emptyIcon: LucideIcons.calendarCheck,
-          emptyTitle: context.l10n.homeCalendarEmpty,
+          emptyTitle: context.l10n.calendarEmpty,
           sectionTitle: context.l10n.homeSectionCalendar,
           onRetry: onRetry,
         ) ??

@@ -7,7 +7,7 @@ extension _DashboardCustomization on _DashboardViewState {
   /// Build-time only: module visibility and the mode gate use `select`.
   List<String> _availableHomeWidgetIds(BuildContext context) {
     final modules = AppRegistry.modules(context);
-    final user = context.read<AuthCubit>().state.user;
+    final user = context.watch<AuthCubit>().state.user;
     final mode = context.select<AudienceModeCubit?, AudienceMode>(
       (cubit) => cubit?.state.mode ?? AudienceMode.general,
     );
@@ -31,6 +31,8 @@ extension _DashboardCustomization on _DashboardViewState {
       if (modules.any((module) => module.id == 'finance')) 'finance',
       if (AppRegistry.notesViewAvailable(context)) 'notes',
       'summary',
+      if (user != null) 'activity',
+      if (user != null) 'mira',
     ];
   }
 
@@ -42,9 +44,10 @@ extension _DashboardCustomization on _DashboardViewState {
     TaskListState taskState,
     CalendarState calendarState,
     ({List<UserTask> today, List<UserTask> upNext}) tasks,
-    List<CalendarEvent> upcomingEvents,
+    List<CalendarEvent> agenda,
+    int rowLimit,
   ) {
-    final user = context.read<AuthCubit>().state.user;
+    final user = context.watch<AuthCubit>().state.user;
     final available = _availableHomeWidgetIds(context);
     _availableIds = available;
     final layout = context.watch<DashboardLayoutCubit>().state;
@@ -75,7 +78,7 @@ extension _DashboardCustomization on _DashboardViewState {
           onRetry: () => _retryEvents(context, workspace),
           status: calendarState.status,
           hasLoadedOnce: calendarState.hasLoadedOnce,
-          events: upcomingEvents,
+          events: agenda.take(rowLimit).toList(),
         ),
       ),
       'mail': _DashboardMailCard(
@@ -98,12 +101,22 @@ extension _DashboardCustomization on _DashboardViewState {
         workspaceId: workspace.id,
         userId: user?.id,
       ),
+      'activity': ProfileTimelineSection(
+        key: _activityKey,
+        replayToken: widget.replayToken,
+        previewLimit: 3,
+      ),
+      'mira': const _HomeMiraCard(),
       'summary': StaggeredEntrance(
         replayKey: widget.replayToken,
         child: _TodaySummaryCard(
-          activeTasks: taskState.totalActiveTasks,
-          overdueTasks: taskState.overdueTasks.length,
-          nextEvents: upcomingEvents.length,
+          completedTasks: taskState.hasLoadedOnce
+              ? taskState.totalCompletedTasks
+              : null,
+          overdueTasks: taskState.hasLoadedOnce
+              ? taskState.overdueTasks.length
+              : null,
+          todayEvents: calendarState.hasLoadedOnce ? agenda.length : null,
         ),
       ),
     };
@@ -231,6 +244,8 @@ class _HomeWidgetEditor extends StatelessWidget {
       context.l10n.classesTodayTitle,
       LucideIcons.graduationCap,
     ),
+    'activity' => (context.l10n.profileTimelineTitle, LucideIcons.history),
+    'mira' => (context.l10n.navMira, LucideIcons.sparkles),
     'tasks' => (context.l10n.homeWidgetTasks, Icons.checklist_rounded),
     'calendar' => (context.l10n.homeSectionCalendar, Icons.event_rounded),
     _ => (context.l10n.dashboardTodayTitle, Icons.auto_graph_rounded),

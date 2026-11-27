@@ -12,9 +12,12 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/responsive/sliver_responsive_cards.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
+import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/core/ui/components/app_tooltip.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_adaptive_grid.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -26,12 +29,16 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/apps/widgets/app_launcher_pins.dart';
 import 'package:mobile/features/audience_mode/audience_mode.dart';
 import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/calendar/utils/calendar_date_time.dart';
 import 'package:mobile/features/calendar/utils/calendar_description_content.dart';
 import 'package:mobile/features/classes/cubit/classes_today_cubit.dart';
 import 'package:mobile/features/classes/data/classes_today_repository.dart';
@@ -42,13 +49,18 @@ import 'package:mobile/features/dashboard/view/home_offline_frame.dart';
 import 'package:mobile/features/mail/data/mail_access.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
 import 'package:mobile/features/notes/note_repository.dart';
+import 'package:mobile/features/profile/view/profile_focus_time_section.dart';
+import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/security/device_mfa/device_mfa_suggestion.dart';
+import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/tasks/cubit/task_list_cubit.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
+import 'package:mobile/features/tasks/widgets/my_task_quick_add_sheet.dart';
+import 'package:mobile/features/tasks_boards/widgets/task_priority_visuals.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
@@ -67,6 +79,7 @@ part 'dashboard_rows.dart';
 part 'dashboard_resource_cards.dart';
 part 'dashboard_customization.dart';
 part 'dashboard_grid.dart';
+part 'dashboard_board_modules.dart';
 
 /// The wall clock Home reads for its greeting, date line and due labels.
 /// It is the device clock unless a [HomeWallClock] above the page pins it, as
@@ -205,6 +218,8 @@ class _DashboardView extends StatefulWidget {
 }
 
 class _DashboardViewState extends State<_DashboardView> {
+  final _focusKey = GlobalKey<ProfileFocusTimeSectionState>();
+  final _activityKey = GlobalKey<ProfileTimelineSectionState>();
   final _mailCardKey = GlobalKey<_DashboardMailCardState>();
   final _meetCardKey = GlobalKey<_DashboardMeetCardState>();
   final _financeCardKey = GlobalKey<_DashboardFinanceCardState>();
@@ -293,10 +308,9 @@ class _DashboardViewState extends State<_DashboardView> {
                           window.shortestSide >= Breakpoints.mediumMin;
                       final rowLimit = desktop ? 6 : 3;
                       final homeTasks = _homeTasks(taskState, rowLimit);
-                      final upcomingEvents = _upcomingEvents(
-                        calendarState.events,
+                      final agenda = _todayAgenda(
+                        calendarState,
                         HomeWallClock.of(context),
-                        rowLimit,
                       );
                       final bottomInset =
                           AppPageInsets.contentBottomClearance(context) +
@@ -309,8 +323,19 @@ class _DashboardViewState extends State<_DashboardView> {
                         taskState,
                         calendarState,
                         homeTasks,
-                        upcomingEvents,
+                        agenda,
+                        rowLimit,
                       );
+                      final showFocus =
+                          workspace.personal &&
+                          AppRegistry.modules(context)
+                              .any((app) => app.id == 'timer');
+                      final pins = _visibleHomePins(context);
+                      final customOrder = context
+                          .read<DashboardLayoutCubit>()
+                          .state
+                          .order
+                          .isNotEmpty;
                       return shad.Scaffold(
                         child: NovaRefreshIndicator(
                           onRefresh: () => _refresh(context, workspace),
@@ -341,6 +366,9 @@ class _DashboardViewState extends State<_DashboardView> {
                                             workspace,
                                             entries,
                                             bottomInset: bottomInset,
+                                            customOrder: customOrder,
+                                            pins: pins,
+                                            showFocus: showFocus,
                                           ),
                                     ),
                                   ],
@@ -381,6 +409,8 @@ class _DashboardViewState extends State<_DashboardView> {
 
   Future<void> _refresh(BuildContext context, Workspace workspace) async {
     await Future.wait([
+      if (_focusKey.currentState case final focus?) focus.refresh(),
+      if (_activityKey.currentState case final activity?) activity.refresh(),
       context.read<TaskListCubit>().loadTasks(
         wsId: workspace.id,
         isPersonal: workspace.personal,
@@ -446,29 +476,33 @@ class _DashboardViewState extends State<_DashboardView> {
         for (final task in bucket)
           if (seen.add(task.id)) task,
     ].take(rowLimit).toList(growable: false);
-    final today = unique([state.overdueTasks, state.todayTasks]);
+    int rank(UserTask task) =>
+        TaskPriorityLevel.tryParse(task.priority)?.index ??
+        TaskPriorityLevel.values.length;
+    List<UserTask> prioritized(List<UserTask> tasks) => [
+      for (
+        var priority = 0;
+        priority <= TaskPriorityLevel.values.length;
+        priority++
+      )
+        ...tasks.where((task) => rank(task) == priority),
+    ];
+    final today = unique([
+      prioritized(state.overdueTasks),
+      prioritized(state.todayTasks),
+    ]);
     return (today: today, upNext: unique([state.upcomingTasks]));
   }
 
-  List<CalendarEvent> _upcomingEvents(
-    List<CalendarEvent> events,
-    DateTime now,
-    int rowLimit,
-  ) {
-    final end = now.add(const Duration(days: 7));
-
-    final result =
-        events
-            .where(
-              (event) =>
-                  !event.isAllDay &&
-                  event.startAt != null &&
-                  !event.startAt!.isBefore(now) &&
-                  event.startAt!.isBefore(end),
-            )
-            .toList()
-          ..sort((a, b) => a.startAt!.compareTo(b.startAt!));
-
-    return result.take(rowLimit).toList(growable: false);
+  List<CalendarEvent> _todayAgenda(CalendarState state, DateTime now) {
+    final wall = calendarWallDate(now, state.timezone);
+    final day = calendarDate(wall.year, wall.month, wall.day);
+    return state.displayEvents
+        .where((event) => calendarEventOverlapsDay(event, day))
+        .toList()
+      ..sort((a, b) {
+        if (a.isAllDay != b.isAllDay) return a.isAllDay ? -1 : 1;
+        return (a.startAt ?? day).compareTo(b.startAt ?? day);
+      });
   }
 }

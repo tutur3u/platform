@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/app_section_header.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -12,6 +13,7 @@ import 'package:mobile/features/profile/personal_profile_workspace.dart';
 import 'package:mobile/features/profile/profile_timeline_access.dart';
 import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_filter.dart';
+import 'package:mobile/features/profile/view/profile_timeline_grouping.dart';
 import 'package:mobile/features/profile/view/profile_timeline_view.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -23,6 +25,7 @@ import 'package:mobile/widgets/nova_refresh_indicator.dart';
 class ProfileTimelineSection extends StatefulWidget {
   const ProfileTimelineSection({
     this.replayToken = 0,
+    this.previewLimit,
     this.repository,
     this.cacheUserId,
     this.contentTopPadding = 0,
@@ -34,6 +37,7 @@ class ProfileTimelineSection extends StatefulWidget {
   });
 
   final int replayToken;
+  final int? previewLimit;
   final String? Function()? cacheUserId;
   final double contentTopPadding;
 
@@ -48,10 +52,10 @@ class ProfileTimelineSection extends StatefulWidget {
   final DateTime? now;
 
   @override
-  State<ProfileTimelineSection> createState() => _ProfileTimelineSectionState();
+  ProfileTimelineSectionState createState() => ProfileTimelineSectionState();
 }
 
-class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
+class ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   late final ProfileTimelineRepository _repository =
       widget.repository ?? ProfileTimelineRepository();
   List<ProfileTimelineItem>? _items;
@@ -73,11 +77,14 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final userId = context.watch<AuthCubit>().state.user?.id;
-    final workspaceId = verifiedPersonalProfileWorkspace(
-      userId: userId,
-      cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
-      workspaces: context.watch<WorkspaceCubit>(),
-    )?.id;
+    final workspaces = context.watch<WorkspaceCubit?>();
+    final workspaceId = workspaces == null
+        ? null
+        : verifiedPersonalProfileWorkspace(
+            userId: userId,
+            cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+            workspaces: workspaces,
+          )?.id;
     final scope = userId == null || workspaceId == null
         ? null
         : '$userId:$workspaceId';
@@ -101,7 +108,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   @override
   void didUpdateWidget(covariant ProfileTimelineSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.replayToken == oldWidget.replayToken) return;
+    if (widget.replayToken == oldWidget.replayToken || _scope == null) return;
     final userId = context.read<AuthCubit>().state.user?.id;
     final workspaceId = verifiedPersonalProfileWorkspace(
       userId: userId,
@@ -303,7 +310,10 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     unawaited(context.push<void>(path));
   }
 
+  Future<void> refresh() => _reload();
+
   Future<void> _reload() async {
+    if (_scope == null) return;
     final userId = context.read<AuthCubit>().state.user?.id;
     final workspaceId = verifiedPersonalProfileWorkspace(
       userId: userId,
@@ -328,6 +338,9 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.previewLimit case final limit?) {
+      return _buildPreview(context, limit);
+    }
     if (_scope == null) {
       return Padding(
         padding: widget.horizontalPadding.copyWith(
@@ -370,6 +383,63 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
             : ProfileTimelineAvailability.complete,
         onOpen: _open,
       ),
+    );
+  }
+
+  Widget _buildPreview(BuildContext context, int limit) {
+    final l10n = context.l10n;
+    final items = groupProfileTimelineDays(_items ?? const []).values
+        .expand((day) => day)
+        .take(limit);
+    final unavailable =
+        _scope == null || _failed || (items.isEmpty && (_partial || _limited));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppSectionHeader(
+          title: l10n.profileTimelineTitle,
+          actionLabel: _scope == null ? null : l10n.homeSeeAll,
+          onAction: _scope == null
+              ? null
+              : () => unawaited(context.push<void>(Routes.timeline)),
+        ),
+        AppGroupedCard(
+          children: [
+            if (_items == null && !unavailable)
+              const AppSkeletonRows()
+            else if (items.isEmpty)
+              AppStateMessage.inline(
+                icon: LucideIcons.history,
+                title: unavailable
+                    ? l10n.profileTimelineUnavailable
+                    : l10n.profileTimelineEmpty,
+                actionLabel: _scope != null && !_denied && unavailable
+                    ? l10n.commonRetry
+                    : null,
+                onAction: _scope != null && !_denied && unavailable
+                    ? _reload
+                    : null,
+              )
+            else ...[
+              for (final item in items)
+                AppGroupedRow(
+                  key: ValueKey((item.type, item.id)),
+                  leading: Icon(item.kindIcon),
+                  title: Text(item.trimmedTitle ?? item.kindLabel(context)),
+                  subtitle: Text(item.kindLabel(context)),
+                  onTap: item.canOpen ? () => _open(item) : null,
+                ),
+              if (_partial)
+                AppStateMessage.inline(
+                  icon: LucideIcons.cloudOff,
+                  title: l10n.profileTimelinePartial,
+                  actionLabel: l10n.commonRetry,
+                  onAction: _reload,
+                ),
+            ],
+          ],
+        ),
+      ],
     );
   }
 }

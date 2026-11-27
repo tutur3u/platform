@@ -9,6 +9,8 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/view/profile_focus_time_section.dart';
 import 'package:mobile/features/profile/view/profile_identity_header.dart';
 import 'package:mobile/features/profile/view/profile_sections.dart';
+import 'package:mobile/features/profile/view/profile_plan_and_credits.dart';
+import 'package:mobile/features/profile/view/profile_timeline_section.dart';
 import 'package:mobile/features/profile/view/profile_surface.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
@@ -49,6 +51,8 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
   static const _ownerId = 'profile-overview';
   static const Set<String> _locations = {Routes.profileRoot};
 
+  final _activity = GlobalKey<ProfileTimelineSectionState>();
+  final _credits = GlobalKey<ProfilePlanAndCreditsState>();
   final _focusTime = GlobalKey<ProfileFocusTimeSectionState>();
 
   @override
@@ -70,6 +74,8 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
 
   Future<void> _refresh() => Future.wait([
     _refreshProfile(),
+    if (_activity.currentState case final activity?) activity.refresh(),
+    if (_credits.currentState case final credits?) credits.refresh(),
     if (_focusTime.currentState case final focus?) focus.refresh(),
   ]);
 
@@ -102,6 +108,21 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                   fallbackEmail: user.email,
                   avatarUrl: profile == null ? null : state.avatarUrl,
                 ),
+                activity: user.id == null
+                    ? null
+                    : ProfileTimelineSection(
+                        key: _activity,
+                        previewLimit: 5,
+                        cacheUserId: widget.cacheUserId,
+                        replayToken: widget.replayToken,
+                      ),
+                accountDetails: user.id == null
+                    ? null
+                    : ProfilePlanAndCredits(
+                        key: _credits,
+                        cacheUserId: widget.cacheUserId,
+                        replayToken: widget.replayToken,
+                      ),
                 focusTime: user.id == null
                     ? null
                     : ProfileFocusTimeSection(
@@ -132,6 +153,8 @@ class ProfileOverviewList extends StatelessWidget {
     this.profile,
     this.avatarUrl,
     this.focusTime,
+    this.activity,
+    this.accountDetails,
     this.topInset = 0,
     super.key,
   });
@@ -142,31 +165,70 @@ class ProfileOverviewList extends StatelessWidget {
 
   /// Focus Time; absent while signed out.
   final Widget? focusTime;
+  final Widget? activity;
+  final Widget? accountDetails;
   final double topInset;
 
   @override
   Widget build(BuildContext context) {
-    final focusTime = this.focusTime;
+    final primary = <Widget>[if (activity case final section?) section];
+    final sidebar = <Widget>[
+      if (accountDetails case final section?) section,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProfileGroupLabel(context.l10n.navSettings),
+          ProfileCard(
+            children: [
+              ProfileAccountSwitchRow(profile: profile, avatarUrl: avatarUrl),
+            ],
+          ),
+          const SizedBox(height: AppLayout.itemGap),
+          const ProfileLinkGroups(),
+          const SizedBox(height: AppLayout.sectionGap),
+          const ProfileDangerGroup(),
+        ],
+      ),
+    ];
+    List<Widget> spaced(List<Widget> children) => [
+      for (final (index, child) in children.indexed) ...[
+        if (index > 0) const SizedBox(height: AppLayout.sectionGap),
+        child,
+      ],
+    ];
     return AppPageListView(
+      kind: AppPageKind.root,
       physics: const AlwaysScrollableScrollPhysics(),
       topInset: topInset,
-      children: [
+      children: spaced([
         header,
-        if (focusTime != null) ...[
-          const SizedBox(height: AppLayout.itemGap),
-          focusTime,
-        ],
-        const SizedBox(height: AppLayout.sectionGap - AppSpacing.sm),
-        ProfileCard(
-          children: [
-            ProfileAccountSwitchRow(profile: profile, avatarUrl: avatarUrl),
-          ],
+        ?focusTime,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
+            if (primary.isEmpty || constraints.maxWidth < 720 * scale) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: spaced([...primary, ...sidebar]),
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 3, child: primary.single),
+                const SizedBox(width: AppLayout.sectionGap),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: spaced(sidebar),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: AppLayout.itemGap),
-        const ProfileLinkGroups(),
-        const SizedBox(height: AppLayout.sectionGap - AppSpacing.sm),
-        const ProfileDangerGroup(),
-      ],
+      ]),
     );
   }
 }

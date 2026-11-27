@@ -111,10 +111,11 @@ extension _DashboardGrid on _DashboardViewState {
     Workspace workspace,
     List<({String id, Widget child})> entries, {
     required double bottomInset,
+    required bool customOrder,
+    required List<AppModule> pins,
+    required bool showFocus,
   }) {
-    final summary = scale.strip
-        ? entries.where((entry) => entry.id == 'summary').firstOrNull
-        : null;
+    final summary = entries.where((entry) => entry.id == 'summary').firstOrNull;
     final leading = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -128,12 +129,28 @@ extension _DashboardGrid on _DashboardViewState {
             ],
           ),
         ),
+        SizedBox(height: scale.gap),
+        _HomeQuickCapture(workspace: workspace),
         if (summary != null) ...[SizedBox(height: scale.gap), summary.child],
+        if (summary != null && showFocus)
+          ProfileFocusTimeSection(
+            key: _focusKey,
+            replayToken: widget.replayToken,
+            compact: true,
+          ),
       ],
     );
+    final phoneDefault = !scale.strip && !customOrder;
     final sections = [
       for (final entry in entries)
-        if (entry.id != summary?.id) entry.child,
+        if (entry.id != summary?.id &&
+            (!phoneDefault || entry.id != 'activity'))
+          entry.child,
+      if (phoneDefault)
+        ...entries
+            .where((entry) => entry.id == 'activity')
+            .map((entry) => entry.child),
+      if (pins.isNotEmpty) _HomePinnedApps(pins: pins),
     ];
     return _HomeScaleScope(
       scale: scale,

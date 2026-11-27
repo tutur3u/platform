@@ -86,7 +86,7 @@ class _EventRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final start = event.startAt;
     final locale = Localizations.localeOf(context).toLanguageTag();
-    final when = start == null
+    final when = event.isAllDay || start == null
         ? context.l10n.dashboardEventAllDay
         : '${DateFormat.EEEE(locale).format(start)}'
               ' · ${DateFormat.Hm(locale).format(start)}';
@@ -95,6 +95,9 @@ class _EventRow extends StatelessWidget {
     return AppGroupedRow(
       leading: _DateLeaf(date: start, size: _leafSize),
       title: Text(event.title ?? context.l10n.dashboardUntitledEvent),
+      onTap: () => unawaited(
+        context.push<void>(Routes.calendarEventDetailPath(event.id)),
+      ),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

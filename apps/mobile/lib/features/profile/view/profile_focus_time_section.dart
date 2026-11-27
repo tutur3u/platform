@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -14,14 +16,14 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/personal_profile_workspace.dart';
 import 'package:mobile/features/profile/view/profile_focus_time_card.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/l10n/l10n.dart';
 
-typedef ProfileStatsLoader =
-    Future<TimeTrackerStats> Function(
-      String workspaceId,
-      String userId,
-      String timezone, {
-      required bool personal,
-    });
+typedef ProfileStatsLoader = Future<TimeTrackerStats> Function(
+  String workspaceId,
+  String userId,
+  String timezone, {
+  required bool personal,
+});
 
 /// Loads the signed-in user's task-linked tracked time from their personal
 /// workspace and shows it as [ProfileFocusTimeCard]. It never requests a
@@ -30,6 +32,7 @@ typedef ProfileStatsLoader =
 class ProfileFocusTimeSection extends StatefulWidget {
   const ProfileFocusTimeSection({
     this.replayToken = 0,
+    this.compact = false,
     this.statsLoader,
     this.timezoneLoader,
     this.cacheUserId,
@@ -38,6 +41,7 @@ class ProfileFocusTimeSection extends StatefulWidget {
 
   /// Reloads when it changes.
   final int replayToken;
+  final bool compact;
   final ProfileStatsLoader? statsLoader;
   final Future<String> Function()? timezoneLoader;
   final String? Function()? cacheUserId;
@@ -145,6 +149,34 @@ class ProfileFocusTimeSectionState extends State<ProfileFocusTimeSection> {
   @override
   Widget build(BuildContext context) {
     if (_scope == null) return const SizedBox.shrink();
+    if (widget.compact) {
+      final l10n = context.l10n;
+      final time = _stats?.weekTime;
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.sm),
+        child: AppGroupedCard(
+          children: [
+            if (_failed)
+              AppStateMessage.inline(
+                icon: LucideIcons.cloudOff,
+                title: l10n.homeSectionLoadFailedTitle(l10n.profileFocusTime),
+                actionLabel: l10n.commonRetry,
+                onAction: refresh,
+              )
+            else
+              AppGroupedRow(
+                leading: const Icon(LucideIcons.timer),
+                title: Text(l10n.profileFocusTime),
+                subtitle: Text(l10n.timerThisWeek),
+                trailing: Text(
+                  time == null ? '—' : profileTrackedDuration(l10n, time),
+                ),
+                onTap: () => context.go(Routes.timerStats),
+              ),
+          ],
+        ),
+      );
+    }
     return ProfileFocusTimeCard(
       stats: _stats,
       onSeeAll: () => context.go(Routes.timerStats),

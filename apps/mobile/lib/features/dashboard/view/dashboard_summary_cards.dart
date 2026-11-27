@@ -15,8 +15,12 @@ class _HomeHeader extends StatelessWidget {
     final scale = _HomeScaleScope.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final now = HomeWallClock.of(context);
+    final actor = context.select<AuthCubit, String?>(
+      (cubit) => cubit.state.user?.id,
+    );
     final name = context.select<ShellProfileCubit?, String?>((cubit) {
       final profile = cubit?.state.profile;
+      if (actor == null || profile?.id != actor) return null;
       final value = profile?.displayName ?? profile?.fullName;
       return value == null || value.trim().isEmpty ? null : value.trim();
     });
@@ -64,18 +68,18 @@ class _HomeHeader extends StatelessWidget {
   }
 }
 
-/// Today's counts: active tasks, overdue tasks and upcoming events. Each
+/// Completed and overdue tasks alongside today's agenda count. Each
 /// count opens the list it summarises, so none is a dead number.
 class _TodaySummaryCard extends StatelessWidget {
   const _TodaySummaryCard({
-    required this.activeTasks,
+    required this.completedTasks,
     required this.overdueTasks,
-    required this.nextEvents,
+    required this.todayEvents,
   });
 
-  final int activeTasks;
-  final int overdueTasks;
-  final int nextEvents;
+  final int? completedTasks;
+  final int? overdueTasks;
+  final int? todayEvents;
 
   @override
   Widget build(BuildContext context) {
@@ -91,10 +95,10 @@ class _TodaySummaryCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _Metric(
-                key: const ValueKey('home-metric-active'),
+                key: const ValueKey('home-metric-completed'),
                 valueSize: scale.metricSize,
-                value: activeTasks,
-                label: l10n.dashboardActiveTasksLabel,
+                value: completedTasks,
+                label: l10n.tasksCompleted,
                 onTap: () => context.go(Routes.tasks),
               ),
               VerticalDivider(
@@ -109,7 +113,7 @@ class _TodaySummaryCard extends StatelessWidget {
                 valueSize: scale.metricSize,
                 value: overdueTasks,
                 label: l10n.dashboardTaskOverdue,
-                tone: overdueTasks > 0 ? AppTone.destructive : null,
+                tone: (overdueTasks ?? 0) > 0 ? AppTone.destructive : null,
                 onTap: () => context.go(Routes.tasks),
               ),
               VerticalDivider(
@@ -122,8 +126,8 @@ class _TodaySummaryCard extends StatelessWidget {
               _Metric(
                 key: const ValueKey('home-metric-events'),
                 valueSize: scale.metricSize,
-                value: nextEvents,
-                label: l10n.dashboardUpcomingEvents,
+                value: todayEvents,
+                label: l10n.calendarAgendaView,
                 onTap: () => context.go(Routes.calendar),
               ),
             ],
@@ -164,7 +168,7 @@ class _Metric extends StatelessWidget {
     super.key,
   });
 
-  final int value;
+  final int? value;
   final double valueSize;
   final String label;
   final VoidCallback onTap;
@@ -175,11 +179,16 @@ class _Metric extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     final scale = _HomeScaleScope.of(context);
+    final display = value == null
+        ? '—'
+        : NumberFormat.decimalPattern(
+            Localizations.localeOf(context).toLanguageTag(),
+          ).format(value);
     return Expanded(
       child: Semantics(
         container: true,
         button: true,
-        label: '$label: $value',
+        label: '$label: $display',
         excludeSemantics: true,
         onTap: onTap,
         child: InkWell(
@@ -195,7 +204,7 @@ class _Metric extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$value',
+                  display,
                   style: tokens.typography.x3Large.copyWith(
                     fontSize: valueSize,
                     color: tone?.foreground(c) ?? c.foreground,

@@ -3,16 +3,18 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/audience_mode/audience_mode.dart';
 
-/// Default Home order. Mode-specific widgets lead; a mode only offers them.
+/// Default Home order. Mode-specific widgets are available only in their audience mode.
 const List<String> homeWidgetIds = [
-  classesTodayHomeWidgetId,
-  'tasks',
+  'summary',
   'calendar',
-  'mail',
+  'tasks',
+  'activity',
+  'mira',
   'meet',
+  'mail',
+  classesTodayHomeWidgetId,
   'finance',
   'notes',
-  'summary',
 ];
 
 class DashboardLayoutState extends Equatable {
