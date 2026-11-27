@@ -41,6 +41,16 @@ it('excludes a recently blocked model despite fresh family headroom', () => {
   expect(pickSeat(options, 'builder', 'gemini-', undefined)?.model).toBe(
     'gemini-3.8-flash'
   );
+  expect(pickSeat(options, 'reviewer', undefined, 'missing-author')).toBeNull();
+  const author = { ...account, instanceId: 'author', available: false };
+  expect(
+    pickSeat(
+      { ...options, accounts: [account, author] },
+      'reviewer',
+      undefined,
+      author.instanceId
+    )
+  ).toBeNull();
   expect(
     pickSeat(options, 'reviewer', undefined, account.instanceId)
   ).toBeNull();

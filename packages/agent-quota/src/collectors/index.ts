@@ -22,7 +22,7 @@ import {
   parseManualUsage,
 } from '../usage-import';
 import { collectAntigravityBlocks } from './antigravity-blocks';
-import { collectCatalog, parseCatalog } from './catalog';
+import { catalogProviders, collectCatalog, parseCatalog } from './catalog';
 import { collectClaude } from './claude';
 import { collectCodex } from './codex';
 import { discoverSnapshotInstances } from './discover';
@@ -86,15 +86,16 @@ export async function collectAllWith(
       .then(() => collectors.collectT3State())
       .then((t3) => ({ t3 }))
       .catch(() => ({ t3Error: 'T3 activity state is unavailable.' }));
-  const [{ blocks, usageImport, observations, poolSettings }, catalog] =
+  const [{ blocks, usageImport, observations, poolSettings }, rawCatalog] =
     await Promise.all([
       collectors.readBlockLedger().then((ledger) => ledger as ExtendedLedger),
       options.catalog === undefined
         ? collectors.collectCatalog()
-        : Promise.resolve(parseCatalog(options.catalog)),
+        : Promise.resolve(catalogProviders(options.catalog)),
     ]);
-  const discovered = catalog.length ? [] : await discoverSnapshotInstances();
-  const instances = catalog.length
+  const catalog = parseCatalog({ providers: rawCatalog });
+  const discovered = rawCatalog ? [] : await discoverSnapshotInstances();
+  const instances = rawCatalog
     ? catalog
     : discovered.length
       ? discovered
@@ -178,18 +179,29 @@ export async function collectAllWith(
     .filter((account) => account.provider === 'antigravity')
     .map((account) => account.instanceId);
   let runBlocks: QuotaBlock[] = [];
-  let receiptAlert: string[] = [];
+  let receiptUnavailable = antigravityIds.length > 0 && !t3.t3;
   if (t3.t3) {
     try {
       runBlocks = collectAntigravityBlocks(antigravityIds, now);
     } catch {
-      receiptAlert = ['ANTIGRAVITY_RUN_RECEIPTS_UNAVAILABLE'];
+      receiptUnavailable = true;
     }
   }
-  const gone = catalog.length
-    ? (t3.t3?.referencedInstances ?? []).filter(
-        (id) => !catalog.some((entry) => entry.instanceId === id)
+  const liveIds = new Set(
+    rawCatalog?.flatMap((entry) => {
+      if (
+        !entry ||
+        typeof entry !== 'object' ||
+        !('providerInstanceId' in entry)
       )
+        return [];
+      return typeof entry.providerInstanceId === 'string'
+        ? [entry.providerInstanceId]
+        : [];
+    })
+  );
+  const gone = rawCatalog
+    ? (t3.t3?.referencedInstances ?? []).filter((id) => !liveIds.has(id))
     : [];
   const renameMap = gone.length ? await readAntigravityRenameMap() : undefined;
   const renames = catalog.flatMap(({ instanceId, provider }) => {
@@ -201,9 +213,13 @@ export async function collectAllWith(
     return oldId ? [`INSTANCE_RENAME_CANDIDATE ${oldId} -> ${instanceId}`] : [];
   });
   return {
-    accounts: withManual,
+    accounts: withManual.map((account) =>
+      receiptUnavailable && account.provider === 'antigravity'
+        ? { ...account, available: false }
+        : account
+    ),
     alerts: [
-      ...receiptAlert,
+      ...(receiptUnavailable ? ['ANTIGRAVITY_RUN_RECEIPTS_UNAVAILABLE'] : []),
       ...withManual.flatMap((account) =>
         accountHealth(account).lastErrorClass === 'auth'
           ? [`AUTH_REQUIRED ${account.instanceId}`]

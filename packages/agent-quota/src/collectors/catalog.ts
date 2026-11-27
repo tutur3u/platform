@@ -49,12 +49,17 @@ function parseModelOptions(value: unknown): Record<string, ModelOption[]> {
   );
 }
 
-export function parseCatalog(value: unknown): CatalogInstance[] {
-  if (!value || typeof value !== 'object') return [];
+export function catalogProviders(value: unknown): unknown[] | undefined {
+  if (!value || typeof value !== 'object') return;
   const envelope = value as Record<string, unknown>;
   const root = (envelope.structuredContent ?? value) as Record<string, unknown>;
-  if (!Array.isArray(root.providers)) return [];
-  return root.providers.flatMap((item: Record<string, unknown>) => {
+  return Array.isArray(root?.providers) ? root.providers : undefined;
+}
+
+export function parseCatalog(value: unknown): CatalogInstance[] {
+  return (catalogProviders(value) ?? []).flatMap((entry) => {
+    if (!entry || typeof entry !== 'object') return [];
+    const item = entry as Record<string, unknown>;
     const provider = driverToProvider(item.driverKind, item.providerInstanceId);
     if (!provider) return [];
     if (typeof item.providerInstanceId !== 'string') return [];
@@ -78,9 +83,9 @@ export function parseCatalog(value: unknown): CatalogInstance[] {
   });
 }
 
-export async function collectCatalog(): Promise<CatalogInstance[]> {
+export async function collectCatalog(): Promise<unknown[] | undefined> {
   const launcher = process.env.T3_ACP_MCP_NODE;
-  if (!launcher) return [];
+  if (!launcher) return;
   try {
     const entry = process.env.T3_ACP_MCP_ENTRYPOINT;
     const { stdout } = await promisify(execFile)(
@@ -97,8 +102,8 @@ export async function collectCatalog(): Promise<CatalogInstance[]> {
         maxBuffer: 1_000_000,
       }
     );
-    return parseCatalog(JSON.parse(stdout));
+    return catalogProviders(JSON.parse(stdout));
   } catch {
-    return [];
+    return;
   }
 }

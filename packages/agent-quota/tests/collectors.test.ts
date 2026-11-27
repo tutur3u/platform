@@ -371,7 +371,7 @@ describe('local collectors', () => {
     };
     const result = await collectAllWith({
       collectT3State: () => Promise.reject(new Error('fixture failure')),
-      collectCatalog: async () => [],
+      collectCatalog: async () => undefined,
       collectClaude: async () => ({ ...account, provider: 'claude' as const }),
       collectCodex: async () => account,
       collectSnapshot: async (value) => value,
@@ -383,6 +383,24 @@ describe('local collectors', () => {
     );
     expect(result.active).toBeUndefined();
     expect(result.t3Error).toBe('T3 activity state is unavailable.');
+  });
+
+  it('reports a referenced seat missing from an observed empty live catalog', async () => {
+    const result = await collectAllWith(
+      {
+        collectT3State: () => ({
+          quotaSnapshotsFound: false,
+          observedAt: new Date().toISOString(),
+          activeAssignments: [],
+          providerByInstance: {},
+          referencedInstances: ['antigravity_old'],
+        }),
+        readBlockLedger: async () => ({ version: 1, blocks: [] }),
+      },
+      { catalog: { providers: [] } }
+    );
+    expect(result.accounts).toEqual([]);
+    expect(result.alerts).toEqual(['INSTANCE_GONE antigravity_old']);
   });
 
   it('tracks claude_thanh and claude_phucvo_personal in the allowlist and default labels', () => {

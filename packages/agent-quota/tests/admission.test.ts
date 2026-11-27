@@ -56,7 +56,7 @@ describe('one-shot quota admission', () => {
     const worker: AccountUsage = {
       ...account('antigravity_2'),
       provider: 'antigravity',
-      models: ['claude-sonnet-4-6', 'gemini-3.8-flash'],
+      models: ['claude-sonnet-4-6', 'gemini-4-argon', 'gemini-3.8-flash'],
     };
     const context = setup(worker);
     const input = request(context.accounts);

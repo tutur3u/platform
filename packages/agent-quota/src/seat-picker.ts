@@ -20,12 +20,18 @@ export function pickSeat(
   const author = options.accounts.find(
     (account) => account.instanceId === authorInstanceId
   );
+  if (role === 'reviewer' && !author) return null;
   const accounts = options.accounts.filter(
     (account) =>
       role !== 'reviewer' ||
-      (account.instanceId !== authorInstanceId &&
-        (!author?.accountIdentityHash ||
-          account.accountIdentityHash !== author.accountIdentityHash))
+      (author !== undefined &&
+        account.instanceId !== author.instanceId &&
+        (account.provider !== author.provider ||
+          Boolean(
+            author.accountIdentityHash &&
+            account.accountIdentityHash &&
+            account.accountIdentityHash !== author.accountIdentityHash
+          )))
   );
   const models = new Set(accounts.flatMap((account) => account.models ?? []));
   const ranked = [...models]

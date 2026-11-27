@@ -134,11 +134,10 @@ test('matches only the newest instance profile log and coalesces shared quota', 
     const collected = await collectAllWith({
       collectT3State: () => Promise.reject(new Error('synthetic')),
       collectCatalog: async () =>
-        accounts.map(({ windows: _, ...account }) => ({
-          ...account,
-          models: [],
-          modelOptions: {},
-          available: true,
+        accounts.map(({ instanceId }) => ({
+          providerInstanceId: instanceId,
+          driverKind: 'antigravity',
+          canRunChildTask: true,
         })),
       collectSnapshot: async (account) => account,
       readBlockLedger: async () => ({
@@ -159,6 +158,10 @@ test('matches only the newest instance profile log and coalesces shared quota', 
     });
     expect(
       collected.accounts.every((account) => account.windows.length === 4)
+    ).toBe(true);
+    expect(collected.alerts).toContain('ANTIGRAVITY_RUN_RECEIPTS_UNAVAILABLE');
+    expect(
+      collected.accounts.every((account) => account.available === false)
     ).toBe(true);
     expect(collected.accounts[0]?.windows[0]?.freshnessTtlMs).toBe(660_000);
     const newId = 'antigravity_7';

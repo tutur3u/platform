@@ -387,7 +387,9 @@ async function main(): Promise<void> {
   }
 
   if (!active && command === 'pick-seat') {
-    console.log(JSON.stringify({ seat: null, reason: 't3-activity-unknown' }));
+    console.log(
+      JSON.stringify({ seat: null, reason: 't3-activity-unknown', alerts })
+    );
     return;
   }
   if (!active)
@@ -426,7 +428,7 @@ async function main(): Promise<void> {
       arg('--model-class'),
       arg('--author-instance')
     );
-    console.log(JSON.stringify({ seat }));
+    console.log(JSON.stringify({ seat, alerts }));
     return;
   }
   const assignments = recommendAssignments({ ...assignmentOptions, count });

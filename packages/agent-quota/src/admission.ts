@@ -20,6 +20,7 @@ import { recommend } from './policy';
 import { poolPolicyReasons, settingsFor } from './pool-settings';
 import { clearRecoveredLimits } from './receipt-expiry';
 import { chooseRoleCandidate, rolePreferenceRank } from './role-policy';
+import { evaluateModelPolicy, loadRoutingConfig } from './routing-config';
 import { compareSignalOrder } from './signal-order';
 import { coversModel, receiptCovers } from './window-scope';
 
@@ -147,6 +148,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
   const author = accounts.find(
     (account) => account.instanceId === request.requirements.authorInstanceId
   );
+  const routingConfig = loadRoutingConfig();
   const pools = collapseAccounts(accounts)
     .map((originalPool) => {
       let pool = originalPool;
@@ -173,7 +175,12 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
           ) &&
           candidate.capabilities.includes(request.requirements.capability) &&
           (member?.provider !== 'antigravity' ||
-            candidate.model.startsWith('gemini-')) &&
+            evaluateModelPolicy(
+              'antigravity',
+              candidate.model,
+              {},
+              routingConfig
+            ).allowed) &&
           member?.available === true &&
           member.models?.includes(candidate.model)
         );
