@@ -9,6 +9,29 @@ function color(user: CaretUser) {
 }
 const TOP_LABEL_CLEARANCE_PX = 4;
 const FALLBACK_LABEL_HEIGHT_PX = 18;
+// Sticky chrome (the editor toolbar) sits over the top of a scroll container, so
+// a label above a caret just below it would be hidden behind that chrome.
+const STICKY_SCAN_DEPTH = 3;
+
+function stickyChromeBottom(scroller: HTMLElement, top: number): number {
+  let bottom = top;
+  const scan = (parent: HTMLElement, depth: number) => {
+    for (const child of parent.children) {
+      if (!(child instanceof HTMLElement)) continue;
+      const rect = child.getBoundingClientRect();
+      if (
+        getComputedStyle(child).position === 'sticky' &&
+        rect.top <= top + 1 &&
+        rect.bottom > bottom
+      ) {
+        bottom = rect.bottom;
+      }
+      if (depth < STICKY_SCAN_DEPTH) scan(child, depth + 1);
+    }
+  };
+  scan(scroller, 1);
+  return bottom;
+}
 
 function findTopClipEdge(caret: HTMLElement): number | null {
   const editorRoot = caret.closest<HTMLElement>('.ProseMirror');
@@ -26,7 +49,8 @@ function findTopClipEdge(caret: HTMLElement): number | null {
     ) {
       const rect = current.getBoundingClientRect();
       if (rect.height > 0) {
-        top = top === null ? rect.top : Math.max(top, rect.top);
+        const edge = Math.max(rect.top, stickyChromeBottom(current, rect.top));
+        top = top === null ? edge : Math.max(top, edge);
       }
     }
     current = current.parentElement;
