@@ -4380,6 +4380,11 @@
       "pattern": "/[wsId]/workspace-setup"
     },
     {
+      "family": "dashboard",
+      "localized": true,
+      "pattern": "/[wsId]/worlds"
+    },
+    {
       "family": "web-rest",
       "localized": false,
       "pattern": "/.well-known/[...slug]"

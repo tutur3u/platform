@@ -23233,6 +23233,25 @@
   },
   "worlds": {
     "description": "Khám phá bản đồ mẫu của hội trường EduFest.",
+    "editor": {
+      "applied": "Đã áp dụng thay đổi vào bản nháp.",
+      "apply": "Áp dụng thay đổi",
+      "bounds": "{width, number} × {depth, number} m",
+      "depth": "Chiều sâu (m)",
+      "elevation": "Độ cao (m)",
+      "empty": "Mẫu này không có đối tượng để chỉnh sửa.",
+      "geometry": "Hình học của đối tượng",
+      "heading": "Góc xoay",
+      "invalid_numbers": "Nhập các giá trị hữu hạn, kích thước lớn hơn 0 và độ cao không âm.",
+      "object": "Đối tượng",
+      "outside_bounds": "Đối tượng sau khi xoay phải nằm trong sảnh.",
+      "persistence": "Thay đổi chỉ lưu trên trang này. Tải lại hoặc rời trang sẽ bỏ bản nháp.",
+      "sample": "Sảnh mẫu EduFest",
+      "title": "Trình chỉnh sửa Worlds",
+      "width": "Chiều rộng (m)",
+      "x": "X (m)",
+      "z": "Z (m)"
+    },
     "preview": "Xem trước hội trường EduFest"
   },
   "ws_post_details": {

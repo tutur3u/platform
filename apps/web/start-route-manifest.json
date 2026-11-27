@@ -12,18 +12,18 @@
   },
   "crons": [],
   "summary": {
-    "total": 907,
+    "total": 908,
     "categories": {
       "api": 705,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 171,
+      "page": 172,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 895 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 896 }
   },
   "routes": [
     {
@@ -677,6 +677,14 @@
     {
       "pattern": "/[locale]/[wsId]/workspace-setup",
       "source": "apps/web/src/app/[locale]/(dashboard)/[wsId]/workspace-setup/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/[wsId]/worlds",
+      "source": "apps/web/src/app/[locale]/(dashboard)/[wsId]/worlds/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",

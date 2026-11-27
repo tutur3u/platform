@@ -195,6 +195,19 @@ export async function WorkspaceNavigationLinks({
       preferencePlacement: 'root',
     },
     ...appLinks,
+    ...(!ENABLE_AI_ONLY && !withoutPermission('manage_workspace_settings')
+      ? [
+          {
+            id: 'worlds',
+            title: t('worlds.editor.title'),
+            href: `/${personalOrWsId}/worlds`,
+            aliases: [`/${wsId}/worlds`],
+            icon: createDashboardNavigationIcon('Globe', 'h-5 w-5'),
+            children: [],
+            matchExact: true,
+          } satisfies DashboardNavigationLink,
+        ]
+      : []),
   ] satisfies DashboardNavigationLink[];
 }
 

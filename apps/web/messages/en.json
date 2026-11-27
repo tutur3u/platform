@@ -23226,6 +23226,25 @@
   },
   "worlds": {
     "description": "Explore the sample hall from EduFest.",
+    "editor": {
+      "applied": "Changes applied to this draft.",
+      "apply": "Apply changes",
+      "bounds": "{width, number} × {depth, number} m",
+      "depth": "Depth (m)",
+      "elevation": "Elevation (m)",
+      "empty": "This sample has no objects to edit.",
+      "geometry": "Object geometry",
+      "heading": "Heading",
+      "invalid_numbers": "Enter finite values, positive dimensions, and a non-negative elevation.",
+      "object": "Object",
+      "outside_bounds": "The rotated object must fit within the hall.",
+      "persistence": "Edits stay on this page. Reloading or leaving discards the draft.",
+      "sample": "EduFest sample hall",
+      "title": "Worlds editor",
+      "width": "Width (m)",
+      "x": "X (m)",
+      "z": "Z (m)"
+    },
     "preview": "Preview EduFest hall"
   },
   "ws_post_details": {

@@ -138,6 +138,7 @@
     "@tuturuuu/users-ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/whiteboard": "workspace:*",
+    "@tuturuuu/worlds": "workspace:*",
     "@upstash/qstash": "^2.12.1",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
