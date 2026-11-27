@@ -10,7 +10,7 @@ import {
   generationLimits,
 } from './contract.ts';
 
-import { isWorldDraft } from './world-draft.ts';
+import { parseWorldDraft } from './world-draft.ts';
 
 export * from './contract.ts';
 
@@ -166,13 +166,11 @@ async function generate(
   if (output?.kind === 'failure' && typeof output.retryable === 'boolean') {
     return failure(job, 'provider', output.retryable);
   }
-  if (
-    output?.kind !== 'draft' ||
-    !isWorldDraft(output.draft, job.request.worldId)
-  ) {
-    return failure(job, 'invalid-output');
-  }
-  return { status: 'succeeded', draft: output.draft };
+  if (output?.kind !== 'draft') return failure(job, 'invalid-output');
+  const draft = parseWorldDraft(output.draft, job.request.worldId);
+  return draft
+    ? { status: 'succeeded', draft }
+    : failure(job, 'invalid-output');
 }
 
 /**

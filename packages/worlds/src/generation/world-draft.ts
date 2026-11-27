@@ -27,12 +27,12 @@ function identifier(value: unknown): value is string {
   );
 }
 
-export function isWorldDraft(value: unknown, worldId: string): value is World {
+export function parseWorldDraft(value: unknown, worldId: string): World | null {
   if (!record(value) || value.schemaVersion !== 1 || value.id !== worldId)
-    return false;
+    return null;
   const { bounds, spawns, objects, assets } = value;
   if (!record(bounds) || !measure(bounds.width) || !measure(bounds.depth))
-    return false;
+    return null;
   const map = { width: bounds.width, depth: bounds.depth };
   if (
     !Array.isArray(spawns) ||
@@ -43,24 +43,33 @@ export function isWorldDraft(value: unknown, worldId: string): value is World {
     !Array.isArray(assets) ||
     assets.length > generationLimits.assetCount
   )
-    return false;
+    return null;
 
+  const draft: World = {
+    schemaVersion: 1,
+    id: worldId,
+    bounds: map,
+    spawns: [],
+    objects: [],
+    assets: [],
+  };
   const assetIds = new Set<string>();
   for (const asset of assets) {
     if (!record(asset) || !identifier(asset.id) || assetIds.has(asset.id))
-      return false;
+      return null;
     if (
       (asset.kind !== 'model' && asset.kind !== 'image') ||
       typeof asset.digest !== 'string' ||
       !/^[a-f0-9]{64}$/.test(asset.digest)
     )
-      return false;
+      return null;
     assetIds.add(asset.id);
+    draft.assets.push({ id: asset.id, kind: asset.kind, digest: asset.digest });
   }
 
   const objectIds = new Set<string>();
   for (const object of objects) {
-    if (!record(object)) return false;
+    if (!record(object)) return null;
     const {
       id,
       kind,
@@ -87,8 +96,8 @@ export function isWorldDraft(value: unknown, worldId: string): value is World {
       (assetId !== undefined &&
         (!identifier(assetId) || !assetIds.has(assetId)))
     )
-      return false;
-    const { min, max } = objectBounds({
+      return null;
+    const item = {
       id,
       kind,
       x,
@@ -97,17 +106,26 @@ export function isWorldDraft(value: unknown, worldId: string): value is World {
       depth,
       elevation,
       heading: rotation,
-    });
-    if (!containsPoint(map, min) || !containsPoint(map, max)) return false;
+      ...(assetId === undefined ? {} : { assetId }),
+    } satisfies World['objects'][number];
+    const { min, max } = objectBounds(item);
+    if (!containsPoint(map, min) || !containsPoint(map, max)) return null;
     objectIds.add(id);
+    draft.objects.push(item);
   }
 
-  return spawns.every(
-    (spawn) =>
-      record(spawn) &&
-      coordinate(spawn.x) &&
-      coordinate(spawn.z) &&
-      heading(spawn.heading) &&
-      containsPoint(map, { x: spawn.x, z: spawn.z })
-  );
+  for (const spawn of spawns) {
+    if (!record(spawn)) return null;
+    const { x, z, heading: rotation } = spawn;
+    if (
+      !coordinate(x) ||
+      !coordinate(z) ||
+      !heading(rotation) ||
+      !containsPoint(map, { x, z })
+    )
+      return null;
+    draft.spawns.push({ x, z, heading: rotation });
+  }
+
+  return draft;
 }

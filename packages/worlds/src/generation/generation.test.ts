@@ -1,4 +1,9 @@
-import { deepStrictEqual, rejects, strictEqual } from 'node:assert';
+import {
+  deepStrictEqual,
+  notStrictEqual,
+  rejects,
+  strictEqual,
+} from 'node:assert';
 import { it } from 'node:test';
 import type { World } from '../runtime.ts';
 import {
@@ -236,4 +241,35 @@ it('cancels queued work and fences an in-flight draft', async () => {
     return { kind: 'draft', draft };
   };
   strictEqual((await runGeneration(deps, request))?.state.status, 'cancelled');
+});
+
+it('rejects sparse spawns and persists a clean snapshot of the draft', async () => {
+  const { deps, request } = fixture();
+  const sparse = { ...request, requestId: 'sparse' };
+  const spawns: unknown[] = [];
+  spawns.length = 1;
+  deps.provider.generate = async () => ({
+    kind: 'draft',
+    draft: { ...draft, spawns },
+  });
+  await submitGeneration(deps.persistence, sparse);
+  deepStrictEqual((await runGeneration(deps, sparse))?.state, {
+    status: 'failed',
+    reason: 'invalid-output',
+  });
+
+  const dirty = {
+    ...draft,
+    bounds: { ...draft.bounds, ignored: true },
+    spawns: [{ ...draft.spawns[0], ignored: true }],
+    metadata: { ignored: true },
+  };
+  deps.provider.generate = async () => ({ kind: 'draft', draft: dirty });
+  await submitGeneration(deps.persistence, request);
+  const state = (await runGeneration(deps, request))?.state;
+  deepStrictEqual(state, { status: 'succeeded', draft });
+  if (state?.status !== 'succeeded') throw new Error('Expected a draft');
+  notStrictEqual(state.draft.spawns, dirty.spawns);
+  dirty.spawns[0]!.x = 9;
+  strictEqual(state.draft.spawns[0]?.x, 1);
 });
