@@ -12,18 +12,18 @@
   },
   "crons": [],
   "summary": {
-    "total": 906,
+    "total": 907,
     "categories": {
       "api": 705,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 170,
+      "page": 171,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 894 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 895 }
   },
   "routes": [
     {
@@ -1352,6 +1352,14 @@
     {
       "pattern": "/[locale]/women-in-tech",
       "source": "apps/web/src/app/[locale]/(marketing)/women-in-tech/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/worlds",
+      "source": "apps/web/src/app/[locale]/(marketing)/worlds/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",

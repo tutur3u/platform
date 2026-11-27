@@ -4427,6 +4427,11 @@
     {
       "family": "web-rest",
       "localized": true,
+      "pattern": "/worlds"
+    },
+    {
+      "family": "web-rest",
+      "localized": true,
       "pattern": "/cite"
     },
     {
