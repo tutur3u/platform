@@ -2,7 +2,10 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { accountGatedCollaboration } from './call-account-gates';
+import {
+  AccountGatedPersonalDrawer,
+  accountGatedCollaboration,
+} from './call-account-gates';
 
 vi.mock('./account-required-state', () => ({
   AccountRequiredState: () => <p>Sign in</p>,
@@ -11,7 +14,9 @@ vi.mock('../whiteboard/board-panel', () => ({
   BoardPanel: () => <p>Board</p>,
 }));
 vi.mock('./document-panel', () => ({ DocumentPanel: () => null }));
-vi.mock('./personal-tools-panel', () => ({ PersonalToolsPanel: () => null }));
+vi.mock('./personal-tools-panel', () => ({
+  PersonalToolsPanel: () => <p>Personal tools</p>,
+}));
 vi.mock('./programming-panel', () => ({ ProgrammingPanel: () => null }));
 vi.mock('./resizable-call-panel', () => ({
   ResizableCallPanel: ({ children }: { children: ReactNode }) => children,
@@ -59,4 +64,29 @@ it('keeps guests on the sign-in state unless guests may open the board', () => {
 it('never opens Co-Programming for a guest', () => {
   guestPane(null, true);
   expect(screen.getByText('Sign in')).toBeTruthy();
+});
+
+it('never renders PersonalToolsPanel for an anonymous guest', () => {
+  render(
+    <AccountGatedPersonalDrawer
+      open
+      requiresAccount
+      accountId=""
+      label="My day"
+      onClose={() => {}}
+    />
+  );
+  expect(screen.getByText('Sign in')).toBeTruthy();
+  expect(screen.queryByText('Personal tools')).toBeNull();
+  cleanup();
+  render(
+    <AccountGatedPersonalDrawer
+      open
+      requiresAccount={false}
+      accountId="actor-1"
+      label="My day"
+      onClose={() => {}}
+    />
+  );
+  expect(screen.getByText('Personal tools')).toBeTruthy();
 });

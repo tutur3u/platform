@@ -1,47 +1,61 @@
 'use client';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   CalendarDays,
   CheckSquare,
-  ExternalLink,
+  HardDrive,
   LockKeyhole,
+  MessageSquare,
+  Video,
 } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
 import { LoadingRegion, Skeleton, SkeletonList } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import {
-  getLaunchableApp,
-  resolveLaunchableAppUrl,
-} from '@tuturuuu/utils/launchable-apps';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import {
   loadPersonalTools,
+  type PersonalToolsApi,
   type PersonalToolsSnapshot,
+  type PersonalToolsTab,
   personalToolsApi,
   personalToolsFailureKeepsSnapshot,
 } from '../lib/personal-tools';
 import { CallPanelHeader } from '../tools/tool-ui';
+import { PersonalCalendarTab } from './personal-tools/calendar-tab';
+import { PersonalChatTab } from './personal-tools/chat-tab';
+import { PersonalDriveTab } from './personal-tools/drive-tab';
+import { PersonalMeetingsTab } from './personal-tools/meetings-tab';
+import { PersonalTasksTab } from './personal-tools/tasks-tab';
 import { ResizableCallPanel } from './resizable-call-panel';
 
-type CalendarEvent = NonNullable<PersonalToolsSnapshot['events']>[number];
+const PERSONAL_TABS = [
+  { value: 'tasks', icon: CheckSquare, labelKey: 'tasks' },
+  { value: 'calendar', icon: CalendarDays, labelKey: 'calendar' },
+  { value: 'meetings', icon: Video, labelKey: 'meetings' },
+  { value: 'chat', icon: MessageSquare, labelKey: 'chat' },
+  { value: 'drive', icon: HardDrive, labelKey: 'drive' },
+] as const;
 
 export function PersonalToolsPanel({
   accountId,
   onClose,
+  api = personalToolsApi,
 }: {
   accountId: string;
   onClose: () => void;
+  api?: PersonalToolsApi;
 }) {
   const t = useTranslations('meet.call.private_tools');
-  const format = useFormatter();
   const cache = useQueryClient();
-  const key = ['meet-personal-tools', accountId];
+  const [activeTab, setActiveTab] = useState<PersonalToolsTab>('tasks');
+  const key = ['meet-personal-tools', accountId] as const;
   const query = useQuery({
     queryKey: key,
     queryFn: () =>
       loadPersonalTools(
         accountId,
-        personalToolsApi,
+        api,
         new Date(),
         cache.getQueryData<PersonalToolsSnapshot>(key)
       ),
@@ -53,16 +67,9 @@ export function PersonalToolsPanel({
     query.isError && !personalToolsFailureKeepsSnapshot(query.error)
       ? null
       : query.data;
-  const tasks = data?.tasks
-    ? [...data.tasks.overdue, ...data.tasks.today, ...data.tasks.upcoming]
-    : null;
-  const openApp = (slug: 'tasks' | 'calendar') =>
-    resolveLaunchableAppUrl({
-      app: getLaunchableApp(slug)!,
-      workspace: data?.workspace,
-    });
+
   return (
-    <ResizableCallPanel label={t('title')}>
+    <ResizableCallPanel label={t('title')} onClose={onClose}>
       <CallPanelHeader
         icon={CalendarDays}
         title={t('title')}
@@ -86,111 +93,53 @@ export function PersonalToolsPanel({
         </p>
       ) : (
         <Tabs
-          defaultValue="tasks"
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as PersonalToolsTab)}
           className="flex min-h-0 flex-1 flex-col gap-3 p-4"
         >
-          <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="tasks">
-              <CheckSquare className="mr-1.5 size-4" />
-              {t('tasks')}
-            </TabsTrigger>
-            <TabsTrigger value="calendar">
-              <CalendarDays className="mr-1.5 size-4" />
-              {t('calendar')}
-            </TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-5 gap-1 p-1">
+            {PERSONAL_TABS.map(({ value, icon: Icon, labelKey }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="flex flex-col items-center gap-0.5 px-1 py-1.5 text-[11px]"
+              >
+                <Icon className="size-3.5 shrink-0" />
+                <span className="w-full truncate text-center">
+                  {t(labelKey)}
+                </span>
+              </TabsTrigger>
+            ))}
           </TabsList>
           <TabsContent value="tasks" className="min-h-0 overflow-auto">
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="mb-3 h-8 gap-1.5 rounded-full px-3.5"
-            >
-              <a
-                href={openApp('tasks')}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="size-4" />
-                {t('open_tasks')}
-              </a>
-            </Button>
-            {data.tasksStatus === 'stale' && (
-              <p role="status" className="mb-2 text-muted-foreground text-xs">
-                {t('stale_tasks')}
-              </p>
-            )}
-            {!tasks ? (
-              <p className="text-muted-foreground text-sm">
-                {t('unavailable')}
-              </p>
-            ) : !tasks.length ? (
-              <p className="text-muted-foreground text-sm">
-                {t('empty_tasks')}
-              </p>
-            ) : (
-              <ul className="space-y-1">
-                {tasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="flex items-start gap-2 rounded-lg px-2 py-3"
-                  >
-                    <CheckSquare className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                    <span className="break-words text-sm">{task.name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <PersonalTasksTab data={data} />
           </TabsContent>
           <TabsContent value="calendar" className="min-h-0 overflow-auto">
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="mb-3 h-8 gap-1.5 rounded-full px-3.5"
-            >
-              <a
-                href={openApp('calendar')}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="size-4" />
-                {t('open_calendar')}
-              </a>
-            </Button>
-            {data.calendarStatus === 'stale' && (
-              <p role="status" className="mb-2 text-muted-foreground text-xs">
-                {t('stale_calendar')}
-              </p>
-            )}
-            {!data.events ? (
-              <p className="text-muted-foreground text-sm">
-                {t('unavailable')}
-              </p>
-            ) : !data.events.length ? (
-              <p className="text-muted-foreground text-sm">
-                {t('empty_calendar')}
-              </p>
-            ) : (
-              <ul className="space-y-1">
-                {data.events.map((event: CalendarEvent) => (
-                  <li key={event.id} className="rounded-lg px-2 py-3">
-                    <p className="break-words text-sm">
-                      {event.is_encrypted
-                        ? t('protected_event')
-                        : event.title || t('event')}
-                    </p>
-                    <p className="mt-1 text-muted-foreground text-xs">
-                      {format.dateTime(new Date(event.start_at), {
-                        weekday: 'short',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <PersonalCalendarTab data={data} />
+          </TabsContent>
+          <TabsContent value="meetings" className="min-h-0 overflow-auto">
+            <PersonalMeetingsTab
+              accountId={accountId}
+              workspace={data.workspace}
+              active={activeTab === 'meetings'}
+              api={api}
+            />
+          </TabsContent>
+          <TabsContent value="chat" className="min-h-0 overflow-auto">
+            <PersonalChatTab
+              accountId={accountId}
+              workspace={data.workspace}
+              active={activeTab === 'chat'}
+              api={api}
+            />
+          </TabsContent>
+          <TabsContent value="drive" className="min-h-0 overflow-auto">
+            <PersonalDriveTab
+              accountId={accountId}
+              workspace={data.workspace}
+              active={activeTab === 'drive'}
+              api={api}
+            />
           </TabsContent>
         </Tabs>
       )}

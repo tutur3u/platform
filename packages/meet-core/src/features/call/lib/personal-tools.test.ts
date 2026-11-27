@@ -1,10 +1,13 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
-import { expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  loadPersonalChat,
+  loadPersonalDrive,
+  loadPersonalMeetings,
   loadPersonalTools,
-  type personalToolsApi,
+  type PersonalToolsApi,
   personalToolsFailureKeepsSnapshot,
 } from './personal-tools';
 
@@ -24,13 +27,63 @@ function api() {
     calendar: vi
       .fn()
       .mockResolvedValue({ data: [{ id: 'event', title: 'Private event' }] }),
-  } satisfies typeof personalToolsApi;
+    meetings: vi.fn().mockResolvedValue({
+      meetings: [
+        {
+          id: 'meeting-1',
+          name: 'Private 1:1',
+          time: '2026-11-28T10:00:00Z',
+          created_at: '2026-11-27T00:00:00Z',
+          creator_id: 'actor',
+          calendar_event: null,
+        },
+      ],
+      totalCount: 1,
+    }),
+    chat: vi.fn().mockResolvedValue([
+      {
+        id: 'conv-1',
+        title: 'Design Notes',
+        type: 'channel',
+        description: null,
+        aiEnabled: false,
+        archivedAt: null,
+        createdAt: '2026-11-27T00:00:00Z',
+        createdBy: 'actor',
+        latestMessage: null,
+        memberCount: 2,
+        members: [],
+        metadata: {},
+        unreadCount: 0,
+        updatedAt: '2026-11-27T00:00:00Z',
+        wsId: 'personal',
+      },
+    ]),
+    drive: vi.fn().mockResolvedValue({
+      data: [{ id: 'file-1', name: 'Q4-notes.pdf' }],
+      pagination: { limit: 25, offset: 0, total: 1 },
+    }),
+  } satisfies PersonalToolsApi;
 }
+
+function readPersonalToolsComponentSources() {
+  const componentsDir = path.resolve(import.meta.dirname, '../components');
+  const panelFile = path.join(componentsDir, 'personal-tools-panel.tsx');
+  const subDir = path.join(componentsDir, 'personal-tools');
+  const files = [
+    panelFile,
+    ...readdirSync(subDir)
+      .filter((name) => name.endsWith('.ts') || name.endsWith('.tsx'))
+      .map((name) => path.join(subDir, name)),
+  ];
+  return files.map((filePath) => ({
+    filePath,
+    name: path.relative(componentsDir, filePath),
+    source: readFileSync(filePath, 'utf8'),
+  }));
+}
+
 it('uses published internal API entry points, including without test aliases', () => {
-  const source = readFileSync(
-    path.join(import.meta.dirname, 'personal-tools.ts'),
-    'utf8'
-  );
   const manifest = JSON.parse(
     readFileSync(
       path.resolve(
@@ -40,13 +93,23 @@ it('uses published internal API entry points, including without test aliases', (
       'utf8'
     )
   );
-  const imports = [
-    ...source.matchAll(/from ['"]@tuturuuu\/internal-api\/([^'"]+)['"]/gu),
+  const sources = [
+    readFileSync(path.join(import.meta.dirname, 'personal-tools.ts'), 'utf8'),
+    ...readPersonalToolsComponentSources().map((entry) => entry.source),
   ];
-  expect(imports.length).toBeGreaterThan(0);
-  for (const [, subpath] of imports)
-    expect(manifest.exports).toHaveProperty(`./${subpath}`);
+  let totalImports = 0;
+  for (const source of sources) {
+    const imports = [
+      ...source.matchAll(/from ['"]@tuturuuu\/internal-api\/([^'"]+)['"]/gu),
+    ];
+    totalImports += imports.length;
+    for (const [, subpath] of imports) {
+      expect(manifest.exports).toHaveProperty(`./${subpath}`);
+    }
+  }
+  expect(totalImports).toBeGreaterThan(0);
 });
+
 it('reads only the authenticated personal workspace, never the meeting workspace', async () => {
   const services = api();
   const result = await loadPersonalTools(
@@ -61,7 +124,12 @@ it('reads only the authenticated personal workspace, never the meeting workspace
   expect(services.calendar.mock.calls[0]?.[0]).toBe('personal');
   expect(result?.tasks?.today[0]?.name).toBe('Private task');
   expect(services.profile).toHaveBeenCalledTimes(2);
+  // Lazy per-tab endpoints are not fetched during initial panel load.
+  expect(services.meetings).not.toHaveBeenCalled();
+  expect(services.chat).not.toHaveBeenCalled();
+  expect(services.drive).not.toHaveBeenCalled();
 });
+
 it('rejects an actor mismatch before any workspace or private data read', async () => {
   const services = api();
   await expect(loadPersonalTools('another-actor', services)).rejects.toThrow(
@@ -70,6 +138,7 @@ it('rejects an actor mismatch before any workspace or private data read', async 
   expect(services.workspaces).not.toHaveBeenCalled();
   expect(services.tasks).not.toHaveBeenCalled();
 });
+
 it('discards completed private reads if the authenticated actor changed', async () => {
   const services = api();
   services.profile
@@ -79,6 +148,7 @@ it('discards completed private reads if the authenticated actor changed', async 
     'actor_changed'
   );
 });
+
 it('never substitutes the meeting or team workspace when personal is unavailable', async () => {
   const services = api();
   services.workspaces.mockResolvedValue([{ id: 'room-team', personal: false }]);
@@ -86,6 +156,7 @@ it('never substitutes the meeting or team workspace when personal is unavailable
   expect(services.tasks).not.toHaveBeenCalled();
   expect(services.calendar).not.toHaveBeenCalled();
 });
+
 it('retains independently available calendar data when tasks fail', async () => {
   const services = api();
   services.tasks.mockRejectedValue(new Error('unavailable'));
@@ -141,6 +212,7 @@ it('retains same-actor source snapshots for temporary partial failures but clear
   expect(denied?.tasksStatus).toBe('unavailable');
   expect(denied?.events).toEqual(previous?.events);
 });
+
 it('does not retain another actor or workspace snapshot and rejects incidental TypeErrors', async () => {
   const services = api();
   const previous = await loadPersonalTools('actor', services);
@@ -153,4 +225,177 @@ it('does not retain another actor or workspace snapshot and rejects incidental T
   expect(
     personalToolsFailureKeepsSnapshot(new TypeError('invalid local data'))
   ).toBe(false);
+});
+
+describe('lazy per-tab loaders (meetings, chat, drive)', () => {
+  it('loads meetings, chat, and drive scoped to actor and workspace', async () => {
+    const services = api();
+    const meetings = await loadPersonalMeetings('actor', 'personal', services);
+    const chat = await loadPersonalChat('actor', 'personal', services);
+    const drive = await loadPersonalDrive('actor', 'personal', services);
+
+    expect(meetings.status).toBe('ready');
+    expect(meetings.items?.[0]?.name).toBe('Private 1:1');
+    expect(chat.status).toBe('ready');
+    expect(chat.items?.[0]?.title).toBe('Design Notes');
+    expect(drive.status).toBe('ready');
+    expect(drive.items?.[0]?.name).toBe('Q4-notes.pdf');
+  });
+
+  it('clears stale tab snapshots on 401/403/404 and degrades gracefully without throwing', async () => {
+    const services = api();
+    const prevMeetings = await loadPersonalMeetings(
+      'actor',
+      'personal',
+      services
+    );
+    const prevChat = await loadPersonalChat('actor', 'personal', services);
+    const prevDrive = await loadPersonalDrive('actor', 'personal', services);
+
+    services.meetings.mockRejectedValue(new InternalApiError('denied', 403));
+    services.chat.mockRejectedValue(new InternalApiError('missing', 404));
+    services.drive.mockRejectedValue(new InternalApiError('signed out', 401));
+
+    const deniedMeetings = await loadPersonalMeetings(
+      'actor',
+      'personal',
+      services,
+      prevMeetings
+    );
+    const missingChat = await loadPersonalChat(
+      'actor',
+      'personal',
+      services,
+      prevChat
+    );
+    const unauthDrive = await loadPersonalDrive(
+      'actor',
+      'personal',
+      services,
+      prevDrive
+    );
+
+    expect(deniedMeetings).toEqual({
+      actorId: 'actor',
+      workspaceId: 'personal',
+      items: null,
+      status: 'unavailable',
+    });
+    expect(missingChat.items).toBeNull();
+    expect(missingChat.status).toBe('unavailable');
+    expect(unauthDrive.items).toBeNull();
+    expect(unauthDrive.status).toBe('unavailable');
+  });
+
+  it('retains previous tab snapshot only on transient failure for the same actor and workspace', async () => {
+    const services = api();
+    const prev = await loadPersonalDrive('actor', 'personal', services);
+    services.drive.mockRejectedValue(new InternalApiError('busy', 503));
+
+    const sameActor = await loadPersonalDrive(
+      'actor',
+      'personal',
+      services,
+      prev
+    );
+    expect(sameActor.status).toBe('stale');
+    expect(sameActor.items).toEqual(prev.items);
+
+    const otherActor = await loadPersonalDrive('actor', 'personal', services, {
+      ...prev,
+      actorId: 'someone-else',
+    });
+    expect(otherActor.status).toBe('unavailable');
+    expect(otherActor.items).toBeNull();
+
+    const otherWorkspace = await loadPersonalDrive(
+      'actor',
+      'personal',
+      services,
+      {
+        ...prev,
+        workspaceId: 'room-team',
+      }
+    );
+    expect(otherWorkspace.status).toBe('unavailable');
+    expect(otherWorkspace.items).toBeNull();
+  });
+
+  it('rejects actor mismatch before or after per-tab reads', async () => {
+    const services = api();
+    await expect(
+      loadPersonalMeetings('wrong-actor', 'personal', services)
+    ).rejects.toThrow('actor_changed');
+    expect(services.meetings).not.toHaveBeenCalled();
+
+    services.profile
+      .mockResolvedValueOnce({ id: 'actor' })
+      .mockResolvedValueOnce({ id: 'other' });
+    await expect(
+      loadPersonalChat('actor', 'personal', services)
+    ).rejects.toThrow('actor_changed');
+  });
+});
+
+describe('PersonalToolsPanel security and isolation boundaries', () => {
+  it('contains zero iframe elements, zero raw fetch calls, and zero useEffect data fetching', () => {
+    const files = readPersonalToolsComponentSources();
+    expect(files.length).toBeGreaterThanOrEqual(6);
+    for (const { name, source } of files) {
+      expect(source, `${name} must not render iframes`).not.toMatch(
+        /<iframe\b/i
+      );
+      expect(source, `${name} must not call raw fetch()`).not.toMatch(
+        /\bfetch\s*\(/
+      );
+      expect(
+        source,
+        `${name} must not use useEffect for data fetching`
+      ).not.toMatch(/\buseEffect\b/);
+    }
+  });
+
+  it('scopes every TanStack Query key to accountId (and workspace.id for per-tab queries)', () => {
+    const files = readPersonalToolsComponentSources();
+    const queryFiles = files.filter(({ source }) =>
+      /\buseQuery\s*\(/.test(source)
+    );
+    expect(queryFiles.length).toBe(4);
+    for (const { name, source } of queryFiles) {
+      expect(source, `${name} must include accountId in queryKey`).toMatch(
+        /'meet-personal-tools',\s*accountId/
+      );
+      if (name !== 'personal-tools-panel.tsx') {
+        expect(
+          source,
+          `${name} must include workspace.id in queryKey`
+        ).toMatch(/'meet-personal-tools',\s*accountId,\s*workspace\.id/);
+      }
+    }
+  });
+
+  it('uses safe rel="noopener noreferrer" for external deep-links', () => {
+    const shared = readPersonalToolsComponentSources().find(
+      ({ name }) => name === 'personal-tools/shared.tsx'
+    );
+    expect(shared?.source).toContain('resolveLaunchableAppUrl');
+    expect(shared?.source).toContain('rel="noopener noreferrer"');
+  });
+
+  it('is excluded from stage-layout, presence, Summon/Follow, Mira, and recordings', () => {
+    const callDir = path.resolve(import.meta.dirname, '..');
+    const isolatedPaths = [
+      path.join(callDir, 'stage-layout', 'activity-ids.ts'),
+      path.join(callDir, 'stage-layout', 'use-activity-presence.ts'),
+      path.join(callDir, 'stage-layout', 'use-stage-navigation.ts'),
+      path.join(callDir, 'stage-layout', 'use-stage-layout.ts'),
+      path.resolve(callDir, '..', 'meeting-ai', 'meeting-ai-panel.tsx'),
+    ];
+    for (const filePath of isolatedPaths) {
+      const source = readFileSync(filePath, 'utf8');
+      expect(source, `${filePath} must not reference PersonalTools`).not.toMatch(
+        /PersonalTools|meet-personal-tools|personal_tools|private_tools/
+      );
+    }
+  });
 });

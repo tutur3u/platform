@@ -5,6 +5,7 @@ export default defineConfig({
   testMatch: [
     'meet-activities-ux.fixture.ts',
     'meet-presence-activities.fixture.ts',
+    'meet-private-apps.fixture.ts',
   ],
   fullyParallel: false,
   workers: 1,

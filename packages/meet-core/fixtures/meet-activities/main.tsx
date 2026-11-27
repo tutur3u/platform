@@ -25,6 +25,7 @@ import {
 } from '../../src/features/call/tools/live-activities/qa/qa-panel';
 import { createLiveQaClient } from '../../src/features/call/tools/live-activities/qa/qa-store';
 import { PresenceSceneFixture } from './presence-scene';
+import { PrivateAppsFixtureScene } from './private-apps-scene';
 
 // Mounts the real activity pane chrome, the real shared-document editor (Yjs +
 // tiptap with its sticky toolbar and remote caret plugin) and the real presence
@@ -285,15 +286,23 @@ const canBrowse = params.get('canBrowse') !== '0';
 const empty = params.get('empty') === '1';
 
 createRoot(document.getElementById('root')!).render(
-  <QueryClientProvider client={queryClient}>
-    <NextIntlClientProvider locale={locale} messages={messages} timeZone="UTC">
-      <LiveQaClientContext value={qaClient}>
-        {scene === 'presence' ? (
-          <PresenceSceneFixture canBrowse={canBrowse} empty={empty} />
-        ) : (
-          <FixtureApp />
-        )}
-      </LiveQaClientContext>
-    </NextIntlClientProvider>
-  </QueryClientProvider>
+  scene === 'private-apps' ? (
+    <PrivateAppsFixtureScene locale={locale} />
+  ) : (
+    <QueryClientProvider client={queryClient}>
+      <NextIntlClientProvider
+        locale={locale}
+        messages={messages}
+        timeZone="UTC"
+      >
+        <LiveQaClientContext value={qaClient}>
+          {scene === 'presence' ? (
+            <PresenceSceneFixture canBrowse={canBrowse} empty={empty} />
+          ) : (
+            <FixtureApp />
+          )}
+        </LiveQaClientContext>
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  )
 );
