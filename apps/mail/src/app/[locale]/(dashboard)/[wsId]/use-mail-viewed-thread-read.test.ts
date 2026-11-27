@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-query';
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import type { MailThreadDetail } from '@tuturuuu/internal-api';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { createElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getMailThreadsQueryKey } from './mail-thread-query';
@@ -36,7 +37,7 @@ const base = {
   blocked: false,
   detail: detail(),
 };
-function setup(props = base) {
+function setup(props: Parameters<typeof useMailViewedThreadRead>[0] = base) {
   const client = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   });
@@ -250,4 +251,23 @@ it('refreshes the live bell after opening a loaded thread persists its server re
     action: 'mark_read',
   });
   expect(bell).toHaveBeenCalledTimes(2);
+});
+
+it('reloads mail caches instead of reporting a failure when the mailbox is no longer accessible after an account switch', async () => {
+  mocks.update.mockRejectedValue(new InternalApiError('Not found', 404));
+  const onStaleMailbox = vi.fn();
+  setup({ ...base, onStaleMailbox });
+  await waitFor(() => expect(onStaleMailbox).toHaveBeenCalledTimes(1));
+  expect(mocks.error).not.toHaveBeenCalled();
+  expect(mocks.update).toHaveBeenCalledTimes(1);
+});
+
+it('still reports a generic read failure without reloading mail caches', async () => {
+  mocks.update.mockRejectedValue(new InternalApiError('Server error', 500));
+  const onStaleMailbox = vi.fn();
+  setup({ ...base, onStaleMailbox });
+  await waitFor(() =>
+    expect(mocks.error).toHaveBeenCalledWith('update_failed')
+  );
+  expect(onStaleMailbox).not.toHaveBeenCalled();
 });

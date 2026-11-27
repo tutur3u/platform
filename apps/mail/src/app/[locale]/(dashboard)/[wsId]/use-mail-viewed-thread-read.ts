@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useRef } from 'react';
 import { reconcileMailWhenIdle } from './mail-action-coordination';
 import type { MailFolder } from './mail-folders';
+import { isStaleMailboxAccessError } from './mail-read-query';
 import {
   restoreMailThreads,
   snapshotMailThreads,
@@ -29,6 +30,7 @@ export function useMailViewedThreadRead({
   blocked,
   folder = 'inbox',
   threads = [],
+  onStaleMailbox,
 }: {
   workspaceId: string;
   mailboxId: string | null;
@@ -37,6 +39,8 @@ export function useMailViewedThreadRead({
   blocked: boolean;
   folder?: MailFolder;
   threads?: MailThreadSummary[];
+  /** Reloads mail caches under the current session when the mailbox is no longer accessible. */
+  onStaleMailbox?: () => void;
 }) {
   const client = useQueryClient();
   const t = useTranslations('mail');
@@ -105,8 +109,12 @@ export function useMailViewedThreadRead({
         folder,
         threads,
       }),
-    onError: (_error, _target, context) => {
+    onError: (error, _target, context) => {
       restoreMailThreads(client, context);
+      if (isStaleMailboxAccessError(error) && onStaleMailbox) {
+        onStaleMailbox();
+        return;
+      }
       toast.error(t('update_failed'));
     },
     onSettled: (_data, _error, target) => {

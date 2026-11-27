@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MailMailbox } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -36,6 +36,7 @@ const MailboxSelectionContext = createContext<ReturnType<
 
 function useMailboxSelectionState(workspaceId: string) {
   const t = useTranslations('mail');
+  const client = useQueryClient();
   const [{ mailbox: requestedId }, setSelection] =
     useQueryStates(selectionParams);
   const bootstrapQuery = useMailBootstrap(workspaceId);
@@ -107,6 +108,20 @@ function useMailboxSelectionState(workspaceId: string) {
     source,
   ]);
 
+  /**
+   * Re-discovers the workspace's mailboxes under the current session. After an
+   * account switch the cached bootstrap still lists the previous account's
+   * mailboxes, so a refused mailbox would otherwise leave nothing selectable.
+   * Mailbox-scoped reads are left alone: each one is keyed by a mailbox id that
+   * is no longer selected, so they cannot be shown again.
+   */
+  const resetMailboxCaches = useCallback(() => {
+    void client.resetQueries({ queryKey: ['mail', workspaceId, 'bootstrap'] });
+    void client.resetQueries({
+      queryKey: ['mail', workspaceId, 'bootstrap-counts'],
+    });
+  }, [client, workspaceId]);
+
   const rejectMailbox = useCallback(
     (mailboxId: string) => {
       if (
@@ -119,7 +134,10 @@ function useMailboxSelectionState(workspaceId: string) {
       if (hint === mailboxId) rememberDefaultMailbox(workspaceId, undefined);
       setDeniedIds((ids) => new Set(ids).add(mailboxId));
       void selectMailbox(nextMailboxId ?? null);
-      awaitingDiscovery.current = !hasDiscovery;
+      // Before discovery, the pending bootstrap already runs under the current session.
+      // After it, re-discover so a fallback is chosen from the current account's list.
+      awaitingDiscovery.current = true;
+      if (hasDiscovery) resetMailboxCaches();
       if (nextMailboxId) notifySwitch();
     },
     [
@@ -128,6 +146,7 @@ function useMailboxSelectionState(workspaceId: string) {
       hint,
       nextMailboxId,
       notifySwitch,
+      resetMailboxCaches,
       selectMailbox,
       source,
       workspaceId,
@@ -152,6 +171,7 @@ function useMailboxSelectionState(workspaceId: string) {
     mailboxes,
     organizationQuery,
     rejectMailbox,
+    resetMailboxCaches,
   };
 }
 

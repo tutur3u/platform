@@ -117,8 +117,13 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     layoutReadyRef.current = true;
   }, []);
 
-  const { activeMailboxId, activeMailbox, bootstrapQuery, mailboxes } =
-    useMailboxSelection();
+  const {
+    activeMailboxId,
+    activeMailbox,
+    bootstrapQuery,
+    mailboxes,
+    resetMailboxCaches,
+  } = useMailboxSelection();
   const { threadsQuery, mailboxForbidden } = useMailThreads({
     folder,
     folderId,
@@ -222,6 +227,7 @@ export function MailAppClient({ folder, workspaceId }: MailAppClientProps) {
     folder,
     threads,
     blocked: detailQuery.isError || folder === 'drafts',
+    onStaleMailbox: resetMailboxCaches,
   });
   const deleteDraftMutation = useMutation({
     mutationFn: (draftId: string) =>

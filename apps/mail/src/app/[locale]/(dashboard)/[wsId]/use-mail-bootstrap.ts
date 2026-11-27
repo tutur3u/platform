@@ -10,6 +10,9 @@ export function useMailBootstrap(workspaceId: string) {
     queryFn: () => getMailBootstrap(workspaceId, undefined, false),
     retry: retryMailRead,
     staleTime: 30_000,
+    // Account switches happen in other tabs; returning here must re-discover
+    // the mailboxes that the current session owns.
+    refetchOnWindowFocus: 'always',
   });
   // Unread counts fan out per mailbox, so they wait while a first thread page
   // is loading. On a first visit with no remembered mailbox, the list starts
