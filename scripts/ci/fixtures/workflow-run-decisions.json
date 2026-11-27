@@ -75,6 +75,7 @@
   "mastermind-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "mastermind-store-cloudflare.yaml": ["path-filters"],
   "meet-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
+  "meet-wave1-first-publication.yaml": ["always"],
   "mind-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "mobile-api-mappings.yaml": ["path-filters"],
   "mobile-build-android.yaml": ["path-filters"],
