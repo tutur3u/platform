@@ -64,3 +64,27 @@ block/contention, `2` malformed/unverifiable state.
   `import-usage` so burn-rate projections accumulate without explicit `--record`.
 - Preserve live `orchestrator_capabilities` option metadata parity when
   `T3_ACP_MCP_NODE` is unavailable and cache discovery is used.
+
+Automations can read one line of fresh remaining percentages for Codex, Claude,
+and each Antigravity instance's Gemini and Claude/GPT pools.
+
+```sh
+bun packages/agent-quota/src/cli.ts capacity-line
+```
+
+Use `status --json` for reset times, source and freshness. A missing or stale
+window displays `unknown`. The T3 snapshot and existing usage import supply
+instance-bound readings to the same admission gate.
+
+To ingest a complete `/usage` TSV captured from a verified instance, supply its
+T3 instance ID and actual capture time. Import only after the export succeeds.
+
+```sh
+bun packages/agent-quota/src/cli.ts antigravity-usage-export INSTANCE_ID CAPTURED_AT \
+  < instance-usage.tsv > instance-usage.json
+bun packages/agent-quota/src/cli.ts import-usage < instance-usage.json
+```
+
+The top-level Antigravity CLI defaults to the CLI login. A capture from that
+login needs independent proof that it belongs to the named T3 instance. The
+export command performs no login, provider query or instance identity check.

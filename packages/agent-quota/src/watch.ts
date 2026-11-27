@@ -11,7 +11,10 @@ import { recommend, SIGNAL_TTL_MS } from './policy';
 import type { PoolSettings } from './pool-settings';
 import { chooseRoleCandidate } from './role-policy';
 import type { AccountUsage, RankedInstance, UsageWindow } from './types';
-import { windowObservationIsFresh } from './window-freshness';
+import {
+  windowHasCurrentReset,
+  windowObservationIsFresh,
+} from './window-freshness';
 import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
 
 export type WatchVerdict = 'ok' | 'warn' | 'switch-now';
@@ -78,7 +81,6 @@ export function freshRemainingPercent(
   );
   if (!scoped.length) return undefined;
   const isFresh = (window: UsageWindow) => {
-    const reset = Date.parse(window.resetsAt ?? '');
     return (
       window.authoritative &&
       typeof window.usedPercent === 'number' &&
@@ -86,9 +88,7 @@ export function freshRemainingPercent(
       window.usedPercent >= 0 &&
       window.usedPercent <= 100 &&
       windowObservationIsFresh(window, now, ttlMs) &&
-      Boolean(window.resetsAt) &&
-      Number.isFinite(reset) &&
-      reset > now.getTime()
+      windowHasCurrentReset(window, now)
     );
   };
   if (scoped.some((window) => !isFresh(window))) return;
@@ -271,7 +271,7 @@ export function selectSuccessor(
             Date.parse(window.observedAt) <= now.getTime() &&
             now.getTime() - Date.parse(window.observedAt) <=
               (account.provider === 'antigravity' ? 5 : 15) * 60_000 &&
-            Date.parse(window.resetsAt ?? '') > now.getTime()
+            windowHasCurrentReset(window, now)
         )
         .map((window) => window.usedPercent!);
       const held = Boolean(

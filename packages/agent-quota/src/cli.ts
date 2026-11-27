@@ -2,6 +2,8 @@
 
 import { readFileSync } from 'node:fs';
 import { collapseAccounts } from './accounts';
+import { parseAntigravityUsage } from './antigravity-usage';
+import { capacityLine } from './capacity-line';
 import { runBlock } from './block-cli';
 import { runCheckpointReady } from './checkpoint-ready';
 import { argumentValue } from './cli-args';
@@ -53,6 +55,41 @@ function outputJson(): boolean {
 
 async function main(): Promise<void> {
   const command = process.argv[2];
+  if (command === 'antigravity-usage-export') {
+    const [instanceId, checkedAt, ...extra] = process.argv.slice(3);
+    if (
+      !instanceId ||
+      !/^[a-zA-Z0-9_-]+$/.test(instanceId) ||
+      !checkedAt ||
+      !Number.isFinite(Date.parse(checkedAt)) ||
+      extra.length
+    ) {
+      throw new Error(
+        'Usage: antigravity-usage-export INSTANCE_ID CHECKED_AT < usage.tsv'
+      );
+    }
+    console.log(
+      JSON.stringify({
+        provenance: 'Instance-bound Antigravity CLI /usage TSV',
+        providers: [
+          {
+            instanceId,
+            driver: 'antigravity',
+            usageLimits: {
+              checkedAt: new Date(checkedAt).toISOString(),
+              windows: parseAntigravityUsage(readFileSync(0, 'utf8')),
+            },
+          },
+        ],
+      })
+    );
+    return;
+  }
+  if (command === 'capacity-line') {
+    const { accounts } = await collectAll({ snapshotsOnly: true });
+    console.log(capacityLine(accounts, new Date()));
+    return;
+  }
   if (
     command &&
     ['explain', 'dry-run', 'import-usage', 'configure'].includes(command)

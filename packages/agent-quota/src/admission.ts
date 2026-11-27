@@ -1,3 +1,4 @@
+import { windowResetAt } from './window-freshness';
 import { accountKey, collapseAccounts } from './accounts';
 import { matchingBlocks } from './block-ledger';
 import { capacityCooldownActive } from './capacity';
@@ -239,7 +240,7 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
           ? 'STALE'
           : 'UNKNOWN';
       const resetTimes = pool.windows
-        .map((window) => window.resetsAt)
+        .map(windowResetAt)
         .filter(
           (value): value is string =>
             Boolean(value) && Number.isFinite(Date.parse(value as string))

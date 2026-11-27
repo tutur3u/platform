@@ -1,6 +1,10 @@
 import { defaultRoutingConfig, type PacingConfig } from './routing-config';
 import type { UsageWindow, WindowPacing } from './types';
-import { windowObservationIsFresh } from './window-freshness';
+import {
+  isUnstartedWindow,
+  windowResetAt,
+  windowObservationIsFresh,
+} from './window-freshness';
 
 export { computeAccountPacing } from './account-pacing';
 
@@ -132,7 +136,8 @@ export function computeWindowPacing(
   const remainingPercent =
     usedPercent === null ? null : Math.round((100 - usedPercent) * 100) / 100;
 
-  const resetMs = window.resetsAt ? Date.parse(window.resetsAt) : Number.NaN;
+  const resetAt = windowResetAt(window);
+  const resetMs = Date.parse(resetAt ?? '');
   const resetsAt = Number.isFinite(resetMs)
     ? new Date(resetMs).toISOString()
     : null;
@@ -151,7 +156,7 @@ export function computeWindowPacing(
           {
             observedAt: window.observedAt,
             usedPercent,
-            resetsAt: window.resetsAt,
+            resetsAt: resetAt,
           },
         ]
       : history;
@@ -168,11 +173,7 @@ export function computeWindowPacing(
   const { burnRatePercentPerHour, observationCount } =
     computeBurnRatePercentPerHour(deduped, window, now, config);
 
-  const isIdleSessionStart =
-    usedPercent === 0 &&
-    window.providerWindowKind === 'session' &&
-    !window.resetsAt &&
-    window.authoritative;
+  const isIdleSessionStart = isUnstartedWindow(window);
   const glideFloorPercent = isIdleSessionStart
     ? config.baseReservePercent
     : computeGlideFloorPercent(window, hoursToReset, config);

@@ -21,9 +21,12 @@ import type {
   Recommendation,
   RecommendationReason,
   TaskRequest,
-  UsageWindow,
 } from './types';
-import { windowObservationIsFresh } from './window-freshness';
+import {
+  windowHasCurrentReset,
+  windowObservationIsFresh,
+  windowResetAt,
+} from './window-freshness';
 import { coversModel, noResetWindowMaxAgeMs } from './window-scope';
 
 export interface RecommendOptions {
@@ -57,15 +60,6 @@ function activeCount(id: string, active: ActiveAssignment[]): number {
   return active
     .filter((entry) => entry.instanceId === id)
     .reduce((sum, entry) => sum + Math.max(0, entry.count), 0);
-}
-
-function isIdleSessionWindow(window: UsageWindow): boolean {
-  return (
-    window.usedPercent === 0 &&
-    window.providerWindowKind === 'session' &&
-    !window.resetsAt &&
-    window.authoritative
-  );
 }
 
 function rankOne(
@@ -109,15 +103,9 @@ function rankOne(
       window.usedPercent <= 100
   );
   const isFresh = (window: (typeof windows)[number]): boolean => {
-    if (isIdleSessionWindow(window)) {
-      return windowObservationIsFresh(window, now, staleAfterMs);
-    }
-    const resetAt = window.resetsAt ? Date.parse(window.resetsAt) : undefined;
     return (
       windowObservationIsFresh(window, now, staleAfterMs) &&
-      resetAt !== undefined &&
-      Number.isFinite(resetAt) &&
-      resetAt > now.getTime()
+      windowHasCurrentReset(window, now)
     );
   };
   const freshWindows = windows.filter(
@@ -281,7 +269,7 @@ function rankOne(
       });
     }
     const reset = freshWindows
-      .map((window) => window.resetsAt)
+      .map(windowResetAt)
       .filter((value): value is string => Boolean(value))
       .map(Date.parse)
       .filter(Number.isFinite);
@@ -372,8 +360,7 @@ function rankOne(
     });
     if (
       staleWindows.some(
-        (window) =>
-          window.resetsAt && Date.parse(window.resetsAt) <= now.getTime()
+        (window) => Date.parse(windowResetAt(window) ?? '') <= now.getTime()
       )
     )
       reasons.push({

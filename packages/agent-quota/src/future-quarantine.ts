@@ -7,7 +7,10 @@ import type {
   HookLedger,
 } from './hooks-types';
 import { SIGNAL_TTL_MS } from './policy';
-import { windowObservationIsFresh } from './window-freshness';
+import {
+  windowHasCurrentReset,
+  windowObservationIsFresh,
+} from './window-freshness';
 import { coversModel } from './window-scope';
 
 export { FUTURE_QUARANTINE_TTL_MS } from './future-quarantine-constants';
@@ -68,7 +71,6 @@ function hasFreshWindowAfter(
   model?: string
 ) {
   return account.windows.some((window) => {
-    const reset = Date.parse(window.resetsAt ?? '');
     return (
       window.authoritative &&
       typeof window.usedPercent === 'number' &&
@@ -79,8 +81,7 @@ function hasFreshWindowAfter(
         context.now,
         SIGNAL_TTL_MS[account.provider]
       ) &&
-      Number.isFinite(reset) &&
-      reset > context.now.getTime()
+      windowHasCurrentReset(window, context.now)
     );
   });
 }

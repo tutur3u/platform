@@ -28,3 +28,33 @@ export function windowObservationIsFresh(
     now.getTime() - observedAt <= ttlMs
   );
 }
+
+function isUnstartedAntigravityWindow(window: UsageWindow): boolean {
+  return (
+    window.confidence === 'provider' &&
+    window.usedPercent === 0 &&
+    Date.parse(window.resetsAt ?? '') === 0 &&
+    /^(gemini|3p)-(weekly|5h)$/.test(window.id ?? '')
+  );
+}
+
+export function isUnstartedWindow(window: UsageWindow): boolean {
+  return (
+    window.authoritative &&
+    (isUnstartedAntigravityWindow(window) ||
+      (window.usedPercent === 0 &&
+        window.providerWindowKind === 'session' &&
+        !window.resetsAt))
+  );
+}
+
+export function windowResetAt(window: UsageWindow): string | undefined {
+  return isUnstartedWindow(window) ? undefined : (window.resetsAt ?? undefined);
+}
+
+export function windowHasCurrentReset(window: UsageWindow, now: Date): boolean {
+  return (
+    isUnstartedWindow(window) ||
+    Date.parse(window.resetsAt ?? '') > now.getTime()
+  );
+}

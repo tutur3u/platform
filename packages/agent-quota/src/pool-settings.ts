@@ -3,7 +3,10 @@ import { HookError } from './hook-ledger';
 import type { AdmissionContext } from './hooks-types';
 import { SIGNAL_TTL_MS } from './policy';
 import type { AccountUsage } from './types';
-import { windowObservationIsFresh } from './window-freshness';
+import {
+  windowHasCurrentReset,
+  windowObservationIsFresh,
+} from './window-freshness';
 import { coversModel } from './window-scope';
 export interface PoolSettings {
   reservePercent: number;
@@ -93,8 +96,7 @@ export function poolPolicyReasons(
           SIGNAL_TTL_MS[account.provider],
           0
         ) &&
-        !!w.resetsAt &&
-        Date.parse(w.resetsAt) > context.now.getTime()
+        windowHasCurrentReset(w, context.now)
     );
   if (fresh) {
     const used = Math.max(...windows.map((w) => w.usedPercent!));
