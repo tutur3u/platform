@@ -254,21 +254,19 @@ function controlledGit(fixture, mode) {
   fs.mkdirSync(bin);
   const attempts = path.join(bin, 'history-attempts');
   const executable = path.join(bin, 'git');
+  const quote = (value) => `'${String(value).replace(/'/g, "'\\''")}'`;
+  // A POSIX shell fixture starts far faster than a Node fixture under load.
+  // The stalled read execs sleep, so the SIGKILL from the normalizer reaches
+  // the only process that holds stdout; no orphan can keep the pipe open.
+  const stall = mode === 'failure' ? 'exit 42' : "trap '' TERM\nexec sleep 60";
   fs.writeFileSync(
     executable,
-    `#!${process.execPath}
-const fs = require('node:fs');
-const { spawnSync } = require('node:child_process');
-const args = process.argv.slice(2);
-if (args[0] === 'show' && args[1] === ${JSON.stringify(`${fixture.base}:CHANGELOG.md`)}) {
-  fs.appendFileSync(${JSON.stringify(attempts)}, 'attempt\\n');
-  if (${JSON.stringify(mode)} === 'failure') process.exit(42);
-  process.on('SIGTERM', () => {});
-  setTimeout(() => process.exit(0), 60_000);
-} else {
-  const result = spawnSync('/usr/bin/git', args, { stdio: 'inherit' });
-  process.exit(result.status ?? 1);
-}
+    `#!/bin/sh
+if [ "$1" = show ] && [ "$2" = ${quote(`${fixture.base}:CHANGELOG.md`)} ]; then
+  printf 'attempt\\n' >> ${quote(attempts)}
+  ${stall}
+fi
+exec /usr/bin/git "$@"
 `,
     { mode: 0o700 }
   );

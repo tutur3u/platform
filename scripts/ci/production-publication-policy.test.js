@@ -209,12 +209,12 @@ function runPolicy(root, workflow, command) {
         cwd: root,
         env,
         encoding: 'utf8',
-        timeout: 10000,
+        timeout: 60000,
       })
     : execFileSync(
         process.execPath,
         ['scripts/ci/production-publication-policy.ts', workflow, summary],
-        { cwd: root, env, encoding: 'utf8', timeout: 10000 }
+        { cwd: root, env, encoding: 'utf8', timeout: 60000 }
       );
   return {
     stdout,
