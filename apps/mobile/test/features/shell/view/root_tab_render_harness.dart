@@ -35,10 +35,11 @@ void _expectDetailContentEdges(
   WidgetTester tester, {
   required Finder page,
   required Finder content,
+  AppPageKind kind = AppPageKind.detail,
 }) {
   final body = tester.getRect(page);
   final deviceClass = Breakpoints.fromWidth(body.width);
-  final cap = AppLayout.maxContentWidth(AppPageKind.detail, deviceClass);
+  final cap = AppLayout.maxContentWidth(kind, deviceClass);
   final centering = cap == null || cap >= body.width
       ? 0.0
       : (body.width - cap) / 2;

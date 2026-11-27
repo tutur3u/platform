@@ -264,6 +264,7 @@ class _ContactGroupPostsState extends State<ContactGroupPosts> {
             child: AppTextField(
               controller: controller,
               label: label,
+              placeholder: label,
               enabled: !saving && !unconfirmed,
               maxLines: lines,
               maxLength: limit,

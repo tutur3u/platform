@@ -364,6 +364,7 @@ void main() {
     final h = await startPresentedCall(tester, cleanup);
     h.workspace.change('44444444-4444-4444-8444-444444444444');
     await settleDisconnect(tester, h);
+    await tester.pumpAndSettle();
     expect(find.byType(AssistantLiveCallScreen), findsNothing);
     expect(h.live.state.status, AssistantLiveConnectionStatus.disconnected);
     expect(tester.takeException(), isNull);

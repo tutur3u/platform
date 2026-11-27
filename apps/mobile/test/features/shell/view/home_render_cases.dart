@@ -123,7 +123,7 @@ void _homeRenderCases() {
         expect(today.left, 16);
         expect(today.right, size.width - 16);
         expect(upNext.top, greaterThan(today.bottom));
-        expect(summary.top, greaterThan(finance.bottom));
+        expect(summary.bottom, lessThan(today.top));
         expect(find.text('Upcoming task 3'), findsOneWidget);
         expect(find.text('Upcoming task 4'), findsNothing);
       }
@@ -179,7 +179,7 @@ void _homeRenderCases() {
             hasLoadedOnce: true,
             events: [
               for (final (offset, title, note) in [
-                (const Duration(hours: 26), 'Design sync', 'Weekly review'),
+                (Duration.zero, 'Design sync', 'Weekly review'),
                 (const Duration(days: 2, hours: 3), 'Customer call', ''),
                 (const Duration(days: 4), 'Sprint planning', 'Room 4B'),
               ])
@@ -218,6 +218,7 @@ void _homeRenderCases() {
         expect(find.byType(DashboardPage), findsOneWidget);
         expect(find.text('Send the Q4 venue shortlist'), findsOneWidget);
         expect(find.text('Design sync'), findsOneWidget);
+        expect(find.text('Customer call'), findsNothing);
         final cards = find.byType(AppGroupedCard);
         // Today, Up next, Calendar and today's summary.
         expect(cards, findsNWidgets(4));
@@ -236,14 +237,14 @@ void _homeRenderCases() {
           // Tablets and desktops lay the widgets out in balanced columns,
           // with Today at a glance as a KPI strip above them.
           final strip = find.ancestor(
-            of: find.byKey(const ValueKey('home-metric-active')),
+            of: find.byKey(const ValueKey('home-metric-completed')),
             matching: find.byType(AppGroupedCard),
           );
-          final today = tester.getRect(
-            find.byKey(const ValueKey('home-widget-tasks')),
+          final agenda = tester.getRect(
+            find.byKey(const ValueKey('home-widget-calendar')),
           );
-          expect(tester.getRect(strip).bottom, lessThan(today.top));
-          expect(tester.getRect(strip).left, today.left);
+          expect(tester.getRect(strip).bottom, lessThan(agenda.top));
+          expect(tester.getRect(strip).left, agenda.left);
           expect(lefts.length, _homeColumns(size.key));
         }
         final wide =
@@ -413,7 +414,7 @@ void _homeRenderCases() {
       initialState: TaskListState(
         status: TaskListStatus.loaded,
         hasLoadedOnce: true,
-        totalActiveTasks: 7,
+        totalCompletedTasks: 7,
         overdueTasks: [
           UserTask(
             id: 't1',
@@ -468,9 +469,9 @@ void _homeRenderCases() {
     }
 
     for (final (key, label, target) in [
-      ('home-metric-active', 'Active tasks: 7', Routes.tasks),
+      ('home-metric-completed', 'Completed: 7', Routes.tasks),
       ('home-metric-overdue', 'Overdue: 1', Routes.tasks),
-      ('home-metric-events', 'Upcoming events: 0', Routes.calendar),
+      ('home-metric-events', 'Agenda: 0', Routes.calendar),
     ]) {
       final data = tester
           .getSemantics(find.bySemanticsLabel(label))

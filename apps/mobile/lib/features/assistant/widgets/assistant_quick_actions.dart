@@ -51,16 +51,17 @@ List<AssistantQuickAction> assistantQuickActions(BuildContext context) {
   ];
 }
 
-/// A two-column grid of quick actions on compact widths and a single row of
-/// four from 600dp of available width. Two-column tiles lay the icon beside
-/// the prompt so the grid stays short on phones; tiles in a row share the
-/// tallest one's height.
+/// A responsive grid of quick actions: one column below 272dp, two columns on
+/// compact widths, and a single row of four from 600dp of available width.
+/// Narrower-than-row tiles lay the icon beside the prompt so the grid stays
+/// short on phones; tiles in a row share the tallest one's height.
 class AssistantQuickActionGrid extends StatelessWidget {
   const AssistantQuickActionGrid({required this.onSelected, super.key});
 
   final ValueChanged<String> onSelected;
 
   static const double _rowWidth = 600;
+  static const double _twoColumnWidth = 272;
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +69,11 @@ class AssistantQuickActionGrid extends StatelessWidget {
     return LayoutBuilder(
       key: const ValueKey('assistant-quick-actions'),
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= _rowWidth ? 4 : 2;
+        final columns = switch (constraints.maxWidth) {
+          >= _rowWidth => 4,
+          >= _twoColumnWidth => 2,
+          _ => 1,
+        };
         const gap = AppSpacing.sm;
         return Column(
           mainAxisSize: MainAxisSize.min,

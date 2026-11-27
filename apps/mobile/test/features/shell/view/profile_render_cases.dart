@@ -71,6 +71,7 @@ void _profileRenderCases() {
           tester,
           page: find.byType(ProfileOverviewPage),
           content: identity,
+          kind: AppPageKind.root,
         );
         expect(
           tester.getSize(find.byKey(profileEditIdentityKey)).height,

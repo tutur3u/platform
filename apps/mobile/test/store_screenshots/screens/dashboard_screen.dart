@@ -22,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fixtures/shell_frame_fixture.dart';
 import '../fixtures/store_team.dart';
+import '../fixtures/time_tracker_fixture.dart';
 import '../store_screenshot_app.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
@@ -181,7 +182,7 @@ CalendarState _calendarState(StoreLocale l) {
         'Review thiết kế: hình ảnh ra mắt',
         'Studio room · Minh, An, Chi',
         'Phòng studio · Minh, An, Chi',
-        StoreTeam.at(9, 30, 1),
+        StoreTeam.at(9, 30),
       ),
       event(
         'store-event-rehearsal',
@@ -189,7 +190,7 @@ CalendarState _calendarState(StoreLocale l) {
         'Tổng duyệt buổi ra mắt',
         'Walk through the demo end to end',
         'Chạy thử toàn bộ phần demo',
-        StoreTeam.at(14, 0, 2),
+        StoreTeam.at(14),
       ),
       event(
         'store-event-press',
@@ -197,7 +198,7 @@ CalendarState _calendarState(StoreLocale l) {
         'Rà soát bộ tài liệu báo chí với Bảo',
         'Final logos, photos and quotes',
         'Logo, ảnh và trích dẫn bản cuối',
-        StoreTeam.at(16, 30, 3),
+        StoreTeam.at(16, 30),
       ),
     ],
   );
@@ -214,7 +215,7 @@ Widget _build(StoreLocale l) {
   whenListen(
     auth,
     const Stream<AuthState>.empty(),
-    initialState: const AuthState.unauthenticated(),
+    initialState: storeTimerSignedIn,
   );
   final workspaces = _Workspaces();
   whenListen(

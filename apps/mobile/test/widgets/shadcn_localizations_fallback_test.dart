@@ -8,18 +8,19 @@ import '../helpers/pump_app.dart';
 
 void main() {
   test(
-    'fallback advertises only app locales and preserves English resources',
+    'bridge advertises only app locales and loads their resources',
     () async {
       const delegate = AppShadcnLocalizationsDelegate();
       expect(delegate.isSupported(const Locale('en')), isTrue);
       expect(delegate.isSupported(const Locale('vi')), isTrue);
       expect(delegate.isSupported(const Locale('fr')), isFalse);
       final english = await delegate.load(const Locale('en'));
-      final vietnameseFallback = await delegate.load(const Locale('vi'));
-      expect(vietnameseFallback.formNotEmpty, english.formNotEmpty);
+      final vietnamese = await delegate.load(const Locale('vi'));
+      expect(english.formNotEmpty, 'This field cannot be empty');
+      expect(vietnamese.formNotEmpty, 'Trường này không được để trống');
       expect(
-        vietnameseFallback.placeholderDatePicker,
-        english.placeholderDatePicker,
+        vietnamese.placeholderDatePicker,
+        isNot(english.placeholderDatePicker),
       );
       expect(delegate.shouldReload(delegate), isFalse);
     },
@@ -31,11 +32,15 @@ void main() {
         tester.platformDispatcher.localesTestValue = [Locale(locale)];
         addTearDown(tester.platformDispatcher.clearLocalesTestValue);
         Locale? resolved;
+        String? datePlaceholder;
         await tester.pumpApp(
           Scaffold(
             body: Builder(
               builder: (context) {
                 resolved = Localizations.localeOf(context);
+                datePlaceholder = shad.ShadcnLocalizations.of(
+                  context,
+                ).placeholderDatePicker;
                 return Column(
                   children: [
                     Text(context.l10n.profileAvatar),
@@ -58,9 +63,10 @@ void main() {
           findsOneWidget,
         );
         expect(find.text(locale == 'vi' ? 'Dán' : 'Paste'), findsOneWidget);
-        expect(find.text('Select a date'), findsOneWidget);
+        final datePicker = find.text(datePlaceholder!);
+        expect(datePicker, findsOneWidget);
         expect(tester.takeException(), isNull);
-        await tester.tap(find.text('Select a date'));
+        await tester.tap(datePicker);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       },
