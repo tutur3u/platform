@@ -5,6 +5,7 @@ import 'package:mobile/features/audience_mode/audience_mode.dart';
 
 /// Default Home order. Mode-specific widgets are available only in their audience mode.
 const List<String> homeWidgetIds = [
+  classesTodayHomeWidgetId,
   'summary',
   'calendar',
   'tasks',
@@ -12,7 +13,6 @@ const List<String> homeWidgetIds = [
   'mira',
   'meet',
   'mail',
-  classesTodayHomeWidgetId,
   'finance',
   'notes',
 ];

@@ -43,8 +43,8 @@ void main() {
     const fresh = DashboardLayoutState();
     expect(fresh.arranged(['tasks', 'calendar', 'classes_today']), [
       'classes_today',
-      'tasks',
       'calendar',
+      'tasks',
     ]);
     const customized = DashboardLayoutState(order: ['calendar', 'tasks']);
     expect(customized.arranged(['tasks', 'calendar', 'classes_today']), [

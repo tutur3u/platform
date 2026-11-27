@@ -325,7 +325,7 @@ extension _MailReaderChrome on _MailReaderState {
         ? ShellDockChoice(
             id: 'appearance',
             icon: Icons.contrast_rounded,
-            label: l10n.mailMessageAppearance,
+            label: context.l10n.mailMessageAppearance,
             options: [
               for (final choice in mailAppearanceLabels(context).entries)
                 (id: choice.key, label: choice.value),
@@ -376,7 +376,7 @@ extension _MailReaderChrome on _MailReaderState {
         (
           id: 'reply',
           icon: Icons.reply_outlined,
-          label: l10n.mailReply,
+          label: context.l10n.mailReply,
           enabled: _messages.isNotEmpty,
           destructive: false,
           run: _replyLast,
@@ -385,7 +385,7 @@ extension _MailReaderChrome on _MailReaderState {
         (
           id: 'reply_all',
           icon: Icons.reply_all_outlined,
-          label: l10n.mailReplyAll,
+          label: context.l10n.mailReplyAll,
           enabled: true,
           destructive: false,
           run: _replyAllLast,
@@ -394,7 +394,7 @@ extension _MailReaderChrome on _MailReaderState {
         (
           id: 'forward',
           icon: Icons.forward_outlined,
-          label: l10n.mailForward,
+          label: context.l10n.mailForward,
           enabled: true,
           destructive: false,
           run: _forwardLast,
