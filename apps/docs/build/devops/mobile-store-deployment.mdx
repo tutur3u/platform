@@ -541,11 +541,28 @@ A second committed edit then reuses that exact version code:
   (for example `alpha` for closed testing or `beta` for open testing).
   `internal`, `qa` and `production` are rejected, including form-factor names
   such as `wear:production`. An unknown track, or a track with a staged
-  (`inProgress` or `halted`) rollout or a `draft` release, fails the job before anything is
-  committed. A fresh edit then reads every promoted track back. The commit uses
+  (`inProgress` or `halted`) rollout or a `draft` release for a different build,
+  fails the job before anything is committed. A fresh edit then reads every
+  promoted track back. The commit uses
   `changesInReviewBehavior=ERROR_IF_IN_REVIEW`, so it never cancels a release
   already in Google review. Google's review of closed and open testing releases
   still applies.
+- **Draft apps.** Until the Play app finishes its first publish in Play Console,
+  Play rejects completed releases on testing tracks with
+  `Only releases with status draft may be created on draft app`. Only that rejection triggers a
+  fallback: the job logs that the app is still in draft, discards the refused
+  edit, and retries once in a fresh edit with `draft` status on the testing
+  tracks. The internal track stays `completed`, and the verification step
+  accepts the `draft` status for this build. Any other commit failure still
+  fails the job. A `draft` testing release does not go live to testers. Play
+  Console must finish the app's first publish before testing releases go live
+  automatically, so until then, check the testing tracks there for draft
+  releases.
+- A rerun of the same build reuses its own `draft` testing release without
+  retrying. A `draft` release for an earlier build still blocks promotion, as it
+  always has, because CI never replaces a draft. On a draft app, discard or
+  finish that earlier draft in Play Console before the next build can promote to
+  the testing tracks.
 
 Before building, the Android job checks whether the internal track already
 holds the run's version code. A rerun of a failed Android job reuses the
@@ -554,7 +571,9 @@ promotion. A track that already carries the build keeps its release list and
 release metadata; only missing Vietnamese notes are added.
 
 Leave `GOOGLE_PLAY_BETA_TRACKS` empty to publish to internal testing only.
-Regression coverage: `scripts/mobile-deployment/play-beta.test.mjs`.
+Regression coverage: `scripts/mobile-deployment/play-beta.test.mjs` and
+`scripts/mobile-deployment/play-beta-draft-app.test.mjs` (both the completed
+and the draft-app branches).
 
 iOS requires the profile's expiration, exact team and bundle ID, App Store
 distribution type, production push entitlement and Live App Group. Time

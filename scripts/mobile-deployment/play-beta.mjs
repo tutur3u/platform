@@ -13,6 +13,11 @@ const TRACK_PATTERN = /^[a-z0-9:_-]{1,64}$/u;
 const LIFECYCLE_STATE_PATTERN = /^RELEASE_LIFECYCLE_STATE_[A-Z_]{1,40}$/u;
 const RESERVED_TRACKS = new Set(['production', 'internal', 'qa']);
 const ROLLOUT_STATUSES = new Set(['inProgress', 'halted', 'draft']);
+// Testing releases are `completed` for published apps. Until an app finishes its
+// first publish in Play Console, Play accepts only `draft` on testing tracks.
+const TESTING_STATUSES = new Set(['completed', 'draft']);
+const DRAFT_APP_REJECTION =
+  /Only releases with status draft may be created on draft app/u;
 
 export function parseBetaTracks(value) {
   const tracks = [
@@ -78,13 +83,36 @@ export function hasNewerBuild(track, buildNumber) {
   );
 }
 
-export function releaseForBuild(track, buildNumber) {
+export function releaseForBuild(track, buildNumber, status = 'completed') {
   return (
     track?.releases?.find(
       (release) =>
-        release.status === 'completed' &&
+        release.status === status &&
         release.versionCodes?.map(String).includes(String(buildNumber))
     ) ?? null
+  );
+}
+
+/**
+ * True only for Play's rejection of a non-draft testing release on an app that
+ * has not finished its first publish. Any other failure must still stop the job.
+ */
+export function isDraftAppRejection(error) {
+  const message = String(error?.message ?? '');
+  return (
+    /Store API request failed \(400,/u.test(message) &&
+    DRAFT_APP_REJECTION.test(message)
+  );
+}
+
+/**
+ * A draft release for this build on an opted-in track means an earlier run
+ * already used draft status. Reuse it, so a rerun does not trip the draft guard
+ * in planPlayBeta before the commit that would reveal the draft app.
+ */
+export function hasDraftForBuild(targets, buildNumber) {
+  return Object.values(targets).some((track) =>
+    Boolean(releaseForBuild(track, buildNumber, 'draft'))
   );
 }
 
@@ -196,9 +224,18 @@ async function assertNothingPendingReview(editUrl, headers) {
 /**
  * Plans one edit. `targets` maps each opted-in track to its current state, so
  * a track that already carries this build is skipped and a staged rollout is
- * never replaced.
+ * never replaced. `testingStatus` is `completed` for published apps and `draft`
+ * while Play still treats the app as a draft; internal stays `completed`.
  */
-export function planPlayBeta({ internal, buildNumber, notes, targets }) {
+export function planPlayBeta({
+  internal,
+  buildNumber,
+  notes,
+  targets,
+  testingStatus = 'completed',
+}) {
+  if (!TESTING_STATUSES.has(testingStatus))
+    throw new Error(`Unsupported Google Play testing status ${testingStatus}`);
   // Planned inside the promotion edit, so a newer internal release published
   // since the job's earlier check stops an older build from being promoted.
   if (hasNewerBuild(internal, buildNumber))
@@ -223,7 +260,7 @@ export function planPlayBeta({ internal, buildNumber, notes, targets }) {
     {
       name: release.name,
       versionCodes: [String(buildNumber)],
-      status: 'completed',
+      status: testingStatus,
       releaseNotes: release.releaseNotes ?? [],
     },
     notes
@@ -237,7 +274,7 @@ export function planPlayBeta({ internal, buildNumber, notes, targets }) {
       throw new Error(
         `Google Play track ${track} already serves a build newer than ${buildNumber}`
       );
-    const existing = releaseForBuild(state, buildNumber);
+    const existing = releaseForBuild(state, buildNumber, testingStatus);
     if (existing) {
       // Keep the target's own release list and metadata; only add notes.
       if (!hasNotes(existing, notes))
@@ -392,11 +429,8 @@ export async function internalHasBuild(buildNumber) {
   return present;
 }
 
-export async function publishPlayBeta(buildNumber, notesDir) {
-  const tracks = parseBetaTracks(process.env.GOOGLE_PLAY_BETA_TRACKS);
-  const english = await readFile(`${notesDir}/whatsnew-en-US`, 'utf8');
-  const headers = await playHeaders();
-  const summary = { tracks: [], vietnamese: false };
+async function promotePlay(headers, buildNumber, english, tracks, status) {
+  const summary = { tracks: [], vietnamese: false, testingStatus: status };
   await withEdit(headers, async (editUrl, commit) => {
     const language = vietnameseListing(
       await json(`${editUrl}/listings`, { headers })
@@ -416,7 +450,22 @@ export async function publishPlayBeta(buildNumber, notesDir) {
       );
     }
     const internal = await json(`${editUrl}/tracks/internal`, { headers });
-    const updates = planPlayBeta({ internal, buildNumber, notes, targets });
+    const testingStatus =
+      status === 'completed' && hasDraftForBuild(targets, buildNumber)
+        ? 'draft'
+        : status;
+    if (testingStatus !== status)
+      console.log(
+        `Build ${buildNumber} already has a draft release on a testing track; keeping draft status.`
+      );
+    summary.testingStatus = testingStatus;
+    const updates = planPlayBeta({
+      internal,
+      buildNumber,
+      notes,
+      targets,
+      testingStatus,
+    });
     summary.tracks = tracks;
     summary.vietnamese = notes.length > 0;
     if (!updates.length) return;
@@ -429,24 +478,49 @@ export async function publishPlayBeta(buildNumber, notesDir) {
     }
     await commit();
   });
+  return summary;
+}
+
+export async function publishPlayBeta(buildNumber, notesDir) {
+  const tracks = parseBetaTracks(process.env.GOOGLE_PLAY_BETA_TRACKS);
+  const english = await readFile(`${notesDir}/whatsnew-en-US`, 'utf8');
+  const headers = await playHeaders();
+  let summary;
+  try {
+    summary = await promotePlay(
+      headers,
+      buildNumber,
+      english,
+      tracks,
+      'completed'
+    );
+  } catch (error) {
+    if (!isDraftAppRejection(error)) throw error;
+    // Play refused the commit, so nothing changed. Retry once in a fresh edit
+    // with draft status; the release goes live after the app's first publish.
+    console.log(
+      'Google Play app is still in draft; creating testing-track releases with draft status. They go live only after the app finishes its first publish in Play Console.'
+    );
+    summary = await promotePlay(headers, buildNumber, english, tracks, 'draft');
+  }
   if (summary.tracks.length)
-    await verifyPromotion(headers, buildNumber, tracks);
+    await verifyPromotion(headers, buildNumber, tracks, summary.testingStatus);
   console.log(
-    `Google Play build ${buildNumber}: testing tracks [${summary.tracks.join(', ') || 'none opted in'}], Vietnamese notes ${summary.vietnamese ? 'added' : 'not added'}.`
+    `Google Play build ${buildNumber}: testing tracks [${summary.tracks.join(', ') || 'none opted in'}] with ${summary.testingStatus} status, Vietnamese notes ${summary.vietnamese ? 'added' : 'not added'}.`
   );
   return summary;
 }
 
-async function verifyPromotion(headers, buildNumber, tracks) {
+async function verifyPromotion(headers, buildNumber, tracks, testingStatus) {
   await withEdit(headers, async (editUrl) => {
     for (const track of tracks) {
       const state = await json(
         `${editUrl}/tracks/${encodeURIComponent(track)}`,
         { headers }
       );
-      if (!releaseForBuild(state, buildNumber))
+      if (!releaseForBuild(state, buildNumber, testingStatus))
         throw new Error(
-          `Build ${buildNumber} is not a completed release on Google Play track ${track}`
+          `Build ${buildNumber} is not a ${testingStatus} release on Google Play track ${track}`
         );
     }
   });
