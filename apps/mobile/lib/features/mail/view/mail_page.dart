@@ -383,8 +383,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         _repository.dispose();
       } else {
         unawaited(
-          Future.wait(_inFlightDeferredCommits.toList())
-              .whenComplete(_repository.dispose),
+          Future.wait(
+            _inFlightDeferredCommits.toList(),
+          ).whenComplete(_repository.dispose),
         );
       }
     }
@@ -431,9 +432,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           '${MailRepository.mailboxPath(widget.workspaceId, box)}/organization',
         );
         _labels = mailRows(organization?['labels']);
-        _folders = mailRows(organization?['folders'])
-            .where((folder) => folder['kind'] == 'custom')
-            .toList();
+        _folders = mailRows(
+          organization?['folders'],
+        ).where((folder) => folder['kind'] == 'custom').toList();
       }
       if (!more) {
         _visibleListKey = path;
@@ -525,9 +526,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       var clearedFilter = false;
       setState(() {
         _labels = mailRows(organization['labels']);
-        _folders = mailRows(organization['folders'])
-            .where((folder) => folder['kind'] == 'custom')
-            .toList();
+        _folders = mailRows(
+          organization['folders'],
+        ).where((folder) => folder['kind'] == 'custom').toList();
         if (_labelId != null &&
             !_labels.any((label) => label['id'] == _labelId)) {
           _labelId = null;

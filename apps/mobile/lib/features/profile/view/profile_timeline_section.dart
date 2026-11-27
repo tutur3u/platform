@@ -388,9 +388,9 @@ class ProfileTimelineSectionState extends State<ProfileTimelineSection> {
 
   Widget _buildPreview(BuildContext context, int limit) {
     final l10n = context.l10n;
-    final items = groupProfileTimelineDays(_items ?? const []).values
-        .expand((day) => day)
-        .take(limit);
+    final items = groupProfileTimelineDays(
+      _items ?? const [],
+    ).values.expand((day) => day).take(limit);
     final unavailable =
         _scope == null || _failed || (items.isEmpty && (_partial || _limited));
     return Column(

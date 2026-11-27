@@ -3,7 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/audience_mode/audience_mode.dart';
 
-/// Default Home order. Mode-specific widgets are available only in their audience mode.
+/// Default Home order, including widgets restricted to an audience mode.
 const List<String> homeWidgetIds = [
   classesTodayHomeWidgetId,
   'summary',

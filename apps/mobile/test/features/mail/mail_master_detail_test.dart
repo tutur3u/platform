@@ -329,20 +329,21 @@ void main() {
     setMailSurface(tester, _tablet);
     final repository = MailPreviewRepository();
     stubMailPreview(repository, threads: 2);
-    when(() => repository.detail('ws', 'box', 'thread-0', thread: true))
-        .thenAnswer(
-          (_) async => {
-            'thread': {'id': 'thread-0', 'subject': 'Unread zero'},
-            'messages': [
-              {
-                'id': 'message-0',
-                'fromAddress': 'sender@example.invalid',
-                'bodyText': 'Body zero',
-                'unread': true,
-              },
-            ],
+    when(
+      () => repository.detail('ws', 'box', 'thread-0', thread: true),
+    ).thenAnswer(
+      (_) async => {
+        'thread': {'id': 'thread-0', 'subject': 'Unread zero'},
+        'messages': [
+          {
+            'id': 'message-0',
+            'fromAddress': 'sender@example.invalid',
+            'bodyText': 'Body zero',
+            'unread': true,
           },
-        );
+        ],
+      },
+    );
     when(
       () => repository.list(
         'ws',

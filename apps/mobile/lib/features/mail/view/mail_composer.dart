@@ -189,9 +189,9 @@ class _MailComposerState extends State<MailComposer> {
     if (!mounted) throw StateError('Mail session changed');
     _draftId = (result['message'] as Map<String, dynamic>)['id'] as String;
     if (widget.forward && !_forwardCopied && widget.reply != null) {
-      final ids = mailRows(widget.reply!['attachments'])
-          .map((a) => a['id'] as String)
-          .toList();
+      final ids = mailRows(
+        widget.reply!['attachments'],
+      ).map((a) => a['id'] as String).toList();
       if (ids.isNotEmpty) {
         final copied = await widget.repository.copyAttachments(
           widget.workspaceId,
@@ -326,27 +326,24 @@ class _MailComposerState extends State<MailComposer> {
     prompt.dispose();
     if (instructions == null || instructions.isEmpty || !mounted) return;
     await _perform(() async {
-      final result = await widget.repository.aiDraft(
-        widget.workspaceId,
-        widget.mailboxId,
-        {
-          'mode': selected || _body.text.trim().isNotEmpty
-              ? 'rewrite'
-              : 'draft',
-          'instructions': selected
-              ? 'Rewrite only the selected passage. Return only its '
-                    'replacement, without greeting, subject, signature, '
-                    'or quoted history. $instructions'
-              : instructions,
-          'bodyText': selected
-              ? originalText.substring(selection.start, selection.end)
-              : _body.text,
-          'subject': _subject.text,
-          'recipients': _addresses(_to.text),
-          if (widget.reply?['threadId'] != null)
-            'threadId': widget.reply!['threadId'],
-        },
-      );
+      final result = await widget.repository
+          .aiDraft(widget.workspaceId, widget.mailboxId, {
+            'mode': selected || _body.text.trim().isNotEmpty
+                ? 'rewrite'
+                : 'draft',
+            'instructions': selected
+                ? 'Rewrite only the selected passage. Return only its '
+                      'replacement, without greeting, subject, signature, '
+                      'or quoted history. $instructions'
+                : instructions,
+            'bodyText': selected
+                ? originalText.substring(selection.start, selection.end)
+                : _body.text,
+            'subject': _subject.text,
+            'recipients': _addresses(_to.text),
+            if (widget.reply?['threadId'] != null)
+              'threadId': widget.reply!['threadId'],
+          });
       if (!mounted) return;
       final accepted = await showDialog<bool>(
         context: context,

@@ -294,8 +294,9 @@ extension _MailWorkspaceSidebar on _MailWorkspaceState {
                 ),
                 child: Text(
                   l10n.mailNoCustomLabels,
-                  style: AppTokens.of(context).typography.xSmall
-                      .copyWith(color: colors.mutedForeground),
+                  style: AppTokens.of(
+                    context,
+                  ).typography.xSmall.copyWith(color: colors.mutedForeground),
                 ),
               ),
           ],

@@ -7,9 +7,9 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -158,8 +158,7 @@ class ProfilePlanAndCreditsState extends State<ProfilePlanAndCredits> {
                         children: [
                           LinearProgressIndicator(
                             value: (credits.totalUsed / credits.totalAllocated)
-                                .clamp(0.0, 1.0)
-                                .toDouble(),
+                                .clamp(0.0, 1.0),
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(_usage(context, credits)),

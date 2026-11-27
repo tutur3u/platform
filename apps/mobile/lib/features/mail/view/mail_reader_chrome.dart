@@ -142,8 +142,9 @@ extension _MailReaderChrome on _MailReaderState {
         // Back to the shell, which returns there in one step.
         onBack:
             widget.notificationEntry &&
-                (ShellRouteTransitionScope.maybeOf(context)
-                        ?.hasNotificationsOrigin() ??
+                (ShellRouteTransitionScope.maybeOf(
+                      context,
+                    )?.hasNotificationsOrigin() ??
                     false)
             ? null
             : _closeFromBack,

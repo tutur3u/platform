@@ -33,7 +33,6 @@ lib/features/inventory/widgets/inventory_form_scaffold.dart
 lib/features/inventory/widgets/inventory_sales_period_editor.dart
 lib/features/inventory/widgets/inventory_sales_periods.dart
 lib/features/inventory/widgets/inventory_ui.dart
-lib/features/mail/view/mail_page.dart
 lib/features/meet/view/meet_page.dart
 lib/features/notes/notes_page.dart
 lib/features/notifications/widgets/notification_read_feedback.dart

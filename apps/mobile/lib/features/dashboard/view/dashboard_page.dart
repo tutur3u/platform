@@ -328,8 +328,9 @@ class _DashboardViewState extends State<_DashboardView> {
                       );
                       final showFocus =
                           workspace.personal &&
-                          AppRegistry.modules(context)
-                              .any((app) => app.id == 'timer');
+                          AppRegistry.modules(
+                            context,
+                          ).any((app) => app.id == 'timer');
                       final pins = _visibleHomePins(context);
                       final customOrder = context
                           .read<DashboardLayoutCubit>()

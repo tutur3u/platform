@@ -18,12 +18,13 @@ import 'package:mobile/features/profile/view/profile_focus_time_card.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-typedef ProfileStatsLoader = Future<TimeTrackerStats> Function(
-  String workspaceId,
-  String userId,
-  String timezone, {
-  required bool personal,
-});
+typedef ProfileStatsLoader =
+    Future<TimeTrackerStats> Function(
+      String workspaceId,
+      String userId,
+      String timezone, {
+      required bool personal,
+    });
 
 /// Loads the signed-in user's task-linked tracked time from their personal
 /// workspace and shows it as [ProfileFocusTimeCard]. It never requests a

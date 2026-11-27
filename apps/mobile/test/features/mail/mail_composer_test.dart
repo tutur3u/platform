@@ -107,8 +107,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Unsaved subject'), findsOneWidget);
     expect(find.byType(MailComposer), findsOneWidget);
-    verify(() => repository.saveDraft('ws', 'box', any(), draftId: null))
-        .called(1);
+    verify(() => repository.saveDraft('ws', 'box', any())).called(1);
     verifyNever(() => repository.send(any(), any(), any()));
   });
 

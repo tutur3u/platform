@@ -150,9 +150,9 @@ void main() {
     tester,
   ) async {
     final group = await _pumpDock(tester);
-    final appearance = group.more[1].singleWhere(
-      (item) => item.id == 'appearance',
-    ) as ShellDockChoice;
+    final appearance =
+        group.more[1].singleWhere((item) => item.id == 'appearance')
+            as ShellDockChoice;
     final previous = MailAppearancePreference.instance.value;
     addTearDown(() => MailAppearancePreference.instance.value = previous);
 
@@ -186,9 +186,9 @@ void main() {
   testWidgets('Move in More lists the mailbox folders', (tester) async {
     final group = await _pumpDock(tester);
 
-    (group.more.first.singleWhere(
-      (item) => item.id == 'move',
-    ) as ShellDockGroupAction).onPressed!();
+    (group.more.first.singleWhere((item) => item.id == 'move')
+            as ShellDockGroupAction)
+        .onPressed!();
     await tester.pumpAndSettle();
 
     expect(find.text('Receipts'), findsOneWidget);
