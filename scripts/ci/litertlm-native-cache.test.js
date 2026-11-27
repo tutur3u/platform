@@ -122,7 +122,12 @@ test('only verified main push/manual input can be saved; never a PR or failed pr
 test('all mobile test shards prepare this input without changing their commands or security authority', () => {
   const mobile = readWorkflow('mobile.yaml', { raw: true });
   assert.deepEqual(mobile.permissions, { contents: 'read' });
-  assert.deepEqual(mobile.jobs.tests.strategy.matrix.shard, [0, 1, 2, 3]);
+  const shards = mobile.jobs.tests.strategy.matrix.shard;
+  assert.ok(Array.isArray(shards) && shards.length > 0);
+  assert.deepEqual(
+    shards,
+    shards.map((_, index) => index)
+  );
   const steps = mobile.jobs.tests.steps;
   const cache = steps.findIndex(
     (s) => s.uses === './.github/actions/cache-litertlm-native'
@@ -132,7 +137,8 @@ test('all mobile test shards prepare this input without changing their commands 
   assert.equal(steps[cache].if, undefined);
   assert.equal(
     steps[tests].run,
-    'flutter test --concurrency=2 --total-shards=4 --shard-index=${{ matrix.shard }} -r expanded'
+    `flutter test --concurrency=2 --total-shards=${shards.length} --shard-index=` +
+      '${{ matrix.shard }} -r expanded'
   );
   const parity = mobile.jobs['realtime-parity'].steps;
   const parityCache = parity.findIndex(

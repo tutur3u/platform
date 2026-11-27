@@ -1,7 +1,7 @@
 ---
 title: "CI/CD Pipeline Optimization"
 description: "Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs."
-updatedAt: '2026-11-20'
+updatedAt: '2026-11-27'
 audience: developers
 ---
 
@@ -30,9 +30,9 @@ setup requirement. See the [active runtime map](/build/devops/active-runtime).
 
 ## Parallel test validation
 
-Mobile analysis and four Flutter test shards run independently. The stable
+Mobile analysis and eight Flutter test shards run independently. The stable
 `build` check requires analysis and every shard to succeed; a cancelled or
-unexpectedly skipped shard fails the gate. Flutter's native `--total-shards=4`
+unexpectedly skipped shard fails the gate. Flutter's native `--total-shards=8`
 and zero-based `--shard-index` partition all test files, with two processes per
 runner. Format, static analysis and Bloc lint run once in the analysis job.
 
@@ -53,7 +53,7 @@ push; superseded feature-branch runs are cancelled.
 Inspect a shard locally with `node scripts/ci/run-test-shard.js 0 4 --plan`.
 Execute it through `ttr resources run -- node scripts/ci/run-test-shard.js 0 4`
 (or append `--coverage`). Reproduce a Flutter shard with
-`flutter test --total-shards=4 --shard-index=0 --concurrency=2` from
+`flutter test --total-shards=8 --shard-index=0 --concurrency=2` from
 `apps/mobile`. Use the resource queue locally rather than launching CI-sized
 parallel runner groups on one machine.
 

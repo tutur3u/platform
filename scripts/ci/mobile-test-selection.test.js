@@ -139,7 +139,12 @@ test('real switchboard emits the mobile job decision without disabling the workf
 
 test('workflow omission requires literal false and reruns always execute', () => {
   const workflow = readWorkflow('mobile.yaml');
-  assert.deepEqual(workflow.jobs.tests.strategy.matrix.shard, [0, 1, 2, 3]);
+  const shards = workflow.jobs.tests.strategy.matrix.shard;
+  assert.ok(Array.isArray(shards) && shards.length > 0);
+  assert.deepEqual(
+    shards,
+    shards.map((_, index) => index)
+  );
   for (const decision of [undefined, true, null, 'false', false]) {
     for (const attempt of [1, 2]) {
       const context = {

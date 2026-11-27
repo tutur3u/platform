@@ -394,7 +394,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3]
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
     defaults:
       run:
         working-directory: apps/mobile
@@ -410,7 +410,7 @@ jobs:
         uses: ./.github/actions/cache-litertlm-native
 
       - name: Run test shard
-        run: flutter test --concurrency=2 --total-shards=4 --shard-index=${{ matrix.shard }} -r expanded
+        run: flutter test --concurrency=2 --total-shards=8 --shard-index=${{ matrix.shard }} -r expanded
 
       - name: Verify configured Mastermind fixture transport
         if: matrix.shard == 0

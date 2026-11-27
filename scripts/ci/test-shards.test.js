@@ -102,10 +102,16 @@ test('all matrix failures propagate through stable required check names', () => 
       file === 'mobile.yaml' ? /always\(\)/ : /!cancelled\(\)/
     );
     assert.equal(workflow.jobs[workers].strategy['fail-fast'], false);
-    assert.deepEqual(
-      workflow.jobs[workers].strategy.matrix.shard,
-      [0, 1, 2, 3]
-    );
+    const shards = workflow.jobs[workers].strategy.matrix.shard;
+    if (file === 'mobile.yaml') {
+      assert.ok(Array.isArray(shards) && shards.length > 0);
+      assert.deepEqual(
+        shards,
+        shards.map((_, index) => index)
+      );
+    } else {
+      assert.deepEqual(shards, [0, 1, 2, 3]);
+    }
     const check = job.steps.find(
       (step) =>
         step.env?.TEST_RESULT && !step.name.startsWith('Documentation-only')

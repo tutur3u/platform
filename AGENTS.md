@@ -301,6 +301,7 @@ time.
   on this machine: its Turbo task graph can build workspace dependencies.
   Native `bun check` runs only as `ttr resources run -- bun check --no-script -p <project>` and does not replace `bun validate` or CI.
   Report any unrelated pre-existing CI blocker.
+- Regression coverage is end-to-end journeys first; keep unit tests only for pure logic, security/auth boundaries, parsers, money/time math and DB/RLS contracts, per [test strategy](apps/docs/build/development-tools/test-strategy.mdx).
 - Before every push, run the build-free `bun check:changed` gate; see
   [pre-push checks](apps/docs/build/development-tools/pre-push-checks.mdx).
 - Lanes push once when exact-head local gates are green; batch review fixes

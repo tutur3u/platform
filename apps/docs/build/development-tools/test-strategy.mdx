@@ -1,0 +1,90 @@
+---
+title: 'Test strategy'
+description: 'Which tests the platform keeps, which CI lane runs each one, and when a unit test is the wrong tool. End-to-end user journeys are the primary regression coverage.'
+updatedAt: '2026-11-27'
+audience: developers
+---
+
+End-to-end user journeys are the primary regression coverage. A journey asserts
+something a user can observe, such as signing in, opening the Tasks board, or
+joining a Meet as a guest, and it keeps passing through refactors that do not
+change behaviour. Unit tests that pin implementation details fail on changes
+that are not regressions, add CI time, and push authors to update fixtures
+instead of reading the failure.
+
+## Keep unit tests for
+
+- Pure logic: parsers, validators, state machines, and status engines.
+- Money and time math: currency rounding, time zones, and DST boundaries.
+- Security and auth boundaries: token verifiers, permission checks,
+  app-coordination and session gates, route auth wrappers, and the protected
+  workflow guards.
+- Database and RLS contracts: policy and migration checks in the database
+  lane.
+
+## Do not add or keep
+
+- Golden or pixel snapshots as the regression signal for copy, spacing,
+  layout, or colour. Use a journey assertion on the visible state instead.
+- Source-text scans: reading CSS, workflow YAML, route directories, or message
+  files and matching strings in them.
+- Inventory counts: asserting how many routes, pages, apps, or workflows exist.
+- Pinned configuration literals such as shard counts, matrix values, and
+  timeouts. Assert the invariant instead, for example that `--total-shards`
+  equals the matrix length and every shard index is covered once.
+- Mock-heavy UI tests that rebuild the component tree to check markup.
+
+When a test in the list above guards a real boundary, keep the boundary and
+move the assertion onto behaviour (a request that must be rejected, a value
+that must be computed) rather than onto text.
+
+## CI lanes
+
+| Lane | Workflow | Role |
+| --- | --- | --- |
+| Unit and script tests | `turbo-unit-tests.yaml` (`Test`) | Required. Pure logic, security boundaries, contracts. |
+| Mobile | `mobile.yaml` | Required. Flutter analysis, then Flutter tests in shards. |
+| Web E2E | `e2e-framework-report-only.yaml` | Report-only. Deterministic replay with `--strict-cache` and zero model calls. |
+| Type, lint, security, database | `type-check.yaml`, `oxc-check.yaml`, `security-checks.yaml`, database contracts | Required and unchanged. |
+
+Playwright suites stay authoritative until the pilot decision in
+[E2E pilot and Playwright retirement](/build/development-tools/e2e-pilot-decision)
+is applied per suite.
+
+## Writing a journey
+
+Journeys live under `apps/web/e2e-agent/` and use `e2e`. Record the trace once,
+commit `.e2e/cache`, and let CI replay it. The setup, fixture identity rules,
+and agent MCP workflow are in the
+[Agentic E2E Framework](/build/development-tools/e2e-framework) guide.
+
+## Deleting a test
+
+Every deleted test needs one of the following in its commit message:
+
+- the name of the journey that now covers the same behaviour, or
+- a written reason that no behaviour is lost, with the boundary it guarded.
+
+Do not delete a security or database contract to make a lane faster. Move it to
+the lane that owns it.
+
+## Rollout
+
+Existing golden, inventory, and source-scan suites are retired in slices. Each
+slice names the journey or invariant that replaces each deleted test, and its
+commit carries the review and CI evidence for the lane change.
+
+## Measuring CI time
+
+Measure wall time per workflow and per job on `main` before and after a
+change:
+
+```bash
+gh run list --repo tutur3u/platform --branch main --workflow mobile.yaml --limit 20 \
+  --json databaseId,conclusion,createdAt,updatedAt
+gh api repos/tutur3u/platform/actions/runs/<run-id>/jobs --jq \
+  '.jobs[] | {name, conclusion, started_at, completed_at}'
+```
+
+Compare medians rather than single runs. A lane that is cancelled or queued
+is not a timing sample.
