@@ -210,10 +210,7 @@ void main() {
 
       final back = find.byKey(const ValueKey('shell-dock-back'));
       expect(back, findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('shell-product-navigation')),
-        findsNothing,
-      );
+      expect(find.byType(MorphingNavigationBar), findsNothing);
       await tester.tap(back, warnIfMissed: false);
       expect(exits, 0);
       expect(shell.path, Routes.settings);
@@ -238,8 +235,13 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey('shell-product-navigation')),
-      findsNothing,
+      tester.widget<ShellNavigationRail>(rail).items.map((item) => item.key),
+      [
+        const ValueKey('home'),
+        const ValueKey('apps'),
+        const ValueKey('assistant'),
+        const ValueKey('notifications'),
+      ],
     );
   });
 

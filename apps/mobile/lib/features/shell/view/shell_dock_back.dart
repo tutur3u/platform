@@ -38,7 +38,7 @@ class ShellDockBack extends StatelessWidget {
       onLongPress: longPress,
       child: AppTooltip(
         message: entry.label,
-        triggerMode: longPress == null
+        triggerMode: onLongPress == null
             ? TooltipTriggerMode.longPress
             : TooltipTriggerMode.manual,
         excludeFromSemantics: true,

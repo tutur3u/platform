@@ -114,9 +114,9 @@ extension _ShellPageLayout on _ShellPageState {
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
     final l10n = context.l10n;
-    final isSettingsRoute = Routes.isSettingsHubLocation(
-      widget.matchedLocation,
-    );
+    final isSettingsRoute =
+        widget.matchedLocation != Routes.profileRoot &&
+        Routes.isSettingsHubLocation(widget.matchedLocation);
     final isMiniAppRoute =
         !isSettingsRoute &&
         (activeModule != null || injectedMiniNavRegistration != null);
