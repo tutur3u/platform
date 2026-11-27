@@ -10,13 +10,13 @@ import {
   normalizeHostname,
   resolveWorldHost,
   verifyCustomDomain,
-} from './host-routing';
+} from './host-routing.ts';
 import {
   beginProviderAttempt,
   completeProviderAttempt,
   createProviderOperation,
   stopProviderOperation,
-} from './provider-operation';
+} from './provider-operation.ts';
 
 const namespace = 'worlds.tuturuuu.com';
 const publication = {
