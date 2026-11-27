@@ -282,17 +282,14 @@ const locale = params.get('locale') === 'vi' ? 'vi' : 'en';
 const messages = locale === 'vi' ? viMessages : enMessages;
 const scene = params.get('scene');
 const canBrowse = params.get('canBrowse') !== '0';
+const empty = params.get('empty') === '1';
 
 createRoot(document.getElementById('root')!).render(
   <QueryClientProvider client={queryClient}>
-    <NextIntlClientProvider
-      locale={locale}
-      messages={messages}
-      timeZone="UTC"
-    >
+    <NextIntlClientProvider locale={locale} messages={messages} timeZone="UTC">
       <LiveQaClientContext value={qaClient}>
         {scene === 'presence' ? (
-          <PresenceSceneFixture canBrowse={canBrowse} />
+          <PresenceSceneFixture canBrowse={canBrowse} empty={empty} />
         ) : (
           <FixtureApp />
         )}

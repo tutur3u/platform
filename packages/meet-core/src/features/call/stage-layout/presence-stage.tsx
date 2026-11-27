@@ -58,7 +58,7 @@ export function PresenceStage({
   presenceByActivity?: Record<string, readonly ActivityPresencePerson[]>;
   /** Host-enabled default activity (`tool:<id>`), if any. */
   defaultActivity?: string | null;
-  /** Optional stage availability check (from `useStageAvailability`). */
+  /** Authoritative stage availability check (from `useStageAvailability`). */
   isAvailable?: (activityId: string) => boolean;
   /** Optional opener (e.g. `revealActivity` when presentation is minimized). */
   onOpenActivity?: (activityId: string) => void;
@@ -144,21 +144,8 @@ export function PresenceStage({
   };
 
   const canOpenActivity = (activityId: string) => {
+    if (isAvailable) return isAvailable(activityId);
     const toolId = toolIdOf(activityId);
-    if (isAvailable) {
-      if (toolId)
-        return (
-          isAvailable(activityId) ||
-          tools.tools.some((entry) => entry.id === toolId) ||
-          activityId === defaultActivity
-        );
-      if (
-        activityId === PROGRAMMING_ACTIVITY ||
-        activityId === DOCUMENT_ACTIVITY
-      )
-        return canBrowse || isAvailable(activityId);
-      return isAvailable(activityId);
-    }
     if (toolId)
       return (
         tools.tools.some((entry) => entry.id === toolId) ||
@@ -203,6 +190,7 @@ export function PresenceStage({
       icon: meta.icon,
       participants: presenceByActivity?.[id] ?? [],
       isOpen,
+      isHostDefault: id === defaultActivity,
       canOpen: canOpenActivity(id),
       onOpen: () => openActivity(id),
     });
@@ -219,12 +207,13 @@ export function PresenceStage({
         ) : undefined
       }
       onProgramming={
-        canBrowse && !liveIds.has(PROGRAMMING_ACTIVITY)
+        canOpenActivity(PROGRAMMING_ACTIVITY) &&
+        !liveIds.has(PROGRAMMING_ACTIVITY)
           ? () => openActivity(PROGRAMMING_ACTIVITY)
           : undefined
       }
       onDocument={
-        canBrowse && !liveIds.has(DOCUMENT_ACTIVITY)
+        canOpenActivity(DOCUMENT_ACTIVITY) && !liveIds.has(DOCUMENT_ACTIVITY)
           ? () => openActivity(DOCUMENT_ACTIVITY)
           : undefined
       }

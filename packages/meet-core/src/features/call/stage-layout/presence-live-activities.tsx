@@ -17,6 +17,7 @@ export interface PresenceLiveActivity {
   icon: ComponentType<{ className?: string }>;
   participants: readonly ActivityPresencePerson[];
   isOpen: boolean;
+  isHostDefault?: boolean;
   canOpen: boolean;
   onOpen: () => void;
 }
@@ -59,16 +60,12 @@ export function PresenceLiveActivities({
       <ul
         className={cn(
           'grid w-full grid-cols-1 gap-3',
-          activities.length === 1
-            ? 'mx-auto max-w-md'
-            : 'sm:grid-cols-2'
+          activities.length === 1 ? 'mx-auto max-w-md' : 'sm:grid-cols-2'
         )}
       >
         {activities.map((activity) => {
           const Icon = activity.icon;
-          const actionLabel = t(
-            activity.isOpen ? 'live_open' : 'live_join'
-          );
+          const actionLabel = t(activity.isOpen ? 'live_open' : 'live_join');
           const actionAriaLabel = t(
             activity.isOpen ? 'live_open_named' : 'live_join_named',
             { name: activity.title }
@@ -77,7 +74,10 @@ export function PresenceLiveActivities({
             <li
               key={activity.id}
               data-live-activity={activity.id}
-              className="flex min-w-0 flex-col justify-between gap-3 rounded-xl border bg-background/80 p-3.5 text-left transition-colors hover:border-foreground/20 sm:p-4"
+              className={cn(
+                'flex min-w-0 flex-col justify-between gap-3 rounded-xl border bg-background/80 p-3.5 text-left transition-colors sm:p-4',
+                activity.canOpen && 'hover:border-foreground/20'
+              )}
             >
               <div className="flex min-w-0 items-start gap-3">
                 <span
@@ -102,7 +102,7 @@ export function PresenceLiveActivities({
               </div>
               <div className="flex min-w-0 items-center justify-between gap-2 pt-0.5">
                 {activity.participants.length > 0 ? (
-                  <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                     <ActivityPresenceRow
                       activityId={activity.id}
                       people={activity.participants}
@@ -110,14 +110,22 @@ export function PresenceLiveActivities({
                     />
                     <span
                       data-live-activity-count={activity.id}
-                      className="truncate font-medium text-muted-foreground text-xs"
+                      className="min-w-0 truncate font-medium text-muted-foreground text-xs"
                     >
                       {t('live_participants', {
                         count: activity.participants.length,
                       })}
                     </span>
                   </div>
-                ) : (
+                ) : activity.isOpen ? (
+                  <span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
+                    <span
+                      aria-hidden="true"
+                      className="size-1.5 shrink-0 rounded-full bg-foreground/60"
+                    />
+                    <span className="truncate">{t('live_open_on_stage')}</span>
+                  </span>
+                ) : activity.isHostDefault ? (
                   <span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
                     <span
                       aria-hidden="true"
@@ -125,6 +133,8 @@ export function PresenceLiveActivities({
                     />
                     <span className="truncate">{t('live_ready')}</span>
                   </span>
+                ) : (
+                  <span />
                 )}
                 {activity.canOpen && (
                   <Button

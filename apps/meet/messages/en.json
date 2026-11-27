@@ -5409,6 +5409,7 @@
         "live_now": "Live now",
         "live_open": "Open",
         "live_open_named": "Open {name}",
+        "live_open_on_stage": "Open on this stage",
         "live_participants": "{count, plural, one {# active} other {# active}}",
         "live_ready": "Host enabled",
         "more_activities": "More activities",

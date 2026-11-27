@@ -39,9 +39,15 @@ test('desktop EN: presence-only room highlights live activities with presence ba
   await expect(liveSection.getByText('Live now')).toBeVisible();
 
   // Live cards render for active Q&A (2 people), active Shared document (1), and host-enabled Polls.
-  await expect(liveSection.locator('[data-live-activity="tool:live-qa"]')).toBeVisible();
-  await expect(liveSection.locator('[data-live-activity="document"]')).toBeVisible();
-  await expect(liveSection.locator('[data-live-activity="tool:polls"]')).toBeVisible();
+  await expect(
+    liveSection.locator('[data-live-activity="tool:live-qa"]')
+  ).toBeVisible();
+  await expect(
+    liveSection.locator('[data-live-activity="document"]')
+  ).toBeVisible();
+  await expect(
+    liveSection.locator('[data-live-activity="tool:polls"]')
+  ).toBeVisible();
 
   // Presence avatars and counts render on active activity cards.
   await expect(
@@ -56,6 +62,16 @@ test('desktop EN: presence-only room highlights live activities with presence ba
   await expect(
     liveSection.locator('[data-live-activity-count="document"]')
   ).toHaveText('1 active');
+
+  // Shared document is already highlighted above, so secondary shortcuts omit a duplicate button.
+  const secondary = page.getByTestId('presence-secondary-activities');
+  await expect(secondary).toBeVisible();
+  await expect(
+    secondary.getByRole('button', { name: 'Shared document' })
+  ).toHaveCount(0);
+  await expect(
+    secondary.getByRole('button', { name: 'Co-programming' })
+  ).toBeVisible();
 
   // Zero EN+VI side-by-side copy and zero hard-coded hue classes.
   const bodyText = (await page.locator('body').innerText()) ?? '';
@@ -133,7 +149,7 @@ test('desktop and mobile VI: presence-only live activities render Vietnamese onl
   }
 });
 
-test('restricted participant respects tool permissions on live activity cards', async ({
+test('restricted participant respects tool permissions and can still join shortcut Polls', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -145,13 +161,45 @@ test('restricted participant respects tool permissions on live activity cards', 
   const liveSection = page.getByTestId('presence-live-activities');
   await expect(liveSection).toBeVisible();
 
-  // Document is visible as active in the room but has no Join button when canBrowse=0.
+  // Document and Q&A are visible as active in the room but omit Join/Open buttons when restricted.
+  await expect(
+    liveSection.locator('[data-live-activity="document"]')
+  ).toBeVisible();
   await expect(
     liveSection.locator('[data-live-activity="document"] button')
   ).toHaveCount(0);
-
-  // Host-enabled default activity (Polls) remains joinable.
   await expect(
-    liveSection.getByRole('button', { name: 'Join Polls' })
+    liveSection.locator('[data-live-activity="tool:live-qa"]')
+  ).toBeVisible();
+  await expect(
+    liveSection.locator('[data-live-activity="tool:live-qa"] button')
+  ).toHaveCount(0);
+
+  // Polls shortcut remains joinable and opens the Polls pane.
+  await liveSection.getByRole('button', { name: 'Join Polls' }).click();
+  await expect(
+    page.locator('section[data-pane-id][aria-label="Polls"]')
+  ).toBeVisible();
+  await expect(page.getByTestId('presence-opened-polls')).toBeVisible();
+});
+
+test('empty presence scene falls back to roster shortcuts without More activities heading', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/?scene=presence&locale=en&empty=1&theme=dark&ui=sorbet', {
+    waitUntil: 'networkidle',
+  });
+
+  await expect(page.getByTestId('presence-live-activities')).toHaveCount(0);
+  await expect(page.getByText('More activities')).toHaveCount(0);
+
+  const secondary = page.getByTestId('presence-secondary-activities');
+  await expect(secondary).toBeVisible();
+  await expect(
+    secondary.getByRole('button', { name: 'Co-programming' })
+  ).toBeVisible();
+  await expect(
+    secondary.getByRole('button', { name: 'Shared document' })
   ).toBeVisible();
 });
