@@ -1,3 +1,4 @@
+import { collectAntigravityAccountMatches } from './antigravity-account';
 import {
   matchingBlocks,
   type QuotaBlock,
@@ -153,7 +154,10 @@ export async function collectAllWith(
   const rawObs = Array.isArray(observations) ? observations : [];
   const parsedManual = parseManualUsage(rawObs, now).observations;
   const withManual = applyManualUsage(
-    applyImportedUsage(accounts, usageImport),
+    await collectAntigravityAccountMatches(
+      applyImportedUsage(accounts, usageImport),
+      now
+    ),
     rawObs,
     invalidObservations,
     now,

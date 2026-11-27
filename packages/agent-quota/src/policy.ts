@@ -1,3 +1,4 @@
+import { ANTIGRAVITY_ACCOUNT_TTL_MS } from './collectors/antigravity-account';
 import { collapseAccounts } from './accounts';
 import { matchingBlocks, type QuotaBlock } from './block-ledger';
 import { computeAccountPacing, type ObservationSample } from './pacing';
@@ -46,7 +47,7 @@ export interface RecommendOptions {
 export const SIGNAL_TTL_MS: Record<Provider, number> = {
   codex: 15 * 60_000,
   claude: 15 * 60_000,
-  antigravity: 5 * 60_000,
+  antigravity: ANTIGRAVITY_ACCOUNT_TTL_MS,
   grok: 5 * 60_000,
   cursor: 5 * 60_000,
   opencode: 5 * 60_000,

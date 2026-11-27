@@ -88,3 +88,13 @@ bun packages/agent-quota/src/cli.ts import-usage < instance-usage.json
 The top-level Antigravity CLI defaults to the CLI login. A capture from that
 login needs independent proof that it belongs to the named T3 instance. The
 export command performs no login, provider query or instance identity check.
+
+On a T3 host, use `refresh-antigravity-account ABSOLUTE_BINARY_PATH` for a
+ten-minute refresh from the default CLI. The command reads the authenticated
+account from the current CLI log, runs `/usage`, and confirms the new CLI log
+reports the same account before writing the private quota cache. Admission and
+`capacity-line` attach the cached reading only to instances whose newest ACP
+server log reports that account. Matching instances share one admission pool.
+The cached reading expires after eleven minutes, and each active window
+expires at its provider reset time. This command requires an existing CLI
+login and does not run a login command.

@@ -7,6 +7,7 @@ import { capacityLine } from './capacity-line';
 import { runBlock } from './block-cli';
 import { runCheckpointReady } from './checkpoint-ready';
 import { argumentValue } from './cli-args';
+import { refreshAntigravityAccount } from './collectors/antigravity-account';
 import { collectAll } from './collectors';
 import { runHook } from './hook-cli';
 import { runOperator } from './operator-cli';
@@ -83,6 +84,20 @@ async function main(): Promise<void> {
         ],
       })
     );
+    return;
+  }
+  if (command === 'refresh-antigravity-account') {
+    const binary = process.argv[3];
+    if (!binary || process.argv.length !== 4)
+      throw new Error(
+        'usage: refresh-antigravity-account ABSOLUTE_BINARY_PATH'
+      );
+    try {
+      await refreshAntigravityAccount(binary);
+      console.log('Antigravity account quota refreshed');
+    } catch {
+      throw new Error('antigravity-account-refresh-failed');
+    }
     return;
   }
   if (command === 'capacity-line') {
@@ -238,29 +253,39 @@ async function main(): Promise<void> {
       const rankEntry = ranking.find(
         (item) => item.instanceId === account.instanceId
       );
-      const count = active
-        ? (active.find((item) => item.instanceId === account.instanceId)
-            ?.count ?? 0)
-        : 0;
-      const pacing = computeAccountPacing(
-        account,
-        count,
-        reserves[account.instanceId],
-        history[account.instanceId] ?? {},
-        observedAt,
-        SIGNAL_TTL_MS[account.provider],
-        {
-          blocks,
-          config: routingConfig.pacing,
-          model:
-            account.provider === 'opencode'
-              ? (account.models?.find((m) => m.startsWith('opencode-go/')) ??
-                'opencode-go/')
-              : account.provider === 'antigravity'
-                ? (rankEntry?.recommendedModel ?? 'gemini-4-hydrogen')
-                : undefined,
-        }
-      );
+      const count =
+        rankEntry?.activeCount ??
+        (active ?? []).reduce(
+          (total, entry) =>
+            total +
+            ((account.instanceIds ?? [account.instanceId]).includes(
+              entry.instanceId
+            )
+              ? entry.count
+              : 0),
+          0
+        );
+      const pacing =
+        rankEntry?.pacing ??
+        computeAccountPacing(
+          account,
+          count,
+          reserves[account.instanceId],
+          history[account.instanceId] ?? {},
+          observedAt,
+          SIGNAL_TTL_MS[account.provider],
+          {
+            blocks,
+            config: routingConfig.pacing,
+            model:
+              account.provider === 'opencode'
+                ? (account.models?.find((m) => m.startsWith('opencode-go/')) ??
+                  'opencode-go/')
+                : account.provider === 'antigravity'
+                  ? (rankEntry?.recommendedModel ?? 'gemini-4-hydrogen')
+                  : undefined,
+          }
+        );
       return {
         ...account,
         windows: account.windows.map((window) => ({

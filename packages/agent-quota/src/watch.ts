@@ -269,8 +269,12 @@ export function selectSuccessor(
             window.authoritative &&
             typeof window.usedPercent === 'number' &&
             Date.parse(window.observedAt) <= now.getTime() &&
-            now.getTime() - Date.parse(window.observedAt) <=
-              (account.provider === 'antigravity' ? 5 : 15) * 60_000 &&
+            windowObservationIsFresh(
+              window,
+              now,
+              SIGNAL_TTL_MS[account.provider],
+              0
+            ) &&
             windowHasCurrentReset(window, now)
         )
         .map((window) => window.usedPercent!);
