@@ -76,6 +76,10 @@ void main() {
     final harness = _TasksHarness(initialLocation: Routes.taskBoards);
     await harness.pump(tester);
     harness.expectBoardList(tester, Routes.taskBoards, boardLabel: 'Tasks');
+    expect(
+      find.bySemanticsIdentifier('tasks-board-card-$_defaultBoardId'),
+      findsOneWidget,
+    );
   });
 
   for (final status in [404, 403]) {

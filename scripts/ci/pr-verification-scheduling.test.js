@@ -46,6 +46,7 @@ const heavy = {
   'mail-cloudflare.yaml': ['native-profiles'],
   'mail-profile-runtime-contract.yaml': ['runtime'],
   'meet-cloudflare.yaml': ['validate', 'restored-artifact'],
+  'mobile-e2e-framework-report-only.yaml': ['mobile-e2e'],
   'mobile.yaml': ['tests', 'realtime-parity', 'build'],
   'parley-cloudflare.yaml': ['validate'],
   'periodic-report-delivery-contract.yaml': ['contract'],

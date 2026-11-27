@@ -245,3 +245,87 @@ v1 attestations and zero lifecycle install scripts (`preinstall`/`install`/`post
 They are installed through `bun add -D` and obey the repository's
 `minimumReleaseAge` policy in `bunfig.toml` without requiring
 `trustedDependencies` or release-age exemptions.
+
+## Flutter mobile harness
+
+The mobile suites live in `apps/mobile/e2e/` with an independent Bun manifest
+and lockfile. From the repository root, run these commands for config and
+discovery checks without a device:
+
+```bash
+cd apps/mobile/e2e
+bun install --frozen-lockfile --ignore-scripts
+node --test shared-mobile-config.test.mjs
+npx --no-install e2e list
+npx --no-install e2e cache stats
+```
+
+For controls that a spec needs to find, set a stable, locale-independent
+`Semantics(identifier: 'shell-workspace-picker')` on the control and use
+`screen.getByTestId('shell-workspace-picker')`. Keep Flutter keys, labels and
+handlers in place. Use a stable entity ID for repeated controls, as in
+`tasks-board-card-<board-id>`. Follow each `agent.act(...)` with an exact
+assertion about the resulting UI so the action can be recorded and replayed.
+
+### Device and QA setup
+
+Use a dedicated phone profile on an iOS Simulator or Android Emulator. Supply a prebuilt simulator
+`.app` or emulator `.apk` with the identifiers in this checkout. Set
+`TUTURUUU_MOBILE_E2E_IOS_APP` or `TUTURUUU_MOBILE_E2E_ANDROID_APP` to its path, or
+install the build on the device before starting. Absolute paths also work for
+builds outside the harness. Select a specific device with
+`TUTURUUU_MOBILE_E2E_IOS_DEVICE` or `TUTURUUU_MOBILE_E2E_ANDROID_DEVICE`. The
+default flavor is `dev` (`com.tuturuuu.app.mobile.dev`). Set
+`TUTURUUU_MOBILE_E2E_FLAVOR=stg` for `com.tuturuuu.app.mobile.stg`.
+
+Start the login spec on a signed-out device profile. It checks email entry
+without submitting the form. The Tasks and Meet specs use an already issued
+QA session from the backend the artifact targets. Supply both parts through
+the environment:
+
+| Token | Environment variable names in priority order |
+| --- | --- |
+| Access token | `E2E_SECRET_MOBILE_ACCESS_TOKEN`, `E2E_USER_MOBILE_ACCESS_TOKEN`, `TUTURUUU_MOBILE_QA_ACCESS_TOKEN` |
+| Refresh token | `E2E_SECRET_MOBILE_REFRESH_TOKEN`, `E2E_USER_MOBILE_REFRESH_TOKEN`, `TUTURUUU_MOBILE_QA_REFRESH_TOKEN` |
+
+The setup opens the app's existing flavor-specific login callback if the app is
+signed out. Use a short-lived session issued through an approved sign-in for a
+disposable QA user with Tasks and Meet access and at least one visible board.
+Keep both values out of commands, docs, and recordings. The mobile harness
+does not submit a password or alter Turnstile. Tasks and Meet explicitly skip
+when neither token is present.
+
+### Record and replay
+
+Create a local `apps/mobile/e2e/e2e.record.config.ts` beside the harness config
+and export `createTuturuuuMobileE2EConfig({ model })` or
+`createTuturuuuMobileE2EConfig({ executor })` with your local provider. Keep that
+file and all credentials local. Record one target and spec at a time:
+
+```bash
+npx --no-install e2e run --config e2e.record.config.ts --target ios tests/auth.e2e.ts
+npx --no-install e2e cache ls
+npx --no-install e2e run --target ios --strict-cache tests/auth.e2e.ts
+```
+
+Use `--target android` for the emulator. Review the resulting
+`.e2e/cache/` diff for sensitive fixture data before committing a recording.
+Only that subdirectory is tracked. Cache misses fail with the default offline
+executor. CI reads the cache and always uses the offline executor.
+
+Mobile report-only CI runs config tests, discovery and cache checks on admitted
+PRs and matching pushes. To try strict replay, dispatch
+`mobile-e2e-framework-report-only.yaml` with a platform, flavor, public HTTPS
+artifact URL and SHA-256. Supply a ZIP containing `Runner.app` at its root for
+the `macos-15` iOS runner or an x86_64-compatible APK for Android. The dispatch
+runs the signed-out spec and skips the two specs that require a QA session.
+The cache starts empty. Config tests and discovery do not establish native
+replay coverage.
+
+### Mobile MCP
+
+With the matching app installed on the selected test device, start
+`npx --no-install e2e mcp` from `apps/mobile/e2e/`. In the MCP client call
+`open_session` with `target: "ios"` or `target: "android"`, use the session's
+device tools to inspect locators, and call `close_session` when finished. MCP
+does not need a model key. [Upstream mobile guide](https://e2e.com/docs/mobile).

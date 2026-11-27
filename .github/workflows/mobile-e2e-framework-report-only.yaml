@@ -1,0 +1,126 @@
+name: Mobile E2E Framework (report-only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+    paths:
+      - ".github/workflows/mobile-e2e-framework-report-only.yaml"
+      - "apps/mobile/e2e/**"
+      - "apps/mobile/lib/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/mobile-e2e-framework-report-only.yaml"
+      - "apps/mobile/e2e/**"
+      - "apps/mobile/lib/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Device platform
+        type: choice
+        options: [ios, android]
+        required: true
+      flavor:
+        description: App flavor
+        type: choice
+        options: [dev, stg]
+        default: dev
+        required: true
+      artifact_url:
+        description: Public HTTPS URL to a simulator Runner.app ZIP or emulator APK
+        type: string
+        required: true
+      artifact_sha256:
+        description: SHA-256 of the artifact download
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1) && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}-{2}-{3}{4}', github.workflow, github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  mobile-e2e:
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    name: Mobile E2E configuration and optional replay (report-only)
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.target == 'ios' && 'macos-15' || 'ubuntu-latest' }}
+    timeout-minutes: 25
+    continue-on-error: true
+    env:
+      E2E_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+          package-cache-enabled: "false"
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install isolated harness
+        working-directory: apps/mobile/e2e
+        run: bash ../../../scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+
+      - name: Test config and inspect test discovery and cache
+        run: |
+          node --test apps/mobile/e2e/shared-mobile-config.test.mjs
+          cd apps/mobile/e2e
+          npx --no-install e2e list
+          npx --no-install e2e cache ls
+          npx --no-install e2e cache stats
+
+      - name: Prepare supplied app artifact
+        if: github.event_name == 'workflow_dispatch'
+        working-directory: apps/mobile/e2e
+        env:
+          ARTIFACT_URL: ${{ inputs.artifact_url }}
+          ARTIFACT_SHA256: ${{ inputs.artifact_sha256 }}
+          MOBILE_TARGET: ${{ inputs.target }}
+          TUTURUUU_MOBILE_E2E_FLAVOR: ${{ inputs.flavor }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_URL" == https://* && "$ARTIFACT_SHA256" =~ ^[a-fA-F0-9]{64}$ ]]
+          mkdir -p .e2e/artifact
+          curl --fail --silent --show-error --location --max-time 300 \
+            --proto '=https' --proto-redir '=https' \
+            --output .e2e/artifact/download -- "$ARTIFACT_URL"
+          printf '%s  %s\n' "$ARTIFACT_SHA256" .e2e/artifact/download | shasum -a 256 -c -
+          printf 'TUTURUUU_MOBILE_E2E_FLAVOR=%s\n' "$TUTURUUU_MOBILE_E2E_FLAVOR" >> "$GITHUB_ENV"
+          if [[ "$MOBILE_TARGET" == ios ]]; then
+            ditto -x -k .e2e/artifact/download .e2e/artifact
+            test -d .e2e/artifact/Runner.app
+            printf 'TUTURUUU_MOBILE_E2E_IOS_APP=.e2e/artifact/Runner.app\n' >> "$GITHUB_ENV"
+          else
+            mv .e2e/artifact/download .e2e/artifact/app.apk
+            printf 'TUTURUUU_MOBILE_E2E_ANDROID_APP=.e2e/artifact/app.apk\n' >> "$GITHUB_ENV"
+          fi
+
+      - name: Replay on iOS Simulator
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'ios'
+        working-directory: apps/mobile/e2e
+        run: npx --no-install e2e run --target ios --strict-cache
+
+      - name: Enable KVM for Android Emulator
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'android'
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-mobile-e2e-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Replay on Android Emulator
+        if: github.event_name == 'workflow_dispatch' && inputs.target == 'android'
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          script: cd apps/mobile/e2e && npx --no-install e2e run --target android --strict-cache

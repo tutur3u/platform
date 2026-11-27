@@ -24,6 +24,7 @@ class ShellWorkspacePicker extends StatelessWidget {
         : displayWorkspaceNameOrFallback(context, workspace);
     void open() => showWorkspacePickerSheet(context);
     return Semantics(
+      identifier: 'shell-workspace-picker',
       button: true,
       label: name ?? action,
       hint: name == null ? null : action,

@@ -20,6 +20,7 @@ class AppLauncherTile extends StatelessWidget {
     final tokens = AppTokens.of(context);
     return AppLauncherButton(
       radius: tokens.shapes.card,
+      identifier: 'app-launcher-${module.id}',
       onPressed: onPressed,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
@@ -48,12 +49,14 @@ class AppLauncherButton extends StatelessWidget {
     required this.radius,
     required this.onPressed,
     required this.child,
+    this.identifier,
     super.key,
   });
 
   final double radius;
   final VoidCallback onPressed;
   final Widget child;
+  final String? identifier;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +66,7 @@ class AppLauncherButton extends StatelessWidget {
       side: BorderSide(color: colors.border),
     );
     return Semantics(
+      identifier: identifier,
       button: true,
       child: Material(
         color: colors.card,

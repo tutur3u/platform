@@ -83,6 +83,7 @@ const HEAVY_PR_WORKFLOWS = [
   'mobile-build-linux.yaml',
   'mobile-build-macos.yaml',
   'mobile-build-windows.yaml',
+  'mobile-e2e-framework-report-only.yaml',
   'mobile.yaml',
   'nova-cloudflare.yaml',
   'ops-hub-cloudflare.yaml',

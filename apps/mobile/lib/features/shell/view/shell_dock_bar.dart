@@ -299,6 +299,7 @@ class ShellDockSlotButton extends StatelessWidget {
     final color = selected ? style.navSelectedInk : style.mutedForeground;
     final duration = style.dockMotion(context);
     return Semantics(
+      identifier: entry.key == const ValueKey('apps') ? 'shell-nav-apps' : null,
       container: true,
       button: true,
       selected: selected,

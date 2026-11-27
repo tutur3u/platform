@@ -1,0 +1,9 @@
+{
+  "name": "@tuturuuu/mobile-e2e",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@e2e-dev/mobile": "0.12.9",
+    "e2e": "0.25.0"
+  }
+}

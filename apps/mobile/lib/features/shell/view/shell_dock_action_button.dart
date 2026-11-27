@@ -50,6 +50,7 @@ class ShellDockActionButton extends StatelessWidget {
               }
             : null,
         child: Semantics(
+          identifier: action.id == 'meet-create' ? 'meet-new-meeting' : null,
           label: action.tooltip,
           excludeSemantics: true,
           child: Row(

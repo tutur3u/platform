@@ -219,6 +219,7 @@ void main() {
           findsOneWidget,
         );
       }
+      expect(find.bySemanticsIdentifier('shell-nav-apps'), findsOneWidget);
       final apps = find.byKey(ShellRootTab.apps.key);
       await tester.longPress(apps);
       await tester.pumpAndSettle();
@@ -352,6 +353,10 @@ void main() {
       router.go(tab.route);
       await _settle(tester);
       expect(picker, findsOneWidget, reason: tab.name);
+      expect(
+        find.bySemanticsIdentifier('shell-workspace-picker'),
+        findsOneWidget,
+      );
       expect(tester.getRect(picker), bounds, reason: tab.name);
       expect(bounds.size, const Size.square(44));
       await tester.tap(picker);

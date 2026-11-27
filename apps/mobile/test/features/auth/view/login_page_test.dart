@@ -101,6 +101,7 @@ void main() {
       expect(find.byTooltip('Continue with Apple'), findsNothing);
       expect(find.byTooltip('Continue with GitHub'), findsOneWidget);
       expect(find.byTooltip('Sign in with mobile QR'), findsOneWidget);
+      expect(find.bySemanticsIdentifier('login-email'), findsOneWidget);
       expect(find.text('Welcome to Tuturuuu'), findsOneWidget);
       expect(find.text('Sign in to continue'), findsNothing);
       expect(find.widgetWithText(AppButton, 'Continue'), findsOneWidget);
