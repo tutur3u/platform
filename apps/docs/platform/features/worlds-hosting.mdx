@@ -1,0 +1,109 @@
+---
+title: Worlds hosting
+description: Hostname ownership, published-world routing, and the Automations deployment handoff.
+---
+
+## Public hostname policy
+
+The viewer entry point is `worlds.tuturuuu.com`. The proposed default namespace
+for published worlds is `<label>.worlds.tuturuuu.com`. A default hostname must
+be assigned explicitly to a workspace and world. The namespace apex stays
+available for the viewer, and the entire namespace is reserved for the platform.
+
+The same public routing rule applies to default and custom hosts. Resolve the
+host to its exact binding, then resolve the binding to the current immutable
+published release for that workspace and world. Unbound and disabled hosts
+receive a generic rejection at the HTTP adapter. A missing or withdrawn
+publication disables its host bindings. Cache policy must preserve revocation
+and partition content by canonical hostname and release.
+
+Read the hostname from the trusted ingress request URL. Ignore caller-supplied
+forwarding headers. Use canonical lowercase ASCII DNS names, with IDNA
+A-labels for international names. The resolver accepts a single terminal root
+dot. Reject invalid names, ports in the hostname input, and wildcard claims.
+
+## Custom domain lifecycle
+
+An authorized workspace actor can claim a hostname for a world in that workspace.
+The storage adapter must verify the actor's role and world ownership, enforce
+global uniqueness of canonical hostnames and claim IDs, and commit claims and
+state transitions atomically against the current record. A current claim blocks
+claims from other workspaces while pending, verified, or suspended.
+
+A trusted verifier binds an expiring DNS ownership result and active TLS result
+to the exact hostname, claim, workspace, and world. The verifier uses a
+claim-specific DNS challenge and checks the provider binding against the
+approved target. The routing adapter treats pending, expired, suspended, and
+released claims as disabled. Resume returns a claim to pending with a fresh
+claim ID. Release disables routing immediately. A new claim uses a fresh ID
+and fresh proof. Reconcile provider detach and any in-flight writes before
+provisioning a replacement binding for that hostname.
+
+The source primitives are under `apps/worlds/src/hosting`. The regression
+suite covers default assignment, unknown and disabled hosts, tenant and
+verification mismatches, suspension and release, stale proof, and the provider
+attempt budget. Run it from `apps/worlds` with
+`bun test ./src/hosting/hosting.test.ts`. The viewer Worker entry point and live
+routing remain unchanged until an adapter and an approved cutover are in place.
+
+## Automations deployment handoff
+
+Treat each deployment as a handoff of an immutable artifact and a scoped
+provider change plan. Keep mutation authority with the approved deployment
+runner.
+
+1. **Identify the exact target.** Record the repository and commit SHA, target
+   environment, Cloudflare account ID, zone ID for each managed DNS/route
+   change, Worker service `tuturuuu-worlds`, and explicit hostname and route
+   set. For a customer-managed zone, record the exact hostname, provider
+   binding identifier if present, and the customer-owned DNS action separately.
+   Include workspace, world, claim and publication IDs. Resolve target IDs from
+   trusted environment inventory. The Worker name alone cannot identify an
+   approved account or zone.
+2. **Pin the build.** Hand off the CI run, exact commit, emitted Worker bundle
+   and assets with SHA-256 digests, and the effective bindings and runtime
+   manifest. Require exact-commit CI, sealed Worker acceptance and staging
+   acceptance. Promote the accepted artifact by digest. Record the immutable
+   Worker version ID when it becomes available.
+3. **Preflight read-only.** Use a read-only identity to confirm the account,
+   zone, service, active Worker version, hostname ownership and any conflicting
+   routes, DNS records, custom hostname bindings or pending writes. Capture
+   current routing, traffic allocation, DNS record values and TTL, and
+   certificate state. Compare those observations with the proposed diff and
+   preserve the prior immutable Worker version and route state for rollback.
+   Missing identity, live-state drift, incomplete rollback evidence or an
+   ambiguous provider response blocks mutation.
+4. **Bind approval to the plan.** Record the release authority, approval ID,
+   expiry, immutable artifact digest, exact targets, allowed mutations and
+   rollback action. Recheck preconditions before applying the plan. Artifact,
+   scope or provider state changes invalidate the approval. A separate scoped
+   identity carries the minimum permissions for approved writes. Keep
+   credentials and challenge values out of receipts.
+5. **Bound each provider operation.** Use an operation ID derived from the
+   approved plan and action, a fixed deadline, and at most three attempts per
+   operation. Set an explicit total operation cap covering preflight,
+   reconciliation, verification polls, writes and rollback. Persist the
+   operation and atomically reserve each attempt before dispatching a single
+   call. Cap per-call timeout at the remaining deadline and use a stable
+   idempotency key where supported. Retry with bounded backoff only after
+   confirmed absence of a side effect. Treat timeout, crash after reservation,
+   and ambiguous outcome as requiring read-only reconciliation. A durable stop
+   fence must block new dispatch after cancellation and prevent late receipts
+   from reopening an operation. An already-dispatched call can still land.
+   Stop scheduling on terminal states and reconcile in-flight effects before
+   enabling traffic or assigning the hostname again.
+6. **Collect DNS, TLS and routing evidence.** Record timestamped authoritative
+   DNS observations and expected targets, provider custom-hostname and
+   certificate statuses, and an end-to-end TLS handshake for the exact SNI
+   hostname. Verify the presented certificate name, chain and validity.
+   Confirm the expected default and custom host serve the intended release,
+   and that unknown, suspended and unpublished hosts are rejected. Record
+   Worker version, release ID and timestamp with the probes. Keep custom
+   routing disabled until these checks pass.
+7. **Verify rollback.** Rehearse the approved one-step traffic restore against
+   the captured immutable Worker version and routing state in staging before
+   cutover. For custom-host failures, fence the claim and stop its pending
+   operations before restoring approved provider and DNS state. DNS caches
+   can retain records through their TTL, so keep the application fence in place
+   throughout reconciliation. Capture version and route readbacks, DNS and TLS
+   observations, and public probes confirming restoration or safe rejection.
