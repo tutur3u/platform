@@ -535,38 +535,41 @@ for (const activity of ['cwd', 'open-file']) {
     const file = path.join(artifact, 'cache/a.tar.zst');
     backdateWorktree(repo, wt, Date.now() - 48 * HOUR_MS);
     const child = spawn(
-      process.execPath,
+      '/bin/sh',
       [
-        '-e',
-        `
-      if (process.argv[1] === 'open-file') {
-        global.fd = require('node:fs').openSync(process.argv[2], 'r');
-      }
-      process.send('ready');
-      setInterval(() => {}, 1000);
-    `,
+        '-c',
+        'if [ "$1" = open-file ]; then exec 3< "$2"; fi; printf "ready"; read -r line',
+        'worktree-liveness-fixture',
         activity,
         file,
       ],
       {
         cwd: activity === 'cwd' ? path.dirname(file) : root,
-        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+        stdio: ['pipe', 'pipe', 'inherit'],
       }
     );
+    const closed = new Promise((resolve) => child.once('close', resolve));
     t.after(async () => {
-      if (child.exitCode !== null) return;
-      const exited = new Promise((resolve) => child.once('exit', resolve));
+      child.stdin.end();
       child.kill();
-      await exited;
+      await closed;
     });
     await new Promise((resolve, reject) => {
       const timer = setTimeout(
         () => reject(new Error('child readiness timeout')),
         5000
       );
-      child.once('message', () => {
+      let output = '';
+      child.stdout.setEncoding('utf8');
+      child.stdout.on('data', (chunk) => {
+        output += chunk;
+        if (output !== 'ready') return;
         clearTimeout(timer);
         resolve();
+      });
+      child.once('close', (code, signal) => {
+        clearTimeout(timer);
+        reject(new Error(`child closed before readiness: ${signal ?? code}`));
       });
       child.once('error', (error) => {
         clearTimeout(timer);
