@@ -46,15 +46,19 @@ export function PersonalMeetingsTab({
         api,
         cache.getQueryData<PersonalTabSnapshot<PersonalMeetingItem[]>>(queryKey)
       ),
+    gcTime: 0,
     staleTime: 30_000,
     refetchInterval: active ? 60_000 : false,
     retry: false,
   });
 
+  const isTransientError =
+    query.isError && personalToolsFailureKeepsSnapshot(query.error);
   const snapshot =
-    query.isError && !personalToolsFailureKeepsSnapshot(query.error)
-      ? null
-      : query.data;
+    query.isError && !isTransientError ? null : query.data;
+  const isStale =
+    snapshot?.status === 'stale' ||
+    (isTransientError && Boolean(snapshot?.items));
   const href = resolveSafePersonalAppUrl('meet', workspace);
 
   return (
@@ -70,7 +74,7 @@ export function PersonalMeetingsTab({
         </p>
       ) : (
         <>
-          {snapshot.status === 'stale' && (
+          {isStale && (
             <p role="status" className="mb-2 text-muted-foreground text-xs">
               {t('stale_meetings')}
             </p>

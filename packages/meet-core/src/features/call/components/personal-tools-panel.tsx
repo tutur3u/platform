@@ -59,17 +59,34 @@ export function PersonalToolsPanel({
         new Date(),
         cache.getQueryData<PersonalToolsSnapshot>(key)
       ),
+    gcTime: 0,
     staleTime: 30_000,
     refetchInterval: 60_000,
     retry: false,
   });
+  const isTransientError =
+    query.isError && personalToolsFailureKeepsSnapshot(query.error);
   const data =
-    query.isError && !personalToolsFailureKeepsSnapshot(query.error)
+    query.isError && !isTransientError
       ? null
-      : query.data;
+      : query.data && isTransientError
+        ? {
+            ...query.data,
+            tasksStatus: query.data.tasks
+              ? ('stale' as const)
+              : query.data.tasksStatus,
+            calendarStatus: query.data.events
+              ? ('stale' as const)
+              : query.data.calendarStatus,
+          }
+        : query.data;
+  const handleClose = () => {
+    cache.removeQueries({ queryKey: ['meet-personal-tools'] });
+    onClose();
+  };
 
   return (
-    <ResizableCallPanel label={t('title')} onClose={onClose}>
+    <ResizableCallPanel label={t('title')} onClose={handleClose}>
       <CallPanelHeader
         icon={CalendarDays}
         title={t('title')}
@@ -80,7 +97,7 @@ export function PersonalToolsPanel({
           </>
         }
         closeLabel={t('close')}
-        onClose={onClose}
+        onClose={handleClose}
       />
       {query.isPending ? (
         <LoadingRegion srLabel={t('loading')} className="space-y-3 p-4">

@@ -2,6 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { describe, expect, it, vi } from 'vitest';
+import { resolveSafePersonalAppUrl } from '../components/personal-tools/shared';
+import { currentRoomView } from '../components/room-navigation-policy';
 import {
   loadPersonalChat,
   loadPersonalDrive,
@@ -124,7 +126,6 @@ it('reads only the authenticated personal workspace, never the meeting workspace
   expect(services.calendar.mock.calls[0]?.[0]).toBe('personal');
   expect(result?.tasks?.today[0]?.name).toBe('Private task');
   expect(services.profile).toHaveBeenCalledTimes(2);
-  // Lazy per-tab endpoints are not fetched during initial panel load.
   expect(services.meetings).not.toHaveBeenCalled();
   expect(services.chat).not.toHaveBeenCalled();
   expect(services.drive).not.toHaveBeenCalled();
@@ -287,6 +288,45 @@ describe('lazy per-tab loaders (meetings, chat, drive)', () => {
     expect(unauthDrive.status).toBe('unavailable');
   });
 
+  it('returns unavailable when read returns 403 and follow-up profile returns 503', async () => {
+    const services = api();
+    const prev = await loadPersonalChat('actor', 'personal', services);
+    services.profile
+      .mockResolvedValueOnce({ id: 'actor' })
+      .mockRejectedValueOnce(new InternalApiError('server', 503));
+    services.chat.mockRejectedValue(new InternalApiError('denied', 403));
+
+    const denied = await loadPersonalChat('actor', 'personal', services, prev);
+    expect(denied).toEqual({
+      actorId: 'actor',
+      workspaceId: 'personal',
+      items: null,
+      status: 'unavailable',
+    });
+  });
+
+  it('overwrites cached snapshot with unavailable when profile returns 401', async () => {
+    const services = api();
+    const prev = await loadPersonalDrive('actor', 'personal', services);
+    services.profile.mockRejectedValueOnce(
+      new InternalApiError('signed out', 401)
+    );
+
+    const signedOut = await loadPersonalDrive(
+      'actor',
+      'personal',
+      services,
+      prev
+    );
+    expect(signedOut).toEqual({
+      actorId: 'actor',
+      workspaceId: 'personal',
+      items: null,
+      status: 'unavailable',
+    });
+    expect(services.drive).toHaveBeenCalledTimes(1);
+  });
+
   it('retains previous tab snapshot only on transient failure for the same actor and workspace', async () => {
     const services = api();
     const prev = await loadPersonalDrive('actor', 'personal', services);
@@ -355,7 +395,7 @@ describe('PersonalToolsPanel security and isolation boundaries', () => {
     }
   });
 
-  it('scopes every TanStack Query key to accountId (and workspace.id for per-tab queries)', () => {
+  it('scopes every TanStack Query key to accountId and sets gcTime: 0', () => {
     const files = readPersonalToolsComponentSources();
     const queryFiles = files.filter(({ source }) =>
       /\buseQuery\s*\(/.test(source)
@@ -365,6 +405,7 @@ describe('PersonalToolsPanel security and isolation boundaries', () => {
       expect(source, `${name} must include accountId in queryKey`).toMatch(
         /'meet-personal-tools',\s*accountId/
       );
+      expect(source, `${name} must set gcTime: 0`).toMatch(/\bgcTime:\s*0\b/);
       if (name !== 'personal-tools-panel.tsx') {
         expect(
           source,
@@ -374,12 +415,45 @@ describe('PersonalToolsPanel security and isolation boundaries', () => {
     }
   });
 
+  it('rejects unsafe javascript: and relative URLs in resolveSafePersonalAppUrl', () => {
+    const workspace = { id: 'personal', personal: true } as never;
+    expect(
+      resolveSafePersonalAppUrl(
+        'chat',
+        workspace,
+        null,
+        () => 'javascript:alert(1)'
+      )
+    ).toBeNull();
+    expect(
+      resolveSafePersonalAppUrl('drive', workspace, null, () => '/evil')
+    ).toBeNull();
+    expect(
+      resolveSafePersonalAppUrl(
+        'chat',
+        workspace,
+        null,
+        () => 'https://chat.tuturuuu.com/personal'
+      )
+    ).toBe('https://chat.tuturuuu.com/personal');
+  });
+
   it('uses safe rel="noopener noreferrer" for external deep-links', () => {
     const shared = readPersonalToolsComponentSources().find(
       ({ name }) => name === 'personal-tools/shared.tsx'
     );
     expect(shared?.source).toContain('resolveLaunchableAppUrl');
     expect(shared?.source).toContain('rel="noopener noreferrer"');
+  });
+
+  it('maps an open personal drawer to plain stage in currentRoomView', () => {
+    expect(
+      currentRoomView({
+        programming: false,
+        document: false,
+        drawer: 'personal',
+      })
+    ).toEqual({ surface: 'stage' });
   });
 
   it('is excluded from stage-layout, presence, Summon/Follow, Mira, and recordings', () => {
@@ -393,7 +467,10 @@ describe('PersonalToolsPanel security and isolation boundaries', () => {
     ];
     for (const filePath of isolatedPaths) {
       const source = readFileSync(filePath, 'utf8');
-      expect(source, `${filePath} must not reference PersonalTools`).not.toMatch(
+      expect(
+        source,
+        `${filePath} must not reference PersonalTools`
+      ).not.toMatch(
         /PersonalTools|meet-personal-tools|personal_tools|private_tools/
       );
     }

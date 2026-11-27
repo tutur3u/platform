@@ -66,11 +66,23 @@ it('never opens Co-Programming for a guest', () => {
   expect(screen.getByText('Sign in')).toBeTruthy();
 });
 
-it('never renders PersonalToolsPanel for an anonymous guest', () => {
+it('never renders PersonalToolsPanel for an anonymous guest or empty accountId', () => {
   render(
     <AccountGatedPersonalDrawer
       open
       requiresAccount
+      accountId=""
+      label="My day"
+      onClose={() => {}}
+    />
+  );
+  expect(screen.getByText('Sign in')).toBeTruthy();
+  expect(screen.queryByText('Personal tools')).toBeNull();
+  cleanup();
+  render(
+    <AccountGatedPersonalDrawer
+      open
+      requiresAccount={false}
       accountId=""
       label="My day"
       onClose={() => {}}

@@ -69,6 +69,19 @@ export interface PersonalTabSnapshot<T> {
   status: PersonalToolStatus;
 }
 
+function isActorChangedError(error: unknown) {
+  return (
+    error instanceof Error && error.message === 'personal_tools_actor_changed'
+  );
+}
+
+function isPersonalToolsAuthOrMissingError(error: unknown) {
+  return (
+    error instanceof InternalApiError &&
+    (error.status === 401 || error.status === 403 || error.status === 404)
+  );
+}
+
 async function assertPersonalToolsActor(
   actorId: string,
   api: Pick<PersonalToolsApi, 'profile'>
@@ -152,7 +165,18 @@ async function loadPersonalTabItems<T>(
   read: () => Promise<T>,
   previous?: PersonalTabSnapshot<T> | null
 ): Promise<PersonalTabSnapshot<T>> {
-  await assertPersonalToolsActor(actorId, api);
+  const unavailable: PersonalTabSnapshot<T> = {
+    actorId,
+    workspaceId,
+    items: null,
+    status: 'unavailable',
+  };
+  try {
+    await assertPersonalToolsActor(actorId, api);
+  } catch (error) {
+    if (isPersonalToolsAuthOrMissingError(error)) return unavailable;
+    throw error;
+  }
   const retained =
     previous?.actorId === actorId && previous.workspaceId === workspaceId
       ? previous
@@ -163,7 +187,23 @@ async function loadPersonalTabItems<T>(
   } catch (reason) {
     result = { status: 'rejected', reason };
   }
-  await assertPersonalToolsActor(actorId, api);
+  if (
+    result.status === 'rejected' &&
+    !personalToolsFailureKeepsSnapshot(result.reason)
+  ) {
+    try {
+      await assertPersonalToolsActor(actorId, api);
+    } catch (error) {
+      if (isActorChangedError(error)) throw error;
+    }
+    return unavailable;
+  }
+  try {
+    await assertPersonalToolsActor(actorId, api);
+  } catch (error) {
+    if (isPersonalToolsAuthOrMissingError(error)) return unavailable;
+    throw error;
+  }
   if (result.status === 'fulfilled') {
     return {
       actorId,
@@ -172,8 +212,7 @@ async function loadPersonalTabItems<T>(
       status: 'ready',
     };
   }
-  const keepPrevious =
-    personalToolsFailureKeepsSnapshot(result.reason) && retained?.items != null;
+  const keepPrevious = retained?.items != null;
   return {
     actorId,
     workspaceId,

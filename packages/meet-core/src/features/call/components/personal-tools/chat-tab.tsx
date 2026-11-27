@@ -62,15 +62,19 @@ export function PersonalChatTab({
         api,
         cache.getQueryData<PersonalTabSnapshot<ChatConversation[]>>(queryKey)
       ),
+    gcTime: 0,
     staleTime: 30_000,
     refetchInterval: active ? 60_000 : false,
     retry: false,
   });
 
+  const isTransientError =
+    query.isError && personalToolsFailureKeepsSnapshot(query.error);
   const snapshot =
-    query.isError && !personalToolsFailureKeepsSnapshot(query.error)
-      ? null
-      : query.data;
+    query.isError && !isTransientError ? null : query.data;
+  const isStale =
+    snapshot?.status === 'stale' ||
+    (isTransientError && Boolean(snapshot?.items));
   const href = resolveSafePersonalAppUrl('chat', workspace);
 
   const filtered = useMemo(() => {
@@ -103,7 +107,7 @@ export function PersonalChatTab({
         </p>
       ) : (
         <>
-          {snapshot.status === 'stale' && (
+          {isStale && (
             <p role="status" className="mb-2 text-muted-foreground text-xs">
               {t('stale_chat')}
             </p>

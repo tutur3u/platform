@@ -18,12 +18,13 @@ export type PersonalAppSlug = Extract<
 export function resolveSafePersonalAppUrl(
   slug: PersonalAppSlug,
   workspace: PersonalToolsSnapshot['workspace'] | null | undefined,
-  path?: string | null
+  path?: string | null,
+  resolveUrl = resolveLaunchableAppUrl
 ): string | null {
   const app = getLaunchableApp(slug);
   if (!app) return null;
   try {
-    const resolved = resolveLaunchableAppUrl({
+    const resolved = resolveUrl({
       app,
       workspace,
       path,

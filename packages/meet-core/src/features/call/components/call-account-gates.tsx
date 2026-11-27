@@ -61,7 +61,7 @@ export function AccountGatedPersonalDrawer({
   onClose: () => void;
 }) {
   if (!open || MEETING_APP !== 'meet') return null;
-  return requiresAccount ? (
+  return requiresAccount || !accountId ? (
     <ResizableCallPanel label={label}>
       <AccountRequiredState />
     </ResizableCallPanel>
