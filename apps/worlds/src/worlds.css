@@ -1,0 +1,51 @@
+:root {
+  color-scheme: light dark;
+  --background: Canvas;
+  --foreground: CanvasText;
+  --primary: Highlight;
+  --primary-foreground: HighlightText;
+  --border: GrayText;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, sans-serif;
+}
+
+main {
+  max-width: 70rem;
+  margin: auto;
+  padding: 1rem;
+}
+header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+nav {
+  display: flex;
+  gap: 1rem;
+}
+.map {
+  position: relative;
+  border: 1px solid var(--border);
+}
+.map > span {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  font-size: clamp(0.45rem, 1.5vw, 1rem);
+}
+.booth {
+  border: 1px solid var(--border);
+}
+.platform,
+.spawn {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.spawn {
+  transform: translate(-50%, -50%);
+  padding: 0.125rem 0.25rem;
+}

@@ -156,7 +156,6 @@
               "platform/features/chat-realtime",
               "platform/features/meet-calls",
               "platform/features/worlds",
-
               "platform/features/meet-short-links",
               "platform/features/meet-media-quality",
               "platform/features/native-calendar-recurrence",

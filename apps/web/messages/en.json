@@ -29125,5 +29125,9 @@
     "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
+  },
+  "worlds": {
+    "description": "Explore the sample hall from EduFest.",
+    "preview": "Preview EduFest hall"
   }
 }
