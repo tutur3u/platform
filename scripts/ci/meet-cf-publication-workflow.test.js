@@ -267,3 +267,15 @@ test('the canonical build identity check expects the published source', () => {
     /^GITHUB_SHA="\$SOURCE_SHA" node scripts\/ci\/verify-meet-build-info\.js$/
   );
 });
+
+test('Meet frontend publication pins the workshop guest budgets', () => {
+  const publish = step('deploy', 'Deploy the verified frontend');
+  for (const [name, value] of Object.entries({
+    MEET_EVENT_GUEST_JOIN_LIMIT: '150',
+    MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT: '600',
+    MEET_GUEST_JOIN_LIMIT: '200',
+  })) {
+    assert.equal(publish.env[name], value);
+    assert.ok(publish.run.includes(`--var "${name}=$${name}"`));
+  }
+});

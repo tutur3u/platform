@@ -1202,7 +1202,8 @@ next token.
 - Each network may attempt 200 guest joins per meeting link every ten
   minutes, so a class of about 50 guests behind one school NAT can join in a
   burst with retries, reconnects after a phone locks and failed Turnstile
-  checks, and 400 guest joins an hour across all meetings, so one address
+  checks, and 600 guest joins an hour across all meetings in the hosted
+  Meet release (400 by default outside that release), so one address
   cannot mint guests over many meetings (that class plus a second room on
   the same network fits). A network is an
   IPv4 address or an IPv6 /64. Failed checks count, and an attempt over
@@ -1212,7 +1213,8 @@ next token.
   limits are `MEET_GUEST_JOIN_LIMIT` and `MEET_GUEST_JOIN_NETWORK_LIMIT` in
   `guest-rate-limit.ts`, overridable through the `MEET_GUEST_JOIN_LIMIT` and
   `MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT` variables; anything but a plain
-  positive integer keeps the default. These limits only bound how fast
+  positive integer keeps the code default. The hosted Meet workflow pins
+  200 and 600. These limits only bound how fast
   sessions are minted: Turnstile, the name checks and host admission still
   decide who gets in. Regression coverage: `guest-rate-limit.test.ts` and the
   guest join `route.test.ts`.
@@ -1332,9 +1334,10 @@ event-scoped proof separately from eligibility for automatic admission.
 Restricted and hard-blocked guests remain refused. Signed-in participants and
 ordinary verified guests retain the room's existing automatic admission rules.
 
-The event allows 80 new guest sessions per network per room every ten minutes.
+The event allows 150 new guest sessions per network per room every ten minutes
+by default (`MEET_EVENT_GUEST_JOIN_LIMIT`).
 Turnstile or jigsaw submissions, work-ticket issuance, and work verification
-each have a separate 80-request window at the same scope. A failed provider
+each have a separate window with that limit at the same scope. A failed provider
 request therefore leaves the same network's work budget available. The shared
 guard must be available for event work. Event rooms also
 cap simultaneous waiting and admitted guest connections at 80. Existing

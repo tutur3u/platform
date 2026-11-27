@@ -14,14 +14,21 @@ vi.mock('next/headers', () => ({
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('../../../../../features/call/server/guest-event-network', () => ({
-  meetEventClientIp: () => '203.0.113.4',
+  meetEventClientIp: (headers: Headers) =>
+    headers.get('cf-connecting-ip') ?? '203.0.113.4',
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
   resolveMeetGuestJoin: mocks.resolve,
 }));
-vi.mock('@tuturuuu/meet-core/features/call/lib/guest-rate-limit', () => ({
-  checkMeetGuestJoinLimit: mocks.limit,
-}));
+vi.mock(
+  '@tuturuuu/meet-core/features/call/lib/guest-rate-limit',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@tuturuuu/meet-core/features/call/lib/guest-rate-limit')
+    >()),
+    checkMeetGuestJoinLimit: mocks.limit,
+  })
+);
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-unverified-limit', () => ({
   checkMeetGuestUnverifiedLimit: mocks.unverifiedLimit,
 }));
@@ -339,12 +346,64 @@ it('issues event recovery work without creating a guest session', async () => {
   });
   expect(mocks.limit).toHaveBeenCalledWith(
     expect.objectContaining({
-      eventLimit: 80,
+      eventLimit: 150,
       phase: 'challenge',
       requireSharedStore: true,
     }),
     null
   );
+});
+
+it('charges fresh event cookies across one IPv6 /64 and skips issuance on cookie reuse', async () => {
+  const actual = await vi.importActual<
+    typeof import('@tuturuuu/meet-core/features/call/lib/guest-rate-limit')
+  >('@tuturuuu/meet-core/features/call/lib/guest-rate-limit');
+  actual.resetMeetGuestJoinLimiter();
+  mocks.resolve.mockResolvedValue({
+    kind: 'available',
+    eventExpiresAt: Date.now() + 360_000,
+  });
+  mocks.risk.mockResolvedValue({
+    allowed: true,
+    decision: { tier: 'standard' },
+  });
+  // Exercise only the issuance window here. Admission tests cover shared-store
+  // refusal, and the other route tests cover attempt and phase enforcement.
+  mocks.limit.mockImplementation((input) =>
+    input.eventLimit && !input.phase
+      ? actual.checkMeetGuestJoinLimit(
+          { ...input, requireSharedStore: undefined },
+          null,
+          () => 60_000
+        )
+      : Promise.resolve({ ok: true })
+  );
+  const join = (suffix: string) => {
+    const req = request({ displayName: 'An', turnstileToken: 't' });
+    req.headers.set('cf-connecting-ip', `2001:db8:aa:${suffix}`);
+    return POST(req, params);
+  };
+  const first = await join('bb::1');
+  expect(first.status).toBe(200);
+  const cookie = first.headers.get('Set-Cookie')?.split(';')[0] ?? '';
+  expect(cookie).not.toBe('');
+  mocks.cookie.mockReturnValue({
+    value: cookie.slice(cookie.indexOf('=') + 1),
+  });
+  const reused = await join('bb::2');
+  expect(reused.status).toBe(200);
+  expect(reused.headers.get('Set-Cookie')).toBeNull();
+  mocks.cookie.mockReturnValue(undefined);
+  for (let attempt = 1; attempt < 150; attempt++) {
+    const issued = await join(attempt % 2 ? 'bb::1' : 'bb::2');
+    expect(issued.status).toBe(200);
+    expect(issued.headers.get('Set-Cookie')).not.toBeNull();
+  }
+  const refused = await join('bb::3');
+  expect(refused.status).toBe(429);
+  expect(refused.headers.get('Retry-After')).toBe('540');
+  expect(refused.headers.get('Set-Cookie')).toBeNull();
+  expect((await join('bc::1')).status).toBe(200);
 });
 
 it('refuses event work issuance for a blocked guest', async () => {

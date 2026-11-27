@@ -7,6 +7,7 @@ import {
   MEET_GUEST_JOIN_NETWORK_LIMIT_ENV,
   MEET_GUEST_JOIN_NETWORK_WINDOW_MS,
   MEET_GUEST_JOIN_WINDOW_MS,
+  meetEventGuestJoinLimit,
   meetGuestJoinLimits,
   meetGuestJoinWindows,
   resetMeetGuestJoinLimiter,
@@ -40,17 +41,40 @@ describe('meet guest join limit', () => {
     ]);
   });
 
-  it('isolates the 80-attempt event window from ordinary join counters', async () => {
-    const input = { meetingId, network: '203.0.113.4' };
-    for (let i = 0; i < 80; i++) {
+  it('caps new event sessions at 150 per network and room, including repeated joins', async () => {
+    vi.stubEnv('MEET_EVENT_GUEST_JOIN_LIMIT', '');
+    const input = { meetingId, eventLimit: meetEventGuestJoinLimit() };
+    const at = () => 60_000;
+    for (let attempt = 0; attempt < 150; attempt++) {
+      const network = attempt % 2 ? '2001:db8:aa:bb::1' : '2001:db8:aa:bb::2';
       expect(
-        await checkMeetGuestJoinLimit({ ...input, eventLimit: 80 }, null)
+        await checkMeetGuestJoinLimit({ ...input, network }, null, at)
       ).toEqual({ ok: true });
     }
+    const sameNetwork = { ...input, network: '2001:db8:aa:bb::3' };
+    expect((await checkMeetGuestJoinLimit(sameNetwork, null, at)).ok).toBe(
+      false
+    );
     expect(
-      (await checkMeetGuestJoinLimit({ ...input, eventLimit: 80 }, null)).ok
-    ).toBe(false);
-    expect((await checkMeetGuestJoinLimit(input, null)).ok).toBe(true);
+      (
+        await checkMeetGuestJoinLimit(
+          { ...sameNetwork, network: '2001:db8:aa:bc::1' },
+          null,
+          at
+        )
+      ).ok
+    ).toBe(true);
+    expect(
+      (
+        await checkMeetGuestJoinLimit(
+          { ...sameNetwork, eventLimit: undefined },
+          null,
+          at
+        )
+      ).ok
+    ).toBe(true);
+    vi.stubEnv('MEET_EVENT_GUEST_JOIN_LIMIT', '175');
+    expect(meetEventGuestJoinLimit()).toBe(175);
   });
 
   it('supports 50 venue guests, each with a failed provider attempt, plus retry headroom', async () => {

@@ -31,6 +31,11 @@ export const MEET_GUEST_JOIN_LIMIT_ENV = 'MEET_GUEST_JOIN_LIMIT';
 export const MEET_GUEST_JOIN_NETWORK_LIMIT_ENV =
   'MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT';
 
+/** Per-network event session and phase budget, independent of room occupancy. */
+export function meetEventGuestJoinLimit() {
+  return parsePositiveIntEnv('MEET_EVENT_GUEST_JOIN_LIMIT', 150);
+}
+
 /** The effective per-meeting and cross-meeting join limits. */
 export function meetGuestJoinLimits() {
   return {

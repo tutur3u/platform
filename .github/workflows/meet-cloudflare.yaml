@@ -781,6 +781,9 @@ jobs:
           MEET_GUEST_WHITEBOARD: ${{ vars.MEET_GUEST_WHITEBOARD || 'false' }}
           MEET_GUEST_WHITEBOARD_DRAW: ${{ vars.MEET_GUEST_WHITEBOARD_DRAW || 'false' }}
           MEET_AI_PER_SPEAKER_WORKSPACES: ${{ vars.MEET_AI_PER_SPEAKER_WORKSPACES || '' }}
+          MEET_EVENT_GUEST_JOIN_LIMIT: '150'
+          MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT: '600'
+          MEET_GUEST_JOIN_LIMIT: '200'
           PAID_TIER_SECRET: ${{ steps.secret-names.outputs.paid_tier_secret }}
         id: frontend
         working-directory: apps/meet
@@ -801,6 +804,9 @@ jobs:
             --var "MEET_UX_V2=$MEET_UX_V2"
             --var "MEET_GUEST_WHITEBOARD=$MEET_GUEST_WHITEBOARD"
             --var "MEET_GUEST_WHITEBOARD_DRAW=$MEET_GUEST_WHITEBOARD_DRAW"
+            --var "MEET_EVENT_GUEST_JOIN_LIMIT=$MEET_EVENT_GUEST_JOIN_LIMIT"
+            --var "MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT=$MEET_GUEST_JOIN_NETWORK_HOURLY_LIMIT"
+            --var "MEET_GUEST_JOIN_LIMIT=$MEET_GUEST_JOIN_LIMIT"
             --var MEET_AI_PER_SPEAKER=true
             --var "MEET_AI_PER_SPEAKER_WORKSPACES=$MEET_AI_PER_SPEAKER_WORKSPACES")
           if [ "$MEET_AI_RELEASE" = contained ]; then

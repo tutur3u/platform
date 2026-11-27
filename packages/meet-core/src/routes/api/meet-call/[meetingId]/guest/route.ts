@@ -7,7 +7,10 @@ import {
   meetDeviceIdentity,
 } from '@tuturuuu/meet-core/features/call/lib/call-session';
 import { resolveMeetGuestJoin } from '@tuturuuu/meet-core/features/call/lib/guest-access';
-import { checkMeetGuestJoinLimit } from '@tuturuuu/meet-core/features/call/lib/guest-rate-limit';
+import {
+  checkMeetGuestJoinLimit,
+  meetEventGuestJoinLimit,
+} from '@tuturuuu/meet-core/features/call/lib/guest-rate-limit';
 import { checkMeetGuestUnverifiedLimit } from '@tuturuuu/meet-core/features/call/lib/guest-unverified-limit';
 import {
   meetHumanCheckGuard,
@@ -25,7 +28,6 @@ import {
 } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { assessMeetGuestUnverifiedJoin } from '@tuturuuu/meet-core/features/call/server/guest-unverified-risk';
 import { meetAiUsageGuard } from '@tuturuuu/meet-core/features/meeting-ai/server/usage-limit';
-import { MEET_EVENT_GUEST_LIMIT } from '@tuturuuu/realtime/meet';
 import { redeemPassToken } from '@tuturuuu/human-check';
 import {
   issueMeetGuestWork,
@@ -155,7 +157,7 @@ export async function POST(
       {
         meetingId,
         network,
-        eventLimit: MEET_EVENT_GUEST_LIMIT,
+        eventLimit: meetEventGuestJoinLimit(),
         phase: requestWork ? 'challenge' : eventWork ? 'work' : 'verify',
         requireSharedStore: true,
       },
@@ -217,7 +219,7 @@ export async function POST(
         {
           meetingId,
           network,
-          eventLimit: MEET_EVENT_GUEST_LIMIT,
+          eventLimit: meetEventGuestJoinLimit(),
           requireSharedStore: true,
         },
         limiter
