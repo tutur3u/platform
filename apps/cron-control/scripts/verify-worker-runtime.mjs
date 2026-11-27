@@ -63,7 +63,7 @@ test('source config preserves the schedule and job list with AI retention in dry
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
     type: 'text',
     value:
-      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare,tasks-cleanup-media',
+      'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare,tasks-cleanup-media,pay-products,infrastructure-sync-trust-cache',
   });
   assert.deepEqual(config.worker.env.FORMS_UPLOAD_CLEANUP_MODE, {
     type: 'text',
