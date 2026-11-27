@@ -36,14 +36,14 @@ function Hall() {
         <h1>{labels.title}</h1>
         <nav aria-label={lang === 'vi' ? 'Ngôn ngữ' : 'Language'}>
           <a
-            href="/?lang=en"
+            href="?lang=en"
             lang="en"
             aria-current={lang === 'en' ? 'true' : undefined}
           >
             English
           </a>
           <a
-            href="/?lang=vi"
+            href="?lang=vi"
             lang="vi"
             aria-current={lang === 'vi' ? 'true' : undefined}
           >
