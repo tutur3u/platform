@@ -967,6 +967,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/ieeai/handbook/stats"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/inquiries/[id]/media-urls"
     },
     {
