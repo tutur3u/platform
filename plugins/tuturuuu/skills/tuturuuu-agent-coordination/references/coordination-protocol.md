@@ -36,6 +36,8 @@ shared-checkout notes + window when agents must cooperate in one directory.
 
 ## Branch Posture
 
+Follow the [repository freshness rule](../../../../../AGENTS.md#3-mandatory-actions) before reading, editing, or reviewing task source. Claude Code reports divergence at session start and labels cached refs when the fetch is unavailable.
+
 - Default to committing on the working branch the user handed you. Do not create
   a new branch unless the user asks or you are intentionally isolating work in a
   separate worktree.

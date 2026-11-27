@@ -144,6 +144,11 @@ time.
 
 - Before writing web UI source, read the [UI design skill](plugins/tuturuuu/skills/tuturuuu-ui-design/SKILL.md) and follow its linked component map and review checklist.
 
+- Before reading task source or editing, run `git fetch origin --prune` and compare with `git rev-list --left-right --count HEAD...origin/main`.
+  Start new task branches and worktrees from `origin/main` unless an explicit or unpublished dependency requires another base.
+  Before editing, rebase clean, owned task branches onto `origin/main` when authorized. Preserve approved exact-hash candidates until the
+  disjoint-rebase rule permits a rewrite (clean rebase, unchanged patch ID, and disjoint upstream changes). Honor explicit holds.
+  Review against current `origin/main`. In a dirty shared main checkout, fetch only. Never pull or reset it.
 - Run `git status --short` before editing. If dirty or untracked paths exist,
   treat them as user-owned or other-agent-owned until proven otherwise.
 - Ship each verified increment as soon as its required checks pass. Treat ETAs, deadlines and train schedules as latest-by times, never as release times: do not hold finished work to bundle it, wait for a train, or match a stated ETA. Batch ready work into large, complete changes so each review, build and deploy cycle carries as much verified work as possible; code generation is fast, while review, build and deploy capacity is the constraint. Prefer fix-forward over rollback or halting; known non-blocking follow-ups go in the next deploy. An active exploit or a secret leak still stops the line. Deploy independent apps and services in parallel by default; serialize only for a proven dependency (for example, a migration before the code that needs it), and record which dependency forced it.

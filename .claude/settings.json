@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$CLAUDE_PROJECT_DIR/scripts/agent/freshness-check.sh\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
