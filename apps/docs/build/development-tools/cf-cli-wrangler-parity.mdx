@@ -255,6 +255,15 @@ hosted runtime parity. A separate isolated, network-denied cf dry-run and module
 resolution rehearsal must close those gaps before a publisher switch; cf dry-run
 has no emitted-upload output flag. Do not treat it as an upload byte comparison.
 
+
+Meet staging first publication uses the existing `apps/meet`
+`deploy:cloudflare` command from a clean checkout. The publisher restores and
+checks the admitted artifact at that command's fixed input path, and the
+one-upload gate tags and forwards the Worker upload once per durable claim.
+An unresolved claim only reads versions and reconciles an exact tag match.
+Retain this command until a disposable cf rehearsal proves first publication
+with managed migrations, initial secrets, and claim-tag readback.
+
 ## Native Worker template
 
 Applied to Cron Control, Devbox Control and Coordination. Each migrated Worker has:

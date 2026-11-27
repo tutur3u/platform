@@ -1,16 +1,18 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readSync, realpathSync } from 'node:fs';
-import { dirname, resolve, sep } from 'node:path';
+import { basename, resolve, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { WAVE1_CONFIG } from './pre-seal-doctor.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import { preflight } from './wave1-staging-preflight.mjs';
 import { runFirstUpload, withFirstUploadGate } from './meet-first-upload.mjs';
 import { inventory } from './wave1-native-artifact.mjs';
 import { attemptLedger } from './wave1-native-attempt.mjs';
 
-const require = createRequire(import.meta.url);
+const meetRoot = fileURLToPath(new URL('../../apps/meet/', import.meta.url));
+export const firstArtifactConfig = basename(WAVE1_CONFIG);
 const accountId = 'e8912e2867beecc673d171907bf09649';
 const targets = {
   'abuse-guard': {
@@ -109,8 +111,8 @@ export function inspectMeetFirstArtifact(directory, app, subdomain) {
     'Unsealable artifact path'
   );
   const files = inventory(root);
-  assert.ok(Object.hasOwn(files, 'wrangler.json'), 'Missing sealed config');
-  const configPath = resolve(root, 'wrangler.json');
+  assert.ok(Object.hasOwn(files, firstArtifactConfig), 'Missing sealed config');
+  const configPath = resolve(root, firstArtifactConfig);
   const config = JSON.parse(readFileSync(configPath, 'utf8'));
   const target = targets[app];
   const name = nameFor(app);
@@ -239,7 +241,6 @@ export function inspectMeetFirstArtifact(directory, app, subdomain) {
     .digest('hex');
   return {
     root,
-    configPath,
     name,
     accountId,
     digest,
@@ -261,6 +262,12 @@ export async function publishMeetFirst({
   exec = runFirstUpload,
 }) {
   const { name, accountId, digest, secrets } = artifact;
+  if (exec === runFirstUpload)
+    assert.equal(
+      artifact.root,
+      resolve(meetRoot, 'dist/ssr'),
+      'Expected the Meet deployment script input directory'
+    );
   const cfToken = env.CLOUDFLARE_STAGING_API_TOKEN;
   const account = `https://api.cloudflare.com/client/v4/accounts/${accountId}`;
   const script = `${account}/workers/scripts/${name}`;
@@ -434,15 +441,10 @@ export async function publishMeetFirst({
           '/bin/bash',
           [
             '-c',
-            'set -o pipefail; /bin/cat | node "$@"',
+            'set -o pipefail; /bin/cat | bun "$@"',
             'meet-first-publication',
-            resolve(
-              dirname(require.resolve('wrangler/package.json')),
-              'bin/wrangler.js'
-            ),
-            'deploy',
-            '--config',
-            artifact.configPath,
+            'run',
+            'deploy:cloudflare',
             '--secrets-file',
             '/dev/stdin',
             '--no-experimental-auto-create',
@@ -453,15 +455,14 @@ export async function publishMeetFirst({
             `MEET_STAGING_ARTIFACT_SHA256:${digest}`,
           ],
           {
-            cwd: artifact.root,
+            cwd: meetRoot,
             env: {
               PATH: env.PATH,
               HOME: env.HOME,
               CLOUDFLARE_API_TOKEN: cfToken,
               CLOUDFLARE_API_BASE_URL: apiBase,
               CLOUDFLARE_ACCOUNT_ID: accountId,
-              WRANGLER_SEND_METRICS: 'false',
-              WRANGLER_WRITE_LOGS: 'false',
+              DO_NOT_TRACK: '1',
               CI: 'true',
             },
             input: JSON.stringify(values),

@@ -6,7 +6,10 @@ import test from 'node:test';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { withFirstUploadGate } from './meet-first-upload.mjs';
-import { inspectMeetFirstArtifact } from './meet-first-publication.mjs';
+import {
+  firstArtifactConfig,
+  inspectMeetFirstArtifact,
+} from './meet-first-publication.mjs';
 import { signAttemptState } from './wave1-native-attempt.mjs';
 import { main } from './wave1-native-publish.mjs';
 import { profiles } from './wave1-native-profile.mjs';
@@ -48,7 +51,7 @@ function fixture(t) {
     },
   };
   const write = () =>
-    writeFileSync(join(root, 'wrangler.json'), JSON.stringify(config));
+    writeFileSync(join(root, firstArtifactConfig), JSON.stringify(config));
   write();
   writeFileSync(
     join(root, 'index.mjs'),
@@ -205,6 +208,7 @@ function fixture(t) {
   };
   const exec = (command, args, options) => {
     assert.equal(command, '/bin/bash');
+    assert.deepEqual(args.slice(3, 5), ['run', 'deploy:cloudflare']);
     assert.ok(args.includes('--no-experimental-auto-create'));
     assert.ok(args.includes('/dev/stdin'));
     assert.equal(
@@ -339,7 +343,7 @@ test('the publisher accepts byte-identical restored build output and rejects a c
   assert.equal(state.writes, 1);
 });
 
-test('a lost provider response cannot replay the Wrangler script PUT', async () => {
+test('a lost provider response cannot replay the Worker script PUT', async () => {
   const scriptPath = `/client/v4/accounts/${accountId}/workers/scripts/${name}`;
   let writes = 0;
   await withFirstUploadGate(

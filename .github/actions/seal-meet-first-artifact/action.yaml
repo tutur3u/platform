@@ -5,7 +5,7 @@ inputs:
     description: Exact Meet staging target
     required: true
   directory:
-    description: Prepared Worker directory with wrangler.json and its bundled modules and assets
+    description: Prepared Worker directory with its normalized deployment config, modules and assets
     required: true
   workers_subdomain:
     description: Existing staging account workers.dev subdomain

@@ -53,7 +53,7 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.artifact_run_id }}
           name: meet-first-${{ inputs.target }}-${{ github.sha }}
-          path: ${{ runner.temp }}/meet-first
+          path: apps/meet/dist/ssr
       - name: Publish admitted artifact once
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -63,7 +63,7 @@ jobs:
           WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
           WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
           WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
-          WAVE1_MEET_FIRST_ARTIFACT_DIR: ${{ runner.temp }}/meet-first
+          WAVE1_MEET_FIRST_ARTIFACT_DIR: ${{ github.workspace }}/apps/meet/dist/ssr
           ABUSE_GUARD_INPUT: ${{ inputs.target == 'abuse-guard' && secrets.MEET_FIRST_ABUSE_GUARD_INPUT || '' }}
           REALTIME_INPUT: ${{ inputs.target == 'meet-realtime' && secrets.MEET_FIRST_REALTIME_INPUT || '' }}
           FRONTEND_INPUT: ${{ inputs.target == 'meet' && secrets.MEET_FIRST_FRONTEND_INPUT || '' }}

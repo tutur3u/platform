@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 
 const api = 'https://api.cloudflare.com';
 
-// Wrangler still prepares modules, assets, migrations and bindings. Only this
+// The existing deploy command prepares modules, assets, migrations and bindings. Only this
 // connection may send the script PUT, and it is consumed before forwarding.
 export async function withFirstUploadGate(
   { scriptPath, versionTag, token, fetcher = fetch },
@@ -135,5 +135,5 @@ export async function runFirstUpload(command, args, options) {
   child.stdin.on('error', () => {});
   child.stdin.end(options.input);
   const [exit] = await once(child, 'close');
-  assert.equal(exit, 0, 'Wrangler first upload failed');
+  assert.equal(exit, 0, 'Meet first upload failed');
 }
