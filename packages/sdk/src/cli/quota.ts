@@ -94,7 +94,12 @@ async function pickSeat(collector: string, args: string[]) {
   for (let index = 0; index < args.length; index += 2) {
     const flag = args[index];
     const value = args[index + 1];
-    if (!flag || !value || !/^[A-Za-z0-9_./-]{1,128}$/.test(value))
+    if (
+      !flag ||
+      !value ||
+      value.startsWith('-') ||
+      !/^[A-Za-z0-9_./-]{1,128}$/.test(value)
+    )
       throw new Error('Invalid quota seat selection argument.');
     if (flag === '--preferred-machine' && hosts.includes(value)) {
       preferredMachine = value;
@@ -117,6 +122,40 @@ async function pickSeat(collector: string, args: string[]) {
   if (!result || typeof result !== 'object' || !('seat' in result))
     throw new Error('Invalid seat selection response.');
   console.log(JSON.stringify({ ...result, machine }));
+}
+
+function ledgerCell(value: unknown) {
+  return typeof value === 'string'
+    ? value.replace(/[\r\n|]/g, ' ').replace(/[<>]/g, '')
+    : 'unknown';
+}
+
+function windowSummary(value: unknown): string {
+  if (!value || typeof value !== 'object') return '';
+  const label = 'id' in value ? value.id : 'kind' in value ? value.kind : '';
+  const used = 'usedPercent' in value ? value.usedPercent : undefined;
+  const ttl = 'ttlMs' in value ? value.ttlMs : undefined;
+  const observedAt = 'observedAt' in value ? value.observedAt : undefined;
+  const age =
+    typeof observedAt === 'string' ? Date.now() - Date.parse(observedAt) : NaN;
+  const current =
+    typeof ttl === 'number' &&
+    age >= 0 &&
+    age <= ttl &&
+    'authoritative' in value &&
+    value.authoritative === true;
+  const observedRemaining =
+    typeof used === 'number' && used >= 0 && used <= 100
+      ? `${Math.round(100 - used)}%`
+      : 'unknown';
+  const remaining = current
+    ? observedRemaining
+    : `unknown (${observedRemaining} observed)`;
+  const reset =
+    'resetsAtIct' in value && typeof value.resetsAtIct === 'string'
+      ? `, ${ledgerCell(value.resetsAtIct)}`
+      : '';
+  return `${ledgerCell(label)} ${remaining}${reset}`;
 }
 
 export async function runQuotaCommand(args: string[]): Promise<void> {
@@ -195,6 +234,21 @@ export async function runQuotaCommand(args: string[]): Promise<void> {
     console.log(
       `| ${result.host} | ${result.usage?.schema === 'legacy-account-pools' ? 'available (legacy pools)' : result.status} | ${result.usage?.seats.length ?? 0} | ${summary} |`
     );
+  }
+  console.log('\n| Host | Seat or pool | Provider | Remaining |');
+  console.log('| --- | --- | --- | --- |');
+  for (const { host, usage } of results) {
+    for (const seat of usage?.seats ?? []) {
+      if (!seat || typeof seat !== 'object' || !('instanceId' in seat))
+        continue;
+      const provider =
+        'provider' in seat ? ledgerCell(seat.provider) : 'unknown';
+      const windows =
+        'windows' in seat && Array.isArray(seat.windows) ? seat.windows : [];
+      console.log(
+        `| ${ledgerCell(host)} | ${ledgerCell(seat.instanceId)} | ${provider} | ${windows.map(windowSummary).filter(Boolean).join('; ') || 'unknown'} |`
+      );
+    }
   }
   console.log(
     githubCore

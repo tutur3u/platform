@@ -44,8 +44,8 @@ New contributors can begin with [Development](/build/development-tools/developme
 
 From the Tuturuuu checkout, run `bun packages/sdk/src/cli/index.ts quota status --json` for the
 machine-readable ledger, or omit `--json` for the Markdown summary. The command
-reads the local host and contacts `skr-studio`, `skr-macbook1`, and
-`skr-macbook-i9` over noninteractive SSH. Each remote needs the quota source
+reads the local host and contacts the configured fleet aliases over
+noninteractive SSH. Each remote needs the quota source
 under `~/Documents/GitHub/tuturuuu`. An unreachable host or a host with an
 incompatible collector appears as a failed collection. Older compatible
 collectors return account pools and are labeled as legacy. Use `--local` to read
@@ -65,7 +65,7 @@ model and reset evidence. Antigravity routes Gemini only. Its Claude and GPT usa
 visible for inspection.
 
 Run `bun packages/sdk/src/cli/index.ts quota pick-seat --role builder
---model-class gemini-` locally, or add `--preferred-machine skr-studio` to
+--model-class gemini-` locally, or add `--preferred-machine HOST_ALIAS` to
 ask the collector on that host. Roles are `lead`, `builder`, and `reviewer`.
 The model class is an advertised model ID prefix. Reviewers require
 `--author-instance` to exclude the author's seat and known account aliases.
