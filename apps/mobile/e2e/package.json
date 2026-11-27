@@ -4,6 +4,8 @@
   "type": "module",
   "devDependencies": {
     "@e2e-dev/mobile": "0.12.9",
-    "e2e": "0.25.0"
+    "@types/node": "24.19.4",
+    "e2e": "0.25.0",
+    "typescript": "7.0.2"
   }
 }

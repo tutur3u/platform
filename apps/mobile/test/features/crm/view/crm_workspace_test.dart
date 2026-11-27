@@ -524,6 +524,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Reports'));
       await tester.pumpAndSettle();
+      expect(
+        find.bySemanticsIdentifier('mobile.contacts.reports'),
+        findsOneWidget,
+      );
       await tester.tap(find.text('March progress'));
       await tester.pumpAndSettle();
       expect(find.text('Afternoon group'), findsOneWidget);

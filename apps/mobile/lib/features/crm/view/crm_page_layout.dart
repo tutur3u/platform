@@ -430,21 +430,27 @@ extension _CrmPageLayout on _CrmPageState {
       final searching = _searchController.text.trim().isNotEmpty;
       final createLabel = _emptyCreateLabel(l10n, usersTab);
       slots.add(
-        AppStateMessage(
-          icon: usersTab ? LucideIcons.contact : LucideIcons.history,
-          title: _emptyTitle(l10n, usersTab),
-          message: searching && usersTab
-              ? l10n.contactsEmptySearch
-              : _emptyMessage(l10n, usersTab),
-          actionLabel: searching ? null : createLabel,
-          onAction: searching ? null : _emptyCreateAction(usersTab),
-          illustration: searching
-              ? const AppIllustration(
-                  AppIllustrationKind.searchNoResults,
-                  tone: AppTone.info,
-                  cycles: 0,
-                )
+        Semantics(
+          identifier:
+              searching && usersTab && _directory == _ContactDirectory.people
+              ? 'mobile.contacts.search-empty'
               : null,
+          child: AppStateMessage(
+            icon: usersTab ? LucideIcons.contact : LucideIcons.history,
+            title: _emptyTitle(l10n, usersTab),
+            message: searching && usersTab
+                ? l10n.contactsEmptySearch
+                : _emptyMessage(l10n, usersTab),
+            actionLabel: searching ? null : createLabel,
+            onAction: searching ? null : _emptyCreateAction(usersTab),
+            illustration: searching
+                ? const AppIllustration(
+                    AppIllustrationKind.searchNoResults,
+                    tone: AppTone.info,
+                    cycles: 0,
+                  )
+                : null,
+          ),
         ),
       );
       return slots;

@@ -304,6 +304,24 @@ void main() {
           } else {
             expect(find.text('All-day shell regression'), findsOneWidget);
             expect(find.text('Timed shell regression'), findsOneWidget);
+            expect(
+              find.bySemanticsIdentifier(
+                RegExp(r'^mobile\.calendar\.event\.all-day\.'),
+              ),
+              findsOneWidget,
+            );
+            await tester.tap(
+              find.bySemanticsIdentifier(
+                RegExp(r'^mobile\.calendar\.event\.timed\.'),
+              ),
+            );
+            await _frames(tester);
+            final detail = find.bySemanticsIdentifier(
+              'mobile.calendar.event-detail',
+            );
+            expect(tester.getSemantics(detail).label, 'Timed shell regression');
+            await tester.binding.handlePopRoute();
+            await _frames(tester);
           }
           expect(find.byType(ErrorWidget), findsNothing);
           await tester.pump(const Duration(seconds: 6));

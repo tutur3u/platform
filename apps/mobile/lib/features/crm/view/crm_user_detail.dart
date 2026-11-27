@@ -75,10 +75,15 @@ class _CrmUserDetail extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          name,
-          textAlign: TextAlign.center,
-          style: tokens.typography.large.copyWith(fontWeight: FontWeight.w600),
+        Semantics(
+          identifier: 'mobile.contacts.detail',
+          child: Text(
+            name,
+            textAlign: TextAlign.center,
+            style: tokens.typography.large.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
         const SizedBox(height: AppLayout.sectionGap),
         if (fields.isNotEmpty)

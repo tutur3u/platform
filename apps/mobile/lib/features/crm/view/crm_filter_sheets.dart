@@ -51,10 +51,13 @@ class _UsersFilterSheetState extends State<_UsersFilterSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.commonFilters,
-            style: tokens.typography.large.copyWith(
-              fontWeight: FontWeight.w600,
+          Semantics(
+            identifier: 'mobile.contacts.filters',
+            child: Text(
+              l10n.commonFilters,
+              style: tokens.typography.large.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),

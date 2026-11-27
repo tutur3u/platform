@@ -38,7 +38,12 @@ extension _CalendarPageViews on _CalendarViewState {
             )
           else
             picker,
-        Expanded(child: _buildViewBody(context, state, firstDayOfWeek)),
+        Expanded(
+          child: Semantics(
+            identifier: 'mobile.calendar.view.${state.viewMode.name}',
+            child: _buildViewBody(context, state, firstDayOfWeek),
+          ),
+        ),
       ],
     );
   }

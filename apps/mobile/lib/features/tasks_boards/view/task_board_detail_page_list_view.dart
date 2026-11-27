@@ -161,13 +161,16 @@ class _TaskBoardEnhancedListViewState
           if (hasMoreTasks)
             footer
           else
-            AppStateMessage.inline(
-              key: const ValueKey('task-board-list-empty'),
-              icon: LucideIcons.listTodo,
-              title: context.l10n.taskBoardListEmptyTitle,
-              message: context.l10n.taskBoardDetailNoTasksInList,
-              actionLabel: context.l10n.taskBoardDetailCreateTask,
-              onAction: widget.onQuickAdd,
+            Semantics(
+              identifier: 'mobile.tasks.list-empty',
+              child: AppStateMessage.inline(
+                key: const ValueKey('task-board-list-empty'),
+                icon: LucideIcons.listTodo,
+                title: context.l10n.taskBoardListEmptyTitle,
+                message: context.l10n.taskBoardDetailNoTasksInList,
+                actionLabel: context.l10n.taskBoardDetailCreateTask,
+                onAction: widget.onQuickAdd,
+              ),
             ),
         ],
       );

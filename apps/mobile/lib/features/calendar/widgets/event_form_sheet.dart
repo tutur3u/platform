@@ -496,13 +496,16 @@ class _EventFormContentState extends State<_EventFormContent> {
           const SizedBox(height: 16),
 
           // Title.
-          AppTextField(
-            controller: _titleController,
-            textCapitalization: TextCapitalization.sentences,
-            autofocus: !_isEditing,
-            onChanged: (_) => setState(() {}),
-            label: l10n.calendarEventTitle,
-            placeholder: l10n.calendarEventTitleHint,
+          Semantics(
+            identifier: _isEditing ? null : 'mobile.calendar.event-create',
+            child: AppTextField(
+              controller: _titleController,
+              textCapitalization: TextCapitalization.sentences,
+              autofocus: !_isEditing,
+              onChanged: (_) => setState(() {}),
+              label: l10n.calendarEventTitle,
+              placeholder: l10n.calendarEventTitleHint,
+            ),
           ),
           const SizedBox(height: 12),
 

@@ -34,6 +34,7 @@ class _KanbanColumnHeader extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Semantics(
+              identifier: 'mobile.tasks.kanban-list.${list.id}',
               header: true,
               child: Text(
                 name == null || name.isEmpty
@@ -62,11 +63,14 @@ class _KanbanColumnHeader extends StatelessWidget {
               ),
               onPressed: onToggle,
             ),
-          AppIconButton(
-            key: ValueKey('kanban-add-${list.id}'),
-            tooltip: l10n.taskBoardDetailCreateTask,
-            icon: const Icon(LucideIcons.plus, size: 18),
-            onPressed: onCreate,
+          Semantics(
+            identifier: 'mobile.tasks.kanban-create.${list.id}',
+            child: AppIconButton(
+              key: ValueKey('kanban-add-${list.id}'),
+              tooltip: l10n.taskBoardDetailCreateTask,
+              icon: const Icon(LucideIcons.plus, size: 18),
+              onPressed: onCreate,
+            ),
           ),
           AppIconButton(
             tooltip: l10n.taskBoardDetailEditList,

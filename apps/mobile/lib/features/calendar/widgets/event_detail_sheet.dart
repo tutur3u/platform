@@ -96,11 +96,14 @@ class EventDetailContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      event.title ?? '',
-                      style: tokens.typography.title.copyWith(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
+                    Semantics(
+                      identifier: 'mobile.calendar.event-detail',
+                      child: Text(
+                        event.title ?? '',
+                        style: tokens.typography.title.copyWith(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),

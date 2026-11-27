@@ -53,9 +53,38 @@ void main() {
             : find.byType(WeekView),
       );
       final cubit = calendarContext.read<CalendarCubit>();
+      for (final (mode, label) in [
+        (CalendarViewMode.day, 'Day'),
+        (CalendarViewMode.threeDays, '3 Days'),
+        (CalendarViewMode.week, 'Week'),
+        (CalendarViewMode.month, 'Month'),
+      ]) {
+        chrome.state
+            .resolveForLocation(Routes.calendar)
+            .singleWhere((action) => action.id == 'calendar-view-selector')
+            .onPressed!();
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(label).last);
+        await tester.pumpAndSettle();
+        expect(cubit.state.viewMode, mode);
+        expect(
+          find.bySemanticsIdentifier('mobile.calendar.view.${mode.name}'),
+          findsOneWidget,
+        );
+      }
       await cubit.setViewMode(CalendarViewMode.agenda);
       await tester.pump();
       expect(cubit.state.viewMode, CalendarViewMode.agenda);
+      expect(
+        find.bySemanticsIdentifier('mobile.calendar.view.agenda'),
+        findsOneWidget,
+      );
+      await cubit.setViewMode(CalendarViewMode.year);
+      await tester.pump();
+      expect(
+        find.bySemanticsIdentifier('mobile.calendar.view.year'),
+        findsOneWidget,
+      );
       chrome.state.resetSectionForLocation(Routes.calendar)!();
       await tester.pump();
       expect(

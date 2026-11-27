@@ -100,6 +100,9 @@ class _Repository extends Mock implements CrmRepository {
     bool withPromotions = false,
   }) async {
     requests.add(query);
+    if (query == 'tuturuuu-e2e-no-match') {
+      return const CrmUsersResult(users: [], count: 0);
+    }
     final name = query.isEmpty ? 'Customer' : 'Ada Lovelace';
     return CrmUsersResult(
       users: [
@@ -226,6 +229,18 @@ void main() {
     expect(items.map((item) => item.id), ['crm-users', 'crm-audit']);
     expect(items.map((item) => item.label), ['Contacts', 'Audit log']);
 
+    chrome.state
+        .resolveForLocation(Routes.contacts)
+        .singleWhere((action) => action.id == 'crm-filters')
+        .onPressed!();
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsIdentifier('mobile.contacts.filters'),
+      findsOneWidget,
+    );
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
     final dock = chrome.state
         .resolveForLocation(Routes.contacts)
         .where((action) => action.inDock);
@@ -240,8 +255,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     expect(repository.requests, contains('Ada'));
-    expect(find.text('Ada Lovelace'), findsWidgets);
+    final row = find.bySemanticsIdentifier('mobile.contacts.row.Ada Lovelace');
+    expect(row, findsOneWidget);
     expect(find.text('Customer'), findsNothing);
+    search.searchController!.text = 'tuturuuu-e2e-no-match';
+    search.onSearchChanged!('tuturuuu-e2e-no-match');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(row, findsNothing);
+    expect(
+      find.bySemanticsIdentifier('mobile.contacts.search-empty'),
+      findsOneWidget,
+    );
+
+    search.searchController!.text = 'Ada';
+    search.onSearchChanged!('Ada');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(tester.getSemantics(row).label, contains('Ada Lovelace'));
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsIdentifier('mobile.contacts.detail'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

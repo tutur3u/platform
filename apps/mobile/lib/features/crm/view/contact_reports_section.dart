@@ -188,24 +188,27 @@ class _ContactReportsSectionState extends State<ContactReportsSection> {
             ),
           ],
         ),
-        ContactSectionList(
-          records: _records,
-          loading: _loading,
-          error: _error,
-          emptyMessage: _query.isEmpty && _cadence == ContactReportCadence.all
-              ? l10n.contactsReportEmptyList
-              : l10n.commonNoSearchResults,
-          onRefresh: () => _loadPage(_page),
-          onOpen: _loading
-              ? null
-              : (record) async {
-                  if (await widget.onOpen(record) && mounted) {
-                    await _loadPage(_page, replace: true);
-                  }
-                },
-          footer: _error == null && _pageCount > 1
-              ? _buildPager(context)
-              : null,
+        Semantics(
+          identifier: 'mobile.contacts.reports',
+          child: ContactSectionList(
+            records: _records,
+            loading: _loading,
+            error: _error,
+            emptyMessage: _query.isEmpty && _cadence == ContactReportCadence.all
+                ? l10n.contactsReportEmptyList
+                : l10n.commonNoSearchResults,
+            onRefresh: () => _loadPage(_page),
+            onOpen: _loading
+                ? null
+                : (record) async {
+                    if (await widget.onOpen(record) && mounted) {
+                      await _loadPage(_page, replace: true);
+                    }
+                  },
+            footer: _error == null && _pageCount > 1
+                ? _buildPager(context)
+                : null,
+          ),
         ),
       ],
     );

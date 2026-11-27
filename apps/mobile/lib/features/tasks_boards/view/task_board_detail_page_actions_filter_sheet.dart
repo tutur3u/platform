@@ -187,11 +187,14 @@ class _TaskBoardAdvancedFilterSheetState
               Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      context.l10n.taskBoardDetailFilters,
-                      style: shad.Theme.of(
-                        context,
-                      ).typography.large.copyWith(fontWeight: FontWeight.w600),
+                    child: Semantics(
+                      identifier: 'mobile.tasks.filters',
+                      child: Text(
+                        context.l10n.taskBoardDetailFilters,
+                        style: shad.Theme.of(context).typography.large.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                   shad.IconButton.ghost(

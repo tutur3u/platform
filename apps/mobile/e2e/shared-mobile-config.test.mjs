@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import {
   createTuturuuuMobileE2EConfig,
@@ -8,8 +11,13 @@ import {
   offlineReplayExecutor,
 } from './shared-mobile-config.ts';
 
-const accessToken = `header.${Buffer.from('{"exp":2000}').toString('base64url')}.signature`;
-const refreshToken = 'test-refresh-token';
+const opaqueValue = () => randomBytes(12).toString('base64url');
+const accessToken = [
+  opaqueValue(),
+  Buffer.from('{"exp":2000}').toString('base64url'),
+  opaqueValue(),
+].join('.');
+const refreshToken = opaqueValue();
 
 test('isolates the dev bundle and selects iOS and Android independently', () => {
   const config = createTuturuuuMobileE2EConfig({
@@ -113,5 +121,41 @@ test('uses the existing flavor callback and refuses expired or malformed tokens'
   assert.throws(
     () => mobileSessionCallback({ accessToken: 'a.b.c', refreshToken }, env),
     /unexpired/
+  );
+});
+
+
+test('discovers every pilot spec for both platforms without publishing identity values', () => {
+  const cwd = fileURLToPath(new URL('.', import.meta.url));
+  const { status, stdout, stderr, error } = spawnSync(
+    process.execPath,
+    ['node_modules/.bin/e2e', 'list', '--reporter', 'json'],
+    {
+      cwd,
+      encoding: 'utf8',
+      env: {
+        PATH: process.env.PATH,
+        CI: 'true',
+        E2E_TELEMETRY_DISABLED: '1',
+        E2E_SECRET_MOBILE_ACCESS_TOKEN: accessToken,
+        E2E_SECRET_MOBILE_REFRESH_TOKEN: refreshToken,
+      },
+    }
+  );
+  for (const value of [accessToken, refreshToken]) {
+    assert.equal((stdout + stderr).includes(value), false, 'Identity leaked');
+  }
+  assert.ifError(error);
+  assert.equal(status, 0, stderr);
+  assert.equal(stderr, '');
+
+  const { pairs } = JSON.parse(stdout);
+  const specs = ['auth', 'calendar', 'contacts', 'meet', 'tasks'];
+  const expected = ['ios', 'android'].flatMap((target) =>
+    specs.map((spec) => `tests/${spec}.e2e.ts [${target}]`)
+  );
+  assert.deepEqual(
+    pairs.map(({ file, target }) => `${file} [${target}]`).sort(),
+    expected.sort()
   );
 });

@@ -193,18 +193,24 @@ class _AgendaViewState extends State<AgendaView> {
             onDaySelected: widget.onDaySelected,
           );
         } else if (item is _EventItem) {
-          final eventCard = item.event.isAllDay
-              ? _AllDayBanner(
-                  event: item.event,
-                  isPast: item.isPast,
-                  displayDate: item.displayDate,
-                  onTap: () => widget.onEventTap(item.event),
-                )
-              : _AgendaEventCard(
-                  event: item.event,
-                  isPast: item.isPast,
-                  onTap: () => widget.onEventTap(item.event),
-                );
+          final eventCard = Semantics(
+            identifier:
+                'mobile.calendar.event.${item.event.id}.'
+                '${item.displayDate.year}-${item.displayDate.month}-'
+                '${item.displayDate.day}',
+            child: item.event.isAllDay
+                ? _AllDayBanner(
+                    event: item.event,
+                    isPast: item.isPast,
+                    displayDate: item.displayDate,
+                    onTap: () => widget.onEventTap(item.event),
+                  )
+                : _AgendaEventCard(
+                    event: item.event,
+                    isPast: item.isPast,
+                    onTap: () => widget.onEventTap(item.event),
+                  ),
+          );
           final wsId = item.event.wsId;
           return wsId == null
               ? eventCard

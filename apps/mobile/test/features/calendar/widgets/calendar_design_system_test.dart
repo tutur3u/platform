@@ -59,6 +59,10 @@ void main() {
     );
     await tester.tap(find.text('Open calendar editor'));
     await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsIdentifier('mobile.calendar.event-create'),
+      findsOneWidget,
+    );
     expect(find.byType(AppToggleRow), findsOneWidget);
     expect(find.byType(TextField), findsNWidgets(3));
     tester.testTextInput.hide();

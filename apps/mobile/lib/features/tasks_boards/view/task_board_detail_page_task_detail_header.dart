@@ -110,6 +110,7 @@ class _TaskDetailTitleFieldState extends State<_TaskDetailTitleField> {
         ? l10n.taskBoardDetailUntitledTask
         : _savedTitle;
     return Semantics(
+      identifier: 'mobile.tasks.detail',
       button: widget.enabled,
       hint: l10n.taskDetailEditTitle,
       child: GestureDetector(

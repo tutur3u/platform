@@ -41,29 +41,32 @@ class ContactListRow extends StatelessWidget {
       phone: user.phone,
     );
     final tone = user.requireAttention ? AppTone.warning : AppTone.info;
-    return AppRichRow(
-      title: name,
-      semanticLabel: name,
-      selected: selected,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      leading: NetworkAvatar(
-        radius: 20,
-        backgroundColor: tone.fill(tokens.colorScheme),
-        avatarUrl: user.avatarUrl,
-        child: Text(
-          contactInitials(name),
-          style: tokens.typography.xSmall.copyWith(
-            color: tone.foreground(tokens.colorScheme),
-            fontWeight: FontWeight.w700,
+    return Semantics(
+      identifier: 'mobile.contacts.row.${user.id}',
+      child: AppRichRow(
+        title: name,
+        semanticLabel: name,
+        selected: selected,
+        onTap: onTap,
+        onLongPress: onLongPress,
+        leading: NetworkAvatar(
+          radius: 20,
+          backgroundColor: tone.fill(tokens.colorScheme),
+          avatarUrl: user.avatarUrl,
+          child: Text(
+            contactInitials(name),
+            style: tokens.typography.xSmall.copyWith(
+              color: tone.foreground(tokens.colorScheme),
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
+        subtitle: secondary,
+        meta: [
+          if (phone != null) AppMetaItem(icon: LucideIcons.phone, label: phone),
+        ],
+        trailing: _statusBadge(l10n),
       ),
-      subtitle: secondary,
-      meta: [
-        if (phone != null) AppMetaItem(icon: LucideIcons.phone, label: phone),
-      ],
-      trailing: _statusBadge(l10n),
     );
   }
 

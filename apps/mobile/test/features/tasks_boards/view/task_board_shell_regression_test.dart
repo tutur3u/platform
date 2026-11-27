@@ -223,9 +223,11 @@ void main() {
   usePhoneSurface();
 
   testWidgets(
-    'Filters chosen from the header overflow opens the filter sheet',
+    'Filtering for urgent tasks shows an empty list until filters clear',
     (tester) async {
       await _pumpBoardInShell(tester);
+      final task = find.bySemanticsIdentifier('mobile.tasks.list-task.task-1');
+      expect(task, findsOneWidget);
       // The board registers more actions than the header shows, so Filters
       // lives in the overflow menu.
       expect(
@@ -249,7 +251,42 @@ void main() {
         findsOneWidget,
         reason: '${_texts()}',
       );
-      expect(find.text('Apply filters'), findsOneWidget);
+      expect(
+        find.bySemanticsIdentifier('mobile.tasks.filters'),
+        findsOneWidget,
+      );
+      final priority = find.text('Priority');
+      final section = tester
+          .element(priority)
+          .findAncestorWidgetOfExactType<Column>()!;
+      final picker = find.descendant(
+        of: find.byWidget(section),
+        matching: find.text('None'),
+      );
+      await tester.ensureVisible(picker);
+      await tester.tap(picker);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Urgent'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Apply filters').last);
+      await tester.pumpAndSettle();
+      final apply = find.text('Apply filters');
+      await tester.ensureVisible(apply);
+      await tester.tap(apply);
+      await tester.pumpAndSettle();
+      expect(task, findsNothing);
+      expect(
+        find.bySemanticsIdentifier('mobile.tasks.list-empty'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Clear filters'));
+      await tester.pumpAndSettle();
+      expect(task, findsOneWidget);
+      await tester.tap(task);
+      await tester.pumpAndSettle();
+      expect(find.bySemanticsIdentifier('mobile.tasks.detail'), findsOneWidget);
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     },
   );
@@ -334,6 +371,24 @@ void main() {
 
   testWidgets('Kanban hides lists without tasks by default', (tester) async {
     await _pumpBoardInShell(tester, initialView: TaskBoardDetailView.kanban);
+    expect(
+      find
+          .bySemanticsIdentifier(RegExp(r'^mobile\.tasks\.kanban-list\.'))
+          .hitTestable()
+          .first,
+      findsOneWidget,
+    );
+    await tester.tap(
+      find
+          .bySemanticsIdentifier(RegExp(r'^mobile\.tasks\.kanban-create\.'))
+          .hitTestable()
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('task-editor-save')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('task-editor-cancel')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('task-editor-save')), findsNothing);
     expect(find.text('QA'), findsWidgets, reason: '${_texts()}');
     expect(find.text('Backlog'), findsNothing, reason: '${_texts()}');
     await tester.pumpWidget(const SizedBox.shrink());
