@@ -310,7 +310,6 @@ function CallShellContent({
     requiresAccount,
     canManage,
     enabled: liveTools,
-    // Activity runners reach only activities when tool browsing is host-only.
     ...toolAccess,
     canRunActivities: runsRoomActivities(state),
     canDraftWithMira: !requiresAccount && canReadWorkspace,

@@ -5336,13 +5336,11 @@
           "title_flashcards": "Draft flashcards with Mira",
           "title_game": "Draft game rounds with Mira",
           "title_icebreaker": "Draft icebreaker with Mira",
-          "title_poll": "Draft poll with Mira",
           "topic_label": "Topic",
           "topic_placeholder_assessment": "For example, Key concepts from cell respiration for grade 9",
           "topic_placeholder_flashcards": "For example, Photosynthesis vocabulary for grade 8 biology",
           "topic_placeholder_game": "For example, World capitals quick-fire trivia",
           "topic_placeholder_icebreaker": "For example, Lighthearted kickoff for a design review",
-          "topic_placeholder_poll": "For example, Which topic should we review next?",
           "trigger": "Draft with Mira"
         },
         "cancel": "Cancel",

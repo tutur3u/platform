@@ -14,9 +14,10 @@ import { MeetCallAccessError } from '../../lib/call-access';
 import { billMeetChat } from '../chat-billing';
 import { getMeetChatModel } from '../chat-model';
 import { resolveMeetClassRole } from '../class-role';
-import type {
-  MeetCallRouteAccess,
-  SignedInMeetCallAccess,
+import {
+  callRoomService,
+  type MeetCallRouteAccess,
+  type SignedInMeetCallAccess,
 } from '../room-service';
 import {
   buildMiraActivityPrompt,
@@ -40,11 +41,20 @@ const envConfigSchema = z.object({
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().min(1),
 });
 
+const roomAuthSchema = z.object({
+  ok: z.literal(true),
+  admitted: z.boolean(),
+});
+
 function requireSignedInAccess(
   access: MeetCallRouteAccess
 ): SignedInMeetCallAccess {
   if (('guest' in access && access.guest) || !access.user?.id) {
-    throw new MeetCallAccessError(401, 'Sign in to use Mira', 'MIRA_AUTH_REQUIRED');
+    throw new MeetCallAccessError(
+      401,
+      'Sign in to use Mira',
+      'MIRA_AUTH_REQUIRED'
+    );
   }
   return access;
 }
@@ -71,10 +81,13 @@ function unavailableError(reason?: string): MeetCallAccessError {
  * 2. Strict Zod validation on prompt length, item count, and activity kind.
  * 3. Cloudflare Meet AI workspace gate (MEET_AI_DISABLED, kill switch,
  *    protected/disabled workspaces, allow-all / allowlist).
- * 4. Private Mira consent + 18+ adult-only workspace attestation & paid/staff
- *    entitlement via readMiraDemoAuthority.
- * 5. Billing charged to privateMiraBillingWorkspace(authority.payer, userId).
- * 6. Strict Zod validation of model JSON output before returning.
+ * 4. Room DO authorization (`activities.authorize`: live meeting, admitted or
+ *    approved caller, `canMeetRealtimeRunActivities`) before consent and again
+ *    before/after generation.
+ * 5. Private Mira consent + 18+ adult-only workspace attestation & paid/staff
+ *    entitlement via `readMiraDemoAuthority` with room-verified `admitted`.
+ * 6. Billing charged to `privateMiraBillingWorkspace(authority.payer, userId)`.
+ * 7. Strict Zod validation of model JSON output before returning.
  */
 export async function draftMeetLiveActivity(
   rawAccess: MeetCallRouteAccess,
@@ -86,11 +99,13 @@ export async function draftMeetLiveActivity(
   if (!access.canReadWorkspace) {
     throw unavailableError();
   }
+  let coHost = false;
   if (!access.isHost) {
     const role = await resolveMeetClassRole(access);
     if (!role.coHost) {
       throw unavailableError();
     }
+    coHost = true;
   }
 
   const cloudflare = await getCloudflareContext({ async: true }).catch(
@@ -104,6 +119,20 @@ export async function draftMeetLiveActivity(
     throw unavailableError();
   }
 
+  const authorizeRoom = async () => {
+    const raw = await callRoomService(
+      access,
+      { action: 'activities.authorize' },
+      coHost ? { coHost: true } : undefined
+    );
+    const parsed = roomAuthSchema.safeParse(raw);
+    if (!parsed.success) {
+      throw unavailableError();
+    }
+    return parsed.data;
+  };
+
+  const roomAuth = await authorizeRoom();
   const consent = await requirePrivateMiraChoice(access);
   const userId = access.user.id;
   const authority = await readMiraDemoAuthority({
@@ -111,7 +140,7 @@ export async function draftMeetLiveActivity(
     workspaceId: access.meeting.ws_id,
     meetingId: access.meeting.id,
     workspaceMember: access.canReadWorkspace,
-    admitted: true,
+    admitted: roomAuth.admitted,
     disabledBinding: config.data.MEET_AI_DISABLED,
   });
   if (!authority.allowed) {
@@ -119,6 +148,7 @@ export async function draftMeetLiveActivity(
   }
 
   const checkConsent = async () => {
+    await authorizeRoom();
     const current = await requirePrivateMiraChoice(access);
     if (current.revision !== consent.revision) {
       throw new MeetCallAccessError(

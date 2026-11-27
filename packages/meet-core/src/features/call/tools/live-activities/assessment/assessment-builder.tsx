@@ -134,13 +134,22 @@ export function AssessmentBuilder({
                   0,
                   MAX_ASSESSMENT_ITEMS - current.length
                 );
-                const added = draft.items.slice(0, remaining).map((item) => ({
-                  key: crypto.randomUUID(),
-                  prompt: item.prompt,
-                  kind: item.kind,
-                  options: item.kind === 'choice' ? item.options : ['', ''],
-                  answer: item.kind === 'choice' ? item.answer : undefined,
-                }));
+                const added = draft.items
+                  .slice(0, remaining)
+                  .map(
+                    (item: {
+                      prompt: string;
+                      kind: 'short' | 'long' | 'choice';
+                      options: string[];
+                      answer?: number;
+                    }) => ({
+                      key: crypto.randomUUID(),
+                      prompt: item.prompt,
+                      kind: item.kind,
+                      options: item.kind === 'choice' ? item.options : ['', ''],
+                      answer: item.kind === 'choice' ? item.answer : undefined,
+                    })
+                  );
                 return [...current, ...added];
               })
             }

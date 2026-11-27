@@ -8,8 +8,7 @@ export type MeetLiveActivityDraftKind =
   | 'flashcards'
   | 'game'
   | 'icebreaker'
-  | 'assessment'
-  | 'poll';
+  | 'assessment';
 
 export type MeetLiveActivityDraftDifficulty =
   | 'beginner'
@@ -53,11 +52,6 @@ export type MeetLiveActivityDraftResult =
         options: string[];
         answer?: number;
       }>;
-    }
-  | {
-      kind: 'poll';
-      question: string;
-      options: string[];
     };
 
 export function draftMeetLiveActivity(

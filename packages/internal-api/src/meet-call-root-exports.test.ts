@@ -7,6 +7,7 @@ import * as internalApi from './index';
 const MEET_CALL_ROOT_EXPORTS = [
   'askMeetAssistant',
   'discardMeetChatFile',
+  'draftMeetLiveActivity',
   'listMeetAssistantReviews',
   'readMeetChatFile',
   'uploadMeetChatFile',

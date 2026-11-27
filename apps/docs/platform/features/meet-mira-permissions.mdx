@@ -22,6 +22,7 @@ Approved access rules:
 | Capability | Rule |
 | --- | --- |
 | Draft polls and action items | Mira drafts; a host or co-host publishes. Nothing posts by itself. |
+| Draft live activities | Mira drafts flashcards, game rounds, icebreakers, and assessments for hosts and workspace co-hosts only; nothing publishes until applied and saved in the editor. |
 | Edit docs | Allowed on room-shared docs only; every edit is attributed "Mira for {person}" and can be undone. |
 | Suggest code | Mira's suggestions appear as a diff; one person must accept. No direct writes. |
 | Read tutor chat | Owner-only opt-in. Each person can share their own tutor chat with their own Private Mira for this meeting (default off, revocable, shown as a chip). A host can never grant access to someone else's private data, and Room Mira never reads private data. Under-18 and unconfirmed accounts: never. |
@@ -33,6 +34,21 @@ Approved access rules:
   someone who manages the room's polls launches them in Polls: the host, or a
   co-host with participant management, which the room checks on `poll.launch`. Action items reach the room only
   through notes review or a document edit, both of which a person approves.
+- **Live activities (`POST /api/meet-call/[meetingId]/live-activities/mira-draft`).**
+  Host and workspace co-host drafting for `flashcards`, `game`, `icebreaker`,
+  and `assessment` fails closed at every boundary: anonymous guests are refused
+  (`401`, `MIRA_AUTH_REQUIRED`), the room Durable Object authorizes
+  `activities.authorize` before consent and again before and after generation
+  (refusing ended rooms with `409`, unapproved callers or non-activity managers
+  with `403`, and passing the room-verified `admitted` status to
+  `readMiraDemoAuthority`), the Cloudflare Meet AI workspace gate
+  (`MEET_AI_DISABLED`, `MEET_AI_ALL_WORKSPACES`,
+  `MEET_AI_PROTECTED_WORKSPACE_IDS`, denylist/allowlist) and 18+ adult-only
+  workspace attestation (`MIRA_WORKSPACE_UNAVAILABLE`) are enforced, and
+  credits are billed to `privateMiraBillingWorkspace(authority.payer, userId)`
+  (Tuturuuu root workspace for verified staff; personal workspace for paid
+  accounts; `MIRA_CREDITS_UNAVAILABLE` when exhausted). Model output is
+  strictly validated with Zod before returning (`502`, `MIRA_INVALID_DRAFT`).
 - **Documents.** The room records a Mira edit only for a tab that exists in the
   meeting's shared document set, and only while the requester's Private Mira
   choice is the revision the server checked. Each edit stores the requester's
@@ -173,3 +189,10 @@ on, and Private Mira's poll launch moves to the Polls panel for the host.
 - `packages/meet-core/src/features/call/components/mira-private-share.test.tsx`
   and `document-edits-attribution.test.tsx`: owner switch, chip with one-tap
   revoke, and the **Mira for {person}** label.
+- `packages/meet-core/src/features/call/server/live-activities/mira-activity-draft.test.ts`,
+  `packages/meet-core/src/routes/api/meet-call/[meetingId]/live-activities/mira-draft/route.test.ts`,
+  and `packages/realtime/src/meet/room-activities-authorize.test.ts`: live
+  activity Mira drafting guest refusal, `activities.authorize` ended/unapproved
+  refusal before billing, 18+ attestation, workspace AI gates, staff vs paid
+  billing workspace resolution, Zod bounds, malformed JSON rejection, and route
+  origin/body-limit (`413`) checks.

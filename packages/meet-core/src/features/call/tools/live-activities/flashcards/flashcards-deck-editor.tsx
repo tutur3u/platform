@@ -105,11 +105,13 @@ export function FlashcardsDeckEditor({
             onApply={(draft) =>
               setDrafts((current) => {
                 const remaining = Math.max(0, MAX_FLASHCARDS - current.length);
-                const added = draft.cards.slice(0, remaining).map((card) => ({
-                  key: crypto.randomUUID(),
-                  front: card.front,
-                  back: card.back,
-                }));
+                const added = draft.cards
+                  .slice(0, remaining)
+                  .map((card: { front: string; back: string }) => ({
+                    key: crypto.randomUUID(),
+                    front: card.front,
+                    back: card.back,
+                  }));
                 return [...current, ...added];
               })
             }

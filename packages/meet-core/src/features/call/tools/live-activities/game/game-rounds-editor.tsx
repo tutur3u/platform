@@ -184,13 +184,22 @@ export function GameRoundsEditor({
             onApply={(draft) =>
               setDrafts((current) => {
                 const remaining = Math.max(0, MAX_GAME_ROUNDS - current.length);
-                const added = draft.rounds.slice(0, remaining).map((round) => ({
-                  key: crypto.randomUUID(),
-                  prompt: round.prompt,
-                  options: round.options,
-                  answer: round.answer,
-                  seconds: String(round.seconds),
-                }));
+                const added = draft.rounds
+                  .slice(0, remaining)
+                  .map(
+                    (round: {
+                      prompt: string;
+                      options: string[];
+                      answer: number;
+                      seconds: number;
+                    }) => ({
+                      key: crypto.randomUUID(),
+                      prompt: round.prompt,
+                      options: round.options,
+                      answer: round.answer,
+                      seconds: String(round.seconds),
+                    })
+                  );
                 return [...current, ...added];
               })
             }

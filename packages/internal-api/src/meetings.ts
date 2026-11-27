@@ -7,6 +7,7 @@ import {
 export * from './meet-ai';
 export * from './meet-call';
 export * from './meet-live';
+export * from './meet-live-activities';
 export * from './meet-short-links';
 export * from './meet-transcript';
 

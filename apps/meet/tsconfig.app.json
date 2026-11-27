@@ -80,6 +80,7 @@
     "src/app/api/meet-call/[meetingId]/guest/route.ts",
     "src/app/api/meet-call/[meetingId]/guest/human-check/route.ts",
     "src/app/api/meet-call/[meetingId]/guest/human-check/verify/route.ts",
+    "src/app/api/meet-call/[meetingId]/live-activities/mira-draft/route.ts",
     "src/app/api/meet-call/[meetingId]/mira-room/route.ts",
     "src/app/api/meet-call/[meetingId]/transcript-consent/route.ts",
     "src/app/api/meet-call/[meetingId]/polls/route.ts",

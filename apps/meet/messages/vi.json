@@ -4987,13 +4987,11 @@
           "title_flashcards": "Soạn thẻ ghi nhớ cùng Mira",
           "title_game": "Soạn vòng trò chơi cùng Mira",
           "title_icebreaker": "Soạn câu hỏi phá băng cùng Mira",
-          "title_poll": "Soạn bình chọn cùng Mira",
           "topic_label": "Chủ đề",
           "topic_placeholder_assessment": "Ví dụ: Các khái niệm trọng tâm về hô hấp tế bào lớp 9",
           "topic_placeholder_flashcards": "Ví dụ: Thuật ngữ quang hợp cho môn Sinh học lớp 8",
           "topic_placeholder_game": "Ví dụ: Đố nhanh thủ đô các nước trên thế giới",
           "topic_placeholder_icebreaker": "Ví dụ: Câu hỏi mở đầu nhẹ nhàng cho buổi góp ý thiết kế",
-          "topic_placeholder_poll": "Ví dụ: Chủ đề nào cả lớp muốn ôn tiếp theo?",
           "trigger": "Soạn cùng Mira"
         },
         "options": {

@@ -18,6 +18,7 @@ import {
   personalChatReceipt,
   personalChatReceiptCommand,
 } from './personal-chat-receipts';
+import { canMeetRealtimeRunActivities } from './permissions';
 import type { RoomBreakouts } from './room-breakouts';
 import type { RoomWhiteboard } from './room-whiteboard';
 import { roomBudgetSummary } from './room-budget';
@@ -132,6 +133,7 @@ const roomCommand = z.union([
     }),
     z.object({ action: z.literal('recording.read'), sessionId: z.uuid() }),
     z.object({ action: z.literal('recording.authorize'), sessionId: z.uuid() }),
+    z.object({ action: z.literal('activities.authorize') }),
     z.object({
       action: z.literal('ai.reserve'),
       messageId: z.string().max(200),
@@ -238,6 +240,12 @@ export function roomService(
     token.scopes.includes('meet:workspace-member');
   const admin = token.role === 'host';
   const { message } = parsed.data;
+  if (message.action === 'activities.authorize') {
+    if (snapshot.ended) return fail('Meeting has ended', 409);
+    if (!admitted && !snapshot.approved?.[accountId]) return fail('Forbidden');
+    if (!canMeetRealtimeRunActivities(token)) return fail('Forbidden');
+    return { state: snapshot, body: { ok: true, admitted: true } };
+  }
   if (message.action === 'transcription.speaker') {
     if (!admin) return fail('Only the host can attribute transcription');
     if (locksClientTranscription(snapshot))

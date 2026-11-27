@@ -29,7 +29,7 @@ import {
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
-import { ToolAction } from '../../tool-ui';
+import { ToolAction } from '../tool-ui';
 import { MiraActivityDraftPreview } from './mira-activity-draft-preview';
 
 const ITEM_COUNTS = ['3', '5', '8', '10', '12'] as const;
@@ -39,27 +39,77 @@ const DIFFICULTIES: readonly MeetLiveActivityDraftDifficulty[] = [
   'advanced',
 ];
 
-function mapDraftErrorKey(error: unknown): string {
+type MiraDraftTranslator = ReturnType<
+  typeof useTranslations<'meet.call.live_activities.mira_draft'>
+>;
+
+function titleForKind(
+  t: MiraDraftTranslator,
+  kind: MeetLiveActivityDraftKind
+): string {
+  switch (kind) {
+    case 'flashcards':
+      return t('title_flashcards');
+    case 'game':
+      return t('title_game');
+    case 'icebreaker':
+      return t('title_icebreaker');
+    case 'assessment':
+      return t('title_assessment');
+  }
+}
+
+function topicPlaceholderForKind(
+  t: MiraDraftTranslator,
+  kind: MeetLiveActivityDraftKind
+): string {
+  switch (kind) {
+    case 'flashcards':
+      return t('topic_placeholder_flashcards');
+    case 'game':
+      return t('topic_placeholder_game');
+    case 'icebreaker':
+      return t('topic_placeholder_icebreaker');
+    case 'assessment':
+      return t('topic_placeholder_assessment');
+  }
+}
+
+function difficultyLabel(
+  t: MiraDraftTranslator,
+  level: MeetLiveActivityDraftDifficulty
+): string {
+  switch (level) {
+    case 'beginner':
+      return t('difficulty_beginner');
+    case 'intermediate':
+      return t('difficulty_intermediate');
+    case 'advanced':
+      return t('difficulty_advanced');
+  }
+}
+
+function draftErrorMessage(t: MiraDraftTranslator, error: unknown): string {
   if (error instanceof InternalApiError) {
     switch (error.code) {
       case 'MIRA_CREDITS_UNAVAILABLE':
-        return 'errors.credits';
+        return t('errors.credits');
       case 'MIRA_CONSENT_REQUIRED':
       case 'MIRA_PRIVATE_CONSENT_UNAVAILABLE':
-        return 'errors.consent';
+        return t('errors.consent');
       case 'MIRA_WORKSPACE_UNAVAILABLE':
-        return 'errors.workspace';
+        return t('errors.workspace');
       case 'MIRA_INVALID_DRAFT':
-        return 'errors.invalid_draft';
+        return t('errors.invalid_draft');
       case 'MIRA_AUTH_REQUIRED':
       case 'MIRA_DRAFT_UNAVAILABLE':
-        return 'errors.unavailable';
+        return t('errors.unavailable');
     }
     if (error.status === 401 || error.status === 403) {
-      return 'errors.unavailable';
+      return t('errors.unavailable');
     }
   }
-  return 'errors.generic';
+  return t('errors.generic');
 }
 
 function MiraActivityDraftForm<K extends MeetLiveActivityDraftKind>({
@@ -123,7 +173,7 @@ function MiraActivityDraftForm<K extends MeetLiveActivityDraftKind>({
           value={prompt}
           maxLength={1000}
           rows={3}
-          placeholder={t(`topic_placeholder_${kind}`)}
+          placeholder={topicPlaceholderForKind(t, kind)}
           onChange={(event) => setPrompt(event.target.value)}
         />
       </div>
@@ -133,7 +183,10 @@ function MiraActivityDraftForm<K extends MeetLiveActivityDraftKind>({
           <div className="space-y-1.5">
             <Label htmlFor={`${fieldId}-count`}>{t('count_label')}</Label>
             <Select value={count} onValueChange={setCount}>
-              <SelectTrigger id={`${fieldId}-count`} aria-label={t('count_label')}>
+              <SelectTrigger
+                id={`${fieldId}-count`}
+                aria-label={t('count_label')}
+              >
                 <SelectValue placeholder={t('count_placeholder')} />
               </SelectTrigger>
               <SelectContent>
@@ -185,7 +238,7 @@ function MiraActivityDraftForm<K extends MeetLiveActivityDraftKind>({
             <SelectContent>
               {DIFFICULTIES.map((level) => (
                 <SelectItem key={level} value={level}>
-                  {t(`difficulty_${level}`)}
+                  {difficultyLabel(t, level)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -199,7 +252,7 @@ function MiraActivityDraftForm<K extends MeetLiveActivityDraftKind>({
           className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-destructive text-xs"
         >
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
-          <span>{t(mapDraftErrorKey(mutation.error))}</span>
+          <span>{draftErrorMessage(t, mutation.error)}</span>
         </div>
       )}
 
@@ -209,7 +262,11 @@ function MiraActivityDraftForm<K extends MeetLiveActivityDraftKind>({
         <Button type="button" variant="outline" onClick={onClose}>
           {t('cancel')}
         </Button>
-        <Button type="submit" variant={draft ? 'outline' : 'default'} disabled={!canGenerate}>
+        <Button
+          type="submit"
+          variant={draft ? 'outline' : 'default'}
+          disabled={!canGenerate}
+        >
           {mutation.isPending ? (
             <Loader2 className="mr-1.5 size-4 animate-spin motion-reduce:animate-none" />
           ) : (
@@ -263,7 +320,7 @@ export function MiraActivityDraftDialog<K extends MeetLiveActivityDraftKind>({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{t(`title_${kind}`)}</DialogTitle>
+            <DialogTitle>{titleForKind(t, kind)}</DialogTitle>
             <DialogDescription>{t('description')}</DialogDescription>
           </DialogHeader>
           {open && (
