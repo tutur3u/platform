@@ -263,6 +263,7 @@ export async function generateWorldDraft(
   });
 
   let dispatched = false;
+  let settlementStarted = false;
   try {
     signal.throwIfAborted();
     const dailyCheck = await verifyDailyCapacityWithActiveHolds({
@@ -323,6 +324,7 @@ export async function generateWorldDraft(
       console.warn('Worlds generation usage exceeded the credit reservation', {
         runId,
       });
+    settlementStarted = true;
     await settleAiStudioRun({
       ...result.usage,
       runId,
@@ -339,7 +341,7 @@ export async function generateWorldDraft(
       console.warn('Worlds generation did not return a draft', { runId });
     throw error;
   } finally {
-    if (!dispatched) {
+    if (!settlementStarted) {
       await settleAiStudioRun({
         runId,
         actualCredits: 0,

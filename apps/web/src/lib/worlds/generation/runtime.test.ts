@@ -205,6 +205,20 @@ test('decodes a Gemini SSE response and settles before returning the draft', asy
   );
 });
 
+test('settles zero credits when the provider dispatch throws', async () => {
+  mocks.stream.mockImplementationOnce(() => {
+    throw new Error('Provider unavailable');
+  });
+  await expect(
+    generateWorldDraft(scope, request, new AbortController().signal)
+  ).rejects.toThrow('Provider unavailable');
+  expect(mocks.settle).toHaveBeenCalledExactlyOnceWith({
+    runId: 'run',
+    actualCredits: 0,
+    status: 'failed',
+  });
+});
+
 test('blocks the provider SDK from opening a continuation request', async () => {
   const { streamText } = await vi.importActual<typeof import('ai')>('ai');
   mocks.stream.mockImplementation(streamText);
@@ -224,10 +238,14 @@ test('blocks the provider SDK from opening a continuation request', async () => 
     generateWorldDraft(scope, request, new AbortController().signal)
   ).rejects.toThrow('Worlds model usage unavailable');
   expect(transport).toHaveBeenCalledOnce();
-  expect(mocks.settle).not.toHaveBeenCalled();
+  expect(mocks.settle).toHaveBeenCalledExactlyOnceWith({
+    runId: 'run',
+    actualCredits: 0,
+    status: 'failed',
+  });
 });
 
-test('aborts the Gemini HTTP request and keeps an unreported attempt fenced', async () => {
+test('aborts the Gemini HTTP request and settles an unreported attempt', async () => {
   const { streamText } = await vi.importActual<typeof import('ai')>('ai');
   mocks.stream.mockImplementation(streamText);
   const controller = new AbortController();
@@ -245,5 +263,9 @@ test('aborts the Gemini HTTP request and keeps an unreported attempt fenced', as
   ).rejects.toThrow();
   expect(transport).toHaveBeenCalledOnce();
   expect(transport.mock.calls[0]?.[1].signal?.aborted).toBe(true);
-  expect(mocks.settle).not.toHaveBeenCalled();
+  expect(mocks.settle).toHaveBeenCalledExactlyOnceWith({
+    runId: 'run',
+    actualCredits: 0,
+    status: 'aborted',
+  });
 });
