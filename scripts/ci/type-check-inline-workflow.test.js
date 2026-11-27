@@ -498,10 +498,10 @@ test('feature branches and main supersede while production and manual attempts s
     });
   assert.equal(group({}), group({ sha: 'latest', run_id: 2 }));
   assert.equal(cancel({}), true);
-  // Main pushes supersede (scripts/ci/main-supersession.json); a newer main
-  // run diffs from the last green main commit.
-  assert.equal(cancel({ ref: 'refs/heads/main' }), true);
-  assert.equal(
+  // Main pushes keep independent per-SHA runs so release pins retain
+  // exact-SHA Type Check evidence.
+  assert.equal(cancel({ ref: 'refs/heads/main' }), false);
+  assert.notEqual(
     group({ ref: 'refs/heads/main' }),
     group({ ref: 'refs/heads/main', sha: 'latest', run_id: 2 })
   );

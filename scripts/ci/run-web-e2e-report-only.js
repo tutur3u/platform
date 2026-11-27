@@ -9,6 +9,108 @@ const {
 } = require('./hosted-web-e2e-admission');
 const { safeFailureSuffix } = require('./secret-safe-diagnostics.js');
 
+const BLOCKING_SMOKE_SPECS = ['auth.noauth.spec.ts'];
+const SMOKE_REPORT_RELATIVE_PATH = 'test-results/smoke-results.json';
+
+function normalizeSpecFile(file) {
+  if (typeof file !== 'string') return '';
+  return file
+    .replaceAll('\\', '/')
+    .replace(/^\.\//, '')
+    .replace(/^apps\/web\//, '')
+    .replace(/^e2e\//, '');
+}
+
+function collectSuiteSpecOutcomes(suites, outcomes, inheritedFile = '') {
+  if (!Array.isArray(suites)) return;
+  for (const suite of suites) {
+    const file = normalizeSpecFile(suite?.file || inheritedFile);
+    if (Array.isArray(suite?.specs)) {
+      for (const spec of suite.specs) {
+        const specFile = normalizeSpecFile(spec?.file || file);
+        if (!specFile) continue;
+        const entry = outcomes.get(specFile) ?? { total: 0, failed: 0 };
+        const tests = Array.isArray(spec?.tests) ? spec.tests : [];
+        for (const t of tests) {
+          entry.total += 1;
+          const ok =
+            t?.status === 'expected' ||
+            (t?.status === undefined && spec?.ok === true);
+          if (!ok) entry.failed += 1;
+        }
+        outcomes.set(specFile, entry);
+      }
+    }
+    collectSuiteSpecOutcomes(suite?.suites, outcomes, file);
+  }
+}
+
+function evaluateSmokeReport(reportPath, blockingSpecs = BLOCKING_SMOKE_SPECS) {
+  if (!fs.existsSync(reportPath)) {
+    return {
+      blockingPassed: false,
+      reason: 'missing smoke JSON report',
+      missingBlockingSpecs: blockingSpecs.map(normalizeSpecFile),
+      failedBlockingSpecs: [],
+      failedReportOnlySpecs: [],
+    };
+  }
+  let report;
+  try {
+    report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  } catch {
+    return {
+      blockingPassed: false,
+      reason: 'unreadable smoke JSON report',
+      missingBlockingSpecs: blockingSpecs.map(normalizeSpecFile),
+      failedBlockingSpecs: [],
+      failedReportOnlySpecs: [],
+    };
+  }
+
+  const outcomes = new Map();
+  collectSuiteSpecOutcomes(report?.suites, outcomes);
+  const blockingSet = new Set(blockingSpecs.map(normalizeSpecFile));
+  const missingBlockingSpecs = [];
+  const failedBlockingSpecs = [];
+  const failedReportOnlySpecs = [];
+
+  for (const spec of blockingSet) {
+    const entry = outcomes.get(spec);
+    if (!entry || entry.total === 0) {
+      missingBlockingSpecs.push(spec);
+    } else if (entry.failed > 0) {
+      failedBlockingSpecs.push(spec);
+    }
+  }
+  for (const [spec, entry] of outcomes.entries()) {
+    if (!blockingSet.has(spec) && entry.failed > 0) {
+      failedReportOnlySpecs.push(spec);
+    }
+  }
+
+  const blockingPassed =
+    missingBlockingSpecs.length === 0 && failedBlockingSpecs.length === 0;
+  return {
+    blockingPassed,
+    reason: blockingPassed
+      ? 'all blocking smoke specs passed'
+      : [
+          missingBlockingSpecs.length > 0
+            ? `missing blocking specs: ${missingBlockingSpecs.join(', ')}`
+            : null,
+          failedBlockingSpecs.length > 0
+            ? `failed blocking specs: ${failedBlockingSpecs.join(', ')}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join('; '),
+    missingBlockingSpecs,
+    failedBlockingSpecs,
+    failedReportOnlySpecs,
+  };
+}
+
 function plan(env = process.env, home = os.homedir()) {
   assertAdmission(env);
   if (!env.GITHUB_WORKSPACE || !env.RUNNER_TEMP)
@@ -40,26 +142,24 @@ function plan(env = process.env, home = os.homedir()) {
       DOCKER_WEB_SKIP_BLUE_GREEN_SUPPORT_BUILD: '0',
       PORTLESS_PORT: '1355',
       PORTLESS_STATE_DIR: path.join(env.RUNNER_TEMP, project, 'portless'),
+      PLAYWRIGHT_JSON_OUTPUT_NAME: SMOKE_REPORT_RELATIVE_PATH,
     },
   };
 }
 
 function argsFor(mode) {
-  const common = [
-    '--grep-invert',
-    '@quarantine',
-    '--reporter=line,html',
-    '--trace=retain-on-failure',
-  ];
+  const common = ['--grep-invert', '@quarantine', '--trace=retain-on-failure'];
   if (mode === 'smoke')
     return [
       ...common,
+      '--reporter=line,html,json',
       '--grep',
       '@smoke',
       '--retries=0',
       '--global-timeout=330000',
     ];
-  if (mode === 'nightly') return [...common, '--global-timeout=2400000'];
+  if (mode === 'nightly')
+    return [...common, '--reporter=line,html', '--global-timeout=2400000'];
   throw new Error('Expected smoke or nightly');
 }
 
@@ -201,7 +301,37 @@ async function main() {
     // Deliberately bypass only the paused package alias in this admitted wrapper.
     // Rust, TanStack, the cron runner and all other Docker entrypoints stay paused.
     const { runWebE2E } = require('../run-web-e2e-docker.js');
-    await runWebE2E(args, { frontend: 'next', playwrightArgs: args });
+    const smokeReportPath = path.join(
+      p.root,
+      'apps/web',
+      SMOKE_REPORT_RELATIVE_PATH
+    );
+    if (mode === 'smoke') {
+      fs.rmSync(smokeReportPath, { force: true });
+    }
+    let runError = null;
+    try {
+      await runWebE2E(args, { frontend: 'next', playwrightArgs: args });
+    } catch (error) {
+      runError = error;
+    }
+    if (mode === 'smoke') {
+      const verdict = evaluateSmokeReport(smokeReportPath);
+      if (!verdict.blockingPassed) {
+        console.error(`Blocking @smoke gate failed: ${verdict.reason}.`);
+        throw runError ?? new Error(verdict.reason);
+      }
+      if (runError) {
+        if (verdict.failedReportOnlySpecs.length === 0) {
+          throw runError;
+        }
+        console.log(
+          `::warning title=Non-blocking @smoke spec failed::Report-only smoke specs failed (${verdict.failedReportOnlySpecs.join(', ')}); all blocking smoke specs (${BLOCKING_SMOKE_SPECS.join(', ')}) passed.`
+        );
+      }
+    } else if (runError) {
+      throw runError;
+    }
   } catch (error) {
     console.error(
       phase === 'admission' && error?.message === ADMISSION_ERROR
@@ -213,4 +343,11 @@ async function main() {
 }
 
 if (require.main === module) void main();
-module.exports = { plan, argsFor, claim, cleanup };
+module.exports = {
+  BLOCKING_SMOKE_SPECS,
+  plan,
+  argsFor,
+  claim,
+  cleanup,
+  evaluateSmokeReport,
+};

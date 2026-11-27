@@ -4,7 +4,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { plan, argsFor, claim, cleanup } = require('./run-web-e2e-report-only');
+const {
+  BLOCKING_SMOKE_SPECS,
+  plan,
+  argsFor,
+  claim,
+  cleanup,
+  evaluateSmokeReport,
+} = require('./run-web-e2e-report-only');
 
 const trusted = {
   CI: 'true',
@@ -230,4 +237,66 @@ test('workflow directories remain required outside the build context', () => {
       () => plan({ ...trusted, [key]: '' }),
       /Missing workflow directories/
     );
+});
+
+test('blocking auth smoke gate fails closed and isolates report-only smoke specs', (t) => {
+  assert.deepEqual(BLOCKING_SMOKE_SPECS, ['auth.noauth.spec.ts']);
+  assert.ok(argsFor('smoke').includes('--reporter=line,html,json'));
+
+  const { readWorkflow } = require('./workflow-yaml-test-helper');
+  const workflow = readWorkflow('e2e-smoke-report-only.yaml');
+  assert.equal(workflow.jobs.e2e['continue-on-error'], undefined);
+  const nightly = workflow.jobs.e2e.steps.find((step) => step.id === 'nightly');
+  assert.equal(nightly['continue-on-error'], true);
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'web-e2e-smoke-report-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const reportPath = path.join(dir, 'smoke-results.json');
+
+  assert.equal(evaluateSmokeReport(reportPath).blockingPassed, false);
+
+  fs.writeFileSync(
+    reportPath,
+    JSON.stringify({
+      suites: [
+        {
+          file: 'auth.noauth.spec.ts',
+          specs: [
+            { ok: true, tests: [{ status: 'expected' }] },
+            { ok: true, tests: [{ status: 'expected' }] },
+          ],
+        },
+        {
+          file: 'tasks-workspace-lifecycle.noauth.spec.ts',
+          specs: [{ ok: false, tests: [{ status: 'unexpected' }] }],
+        },
+      ],
+    })
+  );
+  const partial = evaluateSmokeReport(reportPath);
+  assert.equal(partial.blockingPassed, true);
+  assert.deepEqual(partial.failedBlockingSpecs, []);
+  assert.deepEqual(partial.failedReportOnlySpecs, [
+    'tasks-workspace-lifecycle.noauth.spec.ts',
+  ]);
+
+  fs.writeFileSync(
+    reportPath,
+    JSON.stringify({
+      suites: [
+        {
+          file: 'e2e/auth.noauth.spec.ts',
+          specs: [{ ok: false, tests: [{ status: 'unexpected' }] }],
+        },
+      ],
+    })
+  );
+  const failed = evaluateSmokeReport(reportPath);
+  assert.equal(failed.blockingPassed, false);
+  assert.deepEqual(failed.failedBlockingSpecs, ['auth.noauth.spec.ts']);
+
+  fs.writeFileSync(reportPath, JSON.stringify({ suites: [] }));
+  const empty = evaluateSmokeReport(reportPath);
+  assert.equal(empty.blockingPassed, false);
+  assert.deepEqual(empty.missingBlockingSpecs, ['auth.noauth.spec.ts']);
 });

@@ -45,7 +45,6 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.repository == 'tutur3u/platform'
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    continue-on-error: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -151,6 +150,7 @@ jobs:
       - name: Nightly full suite
         if: github.event_name == 'schedule'
         timeout-minutes: 45
+        continue-on-error: true
         id: nightly
         run: node scripts/ci/run-web-e2e-report-only.js nightly
       - name: Clean up owned runtime
@@ -177,4 +177,4 @@ jobs:
           CLEANUP_OUTCOME: ${{ steps.cleanup.outcome }}
           RUN_MODE: ${{ github.event_name }}
         run: |
-          echo "Report-only E2E ($RUN_MODE): $JOB_STATUS; smoke=$SMOKE_OUTCOME nightly=$NIGHTLY_OUTCOME cleanup=$CLEANUP_OUTCOME. Inspect step outcomes and report artifacts; this check is non-required." >> "$GITHUB_STEP_SUMMARY"
+          echo "Web E2E ($RUN_MODE): $JOB_STATUS; smoke=$SMOKE_OUTCOME nightly=$NIGHTLY_OUTCOME cleanup=$CLEANUP_OUTCOME. Blocking smoke specs fail the job; non-blocking smoke specs and nightly remain report-only." >> "$GITHUB_STEP_SUMMARY"

@@ -16,8 +16,8 @@ const workflowRoot = path.resolve(__dirname, '../../.github/workflows');
 // cancels the older run, while production, generated release branches,
 // reruns and dispatches (release-candidate evidence) keep their own runs.
 test('listed main CI supersedes on main and keeps every evidence run', () => {
-  assert.ok(mainSupersession.includes('turbo-unit-tests.yaml'));
-  assert.ok(mainSupersession.includes('type-check.yaml'));
+  assert.equal(mainSupersession.includes('turbo-unit-tests.yaml'), false);
+  assert.equal(mainSupersession.includes('type-check.yaml'), false);
   for (const file of mainSupersession) {
     const workflow = workflows[file];
     assert.ok(workflow, file);

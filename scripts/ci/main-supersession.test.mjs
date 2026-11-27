@@ -18,7 +18,7 @@ const env = (overrides = {}) => ({
   GITHUB_REPOSITORY: REPO,
   GITHUB_SHA: HEAD,
   GITHUB_TOKEN: 'token',
-  GITHUB_WORKFLOW_REF: `${REPO}/.github/workflows/type-check.yaml@refs/heads/main`,
+  GITHUB_WORKFLOW_REF: `${REPO}/.github/workflows/ai-cloudflare.yaml@refs/heads/main`,
   ...overrides,
 });
 const run = (overrides = {}) => ({
@@ -42,9 +42,12 @@ const answer =
   };
 answer.calls = [];
 
-test('the list names only existing workflow files and includes Test and Type Check', () => {
-  assert.ok(SUPERSEDING_MAIN_WORKFLOWS.includes('turbo-unit-tests.yaml'));
-  assert.ok(SUPERSEDING_MAIN_WORKFLOWS.includes('type-check.yaml'));
+test('the list names only existing workflow files and excludes per-SHA Test and Type Check', () => {
+  assert.equal(
+    SUPERSEDING_MAIN_WORKFLOWS.includes('turbo-unit-tests.yaml'),
+    false
+  );
+  assert.equal(SUPERSEDING_MAIN_WORKFLOWS.includes('type-check.yaml'), false);
   assert.deepEqual([...SUPERSEDING_MAIN_WORKFLOWS].sort(), [
     ...SUPERSEDING_MAIN_WORKFLOWS,
   ]);
@@ -103,7 +106,7 @@ test('the base is the newest green main run that is an ancestor', async () => {
   assert.equal(answer.calls.length, 1);
   assert.match(
     answer.calls[0].url,
-    /\/actions\/workflows\/type-check\.yaml\/runs\?branch=main&status=success&per_page=20$/
+    /\/actions\/workflows\/ai-cloudflare\.yaml\/runs\?branch=main&status=success&per_page=20$/
   );
   assert.equal(answer.calls[0].init.headers.Authorization, 'Bearer token');
 });

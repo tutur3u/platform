@@ -17,8 +17,12 @@ test('workflows real CI diffs from another commit are marked, not decided', () =
     'deployment marker'
   );
   assert.equal(
-    uncomputedRange('type-check.yaml', SUPERSEDING_MAIN_WORKFLOWS),
+    uncomputedRange('ai-cloudflare.yaml', SUPERSEDING_MAIN_WORKFLOWS),
     'last green main run'
+  );
+  assert.equal(
+    uncomputedRange('type-check.yaml', SUPERSEDING_MAIN_WORKFLOWS),
+    null
   );
   assert.equal(
     uncomputedRange('oxc-check.yaml', SUPERSEDING_MAIN_WORKFLOWS),
@@ -28,7 +32,7 @@ test('workflows real CI diffs from another commit are marked, not decided', () =
   const plan = buildPlan({
     workflows: [
       { file: 'meet-cloudflare.yaml', paths: [], ignore: [] },
-      { file: 'type-check.yaml', paths: [], ignore: [] },
+      { file: 'ai-cloudflare.yaml', paths: [], ignore: [] },
       { file: 'oxc-check.yaml', paths: [], ignore: [] },
     ],
     files: ['docs/readme.md'],
@@ -46,7 +50,7 @@ test('workflows real CI diffs from another commit are marked, not decided', () =
       reason: `${RANGE_NOT_COMPUTED}deployment marker`,
     },
     {
-      workflow: 'type-check.yaml',
+      workflow: 'ai-cloudflare.yaml',
       run: true,
       reason: `${RANGE_NOT_COMPUTED}last green main run`,
     },

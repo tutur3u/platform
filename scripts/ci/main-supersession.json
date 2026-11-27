@@ -22,8 +22,6 @@
   "storefront-cloudflare.yaml",
   "track-cloudflare.yaml",
   "turbo-cache-cloudflare.yaml",
-  "turbo-unit-tests.yaml",
-  "type-check.yaml",
   "whiteboards-cloudflare.yaml",
   "workspace-cloudflare.yaml"
 ]
