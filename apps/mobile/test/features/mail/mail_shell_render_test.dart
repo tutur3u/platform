@@ -130,15 +130,12 @@ void main() {
         'pagination': {'hasMore': false},
       },
     );
-    when(
-      () => repository.detail('ws', 'box', any(), thread: true),
-    ).thenAnswer((i) async => _detail(i.positionalArguments[2] as String));
-    when(
-      () => repository.cachedThread(any(), any(), any()),
-    ).thenAnswer((i) async => _detail(i.positionalArguments[2] as String));
-    when(
-      () => repository.refreshThread('ws', 'box', any()),
-    ).thenAnswer((i) async => _detail(i.positionalArguments[2] as String));
+    when(() => repository.detail('ws', 'box', any(), thread: true))
+        .thenAnswer((i) async => _detail(i.positionalArguments[2] as String));
+    when(() => repository.cachedThread(any(), any(), any()))
+        .thenAnswer((i) async => _detail(i.positionalArguments[2] as String));
+    when(() => repository.refreshThread('ws', 'box', any()))
+        .thenAnswer((i) async => _detail(i.positionalArguments[2] as String));
 
     final auth = _Auth();
     final workspaces = _Workspaces();
@@ -210,6 +207,12 @@ void main() {
       ),
     );
     await settleMail(tester);
+    final compose = find.byTooltip('Compose');
+    expect(compose, findsOneWidget);
+    expect(
+      tester.getCenter(compose).dy,
+      lessThan(tester.getTopLeft(find.text(_subject)).dy),
+    );
     expect(tester.takeException(), isNull);
     await DesignRender.capture(tester, 'mail-shell/inbox-dark');
 

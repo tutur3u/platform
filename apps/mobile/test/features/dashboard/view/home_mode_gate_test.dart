@@ -136,7 +136,17 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(find.text('Customize Home'), findsOneWidget);
-    expect(find.byType(ReorderableListView), findsOneWidget);
+    final editor = find.byType(ReorderableListView);
+    expect(editor, findsOneWidget);
+    final scrollable = find.descendant(
+      of: editor,
+      matching: find.byType(Scrollable),
+    );
+    final finance = find.descendant(of: editor, matching: find.text('Finance'));
+    await tester.scrollUntilVisible(finance, 100, scrollable: scrollable);
+    expect(finance, findsOneWidget);
+    tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+    await tester.pump();
   }
 
   Future<AudienceModeCubit> modeCubit({AudienceMode? account}) async {
