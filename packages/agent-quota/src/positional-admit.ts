@@ -19,6 +19,7 @@ import { poolPolicyReasons } from './pool-settings';
 import { clearRecoveredLimits } from './receipt-expiry';
 import type { ChildSnapshot } from './reconcile-children';
 import { applyDescendantReceipts } from './recovery';
+import { evaluateModelPolicy, loadRoutingConfig } from './routing-config';
 import { coversModel, receiptCovers } from './window-scope';
 
 type LedgerTransaction = <T>(
@@ -97,6 +98,16 @@ export function gateDecision(
       exitCode: 2,
       reasons: ['model-unavailable-or-unverified'],
     };
+  if (member.provider === 'antigravity') {
+    const policy = evaluateModelPolicy(
+      member.provider,
+      model,
+      {},
+      loadRoutingConfig()
+    );
+    if (!policy.allowed)
+      return { status: 'BLOCKED', exitCode: 3, reasons: policy.reasons };
+  }
   const ledger = context.ledger;
   pruneLedger(
     ledger,

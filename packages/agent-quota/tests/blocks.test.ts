@@ -17,7 +17,7 @@ import { gateDecision } from '../src/positional-admit';
 const now = new Date('2026-10-23T05:30:00Z');
 const block = createBlock({
   pool: 'antigravity',
-  modelScope: 'gemini-4-argon-*',
+  modelScope: 'gemini-4-hydrogen-*',
   reason: 'Usage Limit Reached resets in 6 days, 23 hours',
   evidence: 'thread/run/terminal',
   observedAt: now.toISOString(),
@@ -35,7 +35,7 @@ function context(): AdmissionContext {
         provider: 'antigravity',
         label: 'AG',
         available: true,
-        models: ['gemini-4-argon-high', 'gemini-3.8-flash-low'],
+        models: ['gemini-4-hydrogen-high', 'gemini-3.8-flash-low'],
         windows: [
           {
             kind: 'short',
@@ -61,7 +61,7 @@ const request: AdmissionRequest = {
     candidates: [
       {
         instanceId: 'antigravity',
-        model: 'gemini-4-argon-high',
+        model: 'gemini-4-hydrogen-high',
         capabilities: ['implementation'],
       },
     ],
@@ -91,7 +91,7 @@ describe('orchestrator invoked hard-block gate', () => {
         eligibleAt: null,
       });
       expect(
-        gateDecision('antigravity', 'gemini-4-argon-high', ctx).exitCode
+        gateDecision('antigravity', 'gemini-4-hydrogen-high', ctx).exitCode
       ).toBe(3);
       expect(
         gateDecision('antigravity', 'gemini-3.8-flash-low', ctx).exitCode
@@ -102,31 +102,50 @@ describe('orchestrator invoked hard-block gate', () => {
   });
   it('blocks an exhausted scope in both admission interfaces and recommendations', () => {
     const c = context();
-    expect(gateDecision('antigravity', 'gemini-4-argon-high', c)).toMatchObject(
-      { status: 'BLOCKED', exitCode: 3 }
-    );
+    expect(
+      gateDecision('antigravity', 'gemini-4-hydrogen-high', c)
+    ).toMatchObject({ status: 'BLOCKED', exitCode: 3 });
     expect(admit(request, c).status).toBe('block');
     expect(
       recommend({
         accounts: c.accounts,
         active: [],
-        task: { model: 'gemini-4-argon-high' },
+        task: { model: 'gemini-4-hydrogen-high' },
         blocks: c.blocks,
         now,
       }).selected
     ).toEqual([]);
   });
+  it('rejects forbidden Gemini and third-party models with fresh headroom', () => {
+    const c = context();
+    c.blocks = [];
+    c.accounts[1]!.models = ['gemini-4-argon-high', 'claude-sonnet-4-6'];
+    expect(gateDecision('antigravity', 'gemini-4-argon-high', c)).toMatchObject(
+      {
+        status: 'BLOCKED',
+        exitCode: 3,
+        reasons: ['model-forbidden-by-policy'],
+      }
+    );
+    expect(gateDecision('antigravity', 'claude-sonnet-4-6', c)).toMatchObject({
+      status: 'BLOCKED',
+      exitCode: 3,
+      reasons: ['antigravity-requires-gemini'],
+    });
+  });
   it('readmits after reset expiry with fresh coverage', () => {
     const c = context();
     c.now = new Date(Date.parse(block.resetAt!) + 1);
     c.accounts[1]!.windows[0]!.observedAt = c.now.toISOString();
-    expect(gateDecision('antigravity', 'gemini-4-argon-high', c)).toMatchObject(
-      { status: 'ADMIT', exitCode: 0 }
-    );
+    expect(
+      gateDecision('antigravity', 'gemini-4-hydrogen-high', c)
+    ).toMatchObject({ status: 'ADMIT', exitCode: 0 });
   });
   it('blocks only matching model globs, not Antigravity flash', () => {
-    expect(matchesScope('gemini-4-argon-*', 'gemini-4-argon-high')).toBe(true);
-    expect(matchesScope('gemini-4-argon-*', 'gemini-3.8-flash-low')).toBe(
+    expect(matchesScope('gemini-4-hydrogen-*', 'gemini-4-hydrogen-high')).toBe(
+      true
+    );
+    expect(matchesScope('gemini-4-hydrogen-*', 'gemini-3.8-flash-low')).toBe(
       false
     );
     expect(
@@ -139,7 +158,7 @@ describe('orchestrator invoked hard-block gate', () => {
       eventId: 'old',
       instanceId: 'antigravity',
       accountKey: 'antigravity:instance:antigravity',
-      model: 'gemini-4-argon-high',
+      model: 'gemini-4-hydrogen-high',
       outcome: 'usage-limit',
       observedAt: now.toISOString(),
       resetsAt: block.resetAt!,

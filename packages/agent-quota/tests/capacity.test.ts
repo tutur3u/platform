@@ -18,7 +18,7 @@ const account: AccountUsage = {
   provider: 'antigravity',
   label: 'fixture',
   available: true,
-  models: ['gemini-3.8-flash-low', 'gemini-4-argon-high'],
+  models: ['gemini-3.8-flash-low', 'gemini-4-hydrogen-high'],
   windows: [
     {
       kind: 'short',
@@ -81,7 +81,7 @@ describe('model-only provider capacity cooldown', () => {
       matchingBlocks([block], ['antigravity'], 'gemini-3.8-flash-low', now)
     ).toHaveLength(1);
     expect(
-      matchingBlocks([block], ['antigravity'], 'gemini-4-argon-high', now)
+      matchingBlocks([block], ['antigravity'], 'gemini-4-hydrogen-high', now)
     ).toHaveLength(0);
     expect(
       matchingBlocks(
@@ -140,7 +140,7 @@ describe('model-only provider capacity cooldown', () => {
       reasons: expect.arrayContaining(['capacity-cooldown']),
     });
     expect(
-      gateDecision('antigravity', 'gemini-4-argon-high', context).exitCode
+      gateDecision('antigravity', 'gemini-4-hydrogen-high', context).exitCode
     ).toBe(0);
     const later = new Date(now.getTime() + 30 * 60_000);
     const fresh = {

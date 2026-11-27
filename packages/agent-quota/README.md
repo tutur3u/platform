@@ -57,7 +57,7 @@ block/contention, `2` malformed/unverifiable state.
 
 ## Follow-ups
 
-- Propagate routing-config gates (Argon ban, Fable `--allow-fable` approval,
+- Propagate the remaining routing-config gates (Fable `--allow-fable` approval,
   OpenCode non-private / paid-Zen ban, and pacing glide floor) into `admit` and
   `gateDecision` in addition to `recommend`.
 - Auto-append usage snapshots to `pacing-history.json` during `observe` and
