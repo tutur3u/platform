@@ -481,6 +481,14 @@ function CallShellContent({
             controller={stage}
             peopleCount={participants.length}
             presentation={presentation}
+            onCloseForEveryone={
+              canManage
+                ? (activityId) => {
+                    stage.close(activityId);
+                    nav.closeActivityForEveryone(activityId);
+                  }
+                : undefined
+            }
             roomTimer={merged ? { meetingId, state } : null}
             tools={meetTools}
             renderTool={tools.renderPanel}

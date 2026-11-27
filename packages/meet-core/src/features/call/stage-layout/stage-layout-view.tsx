@@ -71,6 +71,7 @@ export function StageLayoutView({
   stage,
   peopleCount,
   presentation,
+  onCloseForEveryone,
 }: {
   controller: StageLayoutController;
   activities: readonly StageActivity[];
@@ -78,6 +79,8 @@ export function StageLayoutView({
   stage: ReactNode;
   peopleCount: number;
   presentation?: ActivityPresentation;
+  /** Host/owner only: closes an activity for everyone in the room. */
+  onCloseForEveryone?: (activityId: string) => void;
 }) {
   const t = useTranslations('meet.call.stage_layout');
   const { tier } = controller;
@@ -292,6 +295,7 @@ export function StageLayoutView({
               onSwap={controller.swapPanes}
               onToggleMaximize={toggleMaximize}
               onClose={controller.close}
+              onCloseForEveryone={onCloseForEveryone}
               onMinimize={
                 pane.id === (maximizedId ?? focusedPaneId)
                   ? presentation?.minimize

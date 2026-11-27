@@ -37,6 +37,8 @@ export function applyRoomNavigation(
     return denied(state, 'awaiting_admission', message.requestId);
 
   const forced = canMeetRealtimeManageParticipants(token);
+  if (message.mode === 'activity.close' && !forced)
+    return denied(state, 'permission_denied', message.requestId);
   if (!forced && state.settings?.participantNavigation === false)
     return denied(state, 'permission_denied', message.requestId);
 

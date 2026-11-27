@@ -48,4 +48,46 @@ test('shared doc caret flips below near toolbar, dark-mode focused pane ring is 
     0
   );
   await expect(qaPane.getByRole('button', { name: /^Close / })).toHaveCount(1);
+
+  // 4a. Non-host close opens a popover with "Close for me" only (no native dialog).
+  let nativeDialog = false;
+  page.on('dialog', () => {
+    nativeDialog = true;
+  });
+  await qaPane.getByRole('button', { name: 'Close Q&A' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Close for me' })
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Close for everyone' })
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Close for me' }).click();
+  await expect(qaPane).toHaveCount(0);
+  expect(nativeDialog).toBe(false);
+});
+
+test('host close popover offers both Close for me and Close for everyone', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/?theme=dark&ui=sorbet&role=host', {
+    waitUntil: 'networkidle',
+  });
+
+  const qaPane = page.locator('section[data-pane-id][aria-label="Q&A"]');
+  await qaPane.getByRole('button', { name: 'Close Q&A' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Close for me' })
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Close for everyone' })
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Close for everyone' }).click();
+  await expect(qaPane).toHaveCount(0);
+  const closed = await page.evaluate(
+    () =>
+      (window as unknown as { __closedForEveryone?: string[] })
+        .__closedForEveryone ?? []
+  );
+  expect(closed).toEqual(['tool:live-qa']);
 });

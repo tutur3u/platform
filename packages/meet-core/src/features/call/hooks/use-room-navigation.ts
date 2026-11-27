@@ -80,6 +80,7 @@ export function useRoomNavigation({
   surface,
   layout,
   apply,
+  onCloseActivity,
   access,
 }: {
   room: MeetRoomController;
@@ -94,6 +95,8 @@ export function useRoomNavigation({
    * the move comes from someone this person follows.
    */
   apply: (next: CallSurfaceState, options: ApplyOptions) => ApplyResult | void;
+  /** Called when a host closes a specific activity for everyone in the room. */
+  onCloseActivity?: (view: MeetRoomView) => void;
   access: RoomViewAccess;
 }) {
   const t = useTranslations('meet.call');
@@ -143,6 +146,8 @@ export function useRoomNavigation({
   surfaceRef.current = surface;
   const applyRef = useRef(apply);
   applyRef.current = apply;
+  const onCloseActivityRef = useRef(onCloseActivity);
+  onCloseActivityRef.current = onCloseActivity;
   // Read through a ref so an invitation accepted later is checked against the
   // access the person has at that moment, not when the toast appeared.
   const accessRef = useRef(access);
@@ -301,6 +306,15 @@ export function useRoomNavigation({
           invitations.current.delete(decision.leaderId);
           toast.dismiss(followToast(decision.leaderId));
           break;
+        case 'activity-close':
+          onCloseActivityRef.current?.(decision.view);
+          toast(
+            t('stage_layout.closed_for_everyone_notice', {
+              name,
+              surface: label(decision.view),
+            })
+          );
+          break;
       }
     }
   }, [
@@ -388,6 +402,14 @@ export function useRoomNavigation({
       room.requestNavigation({ mode: 'summon', targets, view: destination });
       pace();
       toast.success(t(canManage ? 'summon.moved' : 'summon.sent', { count }));
+    },
+    closeForEveryone: (destination: MeetRoomView) => {
+      if (!canManage || !otherIds.length) return;
+      room.requestNavigation({
+        mode: 'activity.close',
+        targets: 'everyone',
+        view: destination,
+      });
     },
     following: following
       ? { leaderId: following, name: nameOf(following) }

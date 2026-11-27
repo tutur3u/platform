@@ -33,3 +33,12 @@ export function viewOfActivity(activityId: string | null): MeetRoomView | null {
   const toolId = toolIdOf(activityId);
   return toolId ? { surface: 'tool', toolId } : null;
 }
+
+/** Inverse of `viewOfActivity`; `stage` has no single activity id. */
+export function activityOfView(view: MeetRoomView): string | null {
+  if (view.surface === 'programming') return PROGRAMMING_ACTIVITY;
+  if (view.surface === 'document') return DOCUMENT_ACTIVITY;
+  if (view.surface === 'board') return BOARD_ACTIVITY;
+  if (view.surface === 'tool') return toolActivityId(view.toolId);
+  return null;
+}

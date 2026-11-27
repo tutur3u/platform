@@ -134,7 +134,8 @@ export type NavigationDecision =
       layout?: MeetStageLayoutSnapshot;
     }
   | { kind: 'follow-end'; leaderId: string }
-  | { kind: 'follow-withdrawn'; leaderId: string };
+  | { kind: 'follow-withdrawn'; leaderId: string }
+  | { kind: 'activity-close'; view: MeetRoomView };
 
 /** Gap between a leader's follow updates; just above the room's own pacing. */
 export const FOLLOW_UPDATE_GAP_MS = 1100;
@@ -194,6 +195,10 @@ export function decideNavigation(
       return context.following === event.from
         ? { kind: 'follow-end', leaderId: event.from }
         : { kind: 'follow-withdrawn', leaderId: event.from };
+    case 'activity.close':
+      return event.forced && event.view
+        ? { kind: 'activity-close', view: event.view }
+        : { kind: 'ignore' };
     default:
       return { kind: 'ignore' };
   }

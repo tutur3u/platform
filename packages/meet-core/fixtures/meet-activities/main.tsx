@@ -92,6 +92,11 @@ function SharedDocFixture() {
   );
 }
 
+const isHost = params.get('role') === 'host';
+const closedForEveryone: string[] = [];
+(window as unknown as { __closedForEveryone?: string[] }).__closedForEveryone =
+  closedForEveryone;
+
 function FixtureApp() {
   const controller = useStageLayout({
     accountId: 'fixture-user',
@@ -111,6 +116,14 @@ function FixtureApp() {
         controller={controller}
         peopleCount={2}
         stage={null}
+        onCloseForEveryone={
+          isHost
+            ? (id) => {
+                closedForEveryone.push(id);
+                controller.close(id);
+              }
+            : undefined
+        }
         activities={controller.openIds.map((id) => ({
           id,
           title: id === 'document' ? 'Shared document' : 'Q&A',

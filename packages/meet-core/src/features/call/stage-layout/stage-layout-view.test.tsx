@@ -337,10 +337,15 @@ it('stacks extra activities as tabs and switches by keyboard', () => {
   ]);
 });
 
-it('closes one activity from its pane header', () => {
+it('closes one activity from its pane header popover', () => {
   view();
   open('a', 'b');
   fireEvent.click(screen.getByRole('button', { name: 'Close a' }));
+  expect(screen.getByRole('button', { name: 'Close for me' })).toBeTruthy();
+  expect(
+    screen.queryByRole('button', { name: 'Close for everyone' })
+  ).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Close for me' }));
   expect(controller.openIds).toEqual(['b']);
 });
 

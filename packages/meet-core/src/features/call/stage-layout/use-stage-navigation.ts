@@ -9,6 +9,7 @@ import {
 } from '../components/room-navigation-policy';
 import { useRoomNavigation } from '../hooks/use-room-navigation';
 import {
+  activityOfView,
   BOARD_ACTIVITY,
   DOCUMENT_ACTIVITY,
   PROGRAMMING_ACTIVITY,
@@ -127,6 +128,10 @@ export function useStageNavigation({
     room,
     surface,
     layout: stage.snapshot,
+    onCloseActivity: (view) => {
+      const id = activityOfView(view);
+      if (id) latest.current.close(id);
+    },
     apply: (next, { forced, layout, source }) => {
       const before = focusedActivity.current;
       const notify = (activityId: string) => {
@@ -195,5 +200,11 @@ export function useStageNavigation({
   const following = !!navigation.following;
   const setLocked = stage.setLocked;
   useLayoutEffect(() => setLocked(following), [following, setLocked]);
-  return navigation;
+  return {
+    ...navigation,
+    closeActivityForEveryone: (activityId: string) => {
+      const view = viewOfActivity(activityId);
+      if (view) navigation.closeForEveryone(view);
+    },
+  };
 }

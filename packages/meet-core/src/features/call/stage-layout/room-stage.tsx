@@ -34,6 +34,7 @@ export function RoomStage({
   stage,
   peopleCount,
   presentation,
+  onCloseForEveryone,
   roomTimer = null,
   tools,
   renderTool,
@@ -44,6 +45,7 @@ export function RoomStage({
   stage: ReactNode;
   peopleCount: number;
   presentation?: ActivityPresentation;
+  onCloseForEveryone?: (activityId: string) => void;
   /** Meet UX v2's room timer, for the one Timer pane. */
   roomTimer?: RoomTimer | null;
   tools: readonly MeetToolDefinition[];
@@ -130,6 +132,7 @@ export function RoomStage({
         stage={stage}
         peopleCount={peopleCount}
         presentation={presentation}
+        onCloseForEveryone={onCloseForEveryone}
       />
     </RoomTimerProvider>
   );

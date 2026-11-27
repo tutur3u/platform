@@ -51,6 +51,7 @@ export function PaneChrome({
   onSwap,
   onToggleMaximize,
   onClose,
+  onCloseForEveryone,
   onMinimize,
   onSwitcher,
 }: {
@@ -79,6 +80,7 @@ export function PaneChrome({
   onSwap: (first: string, second: string) => void;
   onToggleMaximize: (paneId: string) => void;
   onClose: (activityId: string) => void;
+  onCloseForEveryone?: (activityId: string) => void;
   onMinimize?: () => void;
   /** Phone only: opens the sheet that switches between open activities. */
   onSwitcher?: () => void;
@@ -241,6 +243,11 @@ export function PaneChrome({
           }
           onToggleMaximize={() => onToggleMaximize(pane.id)}
           onClose={() => onClose(pane.active)}
+          onCloseForEveryone={
+            onCloseForEveryone
+              ? () => onCloseForEveryone(pane.active)
+              : undefined
+          }
           onMinimize={onMinimize}
         />
       </header>

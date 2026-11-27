@@ -81,6 +81,7 @@ export const MEET_NAVIGATION_MODES = [
   'follow',
   'follow.update',
   'follow.stop',
+  'activity.close',
 ] as const;
 export type MeetNavigationMode = (typeof MEET_NAVIGATION_MODES)[number];
 export const MEET_NAVIGATION_MAX_TARGETS = 200;

@@ -7,13 +7,15 @@ import {
   Minimize2,
   Minus,
   RefreshCw,
+  Users,
   X,
 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { ComponentType, ReactNode } from 'react';
+import { type ComponentType, type ReactNode, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useActivityPane } from './activity-pane-context';
 
@@ -225,6 +227,7 @@ export function PaneWindowActions({
   maximized,
   onToggleMaximize,
   onClose,
+  onCloseForEveryone,
   canMaximize = true,
   canClose = true,
   fullscreen = false,
@@ -235,6 +238,8 @@ export function PaneWindowActions({
   maximized: boolean;
   onToggleMaximize: () => void;
   onClose: () => void;
+  /** Host/owner only: closes this activity for everyone in the room. */
+  onCloseForEveryone?: () => void;
   canMaximize?: boolean;
   canClose?: boolean;
   /** The stage is in browser fullscreen. */
@@ -244,6 +249,7 @@ export function PaneWindowActions({
   onMinimize?: () => void;
 }) {
   const t = useTranslations('meet.call.stage_layout');
+  const [closeOpen, setCloseOpen] = useState(false);
   // Corner brackets: the pane fills the stage. Activities with their own full
   // screen use the diagonal arrows, so the two are told apart.
   const MaximizeIcon = maximized ? Minimize : Maximize;
@@ -297,17 +303,52 @@ export function PaneWindowActions({
         </Button>
       )}
       {canClose && (
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
-          aria-label={t('close', { title })}
-          title={t('close', { title })}
-          onClick={onClose}
-        >
-          <X aria-hidden="true" className="size-4" />
-        </Button>
+        <Popover open={closeOpen} onOpenChange={setCloseOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="size-8 shrink-0 rounded-full pointer-coarse:size-11"
+              aria-label={t('close', { title })}
+              title={t('close', { title })}
+            >
+              <X aria-hidden="true" className="size-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-52 p-1.5">
+            <div className="flex flex-col gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 rounded-lg font-normal"
+                onClick={() => {
+                  setCloseOpen(false);
+                  onClose();
+                }}
+              >
+                <X aria-hidden="true" className="size-4" />
+                {t('close_for_me')}
+              </Button>
+              {onCloseForEveryone && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full justify-start gap-2 rounded-lg font-normal text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
+                  onClick={() => {
+                    setCloseOpen(false);
+                    onCloseForEveryone();
+                  }}
+                >
+                  <Users aria-hidden="true" className="size-4" />
+                  {t('close_for_everyone')}
+                </Button>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
       )}
     </>
   );
