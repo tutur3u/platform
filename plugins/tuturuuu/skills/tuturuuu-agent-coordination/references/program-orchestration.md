@@ -517,6 +517,6 @@ Use the read-only `agent-quota reroute-plan --parent THREAD_ID` for reset-only c
 
 ### Fleet quota snapshots
 
-Use the [fleet quota commands](../../../../apps/docs/build/development-tools/contributing-with-agents.mdx#inspect-fleet-quota-before-assigning-work)
+Use the [fleet quota commands](../../../../../apps/docs/build/development-tools/contributing-with-agents.mdx#inspect-fleet-quota-before-assigning-work)
 to check host and seat evidence before assigning work. Carry the snapshot time,
 matching run-error block, and any auth or rename alert into the handoff.

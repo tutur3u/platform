@@ -58,7 +58,6 @@ export function parseCatalog(value: unknown): CatalogInstance[] {
     const provider = driverToProvider(item.driverKind, item.providerInstanceId);
     if (!provider) return [];
     if (typeof item.providerInstanceId !== 'string') return [];
-    return [];
     return [
       {
         instanceId: item.providerInstanceId,

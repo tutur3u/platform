@@ -69,7 +69,7 @@ export function failureClass(
   if (/selected model is at capacity/i.test(message)) return 'capacity';
   if (
     classification === 'usage_limit' ||
-    /usage.limit|session limit|hit your.*limit|quota.*exceed|rate.limit|usage balance exhausted|insufficient balance|402 payment required/i.test(
+    /usage.limit|session limit|hit your.*limit|quota.*exceed|(?:individual|third-party) quota reached|rate.limit|usage balance exhausted|insufficient balance|402 payment required/i.test(
       message
     )
   )
@@ -117,6 +117,24 @@ function oneReceiptReset(
   observedAt: string,
   timezone?: string
 ): string | null {
+  const compact = message.match(
+    /\bresets? in\s+(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?(?:\b|$)/i
+  );
+  const compactSeconds = compact
+    ? Number(compact[1] ?? 0) * 86400 +
+      Number(compact[2] ?? 0) * 3600 +
+      Number(compact[3] ?? 0) * 60 +
+      Number(compact[4] ?? 0)
+    : 0;
+  if (
+    compactSeconds > 0 &&
+    compactSeconds <= 366 * 86400 &&
+    Number.isFinite(Date.parse(observedAt))
+  ) {
+    return new Date(
+      Date.parse(observedAt) + compactSeconds * 1000
+    ).toISOString();
+  }
   const relative = message.match(
     /reset(?:s)?\s+in\s+((?:\d+(?:\.\d+)?\s*(?:days?|hours?|minutes?|seconds?)(?:\s*,?\s*(?:and\s+)?|$))+)/i
   )?.[1];

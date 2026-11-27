@@ -21,6 +21,7 @@ import {
   type ManualUsage,
   parseManualUsage,
 } from '../usage-import';
+import { collectAntigravityBlocks } from './antigravity-blocks';
 import { collectCatalog, parseCatalog } from './catalog';
 import { collectClaude } from './claude';
 import { collectCodex } from './codex';
@@ -173,6 +174,18 @@ export async function collectAllWith(
     blocks
   );
   const t3 = await t3Result;
+  const antigravityIds = withManual
+    .filter((account) => account.provider === 'antigravity')
+    .map((account) => account.instanceId);
+  let runBlocks: QuotaBlock[] = [];
+  let receiptAlert: string[] = [];
+  if (t3.t3) {
+    try {
+      runBlocks = collectAntigravityBlocks(antigravityIds, now);
+    } catch {
+      receiptAlert = ['ANTIGRAVITY_RUN_RECEIPTS_UNAVAILABLE'];
+    }
+  }
   const gone = catalog.length
     ? (t3.t3?.referencedInstances ?? []).filter(
         (id) => !catalog.some((entry) => entry.instanceId === id)
@@ -190,6 +203,7 @@ export async function collectAllWith(
   return {
     accounts: withManual,
     alerts: [
+      ...receiptAlert,
       ...withManual.flatMap((account) =>
         /unauthenticated|authentication required|unauthorized|login required/i.test(
           [
@@ -207,7 +221,7 @@ export async function collectAllWith(
     active: t3.t3?.activeAssignments,
     t3ObservedAt: t3.t3?.observedAt,
     t3Error: t3.t3Error,
-    blocks,
+    blocks: [...blocks, ...runBlocks],
     poolSettings: parsePoolSettings(poolSettings),
     invalidObservations,
     manualObservations: parsedManual,

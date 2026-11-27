@@ -14,8 +14,9 @@ it('excludes a recently blocked model despite fresh family headroom', () => {
       {
         kind: 'weekly',
         scope: { kind: 'models', modelPrefixes: ['gemini-'] },
-        usedPercent: 20,
-        resetsAt: '2026-12-04T16:00:00Z',
+        usedPercent: 1,
+        resetsAt: '2026-11-28T16:00:00Z',
+        windowDurationMins: 10080,
         observedAt: '2026-11-27T15:58:00Z',
         source: 'fixture',
         authoritative: true,

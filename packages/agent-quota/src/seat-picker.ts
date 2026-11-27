@@ -22,11 +22,10 @@ export function pickSeat(
   );
   const accounts = options.accounts.filter(
     (account) =>
-      account.available === true &&
-      (role !== 'reviewer' ||
-        (account.instanceId !== authorInstanceId &&
-          (!author?.accountIdentityHash ||
-            account.accountIdentityHash !== author.accountIdentityHash)))
+      role !== 'reviewer' ||
+      (account.instanceId !== authorInstanceId &&
+        (!author?.accountIdentityHash ||
+          account.accountIdentityHash !== author.accountIdentityHash))
   );
   const models = new Set(accounts.flatMap((account) => account.models ?? []));
   const ranked = [...models]
@@ -40,11 +39,13 @@ export function pickSeat(
       recommend({
         ...options,
         count: 1,
-        accounts: accounts.filter(
-          (account) =>
-            account.models?.includes(model) &&
-            (account.provider !== 'cursor' || model === 'default')
-        ),
+        accounts: accounts.map((account) => ({
+          ...account,
+          available:
+            account.available === true &&
+            account.models?.includes(model) === true &&
+            (account.provider !== 'cursor' || model === 'default'),
+        })),
         task: { ...options.task, kind: kinds[role], model, allowFable: false },
       }).selected.map((seat) => ({ ...seat, model }))
     );

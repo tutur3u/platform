@@ -23,6 +23,8 @@ const scope = `WITH RECURSIVE descendants(thread_id) AS (
  SELECT s.child_thread_id FROM orchestration_v2_projection_subagents s JOIN descendants d ON s.thread_id=d.thread_id WHERE s.child_thread_id IS NOT NULL
 ) `;
 const receiptPrefixes = [
+  "LIKE 'individual quota reached%'",
+  "LIKE 'third-party quota reached%'",
   "LIKE '%usage limit reached%'",
   "LIKE '%usage balance exhausted%'",
   "LIKE '%402 payment required%'",

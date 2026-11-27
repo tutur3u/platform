@@ -47,7 +47,8 @@ machine-readable ledger, or omit `--json` for the Markdown summary. The command
 reads the local host and contacts `skr-studio`, `skr-macbook1`, and
 `skr-macbook-i9` over noninteractive SSH. Each remote needs the quota source
 under `~/Documents/GitHub/tuturuuu`. An unreachable host or a host with an
-incompatible collector appears as a failed collection. Use `--local` to read
+incompatible collector appears as a failed collection. Older compatible
+collectors return account pools and are labeled as legacy. Use `--local` to read
 only the current host. The GitHub API reading is separate from Copilot quota.
 
 Run `bun packages/agent-quota/src/cli.ts refresh-antigravity-account
@@ -57,13 +58,15 @@ result only when the CLI and T3 profile report the same account.
 
 Each provider window carries the original observation timestamp and TTL. Keep
 unavailable readings unknown. An active run-error block overrides family
-headroom for its matching account and model until the block expires. Record
-failures with `agent-quota block` using the actual failed model and reset
-evidence. Antigravity routes Gemini only. Its Claude and GPT usage rows remain
+headroom for its matching account and model until the block expires. The
+collector reads Antigravity terminal quota failures from local T3 state.
+Record additional failures with `agent-quota block` using the actual failed
+model and reset evidence. Antigravity routes Gemini only. Its Claude and GPT usage rows remain
 visible for inspection.
 
-Run `bun packages/agent-quota/src/cli.ts pick-seat --role builder --model-class
-gemini-` on the preferred host. Roles are `lead`, `builder`, and `reviewer`.
+Run `bun packages/sdk/src/cli/index.ts quota pick-seat --role builder
+--model-class gemini-` locally, or add `--preferred-machine skr-studio` to
+ask the collector on that host. Roles are `lead`, `builder`, and `reviewer`.
 The model class is an advertised model ID prefix. Reviewers require
 `--author-instance` to exclude the author's seat and known account aliases.
 A null seat means the available evidence did not admit a candidate.

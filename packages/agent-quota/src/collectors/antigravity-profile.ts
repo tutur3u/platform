@@ -51,8 +51,9 @@ export function oldAntigravityProfile(
       (oldKey !== undefined && oldKey !== entry.old_key)
     )
       return;
-    oldKey = entry.old_key;
-    const old = antigravityProfile(root, oldKey);
+    const oldId: string = entry.old_key;
+    oldKey = oldId;
+    const old = antigravityProfile(root, oldId);
     if (
       old === current ||
       typeof entry.old_data_dir !== 'string' ||
