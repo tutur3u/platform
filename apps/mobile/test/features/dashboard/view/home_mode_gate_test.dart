@@ -135,8 +135,8 @@ void main() {
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
-    // The editor is open: a shared widget is listed.
-    expect(find.text('Finance'), findsWidgets);
+    expect(find.text('Customize Home'), findsOneWidget);
+    expect(find.byType(ReorderableListView), findsOneWidget);
   }
 
   Future<AudienceModeCubit> modeCubit({AudienceMode? account}) async {
