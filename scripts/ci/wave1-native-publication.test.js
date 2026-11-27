@@ -81,7 +81,7 @@ test('negative control: removing the real final fence fails the same zero-upload
   const mutant = source
     .replace(needle, '')
     .replace(
-      /(['"])\.\/(wave1-[^'"]+|production-publication-policy\.ts)\1/g,
+      /(['"])\.\/(wave1-[^'"]+|meet-first-publication\.mjs|production-publication-policy\.ts)\1/g,
       (_, _quote, file) =>
         JSON.stringify(pathToFileURL(path.join(__dirname, file)).href)
     );
