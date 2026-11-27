@@ -14,6 +14,36 @@ export default defineConfig({
     passWithNoTests: true,
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(import.meta.dirname, 'src') },
+      {
+        find: /^#secret-env$/u,
+        replacement: resolve(
+          import.meta.dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/supabase\/next\/(.+)$/u,
+        replacement: resolve(
+          import.meta.dirname,
+          '../../packages/supabase/src/next/$1.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api$/u,
+        replacement: resolve(
+          import.meta.dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/workspace-config-ids$/u,
+        replacement: resolve(
+          import.meta.dirname,
+          '../../packages/internal-api/src/workspace-config-ids.ts'
+        ),
+      },
+    ],
   },
 });
