@@ -56,6 +56,8 @@ function titleForKind(
       return t('title_icebreaker');
     case 'assessment':
       return t('title_assessment');
+    default:
+      return t('trigger');
   }
 }
 
@@ -72,6 +74,8 @@ function topicPlaceholderForKind(
       return t('topic_placeholder_icebreaker');
     case 'assessment':
       return t('topic_placeholder_assessment');
+    default:
+      return t('topic_placeholder_flashcards');
   }
 }
 
@@ -86,6 +90,8 @@ function difficultyLabel(
       return t('difficulty_intermediate');
     case 'advanced':
       return t('difficulty_advanced');
+    default:
+      return t('difficulty_intermediate');
   }
 }
 

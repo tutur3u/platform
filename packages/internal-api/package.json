@@ -526,6 +526,11 @@
       "import": "./dist/meet-call.js",
       "require": "./dist/meet-call.js"
     },
+    "./meet-live-activities": {
+      "types": "./dist/meet-live-activities.d.ts",
+      "import": "./dist/meet-live-activities.js",
+      "require": "./dist/meet-live-activities.js"
+    },
     "./meet-record": {
       "types": "./dist/meet-record.d.ts",
       "import": "./dist/meet-record.js",
