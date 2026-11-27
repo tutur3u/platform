@@ -62,6 +62,7 @@ export function ParticipantNameForm({
             id="participant-display-name"
             maxLength={MAX_DISPLAY_NAME_LENGTH}
             onChange={(event) => setName(event.target.value)}
+            placeholder={t('profile_settings.name_placeholder')}
             required
             value={name}
           />

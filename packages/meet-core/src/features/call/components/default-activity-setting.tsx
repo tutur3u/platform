@@ -65,7 +65,7 @@ export function DefaultActivitySetting({
         onValueChange={(next) => onChange(next === NONE ? null : next)}
       >
         <SelectTrigger aria-labelledby={id} className="min-h-11 w-full">
-          <SelectValue />
+          <SelectValue placeholder={t('default_activity_none')} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value={NONE} className="min-h-11">

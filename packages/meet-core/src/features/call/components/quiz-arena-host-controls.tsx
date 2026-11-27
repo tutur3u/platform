@@ -99,7 +99,7 @@ export function QuizArenaHostControls({
                 aria-label={t('adjust_target')}
                 className="ml-auto h-8 max-w-44"
               >
-                <SelectValue />
+                <SelectValue placeholder={t('adjust_target')} />
               </SelectTrigger>
               <SelectContent>
                 {targets.map((item) => (

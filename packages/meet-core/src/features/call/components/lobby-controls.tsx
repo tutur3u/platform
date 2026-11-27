@@ -163,7 +163,7 @@ export function LobbyDevicePickers({
               value={selectedValue}
             >
               <SelectTrigger className="h-9 w-full text-xs" id={id}>
-                <SelectValue>
+                <SelectValue placeholder={t('system_default')}>
                   {unlisted ? t('system_default') : undefined}
                 </SelectValue>
               </SelectTrigger>

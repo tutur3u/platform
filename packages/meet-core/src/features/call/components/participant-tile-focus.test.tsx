@@ -81,6 +81,40 @@ describe('screen share focus view', () => {
     expect(document.activeElement).toBe(getByLabelText('Focus on screen'));
   });
 
+  it('does not exit focus view on Esc when an overlay dialog is open', () => {
+    const { getByLabelText, getByTestId } = setup();
+    fireEvent.click(getByLabelText('Focus on screen'));
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    document.body.appendChild(dialog);
+    try {
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(getByTestId('participant-peer-screen').dataset.focusView).toBe(
+        'true'
+      );
+    } finally {
+      dialog.remove();
+    }
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(getByTestId('participant-peer-screen').dataset.focusView).toBe(
+      undefined
+    );
+  });
+
+  it('does not exit focus view when Esc was already prevented', () => {
+    const { getByLabelText, getByTestId } = setup();
+    fireEvent.click(getByLabelText('Focus on screen'));
+    const event = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      cancelable: true,
+    });
+    event.preventDefault();
+    document.dispatchEvent(event);
+    expect(getByTestId('participant-peer-screen').dataset.focusView).toBe(
+      'true'
+    );
+  });
+
   it('hides controls after idle time and wakes on pointer movement', () => {
     const { getByLabelText, getByTestId } = setup();
     fireEvent.click(getByLabelText('Focus on screen'));

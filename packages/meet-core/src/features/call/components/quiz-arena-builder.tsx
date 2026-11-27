@@ -174,7 +174,7 @@ export function QuizArenaBuilder({
             onValueChange={(value) => setSubject(value as ArenaSubject)}
           >
             <SelectTrigger aria-label={t('subject')}>
-              <SelectValue />
+              <SelectValue placeholder={t('subject')} />
             </SelectTrigger>
             <SelectContent>
               {ARENA_SUBJECTS.map((value) => (
@@ -191,7 +191,7 @@ export function QuizArenaBuilder({
             onValueChange={(value) => setGrade(value as ArenaGrade)}
           >
             <SelectTrigger aria-label={t('grade')}>
-              <SelectValue />
+              <SelectValue placeholder={t('grade')} />
             </SelectTrigger>
             <SelectContent>
               {ARENA_GRADES.map((value) => (
@@ -208,7 +208,7 @@ export function QuizArenaBuilder({
             onValueChange={(value) => setCategories(Number(value))}
           >
             <SelectTrigger aria-label={t('categories_count')}>
-              <SelectValue />
+              <SelectValue placeholder={t('categories_count')} />
             </SelectTrigger>
             <SelectContent>
               {COUNTS.map((n) => (
@@ -225,7 +225,7 @@ export function QuizArenaBuilder({
             onValueChange={(value) => setTiers(Number(value))}
           >
             <SelectTrigger aria-label={t('tiers_count')}>
-              <SelectValue />
+              <SelectValue placeholder={t('tiers_count')} />
             </SelectTrigger>
             <SelectContent>
               {COUNTS.map((n) => (
@@ -275,7 +275,7 @@ export function QuizArenaBuilder({
                 aria-label={t('teams_count')}
                 className="h-8 w-auto"
               >
-                <SelectValue />
+                <SelectValue placeholder={t('teams_count')} />
               </SelectTrigger>
               <SelectContent>
                 {Array.from({ length: 11 }, (_, i) => String(i + 2)).map(
@@ -314,7 +314,7 @@ export function QuizArenaBuilder({
               aria-label={t('wrong_penalty')}
               className="h-8 w-auto"
             >
-              <SelectValue />
+              <SelectValue placeholder={t('wrong_penalty')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">{t('penalty_none')}</SelectItem>
@@ -408,7 +408,7 @@ export function QuizArenaBuilder({
                 onValueChange={setModuleId}
               >
                 <SelectTrigger aria-label={t('module')}>
-                  <SelectValue />
+                  <SelectValue placeholder={t('module')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{t('all_modules')}</SelectItem>

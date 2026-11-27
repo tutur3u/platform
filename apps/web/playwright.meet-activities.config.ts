@@ -7,6 +7,7 @@ export default defineConfig({
     'meet-activities-mira-draft.fixture.ts',
     'meet-presence-activities.fixture.ts',
     'meet-private-apps.fixture.ts',
+    'meet-ux-polish.fixture.ts',
   ],
   fullyParallel: false,
   workers: 1,

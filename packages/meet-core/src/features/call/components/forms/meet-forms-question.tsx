@@ -194,7 +194,7 @@ function QuestionControl({
           {...a11y}
           value={text}
           disabled={disabled}
-          placeholder={settings?.placeholder ?? undefined}
+          placeholder={settings?.placeholder || copy.answerPlaceholder}
           onChange={(event) => onChange(event.target.value)}
         />
       );
@@ -217,7 +217,7 @@ function QuestionControl({
           }
           value={text}
           disabled={disabled}
-          placeholder={settings?.placeholder ?? undefined}
+          placeholder={settings?.placeholder || copy.answerPlaceholder}
           min={
             question.type === 'number'
               ? (settings?.validationMin ?? undefined)

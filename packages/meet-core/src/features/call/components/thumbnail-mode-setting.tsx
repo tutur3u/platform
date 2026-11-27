@@ -37,7 +37,7 @@ export function ThumbnailModeSetting({ policy }: { policy?: MediaPolicy }) {
         }}
       >
         <SelectTrigger id={id}>
-          <SelectValue />
+          <SelectValue placeholder={t('thumbnail_mode')} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="auto">{t('thumbnail_mode_auto')}</SelectItem>

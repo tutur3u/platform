@@ -109,7 +109,7 @@ export function DeviceSettings({
               }}
             >
               <SelectTrigger id={`meet-${kind}`} className="w-full">
-                <SelectValue />
+                <SelectValue placeholder={t('system_default')} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="default">{t('system_default')}</SelectItem>
@@ -145,7 +145,7 @@ export function DeviceSettings({
           }}
         >
           <SelectTrigger id="meet-bandwidth" className="w-full">
-            <SelectValue />
+            <SelectValue placeholder={t('bandwidth_auto')} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="auto">{t('bandwidth_auto')}</SelectItem>

@@ -167,8 +167,10 @@ it('returns to the previous activity without notifying incoming navigation', () 
     back = navigation().apply(next, { forced: true, source })?.back;
   });
   expect(onNavigate).toHaveBeenCalledTimes(1);
+  expect(onDrawer).toHaveBeenLastCalledWith(null);
   act(() => back?.());
   expect(stage.focused).toBe('programming');
+  expect(onDrawer).toHaveBeenLastCalledWith('chat');
   expect(onNavigate).toHaveBeenCalledTimes(1);
 });
 

@@ -240,7 +240,7 @@ it('shows the activity name and description on its detail page and resets the ta
   );
   open();
   expect(screen.getAllByText(pollsLabel).length).toBeGreaterThan(1);
-  expect(screen.getAllByText(a.descriptions.polls).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(a.descriptions.polls)).toHaveLength(1);
   fireEvent.click(screen.getByRole('button', { name: `Start ${pollsLabel}` }));
   expect(onTool).toHaveBeenCalledWith('polls');
   await vi.waitFor(() => expect(urls.at(-1)).not.toContain('activitiesTab'));

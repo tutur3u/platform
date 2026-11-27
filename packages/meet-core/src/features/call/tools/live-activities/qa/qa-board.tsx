@@ -260,13 +260,13 @@ export function QaBoard({
           }
           extra={
             allowAnonymous ? (
-              <span className="flex items-center gap-2 ps-1">
+              <span className="inline-flex min-w-0 items-center gap-2 ps-1">
                 <Switch
                   id={anonymousId}
                   checked={anonymous}
                   onCheckedChange={setAnonymous}
                 />
-                <label htmlFor={anonymousId} className="text-xs">
+                <label htmlFor={anonymousId} className="truncate text-xs">
                   {t('ask_anonymously')}
                 </label>
               </span>

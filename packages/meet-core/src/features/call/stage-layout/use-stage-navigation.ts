@@ -91,6 +91,10 @@ export function useStageNavigation({
   latest.current = stage;
   const focusedActivity = useRef(stage.focused);
   focusedActivity.current = stage.focused;
+  const onDrawerRef = useRef(onDrawer);
+  onDrawerRef.current = onDrawer;
+  const drawerRef = useRef(drawer);
+  drawerRef.current = drawer;
   const surface = {
     programming: stage.focused === PROGRAMMING_ACTIVITY,
     document: stage.focused === DOCUMENT_ACTIVITY,
@@ -166,13 +170,13 @@ export function useStageNavigation({
         : next.document
           ? DOCUMENT_ACTIVITY
           : next.tool;
-      onDrawer(next.drawer);
+      const drawerBefore = drawerRef.current;
+      onDrawerRef.current(next.drawer);
       if (target) {
         if (forced && next.tool && next.tool !== BOARD_ACTIVITY)
           onSummoned?.(next.tool);
         // Going back returns to the activity the person was in, and closes
         // the one they were brought to if it was not open before.
-        const drawerBefore = drawer;
         const brought = !stage.isOpen(target);
         // Being brought somewhere is not the person's own edit, so it lands
         // even while follow mode still locks the stage.
@@ -187,14 +191,19 @@ export function useStageNavigation({
             const stillThere = now.focused === target;
             if (brought) now.close(target);
             if (!stillThere) return;
-            onDrawer(drawerBefore);
+            onDrawerRef.current(drawerBefore);
             if (before && before !== target && now.isOpen(before))
               now.open(before);
           },
         };
       }
       // The stage view opens nothing: the person stays on what they have open.
-      return { reached: currentRoomView(surface) };
+      return {
+        reached: currentRoomView(surface),
+        ...(next.drawer !== drawerBefore
+          ? { back: () => onDrawerRef.current(drawerBefore) }
+          : {}),
+      };
     },
     // A guest the server lets open the board may be brought to it too.
     access: guestBoard ? { ...access, board: true } : access,

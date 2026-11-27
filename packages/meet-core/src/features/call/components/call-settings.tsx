@@ -330,7 +330,7 @@ export function CallSettings({
                 }}
               >
                 <SelectTrigger id={bandwidthId}>
-                  <SelectValue />
+                  <SelectValue placeholder={t('bandwidth_auto')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="auto">{t('bandwidth_auto')}</SelectItem>

@@ -39,6 +39,7 @@ export function ClassroomSettings({
               type="number"
               min={1}
               max={maximum}
+              placeholder={t('room_maximum_placeholder', { maximum })}
               aria-describedby="meet-room-maximum-hint"
               key={room.state.settings.maxParticipants ?? maximum}
               defaultValue={room.state.settings.maxParticipants ?? maximum}

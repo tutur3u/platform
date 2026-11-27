@@ -202,6 +202,7 @@ export function MeetingEntry({
                 <Input
                   defaultValue={defaultScheduledTime()}
                   id="meeting-time"
+                  placeholder={t('time')}
                   ref={timeRef}
                   required
                   type="datetime-local"
@@ -213,6 +214,7 @@ export function MeetingEntry({
                   defaultValue="60"
                   id="meeting-duration"
                   min="15"
+                  placeholder={t('duration_placeholder')}
                   ref={durationRef}
                   required
                   step="15"

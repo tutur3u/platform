@@ -89,6 +89,7 @@ export function MeetingTitle({
                   id={id}
                   autoFocus
                   maxLength={255}
+                  placeholder={t('meeting_title_placeholder')}
                   value={draft}
                   disabled={busy}
                   onChange={(event) => setDraft(event.target.value)}

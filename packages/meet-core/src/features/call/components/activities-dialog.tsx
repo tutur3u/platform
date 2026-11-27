@@ -77,6 +77,7 @@ export function ActivitiesDialog({
         name: tile.id,
         label: tile.label,
         description: tile.description,
+        hideContentHeader: !tile.page,
         icon: tile.icon,
         keywords: tile.description ? [tile.description] : undefined,
       })),

@@ -1,5 +1,5 @@
 'use client';
-import { Hand, MicOff, MonitorUp, Volume2 } from '@tuturuuu/icons';
+import { Hand, Volume2 } from '@tuturuuu/icons';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -8,21 +8,17 @@ import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { attachMediaPlayback } from '../lib/media-playback';
-import { observeVideoPresentation } from '../lib/video-presentation';
-import { meetParticipantName } from '../lib/participant-identity';
-import { usePhoneChrome } from '../phone/use-phone-chrome';
-import { LiveAvatar } from './live-avatar';
-import { ParticipantIdentityBadge } from './participant-identity-badge';
-import { ParticipantTileActions } from './participant-tile-actions';
-import {
-  MediaReceivingStatus,
-  useStreamReadiness,
-} from './media-receiving-status';
-import { MiraAudioStatus } from './mira-audio-status';
-import { usePlaybackVolume } from './playback-volume';
 import { useIdleControls } from '../hooks/use-idle-controls';
 import { useRenderedHeight } from '../hooks/use-rendered-height';
+import { attachMediaPlayback } from '../lib/media-playback';
+import { meetParticipantName } from '../lib/participant-identity';
+import { observeVideoPresentation } from '../lib/video-presentation';
+import { usePhoneChrome } from '../phone/use-phone-chrome';
+import { LiveAvatar } from './live-avatar';
+import { useStreamReadiness } from './media-receiving-status';
+import { ParticipantTileActions } from './participant-tile-actions';
+import { ParticipantTileBar } from './participant-tile-bar';
+import { usePlaybackVolume } from './playback-volume';
 
 function ParticipantTileImpl({
   className,
@@ -169,18 +165,35 @@ function ParticipantTileImpl({
   useEffect(() => {
     const changed = () =>
       setFullscreen(document.fullscreenElement === tileRef.current);
-    const onEscape = (event: KeyboardEvent) => {
-      // Browser full screen consumes Esc itself; focus view handles the rest.
-      if (event.key === 'Escape' && !document.fullscreenElement)
-        setExpanded(false);
-    };
     document.addEventListener('fullscreenchange', changed);
-    document.addEventListener('keydown', onEscape);
     return () => {
       document.removeEventListener('fullscreenchange', changed);
-      document.removeEventListener('keydown', onEscape);
     };
   }, []);
+  useEffect(() => {
+    if (!expanded) return;
+    const onEscape = (event: KeyboardEvent) => {
+      // Browser full screen consumes Esc itself; focus view handles the rest
+      // unless another layer already handled it or a dialog/popover is open.
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        document.fullscreenElement
+      )
+        return;
+      const overlays = document.querySelectorAll(
+        '[role="dialog"], [role="alertdialog"], [data-radix-popper-content-wrapper]'
+      );
+      for (const overlay of overlays) {
+        if (!overlay.contains(tileRef.current)) return;
+      }
+      setExpanded(false);
+    };
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.removeEventListener('keydown', onEscape);
+    };
+  }, [expanded]);
   useEffect(() => {
     if (expanded) exitFocusRef.current?.focus();
     else if (wasExpanded.current) {
@@ -337,84 +350,21 @@ function ParticipantTileImpl({
           <span className="@max-[12rem]:sr-only">{t('hand_raised')}</span>
         </div>
       )}
-      <div
-        className={cn(
-          'absolute inset-x-0 bottom-0 flex items-end gap-2 bg-gradient-to-t to-transparent px-3 py-2 motion-safe:transition-opacity',
-          controlsHidden && 'pointer-events-none opacity-0',
-          showVideo
-            ? 'from-media-scrim text-media-scrim-foreground'
-            : 'from-background/90 text-foreground'
-        )}
-      >
-        {kind === 'screen' && (
-          <MonitorUp
-            aria-label={t('sharing_screen')}
-            className="size-4 shrink-0"
-          />
-        )}
-        {/* One line with an ellipsis, so the name never rises into the avatar. */}
-        <span
-          className={cn(
-            'min-w-0 font-medium leading-tight',
-            floating ? 'truncate text-xs' : 'truncate text-sm'
-          )}
-          title={floating ? undefined : displayName}
-        >
-          {floating || (condensed && isSelf) ? t('you') : displayName}
-        </span>
-        {!floating && !(condensed && isSelf) && (
-          <ParticipantIdentityBadge
-            className="backdrop-blur-sm"
-            participant={participant}
-          />
-        )}
-        {isSelf && !floating && !condensed && (
-          <span className="shrink-0 font-medium text-sm leading-tight">
-            · {t('you')}
-          </span>
-        )}
-        {!isSelf && !presenceOnly && (
-          <MediaReceivingStatus
-            audio={readiness.receivingAudio}
-            video={presentingVideo || readiness.receivingVideo}
-            expectAudio={kind === 'camera' && participant.media.audioEnabled}
-            expectVideo={
-              kind === 'camera'
-                ? participant.media.videoEnabled
-                : participant.media.screenEnabled
-            }
-          />
-        )}
-        {miraActive && kind === 'camera' && !presenceOnly && (
-          <MiraAudioStatus participant={participant} />
-        )}
-        {!presenceOnly &&
-          !participant.media.audioEnabled &&
-          kind === 'camera' && (
-            <MicOff aria-label={t('muted')} className="size-3.5 shrink-0" />
-          )}
-        {onMute &&
-          !isSelf &&
-          kind === 'camera' &&
-          participant.media.audioEnabled && (
-            <Button
-              size="icon"
-              variant="ghost"
-              className={cn(
-                'ml-auto size-8 shrink-0 rounded-full opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100',
-                showVideo
-                  ? 'bg-background/30 text-media-scrim-foreground hover:bg-background/60'
-                  : 'bg-foreground/10 text-foreground hover:bg-foreground/20'
-              )}
-              aria-label={t('mute_participant', {
-                name: displayName,
-              })}
-              onClick={() => onMute(participant.userId)}
-            >
-              <MicOff className="size-4" />
-            </Button>
-          )}
-      </div>
+      <ParticipantTileBar
+        condensed={condensed}
+        controlsHidden={controlsHidden}
+        displayName={displayName}
+        floating={floating}
+        isSelf={isSelf}
+        kind={kind}
+        miraActive={miraActive}
+        onMute={onMute}
+        participant={participant}
+        presenceOnly={presenceOnly}
+        receivingAudio={readiness.receivingAudio}
+        receivingVideo={presentingVideo || readiness.receivingVideo}
+        showVideo={showVideo}
+      />
       {!floating && (
         <ParticipantTileActions
           audio={!isSelf && !!audioTrack}

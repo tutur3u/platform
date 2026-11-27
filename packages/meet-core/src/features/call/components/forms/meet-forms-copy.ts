@@ -57,6 +57,7 @@ export function useMeetFormsCopy() {
     requiredError: t('requiredError'),
     invalidError: t('invalidError'),
     select: t('select'),
+    answerPlaceholder: t('answerPlaceholder'),
     upload: t('upload'),
     uploadError: t('uploadError'),
     attached: (count: number) => t('attached', { count }),

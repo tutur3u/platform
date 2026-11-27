@@ -405,7 +405,7 @@ export function CallStage({
               aria-label={t('tile_size')}
               className="h-7 w-auto gap-2"
             >
-              <SelectValue />
+              <SelectValue placeholder={t('tile_size')} />
             </SelectTrigger>
             <SelectContent align="end">
               {densities.map((option) => (

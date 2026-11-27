@@ -8,8 +8,9 @@ import {
 } from '@tuturuuu/realtime/documents';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { scheduleCollaborationCaretPlacement } from '@tuturuuu/ui/text-editor/collaboration-carets';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { NextIntlClientProvider } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import enMessages from '../../../../apps/meet/messages/en.json';
 import viMessages from '../../../../apps/meet/messages/vi.json';
@@ -27,6 +28,10 @@ import {
 import { createLiveQaClient } from '../../src/features/call/tools/live-activities/qa/qa-store';
 import { PresenceSceneFixture } from './presence-scene';
 import { PrivateAppsFixtureScene } from './private-apps-scene';
+
+const PolishScene = lazy(() =>
+  import('./polish-scene').then((module) => ({ default: module.PolishScene }))
+);
 
 // Mounts the real activity pane chrome, the real shared-document editor (Yjs +
 // tiptap with its sticky toolbar and remote caret plugin) and the real presence
@@ -296,17 +301,23 @@ createRoot(document.getElementById('root')!).render(
         messages={messages}
         timeZone="UTC"
       >
-        {scene === 'mira-draft' ? (
-          <MiraDraftScene role={isHost ? 'host' : 'guest'} />
-        ) : (
-          <LiveQaClientContext value={qaClient}>
-            {scene === 'presence' ? (
-              <PresenceSceneFixture canBrowse={canBrowse} empty={empty} />
-            ) : (
-              <FixtureApp />
-            )}
-          </LiveQaClientContext>
-        )}
+        <TooltipProvider>
+          {scene === 'mira-draft' ? (
+            <MiraDraftScene role={isHost ? 'host' : 'guest'} />
+          ) : scene === 'polish' ? (
+            <Suspense fallback={null}>
+              <PolishScene />
+            </Suspense>
+          ) : (
+            <LiveQaClientContext value={qaClient}>
+              {scene === 'presence' ? (
+                <PresenceSceneFixture canBrowse={canBrowse} empty={empty} />
+              ) : (
+                <FixtureApp />
+              )}
+            </LiveQaClientContext>
+          )}
+        </TooltipProvider>
       </NextIntlClientProvider>
     </QueryClientProvider>
   )

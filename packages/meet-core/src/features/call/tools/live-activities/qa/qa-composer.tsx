@@ -224,7 +224,7 @@ export function QaComposer({
       className={cn(
         'resize-none text-sm',
         // One line that grows with the text to three, then scrolls.
-        compact ? 'max-h-[4.75rem] min-h-9 overflow-y-auto' : 'min-h-16'
+        compact ? 'max-h-20 min-h-9 overflow-y-auto' : 'min-h-16'
       )}
       onChange={(event) => setDraft(event.target.value)}
       onKeyDown={(event) => {
@@ -261,7 +261,11 @@ export function QaComposer({
         }}
       >
         {chips}
-        {extra}
+        {extra ? (
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            {extra}
+          </div>
+        ) : null}
         <div className="flex items-end gap-1">
           <div className="min-w-0 flex-1">
             {labelNode}

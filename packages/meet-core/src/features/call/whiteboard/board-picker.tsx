@@ -43,7 +43,7 @@ export function GuestAccessSelect({
       onValueChange={(next) => onChange(next as MeetWhiteboardGuestAccess)}
     >
       <SelectTrigger aria-label={label} className="h-8 w-36 text-xs">
-        <SelectValue />
+        <SelectValue placeholder={t('board_guests')} />
       </SelectTrigger>
       <SelectContent>
         {ACCESS.map((level) => (

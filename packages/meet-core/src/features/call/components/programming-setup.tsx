@@ -178,7 +178,7 @@ export function ProgrammingSetup({
                 aria-label={t('language')}
                 className="h-10 w-full rounded-full"
               >
-                <SelectValue />
+                <SelectValue placeholder={t('language')} />
               </SelectTrigger>
               <SelectContent>
                 {PLAYGROUND_LANGUAGES.filter(

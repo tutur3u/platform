@@ -49,6 +49,7 @@ export function PrejoinTitle({
       disabled={busy}
       id="prejoin-title"
       maxLength={255}
+      placeholder={t('meeting_title_placeholder')}
       onBlur={() => void save()}
       onChange={(event) => setDraft(event.target.value)}
       onKeyDown={(event) => {
