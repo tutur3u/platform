@@ -18,6 +18,7 @@ import {
   buildTraceHeaders,
 } from '../upskii/http';
 import {
+  forEachAnchoredRegularFile,
   listAnchoredSqlFiles,
   type RetainedDirectoryHandle,
   readAnchoredRegularFile,
@@ -294,38 +295,38 @@ async function runRlsCheck(ctx: Ctx): Promise<number> {
     'MIGRATIONS_DIR_NOT_FOUND',
     async (anchor) => {
       const list = await readMigrationsInAnchor(anchor);
-      for (const entry of list) {
-        const file = await readAnchoredRegularFile(
-          anchor,
-          entry.file,
-          MAX_MIGRATION_BYTES,
-          'MIGRATIONS_READ_FAILED'
-        );
-        const clean = stripComments(file.content);
-        for (const m of clean.matchAll(createRe)) {
-          const pre = clean.slice(
-            Math.max(0, (m.index ?? 0) - 20),
-            m.index ?? 0
-          );
-          const tbl = /\b(?:TEMP|TEMPORARY)\s*$/iu.test(pre)
-            ? null
-            : toPublicTable(m[1], m[2] ?? '');
-          if (tbl) created.set(tbl, entry.file);
-        }
-        for (const m of clean.matchAll(dropRe)) {
-          const tbl = toPublicTable(m[1], m[2] ?? '');
-          if (tbl) [created, rlsOn, policyOn].forEach((c) => c.delete(tbl));
-        }
-        for (const [re, set] of [
-          [rlsRe, rlsOn],
-          [polRe, policyOn],
-        ] as const) {
-          for (const m of clean.matchAll(re)) {
+      await forEachAnchoredRegularFile(
+        anchor,
+        list.map((entry) => entry.file),
+        MAX_MIGRATION_BYTES,
+        'MIGRATIONS_READ_FAILED',
+        (file) => {
+          const clean = stripComments(file.content);
+          for (const m of clean.matchAll(createRe)) {
+            const pre = clean.slice(
+              Math.max(0, (m.index ?? 0) - 20),
+              m.index ?? 0
+            );
+            const tbl = /\b(?:TEMP|TEMPORARY)\s*$/iu.test(pre)
+              ? null
+              : toPublicTable(m[1], m[2] ?? '');
+            if (tbl) created.set(tbl, file.file);
+          }
+          for (const m of clean.matchAll(dropRe)) {
             const tbl = toPublicTable(m[1], m[2] ?? '');
-            if (tbl) set.add(tbl);
+            if (tbl) [created, rlsOn, policyOn].forEach((c) => c.delete(tbl));
+          }
+          for (const [re, set] of [
+            [rlsRe, rlsOn],
+            [polRe, policyOn],
+          ] as const) {
+            for (const m of clean.matchAll(re)) {
+              const tbl = toPublicTable(m[1], m[2] ?? '');
+              if (tbl) set.add(tbl);
+            }
           }
         }
-      }
+      );
       return list;
     }
   );

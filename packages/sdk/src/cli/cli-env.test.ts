@@ -76,7 +76,7 @@ describe('cli-env', () => {
 
   it('resolves Tuturuuu origins per environment', () => {
     expect(resolveTuturuuuOrigins('prod')).toEqual({
-      admin: 'https://admin.tuturuuu.com',
+      admin: 'https://tuturuuu.com/admin',
       meet: 'https://meet.tuturuuu.com',
       tasks: 'https://tasks.tuturuuu.com',
       web: 'https://tuturuuu.com',

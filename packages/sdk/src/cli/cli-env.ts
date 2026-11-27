@@ -143,7 +143,7 @@ export function resolveTuturuuuOrigins(
   switch (targetEnv) {
     case 'prod':
       return {
-        admin: 'https://admin.tuturuuu.com',
+        admin: 'https://tuturuuu.com/admin',
         meet: 'https://meet.tuturuuu.com',
         tasks: 'https://tasks.tuturuuu.com',
         web: 'https://tuturuuu.com',

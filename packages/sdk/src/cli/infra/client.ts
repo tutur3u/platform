@@ -22,7 +22,143 @@ const RESOURCE_NAME = /^[a-z0-9][a-z0-9_-]{0,127}$/iu;
 const SENSITIVE_HEADERS = new Set(
   'set-cookie authorization cookie x-api-key x-auth-key'.split(' ')
 );
+// Cloudflare's REST edge emits non-auth bot/LB cookies on every response.
+const CLOUDFLARE_EDGE_COOKIES = new Set([
+  '__cf_bm',
+  '__cflb',
+  '_cfuvid',
+  'cf_clearance',
+]);
 const BEARER_TOKEN = /^[A-Za-z0-9_.~+/=-]{6,}$/u;
+// RFC 6265 cookie-octets excluding comma, quotes, backslash, and whitespace so a
+// comma-folded Set-Cookie header cannot sneak a second cookie past validation.
+const SAFE_COOKIE_VALUE = /^[!#$%&'()*+\-./0-9:<=>?@A-Z[\]^_`a-z{|}~]+$/u;
+const SAFE_COOKIE_DOMAIN =
+  /^\.?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/iu;
+const SAFE_COOKIE_PATH = /^\/[^\s,;]*$/u;
+const SAFE_COOKIE_EXPIRES =
+  /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),\s+(\d{1,2})([ -])(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\3(\d{2}|\d{4})\s+(\d{2}):(\d{2}):(\d{2})\s+GMT$/iu;
+const COOKIE_WEEKDAYS = new Map<string, number>([
+  ['sun', 0],
+  ['sunday', 0],
+  ['mon', 1],
+  ['monday', 1],
+  ['tue', 2],
+  ['tuesday', 2],
+  ['wed', 3],
+  ['wednesday', 3],
+  ['thu', 4],
+  ['thursday', 4],
+  ['fri', 5],
+  ['friday', 5],
+  ['sat', 6],
+  ['saturday', 6],
+]);
+const COOKIE_MONTHS = new Map<string, number>([
+  ['jan', 0],
+  ['feb', 1],
+  ['mar', 2],
+  ['apr', 3],
+  ['may', 4],
+  ['jun', 5],
+  ['jul', 6],
+  ['aug', 7],
+  ['sep', 8],
+  ['oct', 9],
+  ['nov', 10],
+  ['dec', 11],
+]);
+const SAFE_COOKIE_BOOL_ATTRS = new Set(['httponly', 'secure', 'partitioned']);
+
+function isValidCookieExpires(value: string): boolean {
+  const match = SAFE_COOKIE_EXPIRES.exec(value);
+  if (!match) return false;
+  const weekday = COOKIE_WEEKDAYS.get((match[1] ?? '').toLowerCase());
+  const day = Number(match[2]);
+  const month = COOKIE_MONTHS.get((match[4] ?? '').toLowerCase());
+  const rawYear = match[5] ?? '';
+  const yearNum = Number(rawYear);
+  const year =
+    rawYear.length === 2
+      ? yearNum >= 70
+        ? 1900 + yearNum
+        : 2000 + yearNum
+      : yearNum;
+  const hour = Number(match[6]);
+  const minute = Number(match[7]);
+  const second = Number(match[8]);
+  if (
+    weekday === undefined ||
+    month === undefined ||
+    year < 1601 ||
+    day < 1 ||
+    day > 31 ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59
+  ) {
+    return false;
+  }
+  const date = new Date(Date.UTC(year, month, day, hour, minute, second));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month &&
+    date.getUTCDate() === day &&
+    date.getUTCDay() === weekday
+  );
+}
+
+function blockCredentialLeak(): never {
+  throw new CliError({
+    code: 'CREDENTIAL_LEAK_BLOCKED',
+    exitCode: CLI_EXIT.policy,
+    message: 'Credential output blocked.',
+  });
+}
+
+function isSafeCloudflareEdgeSetCookie(rawCookie: string): boolean {
+  if (!rawCookie || /[\u0000-\u001f\u007f]/u.test(rawCookie)) return false;
+  const parts = rawCookie.split(';');
+  const pair = parts[0]?.trim() ?? '';
+  const eq = pair.indexOf('=');
+  if (eq <= 0) return false;
+  const name = pair.slice(0, eq);
+  if (!CLOUDFLARE_EDGE_COOKIES.has(name)) return false;
+  let value = pair.slice(eq + 1);
+  if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+    value = value.slice(1, -1);
+  }
+  if (!SAFE_COOKIE_VALUE.test(value)) return false;
+
+  for (let i = 1; i < parts.length; i += 1) {
+    const attr = parts[i]?.trim() ?? '';
+    if (!attr) return false;
+    const attrEq = attr.indexOf('=');
+    if (attrEq === -1) {
+      if (!SAFE_COOKIE_BOOL_ATTRS.has(attr.toLowerCase())) return false;
+      continue;
+    }
+    const attrName = attr.slice(0, attrEq).trim().toLowerCase();
+    const attrValue = attr.slice(attrEq + 1).trim();
+    if (!attrValue) return false;
+    if (attrName === 'expires') {
+      if (!isValidCookieExpires(attrValue)) return false;
+    } else if (attrName === 'max-age') {
+      if (!/^-?\d+$/u.test(attrValue)) return false;
+    } else if (attrName === 'domain') {
+      if (!SAFE_COOKIE_DOMAIN.test(attrValue)) return false;
+    } else if (attrName === 'path') {
+      if (!SAFE_COOKIE_PATH.test(attrValue)) return false;
+    } else if (attrName === 'samesite') {
+      if (!/^(?:lax|strict|none)$/iu.test(attrValue)) return false;
+    } else if (attrName === 'priority') {
+      if (!/^(?:low|medium|high)$/iu.test(attrValue)) return false;
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
 
 export const dnsRecordTypeSchema = z.enum(['A', 'AAAA', 'CNAME', 'TXT', 'MX']);
 type DnsRecordType = z.infer<typeof dnsRecordTypeSchema>;
@@ -187,9 +323,15 @@ export interface InfraClientOptions {
 export function createInfraClient(options: InfraClientOptions) {
   const envVars = options.envVars ?? process.env;
   const adminOrigin = resolveTuturuuuOrigins(options.env, envVars).admin;
+  const adminBaseUrl = new URL(adminOrigin);
+  const adminBasePath = adminBaseUrl.pathname.replace(/\/+$/u, '');
   const fetchImpl = options.fetch ?? globalThis.fetch;
   const secrets = new Set(infraEnvSecrets(envVars));
   const origins = { admin: adminOrigin, cloudflare: CF_ORIGIN };
+  const realmBases = {
+    admin: { basePath: adminBasePath, origin: adminBaseUrl.origin },
+    cloudflare: { basePath: '', origin: CF_ORIGIN },
+  };
   const accountId =
     envVars[`TTR_INFRA_CF_ACCOUNT_ID_${options.env.toUpperCase()}`] ??
     envVars.TTR_INFRA_CF_ACCOUNT_ID;
@@ -272,11 +414,26 @@ export function createInfraClient(options: InfraClientOptions) {
     command: string,
     signal?: AbortSignal
   ): Promise<unknown> {
-    const url = new URL(path, origins[realm]);
-    const prefix = realm === 'cloudflare' ? CF_API : ADMIN_API;
+    const { basePath, origin } = realmBases[realm];
+    const realmPrefix = realm === 'cloudflare' ? CF_API : ADMIN_API;
+    const relative = new URL(path, origin);
     if (
-      url.origin !== origins[realm] ||
-      !url.pathname.startsWith(`${prefix}/`)
+      relative.origin !== origin ||
+      !relative.pathname.startsWith(`${realmPrefix}/`)
+    ) {
+      throw new CliError({
+        code: 'INFRA_UNSAFE_URL',
+        exitCode: CLI_EXIT.policy,
+        message: 'Infrastructure URL is outside the pinned API.',
+      });
+    }
+    const url = new URL(
+      `${basePath}${relative.pathname}${relative.search}`,
+      origin
+    );
+    if (
+      url.origin !== origin ||
+      !url.pathname.startsWith(`${basePath}${realmPrefix}/`)
     ) {
       throw new CliError({
         code: 'INFRA_UNSAFE_URL',
@@ -304,10 +461,29 @@ export function createInfraClient(options: InfraClientOptions) {
       },
       trace['X-TTR-Request-Id']
     );
+    const hasGetSetCookie = typeof response.headers.getSetCookie === 'function';
+    const setCookies = hasGetSetCookie ? response.headers.getSetCookie() : [];
+    for (const cookieHeader of setCookies) {
+      assertSafeInfraText(`set-cookie: ${cookieHeader}`, knownSecrets);
+      if (
+        realm !== 'cloudflare' ||
+        !isSafeCloudflareEdgeSetCookie(cookieHeader)
+      ) {
+        blockCredentialLeak();
+      }
+    }
     for (const [name, value] of response.headers) {
+      const lower = name.toLowerCase();
+      if (lower === 'set-cookie') {
+        if (!hasGetSetCookie || setCookies.length === 0) {
+          assertSafeInfraText(`${name}: ${value}`, knownSecrets);
+          blockCredentialLeak();
+        }
+        continue;
+      }
       assertSafeInfraText(`${name}: ${value}`, knownSecrets);
-      if (SENSITIVE_HEADERS.has(name)) {
-        assertSafeInfraValue({ authorization: value }, knownSecrets);
+      if (SENSITIVE_HEADERS.has(lower)) {
+        blockCredentialLeak();
       }
     }
     assertSafeInfraText(raw, knownSecrets);

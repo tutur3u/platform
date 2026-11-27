@@ -72,6 +72,49 @@ const DARWIN_READ_SCRIPT = [
   '  os.close(ffd)',
 ].join('\n');
 
+const DARWIN_BATCH_READ_SCRIPT = [
+  'import base64, errno, json, os, stat, sys',
+  'dev, ino, cap, batch_cap = int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])',
+  'names = json.loads(sys.stdin.read())',
+  'uid = os.getuid()',
+  'dst = os.fstat(3)',
+  'if not stat.S_ISDIR(dst.st_mode) or dst.st_dev != dev or dst.st_ino != ino or dst.st_uid != uid or (dst.st_mode & 0o022) != 0:',
+  '  sys.exit(6)',
+  'out = []',
+  'batch_total = 0',
+  'for name in names:',
+  '  try:',
+  '    ffd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=3)',
+  '  except OSError as e:',
+  '    sys.exit(4 if e.errno == errno.ENOENT else 6)',
+  '  try:',
+  '    fst = os.fstat(ffd)',
+  '    if not stat.S_ISREG(fst.st_mode) or fst.st_uid != uid or (fst.st_mode & 0o022) != 0:',
+  '      sys.exit(6)',
+  '    if fst.st_size > cap:',
+  '      sys.exit(7)',
+  '    if out and batch_total + fst.st_size > batch_cap:',
+  '      break',
+  '    chunks = []',
+  '    total = 0',
+  '    while True:',
+  '      buf = os.read(ffd, 65536)',
+  '      if not buf:',
+  '        break',
+  '      total += len(buf)',
+  '      if total > cap:',
+  '        sys.exit(7)',
+  '      chunks.append(buf)',
+  '    if out and batch_total + total > batch_cap:',
+  '      break',
+  '    raw = b"".join(chunks)',
+  '    batch_total += total',
+  '    out.append({"b64": base64.b64encode(raw).decode("ascii"), "mtimeMs": fst.st_mtime_ns // 1_000_000, "name": name, "size": total})',
+  '  finally:',
+  '    os.close(ffd)',
+  'sys.stdout.write(json.dumps(out))',
+].join('\n');
+
 export interface RetainedDirectoryHandle {
   dev: bigint;
   fd: number;
@@ -93,15 +136,25 @@ function runDarwinFdHelper(
   fd: number,
   script: string,
   args: string[],
-  maxStdoutBytes: number
+  maxStdoutBytes: number,
+  options: { stdinText?: string; timeoutMs?: number } = {}
 ): Promise<{ code: number; stdout: string }> {
   return new Promise((resolvePromise) => {
     const child = spawn(DARWIN_PYTHON, ['-I', '-c', script, ...args], {
       env: {},
       killSignal: 'SIGKILL',
-      stdio: ['ignore', 'pipe', 'ignore', fd],
-      timeout: 10_000,
+      stdio: [
+        options.stdinText !== undefined ? 'pipe' : 'ignore',
+        'pipe',
+        'ignore',
+        fd,
+      ],
+      timeout: options.timeoutMs ?? 10_000,
     });
+    if (options.stdinText !== undefined && child.stdin) {
+      child.stdin.on('error', () => undefined);
+      child.stdin.end(options.stdinText, 'utf8');
+    }
     const chunks: Buffer[] = [];
     let total = 0;
     let overflow = false;
@@ -444,4 +497,117 @@ export async function readAnchoredRegularFile(
     'FD_ANCHOR_UNAVAILABLE',
     'Descriptor-anchored file reads are unavailable on this platform.'
   );
+}
+
+const DARWIN_BATCH_MAX_FILES = 500;
+const DARWIN_BATCH_MAX_RAW_BYTES = 16 * 1024 * 1024;
+
+export interface AnchoredRegularFileEntry {
+  content: string;
+  file: string;
+  mtime: Date;
+  size: number;
+}
+
+export async function forEachAnchoredRegularFile(
+  anchor: RetainedDirectoryHandle,
+  fileNames: readonly string[],
+  maxBytes: number,
+  notFoundCode: string,
+  onFile: (entry: AnchoredRegularFileEntry) => void | Promise<void>
+): Promise<void> {
+  for (const fileName of fileNames) {
+    if (
+      !fileName ||
+      fileName === '.' ||
+      fileName === '..' ||
+      fileName.includes('/') ||
+      fileName.includes('\\') ||
+      fileName.includes('\0')
+    )
+      throw policy('UNSAFE_LOCAL_PATH', `Invalid file name: ${fileName}`);
+  }
+  if (fileNames.length === 0) return;
+
+  if (process.platform !== 'darwin') {
+    for (const fileName of fileNames) {
+      const read = await readAnchoredRegularFile(
+        anchor,
+        fileName,
+        maxBytes,
+        notFoundCode
+      );
+      await onFile({ ...read, file: fileName });
+    }
+    return;
+  }
+
+  await assertRetainedFd(anchor);
+  const batchCap = Math.max(maxBytes, DARWIN_BATCH_MAX_RAW_BYTES);
+  const maxStdoutBytes = Math.ceil((batchCap * 4) / 3) + 2 * 1024 * 1024;
+  let offset = 0;
+
+  while (offset < fileNames.length) {
+    const slice = fileNames.slice(offset, offset + DARWIN_BATCH_MAX_FILES);
+    const res = await runDarwinFdHelper(
+      anchor.fd,
+      DARWIN_BATCH_READ_SCRIPT,
+      [
+        String(anchor.dev),
+        String(anchor.ino),
+        String(maxBytes),
+        String(batchCap),
+      ],
+      maxStdoutBytes,
+      { stdinText: JSON.stringify(slice), timeoutMs: 20_000 }
+    );
+    if (res.code === 4) {
+      throw err(
+        notFoundCode,
+        `File not found in ${anchor.realDir}`,
+        CLI_EXIT.notFound
+      );
+    }
+    if (res.code === 7) {
+      throw policy(
+        'DB_FILE_TOO_LARGE',
+        `File exceeds ${maxBytes} byte limit in ${anchor.realDir}`
+      );
+    }
+    if (res.code !== 0) {
+      throw policy(
+        res.code === 127 ? 'FD_ANCHOR_UNAVAILABLE' : 'UNSAFE_LOCAL_PATH',
+        `Refusing symlink or unreadable file in ${anchor.realDir}`
+      );
+    }
+    await assertRetainedFd(anchor);
+    const parsed = JSON.parse(res.stdout) as Array<{
+      b64: string;
+      mtimeMs: number;
+      name: string;
+      size: number;
+    }>;
+    if (parsed.length === 0 || parsed.length > slice.length) {
+      throw policy(
+        'UNSAFE_LOCAL_PATH',
+        `Batch directory read returned an unexpected entry count in ${anchor.realDir}`
+      );
+    }
+    for (let index = 0; index < parsed.length; index += 1) {
+      const item = parsed[index];
+      if (!item || item.name !== slice[index]) {
+        throw policy(
+          'UNSAFE_LOCAL_PATH',
+          `Batch directory read returned an unexpected file order in ${anchor.realDir}`
+        );
+      }
+      await onFile({
+        content: Buffer.from(item.b64, 'base64').toString('utf8'),
+        file: item.name,
+        mtime: new Date(item.mtimeMs),
+        size: item.size,
+      });
+    }
+    offset += parsed.length;
+  }
 }

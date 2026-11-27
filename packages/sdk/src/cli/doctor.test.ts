@@ -141,6 +141,20 @@ describe('doctor', () => {
       'https://upskii.com',
     ]);
     expect(process.exitCode).toBe(CLI_EXIT.ok);
+
+    const infraFetch = healthyFetch();
+    const infraWrite = vi.fn();
+    await runDoctorCommand(['--env', 'prod', '--family=infra', '--json'], {
+      env: {},
+      fetch: infraFetch,
+      credentialStore,
+      write: infraWrite,
+    });
+    expect(infraFetch.mock.calls.map(([url]) => url)).toEqual([
+      'https://tuturuuu.com',
+      'https://tuturuuu.com/admin',
+    ]);
+    expect(process.exitCode).toBe(CLI_EXIT.ok);
   });
 
   it('marks critical probe failures unavailable without printing error details', async () => {

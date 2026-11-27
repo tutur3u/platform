@@ -481,6 +481,35 @@ describe('infrastructure reads', () => {
     expect(requests).toHaveLength(0);
   });
 
+  it('targets https://tuturuuu.com/admin/api/v1/infrastructure/* in prod', async () => {
+    const seen: string[] = [];
+    const fetch: typeof globalThis.fetch = async (input) => {
+      const url = input instanceof URL ? input : new URL(String(input));
+      seen.push(url.href);
+      if (url.pathname === '/admin/api/v1/infrastructure/deployments') {
+        return Response.json({ configured: true, projects: [] });
+      }
+      return Response.json({ runners: [] });
+    };
+    const prodEnv = { TTR_INFRA_TOKEN_PROD: ADMIN_TOKEN };
+    expect(
+      await command(['runners', 'list', '--env', 'prod', '--json'], {
+        envVars: prodEnv,
+        fetch,
+      })
+    ).toMatchObject({ exitCode: 0, stderr: '' });
+    expect(
+      await command(['deploys', 'list', '--env', 'prod', '--json'], {
+        envVars: prodEnv,
+        fetch,
+      })
+    ).toMatchObject({ exitCode: 0, stderr: '' });
+    expect(seen).toEqual([
+      'https://tuturuuu.com/admin/api/v1/infrastructure/devboxes',
+      'https://tuturuuu.com/admin/api/v1/infrastructure/deployments',
+    ]);
+  });
+
   it.each([
     new Response(`not-json ${ADMIN_TOKEN}`, { status: 502 }),
     new Response('{"runners":[],"error":"fixture-tuturuuu-\\u0072ead"}'),
@@ -506,6 +535,94 @@ describe('infrastructure reads', () => {
       expect(result.stderr).not.toContain('opaque-fixture');
     }
   );
+
+  it('allows Cloudflare edge LB/bot Set-Cookie headers while still blocking session cookies and token leaks', async () => {
+    const cfEdgeHeaders = new Headers({ 'content-type': 'application/json' });
+    cfEdgeHeaders.append(
+      'set-cookie',
+      '__cflb=02DiuF91a123456; SameSite=Lax; path=/; expires=Fri, 27 Nov 2026 02:00:00 GMT; HttpOnly'
+    );
+    cfEdgeHeaders.append(
+      'set-cookie',
+      '__cf_bm=abc123def456; path=/; expires=Fri, 27-Nov-26 02:00:00 GMT; domain=.api.cloudflare.com; HttpOnly; Secure; SameSite=None'
+    );
+    const ok = await command(['cloudflare', 'zones', '--json'], {
+      envVars: ENV,
+      fetch: async () =>
+        new Response(
+          JSON.stringify({
+            result: [{ id: ZONE_ID, name: 'tuturuuu.com', status: 'active' }],
+            success: true,
+          }),
+          { headers: cfEdgeHeaders, status: 200 }
+        ),
+    });
+    expect(ok).toMatchObject({ exitCode: 0, stderr: '' });
+    expect(JSON.parse(ok.stdout)).toHaveLength(1);
+
+    for (const badCookie of [
+      '',
+      '   ',
+      'session=opaque-fixture; HttpOnly',
+      '__cf_bm=abc123def456; path=/, session=opaque-fixture; HttpOnly',
+      '__cf_bm=abc123def456; expires=Fri, 27 Nov 2026 02:00:00 GMT, session=opaque-fixture',
+      '__cf_bm=abc123def456; expires=Fri, 31 Feb 2026 02:00:00 GMT; path=/',
+      '__cf_bm=abc123def456; expires=Fri, 27 Nov 2026 24:00:00 GMT; path=/',
+      '__cf_bm=abc123def456; expires=Fri, 27 Nov 2026 02:60:00 GMT; path=/',
+      '__cf_bm=abc123def456; expires=Thu, 27 Nov 2026 02:00:00 GMT; path=/',
+      '__cf_bm=abc123def456, session=opaque-fixture',
+      `__cf_bm=leaked-${CF_TOKEN}; path=/`,
+    ]) {
+      const blocked = await command(['cloudflare', 'zones', '--json'], {
+        envVars: ENV,
+        fetch: async () =>
+          new Response(JSON.stringify({ result: [], success: true }), {
+            headers: {
+              'content-type': 'application/json',
+              'set-cookie': badCookie,
+            },
+            status: 200,
+          }),
+      });
+      expect(blocked).toMatchObject({ stdout: '', exitCode: 6 });
+      expect(JSON.parse(blocked.stderr)).toMatchObject({
+        error: { code: 'CREDENTIAL_LEAK_BLOCKED' },
+      });
+      expect(blocked.stderr).not.toContain(CF_TOKEN);
+    }
+
+    const fallbackEmpty = await command(['cloudflare', 'zones', '--json'], {
+      envVars: ENV,
+      fetch: async () =>
+        ({
+          headers: [['set-cookie', '']] as unknown as Headers,
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify({ result: [], success: true }),
+        }) as Response,
+    });
+    expect(fallbackEmpty).toMatchObject({ stdout: '', exitCode: 6 });
+    expect(JSON.parse(fallbackEmpty.stderr)).toMatchObject({
+      error: { code: 'CREDENTIAL_LEAK_BLOCKED' },
+    });
+
+    const adminCookieBlocked = await command(['runners', 'list', '--json'], {
+      envVars: ENV,
+      fetch: async () =>
+        new Response(JSON.stringify({ runners: [] }), {
+          headers: {
+            'content-type': 'application/json',
+            'set-cookie':
+              '__cf_bm=abc123def456; path=/; HttpOnly; Secure; SameSite=None',
+          },
+          status: 200,
+        }),
+    });
+    expect(adminCookieBlocked).toMatchObject({ stdout: '', exitCode: 6 });
+    expect(JSON.parse(adminCookieBlocked.stderr)).toMatchObject({
+      error: { code: 'CREDENTIAL_LEAK_BLOCKED' },
+    });
+  });
 
   it('refuses secret flags and does not forward raw network errors', async () => {
     const opts = {
