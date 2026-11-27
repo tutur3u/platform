@@ -15,7 +15,9 @@ const TIMING_SENSITIVE_TESTS = new Set([
   'scripts/ci/meet-build-metadata.test.js',
   'scripts/ci/normalize-release-notes.test.js',
   'scripts/ci/production-publication-policy.test.js',
+  'scripts/ci/sdk-dev-pack-process.test.js',
   'scripts/sdk-rollout-descriptor.test.js',
+  'scripts/sdk-rollout-race.test.js',
   'scripts/worktree-footprint.test.js',
 ]);
 const DEFAULT_SUPPLEMENTAL_PATHS = [
