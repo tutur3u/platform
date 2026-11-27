@@ -59,9 +59,16 @@ and `timezone_resolution_scope_test.dart` checks the scoped states.
 ## Settings detail shell and profile settings
 
 All mobile Settings children use the same shell background and one shell top
-navbar with the destination title and actions. In-app Back appears only in the
-floating bottom navbar, never in the top navbar. Android system Back remains
-available. Offline is `/settings/offline`; its
+navbar with the destination title and actions. On phones, the Settings dock
+shows Back. On tablets and desktops, the sidebar shows Back alongside the
+global destinations and the Profile account control. Android system Back
+remains available.
+
+An injected Settings Back action, such as Mail's guarded exit, runs on tap
+when enabled. Long-press leaves the editor open so its exit guard still applies.
+The shell rail layout tests cover the phone and tablet controls.
+
+Offline is `/settings/offline`; its
 Finance, Inventory, Tasks and Calendar details are `/settings/offline/<module>`.
 They do not add body title/back bars, nested AppBars or another top safe area.
 Their scroll content reserves the shell-provided bottom padding, so the floating

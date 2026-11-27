@@ -217,11 +217,24 @@ void main() {
 
       backEnabled.value = true;
       await settleShell(tester);
+      await tester.longPress(back);
+      await settleShell(tester);
+      expect(exits, 0);
+      expect(shell.path, Routes.settings);
       await tester.tap(back);
       expect(exits, 1);
       expect(shell.path, Routes.settings);
     });
   }
+
+  testWidgets('plain phone Settings keeps only Back in the dock', (
+    tester,
+  ) async {
+    useShellWindow(tester, const Size(390, 844));
+    await pumpRailShell(tester, Routes.settings);
+    expect(find.byKey(const ValueKey('shell-dock-back')), findsOneWidget);
+    expect(find.byType(MorphingNavigationBar), findsNothing);
+  });
 
   testWidgets('plain Settings exposes Back in the rail', (tester) async {
     useShellWindow(tester, _landscape);
