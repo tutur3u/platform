@@ -77,10 +77,7 @@ export function PresenceSceneFixture({
   const participants = empty ? EMPTY_PARTICIPANTS : ACTIVE_PARTICIPANTS;
   const toolIds = useMemo(
     () =>
-      allowedToolIds(
-        canBrowse ? FIXTURE_TOOLS.map((tool) => tool.id) : [],
-        []
-      ),
+      allowedToolIds(canBrowse ? FIXTURE_TOOLS.map((tool) => tool.id) : [], []),
     [canBrowse]
   );
   const isAvailable = useCallback(

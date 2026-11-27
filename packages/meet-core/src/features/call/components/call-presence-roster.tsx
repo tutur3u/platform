@@ -34,7 +34,9 @@ export function CallPresenceRoster({
   const t = useTranslations('meet.call');
   const programmingT = useTranslations('programmingPlayground');
   const collaborationT = useTranslations('meet.collaboration');
-  const hasSecondaryActions = Boolean(onProgramming || onDocument || activities);
+  const hasSecondaryActions = Boolean(
+    onProgramming || onDocument || activities
+  );
 
   return (
     <section
