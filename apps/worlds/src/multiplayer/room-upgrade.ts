@@ -3,7 +3,7 @@ import {
   APP_LOGOUT_COOKIE_NAME,
   APP_SESSION_COOKIE_NAME,
   verifyAppSessionRequest,
-} from '../../../../packages/auth/src/app-session-core.ts';
+} from '@tuturuuu/auth/app-session-core';
 import { isActorId, issueRoomAdmission, roomName } from './admission.ts';
 import { ROOM_SOCKET_PATH } from './room-protocol.ts';
 import { EDUFEST_HALL_REVISION } from './room.ts';

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test } from 'bun:test';
 import {
   APP_SESSION_COOKIE_NAME,
   createAppSessionToken,
-} from '../../../../packages/auth/src/app-session-core.ts';
+} from '@tuturuuu/auth/app-session-core';
 import { verifyRoomAdmission } from './admission.ts';
 import {
   handleRoomUpgrade,
