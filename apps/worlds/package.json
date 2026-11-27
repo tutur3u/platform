@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "vp build",
-    "dev": "vp dev"
+    "dev": "vp dev",
+    "type-check": "tsc --project tsconfig.json"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.41",
@@ -16,8 +17,12 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.8",
+    "@types/node": "^26.6.5",
+    "@types/react": "~19.2.18",
+    "@types/react-dom": "~19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "cf": "1.0.0-beta.20",
+    "typescript": "7.0.2",
     "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
     "vite-plus": "1.3.0"
   }
