@@ -1,6 +1,9 @@
 import { edufestHall } from '@tuturuuu/worlds/edufest-hall';
 import { describe, expect, it } from 'vitest';
-import { geometryFields, validateObjectGeometry } from './object-geometry';
+import {
+  geometryFields,
+  validateObjectGeometry,
+} from '@/lib/worlds/object-geometry';
 
 const booth = edufestHall.objects[0]!;
 const bounds = edufestHall.bounds;

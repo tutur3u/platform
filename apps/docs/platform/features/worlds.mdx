@@ -48,6 +48,19 @@ saving it. Editors preview and explicitly publish the result. Bound job cost,
 input and output sizes, and attempts. Deduplicate by job ID, persist checkpoints,
 and fence cancellation and terminal jobs from further work.
 
+### Workspace editor draft saves
+
+The dashboard editor stores one EduFest sample draft per workspace. Users with
+`manage_workspace_settings` can load and save geometry overrides. The first
+open shows the bundled sample at revision zero. Each successful save advances
+the revision. A stale save preserves local form values and prompts the user to
+load the latest saved draft. The draft does not affect the public viewer or the
+EduFest event.
+
+The workspace draft API tests cover authorization, revision conflicts and input
+limits. The editor tests cover save and conflict recovery. Deploy the draft
+table through the gated Supabase migration workflow.
+
 ## Viewer, identity, and hosting
 
 Target TanStack Start and Vite+ on Cloudflare for the standalone viewer at

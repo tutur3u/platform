@@ -6894,6 +6894,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/workspaces/[wsId]/worlds/draft",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/worlds/draft/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/workspaces/limits",
       "source": "apps/web/src/app/api/v1/workspaces/limits/route.ts",
       "category": "api",
