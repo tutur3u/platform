@@ -245,15 +245,22 @@ function dispatchMeetRoomCommand(
       const capacityError = roomCapacityError(state, token);
       if (capacityError) return denied(state, capacityError);
       const existing = state.presence[userId] ?? createMeetPresence(token, now);
+      const updated: MeetRealtimePresence = {
+        ...existing,
+        lastSeenAt: now,
+        media: clampMeetMedia(state.settings, existing, message.media),
+      };
+      if (message.activeActivityId === null) delete updated.activeActivityId;
+      else if (message.activeActivityId !== undefined)
+        updated.activeActivityId = message.activeActivityId;
+      if (message.followingUserId === null) delete updated.followingUserId;
+      else if (message.followingUserId !== undefined)
+        updated.followingUserId = message.followingUserId;
       const next = {
         ...state,
         presence: {
           ...state.presence,
-          [userId]: {
-            ...existing,
-            lastSeenAt: now,
-            media: clampMeetMedia(state.settings, existing, message.media),
-          },
+          [userId]: updated,
         },
       };
       return outcome(next, {

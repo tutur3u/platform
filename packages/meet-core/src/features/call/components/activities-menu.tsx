@@ -23,6 +23,10 @@ import {
   PROGRAMMING_ACTIVITY,
   toolActivityId,
 } from '../stage-layout/activity-ids';
+import {
+  ActivityDockPresence,
+  type ActivityPresencePerson,
+} from '../stage-layout/activity-presence';
 import { useActivitiesRequest } from '../stage-layout/activities-request';
 import type { MeetToolDefinition } from '../tools/registry';
 import { ActivitiesDialog } from './activities-dialog';
@@ -61,6 +65,7 @@ export function ActivitiesMenu({
   navigationAllowed = false,
   navigation,
   penBoardFirst = false,
+  dockPresence = [],
 }: {
   tools: readonly MeetToolDefinition[];
   /** Ids of the tools open on the stage. */
@@ -87,6 +92,8 @@ export function ActivitiesMenu({
   navigation?: ActivityNavigation;
   /** Meet UX v2: the Whiteboard opens the pen board (`whiteboardPolicy`). */
   penBoardFirst?: boolean;
+  /** Compact presence indicator for participants currently inside activities. */
+  dockPresence?: readonly ActivityPresencePerson[];
 }) {
   const t = useTranslations('meet.call.activities');
   const programmingT = useTranslations('programmingPlayground');
@@ -235,6 +242,7 @@ export function ActivitiesMenu({
             >
               <LayoutGrid className="size-5" />
               <span className="hidden md:inline">{t('button')}</span>
+              <ActivityDockPresence people={dockPresence} />
               {openCount > 0 && (
                 <span
                   aria-hidden="true"

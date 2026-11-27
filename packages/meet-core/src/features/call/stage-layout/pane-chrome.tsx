@@ -11,6 +11,10 @@ import {
   type KeyboardEvent,
   useCallback,
 } from 'react';
+import {
+  type ActivityPresencePerson,
+  ActivityPresenceRow,
+} from './activity-presence';
 import { PaneWindowActions } from './activity-shell';
 import { activityTone } from './activity-tones';
 import type { PaneNode } from './layout-model';
@@ -54,6 +58,7 @@ export function PaneChrome({
   onCloseForEveryone,
   onMinimize,
   onSwitcher,
+  presence = [],
 }: {
   pane: PaneNode;
   meta: (id: string) => ActivityMeta;
@@ -84,6 +89,8 @@ export function PaneChrome({
   onMinimize?: () => void;
   /** Phone only: opens the sheet that switches between open activities. */
   onSwitcher?: () => void;
+  /** Live participants currently in or following this pane's active activity. */
+  presence?: readonly ActivityPresencePerson[];
 }) {
   const t = useTranslations('meet.call.stage_layout');
   const active = meta(pane.active);
@@ -232,6 +239,7 @@ export function PaneChrome({
           ref={slotRef}
           className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden"
         />
+        <ActivityPresenceRow activityId={pane.active} people={presence} />
         <PaneWindowActions
           title={active.title}
           canMaximize={canMaximize}

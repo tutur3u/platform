@@ -20,6 +20,7 @@ import {
   PROGRAMMING_ACTIVITY,
   toolIdOf,
 } from './activity-ids';
+import type { ActivityPresencePerson } from './activity-presence';
 import { mergedKindOf } from './merged-activities';
 import { type StageActivity, StageLayoutView } from './stage-layout-view';
 import type { ActivityPresentation } from './use-activity-presentation';
@@ -35,6 +36,7 @@ export function RoomStage({
   peopleCount,
   presentation,
   onCloseForEveryone,
+  presenceByActivity,
   roomTimer = null,
   tools,
   renderTool,
@@ -46,6 +48,7 @@ export function RoomStage({
   peopleCount: number;
   presentation?: ActivityPresentation;
   onCloseForEveryone?: (activityId: string) => void;
+  presenceByActivity?: Record<string, readonly ActivityPresencePerson[]>;
   /** Meet UX v2's room timer, for the one Timer pane. */
   roomTimer?: RoomTimer | null;
   tools: readonly MeetToolDefinition[];
@@ -133,6 +136,7 @@ export function RoomStage({
         peopleCount={peopleCount}
         presentation={presentation}
         onCloseForEveryone={onCloseForEveryone}
+        presenceByActivity={presenceByActivity}
       />
     </RoomTimerProvider>
   );

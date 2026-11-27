@@ -48,6 +48,7 @@ function ParticipantTileImpl({
   focused,
   focusKey,
   onRenderedHeight,
+  activityBadge,
 }: {
   className?: string;
   miraActive?: boolean;
@@ -84,6 +85,8 @@ function ParticipantTileImpl({
   focused?: boolean;
   /** Receives this camera tile's device-pixel height for layer selection. */
   onRenderedHeight?: (userId: string, devicePx: number | null) => void;
+  /** Compact indicator of the activity this participant is currently in. */
+  activityBadge?: { title: string; following?: boolean };
 }) {
   const t = useTranslations('meet.call');
   const displayName = meetParticipantName(participant.displayName, participant);
@@ -257,6 +260,25 @@ function ParticipantTileImpl({
           isSelf && kind === 'camera' && '-scale-x-100'
         )}
       />
+      {!floating && kind === 'camera' && activityBadge && (
+        <div
+          data-participant-activity={activityBadge.title}
+          className="pointer-events-none absolute top-2 left-2 z-10 max-w-[calc(100%-3rem)] truncate rounded-full border border-border/70 bg-background/85 px-2 py-0.5 font-medium text-[11px] text-foreground backdrop-blur-sm"
+          title={
+            activityBadge.following
+              ? t('stage_layout.following_badge', {
+                  activity: activityBadge.title,
+                })
+              : activityBadge.title
+          }
+        >
+          {activityBadge.following
+            ? t('stage_layout.following_badge', {
+                activity: activityBadge.title,
+              })
+            : activityBadge.title}
+        </div>
+      )}
       {!showVideo && (
         <div
           className={cn(

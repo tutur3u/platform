@@ -264,6 +264,17 @@ export function useMeetRoom({
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });
   }, []);
+  const updateActivityPresence = useCallback(
+    (activeActivityId: string | null, followingUserId: string | null) => {
+      signalingRef.current?.send({
+        media: mediaRef.current,
+        activeActivityId,
+        followingUserId,
+        type: 'presence.update',
+      });
+    },
+    []
+  );
   const mediaAllowed = usePresenceTransport(
     stateRef,
     state.settings.transport,
@@ -638,6 +649,7 @@ export function useMeetRoom({
   );
   return {
     ...actions,
+    updateActivityPresence,
     setBandwidthMode,
     getBandwidthMode,
     adoptPreview: async (stream) => {

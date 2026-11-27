@@ -91,3 +91,31 @@ test('host close popover offers both Close for me and Close for everyone', async
   );
   expect(closed).toEqual(['tool:live-qa']);
 });
+
+test('presence avatars appear in every activity header, on the Activities dock, and on participant tiles', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/?theme=dark&ui=sorbet', { waitUntil: 'networkidle' });
+
+  // 5a. Consistent presence row in both Shared document and Q&A headers.
+  await expect(
+    page.locator('[data-activity-presence="document"]')
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-activity-presence="tool:live-qa"]')
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      '[data-activity-presence="tool:live-qa"] [aria-label="Alex (following)"]'
+    )
+  ).toBeVisible();
+
+  // 5b. Compact presence indicator on the Activities dock.
+  await expect(page.locator('[data-activities-dock-presence]')).toBeVisible();
+
+  // 5c. Compact activity badge on the participant tile.
+  await expect(
+    page.locator('[data-participant-activity="Shared document"]')
+  ).toBeVisible();
+});

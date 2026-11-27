@@ -75,6 +75,7 @@ export function CallStage({
   onChat,
   reserveCorner = false,
   onFillChange,
+  participantActivities,
 }: {
   room: MeetRoomController;
   outputDeviceId?: string;
@@ -100,6 +101,11 @@ export function CallStage({
   reserveCorner?: boolean;
   /** Reports whether a screen share or spotlight fills the stage. */
   onFillChange?: (filled: boolean) => void;
+  /** Compact activity indicator shown on each participant's tile. */
+  participantActivities?: Record<
+    string,
+    { title: string; following?: boolean }
+  >;
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
@@ -308,6 +314,7 @@ export function CallStage({
       )}
       kind={tile.kind}
       participant={tile.participant}
+      activityBadge={participantActivities?.[tile.participant.userId]}
       stream={tile.stream}
       isSelf={tile.participant.userId === room.state.selfUserId}
       presenceOnly={room.state.settings.transport === 'presence'}

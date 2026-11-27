@@ -9,6 +9,7 @@ import type { RoomNavigation } from '../hooks/use-room-navigation';
 import { managesJoinQr, roomKeepsJoinQr } from '../hooks/use-stage-join-qr';
 import type { MeetRoomController } from '../lib/room-controller';
 import { useMeetCallUx } from '../prejoin/use-meet-call-ux';
+import type { ActivityPresencePerson } from '../stage-layout/activity-presence';
 import { soloBoardAction } from '../stage-layout/whiteboard-policy';
 import { type MeetToolDefinition, meetTools } from '../tools/registry';
 import { ActivitiesMenu } from './activities-menu';
@@ -81,6 +82,7 @@ export function CallControlDock({
   nav,
   revealActivity,
   transcript,
+  dockPresence,
 }: {
   meetingId: string;
   room: MeetRoomController;
@@ -121,6 +123,8 @@ export function CallControlDock({
   revealActivity?: (activityId: string) => void;
   /** Present for people allowed to read the transcript and notes. */
   transcript?: Toggle;
+  /** Compact presence indicator for participants currently in activities. */
+  dockPresence?: readonly ActivityPresencePerson[];
 }) {
   const t = useTranslations('meet.call');
   const aiT = useTranslations('meet.ai');
@@ -150,6 +154,7 @@ export function CallControlDock({
       pages={pages}
       navigationAllowed={nav.allowed}
       penBoardFirst={penBoardFirst}
+      dockPresence={dockPresence}
       navigation={
         revealActivity
           ? {

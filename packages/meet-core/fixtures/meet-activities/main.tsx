@@ -10,6 +10,11 @@ import { createRoot } from 'react-dom/client';
 import messages from '../../../../apps/meet/messages/en.json';
 import '../../../../packages/ui/src/globals.css';
 import { StageLayoutView } from '../../src/features/call/stage-layout/stage-layout-view';
+import {
+  ActivityDockPresence,
+  type ActivityPresencePerson,
+} from '../../src/features/call/stage-layout/activity-presence';
+import { ParticipantTile } from '../../src/features/call/components/participant-tile';
 import { useStageLayout } from '../../src/features/call/stage-layout/use-stage-layout';
 import {
   LiveQaClientContext,
@@ -97,6 +102,39 @@ const closedForEveryone: string[] = [];
 (window as unknown as { __closedForEveryone?: string[] }).__closedForEveryone =
   closedForEveryone;
 
+const PRESENCE_BY_ACTIVITY: Record<string, readonly ActivityPresencePerson[]> =
+  {
+    document: [
+      {
+        userId: 'u-vmkhoiii',
+        displayName: 'vmkhoiii',
+        activityTitle: 'Shared document',
+      },
+    ],
+    'tool:live-qa': [
+      {
+        userId: 'u-alex',
+        displayName: 'Alex',
+        following: true,
+        activityTitle: 'Q&A',
+      },
+    ],
+  };
+
+const DOCK_PRESENCE: readonly ActivityPresencePerson[] = [
+  ...PRESENCE_BY_ACTIVITY.document!,
+  ...PRESENCE_BY_ACTIVITY['tool:live-qa']!,
+];
+
+const FIXTURE_PARTICIPANT = {
+  userId: '00000000-0000-4000-8000-000000000001',
+  displayName: 'vmkhoiii',
+  role: 'speaker' as const,
+  joinedAt: '2026-11-27T00:00:00.000Z',
+  lastSeenAt: '2026-11-27T00:00:00.000Z',
+  media: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+};
+
 function FixtureApp() {
   const controller = useStageLayout({
     accountId: 'fixture-user',
@@ -111,31 +149,51 @@ function FixtureApp() {
   }, [controller.open]);
 
   return (
-    <div className="h-screen w-screen bg-background p-3 text-foreground">
-      <StageLayoutView
-        controller={controller}
-        peopleCount={2}
-        stage={null}
-        onCloseForEveryone={
-          isHost
-            ? (id) => {
-                closedForEveryone.push(id);
-                controller.close(id);
-              }
-            : undefined
-        }
-        activities={controller.openIds.map((id) => ({
-          id,
-          title: id === 'document' ? 'Shared document' : 'Q&A',
-          icon: id === 'document' ? FileText : MessageSquare,
-          content:
-            id === 'document' ? (
-              <SharedDocFixture />
-            ) : (
-              <QaPanel meetingId="fixture-meeting" />
-            ),
-        }))}
-      />
+    <div className="flex h-screen w-screen flex-col gap-2 bg-background p-3 text-foreground">
+      <div className="min-h-0 flex-1">
+        <StageLayoutView
+          controller={controller}
+          peopleCount={2}
+          presenceByActivity={PRESENCE_BY_ACTIVITY}
+          stage={
+            <div className="h-full w-40">
+              <ParticipantTile
+                participant={FIXTURE_PARTICIPANT}
+                presenceOnly
+                resumePlaybackLabel="Resume"
+                activityBadge={{ title: 'Shared document' }}
+                className="h-full w-full"
+              />
+            </div>
+          }
+          onCloseForEveryone={
+            isHost
+              ? (id) => {
+                  closedForEveryone.push(id);
+                  controller.close(id);
+                }
+              : undefined
+          }
+          activities={controller.openIds.map((id) => ({
+            id,
+            title: id === 'document' ? 'Shared document' : 'Q&A',
+            icon: id === 'document' ? FileText : MessageSquare,
+            content:
+              id === 'document' ? (
+                <SharedDocFixture />
+              ) : (
+                <QaPanel meetingId="fixture-meeting" />
+              ),
+          }))}
+        />
+      </div>
+      <div
+        data-testid="fixture-dock"
+        className="flex shrink-0 items-center justify-center gap-2 border-t pt-2"
+      >
+        <span className="text-xs font-medium">Activities</span>
+        <ActivityDockPresence people={DOCK_PRESENCE} />
+      </div>
     </div>
   );
 }

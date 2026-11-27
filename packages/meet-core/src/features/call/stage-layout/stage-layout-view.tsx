@@ -17,6 +17,7 @@ import {
 } from 'react';
 import { useActivitiesRequest } from './activities-request';
 import { ActivityLayer } from './activity-layer';
+import type { ActivityPresencePerson } from './activity-presence';
 import { layoutGeometry, type Rect, rectStyle } from './layout-geometry';
 import { countPanes, paneLeaves, resizeBoundary } from './layout-model';
 import { LayoutSeparator, STAGE_GUTTER } from './layout-separator';
@@ -72,6 +73,7 @@ export function StageLayoutView({
   peopleCount,
   presentation,
   onCloseForEveryone,
+  presenceByActivity,
 }: {
   controller: StageLayoutController;
   activities: readonly StageActivity[];
@@ -81,6 +83,8 @@ export function StageLayoutView({
   presentation?: ActivityPresentation;
   /** Host/owner only: closes an activity for everyone in the room. */
   onCloseForEveryone?: (activityId: string) => void;
+  /** Live participants currently in or following each activity id. */
+  presenceByActivity?: Record<string, readonly ActivityPresencePerson[]>;
 }) {
   const t = useTranslations('meet.call.stage_layout');
   const { tier } = controller;
@@ -296,6 +300,7 @@ export function StageLayoutView({
               onToggleMaximize={toggleMaximize}
               onClose={controller.close}
               onCloseForEveryone={onCloseForEveryone}
+              presence={presenceByActivity?.[pane.active]}
               onMinimize={
                 pane.id === (maximizedId ?? focusedPaneId)
                   ? presentation?.minimize

@@ -156,6 +156,12 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     media: meetMediaStateSchema,
+    activeActivityId: z
+      .string()
+      .regex(/^[a-z0-9][a-z0-9:_-]{0,47}$/)
+      .nullable()
+      .optional(),
+    followingUserId: z.string().uuid().nullable().optional(),
     type: z.literal('presence.update'),
   }),
   z.object({
