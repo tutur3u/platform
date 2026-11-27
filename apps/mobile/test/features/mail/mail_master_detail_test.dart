@@ -248,10 +248,15 @@ void main() {
     // Debounce plus one batch: two requests run, the rest are queued.
     await tester.pump(const Duration(milliseconds: 300));
     expect(reads.length, 2);
-    await tester.drag(
-      find.byType(CustomScrollView).first,
-      const Offset(0, -6000),
-    );
+    final scroll = find.byKey(const ValueKey('mail-conversations'));
+    final gesture = await tester.startGesture(tester.getCenter(scroll));
+    await gesture.moveBy(const Offset(0, -100));
+    await gesture.moveBy(const Offset(0, -6000));
+    await tester.pump();
+    // A paused drag must not start another batch before scrolling ends.
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(reads.length, 2);
+    await gesture.up();
     for (var i = 0; i < 40; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }

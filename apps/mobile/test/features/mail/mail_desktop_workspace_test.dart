@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/layout/master_detail_split.dart';
 import 'package:mobile/features/mail/view/mail_action_bar.dart';
 import 'package:mobile/features/mail/view/mail_message_tile.dart';
 import 'package:mobile/features/mail/view/mail_page.dart';
@@ -43,8 +45,15 @@ void main() {
     final emptyReader = tester.getRect(find.text('Select a conversation'));
     expect(sidebar.width, greaterThanOrEqualTo(160));
     expect(sidebar.right, lessThan(list.left));
-    // The list takes web Mail's default 38% of the master-detail body.
-    expect(list.width, inInclusiveRange(420, 460));
+    // The resize handle takes its own width, and card padding insets the list.
+    final split = tester.getRect(find.byType(AppMasterDetail));
+    final handle = tester.getRect(find.byType(AppMasterDetailSplitHandle));
+    expect(
+      handle.left - split.left,
+      closeTo((split.width - handle.width) * 0.38, 0.01),
+    );
+    expect(list.left, closeTo(split.left + AppSpacing.sm, 0.01));
+    expect(list.right, closeTo(handle.left - AppSpacing.sm, 0.01));
     expect(list.right, lessThan(emptyReader.left));
 
     await tester.tap(find.text('Synthetic subject 1'));

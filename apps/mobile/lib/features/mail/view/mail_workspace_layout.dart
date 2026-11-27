@@ -179,11 +179,14 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
       children: [
         if (wide && _selected.isNotEmpty) _buildMailBulkToolbar(),
         Expanded(
-          child: _buildConversationList(
-            sharedShell: sharedShell,
-            wide: wide,
-            hasSidebar: hasSidebar,
-            folderPicker: folderPicker,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: _onConversationScroll,
+            child: _buildConversationList(
+              sharedShell: sharedShell,
+              wide: wide,
+              hasSidebar: hasSidebar,
+              folderPicker: folderPicker,
+            ),
           ),
         ),
       ],

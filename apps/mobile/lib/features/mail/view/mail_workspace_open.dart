@@ -468,6 +468,26 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
   void _rowVisibilityChanged(String id, {required bool visible}) {
     if (visible ? !_visibleIds.add(id) : !_visibleIds.remove(id)) return;
     _previews.cancel();
+    _scheduleVisiblePrefetch();
+  }
+
+  bool _onConversationScroll(ScrollNotification notification) {
+    if (notification.depth != 0) return false;
+    if (notification is ScrollStartNotification) {
+      // Mounted rows can pause mid-drag or during a fling.
+      _previews.cancel();
+      _prefetchDebounce?.cancel();
+    } else if (notification is ScrollEndNotification) {
+      _scheduleVisiblePrefetch();
+    }
+    return false;
+  }
+
+  bool get _conversationScrolling =>
+      _conversationScroll.hasClients &&
+      _conversationScroll.position.isScrollingNotifier.value;
+
+  void _scheduleVisiblePrefetch() {
     _prefetchDebounce?.cancel();
     _prefetchDebounce = Timer(
       const Duration(milliseconds: 250),
@@ -477,7 +497,9 @@ extension _MailWorkspaceOpen on _MailWorkspaceState {
 
   void _prefetchVisible() {
     final box = _mailboxId;
-    if (!mounted || box == null || !_canPrefetch) return;
+    if (!mounted || box == null || !_canPrefetch || _conversationScrolling) {
+      return;
+    }
     final ids = [
       for (final item in _items)
         if (_visibleIds.contains(item['id'])) item['id'] as String,
