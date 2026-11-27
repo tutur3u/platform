@@ -51,6 +51,7 @@ export const SIGNAL_TTL_MS: Record<Provider, number> = {
   grok: 5 * 60_000,
   cursor: 5 * 60_000,
   opencode: 5 * 60_000,
+  copilot: 5 * 60_000,
 };
 
 const DEFAULT_RESERVES: Record<string, AccountReserve> = {
@@ -75,7 +76,18 @@ function rankOne(
   blocks: QuotaBlock[],
   routingConfig: RoutingConfig
 ): RankedInstance {
-  const modelSelection = selectAccountModels(account, task, routingConfig);
+  const modelSelection = selectAccountModels(
+    {
+      ...account,
+      models: account.models?.filter(
+        (model) =>
+          !matchingBlocks(blocks, account.instanceIds ?? [account.instanceId], model, now)
+            .length
+      ),
+    },
+    task,
+    routingConfig
+  );
   const effectiveModel =
     task.model ??
     (account.provider === 'antigravity' || account.provider === 'opencode'
@@ -518,7 +530,7 @@ export function recommend(options: RecommendOptions): Recommendation {
       matchingBlocks(
         options.blocks ?? [],
         item.instanceIds,
-        options.task.model,
+        options.task.model ?? item.recommendedModel,
         now
       ).length
         ? {

@@ -514,3 +514,9 @@ to `admit` recovery input for idempotent admission; provider-native delivery of
 all descendant terminal failures remains a separate T3 integration gap.
 
 Use the read-only `agent-quota reroute-plan --parent THREAD_ID` for reset-only child waits. Preserve queued text and dirty files, cancel old queued selections, require fresh admission and the thread lease, and verify a task-bound running continuation. Configuration alone is not successful resumption.
+
+### Fleet quota snapshots
+
+Use the [fleet quota commands](../../../../apps/docs/build/development-tools/contributing-with-agents.mdx#inspect-fleet-quota-before-assigning-work)
+to check host and seat evidence before assigning work. Carry the snapshot time,
+matching run-error block, and any auth or rename alert into the handoff.

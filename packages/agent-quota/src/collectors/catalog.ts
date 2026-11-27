@@ -58,14 +58,7 @@ export function parseCatalog(value: unknown): CatalogInstance[] {
     const provider = driverToProvider(item.driverKind);
     if (!provider) return [];
     if (typeof item.providerInstanceId !== 'string') return [];
-    const constraints = Array.isArray(item.constraints)
-      ? item.constraints.map(String)
-      : [];
-    if (
-      item.canRunChildTask === false &&
-      constraints.some((c) => /disabled/i.test(c))
-    )
-      return [];
+    return [];
     return [
       {
         instanceId: item.providerInstanceId,

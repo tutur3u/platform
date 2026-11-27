@@ -1,4 +1,6 @@
-import { collectAntigravityAccountMatches } from './antigravity-account';
+import { antigravityProfile, oldAntigravityProfile } from './antigravity-profile';
+import { stateRoot } from '../state-root';
+import { collectAntigravityAccountMatches, readAntigravityRenameMap } from './antigravity-account';
 import {
   matchingBlocks,
   type QuotaBlock,
@@ -51,6 +53,7 @@ export interface CollectionResult {
   blocks: QuotaBlock[];
   poolSettings: Record<string, PoolSettings>;
   invalidObservations: string[];
+  alerts: string[];
   manualObservations?: ManualUsage[];
 }
 
@@ -164,8 +167,35 @@ export async function collectAllWith(
     blocks
   );
   const t3 = await t3Result;
+  const gone = catalog.length
+    ? (t3.t3?.referencedInstances ?? []).filter(
+        (id) => !catalog.some((entry) => entry.instanceId === id)
+      )
+    : [];
+  const renameMap = gone.length ? await readAntigravityRenameMap() : undefined;
+  const renames = catalog.flatMap(({ instanceId, provider }) => {
+    if (provider !== 'antigravity' || !renameMap) return [];
+    const root = stateRoot('');
+    const oldPath = oldAntigravityProfile(root, instanceId, renameMap);
+    if (!oldPath) return [];
+    const oldId = gone.find((id) =>
+      oldPath === antigravityProfile(root, id)
+    );
+    return oldId ? [`INSTANCE_RENAME_CANDIDATE ${oldId} -> ${instanceId}`] : [];
+  });
   return {
     accounts: withManual,
+    alerts: [
+      ...withManual.flatMap((account) =>
+        /unauthenticated|authentication required|unauthorized|login required/i.test(
+          [account.lastError, account.providerStatus, account.statusMessage].join(' ')
+        )
+          ? [`AUTH_REQUIRED ${account.instanceId}`]
+          : []
+      ),
+      ...gone.map((id) => `INSTANCE_GONE ${id}`),
+      ...renames,
+    ],
     active: t3.t3?.activeAssignments,
     t3ObservedAt: t3.t3?.observedAt,
     t3Error: t3.t3Error,

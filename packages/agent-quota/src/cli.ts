@@ -21,6 +21,7 @@ import { recommend, recommendAssignments, SIGNAL_TTL_MS } from './policy';
 import { runPositionalAdmit } from './positional-admit';
 import { runReconcile } from './reconcile-cli';
 import { runReroute } from './reroute-cli';
+import { pickSeat } from './seat-picker';
 import { parseReserves } from './reserves';
 import { loadRoutingConfig } from './routing-config';
 import { formatRecommendTable, formatStatusTable } from './table';
@@ -38,6 +39,7 @@ const PROVIDERS = new Set<Provider>([
   'grok',
   'cursor',
   'opencode',
+  'copilot',
 ]);
 const TASK_KINDS = new Set<TaskKind>([
   'implementation',
@@ -195,15 +197,15 @@ async function main(): Promise<void> {
     await runHook(command, process.argv[3]);
     return;
   }
-  if (command !== 'status' && command !== 'recommend') {
+  if (command !== 'status' && command !== 'recommend' && command !== 'pick-seat') {
     throw new Error(
-      'Usage: bun packages/agent-quota/src/cli.ts status|recommend [--provider codex|claude|antigravity|grok|cursor|opencode] [--task-kind implementation|analysis|review|research|design|ui] [--count N] [--table] [--json]'
+      'Usage: bun packages/agent-quota/src/cli.ts status|recommend|pick-seat [--provider codex|claude|antigravity|grok|cursor|opencode|copilot] [--task-kind implementation|analysis|review|research|design|ui] [--count N] [--table] [--json]'
     );
   }
   const provider = arg('--provider');
   if (provider && !PROVIDERS.has(provider as Provider)) {
     throw new Error(
-      '--provider must be codex, claude, antigravity, grok, cursor, or opencode.'
+      '--provider must be codex, claude, antigravity, grok, cursor, opencode, or copilot.'
     );
   }
   const collected = await collectAll({
@@ -220,6 +222,7 @@ async function main(): Promise<void> {
     blocks,
     invalidObservations = [],
     manualObservations = [],
+    alerts,
   } = collected;
   const filtered = accounts.filter(
     (account) => !provider || account.provider === provider
@@ -330,6 +333,15 @@ async function main(): Promise<void> {
             t3ObservedAt,
             t3Error,
             accounts: result,
+            seats: filtered.map(({ accountIdentityHash, ...account }) => ({
+              ...account,
+              windows: account.windows.map((window) => ({
+                ...window,
+                ttlMs: windowFreshnessTtlMs(window, SIGNAL_TTL_MS[account.provider]),
+              })),
+            })),
+            blocks,
+            alerts,
             invalidObservations,
           },
           null,
@@ -338,12 +350,17 @@ async function main(): Promise<void> {
       );
     else {
       console.log(formatStatusTable(result, t3Error));
+      for (const alert of alerts) console.log(alert);
       if (invalidObservations.length)
         console.log(`INVALID OBSERVATIONS  ${invalidObservations.join('; ')}`);
     }
     return;
   }
 
+  if (!active && command === 'pick-seat') {
+    console.log(JSON.stringify({ seat: null, reason: 't3-activity-unknown' }));
+    return;
+  }
   if (!active)
     throw new Error('Cannot recommend while T3 activity state is unknown.');
   const count = Number(arg('--count') ?? '1');
@@ -373,6 +390,16 @@ async function main(): Promise<void> {
     history,
     routingConfig,
   };
+  if (command === 'pick-seat') {
+    const seat = pickSeat(
+      assignmentOptions,
+      arg('--role') ?? 'builder',
+      arg('--model-class'),
+      arg('--author-instance')
+    );
+    console.log(JSON.stringify({ seat }));
+    return;
+  }
   const assignments = recommendAssignments({ ...assignmentOptions, count });
   const ranked = recommend({ ...assignmentOptions, count: 1 }).ranked;
   const result = {

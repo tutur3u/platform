@@ -7,6 +7,7 @@ export interface T3SourceStatus {
   quotaSnapshotsFound: false;
   observedAt: string;
   activeAssignments: ActiveAssignment[];
+  referencedInstances?: string[];
   providerByInstance: Record<string, Provider>;
 }
 
@@ -59,7 +60,27 @@ export function collectT3State(
         reservationIds: JSON.parse(row.reservation_ids),
       });
 
+    let referencedInstances = [...assignments.keys()];
+    try {
+      const refs = database.prepare(`
+        SELECT DISTINCT json_extract(payload_json, '$.providerInstanceId') AS id
+        FROM orchestration_v2_projection_threads
+        WHERE json_type(payload_json, '$.providerInstanceId') = 'text'
+          AND COALESCE(json_extract(payload_json, '$.archived'), 0) = 0
+          AND COALESCE(json_extract(payload_json, '$.settled'), 0) = 0
+      `).all();
+      referencedInstances = [...new Set([
+        ...referencedInstances,
+        ...refs.flatMap(({ id }) =>
+          typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id) ? [id] : []
+        ),
+      ])];
+    } catch {
+      // Older T3 projections can still report active assignments.
+    }
+
     return {
+      referencedInstances,
       quotaSnapshotsFound: false,
       observedAt: new Date().toISOString(),
       activeAssignments: [...assignments.entries()].map(

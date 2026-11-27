@@ -39,3 +39,30 @@ summarizes what that means for a contributor, human or agent.
 New contributors can begin with [Development](/build/development-tools/development),
 [Without Docker](/build/development-tools/without-docker) and the
 [monorepo architecture](/build/development-tools/monorepo-architecture).
+
+## Inspect fleet quota before assigning work
+
+From the Tuturuuu checkout, run `bun packages/sdk/src/cli/index.ts quota status --json` for the
+machine-readable ledger, or omit `--json` for the Markdown summary. The command
+reads the local host and contacts `skr-studio`, `skr-macbook1`, and
+`skr-macbook-i9` over noninteractive SSH. Each remote needs the quota source
+under `~/Documents/GitHub/tuturuuu`. An unreachable host or a host with an
+incompatible collector appears as a failed collection. Use `--local` to read
+only the current host. The GitHub API reading is separate from Copilot quota.
+
+Each provider window carries the original observation timestamp and TTL. Keep
+unavailable readings unknown. An active run-error block overrides family
+headroom for its matching account and model until the block expires. Record
+failures with `agent-quota block` using the actual failed model and reset
+evidence. Antigravity routes Gemini only. Its Claude and GPT usage rows remain
+visible for inspection.
+
+Run `bun packages/agent-quota/src/cli.ts pick-seat --role builder --model-class
+gemini-` on the preferred host. Roles are `lead`, `builder`, and `reviewer`.
+The model class is an advertised model ID prefix. Reviewers require
+`--author-instance` to exclude the author's seat and known account aliases.
+A null seat means the available evidence did not admit a candidate.
+
+Report `AUTH_REQUIRED`, `INSTANCE_GONE`, and `INSTANCE_RENAME_CANDIDATE`
+lines to the orchestration owner. A rename candidate requires account and
+thread custody checks before switching an existing thread.

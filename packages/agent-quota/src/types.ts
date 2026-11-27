@@ -4,7 +4,8 @@ export type Provider =
   | 'antigravity'
   | 'grok'
   | 'cursor'
-  | 'opencode';
+  | 'opencode'
+  | 'copilot';
 export type WindowKind = 'short' | 'long' | 'session' | 'weekly';
 export type ModelFamily = 'opus' | 'sonnet' | 'haiku' | 'fable';
 export type TaskKind =

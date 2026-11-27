@@ -176,12 +176,7 @@ export async function collectAntigravityAccountMatches(
     return accounts;
   const [quota, renameEntries] = await Promise.all([
     readMatchedQuota(now),
-    readFileBounded(
-      stateRoot('.t3/scratch/automations/provider-rename-map.json'),
-      128 * 1024
-    )
-      .then((contents): unknown => JSON.parse(contents))
-      .catch(() => undefined),
+    readAntigravityRenameMap(),
   ]);
   return Promise.all(
     accounts.map(async (account) => {
@@ -225,4 +220,13 @@ export async function collectAntigravityAccountMatches(
       }
     })
   );
+}
+
+export function readAntigravityRenameMap(): Promise<unknown> {
+  return readFileBounded(
+      stateRoot('.t3/scratch/automations/provider-rename-map.json'),
+      128 * 1024
+    )
+      .then((contents): unknown => JSON.parse(contents))
+      .catch(() => undefined);
 }
