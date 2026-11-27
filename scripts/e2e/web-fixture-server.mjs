@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import http from 'node:http';
 import { pathToFileURL, URL } from 'node:url';
 import {
@@ -99,11 +99,16 @@ function getCookie(req, name) {
 }
 
 function safeTokenEqual(provided, expected) {
-  if (typeof provided !== 'string') return false;
-  return timingSafeEqual(
-    createHash('sha256').update(provided, 'utf16le').digest(),
-    createHash('sha256').update(expected, 'utf16le').digest()
-  );
+  if (typeof provided !== 'string' || typeof expected !== 'string') {
+    return false;
+  }
+  const providedBytes = Buffer.from(provided, 'utf8');
+  const expectedBytes = Buffer.from(expected, 'utf8');
+  if (providedBytes.length !== expectedBytes.length) {
+    timingSafeEqual(expectedBytes, expectedBytes);
+    return false;
+  }
+  return timingSafeEqual(providedBytes, expectedBytes);
 }
 
 function loginPageHtml(locale) {
