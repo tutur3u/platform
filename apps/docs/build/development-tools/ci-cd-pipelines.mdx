@@ -87,9 +87,13 @@ are supplied only to trusted main or production runs, never untrusted PRs.
 
 The `Test` workflow runs the complete selection exported by
 `scripts/run-script-tests.js` in a separate `Root script tests (24)` job on the
-exact checkout. Node 24 runs it with two test-file workers and the TAP reporter;
-the existing paused-runtime discovery policy remains unchanged. No shell glob or
-subset replaces the canonical selection.
+exact checkout. The runner executes files whose assertions depend on a real
+subprocess deadline serially first (`TIMING_SENSITIVE_TESTS` in
+`scripts/run-script-tests.js`), then runs the remaining files in parallel with up to
+four workers. Deadlines are not raised without measured p95 evidence in the commit.
+The existing paused-runtime discovery policy remains unchanged. No shell glob or
+subset replaces the canonical selection. The job uses Node's default reporter; it
+no longer passes `--test-reporter=tap`.
 
 The job installs the frozen dependencies with the existing Bun setup, verifies
 Ruby and `@playwright/test` resolution, and exposes the owning Web dependency
