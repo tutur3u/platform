@@ -45,6 +45,7 @@ export type {
   MeetRoomController,
   UseMeetRoomOptions,
 } from '../lib/room-controller';
+import { usePresencePublisher } from './use-presence-publisher';
 import { useReceiveRecovery } from './use-receive-recovery';
 import { useLockedMediaRelease } from './use-locked-media-release';
 import {
@@ -264,17 +265,7 @@ export function useMeetRoom({
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });
   }, []);
-  const updateActivityPresence = useCallback(
-    (activeActivityId: string | null, followingUserId: string | null) => {
-      signalingRef.current?.send({
-        media: mediaRef.current,
-        activeActivityId,
-        followingUserId,
-        type: 'presence.update',
-      });
-    },
-    []
-  );
+  const updateActivityPresence = usePresencePublisher(signalingRef, mediaRef);
   const mediaAllowed = usePresenceTransport(
     stateRef,
     state.settings.transport,

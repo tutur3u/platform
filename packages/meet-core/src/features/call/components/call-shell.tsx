@@ -53,7 +53,6 @@ import { CallPanelOwnerContext } from './resizable-call-panel';
 import { CallHeaderControls } from './call-header-controls';
 import { SidePanel } from './side-panel';
 import { CallStageOverlays, StageScreenAudio } from './call-stage-overlays';
-import { useSurfaceLabel } from '../hooks/use-room-navigation';
 import { useStageJoinQr } from '../hooks/use-stage-join-qr';
 import { runsRoomActivities } from '../tools/live-activities/activity-manager';
 import { findMeetTool, meetTools } from '../tools/registry';
@@ -64,9 +63,8 @@ import {
   PROGRAMMING_ACTIVITY,
   toolActivityId,
   toolIdOf,
-  viewOfActivity,
 } from '../stage-layout/activity-ids';
-import type { ActivityPresencePerson } from '../stage-layout/activity-presence';
+import { usePresence } from '../stage-layout/use-activity-presence';
 import { useStageAvailability } from '../stage-layout/use-stage-availability';
 import { RoomStage } from '../stage-layout/room-stage';
 import { useStageLayout } from '../stage-layout/use-stage-layout';
@@ -360,60 +358,8 @@ function CallShellContent({
       stage.open(activityId);
     },
   });
-  const surfaceLabel = useSurfaceLabel();
-  const focusedActivityId = stage.focused ?? null;
-  const followingLeaderId = nav.following?.leaderId ?? null;
-  useEffect(() => {
-    if (lifecycle !== 'live') return;
-    room.updateActivityPresence(focusedActivityId, followingLeaderId);
-  }, [
-    lifecycle,
-    focusedActivityId,
-    followingLeaderId,
-    room.updateActivityPresence,
-  ]);
   const { presenceByActivity, participantActivities, dockPresence } =
-    useMemo(() => {
-      const byActivity: Record<string, ActivityPresencePerson[]> = {};
-      const byParticipant: Record<
-        string,
-        { title: string; following?: boolean }
-      > = {};
-      const dock: ActivityPresencePerson[] = [];
-      for (const person of participants) {
-        const isSelfPerson = person.userId === state.selfUserId;
-        const activityId = isSelfPerson
-          ? focusedActivityId
-          : (person.activeActivityId ?? null);
-        if (!activityId) continue;
-        const following = isSelfPerson
-          ? !!followingLeaderId
-          : !!person.followingUserId;
-        const view = viewOfActivity(activityId);
-        const activityTitle = view ? surfaceLabel(view) : activityId;
-        const entry: ActivityPresencePerson = {
-          userId: person.userId,
-          displayName: person.displayName,
-          avatarUrl: person.avatarUrl,
-          following,
-          activityTitle,
-        };
-        (byActivity[activityId] ??= []).push(entry);
-        byParticipant[person.userId] = { title: activityTitle, following };
-        dock.push(entry);
-      }
-      return {
-        presenceByActivity: byActivity,
-        participantActivities: byParticipant,
-        dockPresence: dock,
-      };
-    }, [
-      participants,
-      state.selfUserId,
-      focusedActivityId,
-      followingLeaderId,
-      surfaceLabel,
-    ]);
+    usePresence({ room, live: lifecycle === 'live', participants, stage, nav });
   if (lifecycle === 'error')
     return (
       <JoinOutcome
@@ -540,12 +486,7 @@ function CallShellContent({
             presentation={presentation}
             presenceByActivity={presenceByActivity}
             onCloseForEveryone={
-              canManage
-                ? (activityId) => {
-                    stage.close(activityId);
-                    nav.closeActivityForEveryone(activityId);
-                  }
-                : undefined
+              canManage ? nav.closeActivityForEveryone : undefined
             }
             roomTimer={merged ? { meetingId, state } : null}
             tools={meetTools}

@@ -203,6 +203,7 @@ export function useStageNavigation({
   return {
     ...navigation,
     closeActivityForEveryone: (activityId: string) => {
+      latest.current.close(activityId);
       const view = viewOfActivity(activityId);
       if (view) navigation.closeForEveryone(view);
     },
