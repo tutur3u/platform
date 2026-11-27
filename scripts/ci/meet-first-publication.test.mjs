@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { withFirstUploadGate } from './meet-first-upload.mjs';
 import { inspectMeetFirstArtifact } from './meet-first-publication.mjs';
 import { signAttemptState } from './wave1-native-attempt.mjs';
@@ -300,6 +301,29 @@ test('lost upload receipt is reconciled from the active artifact only', async (t
 
 test('the publisher accepts byte-identical restored build output and rejects a changed module', async (t) => {
   const { env, run, state } = fixture(t);
+  const sealed = JSON.parse(
+    execFileSync(
+      process.execPath,
+      [
+        'scripts/ci/wave1-native-publish.mjs',
+        'meet-first-seal',
+        app,
+        'staging',
+        sha,
+      ],
+      {
+        encoding: 'utf8',
+        env: {
+          WAVE1_MEET_FIRST_ARTIFACT_DIR: env.WAVE1_MEET_FIRST_ARTIFACT_DIR,
+          CLOUDFLARE_WORKERS_SUBDOMAIN: env.CLOUDFLARE_WORKERS_SUBDOMAIN,
+        },
+      }
+    )
+  );
+  assert.equal(
+    sealed.digest,
+    JSON.parse(env.WAVE1_STAGING_PUBLICATION_ADMISSION).artifactSha256
+  );
   const restored = mkdtempSync(join(tmpdir(), 'meet-first-restored-'));
   t.after(() => rmSync(restored, { recursive: true, force: true }));
   cpSync(env.WAVE1_MEET_FIRST_ARTIFACT_DIR, restored, { recursive: true });
@@ -357,4 +381,47 @@ test('a lost provider response cannot replay the Wrangler script PUT', async () 
     }
   );
   assert.equal(writes, 1);
+});
+
+test('the upload gate permits bounded batch and per-asset endpoints', async () => {
+  const scriptPath = `/client/v4/accounts/${accountId}/workers/scripts/tuturuuu-meet-wave1-staging`;
+  const received = [];
+  await withFirstUploadGate(
+    {
+      scriptPath,
+      versionTag: 'fixture',
+      token: 'fixture',
+      fetcher: async (url, options) => {
+        for await (const _chunk of options.body) {
+          /* consume fixture body */
+        }
+        received.push(url.pathname);
+        return Response.json({ success: true });
+      },
+    },
+    async (base) => {
+      const prefix = `${base}/accounts/${accountId}/workers/assets/upload`;
+      for (const url of [prefix, `${prefix}/${'d'.repeat(32)}`])
+        assert.equal(
+          (await fetch(url, { method: 'POST', body: 'asset' })).status,
+          200
+        );
+      assert.equal(
+        (await fetch(`${prefix}/unrelated`, { method: 'POST', body: 'asset' }))
+          .status,
+        400
+      );
+    }
+  );
+  assert.equal(received.length, 2);
+});
+
+test('invalid staged vars do not expose an accidentally emitted secret', (t) => {
+  const { config, write, inspect } = fixture(t);
+  config.vars.ACCIDENTAL_SECRET = 'secret-must-not-be-logged';
+  write();
+  assert.throws(
+    inspect,
+    (error) => error.message === 'Unadmitted staging variables'
+  );
 });

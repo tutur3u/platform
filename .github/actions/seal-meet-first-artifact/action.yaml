@@ -1,0 +1,43 @@
+name: Seal Meet first-publication build output
+description: Fingerprint and upload a prepared prebundled staging Worker from the current main build
+inputs:
+  target:
+    description: Exact Meet staging target
+    required: true
+  directory:
+    description: Prepared Worker directory with wrangler.json and its bundled modules and assets
+    required: true
+  workers_subdomain:
+    description: Existing staging account workers.dev subdomain
+    required: true
+outputs:
+  digest:
+    description: Exact restored Worker artifact digest for staging admission
+    value: ${{ steps.seal.outputs.digest }}
+runs:
+  using: composite
+  steps:
+    - name: Seal prepared staging Worker
+      id: seal
+      shell: bash
+      env:
+        TARGET: ${{ inputs.target }}
+        WAVE1_MEET_FIRST_ARTIFACT_DIR: ${{ inputs.directory }}
+        CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ inputs.workers_subdomain }}
+      run: |
+        set -euo pipefail
+        test "$GITHUB_REPOSITORY" = tutur3u/platform
+        test "$GITHUB_REF" = refs/heads/main
+        test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+        receipt=$(node scripts/ci/wave1-native-publish.mjs meet-first-seal "$TARGET" staging "$GITHUB_SHA")
+        digest=$(jq -er ".digest" <<< "$receipt")
+        [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+        printf "digest=%s\n" "$digest" >> "$GITHUB_OUTPUT"
+        printf "%s\n" "$receipt" >> "$GITHUB_STEP_SUMMARY"
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: meet-first-${{ inputs.target }}-${{ github.sha }}
+        path: ${{ inputs.directory }}
+        if-no-files-found: error
+        retention-days: 3
+        include-hidden-files: true

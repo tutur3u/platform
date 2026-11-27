@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFileSync, readSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync, readSync, realpathSync } from 'node:fs';
 import { dirname, resolve, sep } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { createRequire } from 'node:module';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import { preflight } from './wave1-staging-preflight.mjs';
@@ -103,6 +104,10 @@ export function inspectMeetFirstArtifact(directory, app, subdomain) {
   assert.ok(Object.hasOwn(targets, app), 'Unadmitted first-publication app');
   assert.match(subdomain ?? '', /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u);
   const root = realpathSync(directory);
+  assert.ok(
+    !existsSync(resolve(root, '__proto__')),
+    'Unsealable artifact path'
+  );
   const files = inventory(root);
   assert.ok(Object.hasOwn(files, 'wrangler.json'), 'Missing sealed config');
   const configPath = resolve(root, 'wrangler.json');
@@ -184,41 +189,50 @@ export function inspectMeetFirstArtifact(directory, app, subdomain) {
       config.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '',
       /^[A-Za-z0-9_-]+$/u
     );
-    assert.deepEqual(config.vars, {
-      MEET_AI_DISABLED: 'true',
-      MEET_AI_ENABLED_WORKSPACE_IDS: '',
-      MEET_CLASS_ATTENDANCE_ENABLED: 'false',
-      MEET_CLASS_TIMER_ENABLED: 'true',
-      MEET_EDUCATION_ENABLED: 'true',
-      NEXT_PUBLIC_APP_URL: `https://${name}.${subdomain}.workers.dev`,
-      NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY:
-        config.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
-      MEET_REALTIME_URL: `wss://${nameFor('meet-realtime')}.${subdomain}.workers.dev/realtime`,
-      TRUSTED_PROXY: 'cloudflare',
-      ABUSE_GUARD_FAMILIES: 'meet,proxy',
-      TUTURUUU_NOINDEX: '1',
-    });
+    assert.ok(
+      isDeepStrictEqual(config.vars, {
+        MEET_AI_DISABLED: 'true',
+        MEET_AI_ENABLED_WORKSPACE_IDS: '',
+        MEET_CLASS_ATTENDANCE_ENABLED: 'false',
+        MEET_CLASS_TIMER_ENABLED: 'true',
+        MEET_EDUCATION_ENABLED: 'true',
+        NEXT_PUBLIC_APP_URL: `https://${name}.${subdomain}.workers.dev`,
+        NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY:
+          config.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+        MEET_REALTIME_URL: `wss://${nameFor('meet-realtime')}.${subdomain}.workers.dev/realtime`,
+        TRUSTED_PROXY: 'cloudflare',
+        ABUSE_GUARD_FAMILIES: 'meet,proxy',
+        TUTURUUU_NOINDEX: '1',
+      }),
+      'Unadmitted staging variables'
+    );
   } else {
     assert.equal(config.assets, undefined);
     assert.equal(config.services, undefined);
     assert.equal(config.r2_buckets, undefined);
   }
   if (app === 'abuse-guard') {
-    assert.deepEqual(config.vars, {
-      ABUSE_GUARD_DAILY_OP_BUDGET: '1000',
-      ABUSE_GUARD_FAMILY_BUDGETS: '',
-      ABUSE_GUARD_LOCATION_HINT: 'apac',
-    });
+    assert.ok(
+      isDeepStrictEqual(config.vars, {
+        ABUSE_GUARD_DAILY_OP_BUDGET: '1000',
+        ABUSE_GUARD_FAMILY_BUDGETS: '',
+        ABUSE_GUARD_LOCATION_HINT: 'apac',
+      }),
+      'Unadmitted staging variables'
+    );
   }
   if (app === 'meet-realtime') {
-    assert.deepEqual(config.vars, {
-      MEET_AI_DISABLED: 'true',
-      MEET_AI_ENABLED_WORKSPACE_IDS: '',
-      MEET_CLASS_ATTENDANCE_ENABLED: 'false',
-      MEET_CLASS_TIMER_ENABLED: 'true',
-      MEET_WHITEBOARD_FLUSH_DISABLED: 'false',
-    });
+    assert.ok(
+      isDeepStrictEqual(config.vars, {
+        MEET_AI_DISABLED: 'true',
+        MEET_AI_ENABLED_WORKSPACE_IDS: '',
+        MEET_CLASS_ATTENDANCE_ENABLED: 'false',
+        MEET_CLASS_TIMER_ENABLED: 'true',
+        MEET_WHITEBOARD_FLUSH_DISABLED: 'false',
+      }),
+      'Unadmitted staging variables'
+    );
   }
   const digest = createHash('sha256')
     .update(JSON.stringify(files))

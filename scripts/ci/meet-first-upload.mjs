@@ -15,6 +15,7 @@ export async function withFirstUploadGate(
   let servingChanged = false;
   let assetWrites = 0;
   const accountPath = scriptPath.split('/workers/scripts/')[0];
+  const assetPath = `${accountPath}/workers/assets/upload`;
   const server = createServer(async (incoming, outgoing) => {
     const fail = (status) => {
       if (outgoing.headersSent) return outgoing.destroy();
@@ -45,7 +46,11 @@ export async function withFirstUploadGate(
       const assetWrite =
         method === 'POST' &&
         (url.pathname === `${scriptPath}/assets-upload-session` ||
-          url.pathname === `${accountPath}/workers/assets/upload`);
+          url.pathname === assetPath ||
+          (url.pathname.startsWith(assetPath + '/') &&
+            /^[a-f0-9]{32,64}$/u.test(
+              url.pathname.slice(assetPath.length + 1)
+            )));
       const servingWrite =
         method === 'POST' &&
         uploaded &&
@@ -80,7 +85,7 @@ export async function withFirstUploadGate(
         headers.delete('content-type');
         body = multipart;
       } else if (assetWrite) {
-        if (uploaded || ++assetWrites > 32) return fail(400);
+        if (uploaded || ++assetWrites > 512) return fail(400);
         body = incoming;
       } else if (servingWrite) {
         if (
