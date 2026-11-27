@@ -97,7 +97,7 @@ export function matchesWorldsScope(
   );
 }
 
-function boundedInput(
+export function boundedInput(
   request: GenerationRequest,
   bytes?: Uint8Array
 ): WorldsInput | null {
@@ -113,7 +113,9 @@ function boundedInput(
     instruction,
     estimatedInputTokens:
       worldsProviderLimits.inputOverheadTokens +
-      new TextEncoder().encode(instruction).byteLength,
+      new TextEncoder().encode(
+        JSON.stringify({ worldId: request.worldId, instruction })
+      ).byteLength,
   };
   if (request.kind === 'prompt') return bytes === undefined ? input : null;
   if (
@@ -175,7 +177,7 @@ function boundedInput(
   }
 }
 
-function validUsage({
+export function validUsage({
   inputTokens,
   outputTokens,
   reasoningTokens,

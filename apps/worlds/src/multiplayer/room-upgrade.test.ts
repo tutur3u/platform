@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'bun:test';
-import {
-  APP_SESSION_COOKIE_NAME,
-  createAppSessionToken,
-} from '@tuturuuu/auth/app-session-core';
+import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
+import { WORLDS_SESSION_COOKIE } from '../session/session.ts';
 import { verifyRoomAdmission } from './admission.ts';
 import {
   handleRoomUpgrade,
@@ -31,7 +29,7 @@ function request(
     headers: {
       origin,
       upgrade: 'websocket',
-      ...(token && { cookie: `${APP_SESSION_COOKIE_NAME}=${token}` }),
+      ...(token && { cookie: `${WORLDS_SESSION_COOKIE}=${token}` }),
       ...headers,
     },
   });
@@ -101,10 +99,14 @@ test('requires a live Worlds cookie and honors the logout fence', async () => {
     request(session('web')),
     request(session('worlds', now - 121_000)),
     request(undefined, { authorization: 'Bearer ' + session() }),
+    request(undefined, { cookie: 'tuturuuu_app_session=' + session() }),
     request(undefined, {
-      cookie: `${APP_SESSION_COOKIE_NAME}=${session()}; __Host-tuturuuu_app_signed_out=1`,
+      cookie: `${WORLDS_SESSION_COOKIE}=${session()}; ${WORLDS_SESSION_COOKIE}=${session()}`,
     }),
-    request(undefined, { cookie: `${APP_SESSION_COOKIE_NAME}=%` }),
+    request(undefined, {
+      cookie: `${WORLDS_SESSION_COOKIE}=${session()}; __Host-tuturuuu_app_signed_out=1`,
+    }),
+    request(undefined, { cookie: `${WORLDS_SESSION_COOKIE}=%` }),
   ]) {
     assert.equal((await handleRoomUpgrade(input, env, clock)).status, 401);
   }

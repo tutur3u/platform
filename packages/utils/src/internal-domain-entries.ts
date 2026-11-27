@@ -141,6 +141,11 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'workspace',
     url: 'https://workspace.tuturuuu.com',
   },
+  {
+    name: 'worlds',
+    url: 'https://worlds.tuturuuu.com',
+    requiresExactOrigin: true,
+  },
   { name: 'mastermind', url: 'https://mastermind.tuturuuu.com' },
 ] as const;
 

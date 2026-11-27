@@ -286,7 +286,8 @@ export function createWorldRoom(
       if (player) this.notifyDeparture(player, this.activePlayers(now, socket));
     }
 
-    async webSocketClose(socket: RoomSocket) {
+    async webSocketClose(socket: RoomSocket, code: number, reason: string) {
+      socket.close(code === 1005 || code === 1006 ? 1000 : code, reason);
       await this.initialized;
       if (!this.stopped) this.depart(socket, options.clock());
     }

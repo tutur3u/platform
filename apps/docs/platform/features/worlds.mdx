@@ -61,6 +61,21 @@ The workspace draft API tests cover authorization, revision conflicts and input
 limits. The editor tests cover save and conflict recovery. Deploy the draft
 table through the gated Supabase migration workflow.
 
+### Workspace generation API
+
+Users with `manage_workspace_settings` can POST a prompt and an optional PNG
+or UTF-8 text attachment to
+`/api/v1/workspaces/{wsId}/worlds/generation`. Supply UUIDs for the request and
+world. AI Studio claims the request ID and reserves workspace credits in one
+transaction. Model selection follows the workspace plan. The request allows one
+provider dispatch and settles reported usage against the reservation.
+
+A successful response contains a validated draft for the caller to preview.
+The workspace editor's draft table continues to store geometry overrides for the
+EduFest sample. The generation route tests cover permissions and attachment
+limits. The transport tests cover duplicate dispatches, cancellation, malformed
+output, and settlement of reported usage.
+
 ## Viewer, identity, and hosting
 
 Target TanStack Start and Vite+ on Cloudflare for the standalone viewer at

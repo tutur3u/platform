@@ -3432,6 +3432,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/worlds/generation"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/workspaces/limits"
     },
     {

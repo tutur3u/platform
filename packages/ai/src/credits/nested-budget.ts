@@ -33,6 +33,47 @@ const UNAMBIGUOUS_UNCOMMITTED_RESERVATION_CODES = new Set([
   'RESERVATION_NOT_FOUND',
 ]);
 
+export function computeNestedModelOutputCap({
+  budgetCredits,
+  inputCredits,
+  searchCredits = 0,
+  outputPricePerToken,
+  markupMultiplier,
+  attemptCount = 1,
+  planMaxOutputTokens,
+  maxOutputTokensLimit,
+}: {
+  budgetCredits: number;
+  inputCredits: number;
+  searchCredits?: number;
+  outputPricePerToken: number;
+  markupMultiplier: number;
+  attemptCount?: number;
+  planMaxOutputTokens?: number | null;
+  maxOutputTokensLimit: number;
+}): number {
+  const remainingForOutput = budgetCredits - inputCredits - searchCredits;
+  if (!Number.isFinite(remainingForOutput) || remainingForOutput <= 0) return 0;
+
+  // Reserve headroom for both visible output and reasoning tokens.
+  const affordableAcrossAttempts = computeAffordableTokens(
+    remainingForOutput / 2,
+    outputPricePerToken,
+    markupMultiplier
+  );
+  const perAttemptBudgetTokens = Math.floor(
+    affordableAcrossAttempts / attemptCount
+  );
+  if (perAttemptBudgetTokens < 1) return 0;
+
+  return Math.min(
+    perAttemptBudgetTokens,
+    planMaxOutputTokens ?? AI_REQUEST_MAX_OUTPUT_TOKENS,
+    maxOutputTokensLimit,
+    AI_REQUEST_MAX_OUTPUT_TOKENS
+  );
+}
+
 export type NestedBudgetDenialCode =
   | 'ACCESS_DENIED'
   | 'CREDIT_CHECK_FAILED'
@@ -209,28 +250,17 @@ export async function reserveNestedModelBudget({
   );
   const heldCredits = Math.min(effectiveRemainingCredits, desiredHoldCredits);
 
-  const computePerAttemptCap = (budgetCredits: number): number => {
-    // Reserve headroom for both visible output and reasoning tokens per attempt.
-    const remainingForOutput = budgetCredits - inputCredits - searchCredits;
-    if (!Number.isFinite(remainingForOutput) || remainingForOutput <= 0) {
-      return 0;
-    }
-    const affordableAcrossAttempts = computeAffordableTokens(
-      remainingForOutput / 2,
-      prices.outputPricePerToken!,
-      markupMultiplier
-    );
-    const perAttemptBudgetTokens = Math.floor(
-      affordableAcrossAttempts / safeAttempts
-    );
-    if (perAttemptBudgetTokens < 1) return 0;
-    return Math.min(
-      perAttemptBudgetTokens,
-      creditCheck.maxOutputTokens ?? AI_REQUEST_MAX_OUTPUT_TOKENS,
+  const computePerAttemptCap = (budgetCredits: number) =>
+    computeNestedModelOutputCap({
+      budgetCredits,
+      inputCredits,
+      searchCredits,
+      outputPricePerToken: prices.outputPricePerToken!,
+      markupMultiplier,
+      attemptCount: safeAttempts,
+      planMaxOutputTokens: creditCheck.maxOutputTokens,
       maxOutputTokensLimit,
-      AI_REQUEST_MAX_OUTPUT_TOKENS
-    );
-  };
+    });
 
   const perAttemptMaxOutputTokens = computePerAttemptCap(heldCredits);
   if (heldCredits < 1 || perAttemptMaxOutputTokens < 1) {

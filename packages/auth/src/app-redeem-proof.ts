@@ -9,7 +9,10 @@ import { getServerTokenSecretCandidates } from '@tuturuuu/utils/app-coordination
  * cookie lifted from the browser, cannot mint a session anywhere else.
  */
 export const APP_REDEEM_PROOF_HEADER = 'x-tuturuuu-app-redeem-proof';
-export const WORKER_ONLY_REDEEM_TARGETS: readonly string[] = ['mastermind'];
+export const WORKER_ONLY_REDEEM_TARGETS: readonly string[] = [
+  'mastermind',
+  'worlds',
+];
 
 export function requiresWorkerRedeemProof(targetApp: string) {
   return WORKER_ONLY_REDEEM_TARGETS.includes(targetApp.trim().toLowerCase());

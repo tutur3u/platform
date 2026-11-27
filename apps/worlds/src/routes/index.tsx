@@ -12,6 +12,7 @@ const copy = {
     stage: 'Stage',
     booth: 'Booth',
     map: 'Hall floor plan',
+    signIn: 'Sign in to Worlds',
     join: 'Join room',
     leave: 'Leave room',
     joining: 'Joining room…',
@@ -29,6 +30,7 @@ const copy = {
     stage: 'Sân khấu',
     booth: 'Gian',
     map: 'Sơ đồ hội trường',
+    signIn: 'Đăng nhập Worlds',
     join: 'Vào phòng',
     leave: 'Rời phòng',
     joining: 'Đang vào phòng…',
@@ -88,6 +90,7 @@ function Hall() {
         </nav>
       </header>
       <p>
+        {!inRoom && <a href={`/login?lang=${lang}`}>{labels.signIn}</a>}{' '}
         {inRoom ? (
           <button type="button" onClick={() => connection.current?.leave()}>
             {labels.leave}

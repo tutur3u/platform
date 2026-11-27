@@ -6,6 +6,7 @@ import {
   verifyMastermindLoginTransaction,
 } from '@tuturuuu/auth/app-redeem-proof';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import {
   createAdminClient,
   createClient,
@@ -252,7 +253,13 @@ async function createCrossAppReturn(
   const decodedReturnUrl = decodeReturnUrl(parsed.data.returnUrl);
   const target = await resolveTargetApp(decodedReturnUrl, request);
 
-  if (!target) {
+  if (
+    !target ||
+    (target.targetApp === 'worlds' &&
+      (target.kind !== 'internal' ||
+        new URL(target.canonicalReturnUrl).origin !==
+          'https://worlds.tuturuuu.com'))
+  ) {
     return fail(
       'INVALID_RETURN_URL',
       NextResponse.json({ error: 'Invalid returnUrl' }, { status: 400 })
@@ -336,7 +343,12 @@ async function createCrossAppReturn(
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (
+    userError ||
+    !user ||
+    (target.targetApp === 'worlds' &&
+      (await getSatelliteAppSessionUser('web'))?.id !== user.id)
+  ) {
     return fail(
       'UNAUTHORIZED',
       NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -561,8 +573,9 @@ async function continueSignedInReturn(
   if (!returnUrl) return fallback();
   if (!isDocumentNavigation(request)) {
     if (
-      mapConfiguredUrlToApp(decodeReturnUrl(returnUrl))?.targetApp !==
-      'mastermind'
+      !requiresWorkerRedeemProof(
+        mapConfiguredUrlToApp(decodeReturnUrl(returnUrl))?.targetApp ?? ''
+      )
     )
       return fallback();
     return NextResponse.json(

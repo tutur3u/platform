@@ -12,6 +12,8 @@ import {
 
 import { parseWorldDraft } from './world-draft.ts';
 
+export { parseWorldDraft } from './world-draft.ts';
+
 export * from './contract.ts';
 
 const identifier = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/;

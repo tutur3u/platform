@@ -5,12 +5,16 @@ import {
   type WorldsRoomEnv,
 } from './multiplayer/room-upgrade.ts';
 
+import { handleWorldsSession } from './session/session.ts';
+
 export { WorldRoom } from './multiplayer/room.ts';
 
 export default {
   fetch(request: Request, env: WorldsRoomEnv) {
-    if (new URL(request.url).pathname === ROOM_SOCKET_PATH)
-      return handleRoomUpgrade(request, env);
+    const { pathname } = new URL(request.url);
+    if (pathname === '/login' || pathname === '/verify-token')
+      return handleWorldsSession(request, env);
+    if (pathname === ROOM_SOCKET_PATH) return handleRoomUpgrade(request, env);
     return handler.fetch(request);
   },
 };

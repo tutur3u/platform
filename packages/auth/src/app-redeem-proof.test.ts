@@ -8,8 +8,9 @@ import {
 describe('Worker-only redeem proof', () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it('applies to Mastermind only', () => {
+  it('applies to Mastermind and Worlds', () => {
     expect(requiresWorkerRedeemProof(' Mastermind ')).toBe(true);
+    expect(requiresWorkerRedeemProof('worlds')).toBe(true);
     expect(requiresWorkerRedeemProof('calendar')).toBe(false);
   });
 

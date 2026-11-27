@@ -1,10 +1,6 @@
 import { edufestHall } from '@tuturuuu/worlds/edufest-hall';
-import {
-  APP_LOGOUT_COOKIE_NAME,
-  APP_SESSION_COOKIE_NAME,
-  verifyAppSessionRequest,
-} from '@tuturuuu/auth/app-session-core';
-import { isActorId, issueRoomAdmission, roomName } from './admission.ts';
+import { resolveWorldsSession } from '../session/session.ts';
+import { issueRoomAdmission, roomName } from './admission.ts';
 import { ROOM_SOCKET_PATH } from './room-protocol.ts';
 import { EDUFEST_HALL_REVISION } from './room.ts';
 
@@ -27,34 +23,6 @@ function reject(status: number) {
     status,
     headers: { 'Cache-Control': 'no-store' },
   });
-}
-
-function resolveWorldsSession(request: Request, secret: string, now: number) {
-  const cookie = (request.headers.get('cookie') ?? '')
-    .split(';')
-    .map((part) => part.trim())
-    .filter(
-      (part) =>
-        part.startsWith(APP_SESSION_COOKIE_NAME + '=') ||
-        part.startsWith(APP_LOGOUT_COOKIE_NAME + '=')
-    )
-    .join('; ');
-  try {
-    const result = verifyAppSessionRequest(
-      { headers: new Headers({ cookie }) },
-      {
-        targetApp: 'worlds',
-        secret,
-        now: new Date(now),
-      }
-    );
-    if (!result.ok) return null;
-    const { sub, exp, iat } = result.claims;
-    if (!isActorId(sub) || iat * 1000 > now || exp * 1000 <= now) return null;
-    return { id: sub, sessionExpiresAt: exp };
-  } catch {
-    return null;
-  }
 }
 
 export async function handleRoomUpgrade(

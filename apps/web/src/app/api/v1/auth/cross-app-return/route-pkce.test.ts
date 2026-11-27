@@ -4,7 +4,12 @@ import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
   getExternalAppByReturnUrl: vi.fn(),
+  getSatelliteAppSessionUser: vi.fn(),
   rpc: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: mocks.getSatelliteAppSessionUser,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -72,6 +77,56 @@ describe('cross-app return PKCE binding', () => {
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '');
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', '');
     mocks.rpc.mockResolvedValue({ data: 'handoff-token', error: null });
+  });
+
+  it('mints a challenge-bound Worlds handoff for the verified Web actor', async () => {
+    mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
+    const response = await post({
+      returnUrl:
+        'https://worlds.tuturuuu.com/verify-token?nextUrl=%2F%3Fstate%3Dfixture',
+      codeChallenge: challenge,
+      codeChallengeMethod: 'S256',
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.getSatelliteAppSessionUser).toHaveBeenCalledWith('web');
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'generate_cross_app_token_pkce',
+      expect.objectContaining({
+        p_target_app: 'worlds',
+        p_user_id: 'user-1',
+        p_code_challenge: challenge,
+      })
+    );
+    const callback = new URL((await response.json()).returnUrl);
+    expect(callback.origin).toBe('https://worlds.tuturuuu.com');
+    expect(callback.searchParams.get('nextUrl')).toBe('/?state=fixture');
+    expect(callback.searchParams.get('targetApp')).toBe('worlds');
+  });
+
+  it('denies Worlds minting for a mismatched actor or missing challenge', async () => {
+    const returnUrl = 'https://worlds.tuturuuu.com/verify-token';
+    mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'other-user' });
+    const mismatch = await post({
+      returnUrl,
+      codeChallenge: challenge,
+      codeChallengeMethod: 'S256',
+    });
+    expect(mismatch.status).toBe(401);
+    mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
+    expect((await post({ returnUrl })).status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('refuses a Worlds handoff to a foreign registry origin', async () => {
+    registerApp({ id: 'worlds' });
+    const response = await post({
+      returnUrl: callbackUrl,
+      codeChallenge: challenge,
+      codeChallengeMethod: 'S256',
+    });
+    expect(response.status).toBe(400);
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('keeps legacy registry apps unchanged without a challenge', async () => {

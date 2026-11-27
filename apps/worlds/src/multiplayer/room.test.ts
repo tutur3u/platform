@@ -219,7 +219,8 @@ test('scopes peer updates in both directions after wake and hides account identi
     peer: { ...ready.self, x: 12 },
   });
   assert.equal(first.events.at(-1)?.type, 'peer');
-  await room.webSocketClose(first);
+  await room.webSocketClose(first, 1000, 'Left room');
+  assert.equal(first.code, 1000);
   assert.deepEqual(second.events.at(-1), { type: 'leave', id: ready.self.id });
   assert.equal(f.writes(), 0);
 });

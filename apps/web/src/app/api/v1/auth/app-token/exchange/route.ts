@@ -331,6 +331,12 @@ async function exchangeAppToken(
   // Admitted per app+secret before the secret check; failures 429 past per-app
   // and per-IP limits. Refresh also keeps its own per-family pre-limit.
   const exchangeAppId = appId ?? targetApp;
+  if (exchangeAppId?.trim().toLowerCase() === 'worlds') {
+    return NextResponse.json(
+      { error: 'Invalid exchange target' },
+      { status: 400 }
+    );
+  }
   const exchange = exchangeAppId
     ? {
         appId: exchangeAppId,
