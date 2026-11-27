@@ -8,7 +8,7 @@ import { createGitHub, nominate, status } from './release-candidate.mjs';
 // it as not dispatchable, keeps dispatching the rest, and the workflow's
 // evidence comes from the main push.
 const SHA = 'a'.repeat(40);
-const OLD = 'turbo-unit-tests.yaml';
+const OLD = 'docs-seo-check.yaml';
 
 test('a 422 dispatch reports not dispatchable; other failures still refuse', async () => {
   const answers = {
