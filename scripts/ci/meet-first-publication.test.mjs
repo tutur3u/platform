@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { request } from 'node:http';
 import { meetWorkerToolEnvironment } from './meet-native-launcher.mjs';
 import { withFirstUploadGate } from './meet-first-upload.mjs';
 import {
@@ -347,11 +348,11 @@ test('the publisher accepts byte-identical restored build output and rejects a c
 });
 
 test('a lost provider response cannot replay the Worker script PUT', async () => {
-  const scriptPath = `/client/v4/accounts/${accountId}/workers/scripts/${name}`;
   let writes = 0;
   await withFirstUploadGate(
     {
-      scriptPath,
+      accountId,
+      workerName: name,
       versionTag: 'fixed-claim',
       token: 'fixture',
       fetcher: async (_url, options) => {
@@ -391,11 +392,11 @@ test('a lost provider response cannot replay the Worker script PUT', async () =>
 });
 
 test('the upload gate permits bounded batch and per-asset endpoints', async () => {
-  const scriptPath = `/client/v4/accounts/${accountId}/workers/scripts/tuturuuu-meet-wave1-staging`;
   const received = [];
   await withFirstUploadGate(
     {
-      scriptPath,
+      accountId,
+      workerName: name,
       versionTag: 'fixture',
       token: 'fixture',
       fetcher: async (url, options) => {
@@ -430,5 +431,58 @@ test('invalid staged vars do not expose an accidentally emitted secret', (t) => 
   assert.throws(
     inspect,
     (error) => error.message === 'Unadmitted staging variables'
+  );
+});
+
+test('the upload gate accepts only account-relative requests to the fixed provider origin', async () => {
+  const forwarded = [];
+  await withFirstUploadGate(
+    {
+      accountId,
+      workerName: name,
+      versionTag: 'fixture',
+      token: 'fixture',
+      fetcher: async (url) => {
+        forwarded.push(url.href);
+        return Response.json({ success: true });
+      },
+    },
+    async (base) => {
+      const local = new URL(base);
+      const sendPath = (path) =>
+        new Promise((resolve, reject) => {
+          const req = request(
+            { hostname: local.hostname, port: local.port, path },
+            (response) => {
+              response.resume();
+              response.once('end', () => resolve(response.statusCode));
+            }
+          );
+          req.once('error', reject);
+          req.end();
+        });
+      const path = `/client/v4/accounts/${accountId}/workers/scripts/${name}/settings`;
+      assert.equal(await sendPath(path + '?page=2'), 200);
+      for (const invalid of [
+        'https://elsewhere.invalid' + path,
+        '//elsewhere.invalid' + path,
+        path.replace(accountId, 'b'.repeat(32)),
+        path.replace(name, 'tuturuuu-meet'),
+        path.replace('/settings', '/%2e%2e/settings'),
+      ]) {
+        assert.equal(await sendPath(invalid), 400);
+      }
+      assert.deepEqual(forwarded, [
+        'https://api.cloudflare.com' + path + '?page=2',
+      ]);
+    }
+  );
+  await assert.rejects(
+    withFirstUploadGate({ accountId: 'invalid', workerName: name }, () => {}),
+    assert.AssertionError
+  );
+  await assert.rejects(
+    withFirstUploadGate({ accountId, workerName: 'tuturuuu-meet' }, () => {}),
+    assert.AssertionError
   );
 });

@@ -433,7 +433,8 @@ export async function publishMeetFirst({
   try {
     await withFirstUploadGate(
       {
-        scriptPath: new URL(script).pathname,
+        accountId,
+        workerName: name,
         versionTag: claimTag,
         token: cfToken,
       },

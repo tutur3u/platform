@@ -4,17 +4,58 @@ import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 
 const api = 'https://api.cloudflare.com';
+const segmentPattern = /^[A-Za-z0-9_-]+$/u;
+const workerPattern =
+  /^tuturuuu-(?:abuse-guard|meet-realtime|meet)-wave1-staging$/u;
+
+function cloudflareRequestUrl(requestTarget, accountId, workerName) {
+  assert.equal(typeof requestTarget, 'string');
+  const separator = requestTarget.indexOf('?');
+  const path =
+    separator < 0 ? requestTarget : requestTarget.slice(0, separator);
+  const segments = path.split('/');
+  const [root, client, version, accounts, account, ...resource] = segments;
+  assert.ok(
+    root === '' &&
+      client === 'client' &&
+      version === 'v4' &&
+      accounts === 'accounts' &&
+      account === accountId &&
+      resource.length > 0 &&
+      resource.every((part) => segmentPattern.test(part))
+  );
+  if (
+    resource[0] === 'workers' &&
+    ['scripts', 'services'].includes(resource[1])
+  )
+    assert.equal(resource[2], workerName);
+  const url = new URL(api);
+  url.pathname =
+    '/' +
+    ['client', 'v4', 'accounts', accountId, ...resource]
+      .map(encodeURIComponent)
+      .join('/');
+  if (separator >= 0)
+    url.search = new URLSearchParams(
+      requestTarget.slice(separator + 1)
+    ).toString();
+  assert.equal(url.origin, api);
+  return url;
+}
 
 // The existing deploy command prepares modules, assets, migrations and bindings. Only this
 // connection may send the script PUT, and it is consumed before forwarding.
 export async function withFirstUploadGate(
-  { scriptPath, versionTag, token, fetcher = fetch },
+  { accountId, workerName, versionTag, token, fetcher = fetch },
   run
 ) {
+  assert.match(accountId, /^[a-f0-9]{32}$/u);
+  assert.match(workerName, workerPattern);
   let uploaded = false;
   let servingChanged = false;
   let assetWrites = 0;
-  const accountPath = scriptPath.split('/workers/scripts/')[0];
+  const accountPath = `/client/v4/accounts/${encodeURIComponent(accountId)}`;
+  const scriptPath = `${accountPath}/workers/scripts/${encodeURIComponent(workerName)}`;
   const assetPath = `${accountPath}/workers/assets/upload`;
   const server = createServer(async (incoming, outgoing) => {
     const fail = (status) => {
@@ -30,9 +71,12 @@ export async function withFirstUploadGate(
       );
     };
     try {
-      const url = new URL(incoming.url, api);
-      assert.equal(url.origin, api);
-      assert.ok(url.pathname.startsWith(accountPath + '/'));
+      let url;
+      try {
+        url = cloudflareRequestUrl(incoming.url, accountId, workerName);
+      } catch {
+        return fail(400);
+      }
       const method = incoming.method;
       const headers = new Headers();
       for (const name of [
