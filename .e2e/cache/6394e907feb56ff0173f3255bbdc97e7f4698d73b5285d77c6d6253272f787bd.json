@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-27T05:30:07.943Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "typeSecret",
+        "summary": "fill secret \"fleet-email\" into textbox \"Email hoặc tên người dùng\"",
+        "target": {
+          "role": "textbox",
+          "name": "Email hoặc tên người dùng",
+          "placeholder": "Nhập email hoặc tên người dùng của bạn",
+          "inputPurpose": "username"
+        },
+        "secret": "fleet-email"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Tiếp tục với email\"",
+        "target": {
+          "role": "button",
+          "name": "Tiếp tục với email"
+        }
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-fixture-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/fleet-sign-in.e2e.ts::signs%20in%20with%20the%20fleet%20test%20identity%20in%20Vietnamese",
+      "targetId": "web-chromium",
+      "instructionDigest": "fee4f75111b4dc124fc2beab4a5c2b143873f0bf26e7037db9ef432b3514b808",
+      "paramsDigest": "5d2dc272a8bd0a7f8ba56bc9e11549f7e6a410f0b1efd8d5bf0d92dd4433a843",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "enter the fleet email and continue in {language}",
+    "startPath": "/vi/login",
+    "endPath": "/vi/login",
+    "endAnchors": [
+      {
+        "role": "heading",
+        "name": "Nhập mật khẩu"
+      },
+      {
+        "text": "Email"
+      },
+      {
+        "role": "textbox",
+        "name": "Email",
+        "value": "<secret:fleet-email>"
+      },
+      {
+        "text": "Mật khẩu"
+      },
+      {
+        "role": "textbox",
+        "name": "Mật khẩu",
+        "placeholder": "Nhập mật khẩu của bạn",
+        "inputPurpose": "password"
+      },
+      {
+        "role": "button",
+        "name": "Đăng nhập"
+      },
+      {
+        "testId": "password-step"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Email hoặc tên người dùng"
+      },
+      {
+        "role": "textbox",
+        "name": "Email hoặc tên người dùng",
+        "placeholder": "Nhập email hoặc tên người dùng của bạn",
+        "inputPurpose": "username"
+      },
+      {
+        "role": "button",
+        "name": "Tiếp tục với email"
+      }
+    ],
+    "endWaitMs": 10177,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

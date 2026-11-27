@@ -1,18 +1,63 @@
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import test from 'node:test';
 import {
   createTuturuuuWebE2EConfig,
+  FLEET_IDENTITY_ENV_NAMES,
   offlineReplayExecutor,
   resolveFleetEmailFromEnv,
   resolveFleetPasswordFromEnv,
   TUTURUUU_HEADLESS_WEB_OPTIONS,
 } from './shared-web-config.ts';
+import { createFixtureServer } from './web-fixture-server.mjs';
+
+async function withFixture(run) {
+  const email = `fixture-${randomUUID()}@example.invalid`;
+  const password = randomUUID();
+  const server = createFixtureServer({
+    E2E_USER_EMAIL: email,
+    E2E_SECRET_PASSWORD: password,
+  });
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  try {
+    await run({
+      get: (path, options) =>
+        fetch(`http://127.0.0.1:${server.address().port}${path}`, {
+          redirect: 'manual',
+          ...options,
+        }),
+      email,
+      password,
+    });
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+}
+
+function post(body) {
+  return {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  };
+}
+
+function sessionCookie(response) {
+  const cookie = response.headers.get('set-cookie');
+  assert.match(cookie, /; HttpOnly; SameSite=Lax/u);
+  return { headers: { cookie: cookie.split(';')[0] } };
+}
 
 test('resolves fleet test identity strictly from env names without hardcoded defaults', () => {
   assert.equal(resolveFleetEmailFromEnv({}), '');
   assert.equal(resolveFleetPasswordFromEnv({}), '');
 
   const uuid = '11111111-2222-4333-8444-555555555555';
+  const email = `fixture-${randomUUID()}@example.invalid`;
+  const password = randomUUID();
   assert.equal(
     resolveFleetEmailFromEnv({ TUTURUUU_FLEET_SMOKE_ID: uuid }),
     `qa-automation+${uuid}@smoke.tuturuuu.com`
@@ -26,15 +71,15 @@ test('resolves fleet test identity strictly from env names without hardcoded def
   assert.equal(
     resolveFleetEmailFromEnv({
       TUTURUUU_FLEET_SMOKE_ID: uuid,
-      E2E_FLEET_EMAIL: 'override@example.test',
+      E2E_FLEET_EMAIL: email,
     }),
-    'override@example.test'
+    email
   );
   assert.equal(
     resolveFleetPasswordFromEnv({
-      TUTURUUU_FLEET_SMOKE_PASSWORD: 'ephemeral-fixture-value',
+      TUTURUUU_FLEET_SMOKE_PASSWORD: password,
     }),
-    'ephemeral-fixture-value'
+    password
   );
 });
 
@@ -56,17 +101,16 @@ test('shared web config enforces headless Chromium defaults without UA spoofing 
   assert.equal(config.credentials, undefined);
   assert.deepEqual(config.cache, { mode: 'read-only', dir: '.e2e/cache' });
 
+  const email = `fixture-${randomUUID()}@example.invalid`;
+  const password = randomUUID();
   const withFleet = createTuturuuuWebE2EConfig({
     tests: 'apps/web/e2e-agent/**/*.e2e.ts',
     env: {
-      E2E_SECRET_FLEET_EMAIL: 'fleet-test@example.invalid',
-      E2E_USER_FLEET_PASSWORD: 'ephemeral-fixture-value',
+      E2E_SECRET_FLEET_EMAIL: email,
+      E2E_USER_FLEET_PASSWORD: password,
     },
   });
-  assert.equal(
-    withFleet.credentials?.fleet?.username,
-    'fleet-test@example.invalid'
-  );
+  assert.equal(withFleet.credentials?.fleet?.username, email);
   assert.equal(typeof withFleet.credentials?.fleet?.password, 'function');
 });
 
@@ -84,4 +128,137 @@ test('offline replay executor fails closed on uncached steps without calling any
   assert.equal(verdict.status, 'failed');
   assert.equal(verdict.errorCode, 'MODEL_UNREACHABLE');
   assert.match(verdict.summary, /--strict-cache/);
+});
+
+test('fixture identity names are inherited by the fixture process', () => {
+  assert.ok(FLEET_IDENTITY_ENV_NAMES.email.includes('E2E_USER_EMAIL'));
+  assert.ok(FLEET_IDENTITY_ENV_NAMES.password.includes('E2E_SECRET_PASSWORD'));
+  const email = `fixture-${randomUUID()}@example.invalid`;
+  const password = randomUUID();
+  assert.equal(resolveFleetEmailFromEnv({ E2E_USER_EMAIL: email }), email);
+  assert.equal(
+    resolveFleetPasswordFromEnv({ E2E_SECRET_PASSWORD: password }),
+    password
+  );
+});
+
+test('login fixtures check runtime credentials and protect both localized destinations', async () => {
+  await withFixture(async ({ get, email, password }) => {
+    for (const [locale, heading, passwordLabel, workspace] of [
+      ['en', 'Welcome to Tuturuuu', 'Password', 'Personal Workspace'],
+      [
+        'vi',
+        'Chào mừng đến với Tuturuuu',
+        'Mật khẩu',
+        'Không gian làm việc cá nhân',
+      ],
+    ]) {
+      const login = await get(`/${locale}/login`);
+      assert.equal(login.status, 200);
+      const html = await login.text();
+      assert.ok(html.includes(`<html lang="${locale}">`));
+      assert.ok(html.includes(heading));
+      assert.ok(html.includes(passwordLabel));
+      assert.equal(html.includes(email), false);
+      assert.equal(html.includes(password), false);
+      const denied = await get(`/${locale}/personal`);
+      assert.equal(denied.status, 302);
+      assert.equal(denied.headers.get('location'), `/${locale}/login`);
+      const invalid = await get(
+        '/api/e2e-fixture/sign-in',
+        post({ email, password: randomUUID() })
+      );
+      assert.equal(invalid.status, 401);
+      assert.equal(invalid.headers.has('set-cookie'), false);
+      const signedIn = await get(
+        '/api/e2e-fixture/sign-in',
+        post({ email, password })
+      );
+      assert.equal(signedIn.status, 200);
+      const personal = await get(
+        `/${locale}/personal`,
+        sessionCookie(signedIn)
+      );
+      assert.equal(personal.status, 200);
+      assert.ok((await personal.text()).includes(workspace));
+    }
+  });
+});
+
+test('Kanban fixture links to a board with cards and the filtered-empty controls', async () => {
+  await withFixture(async ({ get }) => {
+    const index = await get('/en/personal/tasks/boards');
+    assert.equal(index.status, 200);
+    assert.match(
+      await index.text(),
+      /href="\/en\/personal\/tasks\/boards\/default"/u
+    );
+    const board = await get('/en/personal/tasks/boards/default');
+    assert.equal(board.status, 200);
+    const html = await board.text();
+    for (const label of [
+      'Not Started',
+      'Active',
+      'Done',
+      'Search tasks...',
+      'No tasks match the current filters',
+      'Clear filters',
+    ]) {
+      assert.ok(html.includes(label), label);
+    }
+    assert.equal([...html.matchAll(/data-testid="task-card"/gu)].length, 3);
+  });
+});
+
+test('Meet fixture requires a display name and explicit media readiness before admission', async () => {
+  await withFixture(async ({ get }) => {
+    const room = await get('/en/r/e2e-guest-room');
+    assert.equal(room.status, 200);
+    assert.match(await room.text(), /aria-label="Camera preview"/u);
+    const url = '/api/e2e-fixture/meet/guest';
+    const ready = {
+      displayName: 'Meet Guest',
+      camera: false,
+      microphone: false,
+    };
+    assert.equal(
+      (await get(url, post({ ...ready, displayName: ' ' }))).status,
+      400
+    );
+    assert.equal(
+      (await get(url, post({ displayName: ready.displayName }))).status,
+      400
+    );
+    const joined = await get(url, post(ready));
+    assert.equal(joined.status, 200);
+    assert.deepEqual(await joined.json(), { status: 'joined', ...ready });
+  });
+});
+
+test('EduFest fixture returns room presence only after guest admission', async () => {
+  await withFixture(async ({ get }) => {
+    const hall = await get('/worlds');
+    assert.equal(hall.status, 200);
+    assert.match(await hall.text(), /Hall floor plan/u);
+    const readyUrl = '/api/e2e-fixture/worlds/room';
+    const admissionUrl = '/api/e2e-fixture/worlds/admission';
+    assert.equal((await get(readyUrl)).status, 401);
+    assert.equal(
+      (await get(admissionUrl, post({ displayName: ' ' }))).status,
+      400
+    );
+    const admitted = await get(
+      admissionUrl,
+      post({ displayName: 'Hall Guest' })
+    );
+    assert.equal(admitted.status, 204);
+    const ready = await get(readyUrl, sessionCookie(admitted));
+    assert.equal(ready.status, 200);
+    const frame = await ready.json();
+    assert.equal(frame.type, 'ready');
+    assert.equal(frame.self.displayName, 'Hall Guest');
+    assert.ok(Number.isFinite(frame.self.x) && Number.isFinite(frame.self.z));
+    assert.deepEqual(frame.peers, []);
+    assert.equal((await get(readyUrl, sessionCookie(admitted))).status, 401);
+  });
 });

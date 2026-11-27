@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-27T05:30:10.130Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Clear filters\"",
+        "target": {
+          "role": "button",
+          "name": "Clear filters"
+        }
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-fixture-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/tasks-board-load.e2e.ts::filters%20the%20personal%20Kanban%20board%20and%20restores%20its%20cards",
+      "targetId": "web-chromium",
+      "instructionDigest": "942f15d30bf7a8e583b3f829a20d35307a017ebb4d4429789b4a68772e8454f7",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "clear the Kanban filters",
+    "startPath": "/en/personal/tasks/boards/default",
+    "endPath": "/en/personal/tasks/boards/default",
+    "endAnchors": [
+      {
+        "role": "textbox",
+        "name": "Search tasks...",
+        "placeholder": "Search tasks..."
+      },
+      {
+        "role": "heading",
+        "name": "Not Started"
+      },
+      {
+        "role": "listitem",
+        "name": "Review Q4 onboarding checklist",
+        "testId": "task-card"
+      },
+      {
+        "role": "heading",
+        "name": "Active"
+      },
+      {
+        "role": "listitem",
+        "name": "Verify deterministic E2E replay cache",
+        "testId": "task-card"
+      },
+      {
+        "role": "heading",
+        "name": "Done"
+      },
+      {
+        "role": "listitem",
+        "name": "Bootstrap web test harness",
+        "testId": "task-card"
+      },
+      {
+        "role": "region",
+        "name": "Board columns"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "status",
+        "name": "No tasks match the current filters"
+      },
+      {
+        "role": "textbox",
+        "name": "Search tasks...",
+        "placeholder": "Search tasks...",
+        "value": "no matching task title"
+      },
+      {
+        "role": "button",
+        "name": "Clear filters"
+      }
+    ],
+    "endWaitMs": 10178,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

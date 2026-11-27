@@ -1,6 +1,6 @@
 {
   "schemaVersion": "trace-1",
-  "createdAt": "2026-11-26T18:27:39.437Z",
+  "createdAt": "2026-11-27T05:30:10.128Z",
   "payload": {
     "actions": [
       {
@@ -13,17 +13,17 @@
       }
     ],
     "executor": {
-      "name": "tuturuuu-local-recorder"
+      "name": "tuturuuu-fixture-recorder"
     },
     "recordedFor": {
-      "testId": "apps/web/e2e-agent/tasks-board-load.e2e.ts::loads%20the%20active%20personal%20tasks%20board%20and%20renders%20its%20columns",
+      "testId": "apps/web/e2e-agent/tasks-board-load.e2e.ts::filters%20the%20personal%20Kanban%20board%20and%20restores%20its%20cards",
       "targetId": "web-chromium",
       "instructionDigest": "2dcbfe6643b76407e43eeae2880877971b7392ddb82d4107c143b14ad81bfd2b",
       "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
       "callIndex": 0,
       "agent": "default"
     },
-    "summary": "Opened Personal Board",
+    "summary": "open the Personal Board from the active task boards list",
     "startPath": "/en/personal/tasks/boards",
     "endPath": "/en/personal/tasks/boards/default",
     "endAnchors": [
@@ -36,12 +36,18 @@
         "name": "Planner"
       },
       {
+        "role": "textbox",
+        "name": "Search tasks...",
+        "placeholder": "Search tasks..."
+      },
+      {
         "role": "heading",
         "name": "Not Started"
       },
       {
         "role": "listitem",
-        "name": "Review Q4 onboarding checklist"
+        "name": "Review Q4 onboarding checklist",
+        "testId": "task-card"
       },
       {
         "role": "heading",
@@ -49,15 +55,12 @@
       },
       {
         "role": "listitem",
-        "name": "Verify deterministic E2E replay cache"
+        "name": "Verify deterministic E2E replay cache",
+        "testId": "task-card"
       },
       {
         "role": "heading",
         "name": "Done"
-      },
-      {
-        "role": "listitem",
-        "name": "Bootstrap web test harness"
       }
     ],
     "goneAnchors": [
@@ -82,7 +85,7 @@
         "name": "Personal Board"
       }
     ],
-    "endWaitMs": 10177,
+    "endWaitMs": 10178,
     "keyedBy": {
       "cacheSchema": "trace-1",
       "policyVersion": "conservative/6",

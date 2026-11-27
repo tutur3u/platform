@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-27T05:30:06.786Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "typeSecret",
+        "summary": "fill secret \"fleet.password\" into textbox \"Password\"",
+        "target": {
+          "role": "textbox",
+          "name": "Password",
+          "placeholder": "Enter your password",
+          "inputPurpose": "password"
+        },
+        "secret": "fleet.password"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Sign In\"",
+        "target": {
+          "role": "button",
+          "name": "Sign In"
+        }
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-fixture-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/fleet-sign-in.e2e.ts::signs%20in%20with%20the%20fleet%20test%20identity%20in%20English",
+      "targetId": "web-chromium",
+      "instructionDigest": "0c648da2e28eda3b531238faf602c7116a4e3ad98db75761f186a132b90fd796",
+      "paramsDigest": "b7e22273a54b242659e96f40cf65deeb505b5dc8759d864bec844e954f5f5d2a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "submit the fleet password in {language}",
+    "startPath": "/en/login",
+    "endPath": "/en/personal",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "Signed in"
+      },
+      {
+        "role": "heading",
+        "name": "Personal Workspace"
+      },
+      {
+        "role": "document",
+        "name": "Personal Workspace | Tuturuuu"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "heading",
+        "name": "Welcome to Tuturuuu"
+      },
+      {
+        "role": "heading",
+        "name": "Enter your password"
+      },
+      {
+        "text": "Email"
+      },
+      {
+        "role": "textbox",
+        "name": "Email",
+        "value": "<secret:fleet-email>"
+      },
+      {
+        "text": "Password"
+      },
+      {
+        "role": "textbox",
+        "name": "Password",
+        "placeholder": "Enter your password",
+        "inputPurpose": "password"
+      },
+      {
+        "role": "button",
+        "name": "Sign In"
+      },
+      {
+        "role": "document",
+        "name": "Sign In | Tuturuuu"
+      }
+    ],
+    "endWaitMs": 10266,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

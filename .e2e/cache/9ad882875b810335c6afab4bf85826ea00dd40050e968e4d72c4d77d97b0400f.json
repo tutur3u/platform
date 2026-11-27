@@ -1,0 +1,91 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-27T05:30:08.974Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Ask to join\"",
+        "target": {
+          "role": "button",
+          "name": "Ask to join"
+        }
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-fixture-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/meet-guest-join.e2e.ts::previews%20devices%20and%20enters%20a%20Meet%20room%20as%20a%20guest",
+      "targetId": "web-chromium",
+      "instructionDigest": "34e7be9577863e2f6448a0cd34fa89819a9e5f0b75c539b7bdd15019ff12742b",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "ask to join the meeting from the guest preview",
+    "startPath": "/en/r/e2e-guest-room",
+    "endPath": "/en/r/e2e-guest-room",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "In meeting"
+      },
+      {
+        "text": "E2E Guest (you)"
+      },
+      {
+        "role": "link",
+        "name": "Leave call"
+      },
+      {
+        "role": "region",
+        "name": "Meeting room"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "text": "Camera is on"
+      },
+      {
+        "role": "button",
+        "name": "Turn camera off"
+      },
+      {
+        "role": "button",
+        "name": "Mute microphone"
+      },
+      {
+        "text": "Display name"
+      },
+      {
+        "role": "textbox",
+        "name": "Display name",
+        "placeholder": "Your name",
+        "value": "E2E Guest"
+      },
+      {
+        "text": "Human check passed"
+      },
+      {
+        "role": "button",
+        "name": "Ask to join"
+      },
+      {
+        "role": "link",
+        "name": "Sign in with Tuturuuu"
+      }
+    ],
+    "endWaitMs": 10256,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

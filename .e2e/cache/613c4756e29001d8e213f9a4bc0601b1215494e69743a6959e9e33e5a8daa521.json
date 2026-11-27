@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-27T05:30:05.635Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "tap",
+        "summary": "tap button \"Join as guest\"",
+        "target": {
+          "role": "button",
+          "name": "Join as guest"
+        }
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-fixture-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/edufest-hall-guest-join.e2e.ts::joins%20the%20EduFest%20hall%20fixture%20as%20a%20guest%20and%20sees%20hall%20presence",
+      "targetId": "web-chromium",
+      "instructionDigest": "86daf66e4bb0b946bd2320b3d4bbb030af117d736edb4a97288bce5666ba1139",
+      "paramsDigest": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "open the EduFest hall guest entry",
+    "startPath": "/worlds",
+    "endPath": "/worlds",
+    "endAnchors": [
+      {
+        "text": "Display name"
+      },
+      {
+        "role": "textbox",
+        "name": "Display name"
+      },
+      {
+        "role": "button",
+        "name": "Join room"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "button",
+        "name": "Join as guest"
+      }
+    ],
+    "endWaitMs": 10114,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

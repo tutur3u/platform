@@ -3,6 +3,7 @@ import { web } from '@e2e-dev/web';
 
 export const FLEET_IDENTITY_ENV_NAMES = {
   email: [
+    'E2E_USER_EMAIL',
     'E2E_SECRET_FLEET_EMAIL',
     'E2E_USER_FLEET_USERNAME',
     'E2E_FLEET_EMAIL',
@@ -10,6 +11,7 @@ export const FLEET_IDENTITY_ENV_NAMES = {
     'TUTURUUU_FLEET_SMOKE_ID',
   ],
   password: [
+    'E2E_SECRET_PASSWORD',
     'E2E_USER_FLEET_PASSWORD',
     'E2E_FLEET_PASSWORD',
     'TUTURUUU_FLEET_SMOKE_PASSWORD',
@@ -38,6 +40,7 @@ export function resolveFleetEmailFromEnv(
   env: Readonly<Record<string, string | undefined>> = process.env
 ): string {
   const direct =
+    env.E2E_USER_EMAIL?.trim() ||
     env.E2E_SECRET_FLEET_EMAIL?.trim() ||
     env.E2E_USER_FLEET_USERNAME?.trim() ||
     env.E2E_FLEET_EMAIL?.trim() ||
@@ -55,6 +58,7 @@ export function resolveFleetPasswordFromEnv(
   env: Readonly<Record<string, string | undefined>> = process.env
 ): string {
   return (
+    env.E2E_SECRET_PASSWORD?.trim() ||
     env.E2E_USER_FLEET_PASSWORD?.trim() ||
     env.E2E_FLEET_PASSWORD?.trim() ||
     env.TUTURUUU_FLEET_SMOKE_PASSWORD?.trim() ||

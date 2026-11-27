@@ -1,6 +1,6 @@
 {
   "schemaVersion": "trace-1",
-  "createdAt": "2026-11-26T18:27:38.073Z",
+  "createdAt": "2026-11-27T05:30:06.785Z",
   "payload": {
     "actions": [
       {
@@ -21,72 +21,53 @@
           "role": "button",
           "name": "Continue with email"
         }
-      },
-      {
-        "name": "typeSecret",
-        "summary": "fill secret \"fleet.password\" into textbox \"Password\"",
-        "target": {
-          "role": "textbox",
-          "name": "Password",
-          "placeholder": "Enter your password",
-          "inputPurpose": "password"
-        },
-        "secret": "fleet.password"
-      },
-      {
-        "name": "tap",
-        "summary": "tap button \"Sign In\"",
-        "target": {
-          "role": "button",
-          "name": "Sign In"
-        }
       }
     ],
     "executor": {
-      "name": "tuturuuu-local-recorder"
+      "name": "tuturuuu-fixture-recorder"
     },
     "recordedFor": {
-      "testId": "apps/web/e2e-agent/fleet-sign-in.e2e.ts::signs%20in%20with%20the%20fleet%20test%20identity%20from%20env%20names%20only",
+      "testId": "apps/web/e2e-agent/fleet-sign-in.e2e.ts::signs%20in%20with%20the%20fleet%20test%20identity%20in%20English",
       "targetId": "web-chromium",
-      "instructionDigest": "2ae97d0710399185a2b90b05d1889ee59b1b27263f635970c1e1395be7d39917",
-      "paramsDigest": "4103968127783377f9dccb42ec37e262bf683ca1d4ba31e6f751c48ee64dd7a8",
+      "instructionDigest": "fee4f75111b4dc124fc2beab4a5c2b143873f0bf26e7037db9ef432b3514b808",
+      "paramsDigest": "8b5f411b0148ea503d166eeab61e6a3661cc99a4e467dfc98565df2b44be5ec1",
       "callIndex": 0,
       "agent": "default"
     },
-    "summary": "Signed in with fleet identity",
+    "summary": "enter the fleet email and continue in {language}",
     "startPath": "/en/login",
-    "endPath": "/en/personal",
+    "endPath": "/en/login",
     "endAnchors": [
       {
-        "role": "status",
-        "name": "Signed in"
-      },
-      {
-        "role": "link",
-        "name": "Overview"
-      },
-      {
-        "role": "link",
-        "name": "Tasks"
-      },
-      {
         "role": "heading",
-        "name": "Personal Workspace"
+        "name": "Enter your password"
       },
       {
-        "role": "document",
-        "name": "Personal Workspace | Tuturuuu"
+        "text": "Email"
       },
       {
-        "role": "navigation",
-        "name": "Workspace navigation"
+        "role": "textbox",
+        "name": "Email",
+        "value": "<secret:fleet-email>"
+      },
+      {
+        "text": "Password"
+      },
+      {
+        "role": "textbox",
+        "name": "Password",
+        "placeholder": "Enter your password",
+        "inputPurpose": "password"
+      },
+      {
+        "role": "button",
+        "name": "Sign In"
+      },
+      {
+        "testId": "password-step"
       }
     ],
     "goneAnchors": [
-      {
-        "role": "heading",
-        "name": "Sign in to your account"
-      },
       {
         "text": "Email or username"
       },
@@ -99,13 +80,9 @@
       {
         "role": "button",
         "name": "Continue with email"
-      },
-      {
-        "role": "document",
-        "name": "Sign in | Tuturuuu"
       }
     ],
-    "endWaitMs": 10304,
+    "endWaitMs": 10174,
     "keyedBy": {
       "cacheSchema": "trace-1",
       "policyVersion": "conservative/6",

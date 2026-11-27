@@ -1,6 +1,6 @@
 {
   "schemaVersion": "trace-1",
-  "createdAt": "2026-11-26T18:27:38.741Z",
+  "createdAt": "2026-11-27T05:30:08.973Z",
   "payload": {
     "actions": [
       {
@@ -15,70 +15,77 @@
       },
       {
         "name": "tap",
-        "summary": "tap button \"Ask to join\"",
+        "summary": "tap button \"Turn camera on\" in \"Camera is off\"",
         "target": {
           "role": "button",
-          "name": "Ask to join"
+          "name": "Turn camera on",
+          "within": "Camera is off"
+        }
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Unmute microphone\" in \"Camera is on\"",
+        "target": {
+          "role": "button",
+          "name": "Unmute microphone",
+          "within": "Camera is on"
         }
       }
     ],
     "executor": {
-      "name": "tuturuuu-local-recorder"
+      "name": "tuturuuu-fixture-recorder"
     },
     "recordedFor": {
-      "testId": "apps/web/e2e-agent/meet-guest-join.e2e.ts::joins%20a%20Meet%20room%20as%20a%20guest%20and%20waits%20in%20the%20lobby",
+      "testId": "apps/web/e2e-agent/meet-guest-join.e2e.ts::previews%20devices%20and%20enters%20a%20Meet%20room%20as%20a%20guest",
       "targetId": "web-chromium",
-      "instructionDigest": "4ffbc766446facb6db6e3b8b953d445d574f2e874d19b69ed559030f7ca6dfb8",
+      "instructionDigest": "f081cbfadd9ee5ac6e8afee986794addd641bd96d582360c5719f722a423b7b3",
       "paramsDigest": "0da598ba538760790d208c322f155af11004db660d3e0959dfeba911285b4770",
       "callIndex": 0,
       "agent": "default"
     },
-    "summary": "Requested to join Meet room as guest",
+    "summary": "enter {displayName} and turn on the camera and microphone preview",
     "startPath": "/en/r/e2e-guest-room",
     "endPath": "/en/r/e2e-guest-room",
     "endAnchors": [
       {
-        "role": "status",
-        "name": "Waiting for the host to admit you"
+        "text": "Camera is on"
       },
       {
-        "role": "heading",
-        "name": "Waiting in lobby"
+        "role": "button",
+        "name": "Turn camera off"
       },
       {
-        "text": "Guest: E2E Guest",
-        "testId": "meet-guest-badge"
+        "role": "button",
+        "name": "Mute microphone"
+      },
+      {
+        "role": "textbox",
+        "name": "Display name",
+        "placeholder": "Your name",
+        "value": "E2E Guest"
       }
     ],
     "goneAnchors": [
       {
-        "text": "Tuturuuu Meet"
+        "text": "Camera is off"
       },
       {
-        "role": "heading",
-        "name": "Join meeting"
+        "role": "button",
+        "name": "Turn camera on",
+        "states": ["pressed"]
       },
       {
-        "text": "Display name"
+        "role": "button",
+        "name": "Unmute microphone",
+        "states": ["pressed"]
       },
       {
         "role": "textbox",
         "name": "Display name",
         "placeholder": "Your name"
-      },
-      {
-        "text": "Human check passed"
-      },
-      {
-        "role": "button",
-        "name": "Ask to join"
-      },
-      {
-        "role": "link",
-        "name": "Sign in with Tuturuuu"
       }
     ],
-    "endWaitMs": 10178,
+    "endWaitMs": 10086,
     "keyedBy": {
       "cacheSchema": "trace-1",
       "policyVersion": "conservative/6",

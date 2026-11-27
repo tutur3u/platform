@@ -1,44 +1,26 @@
 #!/usr/bin/env node
-/**
- * Deterministic loopback fixture server for zero-build, zero-secret CI replay
- * of the representative `apps/web` e2e suites. Mirrors the exact routes, ARIA
- * roles, labels, placeholders, and transitions of:
- * - /en/login (IdentifyStep + PasswordStep -> /en/personal)
- * - /en/personal/tasks/boards -> /en/personal/tasks/boards/default
- * - /en/r/e2e-guest-room (MeetGuestJoin -> guest lobby)
- *
- * Credentials are read strictly from environment variable names at runtime;
- * no credentials are hardcoded in source.
- */
+import { randomUUID } from 'node:crypto';
 import http from 'node:http';
 import { pathToFileURL, URL } from 'node:url';
+import {
+  ADMISSION_TTL_SECONDS,
+  issueRoomAdmission,
+  ROOM_LEASE_SECONDS,
+  verifyRoomAdmission,
+} from '../../apps/worlds/src/multiplayer/admission.ts';
+import enMessages from '../../apps/web/messages/en.json' with { type: 'json' };
+import viMessages from '../../apps/web/messages/vi.json' with { type: 'json' };
+import {
+  resolveFleetEmailFromEnv,
+  resolveFleetPasswordFromEnv,
+} from './shared-web-config.ts';
 
-const FLEET_SMOKE_UUID_PATTERN =
-  /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/u;
-
-function resolveExpectedEmail(env = process.env) {
-  const direct =
-    env.E2E_SECRET_FLEET_EMAIL?.trim() ||
-    env.E2E_USER_FLEET_USERNAME?.trim() ||
-    env.E2E_FLEET_EMAIL?.trim() ||
-    env.TUTURUUU_FLEET_SMOKE_EMAIL?.trim();
-  if (direct) return direct;
-
-  const requestId = env.TUTURUUU_FLEET_SMOKE_ID?.trim();
-  if (requestId && FLEET_SMOKE_UUID_PATTERN.test(requestId)) {
-    return `qa-automation+${requestId}@smoke.tuturuuu.com`;
-  }
-  return '';
-}
-
-function resolveExpectedPassword(env = process.env) {
-  return (
-    env.E2E_USER_FLEET_PASSWORD?.trim() ||
-    env.E2E_FLEET_PASSWORD?.trim() ||
-    env.TUTURUUU_FLEET_SMOKE_PASSWORD?.trim() ||
-    ''
-  );
-}
+const messages = { en: enMessages, vi: viMessages };
+const hallScope = {
+  worldId: 'edufest-hall',
+  revision: 'edufest-hall-v1',
+  shard: 0,
+};
 
 function escapeHtml(value) {
   return String(value)
@@ -49,9 +31,9 @@ function escapeHtml(value) {
     .replaceAll("'", '&#39;');
 }
 
-function layout(title, body) {
+function layout(title, body, locale = 'en') {
   return `<!doctype html>
-<html lang="en">
+<html lang="${locale}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -112,38 +94,39 @@ function parseCookies(req) {
   return map;
 }
 
-function loginPageHtml() {
+function loginPageHtml(locale) {
+  const copy = messages[locale].login;
   return layout(
-    'Sign in | Tuturuuu',
+    `${copy.sign_in} | Tuturuuu`,
     `<main>
-      <h1>Sign in to your account</h1>
+      <h1>${escapeHtml(copy.welcome_to_tuturuuu)}</h1>
       <form id="identify-form">
-        <label for="login-email">Email or username</label>
+        <label for="login-email">${escapeHtml(copy.email_or_username)}</label>
         <input
           id="login-email"
           name="email"
           type="text"
           autocomplete="username"
-          placeholder="Enter your email or username"
+          placeholder="${escapeHtml(copy.email_username_placeholder)}"
           required
         />
-        <button type="submit">Continue with email</button>
+        <button type="submit">${escapeHtml(copy.continue_with_email)}</button>
       </form>
       <form id="password-form" data-testid="password-step" hidden>
-        <h2>Enter your password</h2>
-        <label for="locked-email">Email</label>
+        <h2>${escapeHtml(copy.password_title)}</h2>
+        <label for="locked-email">${escapeHtml(copy.email)}</label>
         <input id="locked-email" name="email" type="text" readonly aria-readonly="true" />
-        <label for="login-password">Password</label>
+        <label for="login-password">${escapeHtml(copy.password)}</label>
         <input
           id="login-password"
           name="password"
           type="password"
           autocomplete="current-password"
-          placeholder="Enter your password"
+          placeholder="${escapeHtml(copy.password_placeholder)}"
           required
         />
-        <button type="submit">Sign In</button>
-        <p id="login-error" role="alert" hidden></p>
+        <button type="submit">${escapeHtml(copy.sign_in)}</button>
+        <p id="login-error" role="alert" data-message="${escapeHtml(copy.invalid_credentials)}" hidden></p>
       </form>
       <script>
         const identifyForm = document.getElementById('identify-form');
@@ -175,30 +158,26 @@ function loginPageHtml() {
             }),
           });
           if (!res.ok) {
-            errorBox.textContent = 'Invalid credentials';
+            errorBox.textContent = errorBox.dataset.message;
             errorBox.hidden = false;
             return;
           }
-          window.location.assign('/en/personal');
+          window.location.assign('/${locale}/personal');
         });
       </script>
-    </main>`
+    </main>`,
+    locale
   );
 }
 
-function personalWorkspaceHtml() {
+function personalWorkspaceHtml(locale) {
+  const heading =
+    locale === 'vi' ? 'Không gian làm việc cá nhân' : 'Personal Workspace';
+  const status = locale === 'vi' ? 'Đã đăng nhập' : 'Signed in';
   return layout(
-    'Personal Workspace | Tuturuuu',
-    `<header>
-      <nav aria-label="Workspace navigation">
-        <a href="/en/personal">Overview</a>
-        <a href="/en/personal/tasks/boards">Tasks</a>
-      </nav>
-    </header>
-    <main>
-      <h1>Personal Workspace</h1>
-      <p role="status">Signed in</p>
-    </main>`
+    `${heading} | Tuturuuu`,
+    `<main><h1>${heading}</h1><p role="status">${status}</p></main>`,
+    locale
   );
 }
 
@@ -219,31 +198,47 @@ function tasksBoardsIndexHtml() {
 function tasksBoardDetailHtml() {
   return layout(
     'Personal Board | Tuturuuu Tasks',
-    `<main data-testid="task-board">
-      <header>
-        <h1>Personal Board</h1>
-        <button type="button">Planner</button>
-      </header>
-      <section aria-label="Board columns">
+    `<main>
+      <h1>Personal Board</h1>
+      <button type="button">Planner</button>
+      <input id="search" type="text" aria-label="Search tasks..." placeholder="Search tasks..." />
+      <section id="columns" aria-label="Board columns">
         <article aria-label="Not Started">
           <h2>Not Started</h2>
-          <ul>
-            <li>Review Q4 onboarding checklist</li>
-          </ul>
+          <ul><li data-testid="task-card">Review Q4 onboarding checklist</li></ul>
         </article>
         <article aria-label="Active">
           <h2>Active</h2>
-          <ul>
-            <li>Verify deterministic E2E replay cache</li>
-          </ul>
+          <ul><li data-testid="task-card">Verify deterministic E2E replay cache</li></ul>
         </article>
         <article aria-label="Done">
           <h2>Done</h2>
-          <ul>
-            <li>Bootstrap web test harness</li>
-          </ul>
+          <ul><li data-testid="task-card">Bootstrap web test harness</li></ul>
         </article>
       </section>
+      <section id="filtered-empty" hidden>
+        <p role="status">No tasks match the current filters</p>
+        <button id="clear" type="button">Clear filters</button>
+      </section>
+      <script>
+        const search = document.getElementById('search');
+        const columns = document.getElementById('columns');
+        const empty = document.getElementById('filtered-empty');
+        const cards = [...columns.querySelectorAll('li')];
+        function filterCards() {
+          const query = search.value.trim().toLowerCase();
+          for (const card of cards) card.hidden = !card.textContent.toLowerCase().includes(query);
+          const noMatches = cards.every((card) => card.hidden);
+          columns.hidden = noMatches;
+          empty.hidden = !noMatches;
+        }
+        search.addEventListener('input', filterCards);
+        document.getElementById('clear').addEventListener('click', () => {
+          search.value = '';
+          filterCards();
+          search.focus();
+        });
+      </script>
     </main>`
   );
 }
@@ -252,145 +247,297 @@ function meetGuestJoinHtml(roomCode) {
   return layout(
     'Join meeting | Tuturuuu Meet',
     `<main>
+      <h1>Join meeting</h1>
+      <p>Room: ${escapeHtml(roomCode)}</p>
       <form id="meet-guest-form">
-        <p>Tuturuuu Meet</p>
-        <h1>Join meeting</h1>
-        <p data-testid="meet-room-code">Room: ${escapeHtml(roomCode)}</p>
-        <div>
-          <label for="meet-guest-display-name">Display name</label>
-          <input
-            id="meet-guest-display-name"
-            name="displayName"
-            type="text"
-            autocomplete="name"
-            placeholder="Your name"
-            required
-          />
-        </div>
-        <p aria-live="polite">Human check passed</p>
-        <button type="submit">Ask to join</button>
+        <section aria-label="Camera preview">
+          <p id="camera-readiness">Camera is off</p>
+          <button id="camera" type="button" aria-pressed="true">Turn camera on</button>
+          <button id="microphone" type="button" aria-pressed="true">Unmute microphone</button>
+        </section>
+        <label for="meet-guest-display-name">Display name</label>
+        <input id="meet-guest-display-name" name="displayName" autocomplete="name" placeholder="Your name" maxlength="80" required />
+        <p>Human check passed</p>
+        <button type="submit" disabled>Ask to join</button>
         <a href="/en/login">Sign in with Tuturuuu</a>
       </form>
-      <section id="meet-guest-lobby" hidden>
-        <h1>Waiting in lobby</h1>
-        <p id="meet-lobby-status" role="status"></p>
-        <p data-testid="meet-guest-badge"></p>
+      <p id="meet-status" role="status" hidden></p>
+      <section aria-label="Meeting room" id="meet-room" hidden>
+        <p id="guest-name"></p>
+        <a href="/en/r/${encodeURIComponent(roomCode)}">Leave call</a>
       </section>
       <script>
         const form = document.getElementById('meet-guest-form');
-        const input = document.getElementById('meet-guest-display-name');
-        const lobby = document.getElementById('meet-guest-lobby');
-        const status = document.getElementById('meet-lobby-status');
-        const badge = document.querySelector('[data-testid="meet-guest-badge"]');
+        const input = form.elements.displayName;
+        const ask = form.querySelector('[type=submit]');
+        const camera = document.getElementById('camera');
+        const mic = document.getElementById('microphone');
+        const status = document.getElementById('meet-status');
+        const isOff = (button) => button.getAttribute('aria-pressed') === 'true';
 
-        form.addEventListener('submit', (event) => {
+        function bindToggle(button, onLabel, offLabel) {
+          button.addEventListener('click', () => {
+            const turnOn = isOff(button);
+            button.setAttribute('aria-pressed', String(!turnOn));
+            button.textContent = turnOn ? offLabel : onLabel;
+            document.getElementById('camera-readiness').textContent =
+              isOff(camera) ? 'Camera is off' : 'Camera is on';
+          });
+        }
+        bindToggle(camera, 'Turn camera on', 'Turn camera off');
+        bindToggle(mic, 'Unmute microphone', 'Mute microphone');
+        input.addEventListener('input', () => { ask.disabled = !input.value.trim(); });
+
+        form.addEventListener('submit', async (event) => {
           event.preventDefault();
-          const name = input.value.trim();
-          if (!name) return;
-          form.hidden = true;
-          lobby.hidden = false;
-          status.textContent = 'Waiting for the host to admit you';
-          badge.textContent = 'Guest: ' + name;
+          ask.disabled = true;
+          status.hidden = false;
+          status.textContent = 'Waiting for the host to let you in';
+          try {
+            const response = await fetch('/api/e2e-fixture/meet/guest', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                displayName: input.value.trim(),
+                camera: !isOff(camera),
+                microphone: !isOff(mic),
+              }),
+            });
+            if (!response.ok) throw new Error('Guest admission failed');
+            const guest = await response.json();
+            if (guest.status !== 'joined') throw new Error('Guest admission incomplete');
+            form.hidden = true;
+            status.textContent = 'In meeting';
+            document.getElementById('guest-name').textContent = guest.displayName + ' (you)';
+            document.getElementById('meet-room').hidden = false;
+          } catch {
+            ask.disabled = false;
+            status.textContent = 'Could not join meeting';
+          }
         });
       </script>
     </main>`
   );
 }
 
-export function createFixtureServer(env = process.env) {
-  return http.createServer(async (req, res) => {
-    const url = new URL(req.url ?? '/', 'http://127.0.0.1');
-    const pathname = url.pathname;
-
-    if (req.method === 'GET' && pathname === '/') {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(layout('Tuturuuu', '<main><h1>Tuturuuu</h1></main>'));
-      return;
-    }
-
-    if (
-      req.method === 'GET' &&
-      (pathname === '/en/login' || pathname === '/login')
-    ) {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(loginPageHtml());
-      return;
-    }
-
-    if (req.method === 'POST' && pathname === '/api/e2e-fixture/sign-in') {
-      try {
-        const body = await readJsonBody(req);
-        const expectedEmail = resolveExpectedEmail(env);
-        const expectedPassword = resolveExpectedPassword(env);
-        const email = typeof body.email === 'string' ? body.email.trim() : '';
-        const password = typeof body.password === 'string' ? body.password : '';
-        if (
-          !expectedEmail ||
-          !expectedPassword ||
-          email !== expectedEmail ||
-          password !== expectedPassword
-        ) {
-          res.writeHead(401, { 'content-type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Invalid credentials' }));
-          return;
-        }
-        res.writeHead(200, {
-          'content-type': 'application/json',
-          'set-cookie':
-            'ttr_e2e_fixture_session=authenticated; Path=/; HttpOnly; SameSite=Lax',
+function edufestHallHtml() {
+  return layout(
+    'EduFest hall',
+    `<main>
+      <h1>EduFest hall</h1>
+      <button id="guest-entry" type="button">Join as guest</button>
+      <form id="hall-guest-form" hidden>
+        <label for="hall-display-name">Display name</label>
+        <input id="hall-display-name" name="displayName" autocomplete="name" maxlength="80" required />
+        <button type="submit">Join room</button>
+      </form>
+      <p id="hall-status" role="status"></p>
+      <section aria-label="Hall floor plan">
+        <span>Entrance</span>
+        <span>Stage</span>
+        <span id="hall-self" role="img" aria-label="You" hidden>●</span>
+      </section>
+      <button id="hall-leave" type="button" hidden>Leave room</button>
+      <script>
+        const entry = document.getElementById('guest-entry');
+        const form = document.getElementById('hall-guest-form');
+        const status = document.getElementById('hall-status');
+        const self = document.getElementById('hall-self');
+        const leave = document.getElementById('hall-leave');
+        const join = form.querySelector('[type=submit]');
+        entry.addEventListener('click', () => {
+          entry.hidden = true;
+          form.hidden = false;
+          form.elements.displayName.focus();
         });
-        res.end(JSON.stringify({ ok: true }));
-      } catch {
-        res.writeHead(400, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Bad request' }));
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          join.disabled = true;
+          status.textContent = 'Joining room…';
+          try {
+            const admission = await fetch('/api/e2e-fixture/worlds/admission', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ displayName: form.elements.displayName.value.trim() }),
+            });
+            if (!admission.ok) throw new Error('Admission failed');
+            const response = await fetch('/api/e2e-fixture/worlds/room');
+            if (!response.ok) throw new Error('Room unavailable');
+            const frame = await response.json();
+            if (frame.type !== 'ready') throw new Error('Room not ready');
+            self.textContent = frame.self.displayName;
+            self.hidden = false;
+            form.hidden = true;
+            leave.hidden = false;
+            status.textContent = 'In room';
+          } catch {
+            status.textContent = 'Could not join or stay connected.';
+          } finally {
+            join.disabled = false;
+          }
+        });
+        leave.addEventListener('click', () => {
+          self.hidden = true;
+          leave.hidden = true;
+          status.textContent = '';
+          entry.hidden = false;
+        });
+      </script>
+    </main>`
+  );
+}
+
+function reply(res, status, body, headers = {}) {
+  res.writeHead(status, { 'cache-control': 'no-store', ...headers });
+  res.end(body);
+}
+
+function html(res, body) {
+  reply(res, 200, body, { 'content-type': 'text/html; charset=utf-8' });
+}
+
+function json(res, status, body, headers) {
+  reply(res, status, JSON.stringify(body), {
+    'content-type': 'application/json',
+    ...headers,
+  });
+}
+
+function getDisplayName(body) {
+  const name =
+    typeof body?.displayName === 'string' ? body.displayName.trim() : '';
+  return name.length <= 80 ? name : '';
+}
+
+export function createFixtureServer(env = process.env) {
+  const expectedEmail = resolveFleetEmailFromEnv(env);
+  const expectedPassword = resolveFleetPasswordFromEnv(env);
+  const loginSession = randomUUID();
+  const hallKey = randomUUID();
+  const pendingHallGuests = new Map();
+
+  return http.createServer(async (req, res) => {
+    const { pathname } = new URL(req.url ?? '/', 'http://127.0.0.1');
+    try {
+      if (req.method === 'GET') {
+        const authRoute = /^\/(en|vi)\/(login|personal)$/u.exec(pathname);
+        if (pathname === '/login') return html(res, loginPageHtml('en'));
+        if (authRoute) {
+          const [, locale, page] = authRoute;
+          if (page === 'login') return html(res, loginPageHtml(locale));
+          if (
+            parseCookies(req).get('ttr_e2e_fixture_session') !== loginSession
+          ) {
+            return reply(res, 302, undefined, { location: `/${locale}/login` });
+          }
+          return html(res, personalWorkspaceHtml(locale));
+        }
+        if (pathname === '/')
+          return html(
+            res,
+            layout('Tuturuuu', '<main><h1>Tuturuuu</h1></main>')
+          );
+        if (pathname === '/en/personal/tasks/boards')
+          return html(res, tasksBoardsIndexHtml());
+        if (pathname === '/en/personal/tasks/boards/default')
+          return html(res, tasksBoardDetailHtml());
+        const meetRoom = /^\/en\/r\/([^/]+)$/u.exec(pathname);
+        if (meetRoom)
+          return html(res, meetGuestJoinHtml(decodeURIComponent(meetRoom[1])));
+        if (pathname === '/worlds') return html(res, edufestHallHtml());
+        if (pathname === '/api/e2e-fixture/worlds/room') {
+          const grant = parseCookies(req).get('ttr_e2e_hall_admission');
+          const admission =
+            grant && (await verifyRoomAdmission(grant, hallKey));
+          const guest = admission && pendingHallGuests.get(admission.actorId);
+          if (!guest) return json(res, 401, { error: 'Admission required' });
+          pendingHallGuests.delete(admission.actorId);
+          return json(res, 200, {
+            type: 'ready',
+            self: {
+              id: admission.actorId,
+              displayName: guest.displayName,
+              x: 0,
+              z: 0,
+            },
+            peers: [],
+            leaseUntil: admission.leaseUntil,
+          });
+        }
       }
-      return;
-    }
-
-    if (req.method === 'GET' && pathname === '/en/personal') {
-      const cookies = parseCookies(req);
-      if (cookies.get('ttr_e2e_fixture_session') !== 'authenticated') {
-        res.writeHead(302, { location: '/en/login' });
-        res.end();
-        return;
+      if (req.method === 'POST') {
+        if (pathname === '/api/e2e-fixture/sign-in') {
+          const body = await readJsonBody(req);
+          if (
+            !expectedEmail ||
+            !expectedPassword ||
+            body?.email !== expectedEmail ||
+            body?.password !== expectedPassword
+          ) {
+            return json(res, 401, { error: 'Invalid credentials' });
+          }
+          return json(
+            res,
+            200,
+            { ok: true },
+            {
+              'set-cookie': `ttr_e2e_fixture_session=${loginSession}; Path=/; HttpOnly; SameSite=Lax`,
+            }
+          );
+        }
+        if (pathname === '/api/e2e-fixture/meet/guest') {
+          const body = await readJsonBody(req);
+          const displayName = getDisplayName(body);
+          if (
+            !displayName ||
+            typeof body.camera !== 'boolean' ||
+            typeof body.microphone !== 'boolean'
+          ) {
+            return json(res, 400, {
+              error: 'Display name and media preferences required',
+            });
+          }
+          return json(res, 200, {
+            status: 'joined',
+            displayName,
+            camera: body.camera,
+            microphone: body.microphone,
+          });
+        }
+        if (pathname === '/api/e2e-fixture/worlds/admission') {
+          // Guest identities and HTTP room frames are confined to the loopback fixture.
+          const displayName = getDisplayName(await readJsonBody(req));
+          if (!displayName)
+            return json(res, 400, { error: 'Display name required' });
+          const now = Math.floor(Date.now() / 1000);
+          for (const [id, guest] of pendingHallGuests) {
+            if (guest.expiresAt <= now) pendingHallGuests.delete(id);
+          }
+          if (pendingHallGuests.size >= 32)
+            return json(res, 503, { error: 'Admissions full' });
+          const id = randomUUID();
+          pendingHallGuests.set(id, {
+            displayName,
+            expiresAt: now + ADMISSION_TTL_SECONDS,
+          });
+          const grant = await issueRoomAdmission(
+            hallScope,
+            async () => ({
+              id,
+              sessionExpiresAt: now + ROOM_LEASE_SECONDS,
+            }),
+            hallKey,
+            () => now * 1000
+          );
+          return reply(res, 204, undefined, {
+            'set-cookie': `ttr_e2e_hall_admission=${grant}; Path=/api/e2e-fixture/worlds/room; Max-Age=${ADMISSION_TTL_SECONDS}; HttpOnly; SameSite=Lax`,
+          });
+        }
       }
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(personalWorkspaceHtml());
-      return;
+      return reply(res, 404, 'Not found');
+    } catch {
+      return json(res, 400, { error: 'Bad request' });
     }
-
-    if (req.method === 'GET' && pathname === '/en/personal/tasks/boards') {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(tasksBoardsIndexHtml());
-      return;
-    }
-
-    if (
-      req.method === 'GET' &&
-      /^\/en\/personal\/tasks\/boards\/[^/]+$/u.test(pathname)
-    ) {
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(tasksBoardDetailHtml());
-      return;
-    }
-
-    const meetMatch = /^\/en\/r\/([^/]+)$/u.exec(pathname);
-    if (req.method === 'GET' && meetMatch) {
-      let roomCode;
-      try {
-        roomCode = decodeURIComponent(meetMatch[1]);
-      } catch {
-        res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' });
-        res.end('Invalid room code');
-        return;
-      }
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-      res.end(meetGuestJoinHtml(roomCode));
-      return;
-    }
-
-    res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('Not found');
   });
 }
 

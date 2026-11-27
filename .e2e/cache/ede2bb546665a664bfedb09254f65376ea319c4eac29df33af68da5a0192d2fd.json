@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-27T05:30:10.130Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"no matching task title\" into textbox \"Search tasks...\"",
+        "target": {
+          "role": "textbox",
+          "name": "Search tasks...",
+          "placeholder": "Search tasks..."
+        },
+        "value": "no matching task title"
+      }
+    ],
+    "executor": {
+      "name": "tuturuuu-fixture-recorder"
+    },
+    "recordedFor": {
+      "testId": "apps/web/e2e-agent/tasks-board-load.e2e.ts::filters%20the%20personal%20Kanban%20board%20and%20restores%20its%20cards",
+      "targetId": "web-chromium",
+      "instructionDigest": "7cf752a9f08e60f21260477bb33d22972cde0bdc47d6492555d4b950fc7fcdae",
+      "paramsDigest": "169d2853d9b526a3d5514a4f08a716d31ecb468aada73a165c944c681d429e45",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "search the board for {query}",
+    "startPath": "/en/personal/tasks/boards/default",
+    "endPath": "/en/personal/tasks/boards/default",
+    "endAnchors": [
+      {
+        "role": "status",
+        "name": "No tasks match the current filters"
+      },
+      {
+        "role": "textbox",
+        "name": "Search tasks...",
+        "placeholder": "Search tasks...",
+        "value": "no matching task title"
+      },
+      {
+        "role": "button",
+        "name": "Clear filters"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "textbox",
+        "name": "Search tasks...",
+        "placeholder": "Search tasks..."
+      },
+      {
+        "role": "heading",
+        "name": "Not Started"
+      },
+      {
+        "role": "listitem",
+        "name": "Review Q4 onboarding checklist",
+        "testId": "task-card"
+      },
+      {
+        "role": "heading",
+        "name": "Active"
+      },
+      {
+        "role": "listitem",
+        "name": "Verify deterministic E2E replay cache",
+        "testId": "task-card"
+      },
+      {
+        "role": "heading",
+        "name": "Done"
+      },
+      {
+        "role": "listitem",
+        "name": "Bootstrap web test harness",
+        "testId": "task-card"
+      },
+      {
+        "role": "region",
+        "name": "Board columns"
+      }
+    ],
+    "endWaitMs": 10180,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "90c85e9bf9ca92c5c37e3d7985d347faaa9cb6ec864b6d442b9560442b4eb42b",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "fb8132c88cfb5354dad210566d9849d239bb04ba5b3deee5d26c0de056a3f170",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}
