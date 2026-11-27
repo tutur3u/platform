@@ -205,13 +205,7 @@ export async function collectAllWith(
     alerts: [
       ...receiptAlert,
       ...withManual.flatMap((account) =>
-        /unauthenticated|authentication required|unauthorized|login required/i.test(
-          [
-            account.lastError,
-            account.providerStatus,
-            account.statusMessage,
-          ].join(' ')
-        )
+        accountHealth(account).lastErrorClass === 'auth'
           ? [`AUTH_REQUIRED ${account.instanceId}`]
           : []
       ),
@@ -234,4 +228,37 @@ function providerForInstance(instanceId: string): Provider {
   if (instanceId === 'cursor') return 'cursor';
   if (instanceId === 'opencode') return 'opencode';
   return instanceId.startsWith('claude') ? 'claude' : 'codex';
+}
+
+export function accountHealth(account: AccountUsage) {
+  const signal = [
+    account.lastError,
+    account.providerStatus,
+    account.statusMessage,
+  ].join(' ');
+  const lastErrorClass =
+    /unauthenticated|authentication (?:required|failure|failed)|unauthori[sz]ed|login required/i.test(
+      signal
+    )
+      ? 'auth'
+      : account.providerStatus === 'disabled'
+        ? 'disabled'
+        : /model (?:not on|unavailable on|not included in) (?:your |the )?plan/i.test(
+              signal
+            )
+          ? 'model-not-on-plan'
+          : /quota (?:reached|exceeded)|usage limit|rate limit/i.test(signal)
+            ? 'usage-limit'
+            : account.lastError
+              ? 'unknown'
+              : null;
+  return {
+    authenticated:
+      lastErrorClass === 'auth'
+        ? false
+        : account.providerStatus === 'ready'
+          ? true
+          : null,
+    lastErrorClass,
+  };
 }

@@ -138,7 +138,12 @@ function windowSummary(value: unknown): string {
   const observedAt = 'observedAt' in value ? value.observedAt : undefined;
   const age =
     typeof observedAt === 'string' ? Date.now() - Date.parse(observedAt) : NaN;
+  const resetMs =
+    'resetsAt' in value && typeof value.resetsAt === 'string'
+      ? Date.parse(value.resetsAt)
+      : 0;
   const current =
+    (resetMs === 0 || resetMs > Date.now()) &&
     typeof ttl === 'number' &&
     age >= 0 &&
     age <= ttl &&

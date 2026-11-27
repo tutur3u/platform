@@ -8,7 +8,7 @@ import { runBlock } from './block-cli';
 import { runCheckpointReady } from './checkpoint-ready';
 import { argumentValue } from './cli-args';
 import { refreshAntigravityAccount } from './collectors/antigravity-account';
-import { collectAll } from './collectors';
+import { accountHealth, collectAll } from './collectors';
 import { runHook } from './hook-cli';
 import { runOperator } from './operator-cli';
 import { computeAccountPacing } from './pacing';
@@ -352,6 +352,7 @@ async function main(): Promise<void> {
             accounts: result,
             seats: filtered.map(({ accountIdentityHash, ...account }) => ({
               ...account,
+              ...accountHealth(account),
               windows: account.windows.map((window) => ({
                 ...window,
                 ttlMs: windowFreshnessTtlMs(
