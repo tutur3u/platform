@@ -4,10 +4,15 @@ import { bindings, defineConfig, exports } from 'cf/config';
 // published. workers.dev, preview URLs and routes stay off; the owner attaches
 // a custom hostname and secrets during the admitted staging publication.
 // `GuardSubject` partitions are keyed by client-side HMAC digests only.
+const staging = process.env.ABUSE_GUARD_WAVE1_STAGING === '1';
+const worker = staging
+  ? 'tuturuuu-abuse-guard-wave1-staging'
+  : 'tuturuuu-abuse-guard';
+
 export default defineConfig({
   accountId: 'e8912e2867beecc673d171907bf09649',
   worker: {
-    name: 'tuturuuu-abuse-guard',
+    name: worker,
     compatibilityDate: '2026-09-28',
     entrypoint: 'src/worker.ts',
     workersDev: false,
@@ -23,7 +28,7 @@ export default defineConfig({
       // proxied API request for a full UTC day: an exhausted share returns
       // guard_stopped, and proxy callers fall back to per-instance limits
       // until the next UTC day. The total also bounds billable guard work.
-      ABUSE_GUARD_DAILY_OP_BUDGET: bindings.text('5000000'),
+      ABUSE_GUARD_DAILY_OP_BUDGET: bindings.text(staging ? '1000' : '5000000'),
       // Optional explicit split, e.g. `offline=600000,replay=100000`; empty
       // uses the default shares (offline 35%, proxy 20%, replay, password,
       // meet and ratelimit 10% each, live 5%). Unlisted families keep their
@@ -33,11 +38,11 @@ export default defineConfig({
       ABUSE_GUARD_SECRETS: bindings.secret(),
       ABUSE_GUARD_OPERATOR_TOKEN: bindings.secret(),
       GUARD_SUBJECT: bindings.durableObject({
-        worker: 'tuturuuu-abuse-guard',
+        worker,
         exportName: 'GuardSubject',
       }),
       GUARD_CONTROL: bindings.durableObject({
-        worker: 'tuturuuu-abuse-guard',
+        worker,
         exportName: 'GuardControl',
       }),
     },

@@ -9,6 +9,10 @@ import {
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {
+  meetFirstPublication,
+  readMeetFirstCredentials,
+} from './meet-first-publication.mjs';
 import { ingressPreflight } from './wave1-ingress-preflight.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
@@ -135,7 +139,14 @@ function observationTarget(method, url) {
     return `${method} (unparseable URL)`;
   }
 }
-export async function boundedJson(url, token, fetcher = fetch, body, signal) {
+export async function boundedJson(
+  url,
+  token,
+  fetcher = fetch,
+  body,
+  signal,
+  allowNotFound = false
+) {
   const requestTimeout = AbortSignal.timeout(15_000);
   const method = body === undefined ? 'GET' : 'POST';
   const response = await fetcher(url, {
@@ -150,7 +161,7 @@ export async function boundedJson(url, token, fetcher = fetch, body, signal) {
     redirect: 'error',
   });
   assert.ok(
-    response.ok,
+    response.ok || (allowNotFound && response.status === 404),
     `Required control-plane observation failed (${response.status}): ${observationTarget(method, url)}`
   );
   const reader = response.body.getReader();
@@ -167,7 +178,17 @@ export async function boundedJson(url, token, fetcher = fetch, body, signal) {
   } finally {
     await reader.cancel();
   }
-  return JSON.parse(Buffer.concat(chunks).toString());
+  const data = JSON.parse(Buffer.concat(chunks).toString());
+  if (!response.ok) {
+    assert.equal(data.success, false, 'Unrecognized missing Worker response');
+    assert.deepEqual(
+      data.errors?.map((error) => error.code),
+      [10007],
+      'Unrecognized missing Worker response'
+    );
+    return null;
+  }
+  return data;
 }
 export function matchesVersion(version, sha, digest) {
   return (
@@ -199,15 +220,30 @@ export async function main({
   argv = process.argv.slice(2),
   env = process.env,
   fetcher = fetch,
-  exec = execFileSync,
+  exec,
   appRoot,
   settingsTiming,
   readWorkerConfig,
+  readCredentials = readMeetFirstCredentials,
 } = {}) {
   const [mode, app, environment, sha] = argv;
   // The Web issuer candidate builds from its isolated cloudflare/ root.
   appRoot ??=
     app === 'web' ? resolve('apps/web/cloudflare') : resolve('apps', app);
+  if (mode === 'meet-first-seal' || mode === 'meet-first-publish')
+    return meetFirstPublication({
+      mode,
+      app,
+      environment,
+      sha,
+      env,
+      fetcher,
+      exec,
+      readCredentials,
+      publicationAdmission,
+      boundedJson,
+    });
+  exec ??= execFileSync;
   if (mode === 'dry-run') {
     assert.ok(
       !env.CLOUDFLARE_API_TOKEN &&

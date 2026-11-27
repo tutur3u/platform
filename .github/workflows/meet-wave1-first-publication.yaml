@@ -1,0 +1,78 @@
+name: First publish a Meet staging Worker
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Exact staging target to publish
+        type: choice
+        options: [abuse-guard, meet-realtime, meet]
+        required: true
+      artifact_run_id:
+        description: Trusted Actions run providing the exact admitted artifact
+        type: string
+        required: true
+permissions:
+  actions: read
+  contents: read
+concurrency:
+  group: meet-wave1-first-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && github.repository == 'tutur3u/platform'
+    runs-on: ubuntu-latest
+    environment: wave1-meet-staging
+    timeout-minutes: 12
+    env:
+      TARGET: ${{ inputs.target }}
+      SOURCE_SHA: ${{ github.sha }}
+      ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+      CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - name: Verify artifact run identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$ARTIFACT_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          case "$TARGET" in abuse-guard|meet-realtime|meet) ;; *) exit 1 ;; esac
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$ARTIFACT_RUN_ID" --jq             '.head_sha + " " + .head_branch + " " + .conclusion + " " + .head_repository.full_name'             | grep -Fx "$SOURCE_SHA main success $GITHUB_REPOSITORY"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.artifact_run_id }}
+          name: meet-first-${{ inputs.target }}-${{ github.sha }}
+          path: ${{ runner.temp }}/meet-first
+      - name: Publish admitted artifact once
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
+          CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
+          CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
+          WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
+          WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
+          WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
+          WAVE1_MEET_FIRST_ARTIFACT_DIR: ${{ runner.temp }}/meet-first
+          ABUSE_GUARD_INPUT: ${{ inputs.target == 'abuse-guard' && secrets.MEET_FIRST_ABUSE_GUARD_INPUT || '' }}
+          REALTIME_INPUT: ${{ inputs.target == 'meet-realtime' && secrets.MEET_FIRST_REALTIME_INPUT || '' }}
+          FRONTEND_INPUT: ${{ inputs.target == 'meet' && secrets.MEET_FIRST_FRONTEND_INPUT || '' }}
+        run: |
+          case "$TARGET" in
+            abuse-guard) input="$ABUSE_GUARD_INPUT" ;;
+            meet-realtime) input="$REALTIME_INPUT" ;;
+            meet) input="$FRONTEND_INPUT" ;;
+            *) exit 1 ;;
+          esac
+          unset ABUSE_GUARD_INPUT REALTIME_INPUT FRONTEND_INPUT
+          printf '%s' "$input" | node scripts/ci/wave1-native-publish.mjs             meet-first-publish "$TARGET" staging "$SOURCE_SHA"

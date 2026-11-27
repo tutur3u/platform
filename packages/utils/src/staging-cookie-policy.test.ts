@@ -38,6 +38,26 @@ describe('staging outgoing cookie fence', () => {
       )
     ).toBe(response);
   });
+  it('rejects domain cookies on the exact admitted Worker origin', () => {
+    const origin = 'https://tuturuuu-meet-wave1-staging.owner.workers.dev';
+    const response = new Response(null, {
+      headers: { 'set-cookie': 'a=b; Domain=.tuturuuu.com; Path=/; Secure' },
+    });
+    const blocked = enforceStagingCookiePolicy(
+      new Request(origin),
+      response,
+      origin
+    );
+    expect(blocked.status).toBe(500);
+    expect(blocked.headers.getSetCookie()).toEqual([]);
+    expect(
+      enforceStagingCookiePolicy(
+        new Request('https://tuturuuu-meet-wave1-staging.other.workers.dev/'),
+        response,
+        origin
+      )
+    ).toBe(response);
+  });
   it.each([
     'tuturuuu.com',
     'tasks.tuturuuu.com',

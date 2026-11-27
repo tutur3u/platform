@@ -361,7 +361,11 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', a
       ],
       {
         cwd: root,
-        env: { ...process.env, CLOUDFLARE_WORKERS_SUBDOMAIN: 'owner-example' },
+        env: {
+          ...process.env,
+          CLOUDFLARE_WORKERS_SUBDOMAIN: 'owner-example',
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'staging-example',
+        },
         encoding: 'utf8',
       }
     )
@@ -376,6 +380,14 @@ test('Meet staging profile isolates frontend, realtime, DO namespaces and R2', a
   assert.equal(result.workers_dev, false);
   assert.equal(result.preview_urls, false);
   assert.equal(result.services[0].service, result.name);
+  assert.deepEqual(result.services[1], {
+    binding: 'ABUSE_GUARD',
+    service: 'tuturuuu-abuse-guard-wave1-staging',
+    entrypoint: 'AbuseGuardEntrypoint',
+  });
+  assert.equal(result.vars.ABUSE_GUARD_FAMILIES, 'meet,proxy');
+  assert.equal(result.vars.TRUSTED_PROXY, 'cloudflare');
+  assert.equal(result.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY, 'staging-example');
   assert.equal(
     result.r2_buckets[0].bucket_name,
     'tuturuuu-meet-wave1-staging-cache'

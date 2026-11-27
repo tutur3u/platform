@@ -25,9 +25,20 @@ export { MeetLiveDurableObject } from './live/session';
 export { MeetingAIProvider } from './provider';
 export default {
   async fetch(incoming: Request, env: CloudflareEnv, ctx: ExecutionContext) {
-    const decision = decideOneOriginRequest(incoming, meetOneOriginConfig(env));
+    const config = meetOneOriginConfig(env);
+    const stagingOrigin =
+      /^https:\/\/tuturuuu-meet-wave1-staging\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.workers\.dev$/u.test(
+        config.subdomainOrigin
+      )
+        ? config.subdomainOrigin
+        : undefined;
+    const decision = decideOneOriginRequest(incoming, config);
     if (decision.action !== 'serve')
-      return enforceStagingCookiePolicy(incoming, decision.response);
+      return enforceStagingCookiePolicy(
+        incoming,
+        decision.response,
+        stagingOrigin
+      );
     configureMeetAbuseGuard(env);
     const response = applyMeetDocumentHeaders(
       incoming,
@@ -36,7 +47,8 @@ export default {
     );
     return enforceStagingCookiePolicy(
       incoming,
-      decision.noindex ? applyOneOriginNoindex(response) : response
+      decision.noindex ? applyOneOriginNoindex(response) : response,
+      stagingOrigin
     );
   },
 };

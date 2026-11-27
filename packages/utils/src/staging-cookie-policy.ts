@@ -3,9 +3,15 @@ import { isStagingAppHostname } from '@tuturuuu/utils/staging-hosts';
 /** Final response fence: staging cookies must never acquire a Domain attribute. */
 export function enforceStagingCookiePolicy(
   request: Request,
-  response: Response
+  response: Response,
+  admittedStagingOrigin?: string
 ): Response {
-  if (!isStagingAppHostname(new URL(request.url).hostname)) return response;
+  const url = new URL(request.url);
+  if (
+    !isStagingAppHostname(url.hostname) &&
+    url.origin !== admittedStagingOrigin
+  )
+    return response;
   if (
     !response.headers
       .getSetCookie()

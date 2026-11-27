@@ -8,6 +8,11 @@ export function meetStagingConfig() {
     );
   }
 
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+  if (!turnstileSiteKey) {
+    throw new Error('Require NEXT_PUBLIC_TURNSTILE_SITE_KEY for Meet staging');
+  }
+
   return defineConfig({
     target: 'cloudflare',
     inference: {
@@ -41,6 +46,11 @@ export function meetStagingConfig() {
           binding: 'WORKER_SELF_REFERENCE',
           service: 'tuturuuu-meet-wave1-staging',
         },
+        {
+          binding: 'ABUSE_GUARD',
+          service: 'tuturuuu-abuse-guard-wave1-staging',
+          entrypoint: 'AbuseGuardEntrypoint',
+        },
       ],
       r2_buckets: [
         {
@@ -56,6 +66,9 @@ export function meetStagingConfig() {
       ],
       secrets: {
         required: [
+          'ABUSE_GUARD_KEY_PEPPER',
+          'HUMAN_CHECK_SECRET',
+          'TURNSTILE_SECRET_KEY',
           'MEET_REALTIME_TOKEN_SECRET',
           'NEXT_PUBLIC_SUPABASE_URL',
           'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
@@ -66,6 +79,9 @@ export function meetStagingConfig() {
         ],
       },
       vars: {
+        ABUSE_GUARD_FAMILIES: 'meet,proxy',
+        TRUSTED_PROXY: 'cloudflare',
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: turnstileSiteKey,
         MEET_AI_DISABLED: 'true',
         MEET_AI_ENABLED_WORKSPACE_IDS: '',
         MEET_CLASS_ATTENDANCE_ENABLED: 'false',
