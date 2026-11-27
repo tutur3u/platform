@@ -7,8 +7,7 @@ audience: users
 
 Home and Notifications use the grouped design language of mobile Settings:
 muted captions above rounded grouped cards, Lucide line icons in tone-tinted
-tiles, and theme tokens only. Data sources, actions and routes did not change
-with the redesign.
+tiles, and theme tokens only.
 
 ## Offline Home
 
@@ -28,6 +27,13 @@ The default-off `offline_read_home` flag prepares task/calendar summaries and to
   summary follow. Each section is a caption with a **See all** (task and
   calendar sections) or **Open** link above one grouped card. Widget IDs did
   not change, so saved Customize Home layouts carry over.
+- **Quick capture.** Signed-in users can open the task creation sheet for the
+  active workspace directly from Home.
+- **Activity and focus.** Home offers a recent activity preview, and personal
+  focus time appears with the summary when available. On phones a customized
+  widget order keeps the summary in its saved position.
+- **Mira and pins.** The Mira card opens the existing Mira destination. Home
+  shows available apps already pinned in the app launcher.
 - **Task rows** show the due state first: Overdue (destructive tone), Today
   (warning), Tomorrow (primary) or the localized date, then board and list.
   **Event rows** show a calendar-leaf date tile, weekday and time.

@@ -115,7 +115,9 @@ extension _DashboardGrid on _DashboardViewState {
     required List<AppModule> pins,
     required bool showFocus,
   }) {
-    final summary = entries.where((entry) => entry.id == 'summary').firstOrNull;
+    final summary = scale.strip || !customOrder
+        ? entries.where((entry) => entry.id == 'summary').firstOrNull
+        : null;
     final leading = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -144,8 +146,15 @@ extension _DashboardGrid on _DashboardViewState {
     final sections = [
       for (final entry in entries)
         if (entry.id != summary?.id &&
-            (!phoneDefault || entry.id != 'activity'))
+            (!phoneDefault || entry.id != 'activity')) ...[
           entry.child,
+          if (entry.id == 'summary' && showFocus)
+            ProfileFocusTimeSection(
+              key: _focusKey,
+              replayToken: widget.replayToken,
+              compact: true,
+            ),
+        ],
       if (phoneDefault)
         ...entries
             .where((entry) => entry.id == 'activity')
