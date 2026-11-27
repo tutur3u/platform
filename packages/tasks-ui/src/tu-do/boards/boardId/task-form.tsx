@@ -1,6 +1,8 @@
 'use client';
+import { useQueryClient } from '@tanstack/react-query';
 import { FileEdit, Flag, Plus, Sparkles, Users, X } from '@tuturuuu/icons';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -19,7 +21,13 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
-import { createTask } from '@tuturuuu/utils/task-helper';
+import {
+  createOptimisticTask,
+  createTask,
+  insertOptimisticTaskIntoBoardCaches,
+  reconcileOptimisticTaskInBoardCaches,
+  removeOptimisticTaskFromBoardCaches,
+} from '@tuturuuu/utils/task-helper';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
@@ -73,8 +81,10 @@ export function TaskForm({
   const [selectedLabels, setSelectedLabels] = useState<any[]>([]);
   const [estimationPoints, setEstimationPoints] = useState<number | null>(null);
 
+  const queryClient = useQueryClient();
   const params = useParams();
   const wsId = params.wsId as string;
+  const boardId = typeof params.boardId === 'string' ? params.boardId : '';
   const { weekStartsOn, timezone, timeFormat } = useCalendarPreferences();
 
   // Fetch workspace members for quick assign
@@ -159,6 +169,7 @@ export function TaskForm({
     }
 
     setIsSubmitting(true);
+    let optimisticTask: Task | null = null;
     try {
       // Create the task data
       const taskData: {
@@ -190,7 +201,47 @@ export function TaskForm({
         label_ids: selectedLabels.map((label: { id: string }) => label.id),
       };
 
+      if (boardId) {
+        optimisticTask = {
+          ...(createOptimisticTask({
+            name: taskData.name,
+            description: taskData.description,
+            list_id: listId,
+            priority: taskData.priority,
+            start_date: taskData.start_date,
+            end_date: taskData.end_date,
+            estimation_points: taskData.estimation_points,
+          }) as Task & { _localMutationAt?: number }),
+          _localMutationAt: Date.now(),
+        } as Task;
+        insertOptimisticTaskIntoBoardCaches(
+          queryClient,
+          boardId,
+          optimisticTask
+        );
+      }
+
       const newTask = await createTask(wsId, listId, taskData);
+
+      if (boardId && optimisticTask) {
+        const locallyCreatedTask = {
+          ...(newTask as Task & { _localMutationAt?: number }),
+          _localMutationAt: Date.now(),
+        } as Task;
+        reconcileOptimisticTaskInBoardCaches(
+          queryClient,
+          boardId,
+          optimisticTask.id,
+          locallyCreatedTask
+        );
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+          queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] }),
+          queryClient.invalidateQueries({
+            queryKey: ['task-list-counts', boardId],
+          }),
+        ]);
+      }
 
       // Broadcast new task to other clients
       broadcast?.('task:upsert', { task: newTask });
@@ -201,6 +252,13 @@ export function TaskForm({
       handleReset();
       onTaskCreated();
     } catch (error) {
+      if (boardId && optimisticTask) {
+        removeOptimisticTaskFromBoardCaches(
+          queryClient,
+          boardId,
+          optimisticTask.id
+        );
+      }
       console.error('Error creating task:', error);
 
       // Enhanced error handling with better error messages

@@ -27,10 +27,8 @@ vi.mock('@tuturuuu/utils/task-helper', () => ({
 }));
 
 vi.mock('@tuturuuu/tasks-ui/hooks/useBoardRealtime', () => ({
-  useBoardRealtime: (...args: unknown[]) => {
-    useBoardRealtimeMock(...args);
-    return { broadcast: null };
-  },
+  useBoardRealtime: (...args: unknown[]) =>
+    useBoardRealtimeMock(...args) ?? { broadcast: null, isDegraded: false },
 }));
 
 vi.mock('next/navigation', () => ({

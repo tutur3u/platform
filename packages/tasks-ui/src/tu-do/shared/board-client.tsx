@@ -239,60 +239,65 @@ function BoardClientBody({
     [boardId, cacheScopeId]
   );
 
+  const inFlightRevalidationRef = useRef<Promise<void> | null>(null);
+  const lastSuccessfulRevalidateAtRef = useRef(Number.NEGATIVE_INFINITY);
+
+  const triggerBoundedRevalidate = useCallback(() => {
+    const now = Date.now();
+    if (
+      inFlightRevalidationRef.current ||
+      now - lastSuccessfulRevalidateAtRef.current < BOARD_REVALIDATE_COOLDOWN_MS
+    ) {
+      return;
+    }
+
+    inFlightRevalidationRef.current = progressiveLoader
+      .revalidateLoadedLists()
+      .then(async () => {
+        lastSuccessfulRevalidateAtRef.current = Date.now();
+        await Promise.all([
+          queryClient.invalidateQueries({
+            queryKey: ['tasks-full', boardId],
+            refetchType: 'active',
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ['task-board', workspace.id, boardId],
+            refetchType: 'active',
+          }),
+        ]);
+      })
+      .catch(() => {
+        // best effort
+      })
+      .finally(() => {
+        inFlightRevalidationRef.current = null;
+      });
+  }, [
+    boardId,
+    progressiveLoader.revalidateLoadedLists,
+    queryClient,
+    workspace.id,
+  ]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    let inFlightRevalidation: Promise<void> | null = null;
-    let lastSuccessfulRevalidateAt = Number.NEGATIVE_INFINITY;
-
-    const revalidateLoadedLists = () => {
-      const now = Date.now();
-      if (
-        inFlightRevalidation ||
-        now - lastSuccessfulRevalidateAt < BOARD_REVALIDATE_COOLDOWN_MS
-      ) {
-        return;
-      }
-
-      inFlightRevalidation = progressiveLoader
-        .revalidateLoadedLists()
-        .then(async () => {
-          lastSuccessfulRevalidateAt = Date.now();
-          await Promise.all([
-            queryClient.invalidateQueries({
-              queryKey: ['tasks-full', boardId],
-              refetchType: 'active',
-            }),
-            queryClient.invalidateQueries({
-              queryKey: ['task-board', workspace.id, boardId],
-              refetchType: 'active',
-            }),
-          ]);
-        })
-        .catch(() => {
-          // best effort
-        })
-        .finally(() => {
-          inFlightRevalidation = null;
-        });
-    };
-
     const onFocus = () => {
-      if (document.visibilityState === 'visible') revalidateLoadedLists();
+      if (document.visibilityState === 'visible') triggerBoundedRevalidate();
     };
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        revalidateLoadedLists();
+        triggerBoundedRevalidate();
       }
     };
-    const onOnline = () => revalidateLoadedLists();
-    const onPageShow = () => revalidateLoadedLists();
+    const onOnline = () => triggerBoundedRevalidate();
+    const onPageShow = () => triggerBoundedRevalidate();
 
     window.addEventListener('focus', onFocus);
     window.addEventListener('online', onOnline);
     window.addEventListener('pageshow', onPageShow);
     document.addEventListener('visibilitychange', onVisibilityChange);
-    if (cachedSnapshot || seed.revalidateOnMount) revalidateLoadedLists();
+    if (cachedSnapshot || seed.revalidateOnMount) triggerBoundedRevalidate();
 
     return () => {
       window.removeEventListener('focus', onFocus);
@@ -300,14 +305,7 @@ function BoardClientBody({
       window.removeEventListener('pageshow', onPageShow);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [
-    boardId,
-    cachedSnapshot,
-    progressiveLoader.revalidateLoadedLists,
-    queryClient,
-    seed.revalidateOnMount,
-    workspace.id,
-  ]);
+  }, [cachedSnapshot, seed.revalidateOnMount, triggerBoundedRevalidate]);
 
   // Fetch workspace labels once at the board level
   const { data: workspaceLabels = [] } = useWorkspaceLabels(boardWorkspaceId);
@@ -384,9 +382,23 @@ function BoardClientBody({
     []
   );
 
-  const { broadcast } = useBoardRealtime(boardId, {
+  const { broadcast, isDegraded } = useBoardRealtime(boardId, {
     onTaskRelationsChange: scheduleRelationRefresh,
   });
+
+  useEffect(() => {
+    if (!isDegraded || typeof window === 'undefined') return;
+
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        triggerBoundedRevalidate();
+      }
+    }, 10_000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [isDegraded, triggerBoundedRevalidate]);
 
   // Register broadcast at module level so components outside the
   // BoardBroadcastProvider tree (e.g. task dialog) can access it.

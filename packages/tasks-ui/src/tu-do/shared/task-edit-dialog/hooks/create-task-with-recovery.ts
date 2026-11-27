@@ -174,25 +174,28 @@ export async function handleCreateTask({
           },
         ]
       : selectedAssignees;
-  const optimisticTask = createOptimisticTask(
-    withTaskCreateRelations(
-      {
-        name: name.trim(),
-        description: descriptionString || '',
-        priority,
-        start_date: startDate?.toISOString(),
-        end_date: endDate?.toISOString(),
-        estimation_points: estimationPoints ?? null,
-        list_id: selectedListId,
-      },
-      {
-        pendingTaskRelationships: normalizedPendingRelationships,
-        selectedAssignees: optimisticAssignees,
-        selectedLabels,
-        selectedProjects,
-      }
-    )
-  );
+  const optimisticTask = {
+    ...(createOptimisticTask(
+      withTaskCreateRelations(
+        {
+          name: name.trim(),
+          description: descriptionString || '',
+          priority,
+          start_date: startDate?.toISOString(),
+          end_date: endDate?.toISOString(),
+          estimation_points: estimationPoints ?? null,
+          list_id: selectedListId,
+        },
+        {
+          pendingTaskRelationships: normalizedPendingRelationships,
+          selectedAssignees: optimisticAssignees,
+          selectedLabels,
+          selectedProjects,
+        }
+      )
+    ) as Task & { _localMutationAt?: number }),
+    _localMutationAt: Date.now(),
+  } as Task;
   const draftKey = getDraftStorageKey(boardId);
   const recoveryDraft = loadDraft(draftKey);
   let persistedTask: Task | null =
@@ -383,10 +386,14 @@ export async function handleCreateTask({
       queryClient,
       pendingTaskRelationships: normalizedPendingRelationships,
     });
-    await queryClient.invalidateQueries({
-      queryKey: ['task-list-counts', boardId],
-    });
-    await queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] }),
+      queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] }),
+      queryClient.invalidateQueries({
+        queryKey: ['task-list-counts', boardId],
+      }),
+      queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] }),
+    ]);
 
     // Broadcast the new task to other clients
     broadcast?.('task:upsert', { task: createdTaskWithRelations });

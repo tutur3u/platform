@@ -5,7 +5,13 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type { BoardBroadcastFn } from '../tu-do/shared/board-broadcast-context';
 import {
   type BoardRealtimePayload,
@@ -33,7 +39,7 @@ export function useBoardRealtime(
     ) => void;
     onTaskRelationsChange?: (taskIds: string[]) => void;
   }
-): { broadcast: BoardBroadcastFn } {
+): { broadcast: BoardBroadcastFn; isDegraded: boolean } {
   const {
     enabled = true,
     onTaskChange,
@@ -42,6 +48,7 @@ export function useBoardRealtime(
   } = options ?? {};
   const queryClient = useQueryClient();
   const t = useTranslations('common');
+  const [isDegraded, setIsDegraded] = useState(false);
 
   // Hold channel ref so the returned broadcast fn always targets the current channel
   const activeBoardIdRef = useRef(boardId);
@@ -186,7 +193,10 @@ export function useBoardRealtime(
   }, [boardId, handleBoardRealtimeEvent]);
 
   useEffect(() => {
-    if (!boardId || !enabled) return;
+    if (!boardId || !enabled) {
+      setIsDegraded(false);
+      return;
+    }
 
     // ── StrictMode reuse path ──────────────────────────────────────
     // If a pending deferred destruction exists, cancel it and reuse
@@ -313,6 +323,9 @@ export function useBoardRealtime(
     channel.subscribe((status, err) => {
       if (status === 'SUBSCRIBED') {
         hasShownConnectionToastRef.current = false;
+        setIsDegraded(false);
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        setIsDegraded(true);
       }
 
       if (DEV_MODE) {
@@ -445,5 +458,5 @@ export function useBoardRealtime(
     };
   }, [boardId]);
 
-  return { broadcast };
+  return { broadcast, isDegraded };
 }

@@ -440,4 +440,35 @@ describe('handleCreateTask', () => {
       expect(assigneeIds()).toEqual([]);
     });
   });
+
+  it('reconciles board caches and invalidates task queries when realtime broadcast is unavailable', async () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(['tasks', 'board-1'], []);
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    mockCreateTask.mockResolvedValueOnce({
+      id: 'task-offline-1',
+      name: 'Created without realtime',
+      list_id: 'list-1',
+    });
+
+    await handleCreateTask(
+      createOptions({
+        broadcast: null,
+        name: 'Created without realtime',
+        queryClient,
+      })
+    );
+
+    const cachedTasks = queryClient.getQueryData<Task[]>(['tasks', 'board-1']);
+    expect(cachedTasks?.map((task) => task.id)).toEqual(['task-offline-1']);
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['tasks', 'board-1'],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['tasks-full', 'board-1'],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['task-list-counts', 'board-1'],
+    });
+  });
 });
