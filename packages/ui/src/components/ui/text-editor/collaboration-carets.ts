@@ -14,10 +14,12 @@ const FALLBACK_LABEL_HEIGHT_PX = 18;
 const STICKY_SCAN_DEPTH = 3;
 
 function stickyChromeBottom(scroller: HTMLElement, top: number): number {
+  if (scroller.classList.contains('ProseMirror')) return top;
   let bottom = top;
   const scan = (parent: HTMLElement, depth: number) => {
     for (const child of parent.children) {
       if (!(child instanceof HTMLElement)) continue;
+      if (child.classList.contains('ProseMirror')) continue;
       const rect = child.getBoundingClientRect();
       if (
         getComputedStyle(child).position === 'sticky' &&
@@ -64,13 +66,15 @@ function findTopClipEdge(caret: HTMLElement): number | null {
  */
 export function positionCollaborationCaretLabel(
   caret: HTMLElement,
-  label: HTMLElement
+  label: HTMLElement,
+  cachedClipTop?: number | null
 ) {
   if (!caret.isConnected) return;
   const caretRect = caret.getBoundingClientRect();
   const labelHeight =
     label.getBoundingClientRect().height || FALLBACK_LABEL_HEIGHT_PX;
-  const clipTop = findTopClipEdge(caret);
+  const clipTop =
+    cachedClipTop !== undefined ? cachedClipTop : findTopClipEdge(caret);
   let flipBelow = false;
   if (caretRect.height > 0 && clipTop !== null) {
     flipBelow = caretRect.top - clipTop < labelHeight + TOP_LABEL_CLEARANCE_PX;
@@ -90,14 +94,57 @@ export function positionCollaborationCaretLabel(
 }
 
 export function updateCollaborationCaretPlacements(root: HTMLElement) {
-  for (const caret of root.querySelectorAll<HTMLElement>(
+  const carets = root.querySelectorAll<HTMLElement>(
     '.collaboration-carets__caret'
-  )) {
+  );
+  if (carets.length === 0) return;
+  const clipTop = findTopClipEdge(carets[0]!);
+  for (const caret of carets) {
     const label = caret.querySelector<HTMLElement>(
       '.collaboration-carets__label'
     );
-    if (label) positionCollaborationCaretLabel(caret, label);
+    if (label) positionCollaborationCaretLabel(caret, label, clipTop);
   }
+}
+
+const pendingPlacementFrames = new WeakMap<HTMLElement, number>();
+
+/** Coalesces repeated scroll or awareness updates to one layout pass per frame. */
+export function scheduleCollaborationCaretPlacement(root: HTMLElement) {
+  if (typeof requestAnimationFrame !== 'function') {
+    updateCollaborationCaretPlacements(root);
+    return;
+  }
+  if (pendingPlacementFrames.has(root)) return;
+  const frame = requestAnimationFrame(() => {
+    pendingPlacementFrames.delete(root);
+    if (root.isConnected) updateCollaborationCaretPlacements(root);
+  });
+  pendingPlacementFrames.set(root, frame);
+}
+
+/**
+ * Repositions remote caret labels whenever awareness updates, including when
+ * y-prosemirror reuses a caret DOM node without a local scroll.
+ */
+export function observeCollaborationCarets(
+  root: HTMLElement,
+  awareness: {
+    on: (event: 'change', listener: () => void) => void;
+    off: (event: 'change', listener: () => void) => void;
+  }
+) {
+  const schedule = () => scheduleCollaborationCaretPlacement(root);
+  awareness.on('change', schedule);
+  schedule();
+  return () => {
+    awareness.off('change', schedule);
+    const frame = pendingPlacementFrames.get(root);
+    if (frame !== undefined && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(frame);
+      pendingPlacementFrames.delete(root);
+    }
+  };
 }
 
 /** Self-contained caret styling works in every editor surface, including Meet. */

@@ -447,8 +447,7 @@ describe('applyRoomNavigation', () => {
     const baseMedia = {
       audioEnabled: false,
       videoEnabled: false,
-      screenShareEnabled: false,
-      handRaised: false,
+      screenEnabled: false,
     };
     expect(
       meetRealtimeClientMessageSchema.safeParse({
@@ -465,7 +464,13 @@ describe('applyRoomNavigation', () => {
       }).success
     ).toBe(true);
 
-    const state = room(host, alice);
+    const hosting = admitOrHold(createMeetRoomSnapshot(), host, now).state;
+    const waiting = admitOrHold(hosting, alice, now).state;
+    const state = applyMeetRoomCommand(waiting, {
+      message: { type: 'admission.decide', userId: aliceId, admit: true },
+      token: host,
+      now,
+    }).state;
     const absentFollow = applyMeetRoomCommand(state, {
       message: {
         type: 'presence.update',

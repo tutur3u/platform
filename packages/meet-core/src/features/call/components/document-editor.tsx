@@ -13,7 +13,7 @@ import {
   Y,
 } from '@tuturuuu/realtime/documents';
 import { meetingDocumentTopic } from '@tuturuuu/realtime/meet';
-import { updateCollaborationCaretPlacements } from '@tuturuuu/ui/text-editor/collaboration-carets';
+import { scheduleCollaborationCaretPlacement } from '@tuturuuu/ui/text-editor/collaboration-carets';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -161,7 +161,7 @@ export function DocumentEditor({
       <div
         className="min-h-0 flex-1 overflow-auto"
         onScroll={(event) =>
-          updateCollaborationCaretPlacements(event.currentTarget)
+          scheduleCollaborationCaretPlacement(event.currentTarget)
         }
       >
         {provider ? (

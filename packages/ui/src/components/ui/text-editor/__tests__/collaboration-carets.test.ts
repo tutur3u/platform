@@ -11,6 +11,7 @@ import {
 } from 'y-protocols/awareness';
 import * as Y from 'yjs';
 import {
+  observeCollaborationCarets,
   positionCollaborationCaretLabel,
   renderCollaborationCaret,
   renderCollaborationSelection,
@@ -185,6 +186,109 @@ describe('remote cursors and selections', () => {
       expect(lowerLabel.dataset.placement).toBe('top');
       expect(lowerLabel.style.top).toBe('-1.4em');
     } finally {
+      editorRoot.remove();
+    }
+  });
+
+  it('clears a sticky toolbar inside an overflow scrollport and falls back when caret height is zero', () => {
+    const scroller = document.createElement('div');
+    scroller.style.overflowY = 'auto';
+    const toolbar = document.createElement('div');
+    toolbar.style.position = 'sticky';
+    const editorRoot = document.createElement('div');
+    editorRoot.className = 'ProseMirror';
+    const firstBlock = document.createElement('h1');
+    const secondBlock = document.createElement('p');
+    const underToolbarCaret = renderCollaborationCaret({
+      id: 'under-toolbar',
+      name: 'vmkhoiii',
+      color: '#e11d48',
+    });
+    const zeroHeightFirstCaret = renderCollaborationCaret({
+      id: 'zero-first',
+      name: 'ZeroFirst',
+      color: '#2563eb',
+    });
+    const zeroHeightSecondCaret = renderCollaborationCaret({
+      id: 'zero-second',
+      name: 'ZeroSecond',
+      color: '#16a34a',
+    });
+    firstBlock.append(zeroHeightFirstCaret);
+    secondBlock.append(underToolbarCaret, zeroHeightSecondCaret);
+    editorRoot.append(firstBlock, secondBlock);
+    scroller.append(toolbar, editorRoot);
+    document.body.append(scroller);
+    try {
+      scroller.getBoundingClientRect = () =>
+        ({ top: 100, bottom: 500, height: 400 }) as DOMRect;
+      toolbar.getBoundingClientRect = () =>
+        ({ top: 100, bottom: 148, height: 48 }) as DOMRect;
+      editorRoot.getBoundingClientRect = () =>
+        ({ top: 100, bottom: 500, height: 400 }) as DOMRect;
+      // 155 is 55px below scroller/editor top (would stay above without sticky
+      // toolbar), but only 7px below the sticky toolbar's bottom (148).
+      underToolbarCaret.getBoundingClientRect = () =>
+        ({ top: 155, bottom: 175, height: 20 }) as DOMRect;
+      zeroHeightFirstCaret.getBoundingClientRect = () =>
+        ({ top: 0, bottom: 0, height: 0 }) as DOMRect;
+      zeroHeightSecondCaret.getBoundingClientRect = () =>
+        ({ top: 0, bottom: 0, height: 0 }) as DOMRect;
+
+      const underLabel = underToolbarCaret.querySelector<HTMLElement>(
+        '.collaboration-carets__label'
+      )!;
+      const zeroFirstLabel = zeroHeightFirstCaret.querySelector<HTMLElement>(
+        '.collaboration-carets__label'
+      )!;
+      const zeroSecondLabel = zeroHeightSecondCaret.querySelector<HTMLElement>(
+        '.collaboration-carets__label'
+      )!;
+      underLabel.getBoundingClientRect = () => ({ height: 18 }) as DOMRect;
+
+      updateCollaborationCaretPlacements(scroller);
+      expect(underLabel.dataset.placement).toBe('bottom');
+      expect(zeroFirstLabel.dataset.placement).toBe('bottom');
+      expect(zeroSecondLabel.dataset.placement).toBe('top');
+    } finally {
+      scroller.remove();
+    }
+  });
+
+  it('repositions a reused caret when awareness changes without a local scroll', async () => {
+    const editorRoot = document.createElement('div');
+    editorRoot.className = 'ProseMirror';
+    const caret = renderCollaborationCaret({
+      id: 'moving',
+      name: 'Alex',
+      color: '#2563eb',
+    });
+    editorRoot.append(caret);
+    document.body.append(editorRoot);
+    const listeners = new Set<() => void>();
+    const awareness = {
+      on: (_event: 'change', listener: () => void) => listeners.add(listener),
+      off: (_event: 'change', listener: () => void) =>
+        listeners.delete(listener),
+    };
+    const label = caret.querySelector<HTMLElement>(
+      '.collaboration-carets__label'
+    )!;
+    let caretTop = 220;
+    editorRoot.getBoundingClientRect = () =>
+      ({ top: 100, bottom: 500, height: 400 }) as DOMRect;
+    caret.getBoundingClientRect = () =>
+      ({ top: caretTop, bottom: caretTop + 20, height: 20 }) as DOMRect;
+    label.getBoundingClientRect = () => ({ height: 18 }) as DOMRect;
+
+    const stop = observeCollaborationCarets(editorRoot, awareness);
+    try {
+      await waitFor(() => expect(label.dataset.placement).toBe('top'));
+      caretTop = 106;
+      for (const listener of listeners) listener();
+      await waitFor(() => expect(label.dataset.placement).toBe('bottom'));
+    } finally {
+      stop();
       editorRoot.remove();
     }
   });

@@ -10,6 +10,7 @@ import {
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { observeCollaborationCarets } from './collaboration-carets';
 import { migrateInlineImagesToBlock } from './content-migration';
 import {
   CitationLayer,
@@ -382,6 +383,13 @@ export function RichTextEditor({
     },
     [collaborationDoc]
   );
+
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !allowCollaboration || !yjsProvider) {
+      return;
+    }
+    return observeCollaborationCarets(editor.view.dom, yjsProvider.awareness);
+  }, [editor, allowCollaboration, yjsProvider]);
 
   useEffect(() => {
     if (

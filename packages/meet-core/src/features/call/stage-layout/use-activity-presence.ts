@@ -44,7 +44,13 @@ export function usePresence({
   useEffect(() => {
     if (!live || !isOpen) return;
     updateActivityPresence(focusedActivityId, followingLeaderId);
-  }, [live, isOpen, focusedActivityId, followingLeaderId, updateActivityPresence]);
+  }, [
+    live,
+    isOpen,
+    focusedActivityId,
+    followingLeaderId,
+    updateActivityPresence,
+  ]);
   return useMemo(() => {
     const byActivity: Record<string, ActivityPresencePerson[]> = {};
     const byParticipant: Record<

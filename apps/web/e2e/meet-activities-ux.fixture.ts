@@ -48,6 +48,21 @@ test('multiplayer caret labels near the top flip below and clear the sticky tool
   );
   expect(labelTop).toBeGreaterThanOrEqual(toolbarBottom);
 
+  // Moving a remote caret under the sticky toolbar without a local scroll
+  // must flip its label below too.
+  await page.evaluate(() => {
+    (
+      window as unknown as {
+        __moveRemoteCaret?: (id: string, block: number, offset: number) => void;
+      }
+    ).__moveRemoteCaret?.('u-alex', 0, 1);
+  });
+  await expect(lowerLabel).toHaveAttribute('data-placement', 'bottom');
+  const movedTop = await lowerLabel.evaluate(
+    (element) => element.getBoundingClientRect().top
+  );
+  expect(movedTop).toBeGreaterThanOrEqual(toolbarBottom);
+
   // Scrolling the document keeps the flipped label clear of the toolbar.
   await page.locator('[data-testid="doc-scroll"]').evaluate((element) => {
     element.scrollTop = 4;
@@ -87,9 +102,9 @@ test('every activity pane shows one consistent set of window controls', async ({
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?theme=dark&ui=sorbet', { waitUntil: 'networkidle' });
 
-  // Q&A brings its own full screen action; the document pane has none in this
-  // fixture (no stage full screen). Either way a header never shows two.
-  const fullscreenCount = { [DOC_PANE]: 0, [QA_PANE]: 1 } as const;
+  // Each pane shows exactly one full screen control: the pane-level one for the
+  // document, and Q&A's own header action (the pane-level one is suppressed).
+  const fullscreenCount = { [DOC_PANE]: 1, [QA_PANE]: 1 } as const;
   for (const pane of [DOC_PANE, QA_PANE]) {
     const names = await page
       .locator(`${pane} > header button`)
@@ -184,6 +199,6 @@ test('presence shows in every activity header, on the Activities dock, and on pa
 
   // Participant tile shows the activity the participant is in.
   await expect(
-    page.locator('[data-participant-activity="Shared document"]')
+    page.locator('[data-participant-activity="Live document"]')
   ).toBeVisible();
 });

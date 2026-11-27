@@ -7,18 +7,16 @@ import {
   Y,
 } from '@tuturuuu/realtime/documents';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { updateCollaborationCaretPlacements } from '@tuturuuu/ui/text-editor/collaboration-carets';
+import { scheduleCollaborationCaretPlacement } from '@tuturuuu/ui/text-editor/collaboration-carets';
 import { NextIntlClientProvider } from 'next-intl';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import messages from '../../../../apps/meet/messages/en.json';
 import '../../../../packages/ui/src/globals.css';
 import { ParticipantTile } from '../../src/features/call/components/participant-tile';
-import {
-  ActivityDockPresence,
-  type ActivityPresencePerson,
-} from '../../src/features/call/stage-layout/activity-presence';
+import { ActivityDockPresence } from '../../src/features/call/stage-layout/activity-presence';
 import { StageLayoutView } from '../../src/features/call/stage-layout/stage-layout-view';
+import { usePresence } from '../../src/features/call/stage-layout/use-activity-presence';
 import { useStageLayout } from '../../src/features/call/stage-layout/use-stage-layout';
 import {
   LiveQaClientContext,
@@ -83,19 +81,22 @@ function useSharedDocumentPeers() {
   return useMemo(() => {
     const localDoc = seedDocument();
     const awareness = new Awareness(localDoc);
-    const remoteDoc = new Y.Doc();
-    Y.applyUpdate(remoteDoc, Y.encodeStateAsUpdate(localDoc));
+    const state = Y.encodeStateAsUpdate(localDoc);
+    // Each remote peer needs its own Y.Doc so its Awareness gets a distinct
+    // clientID; sharing one Y.Doc causes y-protocols to drop the second peer.
     const remotes = REMOTE_USERS.map((user) => {
+      const remoteDoc = new Y.Doc();
+      Y.applyUpdate(remoteDoc, state);
       const remote = new Awareness(remoteDoc);
       const cursor = cursorJson(remoteDoc, user.block, user.offset);
       remote.setLocalState({
         user: { id: user.id, name: user.name, color: user.color },
         cursor: { anchor: cursor, head: cursor },
       });
-      return remote;
+      return { user, remoteDoc, remote };
     });
     const sync = () => {
-      for (const remote of remotes) {
+      for (const { remote } of remotes) {
         applyAwarenessUpdate(
           awareness,
           encodeAwarenessUpdate(remote, [remote.clientID]),
@@ -103,7 +104,25 @@ function useSharedDocumentPeers() {
         );
       }
     };
-    return { awareness, localDoc, sync };
+    const move = (userId: string, block: number, offset: number) => {
+      const entry = remotes.find((item) => item.user.id === userId);
+      if (!entry) return;
+      const cursor = cursorJson(entry.remoteDoc, block, offset);
+      entry.remote.setLocalState({
+        user: {
+          id: entry.user.id,
+          name: entry.user.name,
+          color: entry.user.color,
+        },
+        cursor: { anchor: cursor, head: cursor },
+      });
+      applyAwarenessUpdate(
+        awareness,
+        encodeAwarenessUpdate(entry.remote, [entry.remote.clientID]),
+        'fixture'
+      );
+    };
+    return { awareness, localDoc, sync, move };
   }, []);
 }
 
@@ -113,6 +132,11 @@ function SharedDocFixture() {
 
   useEffect(() => {
     peers.sync();
+    (
+      window as unknown as {
+        __moveRemoteCaret?: (id: string, block: number, offset: number) => void;
+      }
+    ).__moveRemoteCaret = peers.move;
     // Remote awareness states expire after 30s without a renewal.
     const timer = window.setInterval(peers.sync, 10_000);
     return () => window.clearInterval(timer);
@@ -125,7 +149,7 @@ function SharedDocFixture() {
         data-testid="doc-scroll"
         className="min-h-0 flex-1 overflow-auto"
         onScroll={(event) =>
-          updateCollaborationCaretPlacements(event.currentTarget)
+          scheduleCollaborationCaretPlacement(event.currentTarget)
         }
       >
         <RichTextEditor
@@ -150,30 +174,6 @@ const closedForEveryone: string[] = [];
 (window as unknown as { __closedForEveryone?: string[] }).__closedForEveryone =
   closedForEveryone;
 
-const PRESENCE_BY_ACTIVITY: Record<string, readonly ActivityPresencePerson[]> =
-  {
-    document: [
-      {
-        userId: 'u-vmkhoiii',
-        displayName: 'vmkhoiii',
-        activityTitle: 'Shared document',
-      },
-    ],
-    'tool:live-qa': [
-      {
-        userId: 'u-alex',
-        displayName: 'Alex',
-        following: true,
-        activityTitle: 'Q&A',
-      },
-    ],
-  };
-
-const DOCK_PRESENCE: readonly ActivityPresencePerson[] = [
-  ...PRESENCE_BY_ACTIVITY.document!,
-  ...PRESENCE_BY_ACTIVITY['tool:live-qa']!,
-];
-
 const FIXTURE_PARTICIPANT = {
   userId: '00000000-0000-4000-8000-000000000001',
   displayName: 'vmkhoiii',
@@ -181,7 +181,18 @@ const FIXTURE_PARTICIPANT = {
   joinedAt: '2026-11-27T00:00:00.000Z',
   lastSeenAt: '2026-11-27T00:00:00.000Z',
   media: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+  activeActivityId: 'document',
 };
+
+const FIXTURE_PARTICIPANTS = [
+  FIXTURE_PARTICIPANT,
+  {
+    userId: '00000000-0000-4000-8000-000000000002',
+    displayName: 'Alex',
+    activeActivityId: 'tool:live-qa',
+    followingUserId: FIXTURE_PARTICIPANT.userId,
+  },
+] as const;
 
 function FixtureApp() {
   const controller = useStageLayout({
@@ -190,6 +201,23 @@ function FixtureApp() {
     isAvailable: () => true,
     tier: 'desktop',
   });
+  const updateActivityPresence = useCallback(() => {}, []);
+  const room = useMemo(
+    () => ({
+      connectionStatus: 'open' as const,
+      state: { selfUserId: '00000000-0000-4000-8000-000000000099' } as never,
+      updateActivityPresence,
+    }),
+    [updateActivityPresence]
+  );
+  const { presenceByActivity, participantActivities, dockPresence } =
+    usePresence({
+      room,
+      live: true,
+      participants: FIXTURE_PARTICIPANTS,
+      stage: controller,
+      nav: { following: null },
+    });
 
   useEffect(() => {
     controller.open('document');
@@ -202,14 +230,16 @@ function FixtureApp() {
         <StageLayoutView
           controller={controller}
           peopleCount={2}
-          presenceByActivity={PRESENCE_BY_ACTIVITY}
+          presenceByActivity={presenceByActivity}
           stage={
             <div className="h-full w-40">
               <ParticipantTile
                 participant={FIXTURE_PARTICIPANT}
                 presenceOnly
                 resumePlaybackLabel="Resume"
-                activityBadge={{ title: 'Shared document' }}
+                activityBadge={
+                  participantActivities[FIXTURE_PARTICIPANT.userId]
+                }
                 className="h-full w-full"
               />
             </div>
@@ -218,7 +248,7 @@ function FixtureApp() {
             isHost
               ? (id) => {
                   closedForEveryone.push(id);
-                  controller.close(id);
+                  controller.close(id, { force: true });
                 }
               : undefined
           }
@@ -240,7 +270,7 @@ function FixtureApp() {
         className="flex shrink-0 items-center justify-center gap-2 border-t pt-2"
       >
         <span className="text-xs font-medium">Activities</span>
-        <ActivityDockPresence people={DOCK_PRESENCE} />
+        <ActivityDockPresence people={dockPresence} />
       </div>
     </div>
   );
