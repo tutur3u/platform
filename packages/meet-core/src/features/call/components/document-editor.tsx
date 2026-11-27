@@ -185,6 +185,7 @@ export function DocumentEditor({
                 <DocumentPresence
                   awareness={provider.awareness}
                   connected={connected}
+                  showPeople={false}
                 />
                 {toolbarExtras?.(provider.awareness)}
               </div>

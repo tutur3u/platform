@@ -54,13 +54,19 @@ export function readDocumentCollaborators(awareness: Awareness) {
   return [...users.values()].sort((a, b) => a.id.localeCompare(b.id));
 }
 
-/** Awareness belongs to the active document provider, never the meeting roster. */
+/**
+ * Awareness belongs to the active document provider, never the meeting roster.
+ * `showPeople={false}` leaves only the Mira status chip: the shared activity
+ * presence row in the pane header already shows who is in the document.
+ */
 export function DocumentPresence({
   awareness,
   connected,
+  showPeople = true,
 }: {
   awareness: Awareness;
   connected: boolean;
+  showPeople?: boolean;
 }) {
   const t = useTranslations('meet.collaboration');
   const store = useMemo(() => {
@@ -87,7 +93,7 @@ export function DocumentPresence({
   const mira = users.find((user) => user.mira)?.mira;
   const people = users.filter((user) => !user.mira);
   if (!connected || !users.length) return null;
-  if (!people.length)
+  if (!showPeople || !people.length)
     return mira ? <MiraDocumentPresenceChip source={mira.source} /> : null;
   return (
     <div className="flex min-w-0 shrink-0 items-center gap-2">
