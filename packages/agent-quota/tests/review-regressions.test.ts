@@ -98,7 +98,7 @@ describe('independent review regressions', () => {
     });
     expect(result.chosen?.providerInstanceId).toBe('codex');
   });
-  it('blocks Argon on the completed Antigravity limit receipt despite fresh 3p windows', () => {
+  it('blocks Hydrogen on the completed Antigravity limit receipt despite fresh 3p windows', () => {
     const { request, context } = fixture();
     context.now = new Date('2026-10-25T05:01:00Z');
     context.accounts[1]!.windows = [
@@ -151,12 +151,12 @@ describe('independent review regressions', () => {
       resetsAt: '2026-10-30T03:00:00.000Z',
       windowScope: {
         kind: 'models',
-        modelPrefixes: ['gemini-4-argon'],
+        modelPrefixes: ['gemini-4-hydrogen'],
       },
     });
-    expect(receiptCovers(receipt!, 'antigravity', 'gemini-4-argon-high')).toBe(
-      true
-    );
+    expect(
+      receiptCovers(receipt!, 'antigravity', 'gemini-4-hydrogen-high')
+    ).toBe(true);
     expect(receiptCovers(receipt!, 'antigravity', 'gemini-3.8-flash-low')).toBe(
       false
     );

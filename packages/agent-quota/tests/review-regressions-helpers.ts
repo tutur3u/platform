@@ -13,7 +13,7 @@ export const pool = (
   provider,
   label: instanceId,
   available: true,
-  models: ['gemini-4-argon-high', 'gpt-6.1-sol'],
+  models: ['gemini-4-hydrogen-high', 'gpt-6.1-sol'],
   windows: [
     {
       kind: 'short',
@@ -42,7 +42,7 @@ export function fixture() {
       candidates: [
         {
           instanceId: 'antigravity',
-          model: 'gemini-4-argon-high',
+          model: 'gemini-4-hydrogen-high',
           capabilities: ['implementation'],
         },
         {
@@ -76,7 +76,7 @@ export const snapshot: ChildSnapshot = {
       completedAt: '2026-10-23T03:30:38Z',
       startedAt: '2026-10-23T03:30:00Z',
       instanceId: 'antigravity',
-      model: 'gemini-4-argon-high',
+      model: 'gemini-4-hydrogen-high',
       taskId: 'task',
       rootNodeId: 'root',
       queueHeld: false,
