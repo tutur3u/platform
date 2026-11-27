@@ -117,16 +117,7 @@ jobs:
           node -e "console.log(require.resolve('@playwright/test'))"
 
       - name: Run complete root script suite
-        run: |
-          node <<'NODE'
-          const { discoverScriptTests } = require('./scripts/run-script-tests.js');
-          const { spawnSync } = require('node:child_process');
-          const files = discoverScriptTests();
-          console.log(`Discovered ${files.length} script test files.`);
-          const result = spawnSync(process.execPath, ['--experimental-strip-types', '--test', '--test-concurrency=4', '--test-reporter=tap', ...files], { stdio: 'inherit' });
-          if (result.error) throw result.error;
-          process.exitCode = result.status ?? 1;
-          NODE
+        run: node scripts/run-script-tests.js
 
   backend-source-qualification:
     name: Rust source qualification (1.95)

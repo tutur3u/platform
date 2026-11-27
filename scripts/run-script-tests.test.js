@@ -153,10 +153,39 @@ test('passes spaced paths as arguments and propagates the child exit code', (t) 
   assert.deepEqual(invocation.args, [
     '--experimental-strip-types',
     '--test',
+    `--test-concurrency=${Math.max(1, Math.min(4, os.availableParallelism() - 1))}`,
     'scripts/space name.test.js',
   ]);
   assert.equal(invocation.options.cwd, repoRoot);
   assert.equal(invocation.options.stdio, 'inherit');
+});
+
+test('runs timing-sensitive files serially and preserves failure from either group', (t) => {
+  const repoRoot = createFixture(t);
+  write(repoRoot, 'scripts/ordinary.test.js');
+  write(repoRoot, 'scripts/check-cli-options.test.js');
+  write(repoRoot, 'scripts/ci/meet-build-metadata.test.js');
+  const invocations = [];
+
+  const exitCode = runScriptTests({
+    repoRoot,
+    supplementalPaths: [],
+    spawnImpl(_command, args) {
+      invocations.push(args);
+      return { status: invocations.length === 1 ? 3 : 0 };
+    },
+  });
+
+  assert.equal(exitCode, 3);
+  assert.equal(invocations.length, 2);
+  assert.deepEqual(invocations[0], [
+    '--experimental-strip-types',
+    '--test',
+    '--test-concurrency=1',
+    'scripts/check-cli-options.test.js',
+    'scripts/ci/meet-build-metadata.test.js',
+  ]);
+  assert.deepEqual(invocations[1].slice(3), ['scripts/ordinary.test.js']);
 });
 
 test('new tests are discovered without changing runner configuration', (t) => {

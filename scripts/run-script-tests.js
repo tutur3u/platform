@@ -1,11 +1,23 @@
 #!/usr/bin/env node
 
 const fs = require('node:fs');
+const { availableParallelism } = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { isPausedImplementationTest } = require('./paused-runtimes.js');
 
 const DEFAULT_ROOTS = ['scripts'];
+// These files assert real subprocess deadlines. Isolate them from concurrent
+// fixture setup so that contention cannot consume the process-start budget.
+const TIMING_SENSITIVE_TESTS = new Set([
+  'scripts/check-cli-options.test.js',
+  'scripts/ci/mail-node-imports.test.mjs',
+  'scripts/ci/meet-build-metadata.test.js',
+  'scripts/ci/normalize-release-notes.test.js',
+  'scripts/ci/production-publication-policy.test.js',
+  'scripts/sdk-rollout-descriptor.test.js',
+  'scripts/worktree-footprint.test.js',
+]);
 const DEFAULT_SUPPLEMENTAL_PATHS = [
   '.github/actions/setup-turbo-fallback-cache/action.test.js',
   '.github/actions/run-with-turbo-remote-cache/action.test.js',
@@ -133,16 +145,34 @@ function runScriptTests({
     return 0;
   }
 
-  const result = spawnImpl(
-    process.execPath,
-    ['--experimental-strip-types', '--test', ...files],
-    {
-      cwd: repoRoot,
-      stdio: 'inherit',
-    }
+  const timingSensitive = files.filter((file) =>
+    TIMING_SENSITIVE_TESTS.has(file)
   );
-  if (result.error) throw result.error;
-  return result.status ?? 1;
+  const parallel = files.filter((file) => !TIMING_SENSITIVE_TESTS.has(file));
+  const groups = [
+    { files: timingSensitive, concurrency: 1 },
+    {
+      files: parallel,
+      concurrency: Math.max(1, Math.min(4, availableParallelism() - 1)),
+    },
+  ];
+  let exitCode = 0;
+  for (const group of groups) {
+    if (!group.files.length) continue;
+    const result = spawnImpl(
+      process.execPath,
+      [
+        '--experimental-strip-types',
+        '--test',
+        `--test-concurrency=${group.concurrency}`,
+        ...group.files,
+      ],
+      { cwd: repoRoot, stdio: 'inherit' }
+    );
+    if (result.error) throw result.error;
+    if (exitCode === 0) exitCode = result.status ?? 1;
+  }
+  return exitCode;
 }
 
 function main(argv = process.argv.slice(2)) {
