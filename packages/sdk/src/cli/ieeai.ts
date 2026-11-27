@@ -49,7 +49,7 @@ export async function runIeeaiCommand(args: string[]) {
   }
   if (args[0] !== 'handbook' || args[1] !== 'stats') throw new Error(usage);
   if (args.length === 6 && args[2] === '--from' && args[4] === '--to') {
-    const { readLiveHandbookStats } = await import('./ieeai-live');
+    const { readLiveHandbookStats } = await import('./ieeai-live.js');
     const result = await readLiveHandbookStats(args[3] ?? '', args[5] ?? '');
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;

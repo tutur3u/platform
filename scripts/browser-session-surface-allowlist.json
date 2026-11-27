@@ -286,6 +286,10 @@
       "reason": "CLI client that stores its own bearer pair"
     },
     {
+      "file": "packages/sdk/src/cli/ieeai.ts",
+      "reason": "The CLI-only handbook stats fixture exchanges placeholder tokens through an injected transport scoped to the reserved ieeai-fixture.invalid origin"
+    },
+    {
       "file": "packages/sdk/src/platform-qa-users.ts",
       "reason": "Operator CLI client for disposable QA test account sessions minted by the root-permission-gated /api/v1/admin/qa/test-users API; the CLI writes them only to 0600 files for automation and never prints them"
     }
