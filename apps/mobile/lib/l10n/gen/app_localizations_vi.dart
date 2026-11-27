@@ -2746,6 +2746,45 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsDetails => 'Chi tiết';
 
   @override
+  String get contactsEditSession => 'Chỉnh sửa buổi học';
+
+  @override
+  String get contactsEditSessionOnce => 'Chỉ buổi này';
+
+  @override
+  String get contactsEditSessionDenied => 'Bạn không còn quyền chỉnh sửa buổi học này.';
+
+  @override
+  String get contactsEditSessionOffline => 'Kết nối Internet để chỉnh sửa buổi học này.';
+
+  @override
+  String get contactsEditSessionInvalidTime => 'Thời điểm này không khả dụng trong múi giờ của buổi học.';
+
+  @override
+  String get contactsEditSessionInvalidRange => 'Thời gian kết thúc phải sau thời gian bắt đầu.';
+
+  @override
+  String get crmGroupPosts => 'Bài đăng nhóm';
+
+  @override
+  String get crmGroupPostsEmpty => 'Chưa có bài đăng nhóm';
+
+  @override
+  String get crmGroupPostUntitled => 'Bài đăng không có tiêu đề';
+
+  @override
+  String get crmGroupPostTitle => 'Tiêu đề';
+
+  @override
+  String get crmGroupPostContent => 'Nội dung';
+
+  @override
+  String get crmGroupPostNotes => 'Ghi chú';
+
+  @override
+  String get crmGroupPostSaveUnconfirmed => 'Không thể xác nhận đã lưu. Hãy tải lại để kiểm tra bài đăng trước khi chỉnh sửa tiếp.';
+
+  @override
   String get contactsEditGroup => 'Sửa nhóm';
 
   @override

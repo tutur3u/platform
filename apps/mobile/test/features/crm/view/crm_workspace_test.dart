@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/models/crm/crm_group_post.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -98,6 +99,45 @@ void main() {
         repository: repository,
         permissionsRepository: permissions,
       );
+
+  for (final canViewPosts in [true, false]) {
+    testWidgets('group posts action follows view permission ($canViewPosts)', (
+      tester,
+    ) async {
+      permissions.allowed.add('view_user_groups');
+      permissions.allowed.add(
+        canViewPosts ? 'view_user_groups_posts' : 'update_user_groups_posts',
+      );
+      repository.readGroups = () async => [
+        const CrmGroup(id: 'group', name: 'Example group'),
+      ];
+      when(
+        () => repository.getGroupPostsPage('ws', 'group'),
+      ).thenAnswer((_) async => (posts: <CrmGroupPost>[], nextCursor: null));
+      await tester.pumpApp(page());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Groups').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Example group'), findsOneWidget);
+      final actions = find.byTooltip('More options');
+      if (canViewPosts) {
+        await tester.tap(actions.last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Group posts'));
+        await tester.pumpAndSettle();
+        expect(find.text('No group posts yet'), findsOneWidget);
+        verify(() => repository.getGroupPostsPage('ws', 'group')).called(1);
+        await tester.pumpApp(page(workspace: 'other'));
+        await tester.pumpAndSettle();
+        expect(find.text('No group posts yet'), findsNothing);
+      } else {
+        await tester.longPress(find.text('Example group'));
+        await tester.pumpAndSettle();
+        expect(find.text('Group posts'), findsNothing);
+        verifyNever(() => repository.getGroupPostsPage('ws', 'group'));
+      }
+    });
+  }
 
   testWidgets('public-only detail does not reveal private fields', (
     tester,

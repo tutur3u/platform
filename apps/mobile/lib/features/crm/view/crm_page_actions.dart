@@ -410,6 +410,35 @@ extension _CrmPageActions on _CrmPageState {
     if (saved == true && mounted) await _loadInitial();
   }
 
+  bool get _canViewGroupPosts =>
+      _workspacePermissions.containsPermission('view_user_groups_posts');
+
+  Future<void> _showGroupPosts(CrmGroup group) async {
+    final workspaceId = widget.workspaceId;
+    final actorId = widget.actorId;
+    bool canView() =>
+        mounted &&
+        _alive.value &&
+        widget.workspaceId == workspaceId &&
+        widget.actorId == actorId &&
+        _canViewGroupPosts;
+    if (!canView()) return;
+    await _showOwnedSheet<void>(
+      context: context,
+      builder: (context) => ContactGroupPosts(
+        workspaceId: workspaceId,
+        group: group,
+        repository: _repository,
+        canView: canView,
+        canEdit: () =>
+            canView() &&
+            _workspacePermissions.containsPermission(
+              'update_user_groups_posts',
+            ),
+      ),
+    );
+  }
+
   Future<void> _showGroupActions(CrmGroup group) async {
     final l10n = context.l10n;
     final action = await _showOwnedSheet<String>(
@@ -427,6 +456,12 @@ extension _CrmPageActions on _CrmPageState {
             value: 'members',
             icon: LucideIcons.users,
           ),
+          if (_canViewGroupPosts)
+            AppSheetAction(
+              label: l10n.crmGroupPosts,
+              value: 'posts',
+              icon: LucideIcons.fileText,
+            ),
           if (_canUpdateGroups)
             AppSheetAction(
               label: l10n.commonEdit,
@@ -478,6 +513,8 @@ extension _CrmPageActions on _CrmPageState {
             },
           ),
         );
+      case 'posts':
+        await _showGroupPosts(group);
       case 'edit':
         await _showGroupEditor(group: group);
       case 'delete':

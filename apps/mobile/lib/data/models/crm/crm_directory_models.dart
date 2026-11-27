@@ -8,6 +8,9 @@ class CrmSession extends Equatable {
     required this.endsAt,
     this.groupName,
     this.title,
+    this.seriesId,
+    this.startTimezone,
+    this.endTimezone,
     this.status = 'scheduled',
   });
 
@@ -17,6 +20,9 @@ class CrmSession extends Equatable {
       groupId: crmAsString(json['groupId']) ?? '',
       groupName: crmAsString(json['groupName']),
       title: crmAsString(json['title']),
+      seriesId: crmAsString(json['seriesId']),
+      startTimezone: crmAsString(json['startTimezone']),
+      endTimezone: crmAsString(json['endTimezone']),
       startsAt: crmAsString(json['startsAt']) ?? '',
       endsAt: crmAsString(json['endsAt']) ?? '',
       status: crmAsString(json['status']) ?? 'scheduled',
@@ -27,9 +33,19 @@ class CrmSession extends Equatable {
   final String groupId;
   final String? groupName;
   final String? title;
+  final String? seriesId;
+  final String? startTimezone;
+  final String? endTimezone;
   final String startsAt;
   final String endsAt;
   final String status;
+
+  bool get isPersisted => _sessionIdPattern.hasMatch(id);
+
+  static final _sessionIdPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
 
   String get label {
     final name = title?.trim();
@@ -45,6 +61,9 @@ class CrmSession extends Equatable {
     title,
     startsAt,
     endsAt,
+    seriesId,
+    startTimezone,
+    endTimezone,
     status,
   ];
 }

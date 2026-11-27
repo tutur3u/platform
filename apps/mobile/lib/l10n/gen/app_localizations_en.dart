@@ -2761,6 +2761,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsDetails => 'Details';
 
   @override
+  String get contactsEditSession => 'Edit session';
+
+  @override
+  String get contactsEditSessionOnce => 'This occurrence only';
+
+  @override
+  String get contactsEditSessionDenied => 'You no longer have permission to edit this session.';
+
+  @override
+  String get contactsEditSessionOffline => 'Connect to the internet to edit this session.';
+
+  @override
+  String get contactsEditSessionInvalidTime => 'This time is unavailable in the session’s time zone.';
+
+  @override
+  String get contactsEditSessionInvalidRange => 'End time must be after start time.';
+
+  @override
+  String get crmGroupPosts => 'Group posts';
+
+  @override
+  String get crmGroupPostsEmpty => 'No group posts yet';
+
+  @override
+  String get crmGroupPostUntitled => 'Untitled post';
+
+  @override
+  String get crmGroupPostTitle => 'Title';
+
+  @override
+  String get crmGroupPostContent => 'Content';
+
+  @override
+  String get crmGroupPostNotes => 'Notes';
+
+  @override
+  String get crmGroupPostSaveUnconfirmed => 'The save could not be confirmed. Refresh to check the post before editing again.';
+
+  @override
   String get contactsEditGroup => 'Edit group';
 
   @override

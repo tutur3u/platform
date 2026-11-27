@@ -10,6 +10,7 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/models/crm/crm_group_post.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -22,6 +23,7 @@ part 'crm_repository_attendance.dart';
 part 'crm_repository_billing.dart';
 part 'crm_repository_groups.dart';
 part 'crm_repository_reports.dart';
+part 'crm_repository_schedule.dart';
 
 class CrmRepository
     with
@@ -30,7 +32,8 @@ class CrmRepository
         _CrmAccountLinkRepository,
         _CrmApprovalRepository,
         _CrmAttendanceRepository,
-        _CrmReportRepository {
+        _CrmReportRepository,
+        _CrmScheduleRepository {
   CrmRepository({
     ApiClient? apiClient,
     http.Client? httpClient,

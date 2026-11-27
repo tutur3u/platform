@@ -4,6 +4,45 @@ mixin _CrmGroupMembershipRepository {
   ApiClient get _api;
   String? get expectedUserId;
 
+  String _postsPath(String wsId, String groupId) =>
+      '${CrmEndpoints.userGroup(wsId, groupId)}/posts';
+
+  Future<({List<CrmGroupPost> posts, String? nextCursor})> getGroupPostsPage(
+    String wsId,
+    String groupId, {
+    String? cursor,
+  }) async {
+    final query = Uri(
+      queryParameters: {'limit': '20', if (cursor != null) 'cursor': cursor},
+    );
+    final response = await _api.getJson('${_postsPath(wsId, groupId)}$query');
+    final next = response['nextCursor'] as String?;
+    return (
+      posts: (response['data'] as List)
+          .cast<Map<String, dynamic>>()
+          .map(CrmGroupPost.fromJson)
+          .toList(),
+      nextCursor: next == cursor || next == '' ? null : next,
+    );
+  }
+
+  Future<void> updateGroupPost(
+    String wsId,
+    String groupId,
+    String postId,
+    Map<String, String?> changes, {
+    required Future<void> Function() beforeDispatch,
+  }) async {
+    final response = await _api.putJsonGuarded(
+      '${_postsPath(wsId, groupId)}/${Uri.encodeComponent(postId)}',
+      changes,
+      beforeDispatch: beforeDispatch,
+    );
+    if (response['message'] != 'success') {
+      throw StateError('Group post update was not acknowledged');
+    }
+  }
+
   String _membersPath(String wsId, String groupId) =>
       '${CrmEndpoints.userGroup(Uri.encodeComponent(wsId), Uri.encodeComponent(groupId))}/members';
 

@@ -5281,6 +5281,84 @@ abstract class AppLocalizations {
   /// **'Details'**
   String get contactsDetails;
 
+  /// No description provided for @contactsEditSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit session'**
+  String get contactsEditSession;
+
+  /// No description provided for @contactsEditSessionOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'This occurrence only'**
+  String get contactsEditSessionOnce;
+
+  /// No description provided for @contactsEditSessionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You no longer have permission to edit this session.'**
+  String get contactsEditSessionDenied;
+
+  /// No description provided for @contactsEditSessionOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to edit this session.'**
+  String get contactsEditSessionOffline;
+
+  /// No description provided for @contactsEditSessionInvalidTime.
+  ///
+  /// In en, this message translates to:
+  /// **'This time is unavailable in the session’s time zone.'**
+  String get contactsEditSessionInvalidTime;
+
+  /// No description provided for @contactsEditSessionInvalidRange.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time.'**
+  String get contactsEditSessionInvalidRange;
+
+  /// No description provided for @crmGroupPosts.
+  ///
+  /// In en, this message translates to:
+  /// **'Group posts'**
+  String get crmGroupPosts;
+
+  /// No description provided for @crmGroupPostsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No group posts yet'**
+  String get crmGroupPostsEmpty;
+
+  /// No description provided for @crmGroupPostUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled post'**
+  String get crmGroupPostUntitled;
+
+  /// No description provided for @crmGroupPostTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get crmGroupPostTitle;
+
+  /// No description provided for @crmGroupPostContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get crmGroupPostContent;
+
+  /// No description provided for @crmGroupPostNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get crmGroupPostNotes;
+
+  /// No description provided for @crmGroupPostSaveUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'The save could not be confirmed. Refresh to check the post before editing again.'**
+  String get crmGroupPostSaveUnconfirmed;
+
   /// No description provided for @contactsEditGroup.
   ///
   /// In en, this message translates to:

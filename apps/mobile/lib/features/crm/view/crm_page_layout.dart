@@ -499,6 +499,8 @@ extension _CrmPageLayout on _CrmPageState {
       slots.addAll(
         _namedSlices(_visibleGroups.length, (index) {
           final group = _visibleGroups[index];
+          final hasActions =
+              _canViewGroupPosts || _canUpdateGroups || _canDeleteGroups;
           return AppRichRow(
             title: group.name,
             subtitle: group.notes,
@@ -507,8 +509,13 @@ extension _CrmPageLayout on _CrmPageState {
               tone: AppTone.info,
             ),
             onTap: () => _filterByGroups([group.id]),
-            onLongPress: _canUpdateGroups || _canDeleteGroups
-                ? () => _showGroupActions(group)
+            onLongPress: hasActions ? () => _showGroupActions(group) : null,
+            trailing: hasActions
+                ? AppIconButton(
+                    icon: const Icon(LucideIcons.ellipsis),
+                    tooltip: l10n.commonMoreOptions,
+                    onPressed: () => _showGroupActions(group),
+                  )
                 : null,
           );
         }),
@@ -562,6 +569,13 @@ extension _CrmPageLayout on _CrmPageState {
                   icon: LucideIcons.calendar,
                   tone: AppTone.info,
                 ),
+                trailing: _canUpdateGroups && session.isPersisted
+                    ? AppIconButton(
+                        tooltip: context.l10n.contactsEditSession,
+                        onPressed: () => _editSessionOccurrence(session),
+                        icon: const Icon(LucideIcons.pencil),
+                      )
+                    : null,
                 onTap: () => _showAttendance(session),
               );
             }),

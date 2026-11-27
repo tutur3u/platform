@@ -36,12 +36,34 @@ period when available. The preview uses the same workspace and group access as
 the report list. Use **Previous** and **Next** to browse reports across all
 reporting cadences. Use the shell search and cadence filter to narrow the list.
 
+## Mobile Schedule
+
+In the mobile Contacts Schedule, tap a session to open attendance. When you
+can update user groups, use the edit button to change a saved session's title
+and times while online. Start and end times use their stored time zones. For
+recurring sessions, the edit applies only to the selected occurrence.
+[Mobile regression coverage](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/crm/utils/contact_session_edit_test.dart).
+
 ## Mobile attendance history
 
 Choose a day before opening a group's attendance sheet. Members and marks are
 loaded for that group and day. Editing attendance, including session attendance,
 saves changed marks. Clearing a saved mark sends the cleared status. The mobile
 attendance tests cover saved and cleared marks.
+
+## Mobile group schedules and posts
+
+Use the edit action on a saved session in **Schedule** to update it with
+the workspace's group-update permission. Opening the session itself still
+shows attendance. Editing a recurring session on mobile changes the selected
+occurrence. Use the Contacts web schedule editor for changes to a series.
+
+Open a group row's actions and choose **Group posts** if you have permission to view
+group posts. Editing also requires group-post update permission. Saving a post
+updates its text and preserves its approval state. It does not change messages
+that were already sent. If a save cannot be confirmed, refresh before editing
+again. The mobile session-editor, group-posts, and CRM workspace tests cover
+these flows.
 
 ## Mobile CSV and archiving
 
