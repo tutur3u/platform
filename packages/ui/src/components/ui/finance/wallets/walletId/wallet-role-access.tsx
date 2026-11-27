@@ -40,7 +40,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -171,7 +171,10 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
     },
   });
 
-  const viewingWindow = form.watch('viewing_window');
+  const viewingWindow = useWatch({
+    control: form.control,
+    name: 'viewing_window',
+  });
 
   const handleAddDialogOpenChange = (open: boolean) => {
     setShowAddDialog(open);

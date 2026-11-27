@@ -8,6 +8,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -16,7 +17,7 @@ import type { SectionProps } from './index';
 
 export default function RoleFormDisplaySection({ form, roleId }: SectionProps) {
   const t = useTranslations();
-  const roleName = form.watch('name');
+  const roleName = useWatch({ control: form.control, name: 'name' });
 
   return (
     <div className="space-y-4 md:space-y-6">

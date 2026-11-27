@@ -28,7 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -131,6 +131,10 @@ export default function CreatePlanDialog({
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
   const disabled = !isValid || isSubmitting;
+  const agendaEnabled = useWatch({
+    control: form.control,
+    name: 'agenda_enabled',
+  });
 
   const handleSubmit = async (data: FormData) => {
     setCreating(true);
@@ -383,7 +387,7 @@ export default function CreatePlanDialog({
               />
 
               {/* Agenda content editor - only shown when enabled */}
-              {form.watch('agenda_enabled') && (
+              {agendaEnabled && (
                 <div className="slide-in-from-top-2 animate-in duration-300">
                   <FormField
                     control={form.control}

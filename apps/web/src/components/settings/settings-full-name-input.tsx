@@ -10,7 +10,7 @@ import {
   FormItem,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -63,7 +63,7 @@ export default function FullNameInput({
     form.reset({ name: defaultValue || '' });
   }, [defaultValue, form]);
 
-  const name = form.watch('name') ?? '';
+  const name = useWatch({ control: form.control, name: 'name' }) ?? '';
   // Compare against the form baseline (updated by reset after a save), not
   // the prop, so the button disables immediately after a successful save.
   const savedName = form.formState.defaultValues?.name ?? '';

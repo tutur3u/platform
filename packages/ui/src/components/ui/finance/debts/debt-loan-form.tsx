@@ -15,7 +15,7 @@ import {
 } from '@tuturuuu/utils/currencies';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Button } from '../../button';
 import { SelectField } from '../../custom/select-field';
 import {
@@ -79,8 +79,10 @@ export function DebtLoanForm({
     },
   });
 
-  const selectedType = form.watch('type');
-  const interestRate = form.watch('interest_rate');
+  const [selectedType, interestRate] = useWatch({
+    control: form.control,
+    name: ['type', 'interest_rate'],
+  });
 
   const handleInterestRateChange = useCallback(
     (value: number | undefined) => {

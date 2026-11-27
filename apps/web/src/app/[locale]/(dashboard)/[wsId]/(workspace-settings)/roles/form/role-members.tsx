@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { getWorkspaceAccessRemovalRefusalMessage } from '@tuturuuu/ui/custom/workspace-access';
+import { useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -198,9 +199,14 @@ export default function RoleFormMembersSection({
     }
   };
 
+  const watchedPermissions = useWatch({
+    control: form.control,
+    name: 'permissions',
+  });
+  const roleName = useWatch({ control: form.control, name: 'name' });
   const assignedCount = roleMembers.length;
   const availableCount = availableUsers.length;
-  const permissionCount = Object.values(form.watch('permissions') || {}).filter(
+  const permissionCount = Object.values(watchedPermissions || {}).filter(
     Boolean
   ).length;
 
@@ -216,7 +222,7 @@ export default function RoleFormMembersSection({
               {t('ws-roles.managing_members_for')}
             </div>
             <div className="font-bold text-base text-dynamic-blue sm:text-lg">
-              {form.watch('name') || t('common.unnamed')}
+              {roleName || t('common.unnamed')}
             </div>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">

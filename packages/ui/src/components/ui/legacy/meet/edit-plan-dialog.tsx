@@ -37,7 +37,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -197,12 +197,24 @@ export default function EditPlanDialog({
   const isSubmitting = form.formState.isSubmitting;
 
   const disabled = !isValid || isSubmitting;
-  const watchedName = form.watch('name');
-  const watchedStartTime = form.watch('start_time');
-  const watchedEndTime = form.watch('end_time');
-  const watchedDates = form.watch('dates');
-  const watchedTimezone = form.watch('timezone');
-  const watchedDuration = form.watch('duration_minutes');
+  const [
+    watchedName,
+    watchedStartTime,
+    watchedEndTime,
+    watchedDates,
+    watchedTimezone,
+    watchedDuration,
+  ] = useWatch({
+    control: form.control,
+    name: [
+      'name',
+      'start_time',
+      'end_time',
+      'dates',
+      'timezone',
+      'duration_minutes',
+    ],
+  });
 
   // Convert form values back to component-friendly formats
   const currentStartTime = watchedStartTime

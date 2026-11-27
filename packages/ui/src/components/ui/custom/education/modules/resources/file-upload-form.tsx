@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { Progress } from '@tuturuuu/ui/progress';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -190,7 +190,7 @@ export function StorageObjectForm({
   const [editingFile, setEditingFile] = useState<File | null>(null);
   const [newFileName, setNewFileName] = useState<string>('');
   const normalizedAccept = accept && accept.trim() !== '*' ? accept : undefined;
-  const files = form.watch('files') ?? [];
+  const files = useWatch({ control: form.control, name: 'files' }) ?? [];
 
   function updateFiles(nextFiles: File[]) {
     form.setValue('files', nextFiles, {

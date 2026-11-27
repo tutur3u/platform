@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
+import { type UseFormReturn, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
 
@@ -46,10 +46,16 @@ export function TransferFields({
   onToggleDestinationOverride,
   t,
 }: TransferFieldsProps) {
-  const originWalletId = form.watch('origin_wallet_id');
-  const destinationWalletId = form.watch('destination_wallet_id');
-  const destinationAmount = form.watch('destination_amount');
-  const sourceAmount = form.watch('amount');
+  const [originWalletId, destinationWalletId, destinationAmount, sourceAmount] =
+    useWatch({
+      control: form.control,
+      name: [
+        'origin_wallet_id',
+        'destination_wallet_id',
+        'destination_amount',
+        'amount',
+      ],
+    });
 
   const originWallet = useMemo(
     () => wallets?.find((w) => w.id === originWalletId),

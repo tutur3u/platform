@@ -26,7 +26,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -111,7 +111,7 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
     },
   });
 
-  const watchedType = form.watch('type');
+  const watchedType = useWatch({ control: form.control, name: 'type' });
 
   // Handle icon change - update both local state and form
   const handleIconChange = useCallback(

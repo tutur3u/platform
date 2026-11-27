@@ -16,12 +16,12 @@ import { LoadingRegion, Skeleton, SkeletonLine } from '@tuturuuu/ui/skeleton';
 import { canCreateOnlineMeeting } from '@tuturuuu/utils/meet-creation-policy';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 
 export function MiraMeetingCreate({ wsId }: { wsId: string }) {
   const t = useTranslations('dashboard.mira_workspace');
   const form = useForm({ defaultValues: { name: '', time: '' } });
-  const { name, time } = form.watch();
+  const { name = '', time = '' } = useWatch({ control: form.control });
   const [created, setCreated] = useState(false);
   const queryClient = useQueryClient();
   const profile = useQuery({

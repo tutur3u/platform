@@ -18,7 +18,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { getWorkspaceAccessRemovalRefusalMessage } from '@tuturuuu/ui/custom/workspace-access';
 import { Form } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -214,14 +214,18 @@ export function RoleForm({
   const isEdit = !!roleId;
   const disabled = !isDirty || !isValid || isSubmitting || mutation.isPending;
 
+  const watchedPermissions = useWatch({
+    control: form.control,
+    name: 'permissions',
+  });
   const enabledPermissionsCount = Object.values(groups).map((group) => ({
     id: group.id,
-    count: group.permissions.filter((permission) =>
-      form.watch(`permissions.${permission.id}`)
+    count: group.permissions.filter(
+      (permission) => watchedPermissions?.[permission.id]
     ).length,
   }));
 
-  const adminEnabled = form.watch('permissions.admin');
+  const adminEnabled = watchedPermissions?.admin;
   const totalCount = totalPermissions({
     catalog: permissionCatalog,
     wsId,

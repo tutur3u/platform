@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -170,7 +170,8 @@ export default function PlanLogin({
     setDisplayMode();
   };
 
-  const missingFields = !form.watch('guestName');
+  const guestName = useWatch({ control: form.control, name: 'guestName' });
+  const missingFields = !guestName;
 
   return (
     <Dialog

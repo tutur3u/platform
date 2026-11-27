@@ -19,6 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import { useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
@@ -61,7 +62,7 @@ export function EventAiEntry({
 }: EventAiEntryProps) {
   const t = useTranslations('calendar.event_dialog');
   const capturing = isRecording || isProcessingAudio || isProcessingImage;
-  const prompt = form.watch('prompt');
+  const prompt = useWatch({ control: form.control, name: 'prompt' }) ?? '';
 
   return (
     <Form {...form}>

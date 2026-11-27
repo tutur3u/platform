@@ -28,7 +28,7 @@ import {
 import { Form } from '@tuturuuu/ui/form';
 import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
 import { useFinanceTransactionPreferences } from '@tuturuuu/ui/hooks/use-finance-transaction-preferences';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { useWorkspaceConfig } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -763,14 +763,14 @@ export function TransactionForm({
             t('transaction-data-table.error_creating_transaction')
         );
       }
-
       return body as { message: string; transaction_id?: string };
     },
   });
-
-  const selectedWalletId = form.watch('origin_wallet_id');
-  const selectedDestinationWalletId = form.watch('destination_wallet_id');
-  const sourceAmount = form.watch('amount');
+  const [selectedWalletId, selectedDestinationWalletId, sourceAmount] =
+    useWatch({
+      control: form.control,
+      name: ['origin_wallet_id', 'destination_wallet_id', 'amount'],
+    });
   const selectedWalletCurrency = useMemo(
     () => wallets?.find((w) => w.id === selectedWalletId)?.currency,
     [wallets, selectedWalletId]

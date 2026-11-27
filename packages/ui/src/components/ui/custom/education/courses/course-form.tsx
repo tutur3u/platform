@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
@@ -82,7 +82,10 @@ export function CourseForm({
   });
 
   // Only watch the cert_template field instead of all form values
-  const certTemplate = form.watch('cert_template');
+  const certTemplate = useWatch({
+    control: form.control,
+    name: 'cert_template',
+  });
 
   const [imageError, setImageError] = useState(false);
 

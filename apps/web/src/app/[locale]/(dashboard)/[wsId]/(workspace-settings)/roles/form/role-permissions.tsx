@@ -8,6 +8,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { FormField, FormItem } from '@tuturuuu/ui/form';
+import { useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { isAdminImpliedPermission } from '@tuturuuu/utils/creator-grant-permissions';
@@ -36,14 +37,20 @@ export default function RoleFormPermissionsSection({
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  const watchedPermissions = useWatch({
+    control: form.control,
+    name: 'permissions',
+  });
+  const roleName = useWatch({ control: form.control, name: 'name' });
+
   const allPermissionsEnabled = groups.every((group) =>
     group.permissions.every(
-      (permission) => form.watch(`permissions.${permission.id}`) === true
+      (permission) => watchedPermissions?.[permission.id] === true
     )
   );
 
   // Check if admin permission is enabled
-  const isAdminEnabled = form.watch('permissions.admin') === true;
+  const isAdminEnabled = watchedPermissions?.admin === true;
   // Admin never implies a creator-grant (manage_subscription) or an
   // explicit-grant (manage_mastermind) permission.
   const grantedViaAdmin = (permissionId: string) =>
@@ -101,7 +108,7 @@ export default function RoleFormPermissionsSection({
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <Label className="font-semibold text-base sm:text-lg">
-                  {form.watch('name') || t('ws-roles.unnamed_role')}
+                  {roleName || t('ws-roles.unnamed_role')}
                 </Label>
                 <Badge
                   variant="secondary"
