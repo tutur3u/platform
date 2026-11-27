@@ -102,7 +102,9 @@ void main() {
     await drain(tester);
   });
 
-  testWidgets('the shell rail receives the same sections', (tester) async {
+  testWidgets('the shell rail carries folders when a local pane cannot fit', (
+    tester,
+  ) async {
     setMailSurface(tester, const Size(1440, 900));
     final repository = _repository();
     final miniNav = ShellMiniNavCubit();
@@ -118,7 +120,12 @@ void main() {
           BlocProvider.value(value: actions),
           BlocProvider.value(value: titles),
         ],
-        child: MailWorkspace(workspaceId: 'ws', repository: repository),
+        child: Center(
+          child: SizedBox(
+            width: 754,
+            child: MailWorkspace(workspaceId: 'ws', repository: repository),
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();

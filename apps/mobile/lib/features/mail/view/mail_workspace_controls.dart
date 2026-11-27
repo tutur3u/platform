@@ -181,6 +181,9 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
             padding: const EdgeInsets.only(top: AppSpacing.xs),
             child: MailQuickFilterBar(
               value: _quickFilter,
+              unreadCount: _isMailFolderSelected(_folder)
+                  ? _mailFolderCount(_folder)
+                  : null,
               enabled: !_mutating && _mailboxId != null,
               onChanged: _setQuickFilter,
             ),
@@ -243,12 +246,12 @@ extension _MailWorkspaceControls on _MailWorkspaceState {
         l10n.mailFolders;
   }
 
-  Widget _buildMailListHeader() {
+  Widget _buildMailListHeader({required bool showTitle}) {
     final l10n = context.l10n;
     final markRead =
         _mailboxId != null && ['inbox', 'archive'].contains(_folder);
     return MailListHeader(
-      title: _mailListTitle(l10n),
+      title: showTitle ? _mailListTitle(l10n) : null,
       address: _mailbox['address'] as String?,
       syncState: _loading
           ? MailSyncState.syncing

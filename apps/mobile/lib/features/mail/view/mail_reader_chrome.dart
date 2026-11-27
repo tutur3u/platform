@@ -142,9 +142,8 @@ extension _MailReaderChrome on _MailReaderState {
         // Back to the shell, which returns there in one step.
         onBack:
             widget.notificationEntry &&
-                (ShellRouteTransitionScope.maybeOf(
-                      context,
-                    )?.hasNotificationsOrigin() ??
+                (ShellRouteTransitionScope.maybeOf(context)
+                        ?.hasNotificationsOrigin() ??
                     false)
             ? null
             : _closeFromBack,
@@ -307,34 +306,8 @@ extension _MailReaderChrome on _MailReaderState {
   /// Replies (or a read-only mailbox's common commands) fill the bar beside
   /// Back; More holds everything else, with Delete last.
   ShellDockActionGroup _dockGroup() {
-    final l10n = context.l10n;
     final plan = _dockPlan();
-    final canReply = !_busy && _detail != null && _messages.isNotEmpty;
     final appearance = MailAppearancePreference.instance.value;
-
-    ShellDockGroupAction reply(MailDockReply kind) => switch (kind) {
-      MailDockReply.reply => ShellDockGroupAction(
-        id: 'reply',
-        icon: Icons.reply_outlined,
-        label: l10n.mailReply,
-        enabled: canReply,
-        onPressed: _replyLast,
-      ),
-      MailDockReply.replyAll => ShellDockGroupAction(
-        id: 'reply-all',
-        icon: Icons.reply_all_outlined,
-        label: l10n.mailReplyAll,
-        enabled: canReply,
-        onPressed: _replyAllLast,
-      ),
-      MailDockReply.forward => ShellDockGroupAction(
-        id: 'forward',
-        icon: Icons.forward_outlined,
-        label: l10n.mailForward,
-        enabled: canReply,
-        onPressed: _forwardLast,
-      ),
-    };
 
     ShellDockGroupAction action(MailDockMore kind) {
       final entry = _moreEntry(kind);
@@ -363,10 +336,7 @@ extension _MailReaderChrome on _MailReaderState {
         : action(kind);
 
     return ShellDockActionGroup(
-      actions: [
-        for (final kind in plan.replies) reply(kind),
-        for (final kind in plan.bar) action(kind),
-      ],
+      actions: [for (final kind in plan.bar) action(kind)],
       more: [
         for (final section in plan.more)
           [for (final kind in section) more(kind)],
@@ -400,7 +370,6 @@ extension _MailReaderChrome on _MailReaderState {
     bool includeReplies = true,
   }) async {
     if (_busy || _detail == null) return;
-    final l10n = context.l10n;
     final plan = _dockPlan();
     final entries = <_MailMoreEntry>[
       if (includeReply && plan.replies.contains(MailDockReply.reply))

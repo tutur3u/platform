@@ -55,7 +55,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'mail_workspace_layout.dart';
 part 'mail_workspace_sidebar.dart';
@@ -383,9 +382,8 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         _repository.dispose();
       } else {
         unawaited(
-          Future.wait(
-            _inFlightDeferredCommits.toList(),
-          ).whenComplete(_repository.dispose),
+          Future.wait(_inFlightDeferredCommits.toList())
+              .whenComplete(_repository.dispose),
         );
       }
     }
@@ -432,9 +430,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           '${MailRepository.mailboxPath(widget.workspaceId, box)}/organization',
         );
         _labels = mailRows(organization?['labels']);
-        _folders = mailRows(
-          organization?['folders'],
-        ).where((folder) => folder['kind'] == 'custom').toList();
+        _folders = mailRows(organization?['folders'])
+            .where((folder) => folder['kind'] == 'custom')
+            .toList();
       }
       if (!more) {
         _visibleListKey = path;
@@ -526,9 +524,9 @@ class _MailWorkspaceState extends State<MailWorkspace> {
       var clearedFilter = false;
       setState(() {
         _labels = mailRows(organization['labels']);
-        _folders = mailRows(
-          organization['folders'],
-        ).where((folder) => folder['kind'] == 'custom').toList();
+        _folders = mailRows(organization['folders'])
+            .where((folder) => folder['kind'] == 'custom')
+            .toList();
         if (_labelId != null &&
             !_labels.any((label) => label['id'] == _labelId)) {
           _labelId = null;

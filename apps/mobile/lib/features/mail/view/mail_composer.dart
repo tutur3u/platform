@@ -188,9 +188,9 @@ class _MailComposerState extends State<MailComposer> {
     if (!mounted) throw StateError('Mail session changed');
     _draftId = (result['message'] as Map<String, dynamic>)['id'] as String;
     if (widget.forward && !_forwardCopied && widget.reply != null) {
-      final ids = mailRows(
-        widget.reply!['attachments'],
-      ).map((a) => a['id'] as String).toList();
+      final ids = mailRows(widget.reply!['attachments'])
+          .map((a) => a['id'] as String)
+          .toList();
       if (ids.isNotEmpty) {
         final copied = await widget.repository.copyAttachments(
           widget.workspaceId,
@@ -325,24 +325,27 @@ class _MailComposerState extends State<MailComposer> {
     prompt.dispose();
     if (instructions == null || instructions.isEmpty || !mounted) return;
     await _perform(() async {
-      final result = await widget.repository
-          .aiDraft(widget.workspaceId, widget.mailboxId, {
-            'mode': selected || _body.text.trim().isNotEmpty
-                ? 'rewrite'
-                : 'draft',
-            'instructions': selected
-                ? 'Rewrite only the selected passage. Return only its '
-                      'replacement, without greeting, subject, signature, '
-                      'or quoted history. $instructions'
-                : instructions,
-            'bodyText': selected
-                ? originalText.substring(selection.start, selection.end)
-                : _body.text,
-            'subject': _subject.text,
-            'recipients': _addresses(_to.text),
-            if (widget.reply?['threadId'] != null)
-              'threadId': widget.reply!['threadId'],
-          });
+      final result = await widget.repository.aiDraft(
+        widget.workspaceId,
+        widget.mailboxId,
+        {
+          'mode': selected || _body.text.trim().isNotEmpty
+              ? 'rewrite'
+              : 'draft',
+          'instructions': selected
+              ? 'Rewrite only the selected passage. Return only its '
+                    'replacement, without greeting, subject, signature, '
+                    'or quoted history. $instructions'
+              : instructions,
+          'bodyText': selected
+              ? originalText.substring(selection.start, selection.end)
+              : _body.text,
+          'subject': _subject.text,
+          'recipients': _addresses(_to.text),
+          if (widget.reply?['threadId'] != null)
+            'threadId': widget.reply!['threadId'],
+        },
+      );
       if (!mounted) return;
       final accepted = await showDialog<bool>(
         context: context,
@@ -430,6 +433,12 @@ class _MailComposerState extends State<MailComposer> {
       },
       child: Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leadingWidth: 104,
+          leading: AppButton.ghost(
+            onPressed: _busy ? null : _close,
+            child: Text(l10n.commonCancel, overflow: TextOverflow.ellipsis),
+          ),
           title: Text(l10n.mailCompose),
           actions: [
             if (_draftId != null)
@@ -439,19 +448,9 @@ class _MailComposerState extends State<MailComposer> {
                 icon: const Icon(Icons.delete_outline),
               ),
             IconButton(
-              tooltip: l10n.mailAiDraft,
-              onPressed: _busy ? null : _generate,
-              icon: const Icon(Icons.auto_awesome_outlined),
-            ),
-            IconButton(
               tooltip: l10n.mailSaveDraft,
               onPressed: _busy ? null : () => _perform(_save),
               icon: const Icon(Icons.save_outlined),
-            ),
-            IconButton(
-              tooltip: l10n.mailSend,
-              onPressed: _busy ? null : _send,
-              icon: const Icon(Icons.send_outlined),
             ),
           ],
         ),
@@ -461,7 +460,10 @@ class _MailComposerState extends State<MailComposer> {
             kind: AppPageKind.form,
             children: [
               if (_busy) const NovaLoadingIndicator(size: 20),
-              Text(widget.fromAddress),
+              InputDecorator(
+                decoration: InputDecoration(labelText: l10n.mailFrom),
+                child: Text(widget.fromAddress),
+              ),
               for (final field in [
                 (_to, l10n.mailTo),
                 (_cc, l10n.mailCc),
@@ -485,11 +487,6 @@ class _MailComposerState extends State<MailComposer> {
                 ),
               ),
               MailBodyEditor(controller: _body),
-              TextButton.icon(
-                onPressed: _attach,
-                icon: const Icon(Icons.attach_file),
-                label: Text(l10n.mailAttach),
-              ),
               for (final attachment in _attachments)
                 ListTile(
                   title: Text(attachment['filename'] as String),
@@ -510,6 +507,37 @@ class _MailComposerState extends State<MailComposer> {
                   ),
                 ),
             ],
+          ),
+        ),
+        bottomNavigationBar: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.sm + MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: Row(
+              children: [
+                AppIconButton(
+                  tooltip: l10n.mailAttach,
+                  icon: const Icon(Icons.attach_file),
+                  onPressed: _busy ? null : _attach,
+                ),
+                AppIconButton(
+                  tooltip: l10n.mailAiDraft,
+                  icon: const Icon(Icons.auto_awesome_outlined),
+                  onPressed: _busy ? null : _generate,
+                ),
+                const Spacer(),
+                AppButton.primary(
+                  leading: const Icon(Icons.send_outlined, size: 18),
+                  onPressed: _busy ? null : _send,
+                  child: Text(l10n.mailSend),
+                ),
+              ],
+            ),
           ),
         ),
       ),

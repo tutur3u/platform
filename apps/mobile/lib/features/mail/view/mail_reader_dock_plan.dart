@@ -24,9 +24,8 @@ enum MailDockMore {
   trash,
 }
 
-/// What the reader registers: replies fill one action bar beside the
-/// shell's Back, the default action sits on the top navbar, and everything
-/// else lives in a three-section More sheet with Delete last.
+/// Reader actions for the reply bar, quick action and More sheet.
+/// Read-only mailboxes promote their most common commands into the dock.
 ///
 /// A command appears in exactly one place.
 class MailReaderDockPlan {

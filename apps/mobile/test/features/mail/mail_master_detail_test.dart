@@ -13,7 +13,6 @@ import 'package:mobile/features/mail/view/mail_primary_action_preference.dart';
 import 'package:mobile/features/mail/view/mail_reader.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
-import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -308,12 +307,7 @@ void main() {
         .map((action) => action.id);
     expect(ids, contains('mail-search'));
     expect(ids, isNot(contains('mail-compose')));
-    final compose = tester
-        .widget<ShellMiniNav>(find.byType(ShellMiniNav))
-        .items
-        .singleWhere((item) => item.id == 'compose');
-    expect(compose.label, 'Compose');
-    expect(compose.onPressed, isNotNull);
+    expect(find.byKey(const ValueKey('mail-sidebar-compose')), findsOneWidget);
     expect(ids, isNot(contains('mail-primary-action')));
     expect(titles.state.resolveForLocation(Routes.mail), 'Mail');
     final back = actions.state.backForLocation(Routes.mail);
@@ -330,21 +324,20 @@ void main() {
     setMailSurface(tester, _tablet);
     final repository = MailPreviewRepository();
     stubMailPreview(repository, threads: 2);
-    when(
-      () => repository.detail('ws', 'box', 'thread-0', thread: true),
-    ).thenAnswer(
-      (_) async => {
-        'thread': {'id': 'thread-0', 'subject': 'Unread zero'},
-        'messages': [
-          {
-            'id': 'message-0',
-            'fromAddress': 'sender@example.invalid',
-            'bodyText': 'Body zero',
-            'unread': true,
+    when(() => repository.detail('ws', 'box', 'thread-0', thread: true))
+        .thenAnswer(
+          (_) async => {
+            'thread': {'id': 'thread-0', 'subject': 'Unread zero'},
+            'messages': [
+              {
+                'id': 'message-0',
+                'fromAddress': 'sender@example.invalid',
+                'bodyText': 'Body zero',
+                'unread': true,
+              },
+            ],
           },
-        ],
-      },
-    );
+        );
     when(
       () => repository.list(
         'ws',

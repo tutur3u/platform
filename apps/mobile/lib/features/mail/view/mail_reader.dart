@@ -448,6 +448,9 @@ class _MailReaderState extends State<MailReader> {
     // Capture the shell inset before Scaffold adjusts its body's MediaQuery.
     final readerBottomClearance = AppPageInsets.contentBottomClearance(context);
 
+    final phoneReply =
+        sharedShell && !pane && !wideActions && _dockPlan().replies.isNotEmpty;
+
     // A pane header (split layouts) or the shell owns the message controls.
     final headerControls = sharedShell || pane;
     final attachments = _attachmentsTab && _attachments.isNotEmpty;
@@ -483,7 +486,9 @@ class _MailReaderState extends State<MailReader> {
                           child: ListView.builder(
                             padding: _readerInsets(
                               constraints.maxWidth,
-                              bottom: wideActions ? 0 : readerBottomClearance,
+                              bottom: wideActions || phoneReply
+                                  ? 0
+                                  : readerBottomClearance,
                               wide: wideActions,
                             ),
                             itemCount: count,
@@ -503,7 +508,13 @@ class _MailReaderState extends State<MailReader> {
               ),
               if (widget.actionFeedback case final feedback?) feedback,
               if (wideActions)
-                _wideReaderActions(bottomClearance: readerBottomClearance),
+                _wideReaderActions(bottomClearance: readerBottomClearance)
+              else if (phoneReply)
+                _readerActionBar(
+                  bottomClearance: readerBottomClearance,
+                  labelled: false,
+                  repliesOnly: true,
+                ),
             ],
           ),
         ),

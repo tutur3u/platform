@@ -2,8 +2,8 @@ part of 'mail_page.dart';
 
 double _mailSidebarWidth(double bodyWidth) {
   const split = AppMasterDetailLayout.splitMinWidth;
-  if (bodyWidth >= split + 193) return 192;
-  if (bodyWidth >= split + 57) return 56;
+  if (bodyWidth >= split + 209) return 208;
+  if (bodyWidth >= split + 49) return 48;
   return 0;
 }
 
@@ -148,7 +148,7 @@ extension _MailWorkspaceSidebar on _MailWorkspaceState {
 
   Widget _buildMailSidebar(Map<String, String> folders, double width) {
     final l10n = context.l10n;
-    final labelled = width > 56;
+    final labelled = width > 48;
     final colors = AppTokens.of(context).colorScheme;
     final mailboxLabel = _mailbox['address'] as String? ?? l10n.mailMailbox;
     final onMailbox = _mailboxes.isEmpty || _mutating ? null : _chooseMailbox;
@@ -223,6 +223,7 @@ extension _MailWorkspaceSidebar on _MailWorkspaceState {
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: AppButton.primary(
+                key: const ValueKey('mail-sidebar-compose'),
                 leading: const Icon(Icons.edit_outlined, size: 18),
                 onPressed: _mutating ? null : _compose,
                 child: Text(l10n.mailCompose),
@@ -293,9 +294,8 @@ extension _MailWorkspaceSidebar on _MailWorkspaceState {
                 ),
                 child: Text(
                   l10n.mailNoCustomLabels,
-                  style: AppTokens.of(
-                    context,
-                  ).typography.xSmall.copyWith(color: colors.mutedForeground),
+                  style: AppTokens.of(context).typography.xSmall
+                      .copyWith(color: colors.mutedForeground),
                 ),
               ),
           ],

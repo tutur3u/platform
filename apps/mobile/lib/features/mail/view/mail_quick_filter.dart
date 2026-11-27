@@ -30,19 +30,24 @@ class MailQuickFilterBar extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.enabled = true,
+    this.unreadCount,
     super.key,
   });
 
   final MailQuickFilter value;
   final ValueChanged<MailQuickFilter> onChanged;
   final bool enabled;
+  final int? unreadCount;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     String label(MailQuickFilter filter) => switch (filter) {
       MailQuickFilter.all => l10n.commonAll,
-      MailQuickFilter.unread => l10n.mailFilterUnread,
+      MailQuickFilter.unread =>
+        unreadCount == null
+            ? l10n.mailFilterUnread
+            : '${l10n.mailFilterUnread} · $unreadCount',
       MailQuickFilter.starred => l10n.mailStarred,
       MailQuickFilter.attachments => l10n.mailAttachments,
     };

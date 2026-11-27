@@ -50,7 +50,7 @@ class MailMessageTile extends StatelessWidget {
   /// The clock the date is formatted against; the current time when null.
   final DateTime? now;
 
-  static const radius = BorderRadius.all(Radius.circular(8));
+  static const radius = BorderRadius.all(Radius.circular(14));
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +81,7 @@ class MailMessageTile extends StatelessWidget {
     final delivery = item['deliveryRecipient'] as String?;
     final snippet =
         (item[thread ? 'latestSnippet' : 'snippet'] as String?) ?? '';
-    final text = unread ? colors.foreground : colors.mutedForeground;
+    final text = colors.foreground;
     final weight = unread ? FontWeight.w600 : FontWeight.w400;
     final ui = tokens.typography.ui.copyWith(height: 1.35);
     final primarySize = desktop ? 14.0 : 15.0;
@@ -96,19 +96,21 @@ class MailMessageTile extends StatelessWidget {
 
     final leading = !desktop && selected
         ? SizedBox.square(
-            dimension: 24,
+            dimension: 36,
             child: Icon(Icons.check_circle, size: 22, color: colors.primary),
           )
-        : MailParticipantAvatar(address: address, name: name);
+        : MailParticipantAvatar(
+            address: address,
+            name: name,
+            size: desktop ? 32 : 36,
+          );
 
     final header = Row(
       children: [
-        leading,
-        const SizedBox(width: AppSpacing.sm),
         if (unread) ...[
           Semantics(
             label: l10n.mailFilterUnread,
-            child: MailDot(color: colors.foreground),
+            child: MailDot(color: colors.primary),
           ),
           const SizedBox(width: AppSpacing.sm),
         ],
@@ -270,6 +272,8 @@ class MailMessageTile extends StatelessWidget {
                         _SelectBox(selected: selected, onSelect: onSelect),
                         const SizedBox(width: AppSpacing.xs),
                       ],
+                      leading,
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(child: content),
                     ],
                   ),

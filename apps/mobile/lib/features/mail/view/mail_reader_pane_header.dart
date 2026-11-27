@@ -20,10 +20,11 @@ extension _MailReaderPaneHeader on _MailReaderState {
   Widget _readerActionBar({
     required double bottomClearance,
     required bool labelled,
+    bool repliesOnly = false,
   }) {
     final l10n = context.l10n;
     final ready = !_busy && _detail != null;
-    final quick = _quick();
+    final quick = repliesOnly ? null : _quick();
     final canReply = ready && _messages.isNotEmpty;
     final replies = _dockPlan().replies;
     return MailActionBar(
@@ -43,7 +44,7 @@ extension _MailReaderPaneHeader on _MailReaderState {
               MailDockReply.replyAll => l10n.mailReplyAll,
               MailDockReply.forward => l10n.mailForward,
             },
-            showLabel: labelled,
+            showLabel: labelled || (repliesOnly && kind == MailDockReply.reply),
             emphasized: kind == MailDockReply.reply,
             onPressed: canReply
                 ? switch (kind) {
@@ -61,17 +62,21 @@ extension _MailReaderPaneHeader on _MailReaderState {
             showLabel: false,
             onPressed: ready && !_readPending ? quick.run : null,
           ),
-        MailBarButton(
-          icon: Icons.more_horiz,
-          label: l10n.commonMoreOptions,
-          showLabel: false,
-          onPressed: ready ? () => _chooseAction(includeReplies: false) : null,
-        ),
-        IconButton(
-          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
-          onPressed: _close,
-          icon: const Icon(Icons.close),
-        ),
+        if (!repliesOnly)
+          MailBarButton(
+            icon: Icons.more_horiz,
+            label: l10n.commonMoreOptions,
+            showLabel: false,
+            onPressed: ready
+                ? () => _chooseAction(includeReplies: false)
+                : null,
+          ),
+        if (!repliesOnly)
+          IconButton(
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: _close,
+            icon: const Icon(Icons.close),
+          ),
       ],
     );
   }

@@ -18,7 +18,7 @@ class MailListHeader extends StatelessWidget {
     super.key,
   });
 
-  final String title;
+  final String? title;
   final String? address;
   final MailSyncState syncState;
   final VoidCallback onRefresh;
@@ -32,6 +32,7 @@ class MailListHeader extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final colors = tokens.colorScheme;
     final address = this.address;
+    final title = this.title;
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
@@ -40,21 +41,22 @@ class MailListHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Semantics(
-                  header: true,
-                  child: Text(
-                    title,
-                    key: const ValueKey('mail-list-title'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: tokens.typography.ui.copyWith(
-                      fontSize: 16,
-                      height: 1.5,
-                      fontWeight: FontWeight.w600,
-                      color: colors.foreground,
+                if (title != null)
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      key: const ValueKey('mail-list-title'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: tokens.typography.ui.copyWith(
+                        fontSize: 16,
+                        height: 1.5,
+                        fontWeight: FontWeight.w600,
+                        color: colors.foreground,
+                      ),
                     ),
                   ),
-                ),
                 if (address != null && address.isNotEmpty)
                   Text(
                     address,

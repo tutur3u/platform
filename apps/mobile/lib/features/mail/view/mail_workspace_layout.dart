@@ -23,10 +23,8 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
     final rail =
         shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
         ShellNavigationMode.rail;
-    final shellSidebar = rail && sharedShell;
-    final sidebarWidth = wide && !shellSidebar
-        ? _mailSidebarWidth(bodyWidth)
-        : 0.0;
+    final sidebarWidth = wide ? _mailSidebarWidth(bodyWidth) : 0.0;
+    final shellSidebar = rail && sharedShell && sidebarWidth == 0;
     final hasSidebar = sidebarWidth > 0;
     final folderPicker = _pickerButton(
       label: folders[_folder] ?? l10n.mailFolders,
@@ -48,7 +46,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
               ShellTitleOverride(
                 ownerId: 'mail-inbox',
                 locations: const {Routes.mail},
-                title: l10n.mailTitle,
+                title: wide ? l10n.mailTitle : _mailListTitle(l10n),
               ),
               _buildMailShellActions(
                 wide: wide,
@@ -66,7 +64,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                   ),
                   if (shellSidebar)
                     ..._mailRailItems(folders)
-                  else ...[
+                  else if (!hasSidebar) ...[
                     ShellMiniNavItemSpec(
                       id: 'folder',
                       icon: _mailFolderIcon(_folder),
@@ -100,7 +98,9 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
               ),
             ],
             Scaffold(
-              backgroundColor: shad.Theme.of(context).colorScheme.background,
+              backgroundColor: sharedShell
+                  ? Colors.transparent
+                  : AppTokens.of(context).colorScheme.background,
               appBar: sharedShell
                   ? null
                   : AppBar(
@@ -175,6 +175,19 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
     final l10n = context.l10n;
     final splitPreference = MailPaneSplitPreference.instance;
     unawaited(splitPreference.load());
+    final list = Column(
+      children: [
+        if (wide && _selected.isNotEmpty) _buildMailBulkToolbar(),
+        Expanded(
+          child: _buildConversationList(
+            sharedShell: sharedShell,
+            wide: wide,
+            hasSidebar: hasSidebar,
+            folderPicker: folderPicker,
+          ),
+        ),
+      ],
+    );
     return ValueListenableBuilder<double>(
       valueListenable: splitPreference,
       builder: (context, fraction, master) => AppMasterDetail(
@@ -197,19 +210,12 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
         ),
         master: master!,
       ),
-      child: Column(
-        children: [
-          if (wide && _selected.isNotEmpty) _buildMailBulkToolbar(),
-          Expanded(
-            child: _buildConversationList(
-              sharedShell: sharedShell,
-              wide: wide,
-              hasSidebar: hasSidebar,
-              folderPicker: folderPicker,
-            ),
-          ),
-        ],
-      ),
+      child: wide && hasSidebar
+          ? Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: AppCard(padding: EdgeInsets.zero, child: list),
+            )
+          : list,
     );
   }
 
@@ -235,7 +241,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
             sliver: SliverToBoxAdapter(
               child: Column(
                 children: [
-                  _buildMailListHeader(),
+                  _buildMailListHeader(showTitle: wide || !sharedShell),
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child: _buildMailControls(

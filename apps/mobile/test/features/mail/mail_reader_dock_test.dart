@@ -75,12 +75,15 @@ List<String> _ids(Iterable<dynamic> items) => [
 ];
 
 void main() {
-  testWidgets('one bar of replies and More; Archive on the navbar', (
+  testWidgets('replies sit above the shell dock and More stays in it', (
     tester,
   ) async {
     final group = await _pumpDock(tester);
 
-    expect(_ids(group.actions), ['reply', 'reply-all', 'forward']);
+    expect(group.actions, isEmpty);
+    for (final id in ['reply', 'replyAll', 'forward']) {
+      expect(find.byKey(ValueKey('mail-bar-$id')), findsOneWidget);
+    }
     // No separate floating circle beside the bar.
     expect(group.primary, isNull);
     expect(
@@ -123,7 +126,7 @@ void main() {
     final group = await _pumpDock(tester);
 
     expect(group.primary, isNull);
-    expect(_ids(group.actions), ['reply', 'reply-all', 'forward']);
+    expect(group.actions, isEmpty);
     expect(_navbar(tester).single.tooltip, 'Archive');
     expect([
       for (final section in group.more) ..._ids(section),
@@ -147,9 +150,9 @@ void main() {
     tester,
   ) async {
     final group = await _pumpDock(tester);
-    final appearance =
-        group.more[1].singleWhere((item) => item.id == 'appearance')
-            as ShellDockChoice;
+    final appearance = group.more[1].singleWhere(
+      (item) => item.id == 'appearance',
+    ) as ShellDockChoice;
     final previous = MailAppearancePreference.instance.value;
     addTearDown(() => MailAppearancePreference.instance.value = previous);
 
@@ -183,9 +186,9 @@ void main() {
   testWidgets('Move in More lists the mailbox folders', (tester) async {
     final group = await _pumpDock(tester);
 
-    (group.more.first.singleWhere((item) => item.id == 'move')
-            as ShellDockGroupAction)
-        .onPressed!();
+    (group.more.first.singleWhere(
+      (item) => item.id == 'move',
+    ) as ShellDockGroupAction).onPressed!();
     await tester.pumpAndSettle();
 
     expect(find.text('Receipts'), findsOneWidget);
