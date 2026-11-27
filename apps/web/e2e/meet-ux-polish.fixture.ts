@@ -1,8 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
+import enMessages from '../../meet/messages/en.json';
+import viMessages from '../../meet/messages/vi.json';
 
 // Runs against packages/meet-core/fixtures/meet-activities (vite, port 5213):
 //   bunx vite --config packages/meet-core/fixtures/meet-activities/vite.config.ts
 //   bunx playwright test -c apps/web/playwright.meet-activities.config.ts
+
+const MESSAGES = { en: enMessages, vi: viMessages } as const;
 
 const VI_DIACRITICS =
   /[àáảãạăắằẳẵặâấầẩẫậđèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬĐÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ]/;
@@ -12,7 +16,8 @@ const EN_AND_VI_SIDE_BY_SIDE =
 async function assertPlaceholdersInScope(
   page: Page,
   selector: string,
-  locale: 'en' | 'vi'
+  locale: 'en' | 'vi',
+  expectedPlaceholders: readonly string[]
 ) {
   const findings = await page.locator(selector).evaluate((root) => {
     const inputs = Array.from(
@@ -36,10 +41,14 @@ async function assertPlaceholdersInScope(
   });
 
   expect(findings.inputs.length + findings.selects.length).toBeGreaterThan(0);
-  for (const input of findings.inputs) {
-    expect(input.placeholder.length).toBeGreaterThan(0);
-    if (locale === 'en') expect(input.placeholder).not.toMatch(VI_DIACRITICS);
-    expect(input.placeholder).not.toMatch(EN_AND_VI_SIDE_BY_SIDE);
+  const actualPlaceholders = findings.inputs.map((input) => input.placeholder);
+  for (const placeholder of actualPlaceholders) {
+    expect(placeholder.length).toBeGreaterThan(0);
+    if (locale === 'en') expect(placeholder).not.toMatch(VI_DIACRITICS);
+    expect(placeholder).not.toMatch(EN_AND_VI_SIDE_BY_SIDE);
+  }
+  for (const expected of expectedPlaceholders) {
+    expect(actualPlaceholders).toContain(expected);
   }
   for (const select of findings.selects) {
     expect(select.text.length).toBeGreaterThan(0);
@@ -50,6 +59,8 @@ async function assertPlaceholdersInScope(
 }
 
 for (const locale of ['en', 'vi'] as const) {
+  const m = MESSAGES[locale].meet.call;
+
   test(`placeholders are non-empty, localized, and never bilingual side-by-side across Q&A, Activities, Share, and Settings (${locale})`, async ({
     page,
   }) => {
@@ -62,51 +73,66 @@ for (const locale of ['en', 'vi'] as const) {
     await assertPlaceholdersInScope(
       page,
       '[data-testid="polish-qa-container"]',
-      locale
+      locale,
+      [m.live_activities.qa.composer_placeholder]
     );
 
-    // 2. Activities dialog (search input, deduplicated detail page, timer controls input)
-    const activitiesLabel = locale === 'vi' ? 'Hoạt động' : 'Activities';
+    // 2. Activities dialog (search, deduplicated detail card, timer input)
     await page
-      .getByRole('button', { name: new RegExp(`^${activitiesLabel}`) })
+      .getByRole('button', { name: new RegExp(`^${m.activities.button}`) })
       .click();
     const activitiesDialog = page.getByRole('dialog');
     await expect(activitiesDialog).toBeVisible();
-    await assertPlaceholdersInScope(page, '[role="dialog"]', locale);
+    await assertPlaceholdersInScope(page, '[role="dialog"]', locale, [
+      m.activities.search,
+    ]);
 
-    // Detail page does not duplicate the shell page heading
-    const pollsLabel = locale === 'vi' ? 'Bình chọn' : 'Polls';
+    // Detail page does not duplicate the shell page heading inside <main>
+    const pollsLabel = m.polls.title;
     await activitiesDialog
       .getByRole('navigation')
       .getByRole('button', { name: pollsLabel })
       .click();
-    await expect(activitiesDialog.locator('h2')).toHaveCount(0);
+    const main = activitiesDialog.locator('main');
+    await expect(main.locator('h2')).toHaveCount(0);
+    await expect(main.getByText(pollsLabel).first()).toBeVisible();
+    await expect(
+      main.getByText(m.activities.descriptions.polls)
+    ).toHaveCount(1);
 
-    // Timer page inside Activities has a localized placeholder on its custom minutes input
-    const timerLabel = locale === 'vi' ? 'Hẹn giờ lớp học' : 'Class timer';
+    // Timer page inside Activities has a localized placeholder on custom input
     await activitiesDialog
       .getByRole('navigation')
-      .getByRole('button', { name: timerLabel })
+      .getByRole('button', { name: m.class_timer })
       .click();
-    await assertPlaceholdersInScope(page, '[role="dialog"]', locale);
+    await assertPlaceholdersInScope(page, '[role="dialog"]', locale, [
+      m.activities.search,
+      m.class_timer_preset.replace('{minutes}', '15'),
+    ]);
     await page.keyboard.press('Escape');
     await expect(activitiesDialog).toHaveCount(0);
 
     // 3. Share dialog
-    const shareLabel = locale === 'vi' ? 'Chia sẻ' : 'Share';
-    await page.getByRole('button', { name: shareLabel }).click();
+    await page.getByRole('button', { name: m.share.button }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await assertPlaceholdersInScope(page, '[role="dialog"]', locale);
+    await assertPlaceholdersInScope(page, '[role="dialog"]', locale, [
+      m.share.link,
+      m.meeting_code,
+    ]);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
-    // 4. Settings dialog (inputs + selects)
+    // 4. Settings dialog (inputs + populated & empty selects)
     await page.getByTestId('open-settings-fixture').click();
     await expect(page.getByTestId('polish-settings-dialog')).toBeVisible();
     await assertPlaceholdersInScope(
       page,
       '[data-testid="polish-settings-dialog"]',
-      locale
+      locale,
+      [m.room_maximum_placeholder.replace('{maximum}', '50')]
+    );
+    await expect(page.getByTestId('empty-select-trigger')).toHaveText(
+      m.forms.chooseForm
     );
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('polish-settings-dialog')).toHaveCount(0);

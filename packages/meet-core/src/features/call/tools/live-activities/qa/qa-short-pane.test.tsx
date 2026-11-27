@@ -244,8 +244,8 @@ it('lets the field grow to three lines and then scroll', () => {
   body = SHORT;
   mount();
   expect(composer().className).toContain('min-h-9');
-  // 3 lines of 20px and 16px of padding, then it scrolls.
-  expect(composer().className).toContain('max-h-[4.75rem]');
+  // 3 lines (~5rem), then it scrolls.
+  expect(composer().className).toContain('max-h-20');
   expect(composer().className).toContain('overflow-y-auto');
   fireEvent.change(composer(), { target: { value: 'a\nb\nc\nd\ne' } });
   expect(composer().getAttribute('rows')).toBe('1');

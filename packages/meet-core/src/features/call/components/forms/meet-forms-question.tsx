@@ -204,7 +204,21 @@ function QuestionControl({
     case 'number':
     case 'url':
     case 'date':
-    case 'time':
+    case 'time': {
+      const defaultPlaceholder =
+        question.type === 'email'
+          ? copy.emailPlaceholder
+          : question.type === 'phone'
+            ? copy.phonePlaceholder
+            : question.type === 'number'
+              ? copy.numberPlaceholder
+              : question.type === 'url'
+                ? copy.urlPlaceholder
+                : question.type === 'date'
+                  ? copy.datePlaceholder
+                  : question.type === 'time'
+                    ? copy.timePlaceholder
+                    : copy.answerPlaceholder;
       return (
         <Input
           {...a11y}
@@ -217,7 +231,7 @@ function QuestionControl({
           }
           value={text}
           disabled={disabled}
-          placeholder={settings?.placeholder || copy.answerPlaceholder}
+          placeholder={settings?.placeholder || defaultPlaceholder}
           min={
             question.type === 'number'
               ? (settings?.validationMin ?? undefined)
@@ -236,6 +250,7 @@ function QuestionControl({
           onChange={(event) => onChange(event.target.value)}
         />
       );
+    }
     case 'rating':
     case 'linear_scale':
     case 'nps': {

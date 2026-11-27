@@ -7,6 +7,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { ActivitiesMenu } from '../../src/features/call/components/activities-menu';
@@ -209,6 +216,18 @@ export function PolishScene() {
                 onChange={setDefaultActivity}
               />
               <ThumbnailModeSetting policy={policy} />
+              <Select value="">
+                <SelectTrigger
+                  data-testid="empty-select-trigger"
+                  aria-label={t('forms.chooseForm')}
+                  className="w-full"
+                >
+                  <SelectValue placeholder={t('forms.chooseForm')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sample">{t('forms.title')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </DialogContent>
         </Dialog>

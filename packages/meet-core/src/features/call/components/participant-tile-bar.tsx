@@ -35,8 +35,8 @@ export function ParticipantTileBar({
   showVideo: boolean;
   controlsHidden: boolean;
   miraActive: boolean;
-  receivingAudio: boolean;
-  receivingVideo: boolean;
+  receivingAudio?: boolean;
+  receivingVideo?: boolean;
   onMute?: (userId: string) => void;
 }) {
   const t = useTranslations('meet.call');
