@@ -105,7 +105,7 @@ always requires the fresh root script job to succeed when checks are relevant.
 Configuration and release-relevance gates still apply. The root script job does
 not reuse the package-shard duplicate-validation result. A skipped job or green
 package shards do not prove root script qualification: require the exact-head
-job, prerequisite results, complete discovery count, and full TAP summary.
+job, prerequisite results, complete discovery count, and full test runner summary.
 Historical failures remain unresolved until their actual cases pass on the
 qualified source; do not infer a fix from a different branch's test bytes.
 
