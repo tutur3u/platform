@@ -86,15 +86,14 @@ const mainExceptions = {
 // cancel-in-progress is false, so the proof tests require distinct groups.
 // Oxc keeps job-level mutation locks outside a shared group.
 const queuedMainBaselines = new Set([
+  'e2e-smoke-report-only.yaml',
   'oxc-check.yaml',
   'turbo-unit-tests.yaml',
   'type-check.yaml',
 ]);
 const boundedMainProducers = new Set();
 // Main pushes may still supersede these: their newest run is the only signal.
-const mainSupersedeAllowed = {
-  'e2e-smoke-report-only.yaml': 'Report-only smoke; the newest main run wins',
-};
+const mainSupersedeAllowed = {};
 // Pure CI checks that supersede on main. Each diffs from its last green main
 // run (scripts/ci/main-supersession.mjs), and a pinned SHA keeps evidence
 // through a release-candidate dispatch.

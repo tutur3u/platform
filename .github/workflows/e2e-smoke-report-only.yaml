@@ -36,8 +36,8 @@ permissions:
   packages: read
 
 concurrency:
-  group: e2e-report-only-${{ github.event_name }}-${{ github.ref }}-${{ (github.run_attempt > 1 || github.event_name != 'push') && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
-  cancel-in-progress: ${{ github.event_name == 'push' && github.run_attempt == 1 }}
+  group: e2e-report-only-${{ github.event_name }}-${{ github.ref }}-${{ format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) }}
+  cancel-in-progress: false
 
 jobs:
   e2e:

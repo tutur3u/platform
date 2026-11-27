@@ -49,15 +49,29 @@ test('runs locally and clears inherited remote-cache credentials without a token
   assert.match(result.stdout, /Turbo remote cache disabled/u);
 });
 
-test('rejects a token without a team before running the command', () => {
+test('falls back to local caching when api is unset even with token and team', () => {
   const result = runAction({
-    TURBO_CACHE_COMMAND: 'echo should-not-run',
+    TURBO_API: 'https://inherited.invalid',
+    TURBO_CACHE_COMMAND: `test -z "\${TURBO_TOKEN:-}" && test -z "\${TURBO_TEAM:-}" && test -z "\${TURBO_API:-}" && test -z "\${TURBO_REMOTE_CACHE_SIGNATURE_KEY:-}"`,
+    TURBO_CACHE_INPUT_TEAM: 'test-team',
+    TURBO_CACHE_INPUT_TOKEN: 'test-token',
+    TURBO_TEAM: 'inherited-team',
+    TURBO_TOKEN: 'inherited-token',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /No explicit TURBO_API was provided/u);
+});
+
+test('falls back to local caching when team is missing with api and token', () => {
+  const result = runAction({
+    TURBO_CACHE_COMMAND: `test -z "\${TURBO_TOKEN:-}" && test -z "\${TURBO_TEAM:-}" && test -z "\${TURBO_API:-}"`,
+    TURBO_CACHE_INPUT_API: 'https://cache.test',
     TURBO_CACHE_INPUT_TOKEN: 'test-token',
   });
 
-  assert.equal(result.status, 1);
-  assert.doesNotMatch(result.stdout, /should-not-run/u);
-  assert.match(result.stdout, /A team is required/u);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /No team was provided/u);
 });
 
 test('passes optional API and signature values only to the wrapped command', () => {

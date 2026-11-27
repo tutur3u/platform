@@ -60,6 +60,7 @@ test('singleton keeps the Type Check context, event surface and runner with a re
     steps.map((step) => {
       if (!step.with) return step;
       const {
+        api: _api,
         token: _token,
         team: _team,
         'cache-enabled': _cache,

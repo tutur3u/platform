@@ -45,30 +45,26 @@ runs:
           bash --noprofile --norc -e -o pipefail -c "$TURBO_CACHE_COMMAND"
         }
 
-        if [[ -z "$TURBO_CACHE_INPUT_TOKEN" ]]; then
+        if [[ -z "$TURBO_CACHE_INPUT_API" || -z "$TURBO_CACHE_INPUT_TOKEN" || -z "$TURBO_CACHE_INPUT_TEAM" ]]; then
           unset TURBO_API
           unset TURBO_REMOTE_CACHE_SIGNATURE_KEY
           unset TURBO_TEAM
           unset TURBO_TOKEN
-          echo "::notice title=Turbo remote cache disabled::No token was provided; using local caching only."
+          if [[ -z "$TURBO_CACHE_INPUT_API" ]]; then
+            echo "::notice title=Turbo remote cache disabled::No explicit TURBO_API was provided; using local caching only."
+          elif [[ -z "$TURBO_CACHE_INPUT_TOKEN" ]]; then
+            echo "::notice title=Turbo remote cache disabled::No token was provided; using local caching only."
+          else
+            echo "::notice title=Turbo remote cache disabled::No team was provided; using local caching only."
+          fi
           run_command
           exit 0
         fi
 
-        if [[ -z "$TURBO_CACHE_INPUT_TEAM" ]]; then
-          echo "::error title=Invalid Turbo remote cache configuration::A team is required when a token is provided."
-          exit 1
-        fi
-
         echo "::add-mask::$TURBO_CACHE_INPUT_TOKEN"
+        export TURBO_API="$TURBO_CACHE_INPUT_API"
         export TURBO_TOKEN="$TURBO_CACHE_INPUT_TOKEN"
         export TURBO_TEAM="$TURBO_CACHE_INPUT_TEAM"
-
-        if [[ -n "$TURBO_CACHE_INPUT_API" ]]; then
-          export TURBO_API="$TURBO_CACHE_INPUT_API"
-        else
-          unset TURBO_API
-        fi
 
         if [[ -n "$TURBO_CACHE_INPUT_SIGNATURE_KEY" ]]; then
           echo "::add-mask::$TURBO_CACHE_INPUT_SIGNATURE_KEY"
@@ -77,5 +73,5 @@ runs:
           unset TURBO_REMOTE_CACHE_SIGNATURE_KEY
         fi
 
-        echo "::notice title=Turbo remote cache enabled::Using the configured remote cache team."
+        echo "::notice title=Turbo remote cache enabled::Using the configured remote cache API and team."
         run_command
