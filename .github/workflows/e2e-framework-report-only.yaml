@@ -94,12 +94,31 @@ jobs:
           E2E_TELEMETRY_DISABLED: "1"
         run: |
           set -euo pipefail
-          rm -f .e2e/report.json .e2e/junit.xml .e2e/timings.json
+          rm -f .e2e/report.json .e2e/junit.xml .e2e/timings.json .e2e/pilot-metrics-summary.json
           rm -rf .e2e/results
           export E2E_USER_EMAIL="qa-fixture-$(openssl rand -hex 6)@example.invalid"
           export E2E_SECRET_PASSWORD="$(openssl rand -hex 24)"
           node --test scripts/e2e/shared-web-config.test.mjs
           npx --no-install e2e run --strict-cache --reporter list,junit
+
+      - name: Summarize report-only outcome
+        if: always()
+        env:
+          E2E_OUTCOME: ${{ steps.e2e.outcome }}
+          JOB_STATUS: ${{ job.status }}
+          PILOT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          printf 'E2E strict-cache replay (report-only) — job=%s, step=%s\n\n' "$JOB_STATUS" "$E2E_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
+          printf 'This per-run e2e snapshot remains unpaired until combined with Playwright reports in the 14-day pilot history.\n\n' >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$E2E_OUTCOME" == "skipped" ]]; then
+            exit 0
+          fi
+          if [[ -f .e2e/report.json ]]; then
+            node scripts/e2e/ci-pilot-metrics.mjs >> "$GITHUB_STEP_SUMMARY"
+          elif [[ -f .e2e/junit.xml ]]; then
+            sed -nE 's/^<testsuites name="e2e" tests="([0-9]+)" failures="([0-9]+)" errors="([0-9]+)" skipped="([0-9]+)".*/\nTests \1, failures \2, errors \3, skipped \4./p' .e2e/junit.xml >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload e2e reports
         if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
@@ -109,6 +128,7 @@ jobs:
           path: |
             .e2e/report.json
             .e2e/junit.xml
+            .e2e/pilot-metrics-summary.json
           retention-days: 7
           if-no-files-found: warn
           include-hidden-files: true
@@ -122,14 +142,3 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
           include-hidden-files: true
-
-      - name: Summarize report-only outcome
-        if: always()
-        env:
-          E2E_OUTCOME: ${{ steps.e2e.outcome }}
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          printf 'E2E strict-cache replay (report-only) — job=%s, step=%s\n' "$JOB_STATUS" "$E2E_OUTCOME" >> "$GITHUB_STEP_SUMMARY"
-          if [[ "$E2E_OUTCOME" != "skipped" && -f .e2e/junit.xml ]]; then
-            sed -nE 's/^<testsuites name="e2e" tests="([0-9]+)" failures="([0-9]+)" errors="([0-9]+)" skipped="([0-9]+)".*/\nTests \1, failures \2, errors \3, skipped \4./p' .e2e/junit.xml >> "$GITHUB_STEP_SUMMARY"
-          fi

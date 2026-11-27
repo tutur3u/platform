@@ -14,6 +14,7 @@ coverage
 **/e2e/.auth/
 /.e2e/*
 !/.e2e/cache/
+!/.e2e/pilot-maintenance-log.json
 /apps/mobile/e2e/.e2e/*
 !/apps/mobile/e2e/.e2e/cache/
 /apps/mobile/e2e/e2e.record.config.ts

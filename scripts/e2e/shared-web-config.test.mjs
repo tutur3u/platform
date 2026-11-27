@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { issueRoomAdmission } from '../../apps/worlds/src/multiplayer/admission.ts';
+import {
+  ADMISSION_TTL_SECONDS,
+  issueRoomAdmission,
+} from '../../apps/worlds/src/multiplayer/admission.ts';
 import {
   createTuturuuuWebE2EConfig,
   FLEET_IDENTITY_ENV_NAMES,
@@ -32,6 +36,7 @@ async function withFixture(run) {
         }),
       email,
       password,
+      server,
     });
   } finally {
     await new Promise((resolve) => server.close(resolve));
@@ -50,6 +55,21 @@ function sessionCookie(response) {
   const cookie = response.headers.get('set-cookie');
   assert.match(cookie, /; HttpOnly; SameSite=Lax/u);
   return { headers: { cookie: cookie.split(';')[0] } };
+}
+
+async function dispatchFixtureRequest(server, request) {
+  const [handler] = server.listeners('request');
+  let status;
+  let body;
+  await handler(request, {
+    writeHead(value) {
+      status = value;
+    },
+    end(value) {
+      body = value;
+    },
+  });
+  return { status, body };
 }
 
 test('resolves fleet test identity strictly from env names without hardcoded defaults', () => {
@@ -198,6 +218,7 @@ test('localized personal pages reject forged sessions and bypass inputs', async 
       const forgedSession = { cookie: 'ttr_e2e_fixture_session=forged' };
       for (const [path, headers] of [
         [personal, forgedSession],
+        [personal, { cookie: 'ttr_e2e_fixture_session=' }],
         [personal, bypassHeaders],
         [`${personal}?bypass=1`, {}],
         [`${personal}?bypass=1`, { ...bypassHeaders, ...forgedSession }],
@@ -208,6 +229,16 @@ test('localized personal pages reject forged sessions and bypass inputs', async 
       }
     }
   });
+});
+
+test('fixture rejects a non-loopback socket regardless of forwarded headers', async () => {
+  const response = await dispatchFixtureRequest(createFixtureServer({}), {
+    method: 'GET',
+    url: '/en/login',
+    socket: { remoteAddress: '203.0.113.10' },
+    headers: { 'x-forwarded-for': '127.0.0.1' },
+  });
+  assert.deepEqual(response, { status: 403, body: 'Forbidden' });
 });
 
 test('Kanban fixture links to a board with cards and the filtered-empty controls', async () => {
@@ -313,4 +344,47 @@ test('EduFest fixture returns room presence only after guest admission', async (
     assert.deepEqual(frame.peers, []);
     assert.equal((await get(readyUrl, sessionCookie(admitted))).status, 401);
   });
+});
+
+test('EduFest room checks pending guest expiry after verifying the admission', async (t) => {
+  const start = Date.parse('2026-11-27T08:00:00Z');
+  const expired = start + (ADMISSION_TTL_SECONDS + 1) * 1000;
+  let checkingRoom = false;
+  let reads = 0;
+  t.mock.method(Date, 'now', () =>
+    checkingRoom && reads++ > 0 ? expired : start
+  );
+
+  await withFixture(async ({ get, server }) => {
+    const admitted = await get(
+      '/api/e2e-fixture/worlds/admission',
+      post({ displayName: 'Hall Guest' })
+    );
+    assert.equal(admitted.status, 204);
+    // The admission is valid at token verification and expires before the guest lookup.
+    checkingRoom = true;
+    const response = await dispatchFixtureRequest(server, {
+      method: 'GET',
+      url: '/api/e2e-fixture/worlds/room',
+      socket: { remoteAddress: '127.0.0.1' },
+      ...sessionCookie(admitted),
+    });
+    assert.equal(response.status, 401);
+    assert.deepEqual(JSON.parse(response.body), {
+      error: 'Admission required',
+    });
+    assert.equal(reads, 2);
+    checkingRoom = false;
+  });
+});
+
+test('fixture passes the room admission cookie directly to the verifier', () => {
+  const source = readFileSync(
+    new URL('./web-fixture-server.mjs', import.meta.url),
+    'utf8'
+  );
+  assert.match(
+    source,
+    /const\s+admission\s*=\s*await\s+verifyRoomAdmission\(\s*getCookie\(req,\s*'ttr_e2e_hall_admission'\),\s*hallKey\s*\)/u
+  );
 });

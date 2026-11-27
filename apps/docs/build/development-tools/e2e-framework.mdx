@@ -174,8 +174,14 @@ and pushes to `main` that touch the e2e config, suites, fixture server, or cache
 - **Zero model calls, zero secrets:** no AI API key or repository secret is
   passed to the workflow. Ephemeral per-run fixture credentials are generated in
   memory for the loopback fixture server.
-- **Artifacts:** `.e2e/report.json` and `.e2e/junit.xml` are uploaded for 7
-  days; `.e2e/results/` traces upload only on failure.
+- **Artifacts:** `.e2e/report.json`, `.e2e/junit.xml`, and
+  `.e2e/pilot-metrics-summary.json` are uploaded for 7 days.
+  The job summary shows the per-suite pilot snapshot and flags any model calls.
+  For Playwright pairing, `PILOT_COMMIT_SHA` records the PR head SHA on pull
+  requests and `github.sha` for other events.
+  The suites share the replay's wall time. Collect paired reports for the
+  14-day comparison. On replay failure, the workflow uploads
+  `.e2e/results/` traces when available.
 
 Collect side-by-side evidence and apply the per-suite gates in the
 [E2E pilot and Playwright retirement guide](/build/development-tools/e2e-pilot-decision).
