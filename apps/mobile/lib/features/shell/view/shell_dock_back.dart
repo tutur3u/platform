@@ -25,24 +25,27 @@ class ShellDockBack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = ShellDockSurface.innerBorderRadius;
+    final tap = entry.enabled ? onTap : null;
+    final longPress = entry.enabled ? onLongPress : null;
     return Semantics(
       key: entry.key,
       container: true,
       button: true,
+      enabled: entry.enabled,
       label: entry.label,
       excludeSemantics: true,
-      onTap: onTap,
-      onLongPress: onLongPress,
+      onTap: tap,
+      onLongPress: longPress,
       child: AppTooltip(
         message: entry.label,
-        triggerMode: onLongPress == null
+        triggerMode: longPress == null
             ? TooltipTriggerMode.longPress
             : TooltipTriggerMode.manual,
         excludeFromSemantics: true,
         child: ShellDockControl(
           borderRadius: radius,
-          onTap: onTap,
-          onLongPress: onLongPress,
+          onTap: tap,
+          onLongPress: longPress,
           fill: style.accent,
           child: SizedBox.square(
             key: const ValueKey('shell-dock-back'),

@@ -339,10 +339,12 @@ class ShellSidebarScaffold extends StatelessWidget {
                 dismiss();
                 back.onTap();
               },
-              onLongPress: () {
-                dismiss();
-                back.onLongPress?.call();
-              },
+              onLongPress: back.onLongPress == null
+                  ? null
+                  : () {
+                      dismiss();
+                      back.onLongPress?.call();
+                    },
             ),
       modeMenu: showSidebar ? modeMenu : null,
       onBrandTap: onBrandTap,

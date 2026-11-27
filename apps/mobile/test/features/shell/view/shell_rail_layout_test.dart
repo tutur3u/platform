@@ -5,6 +5,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
 import 'shell_rail_harness.dart';
@@ -176,6 +177,70 @@ void main() {
     );
     expect(find.byType(MorphingNavigationBar), findsOneWidget);
     expect(bottoms.last, greaterThan(0));
+  });
+
+  for (final size in [const Size(390, 844), _landscape]) {
+    testWidgets('Settings keeps injected Back at ${size.width}dp', (
+      tester,
+    ) async {
+      useShellWindow(tester, size);
+      final backEnabled = ValueNotifier(false);
+      addTearDown(backEnabled.dispose);
+      var exits = 0;
+      final shell = await pumpRailShell(
+        tester,
+        Routes.settings,
+        page: (route) => ValueListenableBuilder<bool>(
+          valueListenable: backEnabled,
+          builder: (context, enabled, _) => ShellMiniNav(
+            ownerId: 'settings-back-test',
+            locations: const {Routes.settings},
+            items: [
+              ShellMiniNavItemSpec(
+                id: 'back',
+                icon: Icons.chevron_left,
+                label: 'Back',
+                enabled: enabled,
+                onPressed: () => exits++,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final back = find.byKey(const ValueKey('shell-dock-back'));
+      expect(back, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('shell-product-navigation')),
+        findsNothing,
+      );
+      await tester.tap(back, warnIfMissed: false);
+      expect(exits, 0);
+      expect(shell.path, Routes.settings);
+
+      backEnabled.value = true;
+      await settleShell(tester);
+      await tester.tap(back);
+      expect(exits, 1);
+      expect(shell.path, Routes.settings);
+    });
+  }
+
+  testWidgets('plain Settings exposes Back in the rail', (tester) async {
+    useShellWindow(tester, _landscape);
+    await pumpRailShell(tester, Routes.settingsAppearance);
+    final rail = find.byType(ShellNavigationRail);
+    expect(
+      find.descendant(
+        of: rail,
+        matching: find.byKey(const ValueKey('shell-dock-back')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('shell-product-navigation')),
+      findsNothing,
+    );
   });
 
   testWidgets('right-to-left shells put the rail on the leading edge', (

@@ -114,26 +114,36 @@ extension _ShellPageLayout on _ShellPageState {
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
     final l10n = context.l10n;
+    final isSettingsRoute = Routes.isSettingsHubLocation(
+      widget.matchedLocation,
+    );
     final isMiniAppRoute =
-        activeModule != null || injectedMiniNavRegistration != null;
+        !isSettingsRoute &&
+        (activeModule != null || injectedMiniNavRegistration != null);
     final activeMiniNavItems = isMiniAppRoute
         ? activeModule?.miniAppNavItemsFor(context) ?? const <MiniAppNavItem>[]
         : const <MiniAppNavItem>[];
-    final useInjectedMiniNav = injectedMiniNavRegistration != null;
+    final useInjectedMiniNav =
+        isMiniAppRoute && injectedMiniNavRegistration != null;
     final isCompact = _usesCompactNavigation(context);
     final selectedKey = useInjectedMiniNav
-        ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
+        ? _injectedMiniSelectedKey(injectedMiniNavRegistration!)
         : isMiniAppRoute
         ? _miniSelectedKey(context, activeMiniNavItems)
+        : isSettingsRoute
+        ? ShellRootTab.profile.key
         : _selectedKeyForLocation(_bodyLocation);
     final globalItems = _buildNavItems(context, l10n);
-    final miniItems = useInjectedMiniNav
+    final injectedItems = injectedMiniNavRegistration != null
         ? _buildInjectedMiniNavItems(
             context,
             injectedMiniNavRegistration,
             isCompact,
           )
-        : activeModule != null
+        : const <shad.NavigationItem>[];
+    final miniItems = useInjectedMiniNav
+        ? injectedItems
+        : activeModule != null && isMiniAppRoute
         ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;
@@ -168,9 +178,19 @@ extension _ShellPageLayout on _ShellPageState {
             injectedMiniNavRegistration!.ownerId,
             injectedBack.id,
           );
+    final injectedSettingsBack = isSettingsRoute
+        ? injectedItems.where((item) => item.key == backKey).firstOrNull
+        : null;
     final navChildren = [
       if (useInjectedMiniNav && injectedBack == null) _defaultBackItem(l10n),
-      ...(isMiniAppRoute ? miniItems : globalItems),
+      if (injectedSettingsBack != null) injectedSettingsBack,
+      ...(isMiniAppRoute
+          ? miniItems
+          : globalItems.where(
+              (item) =>
+                  injectedSettingsBack == null ||
+                  item.key != _ShellPageState._backToRootKey,
+            )),
     ];
     final back = navChildren.where((item) => item.key == backKey).firstOrNull;
     final navContent = MorphingNavigationBar(
@@ -179,11 +199,14 @@ extension _ShellPageLayout on _ShellPageState {
       fixedFrame: true,
       ownsDockZones: false,
       backKey: backKey,
-      onBackLongPress: _returnToDestinationRoot,
+      onBackLongPress: injectedSettingsBack == null
+          ? _returnToDestinationRoot
+          : null,
       onSelected: (key) => key == _ShellPageState._backToRootKey
           ? _runBackNavigation(context)
-          : useInjectedMiniNav
-          ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration)
+          : useInjectedMiniNav ||
+                (injectedSettingsBack != null && key == backKey)
+          ? _onInjectedMiniNavItemTapped(key, injectedMiniNavRegistration!)
           : isMiniAppRoute
           ? _onMiniAppItemTapped(key, context, activeModule, activeMiniNavItems)
           : _onItemTapped(_routeForRootKey(key), context),
