@@ -143,7 +143,7 @@ test('recovery reruns a cancelled run once and dispatches missing candidates', (
         return { ...r, conclusion: 'cancelled', id: 11 };
       if (r.path.endsWith('codex-plugin.yaml'))
         return { ...r, conclusion: 'cancelled', id: 12, run_attempt: 2 };
-      if (r.path.endsWith('type-check.yaml'))
+      if (r.path.endsWith('docs-seo-check.yaml'))
         return { ...r, conclusion: 'cancelled', id: 13, run_attempt: 2 };
       return r;
     })
@@ -155,7 +155,7 @@ test('recovery reruns a cancelled run once and dispatches missing candidates', (
   assert.deepEqual(plan.dispatch.sort(), [
     'codex-plugin.yaml',
     'cron-control-cloudflare.yaml',
-    'type-check.yaml',
+    'docs-seo-check.yaml',
   ]);
 });
 
