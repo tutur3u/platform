@@ -65,7 +65,9 @@ export function createWorldsPrivateAssetStorage(
         const bytes = new Uint8Array(source.byteLength);
         let offset = 0;
         let reads = 0;
-        while (reads++ < 1024 && !signal.aborted) {
+        // Allow a read per byte, EOF, and a fixed allowance for empty chunks.
+        const readBudget = bytes.length + 1 + 1024;
+        while (reads++ < readBudget && !signal.aborted) {
           const { done, value } = await reader.read();
           if (done)
             return offset === bytes.length && !signal.aborted ? bytes : null;

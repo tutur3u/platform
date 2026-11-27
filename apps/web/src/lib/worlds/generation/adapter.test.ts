@@ -210,6 +210,28 @@ describe('Worlds provider', () => {
 });
 
 describe('private upload reader', () => {
+  test('accepts one-byte chunks within the declared upload length', async () => {
+    const base = attempt();
+    const bytes = new Uint8Array(2048).fill(65);
+    const source = {
+      id: 'upload',
+      mediaType: 'text/plain',
+      byteLength: bytes.length,
+    };
+    const request = { ...base.request, kind: 'file' as const, source };
+    const storage = createWorldsPrivateAssetStorage(scope, async () => ({
+      ...source,
+      body: new ReadableStream<Uint8Array>({
+        start(controller) {
+          for (const byte of bytes) controller.enqueue(Uint8Array.of(byte));
+          controller.close();
+        },
+      }),
+    }));
+
+    expect(await storage.read({ ...base, request }, source)).toEqual(bytes);
+  });
+
   test('opens only bound references and cancels overflow', async () => {
     const base = attempt();
     const source = { id: 'upload', mediaType: 'text/plain', byteLength: 2 };

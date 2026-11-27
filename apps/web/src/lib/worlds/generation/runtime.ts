@@ -8,8 +8,12 @@ import {
   settleMeteredAiCreditReservation,
 } from '@tuturuuu/ai/credits/reservations';
 import { resolvePlanModel } from '@tuturuuu/ai/credits/resolve-plan-model';
+import {
+  normalizeAiTokenUsage,
+  toLegacyTokenPricing,
+} from '@tuturuuu/ai/credits/token-usage';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { streamText, type UserContent } from 'ai';
+import { type LanguageModelUsage, streamText, type UserContent } from 'ai';
 import {
   createWorldsGenerationProvider,
   type WorldsDispatchLedger,
@@ -79,52 +83,62 @@ const generate: WorldsProviderDependencies['generate'] = async ({
   const encoder = new TextEncoder();
   const chunks: string[] = [];
   let size = 0;
+  let reported: LanguageModelUsage | undefined;
+  let completed = false;
+  let failed = false;
   try {
-    for await (const chunk of stream.textStream) {
-      if (chunk.length > worldsProviderLimits.outputBytes) {
-        throw new Error('Worlds model response exceeded the output limit');
-      }
-      size += encoder.encode(chunk).byteLength;
-      if (size > worldsProviderLimits.outputBytes) {
-        throw new Error('Worlds model response exceeded the output limit');
-      }
-      if (chunk) chunks.push(chunk);
-    }
-    const [total, finish] = await Promise.all([
-      stream.totalUsage,
-      stream.finishReason,
-    ]);
-    if (total.inputTokens === undefined || total.outputTokens === undefined) {
-      throw new Error('Worlds model usage unavailable');
-    }
-    let draft: unknown = null;
-    if (finish === 'stop') {
-      try {
-        draft = JSON.parse(chunks.join(''));
-        // Assets are admitted by a separate storage pipeline.
+    for await (const part of stream.fullStream) {
+      if (part.type === 'finish-step') {
+        reported = part.usage;
+      } else if (part.type === 'finish') {
         if (
-          draft &&
-          typeof draft === 'object' &&
-          'assets' in draft &&
-          Array.isArray(draft.assets) &&
-          draft.assets.length > 0
-        )
-          draft = null;
-      } catch {
-        // Invalid JSON still has reportable usage.
+          part.totalUsage.inputTokens !== undefined ||
+          part.totalUsage.outputTokens !== undefined
+        ) {
+          reported = part.totalUsage;
+        }
+        completed = part.finishReason === 'stop';
+      } else if (part.type === 'abort' || part.type === 'error') {
+        failed = true;
+      } else if (part.type === 'text-delta' && !failed) {
+        const chunk = part.text;
+        size +=
+          chunk.length <= worldsProviderLimits.outputBytes
+            ? encoder.encode(chunk).byteLength
+            : chunk.length;
+        if (size > worldsProviderLimits.outputBytes) {
+          failed = true;
+          overflow.abort();
+        } else if (chunk) {
+          chunks.push(chunk);
+        }
       }
     }
-    return {
-      draft,
-      usage: {
-        inputTokens: total.inputTokens,
-        outputTokens: total.outputTokens,
-        reasoningTokens: total.outputTokenDetails.reasoningTokens ?? 0,
-      },
-    };
+  } catch {
+    failed = true;
   } finally {
     overflow.abort();
   }
+
+  if (!reported) throw new Error('Worlds model usage unavailable');
+  let draft: unknown = null;
+  if (completed && !failed) {
+    try {
+      draft = JSON.parse(chunks.join(''));
+      // Assets are admitted by a separate storage pipeline.
+      if (
+        draft &&
+        typeof draft === 'object' &&
+        'assets' in draft &&
+        Array.isArray(draft.assets) &&
+        draft.assets.length > 0
+      )
+        draft = null;
+    } catch {
+      // Invalid JSON still has reportable usage.
+    }
+  }
+  return { draft, usage: normalizeAiTokenUsage(reported) };
 };
 
 export function createTuturuuuWorldsProvider(
@@ -135,9 +149,13 @@ export function createTuturuuuWorldsProvider(
     ledger,
     generate,
     async reserve({ workspaceId: wsId, actorId: userId }, key, input, signal) {
-      const plan = await resolvePlanModel({ wsId, capability: 'language' });
+      const plan = await resolvePlanModel({
+        wsId,
+        capability: 'language',
+        requestedModel: 'google/gemini-3.1-flash-lite',
+      });
       if (!thinkingLevels.has(plan.modelId)) return null;
-      const admin = await createAdminClient();
+      const admin = await createAdminClient({ noCookie: true });
       signal.throwIfAborted();
       const budget = await reserveNestedModelBudget({
         sbAdmin: admin,
@@ -165,9 +183,15 @@ export function createTuturuuuWorldsProvider(
     },
     async settle({ workspaceId: wsId, actorId: userId }, reservationId, usage) {
       const result = await settleMeteredAiCreditReservation(reservationId, {
-        ...usage,
+        ...toLegacyTokenPricing(usage),
         metadata: { wsId, userId },
       });
+      if (result.errorCode === 'RESERVATION_EXPIRED') {
+        // The dispatch ledger retains usage against the original reservation.
+        console.warn('Worlds credit reservation expired before settlement', {
+          reservationId,
+        });
+      }
       return result.success;
     },
     async release({ workspaceId: wsId, actorId: userId }, reservationId) {
