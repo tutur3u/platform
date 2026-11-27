@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "E2E pilot maintenance log",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "entries"],
+  "properties": {
+    "$schema": { "const": "../scripts/e2e/pilot-maintenance-log.schema.json" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "suite",
+          "framework",
+          "failureCategory",
+          "minutesToFix",
+          "commitSha",
+          "recordedAt",
+          "notes"
+        ],
+        "properties": {
+          "suite": { "type": "string", "minLength": 1 },
+          "framework": { "enum": ["playwright", "e2e"] },
+          "failureCategory": {
+            "enum": [
+              "real-regression",
+              "ui-change-false-failure",
+              "infra-flake"
+            ]
+          },
+          "minutesToFix": { "type": "number", "minimum": 0 },
+          "commitSha": { "type": "string", "pattern": "^[a-fA-F0-9]{40}$" },
+          "recordedAt": { "type": "string", "format": "date-time" },
+          "notes": { "type": "string", "minLength": 1 },
+          "runId": { "type": "string", "minLength": 1 },
+          "regressionId": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

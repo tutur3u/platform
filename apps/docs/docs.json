@@ -369,6 +369,7 @@
               "build/development-tools/local-supabase-development",
               "build/development-tools/local-e2e",
               "build/development-tools/e2e-framework",
+              "build/development-tools/e2e-pilot-decision",
               "build/development-tools/qa-test-users",
               "build/development-tools/hosted-dev-supabase-preview",
               "build/development-tools/notification-email-freshness",

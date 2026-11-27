@@ -1,0 +1,4 @@
+{
+  "$schema": "../scripts/e2e/pilot-maintenance-log.schema.json",
+  "entries": []
+}

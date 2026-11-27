@@ -161,7 +161,7 @@ that calls `createTuturuuuWebE2EConfig` with your model provider or custom
    ```
 
 Runtime outputs under `.e2e/` (`report.json`, `junit.xml`, `results/`,
-`timings.json`) are gitignored; only `.e2e/cache/` is committed.
+`timings.json`) are gitignored; `.e2e/cache/` and the pilot maintenance ledger are tracked.
 
 ## CI workflow (report-only)
 
@@ -176,6 +176,9 @@ and pushes to `main` that touch the e2e config, suites, fixture server, or cache
   memory for the loopback fixture server.
 - **Artifacts:** `.e2e/report.json` and `.e2e/junit.xml` are uploaded for 7
   days; `.e2e/results/` traces upload only on failure.
+
+Collect side-by-side evidence and apply the per-suite gates in the
+[E2E pilot and Playwright retirement guide](/build/development-tools/e2e-pilot-decision).
 
 ## Agent MCP setup (`npx --no-install e2e mcp`)
 

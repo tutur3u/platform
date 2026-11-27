@@ -1,0 +1,170 @@
+---
+title: 'E2E pilot and Playwright retirement'
+description: 'Compare Playwright and e2e pilot results, collect CI and maintenance evidence, and decide when to retire or restore an individual suite.'
+updatedAt: '2026-11-27'
+audience: developers
+---
+
+Run the existing hand-written Playwright suites alongside `e2e-inc/e2e` for
+14 days, from 27 November 2026 to 11 December 2026 (ICT, UTC+7). Playwright
+remains authoritative during the pilot. The `e2e` runs are report-only and use
+strict-cache replay in CI. An eligible result requires a suite owner’s explicit
+acknowledgment before any retirement. See the
+[framework setup](/build/development-tools/e2e-framework).
+
+## Pilot suites
+
+| Surface | Suite ID | Pilot coverage |
+| --- | --- | --- |
+| Upskii | `core-role-matrix` | Authorization across 25 role-matrix cases |
+| Upskii | `tutor-file-picker` | Tutor file picker |
+| Upskii | `class-settings` | Both Class settings variants |
+| Upskii | `learner-class-join` | Learner class-join |
+| Upskii | `assessment-reorder` | Assessment reorder, gated on the Upskii lead’s train |
+| Tuturuuu Web | `tasks-kanban` | Tasks Kanban, including filtered-empty state |
+| Tuturuuu Web | `meet-guest-join` | Meet guest join and lobby |
+| Tuturuuu Web | `login-en-vi` | Login in English and Vietnamese |
+| EduFest | `edufest-hall-guest-join` | Hall guest join alongside the authoritative W4/EduFest harness |
+| Flutter | `mobile-calendar` | Calendar in `apps/mobile/e2e` via `@e2e-dev/mobile` |
+| Flutter | `mobile-tasks` | Tasks in `apps/mobile/e2e` via `@e2e-dev/mobile` |
+| Flutter | `mobile-contacts` | Contacts in `apps/mobile/e2e` via `@e2e-dev/mobile` |
+
+## Collect reports and update history
+
+Run each suite against the same commit and fixture for both frameworks. Use one
+report per suite, framework, and CI attempt. Give both frameworks the same
+`runId` for that attempt, including any rerun attempt number. Use the tested
+commit’s full SHA, the run start timestamp with its offset, and `ci: true` for
+CI results.
+
+Use the Playwright JSON reporter to preserve retry outcomes. If you use JUnit,
+set `PLAYWRIGHT_JUNIT_INCLUDE_RETRIES=1`. Use a consistent report format per
+framework across runs so test identities stay comparable. For `e2e`, collect
+`.e2e/report.json` and `.e2e/junit.xml`. The JSON report supplies runner wall
+time and model-call accounting. The optional `junit` field validates the
+companion report without counting the cases again. An `e2e` JUnit-only input
+can supply outcomes, with model-call coverage marked unknown. Use
+`durationMs` to supply measured wall time when the report lacks it.
+
+Save a manifest such as `tmp/e2e/pilot-manifest.json`. Report paths resolve
+relative to the manifest.
+
+```json
+{
+  "suites": {
+    "edufest-hall-guest-join": { "workshopCritical": true }
+  },
+  "runs": [
+    {
+      "suite": "edufest-hall-guest-join",
+      "framework": "playwright",
+      "runId": "ci-123-attempt-1",
+      "timestamp": "2026-11-27T09:00:00+07:00",
+      "commitSha": "0123456789abcdef0123456789abcdef01234567",
+      "ci": true,
+      "report": "artifacts/playwright.json"
+    },
+    {
+      "suite": "edufest-hall-guest-join",
+      "framework": "e2e",
+      "runId": "ci-123-attempt-1",
+      "timestamp": "2026-11-27T09:00:00+07:00",
+      "commitSha": "0123456789abcdef0123456789abcdef01234567",
+      "ci": true,
+      "report": "artifacts/.e2e/report.json",
+      "junit": "artifacts/.e2e/junit.xml"
+    }
+  ]
+}
+```
+
+Keep the workshop policy in each summary invocation, including when you
+summarize history alone. A policy-only manifest can omit `runs`. Set
+`runtimeCapMs` in the suite policy when the owner has agreed to an absolute CI
+runtime cap.
+
+Run from the repository root. On the first invocation, omit `--history`.
+Reuse `--history-out` as the next invocation’s input. Use one writer for the
+history and archive the raw artifacts before CI retention expires.
+
+```bash
+node scripts/e2e/pilot-metrics.mjs \
+  --manifest tmp/e2e/pilot-manifest.json \
+  --history tmp/e2e/pilot-history.ndjson \
+  --history-out tmp/e2e/pilot-history.ndjson \
+  --as-of 2026-12-11 \
+  --json-out tmp/e2e/pilot-summary.json \
+  --markdown-out tmp/e2e/pilot-summary.md \
+  --assert-zero-model-calls
+```
+
+During collection, omit `--as-of` to use the current time. Use the pilot end
+date to reproduce the final decision. Date-only values start at midnight ICT.
+The tool deduplicates identical snapshots by run ID, timestamp, suite, and
+framework and rejects conflicting snapshots. It accepts a JSON array, a
+single JSON snapshot, or NDJSON. The output history keeps the current
+14-day window. Omit `--markdown-out` to write the Markdown summary to stdout,
+or append the saved file to `$GITHUB_STEP_SUMMARY`. The model-call assertion
+exits nonzero on a positive or unknown total in any CI snapshot supplied.
+
+## Record maintenance and triage failures
+
+Add one entry per break and framework to
+[`.e2e/pilot-maintenance-log.json`](https://github.com/tutur3u/platform/blob/main/.e2e/pilot-maintenance-log.json).
+Keep the schema reference and add the suite ID, framework, full tested commit
+SHA, offset-qualified `recordedAt`, and a short note on what broke. Record
+actual repair minutes in `minutesToFix`, including re-recording for `e2e` or
+editing selectors for Playwright. Use zero for a confirmed break that needed
+no repair. Classify `failureCategory` as `real-regression`,
+`ui-change-false-failure`, or `infra-flake`.
+
+Triage each failing Playwright CI run and include its `runId` on the ledger
+entries. A real regression needs a stable `regressionId`. If both frameworks
+caught it on the same CI attempt, record the same ID on both entries. Use the
+same suite, SHA, and run ID. A passing candidate or an unmatched detection
+counts as a miss. If any baseline failure remains untriaged, leave the suite
+in Playwright.
+
+| Metric | How the summary measures it |
+| --- | --- |
+| Pass, fail, and flake rate per test | A retry-pass counts as a pass and a flake. If outcomes mix on the same SHA, each failing observation counts as a flake. Flake rate divides flaky observations by passes plus failures. Skips have their own count. The JSON includes per-test detail. |
+| UI-change false failures | Count and share of logged breaks classified as `ui-change-false-failure`. A framework with zero logged breaks has a zero rate. |
+| Maintenance time | Mean and median minutes per break for each framework and the ratio of their means. Zero candidate breaks contribute zero repair burden to the ratio. |
+| CI runtime | Mean and nearest-rank p95 runner wall time. Totals sum the known suite wall times in each CI batch. Concurrent suite totals measure runner time. |
+| Model calls | Total model calls and maximum per test. A test’s calls include its retries. CI requires a known zero total for every supplied CI run. |
+
+## Apply the retirement criteria
+
+Use the per-suite decision and its criterion results in the JSON summary.
+Aggregates describe the pilot as a whole. Apply these gates to each suite.
+
+| Criterion | Required evidence |
+| --- | --- |
+| Elapsed window and sample | At least 14 elapsed days and 10 paired CI attempts per suite on matching run ID and commit SHA. Each side must execute at least one test to a verdict without a run-level error. |
+| Flake rate | The `e2e` CI flake rate is at most the Playwright CI flake rate. |
+| Maintenance | The `e2e` mean repair time is strictly below 50% of the Playwright mean. Zero Playwright breaks return `insufficient-break-data`. A zero Playwright mean has no valid ratio. |
+| UI-change false failures | The `e2e` false-failure rate is at most the Playwright rate. |
+| Model calls | 100% of CI runs have a known total of exactly zero. |
+| CI runtime | The `e2e` mean CI wall time is at most 1.25 times the Playwright mean, or at most the explicit suite cap. All CI runs need wall-time evidence. |
+| Real regressions | Every failing baseline run is triaged and `e2e` misses zero confirmed Playwright detections. |
+| W4 and EduFest | Tag all workshop-critical suites with `workshopCritical: true`. The authoritative W4/EduFest harness stays in place through 5 December 2026 ICT. Evaluations return `HELD_UNTIL_DEC_5` until midnight at the start of 6 December, even if every quantitative gate passes. |
+
+## Retire or restore one suite
+
+1. Keep Playwright authoritative for any result other than
+   `ELIGIBLE_FOR_RETIREMENT_ACK`. Continue collecting or repairing evidence
+   for `INSUFFICIENT_DATA` or `KEEP_PLAYWRIGHT`.
+2. For an eligible suite, attach the summary, tested SHA, and artifact links to
+   the decision record. Obtain an explicit acknowledgment from the suite owner.
+3. Retire that suite in a scoped change. Keep a revertable reference to its
+   Playwright spec, job, and fixture settings. Verify the replacement on the
+   exact change with strict-cache CI and zero model calls.
+4. If the replacement misses a regression or breaks the CI criteria, revert
+   the suite retirement. Restore the baseline job and spec, set `e2e` back to
+   report-only for that suite, and run both suites on the same SHA. Reapply the
+   gates and obtain a fresh acknowledgment before retiring it again.
+
+Run the [pilot metrics regression tests](https://github.com/tutur3u/platform/blob/main/scripts/e2e/pilot-metrics.test.mjs)
+with `node --test scripts/e2e/pilot-metrics.test.mjs`. They cover report parsing,
+history deduplication, metric formulas, the calendar hold, and CLI output and
+exit behavior.
