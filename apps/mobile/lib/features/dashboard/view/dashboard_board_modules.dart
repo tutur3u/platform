@@ -61,7 +61,7 @@ class _HomeMiraCard extends StatelessWidget {
       AppGroupedRow(
         leading: const Icon(LucideIcons.sparkles),
         title: Text(context.l10n.navMira),
-        onTap: () => context.go(Routes.mira),
+        onTap: () => context.go(Routes.assistant),
       ),
     ],
   );
