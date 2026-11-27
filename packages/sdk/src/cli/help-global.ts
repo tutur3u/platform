@@ -12,6 +12,7 @@ export function getGlobalHelp() {
     '  check  build-free check:changed; refuses the M4 hub',
     '  storage <status|analyze|suggest|prune|fleet>  disk headroom, ranked consumers and safe cleanup',
     '  git guard <install|status|allow-once|log>  refuse new remote branches and PRs on guarded repos',
+    '  ieeai handbook stats --from <YYYY-MM-DD> --to <YYYY-MM-DD> | --fixture',
     '  whoami',
     '  doctor [--env <env>] [--family all|upskii|infra|db|local] [--json]',
     '  env [current|list|use <prod|staging|sandbox|local>]',

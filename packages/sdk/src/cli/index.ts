@@ -9,6 +9,7 @@ const externalUpskii = args[0] === 'external' && args[1] === 'upskii';
 const separator = args.indexOf('--');
 const globalArgs = separator >= 0 ? args.slice(0, separator) : args;
 const run =
+  args[0] !== 'ieeai' &&
   args[0] !== 'fleet' &&
   args[0] !== 'resources' &&
   args[0] !== 'storage' &&
@@ -84,9 +85,14 @@ const run =
                                         : ['--help']
                                     )
                                 )
-                              : import('./commands.js').then(({ runCli }) =>
-                                  runCli()
-                                );
+                              : args[0] === 'ieeai'
+                                ? import('./ieeai.js').then(
+                                    ({ runIeeaiCommand }) =>
+                                      runIeeaiCommand(args.slice(1))
+                                  )
+                                : import('./commands.js').then(({ runCli }) =>
+                                    runCli()
+                                  );
 run.catch((error) => {
   process.stderr.write(
     `${error instanceof Error ? error.message : String(error)}\n`

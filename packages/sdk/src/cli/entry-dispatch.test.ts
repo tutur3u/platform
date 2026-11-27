@@ -2,9 +2,11 @@ import { afterEach, expect, it, vi } from 'vitest';
 
 const entries = vi.hoisted(() => ({
   resources: vi.fn(),
+  upskii: vi.fn(),
   general: vi.fn(),
   operational: vi.fn(),
 }));
+vi.mock('./upskii/index.js', () => ({ runUpskiiCommand: entries.upskii }));
 vi.mock('./resources.js', () => ({ runResourcesCommand: entries.resources }));
 vi.mock('./commands.js', () => {
   entries.general();
@@ -54,5 +56,22 @@ it('retains the entry error message and exit status for resource failures', asyn
   await import('./index');
   await vi.waitFor(() => expect(process.exitCode).toBe(1));
   expect(stderr).toHaveBeenCalledWith('Unknown run option: --bad\n');
+  expect(entries.general).not.toHaveBeenCalled();
+});
+
+it('dispatches EduFest lesson commands through the existing Upskii entry', async () => {
+  const args = [
+    'lessons',
+    'seed',
+    '--class',
+    'fixture-class',
+    '--template',
+    'edufest-workshop',
+  ];
+  process.argv = ['bun', 'index.ts', 'external', 'upskii', ...args];
+  await import('./index');
+  await vi.waitFor(() =>
+    expect(entries.upskii).toHaveBeenCalledExactlyOnceWith(args)
+  );
   expect(entries.general).not.toHaveBeenCalled();
 });

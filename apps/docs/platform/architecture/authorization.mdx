@@ -368,3 +368,19 @@ permission. Listing shares keeps view access.
 
 Regression coverage: the Tasks board `capacity-rules/access.test.ts`,
 `public-link/access.test.ts` and `shares/access.test.ts`.
+
+## IEEAI handbook stats CLI
+
+Run `ttr ieeai handbook stats --from YYYY-MM-DD --to YYYY-MM-DD` for an
+inclusive range of up to 400 ICT calendar days. The Web API requires a
+Tuturuuu CLI session and active membership in the IEEAI workspace. Workspace
+creators and members with explicitly assigned administrator permissions can
+read aggregate counts. Default permissions and platform-wide privileges
+alone confer no access. The `--fixture` option runs locally with synthetic
+data.
+
+Web uses `IEEAI_CLI_STATS_HANDOFF_KEY` for its signed request to the IEEAI
+Admin Worker. Configure the same 32-byte base64url key on both sides of
+this handoff. The Worker retains custody of its separate docs stats
+credential. The Web route tests cover entitlement, token scope, signed
+request fields, and aggregate response validation.

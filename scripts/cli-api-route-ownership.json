@@ -257,6 +257,12 @@
       "canonicalApp": "upskii-app",
       "status": "external",
       "clientFile": "packages/sdk/src/cli/upskii/chat-credits-status-command.ts"
+    },
+    {
+      "routePath": "/api/v1/ieeai/handbook/stats",
+      "canonicalApp": "web",
+      "clientFile": "packages/sdk/src/cli/ieeai-live.ts",
+      "status": "reserved"
     }
   ]
 }
