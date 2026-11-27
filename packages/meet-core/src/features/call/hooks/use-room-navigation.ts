@@ -95,8 +95,11 @@ export function useRoomNavigation({
    * the move comes from someone this person follows.
    */
   apply: (next: CallSurfaceState, options: ApplyOptions) => ApplyResult | void;
-  /** Called when a host closes a specific activity for everyone in the room. */
-  onCloseActivity?: (view: MeetRoomView) => void;
+  /**
+   * Called when a host closes a specific activity for everyone in the room.
+   * Return `false` if the activity was not open locally, to suppress the toast.
+   */
+  onCloseActivity?: (view: MeetRoomView) => boolean | void;
   access: RoomViewAccess;
 }) {
   const t = useTranslations('meet.call');
@@ -307,13 +310,14 @@ export function useRoomNavigation({
           toast.dismiss(followToast(decision.leaderId));
           break;
         case 'activity-close':
-          onCloseActivityRef.current?.(decision.view);
-          toast(
-            t('stage_layout.closed_for_everyone_notice', {
-              name,
-              surface: label(decision.view),
-            })
-          );
+          if (onCloseActivityRef.current?.(decision.view) !== false) {
+            toast(
+              t('stage_layout.closed_for_everyone_notice', {
+                name,
+                surface: label(decision.view),
+              })
+            );
+          }
           break;
       }
     }
@@ -403,13 +407,16 @@ export function useRoomNavigation({
       pace();
       toast.success(t(canManage ? 'summon.moved' : 'summon.sent', { count }));
     },
-    closeForEveryone: (destination: MeetRoomView) => {
-      if (!canManage || !otherIds.length) return;
-      room.requestNavigation({
-        mode: 'activity.close',
-        targets: 'everyone',
-        view: destination,
-      });
+    closeForEveryone: async (destination: MeetRoomView): Promise<boolean> => {
+      if (!canManage || paused) return false;
+      if (!otherIds.length) return true;
+      try {
+        await room.closeActivityForEveryone(destination);
+        pace();
+        return true;
+      } catch {
+        return false;
+      }
     },
     following: following
       ? { leaderId: following, name: nameOf(following) }

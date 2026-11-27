@@ -143,11 +143,15 @@ export const meetAssistantAudioSchema = z.object({
   speakerEnabled: z.boolean(),
 });
 
+/** Known Meet activity surface ids accepted on room presence updates. */
+export const meetActiveActivityIdSchema = z
+  .string()
+  .regex(
+    /^(?:programming|document|board|whiteboard|breakouts|tool:[a-z0-9-]{1,40})$/
+  );
+
 export const meetRealtimePresenceSchema = z.object({
-  activeActivityId: z
-    .string()
-    .regex(/^[a-z0-9][a-z0-9:_-]{0,47}$/)
-    .optional(),
+  activeActivityId: meetActiveActivityIdSchema.optional(),
   followingUserId: z.string().uuid().optional(),
   canManageParticipants: z.boolean().optional(),
   miraPrivate: z.boolean().optional(),

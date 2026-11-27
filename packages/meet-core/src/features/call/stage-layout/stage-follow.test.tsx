@@ -23,9 +23,11 @@ const people = {
 };
 let events: NavigationEvent[] = [];
 let allowed = true;
+let canManage = false;
 let sharers: readonly string[] = [];
 let presenting: ReturnType<typeof useActivityPresentation>;
 const requestNavigation = vi.fn();
+const closeActivityForEveryone = vi.fn(async () => undefined);
 let stage: ReturnType<typeof useStageLayout>;
 let nav: ReturnType<typeof useStageNavigation>;
 let summoned: string[] = [];
@@ -42,14 +44,15 @@ function Harness() {
   const room = useRef({
     state: {},
     requestNavigation,
+    closeActivityForEveryone,
   }).current;
   room.state = {
     participants: people,
     selfUserId: 'me',
     navigation: events,
     settings: { participantNavigation: allowed },
-    role: 'participant',
-    canManageParticipants: false,
+    role: canManage ? 'host' : 'participant',
+    canManageParticipants: canManage,
     error: null,
   };
   presenting = useActivityPresentation(stage.openIds.length > 0, sharers);
@@ -104,8 +107,11 @@ const deliver = (
 beforeEach(() => {
   events = [];
   allowed = true;
+  canManage = false;
   sharers = [];
   requestNavigation.mockClear();
+  closeActivityForEveryone.mockReset();
+  closeActivityForEveryone.mockResolvedValue(undefined);
   vi.mocked(toast).mockClear();
   summoned = [];
   drawerNow = null;
@@ -316,4 +322,51 @@ it('pulses the minimized chip and announces an activity opened through Follow', 
   expect(screen.getByRole('status').textContent).toBe(
     `Lan opened ${messages.meet.collaboration.document}`
   );
+});
+
+it('closes a locked follower stage on activity.close and skips the toast when not open', () => {
+  const { rerender } = mount();
+  deliver({ surface: 'document' }, 'follow', true);
+  rerender(tree());
+  expect(nav.following?.leaderId).toBe('leader');
+  expect(stage.locked).toBe(true);
+  expect(stage.openIds).toEqual(['document']);
+
+  vi.mocked(toast).mockClear();
+  deliver({ surface: 'document' }, 'activity.close', true);
+  rerender(tree());
+  expect(stage.openIds).toEqual([]);
+  expect(vi.mocked(toast)).toHaveBeenCalledTimes(1);
+
+  // Closing an activity that is already closed does not toast again.
+  vi.mocked(toast).mockClear();
+  deliver({ surface: 'document' }, 'activity.close', true);
+  rerender(tree());
+  expect(vi.mocked(toast)).not.toHaveBeenCalled();
+});
+
+it('keeps the host activity open if Close for everyone is rejected, and closes once accepted', async () => {
+  canManage = true;
+  const { rerender } = mount();
+  act(() => stage.open('document'));
+  rerender(tree());
+  expect(stage.openIds).toEqual(['document']);
+
+  closeActivityForEveryone.mockRejectedValueOnce(
+    new Error('navigation_rate_limited')
+  );
+  await act(async () => {
+    nav.closeActivityForEveryone('document');
+    await Promise.resolve();
+  });
+  rerender(tree());
+  expect(stage.openIds).toEqual(['document']);
+
+  closeActivityForEveryone.mockResolvedValueOnce(undefined);
+  await act(async () => {
+    nav.closeActivityForEveryone('document');
+    await Promise.resolve();
+  });
+  rerender(tree());
+  expect(stage.openIds).toEqual([]);
 });

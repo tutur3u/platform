@@ -102,12 +102,24 @@ export function applyRoomNavigation(
         next[userId] = at;
     return next;
   };
+  const reply =
+    message.mode === 'activity.close'
+      ? [
+          {
+            ...event,
+            ...(message.requestId ? { requestId: message.requestId } : {}),
+          },
+        ]
+      : undefined;
   return outcome(
     {
       ...state,
       lastNavigationAt: paced(state.lastNavigationAt, !stop),
       lastNavigationStopAt: paced(state.lastNavigationStopAt, stop),
     },
-    { direct: targets.map((userId) => ({ userId, message: event })) }
+    {
+      direct: targets.map((userId) => ({ userId, message: event })),
+      ...(reply ? { reply } : {}),
+    }
   );
 }

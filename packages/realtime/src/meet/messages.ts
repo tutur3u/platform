@@ -22,6 +22,7 @@ import type { MeetStreamEntitlement } from './stream-tiers';
 import {
   cloudflareSfuSessionDescriptionSchema,
   cloudflareSfuTrackSchema,
+  meetActiveActivityIdSchema,
   type MeetRealtimePresence,
   type MeetRealtimeRecordingState,
   type MeetRealtimeRole,
@@ -156,11 +157,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     media: meetMediaStateSchema,
-    activeActivityId: z
-      .string()
-      .regex(/^[a-z0-9][a-z0-9:_-]{0,47}$/)
-      .nullable()
-      .optional(),
+    activeActivityId: meetActiveActivityIdSchema.nullable().optional(),
     followingUserId: z.string().uuid().nullable().optional(),
     type: z.literal('presence.update'),
   }),
@@ -361,6 +358,8 @@ export type MeetRealtimeServerMessage =
       /** Hosts and co-hosts move people directly; others ask for consent. */
       forced: boolean;
       createdAt: string;
+      /** Set on the reply to `activity.close`, so the host knows it landed. */
+      requestId?: string;
     }
   | {
       type: 'room.settings';

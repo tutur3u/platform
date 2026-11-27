@@ -11,7 +11,7 @@ import {
   type KeyboardEvent,
   useCallback,
 } from 'react';
-import { hasOwnFullscreen } from './activity-ids';
+import { hasOwnFullscreen, viewOfActivity } from './activity-ids';
 import {
   type ActivityPresencePerson,
   ActivityPresenceRow,
@@ -255,7 +255,7 @@ export function PaneChrome({
           onToggleMaximize={() => onToggleMaximize(pane.id)}
           onClose={() => onClose(pane.active)}
           onCloseForEveryone={
-            onCloseForEveryone
+            onCloseForEveryone && viewOfActivity(pane.active)
               ? () => onCloseForEveryone(pane.active)
               : undefined
           }

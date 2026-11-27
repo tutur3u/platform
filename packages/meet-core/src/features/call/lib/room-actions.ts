@@ -305,6 +305,14 @@ export function createRoomActions(
         requestId: crypto.randomUUID(),
         ...request,
       }),
+    /** Host/co-host close for everyone: resolves only once the room accepts. */
+    closeActivityForEveryone: (view: MeetRoomView) =>
+      signaling.current?.request<void>({
+        type: 'navigation.request',
+        mode: 'activity.close',
+        targets: 'everyone',
+        view,
+      }) ?? Promise.reject(new Error('signaling_closed')),
     setRecordingState: (state: 'recording' | 'idle', sessionId?: string) =>
       signaling.current?.send({
         type: 'recording.state',

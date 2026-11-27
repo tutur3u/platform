@@ -36,6 +36,11 @@ export interface MeetRoomController extends ReturnType<
   selectDevice: (kind: 'audio' | 'video', deviceId: string) => Promise<void>;
   setBandwidthMode: (mode: import('./bandwidth').BandwidthMode) => void;
   leave: () => void;
+  /** Publishes the focused activity and follow target on the presence channel. */
+  updateActivityPresence: (
+    activeActivityId: string | null,
+    followingUserId: string | null
+  ) => void;
   adoptPreview: (stream: MediaStream | null) => Promise<void>;
   cameraLook: CameraLook;
   setCameraLook: (look: CameraLook) => Promise<void>;

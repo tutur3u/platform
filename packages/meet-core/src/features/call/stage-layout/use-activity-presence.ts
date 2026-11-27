@@ -26,7 +26,10 @@ export function usePresence({
   stage,
   nav,
 }: {
-  room: Pick<MeetRoomController, 'updateActivityPresence' | 'state'>;
+  room: Pick<
+    MeetRoomController,
+    'updateActivityPresence' | 'state' | 'connectionStatus'
+  >;
   live: boolean;
   participants: readonly ActivityPresenceSource[];
   stage: { focused?: string | null };
@@ -36,11 +39,12 @@ export function usePresence({
   const selfUserId = room.state.selfUserId;
   const focusedActivityId = stage.focused ?? null;
   const followingLeaderId = nav.following?.leaderId ?? null;
+  const isOpen = room.connectionStatus === 'open';
   const { updateActivityPresence } = room;
   useEffect(() => {
-    if (!live) return;
+    if (!live || !isOpen) return;
     updateActivityPresence(focusedActivityId, followingLeaderId);
-  }, [live, focusedActivityId, followingLeaderId, updateActivityPresence]);
+  }, [live, isOpen, focusedActivityId, followingLeaderId, updateActivityPresence]);
   return useMemo(() => {
     const byActivity: Record<string, ActivityPresencePerson[]> = {};
     const byParticipant: Record<

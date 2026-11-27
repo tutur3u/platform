@@ -384,4 +384,128 @@ describe('applyRoomNavigation', () => {
       },
     ]);
   });
+
+  it('denies non-manager activity.close and replies with requestId when a host closes for everyone', () => {
+    const state = room(host, alice);
+    const closeRequest = request({
+      mode: 'activity.close',
+      targets: 'everyone',
+      view: { surface: 'document' },
+      requestId: 'close-1',
+    });
+    expect(applyRoomNavigation(state, closeRequest, alice, now)?.reply).toEqual(
+      [{ type: 'error', error: 'permission_denied', requestId: 'close-1' }]
+    );
+
+    const accepted = applyRoomNavigation(state, closeRequest, host, now);
+    expect(accepted?.direct).toEqual([
+      {
+        userId: aliceId,
+        message: {
+          type: 'navigation',
+          mode: 'activity.close',
+          from: hostId,
+          view: { surface: 'document' },
+          forced: true,
+          createdAt: now,
+        },
+      },
+    ]);
+    expect(accepted?.reply).toEqual([
+      {
+        type: 'navigation',
+        mode: 'activity.close',
+        from: hostId,
+        view: { surface: 'document' },
+        forced: true,
+        createdAt: now,
+        requestId: 'close-1',
+      },
+    ]);
+
+    const rateLimited = applyRoomNavigation(
+      accepted!.state,
+      request({
+        mode: 'activity.close',
+        targets: 'everyone',
+        view: { surface: 'document' },
+        requestId: 'close-2',
+      }),
+      host,
+      later(200)
+    );
+    expect(rateLimited?.reply).toEqual([
+      {
+        type: 'error',
+        error: 'navigation_rate_limited',
+        requestId: 'close-2',
+      },
+    ]);
+  });
+
+  it('validates activity surface ids and rejects unknown follow targets on presence.update', () => {
+    const baseMedia = {
+      audioEnabled: false,
+      videoEnabled: false,
+      screenShareEnabled: false,
+      handRaised: false,
+    };
+    expect(
+      meetRealtimeClientMessageSchema.safeParse({
+        type: 'presence.update',
+        media: baseMedia,
+        activeActivityId: 'spoofed-surface',
+      }).success
+    ).toBe(false);
+    expect(
+      meetRealtimeClientMessageSchema.safeParse({
+        type: 'presence.update',
+        media: baseMedia,
+        activeActivityId: 'tool:live-qa',
+      }).success
+    ).toBe(true);
+
+    const state = room(host, alice);
+    const absentFollow = applyMeetRoomCommand(state, {
+      message: {
+        type: 'presence.update',
+        media: baseMedia,
+        activeActivityId: 'document',
+        followingUserId: absentId,
+      },
+      token: alice,
+      now,
+    });
+    expect(absentFollow.reply).toEqual([
+      { type: 'error', error: 'participant_not_found' },
+    ]);
+
+    const selfFollow = applyMeetRoomCommand(state, {
+      message: {
+        type: 'presence.update',
+        media: baseMedia,
+        followingUserId: aliceId,
+      },
+      token: alice,
+      now,
+    });
+    expect(selfFollow.reply).toEqual([
+      { type: 'error', error: 'participant_not_found' },
+    ]);
+
+    const valid = applyMeetRoomCommand(state, {
+      message: {
+        type: 'presence.update',
+        media: baseMedia,
+        activeActivityId: 'tool:live-qa',
+        followingUserId: hostId,
+      },
+      token: alice,
+      now,
+    });
+    expect(valid.state.presence[aliceId]?.activeActivityId).toBe(
+      'tool:live-qa'
+    );
+    expect(valid.state.presence[aliceId]?.followingUserId).toBe(hostId);
+  });
 });

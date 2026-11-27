@@ -8,6 +8,7 @@ import {
 import { meetClassFeatures } from './class-features';
 import { classTimerServerMessage, presentClassTimer } from './class-timer';
 import type { MeetRealtimeSfuClientMessage } from './messages';
+import type { MeetRealtimePresence } from './primitives';
 import {
   canMeetRealtimeManageParticipants,
   clampMeetMedia,
@@ -254,8 +255,15 @@ function dispatchMeetRoomCommand(
       else if (message.activeActivityId !== undefined)
         updated.activeActivityId = message.activeActivityId;
       if (message.followingUserId === null) delete updated.followingUserId;
-      else if (message.followingUserId !== undefined)
+      else if (message.followingUserId !== undefined) {
+        if (
+          message.followingUserId === userId ||
+          !state.presence[message.followingUserId]
+        ) {
+          return denied(state, 'participant_not_found');
+        }
         updated.followingUserId = message.followingUserId;
+      }
       const next = {
         ...state,
         presence: {

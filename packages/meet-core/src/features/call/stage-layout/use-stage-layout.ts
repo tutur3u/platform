@@ -266,7 +266,13 @@ export function useStageLayout({
     [edit]
   );
   const close = useCallback(
-    (id: string) => edit((layout) => closeActivity(layout, id), true),
+    (id: string, options?: { force?: boolean }) =>
+      edit(
+        (layout) => closeActivity(layout, id),
+        true,
+        undefined,
+        Boolean(options?.force)
+      ),
     [edit]
   );
   const toggle = useCallback(

@@ -130,7 +130,9 @@ export function useStageNavigation({
     layout: stage.snapshot,
     onCloseActivity: (view) => {
       const id = activityOfView(view);
-      if (id) latest.current.close(id);
+      if (!id || !latest.current.isOpen(id)) return false;
+      latest.current.close(id, { force: true });
+      return true;
     },
     apply: (next, { forced, layout, source }) => {
       const before = focusedActivity.current;
@@ -203,9 +205,11 @@ export function useStageNavigation({
   return {
     ...navigation,
     closeActivityForEveryone: (activityId: string) => {
-      latest.current.close(activityId);
       const view = viewOfActivity(activityId);
-      if (view) navigation.closeForEveryone(view);
+      if (!view) return;
+      void navigation.closeForEveryone(view).then((accepted) => {
+        if (accepted) latest.current.close(activityId, { force: true });
+      });
     },
   };
 }

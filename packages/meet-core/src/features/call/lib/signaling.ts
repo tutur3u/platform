@@ -286,7 +286,8 @@ export class MeetSignaling {
     if (
       (message.type === 'room.ended' ||
         message.type === 'room.title.changed' ||
-        message.type === 'recording.state') &&
+        message.type === 'recording.state' ||
+        message.type === 'navigation') &&
       message.requestId
     ) {
       this.pending.get(message.requestId)?.resolve(undefined);
