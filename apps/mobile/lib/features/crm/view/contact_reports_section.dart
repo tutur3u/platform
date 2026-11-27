@@ -18,12 +18,14 @@ class ContactReportsSection extends StatefulWidget {
     required this.repository,
     required this.onOpen,
     required this.selectCadence,
+    this.onCreate,
     super.key,
   });
 
   final String workspaceId;
   final CrmRepository repository;
-  final ValueChanged<ContactSectionRecord> onOpen;
+  final Future<bool> Function(ContactSectionRecord) onOpen;
+  final Future<bool> Function()? onCreate;
   final Future<ContactReportCadence?> Function(ContactReportCadence)
   selectCadence;
 
@@ -166,6 +168,17 @@ class _ContactReportsSectionState extends State<ContactReportsSection> {
               onSearchSubmitted: _applyQuery,
               onCloseSearch: _closeSearch,
             ),
+            if (widget.onCreate case final create?)
+              ShellActionSpec(
+                id: 'crm-report-create',
+                icon: LucideIcons.plus,
+                tooltip: l10n.contactsReportCreate,
+                onPressed: () async {
+                  if (await create() && mounted) {
+                    await _loadPage(1, replace: true);
+                  }
+                },
+              ),
             ShellActionSpec(
               id: 'crm-report-cadence',
               icon: LucideIcons.listFilter,
@@ -183,7 +196,13 @@ class _ContactReportsSectionState extends State<ContactReportsSection> {
               ? l10n.contactsReportEmptyList
               : l10n.commonNoSearchResults,
           onRefresh: () => _loadPage(_page),
-          onOpen: _loading ? null : widget.onOpen,
+          onOpen: _loading
+              ? null
+              : (record) async {
+                  if (await widget.onOpen(record) && mounted) {
+                    await _loadPage(_page, replace: true);
+                  }
+                },
           footer: _error == null && _pageCount > 1
               ? _buildPager(context)
               : null,

@@ -11,12 +11,14 @@ class ContactReportPreview extends StatelessWidget {
     required this.title,
     required this.report,
     this.subtitle,
+    this.onEdit,
     super.key,
   });
 
   final String title;
   final String? subtitle;
   final ContactReportDetails report;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,10 @@ class ContactReportPreview extends StatelessWidget {
     return AppSheetScaffold(
       title: title,
       description: subtitle,
+      actions: [
+        if (onEdit case final edit?)
+          AppButton.primary(onPressed: edit, child: Text(l10n.commonEdit)),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

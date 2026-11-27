@@ -352,23 +352,34 @@ class ApiClient {
     String path,
     Map<String, dynamic> body, {
     bool requiresAuth = true,
+  }) => _putJson(path, body, requiresAuth: requiresAuth);
+
+  /// PUT JSON with a scope guard before every dispatch.
+  Future<Map<String, dynamic>> putJsonGuarded(
+    String path,
+    Map<String, dynamic> body, {
+    required Future<void> Function() beforeDispatch,
+  }) => _putJson(path, body, beforeDispatch: beforeDispatch);
+
+  Future<Map<String, dynamic>> _putJson(
+    String path,
+    Map<String, dynamic> body, {
+    bool requiresAuth = true,
+    Future<void> Function()? beforeDispatch,
   }) async {
     final url = _url(path);
 
-    final response = await _performRequest(
-      () async => await _client
-          .put(
-            url,
-            headers: await _getHeaders(
-              path: path,
-              contentType: 'application/json',
-              requiresAuth: requiresAuth,
-            ),
-            body: jsonEncode(body),
-          )
-          .timeout(_requestTimeout),
-      requiresAuth: requiresAuth,
-    );
+    final response = await _performRequest(() async {
+      final headers = await _getHeaders(
+        path: path,
+        contentType: 'application/json',
+        requiresAuth: requiresAuth,
+      );
+      if (beforeDispatch != null) await beforeDispatch();
+      return await _client
+          .put(url, headers: headers, body: jsonEncode(body))
+          .timeout(_requestTimeout);
+    }, requiresAuth: requiresAuth);
 
     return _handleResponse(response);
   }

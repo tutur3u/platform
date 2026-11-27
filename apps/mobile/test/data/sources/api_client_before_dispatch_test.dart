@@ -141,6 +141,28 @@ void main() {
     expectGuardAfterCredentials();
   });
 
+  test('guarded PUT rechecks scope before a verification replay', () async {
+    final api = challenged(log);
+    var checks = 0;
+    await expectLater(
+      api.putJsonGuarded(
+        '/reports/id',
+        const {'title': 'Updated'},
+        beforeDispatch: () async {
+          log.add('guard');
+          if (++checks > 1) throw StateError('workspace changed');
+        },
+      ),
+      throwsA(isA<ApiException>()),
+    );
+    expect(log.where((entry) => entry != 'credentials'), [
+      'guard',
+      'dispatch',
+      'guard',
+    ]);
+    expectGuardAfterCredentials();
+  });
+
   test('the session-refresh replay runs the guard again', () async {
     when(
       () => auth.refreshSession(),

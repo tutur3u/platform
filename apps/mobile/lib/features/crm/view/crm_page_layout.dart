@@ -172,7 +172,13 @@ extension _CrmPageLayout on _CrmPageState {
               key: ValueKey(widget.workspaceId),
               workspaceId: widget.workspaceId,
               repository: _repository,
-              onOpen: _openSectionRecord,
+              onOpen: _openReportRecord,
+              onCreate:
+                  _workspacePermissions.containsPermission(
+                    'create_user_groups_reports',
+                  )
+                  ? _editReport
+                  : null,
               selectCadence: _selectReportCadence,
             )
           else if (_section != null)

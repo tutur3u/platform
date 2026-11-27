@@ -5449,6 +5449,54 @@ abstract class AppLocalizations {
   /// **'Yearly'**
   String get contactsReportYearly;
 
+  /// No description provided for @contactsReportCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create report'**
+  String get contactsReportCreate;
+
+  /// No description provided for @contactsReportEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit report'**
+  String get contactsReportEdit;
+
+  /// No description provided for @contactsReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report title'**
+  String get contactsReportTitle;
+
+  /// No description provided for @contactsReportTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a title'**
+  String get contactsReportTitleHint;
+
+  /// No description provided for @contactsReportContentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter report content'**
+  String get contactsReportContentHint;
+
+  /// No description provided for @contactsReportFeedbackHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter feedback'**
+  String get contactsReportFeedbackHint;
+
+  /// No description provided for @contactsReportOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to save this report.'**
+  String get contactsReportOffline;
+
+  /// No description provided for @contactsReportSaveUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not confirm the save. Close and refresh before trying again.'**
+  String get contactsReportSaveUncertain;
+
   /// No description provided for @contactsReportContent.
   ///
   /// In en, this message translates to:

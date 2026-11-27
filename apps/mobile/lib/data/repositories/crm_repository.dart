@@ -21,6 +21,7 @@ part 'crm_repository_approvals.dart';
 part 'crm_repository_attendance.dart';
 part 'crm_repository_billing.dart';
 part 'crm_repository_groups.dart';
+part 'crm_repository_reports.dart';
 
 class CrmRepository
     with
@@ -28,7 +29,8 @@ class CrmRepository
         _CrmBillingRepository,
         _CrmAccountLinkRepository,
         _CrmApprovalRepository,
-        _CrmAttendanceRepository {
+        _CrmAttendanceRepository,
+        _CrmReportRepository {
   CrmRepository({
     ApiClient? apiClient,
     http.Client? httpClient,

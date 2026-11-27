@@ -2830,6 +2830,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsReportYearly => 'Hằng năm';
 
   @override
+  String get contactsReportCreate => 'Tạo báo cáo';
+
+  @override
+  String get contactsReportEdit => 'Chỉnh sửa báo cáo';
+
+  @override
+  String get contactsReportTitle => 'Tiêu đề báo cáo';
+
+  @override
+  String get contactsReportTitleHint => 'Nhập tiêu đề';
+
+  @override
+  String get contactsReportContentHint => 'Nhập nội dung báo cáo';
+
+  @override
+  String get contactsReportFeedbackHint => 'Nhập nhận xét';
+
+  @override
+  String get contactsReportOffline => 'Kết nối Internet để lưu báo cáo.';
+
+  @override
+  String get contactsReportSaveUncertain => 'Không thể xác nhận đã lưu. Hãy đóng và tải lại trước khi thử lại.';
+
+  @override
   String get contactsReportContent => 'Nội dung báo cáo';
 
   @override

@@ -2845,6 +2845,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsReportYearly => 'Yearly';
 
   @override
+  String get contactsReportCreate => 'Create report';
+
+  @override
+  String get contactsReportEdit => 'Edit report';
+
+  @override
+  String get contactsReportTitle => 'Report title';
+
+  @override
+  String get contactsReportTitleHint => 'Enter a title';
+
+  @override
+  String get contactsReportContentHint => 'Enter report content';
+
+  @override
+  String get contactsReportFeedbackHint => 'Enter feedback';
+
+  @override
+  String get contactsReportOffline => 'Connect to the internet to save this report.';
+
+  @override
+  String get contactsReportSaveUncertain => 'Could not confirm the save. Close and refresh before trying again.';
+
+  @override
   String get contactsReportContent => 'Report content';
 
   @override

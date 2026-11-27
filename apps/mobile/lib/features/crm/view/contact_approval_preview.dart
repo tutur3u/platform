@@ -11,6 +11,8 @@ class ContactApprovalPreview extends StatefulWidget {
     required this.record,
     required this.approval,
     required this.onReview,
+    this.isReviewCurrent,
+    this.onUncertain,
     super.key,
   });
 
@@ -18,9 +20,15 @@ class ContactApprovalPreview extends StatefulWidget {
   final ContactApprovalDetails approval;
   final Future<void> Function(ContactApprovalDecision, String?)? onReview;
 
+  /// Resolves the originating workspace, actor and permission at submit time.
+  final bool Function()? isReviewCurrent;
+  final Future<void> Function()? onUncertain;
+
   @override
   State<ContactApprovalPreview> createState() => _ContactApprovalPreviewState();
 }
+
+enum _ReviewFailure { feedbackRequired, uncertain, unavailable, other }
 
 class _ContactApprovalPreviewState extends State<ContactApprovalPreview> {
   static const _reasonLimit = 512;
@@ -28,12 +36,19 @@ class _ContactApprovalPreviewState extends State<ContactApprovalPreview> {
   bool _rejecting = false;
   bool _saving = false;
   bool _confirming = false;
-  bool _feedbackRequired = false;
-  bool _failed = false;
+  bool _reviewed = false;
+  _ReviewFailure? _failure;
+
+  bool get _canReview =>
+      !_reviewed &&
+      _failure != _ReviewFailure.uncertain &&
+      _failure != _ReviewFailure.unavailable &&
+      widget.onReview != null &&
+      (widget.isReviewCurrent?.call() ?? true);
 
   Future<void> _submit(ContactApprovalDecision decision) async {
-    final review = widget.onReview;
-    if (review == null || _saving || _confirming) return;
+    if (!_canReview || _saving || _confirming) return;
+    final original = widget;
     final reason = _reason.trim();
     final rejecting = decision == ContactApprovalDecision.reject;
     if (rejecting && (reason.isEmpty || reason.length > _reasonLimit)) return;
@@ -49,26 +64,49 @@ class _ContactApprovalPreviewState extends State<ContactApprovalPreview> {
       );
       _confirming = false;
       if (!mounted || !confirmed) return;
+      if (!_canReview ||
+          !identical(original.record, widget.record) ||
+          !identical(original.approval, widget.approval) ||
+          !(original.isReviewCurrent?.call() ?? true)) {
+        setState(() {});
+        return;
+      }
     }
     setState(() {
       _saving = true;
-      _failed = false;
-      _feedbackRequired = false;
+      _failure = null;
     });
     try {
-      await review(decision, rejecting ? reason : null);
-      if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+      await widget.onReview!(decision, rejecting ? reason : null);
+      if (!mounted) return;
+      _reviewed = true;
+      if (ModalRoute.of(context)?.isCurrent == true) {
         Navigator.of(context).pop();
       }
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {
-        _feedbackRequired = error.statusCode == 422;
-        _failed = !_feedbackRequired;
+        _failure = switch (error) {
+          ApiMutationScopeChanged() => _ReviewFailure.unavailable,
+          ApiMutationNotDispatched() => _ReviewFailure.other,
+          ApiException(failureKind: ApiFailureKind.transport) =>
+            _ReviewFailure.uncertain,
+          ApiException(statusCode: >= 500) => _ReviewFailure.uncertain,
+          ApiException(statusCode: 401 || 403 || 404 || 409) =>
+            _ReviewFailure.unavailable,
+          ApiException(statusCode: 422)
+              when !rejecting &&
+                  original.approval.kind == ContactApprovalKind.reports =>
+            _ReviewFailure.feedbackRequired,
+          _ => _ReviewFailure.other,
+        };
       });
-    } on Exception {
-      if (mounted) setState(() => _failed = true);
+    } on Object {
+      if (mounted) setState(() => _failure = _ReviewFailure.uncertain);
     } finally {
+      if (_failure == _ReviewFailure.uncertain) {
+        await original.onUncertain?.call();
+      }
       if (mounted) setState(() => _saving = false);
     }
   }
@@ -81,7 +119,7 @@ class _ContactApprovalPreviewState extends State<ContactApprovalPreview> {
     return AppSheetScaffold(
       title: widget.record.title,
       description: widget.record.subtitle,
-      actions: widget.onReview == null
+      actions: !_canReview
           ? const []
           : [
               if (_rejecting) ...[
@@ -136,7 +174,7 @@ class _ContactApprovalPreviewState extends State<ContactApprovalPreview> {
               title: isReport ? l10n.crmFeedback : l10n.contactsApprovalNotes,
               child: SelectableText(comment),
             ),
-          if (_rejecting)
+          if (_rejecting && _canReview)
             AppTextField(
               key: const ValueKey('approval-rejection-reason'),
               label: l10n.contactsApprovalReason,
@@ -147,12 +185,15 @@ class _ContactApprovalPreviewState extends State<ContactApprovalPreview> {
               enabled: !_saving,
               onChanged: (reason) => setState(() => _reason = reason),
             ),
-          if (_failed || _feedbackRequired)
+          if (_failure case final failure?)
             AppStateMessage(
               icon: LucideIcons.circleAlert,
-              title: _feedbackRequired
-                  ? l10n.contactsApprovalFeedbackRequired
-                  : l10n.commonSomethingWentWrong,
+              title: switch (failure) {
+                _ReviewFailure.feedbackRequired =>
+                  l10n.contactsApprovalFeedbackRequired,
+                _ReviewFailure.uncertain => l10n.offlineChangesReview,
+                _ => l10n.commonSomethingWentWrong,
+              },
             ),
         ],
       ),

@@ -136,20 +136,98 @@ extension _CrmSections on _CrmPageState {
     ),
   );
 
+  Future<bool> _openReportRecord(ContactSectionRecord record) async {
+    final report = record.report;
+    if (report == null) return false;
+    final edit = await _showOwnedSheet<bool>(
+      context: context,
+      builder: (context) => ContactReportPreview(
+        title: record.title,
+        subtitle: record.subtitle,
+        report: report,
+        onEdit:
+            _workspacePermissions.containsPermission(
+              'update_user_groups_reports',
+            )
+            ? () => Navigator.of(context).pop(true)
+            : null,
+      ),
+    );
+    return mounted && edit == true && await _editReport(record);
+  }
+
+  Future<bool> _editReport([ContactSectionRecord? record]) async {
+    final wsId = _wsId;
+    final actor = widget.actorId;
+    final permission = record == null
+        ? 'create_user_groups_reports'
+        : 'update_user_groups_reports';
+    bool isCurrent() =>
+        mounted &&
+        widget.actorId == actor &&
+        _wsId == wsId &&
+        _section == _ContactSection.reports &&
+        _workspacePermissions.containsPermission(permission);
+    if (wsId == null || !isCurrent()) return false;
+    final l10n = context.l10n;
+    Future<void> requireScope() async {
+      if (!isCurrent()) {
+        throw ApiException(
+          message: l10n.commonSomethingWentWrong,
+          statusCode: 403,
+        );
+      }
+    }
+
+    final saved = await _showOwnedSheet<bool>(
+      context: context,
+      builder: (context) => ContactReportEditor(
+        record: record,
+        groups: _groups,
+        loadMembers: (groupId) => _repository.getGroupMembers(wsId, groupId),
+        save:
+            ({
+              required groupId,
+              required contactId,
+              required title,
+              required content,
+              required feedback,
+            }) async {
+              await requireScope();
+              if (!await hasNetworkConnection()) {
+                throw ApiException(
+                  message: l10n.contactsReportOffline,
+                  statusCode: 0,
+                );
+              }
+              if (record == null) {
+                await _repository.createReport(
+                  wsId,
+                  contactId: contactId!,
+                  groupId: groupId!,
+                  title: title,
+                  content: content,
+                  feedback: feedback,
+                  beforeDispatch: requireScope,
+                );
+              } else {
+                await _repository.updateReport(
+                  wsId,
+                  record.id,
+                  title: title,
+                  content: content,
+                  feedback: feedback,
+                  beforeDispatch: requireScope,
+                );
+              }
+            },
+      ),
+    );
+    return saved == true && isCurrent();
+  }
+
   Future<void> _openSectionRecord(ContactSectionRecord record) async {
     final section = _section;
-    final report = record.report;
-    if (section == _ContactSection.reports && report != null) {
-      await _showOwnedSheet<void>(
-        context: context,
-        builder: (context) => ContactReportPreview(
-          title: record.title,
-          subtitle: record.subtitle,
-          report: report,
-        ),
-      );
-      return;
-    }
     final approval = record.approval;
     final wsId = _wsId;
     if (section == _ContactSection.approvals &&
@@ -159,12 +237,24 @@ extension _CrmSections on _CrmPageState {
         ContactApprovalKind.reports => 'approve_reports',
         ContactApprovalKind.posts => 'approve_posts',
       };
+      final actorId = widget.actorId;
+      bool isReviewCurrent() =>
+          mounted &&
+          widget.actorId == actorId &&
+          _wsId == wsId &&
+          _section == section &&
+          _workspacePermissions.containsPermission(permission);
+
       await _showOwnedSheet<void>(
         context: context,
         builder: (context) => ContactApprovalPreview(
           record: record,
           approval: approval,
-          onReview: _workspacePermissions.containsPermission(permission)
+          isReviewCurrent: isReviewCurrent,
+          onUncertain: () async {
+            if (isReviewCurrent()) await _reloadSection();
+          },
+          onReview: isReviewCurrent()
               ? (decision, reason) async {
                   await _repository.updateApproval(
                     wsId,
@@ -173,7 +263,7 @@ extension _CrmSections on _CrmPageState {
                     decision: decision,
                     reason: reason,
                   );
-                  if (mounted && _wsId == wsId && _section == section) {
+                  if (isReviewCurrent()) {
                     // Drop the reviewed item first so a failed reload cannot
                     // leave it in the pending queue.
                     _updateState(
