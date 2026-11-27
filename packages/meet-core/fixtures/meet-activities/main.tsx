@@ -1,20 +1,24 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FileText, MessageSquare } from '@tuturuuu/icons';
 import {
-  renderCollaborationCaret,
-  updateCollaborationCaretPlacements,
-} from '@tuturuuu/ui/text-editor/collaboration-carets';
+  Awareness,
+  applyAwarenessUpdate,
+  encodeAwarenessUpdate,
+  Y,
+} from '@tuturuuu/realtime/documents';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import { updateCollaborationCaretPlacements } from '@tuturuuu/ui/text-editor/collaboration-carets';
 import { NextIntlClientProvider } from 'next-intl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import messages from '../../../../apps/meet/messages/en.json';
 import '../../../../packages/ui/src/globals.css';
-import { StageLayoutView } from '../../src/features/call/stage-layout/stage-layout-view';
+import { ParticipantTile } from '../../src/features/call/components/participant-tile';
 import {
   ActivityDockPresence,
   type ActivityPresencePerson,
 } from '../../src/features/call/stage-layout/activity-presence';
-import { ParticipantTile } from '../../src/features/call/components/participant-tile';
+import { StageLayoutView } from '../../src/features/call/stage-layout/stage-layout-view';
 import { useStageLayout } from '../../src/features/call/stage-layout/use-stage-layout';
 import {
   LiveQaClientContext,
@@ -22,6 +26,10 @@ import {
 } from '../../src/features/call/tools/live-activities/qa/qa-panel';
 import { createLiveQaClient } from '../../src/features/call/tools/live-activities/qa/qa-store';
 
+// Mounts the real activity pane chrome, the real shared-document editor (Yjs +
+// tiptap with its sticky toolbar and remote caret plugin) and the real presence
+// components. Only the transport is local: a remote Yjs/awareness peer stands in
+// for the other participants, so the caret path is the production one.
 const params = new URLSearchParams(location.search);
 document.documentElement.classList.toggle(
   'dark',
@@ -36,32 +44,79 @@ const qaClient = createLiveQaClient({
   subscribe: () => () => {},
 });
 
+const DOCUMENT_FIELD = 'prosemirror';
+const LOCAL_USER = { id: 'u-you', name: 'You', color: '#16a34a' };
+const REMOTE_USERS = [
+  { id: 'u-vmkhoiii', name: 'vmkhoiii', color: '#e11d48', block: 0, offset: 3 },
+  { id: 'u-alex', name: 'Alex', color: '#2563eb', block: 3, offset: 2 },
+] as const;
+
+function seedDocument() {
+  const doc = new Y.Doc();
+  doc.transact(() => {
+    const blocks = [
+      ['heading', 'Marketing plan'],
+      ['paragraph', 'Shared marketing team'],
+      ['paragraph', 'Budget and directions'],
+      ['paragraph', 'Priorities'],
+    ] as const;
+    const nodes = blocks.map(([type, text]) => {
+      const node = new Y.XmlElement(type);
+      if (type === 'heading') node.setAttribute('level', '1');
+      node.insert(0, [new Y.XmlText(text)]);
+      return node;
+    });
+    doc.getXmlFragment(DOCUMENT_FIELD).insert(0, nodes);
+  });
+  return doc;
+}
+
+function cursorJson(doc: Y.Doc, block: number, offset: number) {
+  const element = doc.getXmlFragment(DOCUMENT_FIELD).get(block) as Y.XmlElement;
+  const text = element.get(0) as Y.XmlText;
+  return Y.relativePositionToJSON(
+    Y.createRelativePositionFromTypeIndex(text, offset)
+  );
+}
+
+function useSharedDocumentPeers() {
+  return useMemo(() => {
+    const localDoc = seedDocument();
+    const awareness = new Awareness(localDoc);
+    const remoteDoc = new Y.Doc();
+    Y.applyUpdate(remoteDoc, Y.encodeStateAsUpdate(localDoc));
+    const remotes = REMOTE_USERS.map((user) => {
+      const remote = new Awareness(remoteDoc);
+      const cursor = cursorJson(remoteDoc, user.block, user.offset);
+      remote.setLocalState({
+        user: { id: user.id, name: user.name, color: user.color },
+        cursor: { anchor: cursor, head: cursor },
+      });
+      return remote;
+    });
+    const sync = () => {
+      for (const remote of remotes) {
+        applyAwarenessUpdate(
+          awareness,
+          encodeAwarenessUpdate(remote, [remote.clientID]),
+          'fixture'
+        );
+      }
+    };
+    return { awareness, localDoc, sync };
+  }, []);
+}
+
 function SharedDocFixture() {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const h1Ref = useRef<HTMLHeadingElement>(null);
-  const lowerRef = useRef<HTMLParagraphElement>(null);
+  const peers = useSharedDocumentPeers();
 
   useEffect(() => {
-    const h1 = h1Ref.current;
-    const lower = lowerRef.current;
-    if (!h1 || !lower) return;
-    const topCaret = renderCollaborationCaret({
-      id: 'vmkhoiii',
-      name: 'vmkhoiii',
-      color: '#e11d48',
-    });
-    const lowerCaret = renderCollaborationCaret({
-      id: 'alex',
-      name: 'Alex',
-      color: '#2563eb',
-    });
-    h1.append(topCaret);
-    lower.append(lowerCaret);
-    return () => {
-      topCaret.remove();
-      lowerCaret.remove();
-    };
-  }, []);
+    peers.sync();
+    // Remote awareness states expire after 30s without a renewal.
+    const timer = window.setInterval(peers.sync, 10_000);
+    return () => window.clearInterval(timer);
+  }, [peers]);
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
@@ -73,25 +128,18 @@ function SharedDocFixture() {
           updateCollaborationCaretPlacements(event.currentTarget)
         }
       >
-        <div
-          data-testid="doc-toolbar"
-          className="sticky top-0 z-10 flex h-10 items-center gap-2 border-b bg-background px-4 text-muted-foreground text-xs"
-        >
-          <span>Ask Mira</span>
-          <span>B</span>
-          <span>I</span>
-          <span>Tools</span>
-        </div>
-        <div className="ProseMirror min-h-[360px] px-6 pt-4 pb-12">
-          <h1 ref={h1Ref} className="mt-0 font-bold text-4xl">
-            Marketing plan
-          </h1>
-          <p className="my-3 leading-7">Shared marketing team</p>
-          <p className="my-3 leading-7">Budget and directions</p>
-          <p ref={lowerRef} className="my-3 leading-7">
-            Priorities
-          </p>
-        </div>
+        <RichTextEditor
+          content={null}
+          fillHeight
+          allowCollaboration
+          yjsDoc={peers.localDoc}
+          yjsProvider={{ awareness: peers.awareness }}
+          collaborationUser={LOCAL_USER}
+          toolbarToolsLabel="Tools"
+          titlePlaceholder="Untitled"
+          writePlaceholder="Write together..."
+          className="min-h-[360px] border-0 bg-background"
+        />
       </div>
     </section>
   );
