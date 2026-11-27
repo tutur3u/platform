@@ -28,7 +28,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: jobs.admin,
 }));
 vi.mock('@tuturuuu/utils/abuse-protection/edge-trust', () => ({
-  setCachedTrustEntry: jobs.cache,
+  reconcileCachedTrustEntry: jobs.cache,
 }));
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
@@ -68,9 +68,13 @@ beforeEach(() => {
     control: { dockerRecoverySettings: { emailAlertsEnabled: false } },
   });
   jobs.admin.mockResolvedValue({ rpc: jobs.rpc });
-  jobs.rpc.mockResolvedValue({
-    data: [{ subject_key: 'private-subject', trust_multiplier: 2 }],
-    error: null,
+  jobs.rpc.mockReturnValue({
+    limit: () => ({
+      abortSignal: async () => ({
+        data: [{ subject_key: 'private-subject', trust_multiplier: 2 }],
+        error: null,
+      }),
+    }),
   });
   vi.spyOn(console, 'info').mockImplementation(() => {});
   vi.spyOn(console, 'error').mockImplementation(() => {});

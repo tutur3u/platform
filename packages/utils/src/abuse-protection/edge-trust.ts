@@ -310,17 +310,23 @@ export async function setCachedTrustEntry(
   ttlSeconds: number = getTrustCacheTtlSeconds()
 ): Promise<void> {
   try {
-    const redis = await getTrustRedisClient();
-    if (!redis) {
-      return;
-    }
-
-    await redis.set(buildTrustCacheKey(subjectKey), serializeEntry(entry), {
-      ex: ttlSeconds,
-    });
+    await reconcileCachedTrustEntry(subjectKey, entry, ttlSeconds);
   } catch {
     // Cache writes must never block the protected request path.
   }
+}
+
+export async function reconcileCachedTrustEntry(
+  subjectKey: string,
+  entry: CachedTrustEntry,
+  ttlSeconds: number
+): Promise<void> {
+  const redis = await getTrustRedisClient();
+  if (!redis) throw new Error('Trust cache is unavailable');
+
+  await redis.set(buildTrustCacheKey(subjectKey), serializeEntry(entry), {
+    ex: ttlSeconds,
+  });
 }
 
 /**

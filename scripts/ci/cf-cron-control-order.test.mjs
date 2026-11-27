@@ -81,7 +81,12 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
   );
   assert.deepEqual(baseline.identity.vars, {
     ...baseline.previousIdentity.vars,
-    CRON_CONTROL_ENABLED_JOBS: `${baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS},tasks-cleanup-media`,
+    CRON_CONTROL_ENABLED_JOBS: [
+      baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS,
+      'tasks-cleanup-media',
+      'pay-products',
+      'infrastructure-sync-trust-cache',
+    ].join(','),
   });
   assert.equal(baseline.previousIdentity.vars.FORMS_UPLOAD_CLEANUP_MODE, 'off');
   assert.deepEqual(

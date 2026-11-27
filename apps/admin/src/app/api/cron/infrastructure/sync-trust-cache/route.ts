@@ -2,7 +2,7 @@ import { authorizeInfrastructureCron } from '@/lib/infrastructure-cron-auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   type CachedTrustEntry,
-  setCachedTrustEntry,
+  reconcileCachedTrustEntry,
 } from '@tuturuuu/utils/abuse-protection/edge-trust';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
@@ -14,6 +14,7 @@ const PATH = '/api/cron/infrastructure/sync-trust-cache';
 // cache survives between cron runs (every 10 minutes).
 const RECONCILE_TTL_SECONDS = 2 * 60 * 60; // 2 hours
 const WRITE_CONCURRENCY = 32;
+const MAX_TRUST_ROWS = 999;
 
 export async function GET(request: NextRequest) {
   const denied = authorizeInfrastructureCron(request);
@@ -88,10 +89,11 @@ function buildCacheEntry(row: {
 async function handleGET() {
   try {
     const sbAdmin = await createAdminClient();
-    const { data, error } = await sbAdmin.rpc(
-      'list_trusted_subjects_for_cache',
-      {}
-    );
+    const deadline = AbortSignal.timeout(100_000);
+    const { data, error } = await sbAdmin
+      .rpc('list_trusted_subjects_for_cache', {})
+      .limit(MAX_TRUST_ROWS + 1)
+      .abortSignal(deadline);
 
     if (error) {
       console.error('Infrastructure cron job failed');
@@ -99,12 +101,17 @@ async function handleGET() {
     }
 
     const rows = data ?? [];
+    if (rows.length > MAX_TRUST_ROWS) {
+      console.error('Trust cache reconciliation row budget exceeded');
+      return NextResponse.json({ ok: false }, { status: 500 });
+    }
     let written = 0;
     let skipped = 0;
 
     for (let index = 0; index < rows.length; index += WRITE_CONCURRENCY) {
+      deadline.throwIfAborted();
       const batch = rows.slice(index, index + WRITE_CONCURRENCY);
-      await Promise.all(
+      const outcomes = await Promise.allSettled(
         batch.map(async (row) => {
           const subjectKey = row.subject_key?.trim();
           const entry = buildCacheEntry(row);
@@ -113,10 +120,17 @@ async function handleGET() {
             return;
           }
 
-          await setCachedTrustEntry(subjectKey, entry, RECONCILE_TTL_SECONDS);
+          await reconcileCachedTrustEntry(
+            subjectKey,
+            entry,
+            RECONCILE_TTL_SECONDS
+          );
           written += 1;
         })
       );
+      if (outcomes.some((outcome) => outcome.status === 'rejected')) {
+        throw new Error('Trust cache reconciliation write failed');
+      }
     }
 
     console.info('Reconciled edge trust cache', {

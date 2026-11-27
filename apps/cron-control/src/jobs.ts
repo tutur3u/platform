@@ -479,21 +479,6 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/api/cron/tasks/deadline-reminders',
     'handover'
   ),
-  job(
-    'infrastructure-docker-recovery-alerts',
-    '*/5 * * * *',
-    'infrastructure',
-    '/api/cron/infrastructure/docker-recovery-alerts',
-    'handover'
-  ),
-  job(
-    'infrastructure-sample-resources',
-    '* * * * *',
-    'infrastructure',
-    '/api/cron/infrastructure/sample-resources',
-    'idempotent',
-    { timeoutMs: 50_000 }
-  ),
 ]);
 
 export const CRON_TRIGGERS: readonly string[] = Object.freeze([

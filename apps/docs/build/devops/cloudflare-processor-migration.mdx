@@ -126,6 +126,31 @@ counts calls for the default-off, empty, full-then-short, eight-full-page,
 deadline-pressure, fence-closed, missing-function before and after the grace
 date, non-`PGRST202` 404, 5xx failure-budget and invalid-count cases.
 
+## Legacy Vercel cron handoff
+
+The UTC cron expressions below are unchanged. Cron Control dispatches Pay and trust-cache
+jobs over their existing HTTPS callbacks after the approved release. Confirm
+the enabled job list and target secret names against the serving configuration,
+then verify one scheduled outcome per job. The legacy Vercel schedules must be
+inactive before enabling the successors.
+
+| Job | Schedule (UTC) | Callback and work budget |
+| --- | --- | --- |
+| `pay-products` | `0 */12 * * *` | Pay with `CRON_SECRET_PAY`. Upserts by Polar product ID, with at most ten 100-product pages per attempt. |
+| `calendar-smart-schedule` | `0 */6 * * *` | Admin Calendar gateway with `CRON_SECRET_INFRASTRUCTURE`. Registered and disabled. Confirm the downstream Calendar route and durable, replay-safe workspace writes before enabling it. |
+| `infrastructure-sync-trust-cache` | `*/10 * * * *` | Admin with `CRON_SECRET_INFRASTRUCTURE`. Overwrites up to 999 trust entries with a two-hour TTL and 32 writes in flight. |
+
+The Durable Object ledger admits a slot once and stops a job after five failed
+slots. Pay and trust-cache allow at most one retry for a retryable callback
+response. A workload exceeding its budget reports failure for operator review.
+The operator can stop future attempts through the job control. An HTTP callback
+already admitted can finish within its own work budget.
+
+The Docker recovery alert and resource sampler are retired from scheduled
+dispatch. Both read the retired blue/green Docker host snapshot. The sampler
+fed historical Docker resource charts and the alert job emailed Docker daemon
+incidents. Cloudflare provider observability has its own collector.
+
 ## Per-job plan
 
 | Job | Processor target | Work bounds to keep | Cost change when moved |
