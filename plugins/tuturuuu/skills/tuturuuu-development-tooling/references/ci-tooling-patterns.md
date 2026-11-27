@@ -583,11 +583,16 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   in every Dockerfile whose frozen install covers the workspace (today the
   web, chat-realtime, hive, hive-realtime, meet-realtime and supermemory
   images). Re-run `node scripts/generate-docs-inventory.js`; the
-  `generated docs inventory` step of `bun check:changed` verifies it. Before
-  pushing, run
-  `node --test scripts/ci/release-workflows.test.js scripts/ci/web-e2e-dependency-context.test.js`;
-  `check:changed` does not select them for a package-only change, so a miss
-  shows up first as a red Test run on main.
+  `generated docs inventory` step of `bun check:changed` verifies it. Preserve
+  audience and updated-date metadata for generated pages. Register each new
+  user-facing app in the production fleet and wire the shared status page.
+  Register Web routes in the applicable route-shape and multi-account lists.
+- Before landing a new app, package, or route, run the full root script suite
+  (`bun test:scripts`), the full Web unit suite (`bun run --cwd apps/web test`),
+  and `bun check:changed` on the exact candidate. Use an admitted host and
+  the owned disposable Redis fixture (`scripts/fleet-ci/with-redis.sh`) for
+  Web units outside hosted CI. The changed-file gate selects related checks
+  and can miss repository-wide enrollment and route-registry assertions.
 - Use `bun git-release-please` from a clean `main` checkout to merge the latest
   `release-please--branches--production` branch. The helper fetches the bot
   branch, merges without committing, syncs the platform badge version files from
