@@ -62,6 +62,7 @@ export const WEB_WORKSPACE_ROUTE_SEGMENTS = new Set([
   'workforce',
   'workouts',
   'workspace-setup',
+  'worlds',
 ]);
 
 function safeDecode(value: string) {

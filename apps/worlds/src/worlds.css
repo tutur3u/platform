@@ -10,19 +10,19 @@
   font-family: system-ui, sans-serif;
 }
 
-main {
+.world-view {
   max-width: 70rem;
   margin: auto;
   padding: 1rem;
 }
-header {
+.world-view > header {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 1rem;
 }
-nav {
+.world-view nav {
   display: flex;
   gap: 1rem;
 }

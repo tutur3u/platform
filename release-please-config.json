@@ -175,6 +175,10 @@
       "component": "workspace",
       "package-name": "@tuturuuu/workspace"
     },
+    "apps/worlds": {
+      "component": "worlds-viewer",
+      "package-name": "@tuturuuu/worlds-viewer"
+    },
     "packages/agent-quota": {
       "component": "agent-quota",
       "package-name": "@tuturuuu/agent-quota"
@@ -382,6 +386,10 @@
     "packages/workflows": {
       "component": "workflows",
       "package-name": "@tuturuuu/workflows"
+    },
+    "packages/worlds": {
+      "component": "worlds",
+      "package-name": "@tuturuuu/worlds"
     },
     "apps/lettin": {
       "component": "lettin",

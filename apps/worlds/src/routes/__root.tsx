@@ -1,10 +1,13 @@
 import {
   createRootRoute,
+  type ErrorComponentProps,
   HeadContent,
   Outlet,
   Scripts,
   useRouterState,
 } from '@tanstack/react-router';
+import { StatusPage } from '@tuturuuu/ui/custom/status-page';
+import type { ReactNode } from 'react';
 import styles from '../worlds.css?url';
 
 export const Route = createRootRoute({
@@ -16,22 +19,52 @@ export const Route = createRootRoute({
     ],
     links: [{ rel: 'stylesheet', href: styles }],
   }),
-  component: RootDocument,
+  component: Outlet,
+  shellComponent: RootDocument,
+  notFoundComponent: WorldsNotFound,
+  errorComponent: WorldsError,
 });
 
-function RootDocument() {
-  const language = useRouterState({
+function useWorldsLocale() {
+  return useRouterState({
     select: ({ location }) => (location.search.lang === 'vi' ? 'vi' : 'en'),
   });
+}
+
+function RootDocument({ children }: { children: ReactNode }) {
+  const language = useWorldsLocale();
   return (
     <html lang={language}>
       <head>
         <HeadContent />
       </head>
       <body>
-        <Outlet />
+        {children}
         <Scripts />
       </body>
     </html>
+  );
+}
+
+function WorldsNotFound() {
+  return (
+    <StatusPage
+      variant="not-found"
+      locale={useWorldsLocale()}
+      appName="Worlds"
+      appHref="/"
+    />
+  );
+}
+
+function WorldsError({ reset }: ErrorComponentProps) {
+  return (
+    <StatusPage
+      variant="error"
+      locale={useWorldsLocale()}
+      appName="Worlds"
+      appHref="/"
+      onRetry={reset}
+    />
   );
 }

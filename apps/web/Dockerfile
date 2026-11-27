@@ -75,6 +75,7 @@ COPY apps/status-api/package.json ./apps/status-api/package.json
 COPY apps/turbo-cache/package.json ./apps/turbo-cache/package.json
 COPY apps/vault-witness/package.json ./apps/vault-witness/package.json
 COPY apps/workspace/package.json ./apps/workspace/package.json
+COPY apps/worlds/package.json ./apps/worlds/package.json
 COPY apps/workspace-domains/package.json ./apps/workspace-domains/package.json
 COPY apps/workspace-secrets/package.json ./apps/workspace-secrets/package.json
 COPY apps/web/package.json ./apps/web/package.json
@@ -138,6 +139,7 @@ COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
 COPY packages/whiteboard/package.json ./packages/whiteboard/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
+COPY packages/worlds/package.json ./packages/worlds/package.json
 
 # Keep this install command in sync with scripts/check-docker-web.js.
 # Retries mitigate flaky BuildKit cache / disk pressure (e.g. Oxc CLI tarball extract).

@@ -31,7 +31,7 @@ function Hall() {
   const labels = copy[lang];
   const { width, depth } = world.bounds;
   return (
-    <main>
+    <main className="world-view">
       <header>
         <h1>{labels.title}</h1>
         <nav aria-label={lang === 'vi' ? 'Ngôn ngữ' : 'Language'}>

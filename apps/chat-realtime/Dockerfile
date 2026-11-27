@@ -74,6 +74,7 @@ COPY apps/vault-witness/package.json ./apps/vault-witness/package.json
 COPY apps/workspace-domains/package.json ./apps/workspace-domains/package.json
 COPY apps/workspace-secrets/package.json ./apps/workspace-secrets/package.json
 COPY apps/workspace/package.json ./apps/workspace/package.json
+COPY apps/worlds/package.json ./apps/worlds/package.json
 COPY packages/ai/package.json ./packages/ai/package.json
 COPY packages/meet-core/package.json ./packages/meet-core/package.json
 COPY packages/apis/package.json ./packages/apis/package.json
@@ -83,7 +84,6 @@ COPY packages/data/package.json ./packages/data/package.json
 COPY packages/devbox/package.json ./packages/devbox/package.json
 COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/education-core/package.json ./packages/education-core/package.json
-COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/finance-core/package.json ./packages/finance-core/package.json
 COPY packages/payment-core/package.json ./packages/payment-core/package.json
 COPY packages/programming-ui/package.json ./packages/programming-ui/package.json
@@ -121,6 +121,7 @@ COPY packages/users-core/package.json ./packages/users-core/package.json
 COPY packages/users-ui/package.json ./packages/users-ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
+COPY packages/worlds/package.json ./packages/worlds/package.json
 COPY packages/agent-quota/package.json ./packages/agent-quota/package.json
 COPY packages/cite/package.json ./packages/cite/package.json
 COPY packages/cms-blocks/package.json ./packages/cms-blocks/package.json

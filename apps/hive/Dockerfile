@@ -110,6 +110,7 @@ COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/whiteboard/package.json ./packages/whiteboard/package.json
 COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
+COPY packages/worlds/package.json ./packages/worlds/package.json
 
 COPY apps/abuse-guard/package.json ./apps/abuse-guard/package.json
 COPY apps/api/package.json ./apps/api/package.json
@@ -131,6 +132,7 @@ COPY apps/vault-witness/package.json ./apps/vault-witness/package.json
 COPY apps/workspace-domains/package.json ./apps/workspace-domains/package.json
 COPY apps/workspace-secrets/package.json ./apps/workspace-secrets/package.json
 COPY apps/workspace/package.json ./apps/workspace/package.json
+COPY apps/worlds/package.json ./apps/worlds/package.json
 COPY packages/agent-quota/package.json ./packages/agent-quota/package.json
 COPY packages/cms-blocks/package.json ./packages/cms-blocks/package.json
 COPY packages/feature-flags/package.json ./packages/feature-flags/package.json

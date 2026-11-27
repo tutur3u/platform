@@ -79,6 +79,7 @@ export const KNOWN_ROOT_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'verify-token',
   'visualizations',
   'women-in-tech',
+  'worlds',
 ]);
 
 /** Route segments directly under `[wsId]` (route groups flattened). */
@@ -129,6 +130,7 @@ export const WORKSPACE_CHILD_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'workforce',
   'workouts',
   'workspace-setup',
+  'worlds',
 ]);
 
 /** A workspace id that can only be a real workspace reference. */
