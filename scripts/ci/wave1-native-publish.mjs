@@ -9,10 +9,6 @@ import {
 } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import {
-  meetFirstPublication,
-  readMeetFirstCredentials,
-} from './meet-first-publication.mjs';
 import { ingressPreflight } from './wave1-ingress-preflight.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
@@ -224,13 +220,15 @@ export async function main({
   appRoot,
   settingsTiming,
   readWorkerConfig,
-  readCredentials = readMeetFirstCredentials,
+  readCredentials,
 } = {}) {
   const [mode, app, environment, sha] = argv;
   // The Web issuer candidate builds from its isolated cloudflare/ root.
   appRoot ??=
     app === 'web' ? resolve('apps/web/cloudflare') : resolve('apps', app);
-  if (mode === 'meet-first-seal' || mode === 'meet-first-publish')
+  if (mode === 'meet-first-seal' || mode === 'meet-first-publish') {
+    const { meetFirstPublication, readMeetFirstCredentials } =
+      await import('./meet-first-publication.mjs');
     return meetFirstPublication({
       mode,
       app,
@@ -239,10 +237,11 @@ export async function main({
       env,
       fetcher,
       exec,
-      readCredentials,
+      readCredentials: readCredentials ?? readMeetFirstCredentials,
       publicationAdmission,
       boundedJson,
     });
+  }
   exec ??= execFileSync;
   if (mode === 'dry-run') {
     assert.ok(
