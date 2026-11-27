@@ -238,7 +238,8 @@ extension _ShellPageLayout on _ShellPageState {
       location: widget.matchedLocation,
       showSidebar: railVisible,
       includeWorkspacePicker: showsWorkspacePicker,
-      compactFooter: showBottomNav && isCompact && !composerVisible
+      compactFooter:
+          showBottomNav && !isSettingsRoute && isCompact && !composerVisible
           ? _compactFooter(navigationBar)
           : null,
       back: dockBack,
@@ -266,6 +267,7 @@ extension _ShellPageLayout on _ShellPageState {
         navigationBar:
             showBottomNav &&
                 !railMode &&
+                !isSettingsRoute &&
                 destinations.length > 1 &&
                 (!isCompact || composerVisible)
             ? navigationBar
