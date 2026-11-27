@@ -39,6 +39,7 @@ jobs:
             scripts/ci/check-workflow-config.ts
             scripts/ci/lockfile-workspace-delta.ts
             scripts/ci/mail-calendar-tasks-affected.ts
+            scripts/ci/mastermind-production-target.ts
             scripts/ci/mobile-build-selection.ts
             scripts/ci/production-test-only-paths.ts
             scripts/ci/tasks-production-inputs.ts
@@ -150,6 +151,7 @@ jobs:
             scripts/ci/check-workflow-config.ts
             scripts/ci/lockfile-workspace-delta.ts
             scripts/ci/mail-calendar-tasks-affected.ts
+            scripts/ci/mastermind-production-target.ts
             scripts/ci/mobile-build-selection.ts
             scripts/ci/production-test-only-paths.ts
             scripts/ci/tasks-production-inputs.ts
