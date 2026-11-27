@@ -10,7 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
+import { type UseFormReturn, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { AuthCodeField } from './auth-code-field';
@@ -62,7 +62,7 @@ export function OtpStep({
   turnstile: IdentifyStepTurnstile;
 }) {
   const t = useTranslations();
-  const code = form.watch('otp');
+  const code = useWatch({ control: form.control, name: 'otp' }) ?? '';
 
   return (
     <AuthStateCard

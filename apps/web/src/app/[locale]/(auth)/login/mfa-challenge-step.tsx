@@ -11,7 +11,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
+import { type UseFormReturn, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { useLocale, useTranslations } from 'next-intl';
 import { AuthCodeField } from './auth-code-field';
 import { AuthInlineError } from './auth-inline-error';
@@ -110,7 +110,7 @@ export function MfaChallengeStep({
 }) {
   const t = useTranslations();
   const locale = useLocale();
-  const code = form.watch('totp');
+  const code = useWatch({ control: form.control, name: 'totp' }) ?? '';
 
   return (
     <AuthStateCard

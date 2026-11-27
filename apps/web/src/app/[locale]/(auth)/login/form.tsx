@@ -18,7 +18,7 @@ import {
 import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
@@ -301,9 +301,8 @@ export default function LoginForm({
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
   });
   const turnstileSiteKey = turnstileClientState.siteKey;
-  const emailValue = emailForm.watch('email');
-  const passwordEmailValue = passwordForm.watch('email');
-  const passwordValue = passwordForm.watch('password');
+  const { email: emailValue = '' } = useWatch({ control: emailForm.control });
+  const passwordValues = useWatch({ control: passwordForm.control });
   const webOtpEnabled = otpSettingsQuery.data?.otpEnabled ?? false;
   const preferredEmailMode = emailModePreference.current.resolve(
     processEmailInput(emailValue),
@@ -328,8 +327,8 @@ export default function LoginForm({
       : null;
   const emailIsValid = emailSchema.safeParse(emailValue).success;
   const passwordCredentialsAreValid = passwordFormSchema.safeParse({
-    email: passwordEmailValue,
-    password: passwordValue,
+    email: passwordValues.email ?? '',
+    password: passwordValues.password ?? '',
   }).success;
   const isCaptchaBlockingPasswordSubmit =
     turnstileClientState.isRequired &&

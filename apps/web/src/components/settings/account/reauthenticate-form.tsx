@@ -10,7 +10,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useTranslations } from 'next-intl';
@@ -43,6 +43,7 @@ export default function ReauthenticateForm({
       otp: '',
     },
   });
+  const otpCode = useWatch({ control: form.control, name: 'otp' }) ?? '';
 
   const handleResend = async () => {
     await onResend();
@@ -109,7 +110,7 @@ export default function ReauthenticateForm({
           <Button
             type="submit"
             className="w-full"
-            disabled={loading || form.watch('otp').length < 6}
+            disabled={loading || otpCode.length < 6}
           >
             {loading ? 'Verifying...' : 'Verify Code'}
           </Button>

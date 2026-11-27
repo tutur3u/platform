@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
+import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   mocks,
@@ -7,7 +14,8 @@ import {
   queryClients,
   renderLoginFormSearch,
 } from './login-form-test-support';
-import { formatCountdown } from './otp-step';
+import { MfaChallengeStep } from './mfa-challenge-step';
+import { formatCountdown, OtpStep } from './otp-step';
 
 async function identify(email: string) {
   await openEmailStep();
@@ -141,5 +149,69 @@ describe('Sorbet code and password steps', () => {
     expect(
       screen.getByRole('button', { name: 'login.other_sign_in_methods' })
     ).toBeInTheDocument();
+  });
+
+  it('enables OTP verify on 6 digits via useWatch without calling form.watch', async () => {
+    const watchSpy = vi.fn(() => '');
+    function Harness() {
+      const form = useForm({ defaultValues: { otp: '' } });
+      form.watch = watchSpy as unknown as typeof form.watch;
+      return (
+        <OtpStep
+          email="person@example.com"
+          form={form}
+          loading={false}
+          onBack={vi.fn()}
+          onResend={vi.fn()}
+          onSubmit={vi.fn()}
+          onUsePassword={vi.fn()}
+          rateLimit={null}
+          resendDisabled={false}
+          retryAfterSeconds={0}
+          turnstile={{
+            onRetry: vi.fn(),
+            state: null,
+            widget: null,
+          }}
+        />
+      );
+    }
+
+    render(<Harness />);
+    const verify = screen.getByRole('button', { name: 'login.verify_button' });
+    const input = await screen.findByLabelText('otp-input');
+
+    expect(verify).toBeDisabled();
+    fireEvent.change(input, { target: { value: '12345' } });
+    expect(verify).toBeDisabled();
+    fireEvent.change(input, { target: { value: '123456' } });
+    await waitFor(() => expect(verify).toBeEnabled());
+    expect(watchSpy).not.toHaveBeenCalled();
+  });
+
+  it('enables MFA verify on 6 digits via useWatch without calling form.watch', async () => {
+    const watchSpy = vi.fn(() => '');
+    function Harness() {
+      const form = useForm({ defaultValues: { totp: '' } });
+      form.watch = watchSpy as unknown as typeof form.watch;
+      return (
+        <MfaChallengeStep
+          form={form}
+          loading={false}
+          mobile={null}
+          onSubmit={vi.fn()}
+          stepUp={false}
+        />
+      );
+    }
+
+    render(<Harness />);
+    const verify = screen.getByRole('button', { name: 'login.verify_button' });
+    const input = await screen.findByLabelText('otp-input');
+
+    expect(verify).toBeDisabled();
+    fireEvent.change(input, { target: { value: '654321' } });
+    await waitFor(() => expect(verify).toBeEnabled());
+    expect(watchSpy).not.toHaveBeenCalled();
   });
 });
