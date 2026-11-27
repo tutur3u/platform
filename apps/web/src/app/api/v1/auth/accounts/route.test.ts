@@ -414,3 +414,75 @@ it('returns a generic 409 for a stale account-switch CAS', async () => {
   expect(response.status).toBe(409);
   expect(response.headers.getSetCookie()).toEqual([]);
 });
+
+it('clears stale app-session cookies on successful account switch without setting a logout fence', async () => {
+  mocks.switchWebAccount.mockResolvedValue({
+    accounts: [],
+    activeAccountId: 'user-2',
+    accountId: 'user-2',
+    redirectTo: '/en/personal/inbox',
+    success: true,
+  });
+  const response = await switchPOST(
+    new NextRequest('https://tuturuuu.com/api/v1/auth/accounts/switch', {
+      method: 'POST',
+      body: JSON.stringify({ accountId: 'user-2' }),
+      headers: jsonHeaders,
+    })
+  );
+  expect(response.status).toBe(200);
+  const cookies = response.headers.getSetCookie();
+  for (const name of [
+    'tuturuuu_app_session',
+    'tuturuuu_web_app_session',
+    'tuturuuu_app_session_refresh',
+    'tuturuuu_web_app_session_refresh',
+  ]) {
+    expect(
+      cookies.some((c) => c.startsWith(`${name}=;`) && c.includes('Max-Age=0'))
+    ).toBe(true);
+  }
+  expect(
+    cookies.some((c) => c.startsWith('__Host-tuturuuu_app_signed_out='))
+  ).toBe(false);
+});
+
+it('clears app-session cookies on successful account logout but leaves them intact on 409 conflict', async () => {
+  mocks.logoutCurrentWebAccount.mockResolvedValueOnce({
+    accounts: [],
+    activeAccountId: 'user-2',
+    success: true,
+  });
+  const okRes = await logoutPOST(
+    new NextRequest('https://tuturuuu.com/api/v1/auth/accounts/logout', {
+      method: 'POST',
+      body: JSON.stringify({}),
+      headers: jsonHeaders,
+    })
+  );
+  expect(okRes.status).toBe(200);
+  expect(
+    okRes.headers
+      .getSetCookie()
+      .some(
+        (c) => c.startsWith('tuturuuu_app_session=;') && c.includes('Max-Age=0')
+      )
+  ).toBe(true);
+
+  mocks.logoutCurrentWebAccount.mockResolvedValueOnce({
+    accounts: [],
+    activeAccountId: null,
+    success: false,
+    errorCode: 'switch_conflict',
+    error: 'Account switch state changed',
+  });
+  const conflictRes = await logoutPOST(
+    new NextRequest('https://tuturuuu.com/api/v1/auth/accounts/logout', {
+      method: 'POST',
+      body: JSON.stringify({}),
+      headers: jsonHeaders,
+    })
+  );
+  expect(conflictRes.status).toBe(409);
+  expect(conflictRes.headers.getSetCookie()).toEqual([]);
+});

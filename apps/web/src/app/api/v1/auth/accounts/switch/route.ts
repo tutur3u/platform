@@ -1,3 +1,4 @@
+import { clearAppSessionCookie } from '@tuturuuu/auth/app-session';
 import { unstable_rethrow } from 'next/navigation';
 import type { NextRequest } from 'next/server';
 import { z } from 'zod';
@@ -63,7 +64,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return accountCorsJson(request, result);
+    const response = accountCorsJson(request, result);
+    // Drop any previous-account app-session cookies on the shared origin so
+    // mounted apps and satellites re-derive claims from the newly switched
+    // Supabase session instead of reading stale tokens.
+    clearAppSessionCookie(response);
+    return response;
   } catch (error) {
     unstable_rethrow(error);
 

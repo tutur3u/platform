@@ -1,3 +1,4 @@
+import { clearAppSessionCookie } from '@tuturuuu/auth/app-session';
 import { unstable_rethrow } from 'next/navigation';
 import type { NextRequest } from 'next/server';
 import {
@@ -21,9 +22,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await logoutCurrentWebAccount(request);
-    return accountCorsJson(request, result, {
+    const response = accountCorsJson(request, result, {
       status: result.errorCode === 'switch_conflict' ? 409 : 200,
     });
+    if (result.success) {
+      clearAppSessionCookie(response);
+    }
+    return response;
   } catch (error) {
     unstable_rethrow(error);
 
