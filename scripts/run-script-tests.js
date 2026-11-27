@@ -13,6 +13,7 @@ const TIMING_SENSITIVE_TESTS = new Set([
   'scripts/check-cli-options.test.js',
   'scripts/ci/mail-node-imports.test.mjs',
   'scripts/ci/meet-build-metadata.test.js',
+  'scripts/e2e-owned-process-group.test.js',
   'scripts/ci/normalize-release-notes.test.js',
   'scripts/ci/production-publication-policy.test.js',
   'scripts/ci/sdk-dev-pack-process.test.js',

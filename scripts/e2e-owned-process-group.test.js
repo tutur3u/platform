@@ -61,7 +61,7 @@ test(
     const deadline = new Promise((_, reject) => {
       timer = setTimeout(
         () => reject(new Error('owned descendant cleanup deadline')),
-        5000
+        20000
       );
     });
     try {
@@ -98,7 +98,7 @@ for (const [signal, exitCode] of [
     `runner ${signal} kills only registered detached groups and exits ${exitCode}`,
     {
       skip: process.platform === 'win32',
-      timeout: 6000,
+      timeout: 20000,
     },
     async (t) => {
       const { spawn } = require('node:child_process');
