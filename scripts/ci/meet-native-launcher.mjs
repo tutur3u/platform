@@ -25,6 +25,13 @@ import { PRODUCTION_PROFILE } from './meet-native-inventory.mjs';
 import { createMeetSsrCollector } from './meet-ssr-capture.mjs';
 import { observeOwnedChild } from './native-wrangler-observable.mjs';
 
+export const meetWorkerToolEnvironment = Object.freeze({
+  CLOUDFLARE_INCLUDE_PROCESS_ENV: 'false',
+  CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'false',
+  WRANGLER_WRITE_LOGS: 'false',
+  WRANGLER_SEND_METRICS: 'false',
+});
+
 export function meetChildEnvironment(
   env,
   { caseRoot, tempRoot, planFile, receiptFile, sourceSHA, profile }
@@ -52,10 +59,7 @@ export function meetChildEnvironment(
     NODE_OPTIONS: '',
     NODE_PATH: '',
     CLOUDFLARE_ENV: '',
-    CLOUDFLARE_INCLUDE_PROCESS_ENV: 'false',
-    CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV: 'false',
-    WRANGLER_WRITE_LOGS: 'false',
-    WRANGLER_SEND_METRICS: 'false',
+    ...meetWorkerToolEnvironment,
     CI: 'true',
     GITHUB_SHA: sourceSHA,
     GITHUB_REF:

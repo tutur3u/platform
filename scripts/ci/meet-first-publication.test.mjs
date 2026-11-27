@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { meetWorkerToolEnvironment } from './meet-native-launcher.mjs';
 import { withFirstUploadGate } from './meet-first-upload.mjs';
 import {
   firstArtifactConfig,
@@ -216,6 +217,8 @@ function fixture(t) {
       'generated-fixture'
     );
     assert.equal(options.env.CLOUDFLARE_API_TOKEN, 'cf-fixture');
+    for (const [key, value] of Object.entries(meetWorkerToolEnvironment))
+      assert.equal(options.env[key], value);
     assert.match(
       options.env.CLOUDFLARE_API_BASE_URL,
       /^http:\/\/127\.0\.0\.1:[0-9]+\/client\/v4$/u

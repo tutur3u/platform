@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readSync, realpathSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 import { fileURLToPath } from 'node:url';
+import { meetWorkerToolEnvironment } from './meet-native-launcher.mjs';
 import { WAVE1_CONFIG } from './pre-seal-doctor.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import { preflight } from './wave1-staging-preflight.mjs';
@@ -462,7 +463,7 @@ export async function publishMeetFirst({
               CLOUDFLARE_API_TOKEN: cfToken,
               CLOUDFLARE_API_BASE_URL: apiBase,
               CLOUDFLARE_ACCOUNT_ID: accountId,
-              DO_NOT_TRACK: '1',
+              ...meetWorkerToolEnvironment,
               CI: 'true',
             },
             input: JSON.stringify(values),
