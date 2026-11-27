@@ -13,6 +13,7 @@ import {
   Y,
 } from '@tuturuuu/realtime/documents';
 import { meetingDocumentTopic } from '@tuturuuu/realtime/meet';
+import { updateCollaborationCaretPlacements } from '@tuturuuu/ui/text-editor/collaboration-carets';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -157,7 +158,12 @@ export function DocumentEditor({
   }, [doc, initial, join, meetingId, tabId]);
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden bg-background">
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div
+        className="min-h-0 flex-1 overflow-auto"
+        onScroll={(event) =>
+          updateCollaborationCaretPlacements(event.currentTarget)
+        }
+      >
         {provider ? (
           <RichTextEditor
             // The surface itself is the panel: no inner frame, padding instead of

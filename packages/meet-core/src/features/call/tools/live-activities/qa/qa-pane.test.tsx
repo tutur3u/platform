@@ -56,7 +56,7 @@ function Harness() {
   );
 }
 
-it('keeps the Q&A header actions and full screen working inside a pane', () => {
+it('keeps one consistent set of window controls in the Q&A pane header', () => {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <NextIntlClientProvider locale="en" messages={messages} timeZone="UTC">
@@ -71,20 +71,16 @@ it('keeps the Q&A header actions and full screen working inside a pane', () => {
     controller.open('other');
   });
   const pane = document.querySelector('[data-pane-id]') as HTMLElement;
-  // The pane header carries the live chip and the full screen action; the
-  // panel brings no second title or close button of its own.
+  // The pane header carries the live chip and its single consistent window
+  // controls; Q&A does not inject a duplicate fullscreen/expand button.
   expect(within(pane).getAllByRole('heading', { level: 2 })).toHaveLength(1);
   expect(within(pane).getAllByRole('button', { name: /^Close / })).toHaveLength(
     1
   );
-  fireEvent.click(within(pane).getByRole('button', { name: t.fullscreen }));
-  const dialog = screen.getByRole('dialog');
-  expect(within(dialog).getByText(t.qa.title)).toBeTruthy();
-  fireEvent.click(
-    within(dialog).getByRole('button', { name: t.exit_fullscreen })
-  );
-  expect(screen.queryByRole('dialog')).toBeNull();
-  // The board is back in its pane, still mounted.
+  expect(within(pane).queryByRole('button', { name: t.fullscreen })).toBeNull();
+  expect(
+    within(pane).getAllByRole('button', { name: /^Maximize / })
+  ).toHaveLength(1);
   expect(controller.openIds).toEqual(['qa', 'other']);
   expect(screen.getByPlaceholderText(t.qa.composer_placeholder)).toBeTruthy();
 });

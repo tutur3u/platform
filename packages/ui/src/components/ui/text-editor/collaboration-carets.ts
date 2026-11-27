@@ -7,6 +7,75 @@ function color(user: CaretUser) {
     ? user.color
     : 'var(--primary)';
 }
+const TOP_LABEL_CLEARANCE_PX = 4;
+const FALLBACK_LABEL_HEIGHT_PX = 18;
+
+function findTopClipEdge(caret: HTMLElement): number | null {
+  const editorRoot = caret.closest<HTMLElement>('.ProseMirror');
+  let top: number | null = editorRoot
+    ? editorRoot.getBoundingClientRect().top
+    : null;
+  let current: HTMLElement | null = caret.parentElement;
+  while (current && current !== document.body) {
+    const overflowY = getComputedStyle(current).overflowY;
+    if (
+      overflowY === 'auto' ||
+      overflowY === 'scroll' ||
+      overflowY === 'hidden' ||
+      overflowY === 'clip'
+    ) {
+      const rect = current.getBoundingClientRect();
+      if (rect.height > 0) {
+        top = top === null ? rect.top : Math.max(top, rect.top);
+      }
+    }
+    current = current.parentElement;
+  }
+  return top;
+}
+
+/**
+ * Places a remote caret's name pill below the caret whenever placing it above
+ * would clip against the editor toolbar or scroll container top edge.
+ */
+export function positionCollaborationCaretLabel(
+  caret: HTMLElement,
+  label: HTMLElement
+) {
+  if (!caret.isConnected) return;
+  const caretRect = caret.getBoundingClientRect();
+  const labelHeight =
+    label.getBoundingClientRect().height || FALLBACK_LABEL_HEIGHT_PX;
+  const clipTop = findTopClipEdge(caret);
+  let flipBelow = false;
+  if (caretRect.height > 0 && clipTop !== null) {
+    flipBelow = caretRect.top - clipTop < labelHeight + TOP_LABEL_CLEARANCE_PX;
+  } else {
+    const editorRoot = caret.closest<HTMLElement>('.ProseMirror');
+    flipBelow = Boolean(editorRoot?.firstElementChild?.contains(caret));
+  }
+  if (flipBelow) {
+    label.style.top = 'calc(100% + 2px)';
+    label.style.borderRadius = '0 3px 3px 3px';
+    label.dataset.placement = 'bottom';
+  } else {
+    label.style.top = '-1.4em';
+    label.style.borderRadius = '3px 3px 3px 0';
+    label.dataset.placement = 'top';
+  }
+}
+
+export function updateCollaborationCaretPlacements(root: HTMLElement) {
+  for (const caret of root.querySelectorAll<HTMLElement>(
+    '.collaboration-carets__caret'
+  )) {
+    const label = caret.querySelector<HTMLElement>(
+      '.collaboration-carets__label'
+    );
+    if (label) positionCollaborationCaretLabel(caret, label);
+  }
+}
+
 /** Self-contained caret styling works in every editor surface, including Meet. */
 export function renderCollaborationCaret(user: CaretUser) {
   const caret = document.createElement('span');
@@ -21,12 +90,14 @@ export function renderCollaborationCaret(user: CaretUser) {
   const label = document.createElement('span');
   label.className = 'collaboration-carets__label';
   label.dataset.userId = identity(user);
+  label.dataset.placement = 'top';
   label.textContent =
     typeof user.name === 'string' ? user.name.slice(0, 100) : '';
   Object.assign(label.style, {
     position: 'absolute',
     top: '-1.4em',
     left: '-2px',
+    zIndex: '20',
     padding: '1px 4px',
     borderRadius: '3px 3px 3px 0',
     backgroundColor: color(user),
@@ -37,6 +108,9 @@ export function renderCollaborationCaret(user: CaretUser) {
     userSelect: 'none',
   });
   caret.append(label);
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => positionCollaborationCaretLabel(caret, label));
+  }
   return caret;
 }
 export function renderCollaborationSelection(user: CaretUser) {

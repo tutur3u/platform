@@ -134,8 +134,8 @@ export function PaneChrome({
       style={style}
       className={cn(
         '@container absolute flex flex-col overflow-hidden rounded-2xl border bg-card shadow-elevation-1 outline-none',
-        focused ? 'border-ring ring-2 ring-ring' : 'border-border',
-        'focus-visible:ring-2 focus-visible:ring-ring',
+        focused ? 'border-foreground/20 ring-1 ring-border' : 'border-border',
+        'focus-visible:ring-1 focus-visible:ring-ring/60',
         hidden && 'invisible'
       )}
       onPointerDownCapture={() => !current && onFocus(pane.id)}

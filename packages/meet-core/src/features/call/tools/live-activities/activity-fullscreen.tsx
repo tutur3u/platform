@@ -102,9 +102,15 @@ export function ActivityFullscreen({
   );
 }
 
-/** The header action that opens an activity in full screen. */
+/**
+ * The header action that opens an activity in full screen. Inside a stage pane
+ * the pane header already provides the single consistent window controls
+ * (fullscreen, maximize, minimize, close), so no duplicate button is rendered.
+ */
 export function ActivityFullscreenButton({ onOpen }: { onOpen: () => void }) {
   const t = useTranslations('meet.call.live_activities');
+  const pane = useActivityPane();
+  if (pane) return null;
   return (
     <ToolIconAction icon={Maximize2} label={t('fullscreen')} onClick={onOpen} />
   );

@@ -11,9 +11,11 @@ import {
 } from 'y-protocols/awareness';
 import * as Y from 'yjs';
 import {
+  positionCollaborationCaretLabel,
   renderCollaborationCaret,
   renderCollaborationSelection,
   scrollToCollaborationCaret,
+  updateCollaborationCaretPlacements,
 } from '../collaboration-carets';
 
 describe('remote cursors and selections', () => {
@@ -137,6 +139,53 @@ describe('remote cursors and selections', () => {
       a.destroy();
       b.destroy();
       for (const element of elements) element.remove();
+    }
+  });
+
+  it('flips caret name pills below the caret near the top edge and keeps them above lower down', () => {
+    const editorRoot = document.createElement('div');
+    editorRoot.className = 'ProseMirror';
+    const firstBlock = document.createElement('h1');
+    const secondBlock = document.createElement('p');
+    const topCaret = renderCollaborationCaret({
+      id: 'top',
+      name: 'vmkhoiii',
+      color: '#e11d48',
+    });
+    const lowerCaret = renderCollaborationCaret({
+      id: 'lower',
+      name: 'Alex',
+      color: '#2563eb',
+    });
+    firstBlock.append(topCaret);
+    secondBlock.append(lowerCaret);
+    editorRoot.append(firstBlock, secondBlock);
+    document.body.append(editorRoot);
+    try {
+      const topLabel = topCaret.querySelector<HTMLElement>(
+        '.collaboration-carets__label'
+      )!;
+      const lowerLabel = lowerCaret.querySelector<HTMLElement>(
+        '.collaboration-carets__label'
+      )!;
+      editorRoot.getBoundingClientRect = () =>
+        ({ top: 100, height: 400 }) as DOMRect;
+      topCaret.getBoundingClientRect = () =>
+        ({ top: 108, height: 32 }) as DOMRect;
+      lowerCaret.getBoundingClientRect = () =>
+        ({ top: 180, height: 20 }) as DOMRect;
+      topLabel.getBoundingClientRect = () => ({ height: 18 }) as DOMRect;
+      lowerLabel.getBoundingClientRect = () => ({ height: 18 }) as DOMRect;
+
+      positionCollaborationCaretLabel(topCaret, topLabel);
+      expect(topLabel.dataset.placement).toBe('bottom');
+      expect(topLabel.style.top).toBe('calc(100% + 2px)');
+
+      updateCollaborationCaretPlacements(editorRoot);
+      expect(lowerLabel.dataset.placement).toBe('top');
+      expect(lowerLabel.style.top).toBe('-1.4em');
+    } finally {
+      editorRoot.remove();
     }
   });
 });
