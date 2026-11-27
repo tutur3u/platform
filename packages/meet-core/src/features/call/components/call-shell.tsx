@@ -313,6 +313,7 @@ function CallShellContent({
     // Activity runners reach only activities when tool browsing is host-only.
     ...toolAccess,
     canRunActivities: runsRoomActivities(state),
+    canDraftWithMira: !requiresAccount && canReadWorkspace,
     selfUserId: state.selfUserId,
     people: state.participants,
   });

@@ -34,7 +34,13 @@ export function GamePanel({ onClose }: MeetToolPanelProps) {
     >
       {game.phase === 'idle' ? (
         activity.canManage ? (
-          <GameRoundsEditor draft={draft} saved={rounds} send={activity.send} />
+          <GameRoundsEditor
+            draft={draft}
+            saved={rounds}
+            send={activity.send}
+            meetingId={activity.meetingId}
+            canDraftWithMira={activity.canDraftWithMira}
+          />
         ) : (
           <ActivityEmpty>{t('empty_participant')}</ActivityEmpty>
         )

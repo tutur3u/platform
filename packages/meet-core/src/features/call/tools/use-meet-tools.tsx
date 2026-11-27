@@ -35,6 +35,7 @@ export function useMeetTools({
   requiresAccount,
   canManage,
   canRunActivities,
+  canDraftWithMira,
   enabled,
   available,
   activitiesOnly,
@@ -49,6 +50,8 @@ export function useMeetTools({
   canManage: boolean;
   /** The room's rule for who runs live activities; includes workspace co-hosts. */
   canRunActivities?: boolean;
+  /** Whether Mira activity drafting is available to this signed-in manager. */
+  canDraftWithMira?: boolean;
   enabled: boolean;
   /** This person's room id and the room's people, for room-shared tools. */
   selfUserId?: string | null;
@@ -80,6 +83,7 @@ export function useMeetTools({
       requiresAccount,
       canManage,
       canRunActivities,
+      canDraftWithMira,
       enabled,
       selfUserId,
       people,

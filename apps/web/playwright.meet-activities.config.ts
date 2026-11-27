@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: './e2e',
   testMatch: [
     'meet-activities-ux.fixture.ts',
+    'meet-activities-mira-draft.fixture.ts',
     'meet-presence-activities.fixture.ts',
     'meet-private-apps.fixture.ts',
   ],

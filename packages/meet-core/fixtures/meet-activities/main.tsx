@@ -14,6 +14,7 @@ import { createRoot } from 'react-dom/client';
 import enMessages from '../../../../apps/meet/messages/en.json';
 import viMessages from '../../../../apps/meet/messages/vi.json';
 import '../../../../packages/ui/src/globals.css';
+import { MiraDraftScene } from './mira-draft-scene';
 import { ParticipantTile } from '../../src/features/call/components/participant-tile';
 import { ActivityDockPresence } from '../../src/features/call/stage-layout/activity-presence';
 import { StageLayoutView } from '../../src/features/call/stage-layout/stage-layout-view';
@@ -295,13 +296,17 @@ createRoot(document.getElementById('root')!).render(
         messages={messages}
         timeZone="UTC"
       >
-        <LiveQaClientContext value={qaClient}>
-          {scene === 'presence' ? (
-            <PresenceSceneFixture canBrowse={canBrowse} empty={empty} />
-          ) : (
-            <FixtureApp />
-          )}
-        </LiveQaClientContext>
+        {scene === 'mira-draft' ? (
+          <MiraDraftScene role={isHost ? 'host' : 'guest'} />
+        ) : (
+          <LiveQaClientContext value={qaClient}>
+            {scene === 'presence' ? (
+              <PresenceSceneFixture canBrowse={canBrowse} empty={empty} />
+            ) : (
+              <FixtureApp />
+            )}
+          </LiveQaClientContext>
+        )}
       </NextIntlClientProvider>
     </QueryClientProvider>
   )

@@ -180,7 +180,12 @@ export function FlashcardsPanel({ onClose }: MeetToolPanelProps) {
           }
         >
           {(editing || !cards.length) && (
-            <FlashcardsDeckEditor cards={deck} send={activity.send} />
+            <FlashcardsDeckEditor
+              cards={deck}
+              send={activity.send}
+              meetingId={activity.meetingId}
+              canDraftWithMira={activity.canDraftWithMira}
+            />
           )}
         </ActivitySection>
       )}

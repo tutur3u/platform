@@ -5,6 +5,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
 import { ToolAction, ToolIconAction } from '../../tool-ui';
 import type { Activity } from '../activity-kit';
+import { MiraActivityDraftDialog } from '../mira-activity-draft-dialog';
 import { useRoomDraft } from '../room-draft';
 
 export const MAX_FLASHCARDS = 60;
@@ -23,10 +24,14 @@ const sameCards = (a: readonly DraftCard[], b: readonly DraftCard[]) =>
 export function FlashcardsDeckEditor({
   cards,
   send,
+  meetingId,
+  canDraftWithMira = false,
 }: {
   /** The full deck, which only managers hold. */
   cards: NonNullable<Activity['host']>['flashcards']['cards'];
   send: Activity['send'];
+  meetingId?: string;
+  canDraftWithMira?: boolean;
 }) {
   const t = useTranslations('meet.call.live_activities.flashcards');
   const saved = cards.map(({ id, front, back }) => ({ key: id, front, back }));
@@ -92,6 +97,24 @@ export function FlashcardsDeckEditor({
             ])
           }
         />
+        {meetingId && (
+          <MiraActivityDraftDialog
+            meetingId={meetingId}
+            kind="flashcards"
+            enabled={canDraftWithMira}
+            onApply={(draft) =>
+              setDrafts((current) => {
+                const remaining = Math.max(0, MAX_FLASHCARDS - current.length);
+                const added = draft.cards.slice(0, remaining).map((card) => ({
+                  key: crypto.randomUUID(),
+                  front: card.front,
+                  back: card.back,
+                }));
+                return [...current, ...added];
+              })
+            }
+          />
+        )}
         <ToolAction
           icon={Save}
           label={t('save_deck')}

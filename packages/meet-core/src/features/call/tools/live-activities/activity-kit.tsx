@@ -44,10 +44,14 @@ export function useActivity() {
     participantId === tool.selfUserId
       ? t('you')
       : tool.people?.[participantId]?.displayName?.trim() || t('someone');
+  const canManage = tool.canRunActivities ?? tool.canManage;
   return {
     ...activities,
+    meetingId: tool.meetingId,
     // The room's rule for live activities, which also covers workspace co-hosts.
-    canManage: tool.canRunActivities ?? tool.canManage,
+    canManage,
+    canDraftWithMira:
+      !tool.requiresAccount && canManage && (tool.canDraftWithMira ?? true),
     selfUserId: tool.selfUserId ?? null,
     nameOf,
   };

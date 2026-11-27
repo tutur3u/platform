@@ -10,6 +10,7 @@ import {
   activityCardClass,
   OptionsEditor,
 } from '../activity-kit';
+import { MiraActivityDraftDialog } from '../mira-activity-draft-dialog';
 import { useRoomDraft } from '../room-draft';
 
 export const MAX_GAME_ROUNDS = 30;
@@ -84,10 +85,14 @@ export function GameRoundsEditor({
   draft: { stored, drafts, setDrafts },
   saved,
   send,
+  meetingId,
+  canDraftWithMira = false,
 }: {
   draft: ReturnType<typeof useGameRoundsDraft>;
   saved: readonly SavedRound[];
   send: Activity['send'];
+  meetingId?: string;
+  canDraftWithMira?: boolean;
 }) {
   const t = useTranslations('meet.call.live_activities.game');
   const rounds = gameRounds(drafts);
@@ -171,6 +176,26 @@ export function GameRoundsEditor({
             ])
           }
         />
+        {meetingId && (
+          <MiraActivityDraftDialog
+            meetingId={meetingId}
+            kind="game"
+            enabled={canDraftWithMira}
+            onApply={(draft) =>
+              setDrafts((current) => {
+                const remaining = Math.max(0, MAX_GAME_ROUNDS - current.length);
+                const added = draft.rounds.slice(0, remaining).map((round) => ({
+                  key: crypto.randomUUID(),
+                  prompt: round.prompt,
+                  options: round.options,
+                  answer: round.answer,
+                  seconds: String(round.seconds),
+                }));
+                return [...current, ...added];
+              })
+            }
+          />
+        )}
         <ToolAction
           icon={Save}
           label={t('save_rounds')}

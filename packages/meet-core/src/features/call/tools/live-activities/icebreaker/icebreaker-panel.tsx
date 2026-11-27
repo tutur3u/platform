@@ -14,18 +14,37 @@ import {
   useActivity,
 } from '../activity-kit';
 import type { MeetToolPanelProps } from '../meet-tool';
+import { MiraActivityDraftDialog } from '../mira-activity-draft-dialog';
 import { LiveActivityPanelFrame } from '../panel-frame';
 import { useRoomDraft } from '../room-draft';
 
 const SUGGESTIONS = ['weekend', 'learned', 'song', 'superpower'] as const;
 
 /** The host asks the room one question: a suggestion or their own words. */
-function PromptPicker({ send }: { send: Activity['send'] }) {
+function PromptPicker({
+  send,
+  meetingId,
+  canDraftWithMira,
+}: {
+  send: Activity['send'];
+  meetingId: string;
+  canDraftWithMira: boolean;
+}) {
   const t = useTranslations('meet.call.live_activities.icebreaker');
   const [custom, setCustom] = useState('');
   const ask = (text: string) => send({ kind: 'icebreaker.prompt', text });
   return (
     <div className="space-y-3">
+      {canDraftWithMira && (
+        <div className="flex flex-wrap items-center gap-2">
+          <MiraActivityDraftDialog
+            meetingId={meetingId}
+            kind="icebreaker"
+            enabled={canDraftWithMira}
+            onApply={(draft) => setCustom(draft.prompt)}
+          />
+        </div>
+      )}
       <ul className="grid gap-1.5">
         {SUGGESTIONS.map((key) => (
           <li key={key}>
@@ -131,7 +150,11 @@ export function IcebreakerPanel({ onClose }: MeetToolPanelProps) {
     >
       {prompt === null ? (
         activity.canManage ? (
-          <PromptPicker send={activity.send} />
+          <PromptPicker
+            send={activity.send}
+            meetingId={activity.meetingId}
+            canDraftWithMira={activity.canDraftWithMira}
+          />
         ) : (
           <ActivityEmpty>{t('empty_participant')}</ActivityEmpty>
         )

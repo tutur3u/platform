@@ -14,6 +14,8 @@ export type MeetToolContextValue = {
    * covers a workspace admin in someone else's meeting, as the room decides.
    */
   canRunActivities?: boolean;
+  /** Whether Mira activity drafting is available to this signed-in manager. */
+  canDraftWithMira?: boolean;
   /** False when the call is not live; tools must not query the room then. */
   enabled: boolean;
   /** This person's id in the room, which room-shared tools record as the author. */

@@ -12,6 +12,7 @@ import {
   OptionsEditor,
 } from '../activity-kit';
 import { radioGroupKeyDown } from '../choice-group';
+import { MiraActivityDraftDialog } from '../mira-activity-draft-dialog';
 import { useRoomDraft } from '../room-draft';
 import {
   ASSESSMENT_KINDS,
@@ -28,11 +29,15 @@ export function AssessmentBuilder({
   saved,
   attemptId,
   send,
+  meetingId,
+  canDraftWithMira = false,
 }: {
   saved: DraftItem[];
   /** The saved draft this builder shows; opening names it. */
   attemptId: string | null;
   send: Activity['send'];
+  meetingId?: string;
+  canDraftWithMira?: boolean;
 }) {
   const t = useTranslations('meet.call.live_activities.assessment');
   // The room issues new ids on save, sends the answer keys after the questions
@@ -118,6 +123,29 @@ export function AssessmentBuilder({
           disabled={drafts.length >= MAX_ASSESSMENT_ITEMS}
           onClick={() => setDrafts((current) => [...current, newDraftItem()])}
         />
+        {meetingId && (
+          <MiraActivityDraftDialog
+            meetingId={meetingId}
+            kind="assessment"
+            enabled={canDraftWithMira}
+            onApply={(draft) =>
+              setDrafts((current) => {
+                const remaining = Math.max(
+                  0,
+                  MAX_ASSESSMENT_ITEMS - current.length
+                );
+                const added = draft.items.slice(0, remaining).map((item) => ({
+                  key: crypto.randomUUID(),
+                  prompt: item.prompt,
+                  kind: item.kind,
+                  options: item.kind === 'choice' ? item.options : ['', ''],
+                  answer: item.kind === 'choice' ? item.answer : undefined,
+                }));
+                return [...current, ...added];
+              })
+            }
+          />
+        )}
         <ToolAction
           icon={Save}
           label={t('save')}

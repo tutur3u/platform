@@ -35,6 +35,8 @@ export function AssessmentPanel({ onClose }: MeetToolPanelProps) {
           saved={saved}
           attemptId={assessment.attemptId}
           send={activity.send}
+          meetingId={activity.meetingId}
+          canDraftWithMira={activity.canDraftWithMira}
         />
       ) : (
         <AssessmentHost activity={activity} />

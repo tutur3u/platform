@@ -647,4 +647,5 @@ export function assistMeetDocument(
   });
 }
 
+export * from './meet-live-activities';
 export * from './meet-room-mira';

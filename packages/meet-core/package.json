@@ -582,6 +582,8 @@
     "./routes/api/meet-call/[meetingId]/guest/human-check/verify/route.ts": "./src/routes/api/meet-call/[meetingId]/guest/human-check/verify/route.ts",
     "./routes/api/meet-call/[meetingId]/polls/route": "./src/routes/api/meet-call/[meetingId]/polls/route.ts",
     "./routes/api/meet-call/[meetingId]/polls/route.ts": "./src/routes/api/meet-call/[meetingId]/polls/route.ts",
+    "./routes/api/meet-call/[meetingId]/live-activities/mira-draft/route": "./src/routes/api/meet-call/[meetingId]/live-activities/mira-draft/route.ts",
+    "./routes/api/meet-call/[meetingId]/live-activities/mira-draft/route.ts": "./src/routes/api/meet-call/[meetingId]/live-activities/mira-draft/route.ts",
     "./routes/api/meet-call/[meetingId]/mira-room/route": "./src/routes/api/meet-call/[meetingId]/mira-room/route.ts",
     "./routes/api/meet-call/[meetingId]/mira-room/route.ts": "./src/routes/api/meet-call/[meetingId]/mira-room/route.ts",
     "./routes/api/meet-call/[meetingId]/transcript-consent/route": "./src/routes/api/meet-call/[meetingId]/transcript-consent/route.ts",
