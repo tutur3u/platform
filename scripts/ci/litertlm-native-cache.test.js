@@ -137,8 +137,8 @@ test('all mobile test shards prepare this input without changing their commands 
   assert.equal(steps[cache].if, undefined);
   assert.equal(
     steps[tests].run,
-    `flutter test --concurrency=2 --total-shards=${shards.length} --shard-index=` +
-      '${{ matrix.shard }} -r expanded'
+    `node ../../scripts/ci/run-mobile-test-shard.mjs --total-shards ${shards.length} --shard-index ` +
+      '${{ matrix.shard }}'
   );
   const parity = mobile.jobs['realtime-parity'].steps;
   const parityCache = parity.findIndex(

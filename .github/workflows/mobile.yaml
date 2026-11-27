@@ -18,6 +18,7 @@ on:
       - "scripts/check-mobile-lucide-sync.js"
       - "scripts/check-mobile-shadcn-imports.js"
       - "scripts/dart-directive-uris.js"
+      - "scripts/ci/run-mobile-test-shard.mjs"
       - ".github/actions/setup-flutter-with-cache/**"
       - ".github/actions/cache-litertlm-native/**"
   pull_request:
@@ -32,6 +33,7 @@ on:
       - "scripts/check-mobile-lucide-sync.js"
       - "scripts/check-mobile-shadcn-imports.js"
       - "scripts/dart-directive-uris.js"
+      - "scripts/ci/run-mobile-test-shard.mjs"
       - ".github/actions/setup-flutter-with-cache/**"
       - ".github/actions/cache-litertlm-native/**"
 
@@ -410,7 +412,7 @@ jobs:
         uses: ./.github/actions/cache-litertlm-native
 
       - name: Run test shard
-        run: flutter test --concurrency=2 --total-shards=8 --shard-index=${{ matrix.shard }} -r expanded
+        run: node ../../scripts/ci/run-mobile-test-shard.mjs --total-shards 8 --shard-index ${{ matrix.shard }}
 
       - name: Verify configured Mastermind fixture transport
         if: matrix.shard == 0

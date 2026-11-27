@@ -243,6 +243,7 @@ test('mobile seeds follow the mobile workflow path list', () => {
     'scripts/check-mobile-lucide-sync.js',
     'scripts/check-mobile-shadcn-imports.js',
     'scripts/dart-directive-uris.js',
+    'scripts/ci/run-mobile-test-shard.mjs',
     '.github/actions/setup-flutter-with-cache/**',
     '.github/actions/cache-litertlm-native/**',
   ]);
