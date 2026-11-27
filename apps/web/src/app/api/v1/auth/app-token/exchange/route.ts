@@ -127,9 +127,9 @@ async function resolveExchangeTarget({
   targetApp?: string;
   workspaceId?: string;
 }) {
-  const resolvedTargetApp = targetApp ?? appId;
+  const target = targetApp ?? appId;
 
-  if (!resolvedTargetApp) {
+  if (!target || target.trim().toLowerCase() === 'worlds') {
     return {
       error: 'Missing app coordination target',
       status: 400,
@@ -176,7 +176,7 @@ async function resolveExchangeTarget({
     } as const;
   }
 
-  if (!isConfiguredApp(resolvedTargetApp)) {
+  if (!isConfiguredApp(target)) {
     return {
       error: 'Unknown app coordination target',
       status: 400,
@@ -331,12 +331,6 @@ async function exchangeAppToken(
   // Admitted per app+secret before the secret check; failures 429 past per-app
   // and per-IP limits. Refresh also keeps its own per-family pre-limit.
   const exchangeAppId = appId ?? targetApp;
-  if (exchangeAppId?.trim().toLowerCase() === 'worlds') {
-    return NextResponse.json(
-      { error: 'Invalid exchange target' },
-      { status: 400 }
-    );
-  }
   const exchange = exchangeAppId
     ? {
         appId: exchangeAppId,

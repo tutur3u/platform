@@ -287,9 +287,12 @@ export function createWorldRoom(
     }
 
     async webSocketClose(socket: RoomSocket, code: number, reason: string) {
-      socket.close(code === 1005 || code === 1006 ? 1000 : code, reason);
-      await this.initialized;
-      if (!this.stopped) this.depart(socket, options.clock());
+      try {
+        socket.close(code === 1005 || code === 1006 ? 1000 : code, reason);
+      } finally {
+        await this.initialized;
+        if (!this.stopped) this.depart(socket, options.clock());
+      }
     }
 
     async webSocketError(socket: RoomSocket) {
