@@ -11,6 +11,7 @@ import {
   type KeyboardEvent,
   useCallback,
 } from 'react';
+import { hasOwnFullscreen } from './activity-ids';
 import {
   type ActivityPresencePerson,
   ActivityPresenceRow,
@@ -247,7 +248,9 @@ export function PaneChrome({
           maximized={maximized}
           fullscreen={fullscreen}
           onToggleFullscreen={
-            onToggleFullscreen ? () => onToggleFullscreen(pane.id) : undefined
+            onToggleFullscreen && !hasOwnFullscreen(pane.active)
+              ? () => onToggleFullscreen(pane.id)
+              : undefined
           }
           onToggleMaximize={() => onToggleMaximize(pane.id)}
           onClose={() => onClose(pane.active)}

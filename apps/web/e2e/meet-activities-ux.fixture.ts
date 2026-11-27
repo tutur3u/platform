@@ -57,9 +57,7 @@ test('multiplayer caret labels near the top flip below and clear the sticky tool
   const scrolledTop = await topLabel.evaluate(
     (element) => element.getBoundingClientRect().top
   );
-  expect(scrolledTop).toBeGreaterThanOrEqual(
-    await stickyChromeBottom(page)
-  );
+  expect(scrolledTop).toBeGreaterThanOrEqual(await stickyChromeBottom(page));
 });
 
 test('dark-mode focused pane uses a subtle token ring, not a thick bright one', async ({
@@ -89,6 +87,9 @@ test('every activity pane shows one consistent set of window controls', async ({
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?theme=dark&ui=sorbet', { waitUntil: 'networkidle' });
 
+  // Q&A brings its own full screen action; the document pane has none in this
+  // fixture (no stage full screen). Either way a header never shows two.
+  const fullscreenCount = { [DOC_PANE]: 0, [QA_PANE]: 1 } as const;
   for (const pane of [DOC_PANE, QA_PANE]) {
     const names = await page
       .locator(`${pane} > header button`)
@@ -97,10 +98,12 @@ test('every activity pane shows one consistent set of window controls', async ({
       );
     // No control appears twice in one header.
     expect(new Set(names).size).toBe(names.length);
-    // Exactly one maximize and one close; no second expand/fullscreen button.
+    // Exactly one maximize and one close, and one full screen where it exists.
     expect(names.filter((name) => /^Maximize /.test(name))).toHaveLength(1);
     expect(names.filter((name) => /^Close /.test(name))).toHaveLength(1);
-    expect(names.filter((name) => /full screen/i.test(name))).toHaveLength(0);
+    expect(names.filter((name) => /full screen/i.test(name))).toHaveLength(
+      fullscreenCount[pane]
+    );
   }
 });
 
@@ -116,7 +119,9 @@ test('closing an activity opens a popover; members see only "Close for me" and n
 
   const qaPane = page.locator(QA_PANE);
   await qaPane.getByRole('button', { name: 'Close Q&A' }).click();
-  await expect(page.getByRole('button', { name: 'Close for me' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Close for me' })
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Close for everyone' })
   ).toHaveCount(0);
@@ -135,7 +140,9 @@ test('hosts see "Close for everyone" in the same popover and it closes the activ
 
   const qaPane = page.locator(QA_PANE);
   await qaPane.getByRole('button', { name: 'Close Q&A' }).click();
-  await expect(page.getByRole('button', { name: 'Close for me' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Close for me' })
+  ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Close for everyone' })
   ).toBeVisible();

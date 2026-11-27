@@ -17,6 +17,17 @@ const TOOL_PREFIX = 'tool:';
 /** Stage id of a registered tool; it matches the room's `tool:<id>` view. */
 export const toolActivityId = (toolId: string) => `${TOOL_PREFIX}${toolId}`;
 
+/**
+ * Registered tools whose own header supplies a full screen action. The pane
+ * then skips its stage-level full screen so each header keeps exactly one.
+ */
+const OWN_FULLSCREEN_TOOL_IDS: readonly string[] = ['live-qa'];
+
+export const hasOwnFullscreen = (activityId: string | null) => {
+  const toolId = toolIdOf(activityId);
+  return !!toolId && OWN_FULLSCREEN_TOOL_IDS.includes(toolId);
+};
+
 export const toolIdOf = (activityId: string | null) =>
   activityId?.startsWith(TOOL_PREFIX)
     ? activityId.slice(TOOL_PREFIX.length)

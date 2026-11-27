@@ -101,7 +101,8 @@ it('places backup feedback in the editor toolbar without a padded title wrapper'
     })
   ).toBeTruthy();
   expect(within(toolbar).getByRole('button', { name: 'Tools' })).toBeTruthy();
-  expect(within(toolbar).getByLabelText('Participant')).toBeTruthy();
+  // People in the document show in the activity header presence row instead.
+  expect(within(toolbar).queryByLabelText('Participant')).toBeNull();
   const wrapper = screen.getByTestId('editor').parentElement;
   expect(wrapper?.className).not.toMatch(/\bp-4\b|\bpx-4\b/);
   expect(container.querySelector('section')?.className).not.toMatch(

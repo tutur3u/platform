@@ -71,13 +71,15 @@ it('keeps one consistent set of window controls in the Q&A pane header', () => {
     controller.open('other');
   });
   const pane = document.querySelector('[data-pane-id]') as HTMLElement;
-  // The pane header carries the live chip and its single consistent window
-  // controls; Q&A does not inject a duplicate fullscreen/expand button.
+  // The pane header carries the live chip and one consistent window control set.
   expect(within(pane).getAllByRole('heading', { level: 2 })).toHaveLength(1);
   expect(within(pane).getAllByRole('button', { name: /^Close / })).toHaveLength(
     1
   );
-  expect(within(pane).queryByRole('button', { name: t.fullscreen })).toBeNull();
+  // Exactly one full screen control: the Q&A header's own action.
+  expect(
+    within(pane).getAllByRole('button', { name: t.fullscreen })
+  ).toHaveLength(1);
   expect(
     within(pane).getAllByRole('button', { name: /^Maximize / })
   ).toHaveLength(1);
