@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/runtime.ts",
-    "./edufest-hall": "./src/edufest-hall.ts"
+    "./edufest-hall": "./src/edufest-hall.ts",
+    "./generation": "./src/generation/index.ts"
   }
 }
