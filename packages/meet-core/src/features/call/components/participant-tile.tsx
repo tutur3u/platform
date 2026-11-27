@@ -361,8 +361,8 @@ function ParticipantTileImpl({
         onMute={onMute}
         participant={participant}
         presenceOnly={presenceOnly}
-        receivingAudio={Boolean(readiness.receivingAudio)}
-        receivingVideo={Boolean(presentingVideo || readiness.receivingVideo)}
+        receivingAudio={readiness.receivingAudio}
+        receivingVideo={presentingVideo || readiness.receivingVideo}
         showVideo={showVideo}
       />
       {!floating && (
