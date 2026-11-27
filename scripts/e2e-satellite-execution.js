@@ -20,6 +20,13 @@ const {
   getTasksSatellitePortlessEnv,
   getTasksSatellitePlaywrightEnv,
 } = require('./e2e-tasks-satellite');
+const {
+  getRealtimeChannelsPortlessEnv,
+  printRealtimeChannelsLog,
+  startRealtimeChannelsFixture,
+  stopRealtimeChannelsFixture,
+  waitForRealtimeChannelsFixture,
+} = require('./e2e-realtime-channels-fixture');
 const { runPlaywrightWithHeartbeat } = require('./ci/e2e-runtime-heartbeat');
 
 async function runFixtureLifecycle({ start, run, diagnose, stop, runtime }) {
@@ -55,6 +62,7 @@ async function runE2ESatelliteFixtures({
   waitForUrl,
   satellites,
   tasksRequired,
+  realtimeChannelsRequired = Boolean(env?.CLOUDFLARE_CHANNELS_URL),
 }) {
   const start = async (cohort, cohortEnv, runtime) => {
     await startOwnedSatelliteFixtures(cohort.satellites, runtime.owned, {
@@ -62,6 +70,18 @@ async function runE2ESatelliteFixtures({
       ensurePortlessRoute,
       waitForUrl,
     });
+    if (realtimeChannelsRequired) {
+      runtime.realtimeChannels = startRealtimeChannelsFixture({
+        env: cohortEnv,
+      });
+      await ensurePortlessRoute({
+        env: getRealtimeChannelsPortlessEnv(cohortEnv),
+      });
+      await waitForRealtimeChannelsFixture(
+        runtime.realtimeChannels,
+        waitForUrl
+      );
+    }
     runtime.env = getOwnedSatellitesPlaywrightEnv(cohort.satellites, cohortEnv);
     if (cohort.tasks) {
       runtime.tasks = startTasksSatellite({ env: cohortEnv });
@@ -76,6 +96,7 @@ async function runE2ESatelliteFixtures({
     let failure;
     for (const [fixture, cleanup] of [
       [runtime.tasks, stopTasksSatellite],
+      [runtime.realtimeChannels, stopRealtimeChannelsFixture],
       ...runtime.owned
         .slice()
         .reverse()
@@ -91,6 +112,8 @@ async function runE2ESatelliteFixtures({
   };
   const diagnose = async (runtime) => {
     if (runtime.tasks) printTasksSatelliteLog(runtime.tasks);
+    if (runtime.realtimeChannels)
+      printRealtimeChannelsLog(runtime.realtimeChannels);
     for (const fixture of runtime.owned) printOwnedSatelliteLog(fixture);
   };
   const cohorts =
@@ -103,7 +126,7 @@ async function runE2ESatelliteFixtures({
     ? null
     : isolationArgs(args, list || null);
   if (cohorts.length < 2 || !isolatedArgs) {
-    const runtime = { owned: [], tasks: null };
+    const runtime = { owned: [], tasks: null, realtimeChannels: null };
     await runFixtureLifecycle({
       runtime,
       start: () => start({ satellites, tasks: tasksRequired }, env, runtime),

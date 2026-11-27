@@ -239,8 +239,11 @@ test('workflow directories remain required outside the build context', () => {
     );
 });
 
-test('blocking auth smoke gate fails closed and isolates report-only smoke specs', (t) => {
-  assert.deepEqual(BLOCKING_SMOKE_SPECS, ['auth.noauth.spec.ts']);
+test('blocking smoke gate fails closed and isolates report-only smoke specs', (t) => {
+  assert.deepEqual(BLOCKING_SMOKE_SPECS, [
+    'auth.noauth.spec.ts',
+    'tasks-workspace-lifecycle.noauth.spec.ts',
+  ]);
   assert.ok(argsFor('smoke').includes('--reporter=line,html,json'));
 
   const { readWorkflow } = require('./workflow-yaml-test-helper');
@@ -268,6 +271,10 @@ test('blocking auth smoke gate fails closed and isolates report-only smoke specs
         },
         {
           file: 'tasks-workspace-lifecycle.noauth.spec.ts',
+          specs: [{ ok: true, tests: [{ status: 'expected' }] }],
+        },
+        {
+          file: 'other-report-only.noauth.spec.ts',
           specs: [{ ok: false, tests: [{ status: 'unexpected' }] }],
         },
       ],
@@ -277,7 +284,7 @@ test('blocking auth smoke gate fails closed and isolates report-only smoke specs
   assert.equal(partial.blockingPassed, true);
   assert.deepEqual(partial.failedBlockingSpecs, []);
   assert.deepEqual(partial.failedReportOnlySpecs, [
-    'tasks-workspace-lifecycle.noauth.spec.ts',
+    'other-report-only.noauth.spec.ts',
   ]);
 
   fs.writeFileSync(
@@ -286,6 +293,10 @@ test('blocking auth smoke gate fails closed and isolates report-only smoke specs
       suites: [
         {
           file: 'e2e/auth.noauth.spec.ts',
+          specs: [{ ok: true, tests: [{ status: 'expected' }] }],
+        },
+        {
+          file: 'e2e/tasks-workspace-lifecycle.noauth.spec.ts',
           specs: [{ ok: false, tests: [{ status: 'unexpected' }] }],
         },
       ],
@@ -293,10 +304,15 @@ test('blocking auth smoke gate fails closed and isolates report-only smoke specs
   );
   const failed = evaluateSmokeReport(reportPath);
   assert.equal(failed.blockingPassed, false);
-  assert.deepEqual(failed.failedBlockingSpecs, ['auth.noauth.spec.ts']);
+  assert.deepEqual(failed.failedBlockingSpecs, [
+    'tasks-workspace-lifecycle.noauth.spec.ts',
+  ]);
 
   fs.writeFileSync(reportPath, JSON.stringify({ suites: [] }));
   const empty = evaluateSmokeReport(reportPath);
   assert.equal(empty.blockingPassed, false);
-  assert.deepEqual(empty.missingBlockingSpecs, ['auth.noauth.spec.ts']);
+  assert.deepEqual(empty.missingBlockingSpecs, [
+    'auth.noauth.spec.ts',
+    'tasks-workspace-lifecycle.noauth.spec.ts',
+  ]);
 });

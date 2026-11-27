@@ -9,7 +9,10 @@ const {
 } = require('./hosted-web-e2e-admission');
 const { safeFailureSuffix } = require('./secret-safe-diagnostics.js');
 
-const BLOCKING_SMOKE_SPECS = ['auth.noauth.spec.ts'];
+const BLOCKING_SMOKE_SPECS = [
+  'auth.noauth.spec.ts',
+  'tasks-workspace-lifecycle.noauth.spec.ts',
+];
 const SMOKE_REPORT_RELATIVE_PATH = 'test-results/smoke-results.json';
 
 function normalizeSpecFile(file) {
@@ -196,7 +199,9 @@ function claim(p, run = command) {
       );
     }
     // Fixed local auth origins require these ports. Refuse an existing runtime.
-    const ports = [1355, 7803, 7809, 8000, 8001, 8002, 8003, 8004, 8007, 8009];
+    const ports = [
+      1355, 7803, 7809, 7829, 8000, 8001, 8002, 8003, 8004, 8007, 8009,
+    ];
     for (const port of ports) {
       try {
         const listeners = run(
