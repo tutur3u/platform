@@ -47,6 +47,7 @@
     "react/no-danger": "error"
   },
   "ignorePatterns": [
+    "**/.dart_tool/**",
     "**/node_modules/**",
     "**/dist/**",
     "**/.next/**",

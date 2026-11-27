@@ -13,6 +13,7 @@
   "bracketSpacing": true,
   "sortPackageJson": false,
   "ignorePatterns": [
+    "**/.dart_tool/**",
     "**/node_modules/**",
     "**/dist/**",
     "**/.next/**",
