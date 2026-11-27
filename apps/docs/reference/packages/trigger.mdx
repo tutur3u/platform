@@ -55,13 +55,7 @@ await unifiedScheduleHelper(workspaceId, {
 
 ## Cron ownership
 
-Calendar provider sync is configured in `apps/web/cron.config.json` and served
-through `/api/cron/calendar/provider-sync`. Keep `apps/web/vercel.json`
-generated from that configuration with:
-
-```bash
-node scripts/sync-web-crons.js
-```
+Cron Control schedules Calendar provider sync through the Infrastructure gateway at `/api/cron/calendar/provider-sync`.
 
 Do not add task-runner wrappers, provider-specific recurring jobs, or a second
 source of cadence inside this package.

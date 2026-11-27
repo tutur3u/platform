@@ -50,12 +50,7 @@ function harness(respond: () => Response = () => Response.json({ ok: true })) {
   };
   return { deps, send, counts, ledger };
 }
-it('owns all five web cron paths and schedules with none left on Vercel', async () => {
-  const vercel = JSON.parse(
-    readFileSync(new URL('../../web/vercel.json', import.meta.url), 'utf8')
-  );
-  // Single scheduler: web's deployment carries no Vercel schedule.
-  expect(vercel.crons).toEqual([]);
+it('owns all five Web cron paths and schedules', () => {
   expect(jobs.map(({ path }) => path).sort()).toEqual(
     Object.keys(WEB_CRON_PATHS).sort()
   );

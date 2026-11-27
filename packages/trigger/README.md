@@ -16,7 +16,7 @@ central workspace sync API with cron auth.
 - Keep reusable sync-token and full-sync helpers available for OAuth/manual sync
   paths.
 - Use `apps/web/cron.config.json` as the source of truth for Calendar provider
-  cadence, then sync `apps/web/vercel.json` with `node scripts/sync-web-crons.js`.
+  cadence in the Cron Control registry.
 
 ## Useful Files
 

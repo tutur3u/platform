@@ -37,7 +37,6 @@ parallel `apps/tanstack-web` migration runtime.
 - `apps/supermemory/Dockerfile`
 - `docker-compose.web.yml`
 - `docker-compose.web.prod.yml` (Compose `include` entry that merges `docker-compose/compose.web.prod.*.yml` fragments plus shared `secrets` / `volumes`)
-- `scripts/sync-web-crons.js`
 - `scripts/watch-web-crons.js`
 - `scripts/docker-web.js`
 - `scripts/check-docker-web.js`
@@ -1117,7 +1116,7 @@ Current scheduled work uses the owning app's hosted Vercel schedules and the
 Cloudflare Cron Control Worker. Calendar
 provider sync and smart scheduling enter the Infrastructure gateway, then the
 Calendar app. Web cron configuration generation remains useful for Vercel;
-`vercel: false` means that Web does not schedule a job on Vercel, not that an
+The Docker catalog records job metadata independently of whether an
 active Docker runner will execute it.
 
 Use the [active runtime and scheduler map](/build/devops/active-runtime) for

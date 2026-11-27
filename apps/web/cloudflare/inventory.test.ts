@@ -25,7 +25,6 @@ function fixture() {
 describe('Web route census', () => {
   it('keeps source churn in the artifact and orders modules by codepoint', () => {
     const { root, write } = fixture();
-    write('apps/web/vercel.json', '{"crons":[]}');
     write('packages/fixture/package.json', '{"exports":{}}');
     write(
       'apps/web/src/app/page.tsx',

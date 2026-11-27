@@ -14,6 +14,15 @@ vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
 }));
 vi.mock('@tanstack/react-start/server-only', () => ({}));
 vi.mock('../proxy', () => ({ proxy: suppliers.proxy }));
+vi.mock('../app/api/cron/calendar/provider-sync/route', () => ({
+  GET: () => new Response('provider-sync'),
+}));
+vi.mock('../app/api/cron/calendar/smart-schedule/route', () => ({
+  GET: () => new Response('smart-schedule'),
+}));
+vi.mock('../app/api/v1/calendar/auth/callback/route', () => ({
+  GET: () => new Response('oauth-callback'),
+}));
 
 import { handleCalendarRequest } from './handler';
 import { LEGACY_SERVICE_WORKER_SOURCE } from './legacy-host';
@@ -29,6 +38,37 @@ const telemetry: CalendarTelemetryPort = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('Calendar cutover boundary', () => {
+  it.each([
+    ['/api/cron/calendar/provider-sync', 'provider-sync'],
+    ['/api/cron/calendar/smart-schedule', 'smart-schedule'],
+    ['/api/v1/calendar/auth/callback', 'oauth-callback'],
+  ])(
+    'dispatches the root-host API %s through its registered route',
+    async (path, body) => {
+      suppliers.proxy.mockResolvedValue(NextResponse.next());
+      const url = `https://calendar.tuturuuu.com${path}?fixture=1`;
+      const response = await handleCalendarRequest(
+        new Request(url),
+        apexRedirect,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(200);
+      expect(response.headers.get('location')).toBeNull();
+      expect(await response.text()).toBe(body);
+      const rejected = await handleCalendarRequest(
+        new Request(url, { method: 'POST' }),
+        apexRedirect,
+        ctx,
+        telemetry
+      );
+      expect(rejected.status).toBe(405);
+      expect(rejected.headers.get('allow')).toContain('GET');
+      expect(suppliers.start).not.toHaveBeenCalled();
+      expect(asset).not.toHaveBeenCalled();
+    }
+  );
+
   it.each(['https://tuturuuu.com/calendar/personal'])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
     async (url) => {

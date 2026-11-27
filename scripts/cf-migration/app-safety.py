@@ -26,7 +26,6 @@ p=root/'void.config.ts';p.write_text(p.read_text().replace('workers_dev: false,'
 p=root/'vite.config.mts';s=p.read_text();s=s.replace('  base: bridge.base,',"  define: { ...bridge.define, 'process.env.NODE_ENV': JSON.stringify('production') },\n  base: bridge.base,") if '  define: bridge.define,' not in s else s.replace('  define: bridge.define,',"  define: { ...bridge.define, 'process.env.NODE_ENV': JSON.stringify('production') },")
 p.write_text(s)
 p=root/'package.json';d=json.loads(p.read_text());d['scripts']['build:legacy']=legacy;p.write_text(json.dumps(d,indent=2)+'\n')
-p=root/'vercel.json';d=json.loads(p.read_text()) if p.exists() else {};d['buildCommand']=f'cd ../.. && bun turbo:local run build --filter="@tuturuuu/{app}^..." && bun run --cwd apps/{app} build:legacy';p.write_text(json.dumps(d,indent=2)+'\n')
 # Fixture values are synthetic; no provider authentication or outbound traffic is allowed.
 s='''import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';

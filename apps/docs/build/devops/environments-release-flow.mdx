@@ -235,17 +235,7 @@ The SDK publishes from `release-sdk-package.yaml` when that commit reaches
 
 ### Hosted Calendar schedules
 
-Infrastructure owns the hosted Calendar provider-sync (every 15 minutes) and
-smart-scheduling (every six hours) schedules in its `vercel.json` and
-`cron.config.json`. Requests enter `/api/cron/calendar/:job`, authenticate with
-`CRON_SECRET`, and use the encrypted gateway credential to reach Calendar.
-Calendar must not keep a second direct Vercel schedule: direct scheduler requests
-do not carry the private hosting header.
-
-The retired Docker configuration retains these jobs in
-`apps/web/cron.config.json` with `vercel: false`. That flag excludes them from
-generated Web Vercel schedules; it does not activate a Docker runner. The
-Infrastructure hosted schedules are the active Calendar owners. After deployment, verify a fresh provider sync timestamp
+Cron Control dispatches Calendar provider sync every 15 minutes. Smart scheduling is registered at a six-hour cadence and is disabled in the production Worker configuration. Infrastructure retains both legacy declarations during the scheduler handoff. Confirm the prior scheduler’s last invocation and absence before closing the handoff. Calendar must have no direct scheduler because direct requests lack the private gateway credential. Requests enter Infrastructure at `/api/cron/calendar/:job`, authenticate with `CRON_SECRET`, and use the encrypted gateway credential to reach Calendar. After deployment, verify a fresh provider sync timestamp
 with all Calendar clients closed; a READY deployment alone is insufficient.
 
 ### Browser App Version Metadata

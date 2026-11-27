@@ -96,7 +96,7 @@ function contract(app) {
   appName(app);
   if (app !== 'meet')
     throw new Error(
-      `${app}: missing committed public Vercel project/Build Output adapter configuration; the Vercel preview workflow uses authenticated vercel pull/build. Cloudflare Start and raw .next outputs are not substitutes.`
+      `${app}: the public compiler currently supports only the Meet Worker pair.`
     );
   return {
     adapter: 'cloudflare-start+cloudflare-vite',
@@ -110,8 +110,7 @@ function main() {
   const receipt = {
     ...identity(),
     app,
-    requestedAdapter:
-      app === 'meet' ? 'cloudflare-start+cloudflare-vite' : 'vercel-next',
+    requestedAdapter: 'cloudflare-start+cloudflare-vite',
     kind: 'public-build',
     commands: [],
     status: 'FAIL',
@@ -119,10 +118,10 @@ function main() {
   try {
     Object.assign(receipt, contract(app));
     receipt.adapterInputDigests = Object.fromEntries(
-      [
-        `apps/${app}/package.json`,
-        `apps/${app}/vite.config.ts`,
-      ].map((p) => [p, sha256(fs.readFileSync(p))])
+      [`apps/${app}/package.json`, `apps/${app}/vite.config.ts`].map((p) => [
+        p,
+        sha256(fs.readFileSync(p)),
+      ])
     );
     receipt.publicInputSHA256 = sha256(JSON.stringify(publicInputs));
     receipt.inputDigests = Object.fromEntries(

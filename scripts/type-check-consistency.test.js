@@ -33,15 +33,22 @@ function hasNextBuild(scripts, includeLegacy = true) {
 
 test('compiler eligibility covers the primary and legacy Next build scripts', () => {
   assert.equal(hasNextBuild({ build: 'next build' }), true);
-  assert.equal(hasNextBuild({ 'build:legacy': 'next build --turbopack' }), true);
+  assert.equal(
+    hasNextBuild({ 'build:legacy': 'next build --turbopack' }),
+    true
+  );
   assert.equal(hasNextBuild({ build: 'vp build' }), false);
 });
 
+// Mail and Playground retain legacy scripts for reference. Their primary
+// build contracts do not invoke those scripts.
 function getNextBuildPackageJsonPaths() {
   return getWorkspacePackageJsonPaths().filter((packageJsonPath) =>
     hasNextBuild(
       readJson(packageJsonPath).scripts ?? {},
-      !['apps/mail/package.json', 'apps/playground/package.json'].includes(packageJsonPath)
+      !['apps/mail/package.json', 'apps/playground/package.json'].includes(
+        packageJsonPath
+      )
     )
   );
 }

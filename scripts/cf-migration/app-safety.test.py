@@ -21,11 +21,10 @@ class GeneratorTest(unittest.TestCase):
         if legacy is not None:
             scripts['build:legacy'] = legacy
         (target / 'package.json').write_text(json.dumps({'scripts': scripts}))
-        (target / 'vercel.json').write_text(json.dumps({'regions': ['sin1']}))
         result = subprocess.run([sys.executable, str(GENERATOR), app], cwd=root, capture_output=True, text=True)
         return target, result
 
-    def test_six_observed_app_names_preserve_shared_secret_and_dependency_build(self):
+    def test_six_observed_app_names_preserve_shared_secret_and_worker_safety(self):
         for app in ['hive', 'infrastructure', 'learn', 'pay', 'contacts', 'drive']:
             with self.subTest(app=app):
                 root, result = self.generate(app)
@@ -37,9 +36,8 @@ class GeneratorTest(unittest.TestCase):
                     self.assertNotIn(f'TUTURUUU_{app}_COORDINATION_SECRET', source)
                 self.assertIn(f'{app}.tuturuuu.com', runtime)
                 self.assertNotIn('__APP_ID__', runtime)
-                config = json.loads((root / 'vercel.json').read_text())
-                self.assertEqual(config['regions'], ['sin1'])
-                self.assertEqual(config['buildCommand'], f'cd ../.. && bun turbo:local run build --filter="@tuturuuu/{app}^..." && bun run --cwd apps/{app} build:legacy')
+                self.assertFalse((root / 'vercel.json').exists())
+                self.assertIn('preview_urls: false', (root / 'void.config.ts').read_text())
 
     def test_retained_legacy_script_survives_native_default(self):
         root, result = self.generate('contacts', build='vp build', legacy='next build --turbopack')

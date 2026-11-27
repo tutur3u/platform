@@ -64,17 +64,7 @@ sources also declare `Cache-Control: private, no-store`: `/` goes to
 segment is `calendar`, `api`, `_next`, `_vercel`, `serwist`, `monitoring` or
 `.well-known`. Next's built-in 308 removes a trailing slash first.
 
-On Vercel, unprefixed `/api/*` is served in place. A `routes` entry in
-`apps/calendar/vercel.json` rewrites it to `/calendar/api/*` with
-`continue: true` ahead of Next's routes, so every method and body pass through
-and the proxy API guard and owner rewrites apply as on the prefixed path. A
-vercel.json `rewrites` entry cannot do this: it compiles to a `check` route that
-leaves the phase before Next's proxy route. Next alone cannot serve an
-unprefixed path in place, so without that entry the Google and Microsoft OAuth
-callbacks and `/api/build-info` redirect to their prefixed paths and other
-unprefixed API paths are not found. `apps/calendar/src/lib/legacy-root-routes.ts`
-holds the Next rule; `apps/calendar/next.config.test.ts` and
-`apps/calendar/vercel-config.test.ts` cover both.
+The Calendar Worker serves unprefixed API requests in place. The root-host handler tests cover unprefixed cron and OAuth callback routing, and the mounted API tests cover prefixed requests.
 
 `apps/calendar/src/runtime/public-completion.test.ts` covers the real proxy,
 shared token consumer, locale resolution, anonymous page model, security policy,
@@ -451,10 +441,9 @@ forking host-local connection controls.
 ## CI And Deployment
 
 Calendar deploys to Cloudflare through `.github/workflows/calendar-cloudflare.yaml`.
-Previews are Worker versions uploaded at a 0% stage; see the [native Start migration runbook](/build/devops/native-start-migration). `apps/calendar/vercel.json` keeps `git.deploymentEnabled` and
-`github.enabled` set to `false`, so Vercel never builds Calendar from GitHub.
+Previews are Worker versions uploaded at a 0% stage; see the [native Start migration runbook](/build/devops/native-start-migration).
 
-Vercel hosts the Calendar schedules in `apps/admin/vercel.json`. Infrastructure authenticates the scheduler and forwards through the private Calendar gateway; Calendar validates the scheduler credential again.
+Cron Control dispatches provider sync through Infrastructure every 15 minutes. Smart scheduling has a six-hour cadence in the job registry and is disabled in the production Worker configuration. Infrastructure retains both legacy scheduler declarations during the handoff. Confirm the previous scheduler has stopped before closing the handoff. Infrastructure authenticates the scheduler and forwards through the private Calendar gateway; Calendar validates the scheduler credential again.
 
 After qualification, collect `native-emitted-config-calendar.json` even on failure. Keep the actual source HEAD separate from the
 event SHA. Retain pointer and config hashes and a redacted key-shape inventory, never raw configs, resource identifiers, or secret

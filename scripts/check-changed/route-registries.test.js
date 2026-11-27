@@ -48,7 +48,6 @@ test('each registry is checked for the sources that feed it, and only those', ()
       'apps/web/cloudflare/vinext/families.json',
       ['web-route-manifest', 'gateway-routes'],
     ],
-    ['apps/web/vercel.json', ['web-route-manifest']],
     ['apps/web/next.config.ts', ['web-route-manifest']],
     ['apps/web/src/proxy.ts', ['web-route-manifest']],
     ['apps/web/src/lib/satellite-api-rewrites.ts', ['web-route-manifest']],

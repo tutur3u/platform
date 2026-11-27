@@ -345,32 +345,6 @@ test('release-please workflow uses static switchboard gating', () => {
   );
 });
 
-test('Retained app configs disable provider-owned GitHub builds', () => {
-  const appsRoot = path.join(repoRoot, 'apps');
-  const vercelJsonPaths = fs
-    .readdirSync(appsRoot)
-    .map((appName) => path.join(appsRoot, appName, 'vercel.json'))
-    .filter((vercelJsonPath) => fs.existsSync(vercelJsonPath));
-
-  assert.ok(vercelJsonPaths.length > 0, 'expected app Vercel configs');
-
-  for (const vercelJsonPath of vercelJsonPaths) {
-    const relativePath = path.relative(repoRoot, vercelJsonPath);
-    const vercelConfig = JSON.parse(fs.readFileSync(vercelJsonPath, 'utf8'));
-
-    assert.equal(
-      vercelConfig.git?.deploymentEnabled,
-      false,
-      `${relativePath} must let GitHub Actions own deployments`
-    );
-    assert.equal(
-      vercelConfig.github?.enabled,
-      false,
-      `${relativePath} must disable Vercel GitHub auto-builds`
-    );
-  }
-});
-
 test('Bun workflow helpers use bounded exponential backoff', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'type-check.yaml'),

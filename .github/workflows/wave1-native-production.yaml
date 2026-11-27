@@ -158,7 +158,7 @@ jobs:
           command: bun turbo:local run build --filter=@tuturuuu/${{ inputs.app }} --concurrency=2
           token: ''
           team: ''
-      # Finance's package build is its Vercel Next build; the Worker is its Void build.
+      # Finance's package build targets Next; the Worker uses its Void build.
       - name: Build Finance workspace suppliers
         if: ${{ inputs.app == 'finance' }}
         uses: ./.github/actions/run-with-turbo-remote-cache

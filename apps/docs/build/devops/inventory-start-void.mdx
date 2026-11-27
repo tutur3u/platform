@@ -106,14 +106,7 @@ before retiring the subdomain callback.
    due slot skip processor work and verify the stop survives a restart. Reconcile
    any expiry RPC that might have committed before the revalidation obligation was
    recorded. Review pending and quarantined obligations before resuming.
-4. In the authorized production handoff, disable the Vercel schedule and confirm
-   its last invocation has completed. Activate the Cloudflare job with the Worker
-   processor selected. Verify a successful slot, the expired count, storefront
-   freshness, and subsequent slots with Cloudflare as the sole scheduler.
-5. Remove the checkout-expiry entry from `apps/inventory/vercel.json` and remove
-   its backend-ownership allowlist entry. Verify the Vercel schedule is absent in
-   provider readback before releasing the Inventory routes. Keep the authenticated
-   `POST` adapter for Cron Control's follow-up work.
+4. The production Worker configuration enables checkout expiry with the Worker processor selected. During an authorized production check, verify a successful slot, the expired count and storefront freshness. Before releasing the Inventory routes, record the previous scheduler’s final invocation and verify that its schedule is absent in provider readback. Keep the authenticated `POST` adapter for follow-up work.
 
 The processor runs once per slot. It caps expiry at ten batches of 1,000 rows,
 uses a 240-second deadline within a 270-second lease, and revalidates in chunks of

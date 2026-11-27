@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { createSatelliteApiRewrites } from '../src/lib/satellite-api-rewrites';
 import { createSourceGraph } from './inventory-source';
@@ -25,9 +25,6 @@ export function routePattern(file: string) {
 export function generateInventory(repo: string) {
   const appDir = resolve(repo, 'apps/web/src/app');
   const graph = createSourceGraph(repo);
-  const vercel: { crons: { path: string; schedule: string }[] } = JSON.parse(
-    readFileSync(resolve(repo, 'apps/web/vercel.json'), 'utf8')
-  );
   const routes = filesUnder(appDir).flatMap((file) => {
     const local = relative(appDir, file);
     const name = local.split('/').at(-1) ?? '';
@@ -109,9 +106,7 @@ export function generateInventory(repo: string) {
         boundaries: /\.[cm]?[jt]sx?$/u.test(name)
           ? graph.boundaries(roots)
           : {},
-        cronOwner: vercel.crons.some((cron) => cron.path === pattern)
-          ? 'vercel-web'
-          : null,
+        cronOwner: null,
       },
     ];
   });
@@ -196,11 +191,7 @@ export function generateInventory(repo: string) {
       disposition: 'Next-fallback',
       bypassPrefixes: ['/meet', '/mail'],
     },
-    crons: vercel.crons.map((cron) => ({
-      ...cron,
-      owner: 'vercel-web',
-      status: 'BLOCKER: port in a later PR; no ownership transfer',
-    })),
+    crons: [],
     summary: {
       total: entries.length,
       categories: Object.fromEntries(

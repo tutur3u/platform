@@ -99,7 +99,7 @@ reviewed change, then delete the allowlist entry. Never run both owners unfenced
 
 The five web schedules run on the existing Cron Control Worker with
 `CRON_CONTROL_WEB_MODE` (`active` dispatches, `off` makes no calls);
-`apps/web/vercel.json` has no crons and the
+Web has no app-local scheduler and the
 allowlist has no web Vercel entries. Requests use the existing authenticated web
 endpoints. See the [web migration runbook](/build/devops/web-cloudflare-migration#current-ownership)
 for the ungated single-owner rule, kill switch and verification.

@@ -12,8 +12,7 @@
  * - Every other unprefixed `/api/*` path is left to the host. Next serves an
  *   unprefixed path in place only through an external (absolute) rewrite, and
  *   a redirect breaks non-GET or manual-redirect callers such as the
- *   Infrastructure cron gateway. On Vercel, the `routes` entry in
- *   `vercel.json` serves `/api/*` in place before these redirects apply.
+ *   Infrastructure cron gateway.
  *
  * The native Worker handles the legacy host in `src/runtime/legacy-host.ts`
  * and does not read this config.

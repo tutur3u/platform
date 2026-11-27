@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { getCronSyncDiff, syncWebCrons } = require('./web-crons.js');
+const { normalizeCronConfig } = require('./web-crons.js');
 const {
   getCronPaths,
   getDueScheduledJobs,
@@ -36,27 +36,12 @@ function createCronConfig() {
   };
 }
 
-test('syncWebCrons reports drift when vercel crons differ from shared config', () => {
-  const tempDir = makeTempDir('web-crons-sync-');
-  const cronConfigPath = path.join(tempDir, 'cron.config.json');
-  const vercelConfigPath = path.join(tempDir, 'vercel.json');
-
-  try {
-    writeJson(cronConfigPath, createCronConfig());
-    writeJson(vercelConfigPath, { crons: [] });
-
-    const diff = getCronSyncDiff({ cronConfigPath, vercelConfigPath });
-
-    assert.equal(diff.expected.crons[0].path, '/api/cron/test');
-    assert.equal(
-      syncWebCrons({ check: true, cronConfigPath, vercelConfigPath }).changed,
-      true
-    );
-    syncWebCrons({ cronConfigPath, vercelConfigPath });
-    assert.equal(getCronSyncDiff({ cronConfigPath, vercelConfigPath }), null);
-  } finally {
-    fs.rmSync(tempDir, { force: true, recursive: true });
-  }
+test('cron catalog rejects duplicate paths', () => {
+  const { jobs } = createCronConfig();
+  assert.throws(
+    () => normalizeCronConfig({ jobs: [jobs[0], { ...jobs[0], id: 'other' }] }),
+    /Duplicate cron job path/
+  );
 });
 
 test('loadCronParser falls back to the packaged cron-runner module path', () => {

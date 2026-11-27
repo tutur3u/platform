@@ -48,9 +48,8 @@ export default defineConfig({
       CRON_CONTROL_ENABLED_JOBS: bindings.text(
         'database-cron-history-retention,ai-studio-retention,web-notification-batches,web-post-email-queue,web-report-automation,web-topic-announcements,web-deadline-reminders,finance-exchange-rates,mastermind-ship,inventory-checkout-expiry,calendar-provider-sync,mobile-crashlytics-alerts,qa-test-user-cleanup,forms-upload-cleanup,meet-attendance-retention,meet-attendance-erasure,observability-retention,observability-slo-burn,observability-cloudflare,tasks-cleanup-media'
       ),
-      // Cron Control is web's only scheduler (apps/web/vercel.json has no
-      // crons). 'active' dispatches the five web-* jobs; 'off' stops only
-      // those. finance-exchange-rates is not gated by it: drop its id above.
+      // Cron Control schedules the five web-* jobs when set to 'active'.
+      // 'off' stops only those jobs. finance-exchange-rates is not gated by it: drop its id above.
       CRON_CONTROL_WEB_MODE: bindings.text('active'),
       // Counts only until a reviewed change sets 'delete'; 'off' is the kill
       // switch. Any other value (including unset or padded) means off.

@@ -37,8 +37,6 @@ const PURE_POSTGRES =
   'so moving it adds cost and credential exposure without benefit.';
 
 const LEGACY_OWNERS = Object.freeze([
-  // Vercel Cron definitions (scheduler owner). Wave 1 moves the schedule into
-  // apps/cron-control behind default-off flags; processors move afterwards.
   vercelCron(
     'apps/admin',
     '/api/cron/infrastructure/sample-resources',
@@ -74,7 +72,6 @@ const LEGACY_OWNERS = Object.freeze([
     TARGETS.cronTrigger,
     'Cron Control job calendar-smart-schedule through the Infrastructure gateway; later a Workflow.'
   ),
-
   vercelCron(
     'apps/pay',
     '/api/cron/payment/products',
@@ -83,7 +80,7 @@ const LEGACY_OWNERS = Object.freeze([
     'Cron Control job pay-products; later a Worker processor for the Polar catalog sync.'
   ),
 
-  // Cron catalogs feed sync-web-crons and the Infrastructure cron monitor.
+  // Cron catalogs feed the Infrastructure cron monitor.
   // Enabled entries are schedule definitions in their own right.
   ...[
     ['process-notification-batches', '*/15 * * * *', TARGETS.cronTrigger],

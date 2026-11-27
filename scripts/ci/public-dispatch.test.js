@@ -154,7 +154,7 @@ test('choice helpers reject SHA/ref/app injection and exact SHA terminators', ()
   for (const value of ['../web', 'web;echo fixture', 'WEB', 'meet-realtime'])
     assert.throws(() => appName(value));
   for (const app of ['finance', 'web'])
-    assert.throws(() => contract(app), /missing committed public Vercel/);
+    assert.throws(() => contract(app), /supports only the Meet Worker pair/);
   assert.equal(contract('meet').deployAcceptance, false);
 });
 test('test accounting never treats zero, skipped or failing execution as clean', () => {

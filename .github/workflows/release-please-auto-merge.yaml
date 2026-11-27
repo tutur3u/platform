@@ -140,7 +140,7 @@ jobs:
       # `GH013: Changes must be made through a pull request`. Granting the
       # Actions app a bypass instead would not work either: pushes made with
       # `GITHUB_TOKEN` do not trigger `push` workflows, so the production push
-      # would skip the Vercel production planner and the next Release Please
+      # would skip the production deployment planner and the next Release Please
       # run.
       - name: Require a token that can push protected branches
         if: (steps.plan.outputs.should_merge == 'true' || steps.plan.outputs.needs_sync == 'true') && inputs.dry_run != true

@@ -123,7 +123,6 @@ test('changes that cannot alter rendered translations leave them out', () => {
     'apps/web/src/app/globals.css',
     'apps/web/src/lib/data.json',
     'apps/web/' + 'wrang' + 'ler.jsonc',
-    'apps/web/vercel.json',
     'packages/ui/README.md',
     'packages/ui/components.json',
     'packages/ui/src/package.json',

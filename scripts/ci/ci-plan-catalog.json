@@ -208,7 +208,7 @@
     ".github/workflows/cron-control-cloudflare.yaml",
     "apps/cron-control/",
     "apps/cron-control/**",
-    "apps/web/vercel.json",
+    "apps/web/cron.config.json",
     "packages/realtime/**",
     "scripts/ci/cf-vite-worker.mjs",
     "scripts/ci/cf-worker-parity.mjs",

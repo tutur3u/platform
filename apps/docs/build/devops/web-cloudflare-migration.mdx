@@ -9,8 +9,7 @@ audience: developers
 
 Web's five cron schedules run on the existing `apps/cron-control` Worker, which
 calls the existing authenticated Next.js processors and keeps their Supabase job
-state. `apps/web/vercel.json` declares `"crons": []`: Vercel Hobby rejects
-sub-daily schedules, and a web deployment must never carry a second scheduler.
+state. Cron Control owns the schedule; Web hosts the processor routes.
 Canonical web traffic is unchanged. The paused `apps/tanstack-web` runtime stays
 paused.
 
@@ -244,8 +243,7 @@ runs the ungated single-owner model in [Current ownership](#current-ownership).
 4. Resume the execution gate, set mode `active` and resume that job's dispatch
    ledger. Observe one terminal processor result and duplicate rejection. Only
    after that acceptance, disable that Vercel cron in a separately reviewed change
-   and shrink the backend ownership allowlist. Do not run `sync-web-crons` against
-   the stale retired Docker catalog.
+   and shrink the backend ownership allowlist.
 5. To roll back, stop both fences, drain/reconcile the active operation, change
    gate owner to `vercel`, turn Cloudflare mode off (or deselect the job), restore
    the Vercel schedule if removed, then resume the gate. Keep its origin and

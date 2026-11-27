@@ -6,8 +6,8 @@ source of the former temporary `cf-safety-edit.py` generator. It changes only
 the named app. Review its output before committing; it does not deploy or run
 builds.
 
-Keep a retained Next `build:legacy` script before running it. Generated Vercel
-commands build workspace dependencies before invoking that legacy build.
+Keep a retained Next `build:legacy` script before running it. The generator
+writes the Worker configuration and smoke fixture.
 Runtime templates substitute only `__APP_ID__`; credential identifiers such as
 `TUTURUUU_APP_COORDINATION_SECRET` must remain literal. Never replace every
 occurrence of `APP` in a template or in already-rendered binding names.

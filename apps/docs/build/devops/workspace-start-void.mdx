@@ -169,9 +169,7 @@ other host gets the bridge's `404`. Both deployment profiles emit
 `workers_dev: false` and `preview_urls: false`, and neither declares `routes`.
 `VITE_WORKSPACE_NATIVE_PROFILE=production` selects the name `tuturuuu-workspace`
 and `TUTURUUU_NOINDEX=0`; an unset profile keeps
-the staging Worker name and `TUTURUUU_NOINDEX=1`. No Vercel project is
-linked: `apps/workspace` has no `.vercel` directory, and its `vercel.json`
-disables Git deployments and the GitHub integration.
+the staging Worker name and `TUTURUUU_NOINDEX=1`. GitHub Actions publishes the Worker.
 
 ## Local verification
 

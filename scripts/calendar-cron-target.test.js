@@ -34,36 +34,40 @@ test('job paths cannot redirect or escape the configured origin', () => {
   }
 });
 
-test('hosted Calendar jobs have exactly one owner and keep Docker execution', () => {
+test('Calendar cron routes retain their Cron Control cadence and enablement', () => {
   const { readFileSync } = require('node:fs');
   const { join } = require('node:path');
-  const {
-    normalizeCronConfig,
-    getVercelCronsFromConfig,
-  } = require('./web-crons.js');
-  const read = (file) =>
-    JSON.parse(readFileSync(join(__dirname, '..', file), 'utf8'));
-  const infra = read('apps/admin/vercel.json').crons;
-  const calendar = read('apps/calendar/vercel.json').crons ?? [];
-  const web = normalizeCronConfig(read('apps/web/cron.config.json'));
-  const generatedWeb = getVercelCronsFromConfig(web);
-  const monitored = read('apps/admin/cron.config.json').jobs;
+  const { normalizeCronConfig } = require('./web-crons.js');
+  const read = (file) => readFileSync(join(__dirname, '..', file), 'utf8');
+  const jobs = read('apps/cron-control/src/jobs.ts');
+  const worker = read('apps/cron-control/cloudflare.config.ts');
+  const enabled = /CRON_CONTROL_ENABLED_JOBS: bindings.text\(\s*'([^']+)'/
+    .exec(worker)?.[1]
+    .split(',');
+  assert.ok(enabled);
+  const web = normalizeCronConfig(
+    JSON.parse(read('apps/web/cron.config.json'))
+  );
+  const monitored = JSON.parse(read('apps/admin/cron.config.json')).jobs;
   for (const [name, schedule] of [
     ['provider-sync', '*/15 * * * *'],
     ['smart-schedule', '0 */6 * * *'],
   ]) {
     const path = `/api/cron/calendar/${name}`;
-    assert.deepEqual(
-      infra.filter((job) => job.path === path),
-      [{ path, schedule }]
+    assert.equal(jobs.split(`'${path}'`).length - 1, 1);
+    assert.ok(
+      jobs.includes(
+        `job(
+    'calendar-${name}',
+    '${schedule}',
+    'infrastructure',
+    '${path}',`
+      )
     );
+    assert.ok(worker.includes(`'${schedule}'`));
     assert.equal(
-      calendar.some((job) => job.path === path),
-      false
-    );
-    assert.equal(
-      generatedWeb.some((job) => job.path === path),
-      false
+      enabled.includes(`calendar-${name}`),
+      name === 'provider-sync'
     );
     assert.equal(web.jobs.find((job) => job.path === path)?.enabled, true);
     assert.equal(
