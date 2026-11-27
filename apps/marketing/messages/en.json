@@ -1790,7 +1790,8 @@
       "tools": "Tools",
       "track": "Track",
       "vault-witness": "Vault Witness",
-      "workspace-secrets": "Workspace secrets"
+      "workspace-secrets": "Workspace secrets",
+      "worlds": "Worlds"
     },
     "categories": {
       "ai": "AI and knowledge",
@@ -1963,7 +1964,8 @@
       "workforce": "Workforce administration",
       "workspace-domains_0": "Workspace custom domains edge",
       "workspaces": "Workspaces created per account",
-      "workspace-secrets_0": "Encrypted workspace secrets service"
+      "workspace-secrets_0": "Encrypted workspace secrets service",
+      "worlds_0": "World editor and viewer"
     },
     "included": "Included",
     "internal": "Show platform services",

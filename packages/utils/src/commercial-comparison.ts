@@ -18,6 +18,14 @@ const advanced: ComparisonFeature[] = [
     pending: true,
   },
   {
+    id: 'worlds_0',
+    app: 'worlds',
+    category: 'developer',
+    detail: 'standard',
+    values: ['pending', 'pending', 'pending', 'pending'],
+    pending: true,
+  },
+  {
     id: 'lms_0',
     app: 'lms',
     category: 'learning',

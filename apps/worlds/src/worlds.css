@@ -1,16 +1,7 @@
-:root {
-  color-scheme: light dark;
-  --background: Canvas;
-  --foreground: CanvasText;
-  --primary: Highlight;
-  --primary-foreground: HighlightText;
-  --border: GrayText;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, sans-serif;
-}
+@import "@tuturuuu/ui/globals.css";
 
 .world-view {
+  color-scheme: light dark;
   max-width: 70rem;
   margin: auto;
   padding: 1rem;

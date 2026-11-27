@@ -5063,7 +5063,8 @@
       "teach": "Teach",
       "tools": "Tools",
       "track": "Track",
-      "vault-witness": "Vault Witness"
+      "vault-witness": "Vault Witness",
+      "worlds": "Worlds"
     },
     "categories": {
       "ai": "AI and knowledge",
@@ -5234,7 +5235,8 @@
       "whiteboards_0": "Real-time whiteboards",
       "workforce": "Workforce administration",
       "workspace-domains_0": "Workspace custom domains edge",
-      "workspaces": "Workspaces created per account"
+      "workspaces": "Workspaces created per account",
+      "worlds_0": "World editor and viewer"
     },
     "included": "Included",
     "internal": "Show platform services",

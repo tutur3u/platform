@@ -1790,7 +1790,8 @@
       "tools": "Công cụ",
       "track": "Theo dõi thời gian",
       "vault-witness": "Vault Witness",
-      "workspace-secrets": "Bí mật không gian làm việc"
+      "workspace-secrets": "Bí mật không gian làm việc",
+      "worlds": "Worlds"
     },
     "categories": {
       "ai": "AI và tri thức",
@@ -1963,7 +1964,8 @@
       "workforce": "Quản trị nhân sự",
       "workspace-domains_0": "Tên miền tùy chỉnh cho không gian làm việc (edge)",
       "workspaces": "Không gian tạo trên mỗi tài khoản",
-      "workspace-secrets_0": "Dịch vụ lưu trữ bí mật được mã hóa cho không gian làm việc"
+      "workspace-secrets_0": "Dịch vụ lưu trữ bí mật được mã hóa cho không gian làm việc",
+      "worlds_0": "Trình chỉnh sửa và xem thế giới"
     },
     "included": "Bao gồm",
     "internal": "Hiện dịch vụ nền tảng",
