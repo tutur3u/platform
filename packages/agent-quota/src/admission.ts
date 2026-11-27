@@ -172,6 +172,8 @@ export function admit(request: AdmissionRequest, context: AdmissionContext) {
             candidate.instanceId
           ) &&
           candidate.capabilities.includes(request.requirements.capability) &&
+          (member?.provider !== 'antigravity' ||
+            candidate.model.startsWith('gemini-')) &&
           member?.available === true &&
           member.models?.includes(candidate.model)
         );

@@ -286,6 +286,10 @@ export function evaluateModelPolicy(
     reasons.push('opencode-requires-non-private');
   }
   if (model) {
+    if (provider === 'antigravity' && !model.startsWith('gemini-')) {
+      neverUse = true;
+      reasons.push('antigravity-requires-gemini');
+    }
     if (
       config.providers.gemini.forbiddenModels.some((p) => matchGlob(p, model))
     ) {

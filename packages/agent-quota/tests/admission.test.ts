@@ -52,6 +52,22 @@ function setup(pool = account('worker')) {
   return { accounts, active: [], ledger: emptyLedger(), now };
 }
 describe('one-shot quota admission', () => {
+  it('rejects advertised third-party models on Antigravity during admission', () => {
+    const worker: AccountUsage = {
+      ...account('antigravity_2'),
+      provider: 'antigravity',
+      models: ['claude-sonnet-4-6', 'gemini-3.8-flash'],
+    };
+    const context = setup(worker);
+    const input = request(context.accounts);
+    input.requirements.candidates = worker.models!.map((model) => ({
+      instanceId: worker.instanceId,
+      model,
+      capabilities: ['implementation'],
+    }));
+    expect(admit(input, context).chosen?.model).toBe('gemini-3.8-flash');
+  });
+
   it('lets operator preference outrank the UNKNOWN ordering hint', () => {
     const at = new Date('2026-10-23T20:52:25.000Z');
     const stale = (instanceId: string, usedPercent: number): AccountUsage => ({

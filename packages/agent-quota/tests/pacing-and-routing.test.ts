@@ -259,6 +259,30 @@ describe('user routing preferences config and table rendering', () => {
     expect(argonDecision.neverUse).toBe(true);
   });
 
+  it.each(['antigravity', 'antigravity_2', 'antigravity_3'])(
+    'only routes Gemini models on %s',
+    (instanceId) => {
+      const decision = selectAccountModels(
+        {
+          instanceId,
+          provider: 'antigravity',
+          label: instanceId,
+          available: true,
+          models: [
+            'claude-sonnet-4-6',
+            'gpt-oss-120b-medium',
+            'gemini-3.8-flash',
+          ],
+          windows: [],
+        },
+        { kind: 'research' },
+        defaultRoutingConfig()
+      );
+      expect(decision.eligibleModels).toEqual(['gemini-3.8-flash']);
+      expect(decision.excludedModels).toHaveLength(2);
+    }
+  );
+
   it('requires explicit approval for Claude Fable and prefers Claude Opus for design/ui work', () => {
     const claudeHealthy: AccountUsage = {
       instanceId: 'claude_dd',
