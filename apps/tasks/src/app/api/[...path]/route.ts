@@ -18,6 +18,7 @@ function resolveWebAppUrl() {
   return resolveInternalAppUrl({
     appName: 'platform',
     candidates: [
+      process.env.INTERNAL_WEB_API_ORIGIN,
       process.env.TTR_URL,
       process.env.NEXT_PUBLIC_WEB_APP_URL,
       process.env.WEB_APP_URL,

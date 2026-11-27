@@ -199,4 +199,34 @@ describe('Tasks API proxy', () => {
     expect(response.status).toBe(404);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('prefers INTERNAL_WEB_API_ORIGIN over TTR_URL for proxied Web API calls', async () => {
+    vi.stubEnv('INTERNAL_WEB_API_ORIGIN', 'http://127.0.0.1:7803');
+    vi.stubEnv('TTR_URL', 'https://tuturuuu.localhost:1355');
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 })
+      );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await POST(
+      new NextRequest(
+        'https://tasks.tuturuuu.localhost:1355/api/v1/realtime/channels',
+        {
+          body: JSON.stringify({ topic: 'board:123' }),
+          headers: { 'content-type': 'application/json' },
+          method: 'POST',
+        }
+      ),
+      { params: Promise.resolve({ path: ['v1', 'realtime', 'channels'] }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [targetUrl] = fetchMock.mock.calls[0] ?? [];
+    expect(String(targetUrl)).toBe(
+      'http://127.0.0.1:7803/api/v1/realtime/channels'
+    );
+  });
 });
