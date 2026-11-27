@@ -27,12 +27,22 @@ async function snapshot(command: string, args: string[]) {
 
 async function githubRateLimit() {
   try {
-    const { stdout } = await exec('gh', [
-      'api', 'rate_limit', '--jq', '.resources.core | {remaining,limit,reset}',
-    ], { timeout: 5000, maxBuffer: 4096 });
+    const { stdout } = await exec(
+      'gh',
+      [
+        'api',
+        'rate_limit',
+        '--jq',
+        '.resources.core | {remaining,limit,reset}',
+      ],
+      { timeout: 5000, maxBuffer: 4096 }
+    );
     const usage = JSON.parse(stdout);
-    if (Number.isInteger(usage.remaining) && Number.isInteger(usage.limit) &&
-        Number.isInteger(usage.reset)) {
+    if (
+      Number.isInteger(usage.remaining) &&
+      Number.isInteger(usage.limit) &&
+      Number.isInteger(usage.reset)
+    ) {
       return {
         remaining: usage.remaining,
         limit: usage.limit,
@@ -72,7 +82,10 @@ export async function runQuotaCommand(args: string[]): Promise<void> {
       return { host, status: 'available', usage };
     } catch (error) {
       const status =
-        error && typeof error === 'object' && 'code' in error && error.code === 255
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 255
           ? 'unreachable'
           : 'collection-failed';
       return { host, status };
@@ -87,21 +100,36 @@ export async function runQuotaCommand(args: string[]): Promise<void> {
     ...remote,
   ]);
   const githubCore = await github;
-  if (results.every((result) => result.status !== 'available')) process.exitCode = 1;
+  if (results.every((result) => result.status !== 'available'))
+    process.exitCode = 1;
   if (args.includes('--json')) {
-    console.log(JSON.stringify({ observedAt: new Date().toISOString(), hosts: results, githubCore }, null, 2));
+    console.log(
+      JSON.stringify(
+        { observedAt: new Date().toISOString(), hosts: results, githubCore },
+        null,
+        2
+      )
+    );
     return;
   }
   console.log('| Host | Status | Seats | Alerts |');
   console.log('| --- | --- | ---: | --- |');
   for (const result of results) {
-    const alerts = result.usage && 'alerts' in result.usage
-      ? result.usage.alerts
-      : [];
+    const alerts =
+      result.usage && 'alerts' in result.usage ? result.usage.alerts : [];
     const summary = Array.isArray(alerts)
-      ? alerts.filter((alert) => typeof alert === 'string').join(', ').replaceAll('|', '\\|')
+      ? alerts
+          .filter((alert) => typeof alert === 'string')
+          .join(', ')
+          .replaceAll('|', '\\|')
       : '';
-    console.log(`| ${result.host} | ${result.status} | ${result.usage?.seats.length ?? 0} | ${summary} |`);
+    console.log(
+      `| ${result.host} | ${result.status} | ${result.usage?.seats.length ?? 0} | ${summary} |`
+    );
   }
-  console.log(githubCore ? `GitHub core API remaining ${githubCore.remaining}/${githubCore.limit}` : 'GitHub core API quota unknown');
+  console.log(
+    githubCore
+      ? `GitHub core API remaining ${githubCore.remaining}/${githubCore.limit}`
+      : 'GitHub core API quota unknown'
+  );
 }

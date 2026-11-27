@@ -138,3 +138,20 @@ test('uses actual reset deadlines and preserves provider idle sessions', () => {
     )
   ).toBe('claudeAgent 5h=100% week=unknown');
 });
+
+test('keeps exhausted weekly readings when short windows are absent or disabled', () => {
+  const reset = '2026-12-04T15:17:53Z';
+  const rows = [
+    ['Gemini Models', 'Weekly Limit Remaining', '0%', reset],
+    ['Claude and GPT models', 'Weekly Limit Remaining', '0%', reset],
+    ['Claude and GPT models', 'Five Hour Limit Remaining', 'disabled', ''],
+  ];
+  expect(
+    parseAntigravityUsage(rows.map((row) => row.join('\t')).join('\n')).map(
+      ({ id, usedPercent }) => [id, usedPercent]
+    )
+  ).toEqual([
+    ['gemini-weekly', 100],
+    ['3p-weekly', 100],
+  ]);
+});

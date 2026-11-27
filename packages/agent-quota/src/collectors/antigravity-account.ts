@@ -27,9 +27,9 @@ import {
 
 const digest = (value: string) =>
   createHash('sha256').update(value).digest('hex');
-const cachePath = () =>
+const cachePath = (instanceId?: string) =>
   stateRoot(
-    '.local/share/tuturuuu/orchestration/quota/antigravity-account.json'
+    `.local/share/tuturuuu/orchestration/quota/antigravity-account${instanceId ? `-${digest(instanceId)}` : ''}.json`
   );
 
 export function accountFromLog(log: string): string | undefined {
@@ -61,9 +61,9 @@ async function accountAt(path: string) {
   return identity && { identity, path };
 }
 
-async function defaultAccount() {
-  const dir = await realpath(stateRoot('.gemini/antigravity-cli/log'));
-  const path = await realpath(stateRoot('.gemini/antigravity-cli/cli.log'));
+async function cliAccount(profile = stateRoot('.gemini')) {
+  const dir = await realpath(join(profile, 'antigravity-cli/log'));
+  const path = await realpath(join(profile, 'antigravity-cli/cli.log'));
   if (dirname(path) !== dir || !/^cli-\d{8}_\d{6}\.log$/.test(basename(path)))
     return;
   return accountAt(path);
@@ -104,26 +104,48 @@ async function instanceAccount(instanceId: string, renameEntries: unknown) {
   }
 }
 
-export async function refreshAntigravityAccount(binary: string) {
-  const path = cachePath();
+export async function refreshAntigravityAccount(
+  binary: string,
+  instanceId?: string
+) {
+  if (instanceId && !/^antigravity(?:_[a-zA-Z0-9_-]+)?$/.test(instanceId))
+    throw new Error('invalid-antigravity-instance');
+  const profile = instanceId
+    ? antigravityProfile(stateRoot(), instanceId)
+    : undefined;
+  const path = cachePath(instanceId);
   assertSafeStateWrite(path);
   if (!isAbsolute(binary)) throw new Error('binary-path-required');
-  const account = await defaultAccount();
+  if (profile && (await realpath(profile)) !== profile)
+    throw new Error('unexpected-antigravity-profile');
+  const account = instanceId
+    ? await instanceAccount(instanceId, undefined)
+    : await cliAccount();
   if (!account) throw new Error('default-account-unverified');
   const cwd = await mkdtemp(join(tmpdir(), 'antigravity-usage-'));
   try {
+    const logPath = join(cwd, 'usage.log');
     const tsv = execFileSync(
       binary,
-      ['--print-timeout', '12s', '-p', '/usage'],
+      [
+        ...(profile ? ['--log-file', logPath] : []),
+        '--print-timeout',
+        '12s',
+        '-p',
+        '/usage',
+      ],
       {
         cwd,
+        ...(profile
+          ? { env: { ...process.env, ANTIGRAVITY_GEMINI_DIR: profile } }
+          : {}),
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
         timeout: 16_000,
         maxBuffer: 128 * 1024,
       }
     );
-    const after = await defaultAccount();
+    const after = profile ? await accountAt(logPath) : await cliAccount();
     if (
       !after ||
       after.path === account.path ||
@@ -154,15 +176,24 @@ export async function refreshAntigravityAccount(binary: string) {
   }
 }
 
-async function readMatchedQuota(now: Date) {
+async function readMatchedQuota(now: Date, instanceId?: string) {
   try {
-    const data = JSON.parse(await readFileBounded(cachePath(), 128 * 1024));
+    const data = JSON.parse(
+      await readFileBounded(cachePath(instanceId), 128 * 1024)
+    );
     const capturedAt = Date.parse(data.checkedAt);
     const age = now.getTime() - capturedAt;
     if (!(age >= 0 && age <= ANTIGRAVITY_ACCOUNT_TTL_MS)) return;
-    const cli = await defaultAccount();
-    if (!cli || cli.identity !== data.identity) return;
-    return { identity: cli.identity, capturedAt, data };
+    if (
+      typeof data.identity !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(data.identity)
+    )
+      return;
+    if (!instanceId) {
+      const cli = await cliAccount();
+      if (!cli || cli.identity !== data.identity) return;
+    }
+    return { identity: data.identity, capturedAt, data };
   } catch {
     return;
   }
@@ -174,7 +205,7 @@ export async function collectAntigravityAccountMatches(
 ) {
   if (!accounts.some((account) => account.provider === 'antigravity'))
     return accounts;
-  const [quota, renameEntries] = await Promise.all([
+  const [defaultQuota, renameEntries] = await Promise.all([
     readMatchedQuota(now),
     readAntigravityRenameMap(),
   ]);
@@ -190,7 +221,11 @@ export async function collectAntigravityAccountMatches(
         ...account,
         accountIdentityHash: digest(`antigravity-account:${instance.identity}`),
       };
-      if (quota?.identity !== instance.identity) return identified;
+      const seatQuota = await readMatchedQuota(now, account.instanceId);
+      const quota = [seatQuota, defaultQuota]
+        .filter((entry) => entry?.identity === instance.identity)
+        .sort((a, b) => (b?.capturedAt ?? 0) - (a?.capturedAt ?? 0))[0];
+      if (!quota) return identified;
       try {
         const matched = snapshotWindows(account, quota.data);
         if (!matched.length) return identified;
@@ -224,9 +259,9 @@ export async function collectAntigravityAccountMatches(
 
 export function readAntigravityRenameMap(): Promise<unknown> {
   return readFileBounded(
-      stateRoot('.t3/scratch/automations/provider-rename-map.json'),
-      128 * 1024
-    )
-      .then((contents): unknown => JSON.parse(contents))
-      .catch(() => undefined);
+    stateRoot('.t3/scratch/automations/provider-rename-map.json'),
+    128 * 1024
+  )
+    .then((contents): unknown => JSON.parse(contents))
+    .catch(() => undefined);
 }

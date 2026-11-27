@@ -1,6 +1,12 @@
-import { antigravityProfile, oldAntigravityProfile } from './antigravity-profile';
+import {
+  antigravityProfile,
+  oldAntigravityProfile,
+} from './antigravity-profile';
 import { stateRoot } from '../state-root';
-import { collectAntigravityAccountMatches, readAntigravityRenameMap } from './antigravity-account';
+import {
+  collectAntigravityAccountMatches,
+  readAntigravityRenameMap,
+} from './antigravity-account';
 import {
   matchingBlocks,
   type QuotaBlock,
@@ -178,9 +184,7 @@ export async function collectAllWith(
     const root = stateRoot('');
     const oldPath = oldAntigravityProfile(root, instanceId, renameMap);
     if (!oldPath) return [];
-    const oldId = gone.find((id) =>
-      oldPath === antigravityProfile(root, id)
-    );
+    const oldId = gone.find((id) => oldPath === antigravityProfile(root, id));
     return oldId ? [`INSTANCE_RENAME_CANDIDATE ${oldId} -> ${instanceId}`] : [];
   });
   return {
@@ -188,7 +192,11 @@ export async function collectAllWith(
     alerts: [
       ...withManual.flatMap((account) =>
         /unauthenticated|authentication required|unauthorized|login required/i.test(
-          [account.lastError, account.providerStatus, account.statusMessage].join(' ')
+          [
+            account.lastError,
+            account.providerStatus,
+            account.statusMessage,
+          ].join(' ')
         )
           ? [`AUTH_REQUIRED ${account.instanceId}`]
           : []

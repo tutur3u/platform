@@ -90,12 +90,20 @@ async function main(): Promise<void> {
   }
   if (command === 'refresh-antigravity-account') {
     const binary = process.argv[3];
-    if (!binary || process.argv.length !== 4)
+    if (
+      !binary ||
+      (process.argv.length !== 4 &&
+        !(
+          process.argv.length === 6 &&
+          process.argv[4] === '--instance' &&
+          process.argv[5]
+        ))
+    )
       throw new Error(
-        'usage: refresh-antigravity-account ABSOLUTE_BINARY_PATH'
+        'usage: refresh-antigravity-account ABSOLUTE_BINARY_PATH [--instance ID]'
       );
     try {
-      await refreshAntigravityAccount(binary);
+      await refreshAntigravityAccount(binary, process.argv[5]);
       console.log('Antigravity account quota refreshed');
     } catch {
       throw new Error('antigravity-account-refresh-failed');
@@ -197,7 +205,11 @@ async function main(): Promise<void> {
     await runHook(command, process.argv[3]);
     return;
   }
-  if (command !== 'status' && command !== 'recommend' && command !== 'pick-seat') {
+  if (
+    command !== 'status' &&
+    command !== 'recommend' &&
+    command !== 'pick-seat'
+  ) {
     throw new Error(
       'Usage: bun packages/agent-quota/src/cli.ts status|recommend|pick-seat [--provider codex|claude|antigravity|grok|cursor|opencode|copilot] [--task-kind implementation|analysis|review|research|design|ui] [--count N] [--table] [--json]'
     );
@@ -234,6 +246,11 @@ async function main(): Promise<void> {
 
   if (command === 'status') {
     const observedAt = new Date();
+    const ict = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      dateStyle: 'short',
+      timeStyle: 'medium',
+    });
     if (process.argv.includes('--record')) {
       await appendPacingSnapshots(filtered, observedAt);
     }
@@ -337,7 +354,18 @@ async function main(): Promise<void> {
               ...account,
               windows: account.windows.map((window) => ({
                 ...window,
-                ttlMs: windowFreshnessTtlMs(window, SIGNAL_TTL_MS[account.provider]),
+                ttlMs: windowFreshnessTtlMs(
+                  window,
+                  SIGNAL_TTL_MS[account.provider]
+                ),
+                remainingPercent:
+                  window.usedPercent === undefined
+                    ? null
+                    : 100 - window.usedPercent,
+                resetsAtIct:
+                  window.resetsAt && Date.parse(window.resetsAt) > 0
+                    ? `${ict.format(new Date(window.resetsAt))} ICT`
+                    : null,
               })),
             })),
             blocks,

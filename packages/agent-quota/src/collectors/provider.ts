@@ -1,7 +1,14 @@
 import type { Provider } from '../types';
 
-export function driverToProvider(driver: unknown): Provider | undefined {
-  if (driver === 'acpRegistry_github_copilot' || driver === 'copilot')
+export function driverToProvider(
+  driver: unknown,
+  instanceId?: unknown
+): Provider | undefined {
+  if (
+    driver === 'acpRegistry_github_copilot' ||
+    driver === 'copilot' ||
+    (driver === 'acpRegistry' && instanceId === 'acpRegistry_github_copilot')
+  )
     return 'copilot';
   if (driver === 'claudeAgent' || driver === 'claude') return 'claude';
   if (
@@ -17,6 +24,6 @@ export function driverToProvider(driver: unknown): Provider | undefined {
 
 export function providerToDriver(provider: Provider): string {
   if (provider === 'claude') return 'claudeAgent';
-  if (provider === 'copilot') return 'acpRegistry_github_copilot';
+  if (provider === 'copilot') return 'acpRegistry';
   return provider;
 }

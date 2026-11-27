@@ -14,6 +14,7 @@ interface AntigravityUsageWindow {
 
 export function parseAntigravityUsage(tsv: string) {
   const windows = new Map<string, AntigravityUsageWindow>();
+  const seen = new Set<string>();
   for (const line of tsv.split(/\r?\n/)) {
     const [label, limit, percent, reset, ...extra] = line
       .split('\t')
@@ -27,6 +28,10 @@ export function parseAntigravityUsage(tsv: string) {
           ? 'session'
           : undefined;
     if (!kind) continue;
+    const id = `${POOLS[label]}-${kind === 'weekly' ? 'weekly' : '5h'}`;
+    if (seen.has(id)) throw new Error('antigravity-usage-duplicate-window');
+    seen.add(id);
+    if (percent === 'disabled' && !reset && !extra.length) continue;
     const resetValue = reset?.replace(/^reset\s+/i, '');
     const resetTime = Date.parse(resetValue ?? '');
     const remainingPercent = Number(percent?.slice(0, -1));
@@ -41,8 +46,6 @@ export function parseAntigravityUsage(tsv: string) {
     ) {
       throw new Error('antigravity-usage-invalid-row');
     }
-    const id = `${POOLS[label]}-${kind === 'weekly' ? 'weekly' : '5h'}`;
-    if (windows.has(id)) throw new Error('antigravity-usage-duplicate-window');
     windows.set(id, {
       id,
       kind,
@@ -52,6 +55,7 @@ export function parseAntigravityUsage(tsv: string) {
       windowDurationMins: kind === 'weekly' ? 10080 : 300,
     });
   }
-  if (windows.size !== 4) throw new Error('antigravity-usage-incomplete');
+  if (!windows.has('gemini-weekly') || !windows.has('3p-weekly'))
+    throw new Error('antigravity-usage-incomplete');
   return [...windows.values()];
 }

@@ -8,9 +8,8 @@ const local = args[0] === 'backlog' || args[0] === 'operational-memory';
 const externalUpskii = args[0] === 'external' && args[1] === 'upskii';
 const separator = args.indexOf('--');
 const globalArgs = separator >= 0 ? args.slice(0, separator) : args;
-const run = args[0] === 'quota'
-  ? import('./quota.js').then(({ runQuotaCommand }) => runQuotaCommand(args.slice(1)))
-  :
+const run =
+  args[0] !== 'quota' &&
   args[0] !== 'ieeai' &&
   args[0] !== 'fleet' &&
   args[0] !== 'resources' &&
@@ -92,9 +91,14 @@ const run = args[0] === 'quota'
                                     ({ runIeeaiCommand }) =>
                                       runIeeaiCommand(args.slice(1))
                                   )
-                                : import('./commands.js').then(({ runCli }) =>
-                                    runCli()
-                                  );
+                                : args[0] === 'quota'
+                                  ? import('./quota.js').then(
+                                      ({ runQuotaCommand }) =>
+                                        runQuotaCommand(args.slice(1))
+                                    )
+                                  : import('./commands.js').then(({ runCli }) =>
+                                      runCli()
+                                    );
 run.catch((error) => {
   process.stderr.write(
     `${error instanceof Error ? error.message : String(error)}\n`

@@ -55,7 +55,7 @@ export function parseCatalog(value: unknown): CatalogInstance[] {
   const root = (envelope.structuredContent ?? value) as Record<string, unknown>;
   if (!Array.isArray(root.providers)) return [];
   return root.providers.flatMap((item: Record<string, unknown>) => {
-    const provider = driverToProvider(item.driverKind);
+    const provider = driverToProvider(item.driverKind, item.providerInstanceId);
     if (!provider) return [];
     if (typeof item.providerInstanceId !== 'string') return [];
     return [];

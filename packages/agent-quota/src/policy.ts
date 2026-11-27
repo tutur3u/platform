@@ -81,8 +81,12 @@ function rankOne(
       ...account,
       models: account.models?.filter(
         (model) =>
-          !matchingBlocks(blocks, account.instanceIds ?? [account.instanceId], model, now)
-            .length
+          !matchingBlocks(
+            blocks,
+            account.instanceIds ?? [account.instanceId],
+            model,
+            now
+          ).length
       ),
     },
     task,

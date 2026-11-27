@@ -40,6 +40,15 @@ it('excludes a recently blocked model despite fresh family headroom', () => {
   expect(pickSeat(options, 'builder', 'gemini-', undefined)?.model).toBe(
     'gemini-3.8-flash'
   );
-  expect(pickSeat(options, 'reviewer', undefined, account.instanceId)).toBeNull();
-  expect(pickSeat({ ...options, now: new Date('2026-11-27T17:00:00Z') }, 'builder', undefined, undefined)).toBeNull();
+  expect(
+    pickSeat(options, 'reviewer', undefined, account.instanceId)
+  ).toBeNull();
+  expect(
+    pickSeat(
+      { ...options, now: new Date('2026-11-27T17:00:00Z') },
+      'builder',
+      undefined,
+      undefined
+    )
+  ).toBeNull();
 });

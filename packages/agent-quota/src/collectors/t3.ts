@@ -33,7 +33,7 @@ export function collectT3State(
     `)
       .all() as Array<{ provider_instance_id: string; provider: string }>;
     for (const row of rows) {
-      const provider = driverToProvider(row.provider);
+      const provider = driverToProvider(row.provider, row.provider_instance_id);
       if (provider) byInstance.set(row.provider_instance_id, provider);
     }
     const active = database
@@ -62,19 +62,25 @@ export function collectT3State(
 
     let referencedInstances = [...assignments.keys()];
     try {
-      const refs = database.prepare(`
-        SELECT DISTINCT json_extract(payload_json, '$.providerInstanceId') AS id
+      const refs = database
+        .prepare(`
+        SELECT DISTINCT provider_instance_id AS id
         FROM orchestration_v2_projection_threads
-        WHERE json_type(payload_json, '$.providerInstanceId') = 'text'
-          AND COALESCE(json_extract(payload_json, '$.archived'), 0) = 0
+        WHERE provider_instance_id IS NOT NULL
+          AND archived_at IS NULL AND deleted_at IS NULL
           AND COALESCE(json_extract(payload_json, '$.settled'), 0) = 0
-      `).all();
-      referencedInstances = [...new Set([
-        ...referencedInstances,
-        ...refs.flatMap(({ id }) =>
-          typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id) ? [id] : []
-        ),
-      ])];
+      `)
+        .all();
+      referencedInstances = [
+        ...new Set([
+          ...referencedInstances,
+          ...refs.flatMap(({ id }) =>
+            typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id)
+              ? [id]
+              : []
+          ),
+        ]),
+      ];
     } catch {
       // Older T3 projections can still report active assignments.
     }

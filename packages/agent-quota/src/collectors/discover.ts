@@ -96,7 +96,7 @@ export async function discoverSnapshotInstances(
       const raw = await readRegularJsonFile(join(cacheDir, name));
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
       const value = raw as Record<string, unknown>;
-      const provider = driverToProvider(value.driver);
+      const provider = driverToProvider(value.driver, value.instanceId);
       if (!provider || value.instanceId !== stem) continue;
       if (value.enabled === false || value.status === 'disabled') continue;
       const extracted = extractModelsFromCache(value);

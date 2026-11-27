@@ -50,6 +50,11 @@ under `~/Documents/GitHub/tuturuuu`. An unreachable host or a host with an
 incompatible collector appears as a failed collection. Use `--local` to read
 only the current host. The GitHub API reading is separate from Copilot quota.
 
+Run `bun packages/agent-quota/src/cli.ts refresh-antigravity-account
+ABSOLUTE_BINARY_PATH --instance antigravity_2` to refresh an individual
+Antigravity seat using its native `/usage` command. The collector caches the
+result only when the CLI and T3 profile report the same account.
+
 Each provider window carries the original observation timestamp and TTL. Keep
 unavailable readings unknown. An active run-error block overrides family
 headroom for its matching account and model until the block expires. Record
