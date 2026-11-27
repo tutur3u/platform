@@ -4,27 +4,32 @@ import { useSyncExternalStore } from 'react';
 
 /**
  * The default mailbox is only known after bootstrap. Remembering the last
- * resolved default lets the thread list start in parallel with bootstrap on
- * the next visit; the server still authorizes every mailbox ID.
+ * resolved default per account and workspace lets the thread list start in
+ * parallel with bootstrap on the next visit without bleeding across accounts;
+ * the server still authorizes every mailbox ID.
  */
-const keyFor = (workspaceId: string) =>
-  `tuturuuu-mail-default-mailbox:${workspaceId}`;
+const keyFor = (workspaceId: string, actorId?: string | null) =>
+  actorId
+    ? `tuturuuu-mail-default-mailbox:${actorId}:${workspaceId}`
+    : `tuturuuu-mail-default-mailbox:${workspaceId}`;
 
 export function rememberDefaultMailbox(
   workspaceId: string,
-  mailboxId: string | undefined
+  mailboxId: string | undefined,
+  actorId?: string | null
 ) {
   try {
-    if (mailboxId) window.localStorage.setItem(keyFor(workspaceId), mailboxId);
-    else window.localStorage.removeItem(keyFor(workspaceId));
+    const key = keyFor(workspaceId, actorId);
+    if (mailboxId) window.localStorage.setItem(key, mailboxId);
+    else window.localStorage.removeItem(key);
   } catch {
     // Storage can be unavailable; the hint is only an optimization.
   }
 }
 
-function readHint(workspaceId: string) {
+function readHint(workspaceId: string, actorId?: string | null) {
   try {
-    return window.localStorage.getItem(keyFor(workspaceId));
+    return window.localStorage.getItem(keyFor(workspaceId, actorId));
   } catch {
     return null;
   }
@@ -32,10 +37,10 @@ function readHint(workspaceId: string) {
 
 const noop = () => () => undefined;
 
-export function useMailboxHint(workspaceId: string) {
+export function useMailboxHint(workspaceId: string, actorId?: string | null) {
   return useSyncExternalStore(
     noop,
-    () => readHint(workspaceId),
+    () => readHint(workspaceId, actorId),
     () => null
   );
 }

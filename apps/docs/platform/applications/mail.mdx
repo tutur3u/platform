@@ -227,14 +227,20 @@ Switching mailbox closes the open conversation, and a resize never reopens a
 conversation from another mailbox.
 
 Account changes while Mail is open (for example, switching accounts in another
-tab) are recovered on the web client. Mailbox discovery re-runs when the tab
-regains focus, and a mailbox-scoped read refused with 403 or 404 drops that
-mailbox from the selection and moves to the current account's default mailbox,
-with the stale `mailbox`, `thread`, folder and label parameters cleared. A
-conversation mark-as-read refused the same way reloads discovery silently
-instead of showing "Could not update the conversation". The server still
-authorizes every mailbox ID; a foreign ID is never served.
-Coverage: `mail-read-query.test.ts`, `use-mail-viewed-thread-read.test.ts`.
+tab) are recovered across SSR and the web client. On folder SSR, a managed
+`mailbox` query parameter that is malformed, unknown, or refused for the signed-in
+account redirects to that workspace's inbox with stale `mailbox`, `thread`,
+`folderId`, and `label` parameters stripped instead of throwing a 500. The
+remembered default mailbox hint in `localStorage` is scoped per account and
+workspace so one account never pre-selects another account's mailbox. Mailbox
+discovery re-runs when the tab regains focus, a mailbox list or organization
+read refused with 403 drops that mailbox from the selection and moves to the
+current account's default mailbox, and a conversation mark-as-read refused with
+403 or 404 reloads discovery silently instead of showing "Could not update the
+conversation". The server still authorizes every mailbox ID; a foreign ID is
+never served.
+Coverage: `page-model.test.ts`, `mail-mailbox-hint.test.ts`,
+`mail-read-query.test.ts`, `use-mail-viewed-thread-read.test.ts`.
 
 Prefetching is bounded. For verified mailboxes it fetches the rows currently
 built in the list, after scrolling pauses for 250ms: conversations in thread

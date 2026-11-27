@@ -15,6 +15,10 @@ import LoginPage from '../app/[locale]/(auth)/login/page';
 import { proxy } from '../proxy';
 import { getLocale } from './intl-server';
 import { MAIL_FUNCTION_BASE } from './mail-api-policy';
+import {
+  canAccessRequestedMailbox,
+  stripStaleMailboxParams,
+} from './mail-mailbox-access.server';
 import { loadMailWorkspace } from './mail-workspace-model.server';
 import { resolveMailPage } from './page-policy';
 import { dispatchThroughMailProxy } from './proxy-bridge';
@@ -143,6 +147,18 @@ async function loadResolvedPage(url: URL) {
         throw redirect({
           href: `${prefix}/${workspace.workspaceSlug}/inbox${url.search}`,
         });
+      const requestedMailbox = url.searchParams.get('mailbox');
+      if (requestedMailbox && url.searchParams.get('connected') !== '1') {
+        const accessible = await canAccessRequestedMailbox(
+          workspace.actorId,
+          requestedMailbox
+        );
+        if (!accessible) {
+          throw redirect({
+            href: `${prefix}/${workspace.workspaceSlug}/inbox${stripStaleMailboxParams(url.searchParams)}`,
+          });
+        }
+      }
       await timing.appendToResponse(async () => {
         const verified = await getSatelliteSupabaseSessionUser();
         return (

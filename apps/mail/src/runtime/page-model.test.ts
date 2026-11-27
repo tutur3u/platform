@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   profile: vi.fn(),
   workspace: vi.fn(),
   invitation: vi.fn(),
+  mailboxMembership: vi.fn(),
   proxy: vi.fn(),
   login: vi.fn(),
 }));
@@ -31,6 +32,19 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
         }),
       },
     },
+    schema: () => ({
+      from: () => ({
+        select: () => ({
+          eq: (_c1: string, mailboxId: string) => ({
+            eq: (_c2: string, userId: string) => ({
+              eq: () => ({
+                maybeSingle: () => mocks.mailboxMembership(userId, mailboxId),
+              }),
+            }),
+          }),
+        }),
+      }),
+    }),
   }),
 }));
 vi.mock('@tanstack/react-start/server-only', () => ({}));
@@ -380,6 +394,78 @@ describe('Mail page model under the /mail apex mount', () => {
         href: 'https://tuturuuu.com/mail/login?refresh=1&next=%2Fvi%2Fpersonal%2Fsent',
         reloadDocument: true,
       },
+    });
+  });
+
+  it('redirects foreign, refused, or malformed mailbox query params to inbox instead of throwing in SSR', async () => {
+    const staleMailbox = '85abef4b-2fee-4eeb-b273-80e6c8d49e0b';
+    const ownMailbox = '5750819e-e05e-48a4-b7d7-23997b6d9071';
+    mocks.workspace.mockResolvedValue({
+      id: tenant,
+      personal: true,
+      joined: true,
+    });
+
+    // Foreign / unknown mailbox (no membership row) on snoozed route -> redirect to inbox, strip stale params.
+    mocks.mailboxMembership.mockResolvedValueOnce({ data: null, error: null });
+    await expect(
+      load(
+        `/personal/snoozed?connected=&mailbox=${staleMailbox}&thread=t1&label=l1&folderId=f1`
+      )
+    ).rejects.toMatchObject({
+      options: { href: '/personal/inbox?connected=' },
+    });
+    expect(mocks.mailboxMembership).toHaveBeenCalledWith('actor', staleMailbox);
+
+    // Refused / thrown error during SSR membership check -> redirect instead of 500.
+    mocks.mailboxMembership.mockRejectedValueOnce(
+      Object.assign(new Error('Forbidden'), { status: 403 })
+    );
+    await expect(
+      load(`/personal/snoozed?mailbox=${staleMailbox}`)
+    ).rejects.toMatchObject({
+      options: { href: '/personal/inbox' },
+    });
+
+    // Database error object -> redirect instead of 500.
+    mocks.mailboxMembership.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'permission denied' },
+    });
+    await expect(
+      load(`/vi/personal/snoozed?mailbox=${staleMailbox}`)
+    ).rejects.toMatchObject({
+      options: { href: '/vi/personal/inbox' },
+    });
+
+    // Malformed non-UUID mailbox -> redirect without touching DB.
+    mocks.mailboxMembership.mockClear();
+    await expect(
+      load('/personal/snoozed?mailbox=not-a-uuid')
+    ).rejects.toMatchObject({
+      options: { href: '/personal/inbox' },
+    });
+    expect(mocks.mailboxMembership).not.toHaveBeenCalled();
+
+    // Connected mode (?connected=1) does not check managed mailbox access.
+    await expect(
+      load(`/personal/snoozed?connected=1&mailbox=${staleMailbox}`)
+    ).resolves.toMatchObject({
+      kind: 'folder',
+      folder: 'snoozed',
+    });
+    expect(mocks.mailboxMembership).not.toHaveBeenCalled();
+
+    // Accessible active mailbox renders normally.
+    mocks.mailboxMembership.mockResolvedValueOnce({
+      data: { role: 'owner' },
+      error: null,
+    });
+    await expect(
+      load(`/personal/snoozed?connected=&mailbox=${ownMailbox}`)
+    ).resolves.toMatchObject({
+      kind: 'folder',
+      folder: 'snoozed',
     });
   });
 });

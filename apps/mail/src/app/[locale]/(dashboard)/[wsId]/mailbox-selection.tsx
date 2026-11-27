@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useMailActor } from '@/components/mail-actor-provider';
 import {
   rememberDefaultMailbox,
   resolveActiveMailboxId,
@@ -45,7 +46,8 @@ function useMailboxSelectionState(workspaceId: string) {
   );
   const rejectedSelection = useRef<string | null>(null);
   const awaitingDiscovery = useRef(false);
-  const hint = useMailboxHint(workspaceId);
+  const actorId = useMailActor();
+  const hint = useMailboxHint(workspaceId, actorId);
   const { source } = useMailSource();
   const discovered: MailMailbox[] | undefined = bootstrapQuery.data?.mailboxes;
   const mailboxes = (discovered ?? []).filter(
@@ -69,8 +71,9 @@ function useMailboxSelectionState(workspaceId: string) {
 
   const hasDiscovery = Boolean(discovered);
   useEffect(() => {
-    if (hasDiscovery) rememberDefaultMailbox(workspaceId, defaultMailboxId);
-  }, [hasDiscovery, defaultMailboxId, workspaceId]);
+    if (hasDiscovery)
+      rememberDefaultMailbox(workspaceId, defaultMailboxId, actorId);
+  }, [actorId, hasDiscovery, defaultMailboxId, workspaceId]);
 
   const selectMailbox = useCallback(
     (mailbox: string | null) =>
@@ -131,7 +134,8 @@ function useMailboxSelectionState(workspaceId: string) {
       )
         return;
       rejectedSelection.current = mailboxId;
-      if (hint === mailboxId) rememberDefaultMailbox(workspaceId, undefined);
+      if (hint === mailboxId)
+        rememberDefaultMailbox(workspaceId, undefined, actorId);
       setDeniedIds((ids) => new Set(ids).add(mailboxId));
       void selectMailbox(nextMailboxId ?? null);
       // Before discovery, the pending bootstrap already runs under the current session.
@@ -142,6 +146,7 @@ function useMailboxSelectionState(workspaceId: string) {
     },
     [
       activeMailboxId,
+      actorId,
       hasDiscovery,
       hint,
       nextMailboxId,
