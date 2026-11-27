@@ -1,10 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
@@ -234,6 +236,27 @@ void main() {
     await pumpRailShell(tester, Routes.settings);
     expect(find.byKey(const ValueKey('shell-dock-back')), findsOneWidget);
     expect(find.byType(MorphingNavigationBar), findsNothing);
+  });
+
+  testWidgets('dropdown navigation glyph fits the icon and chevron', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Center(
+          child: ShellDockNavIcon(
+            icon: Icons.more_horiz,
+            label: 'More',
+            dropdown: true,
+          ),
+        ),
+      ),
+    );
+    final glyph = tester.getRect(find.byType(ShellDockNavIcon));
+    final chevron = tester.getRect(find.byIcon(Icons.expand_more));
+    expect(glyph.width, ShellDockMetrics.dropdownGlyphWidth);
+    expect(chevron.right, lessThanOrEqualTo(glyph.right));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('plain Settings exposes Back in the rail', (tester) async {

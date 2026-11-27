@@ -158,6 +158,15 @@ void main() {
           repository.saveDraft('ws', 'box', captureAny(), draftId: 'original'),
       () => repository.send('ws', 'box', captureAny()),
     ]);
+    verifyNever(
+      () => repository.saveDraft(
+        any(),
+        any(),
+        any(),
+        draftId: any(named: 'draftId'),
+      ),
+    );
+    verifyNever(() => repository.send(any(), any(), any()));
     final saved = calls[0].captured.single as Map<String, dynamic>;
     final payload = calls[1].captured.single as Map<String, dynamic>;
     expect(saved['subject'], 'Updated subject');
