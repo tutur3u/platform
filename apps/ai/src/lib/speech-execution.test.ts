@@ -5,6 +5,10 @@ const mocks = vi.hoisted(() => ({
   settleMeteredExecution: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: vi.fn(async () => true),
+}));
 vi.mock('./public-api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./public-api')>()),
   prepareMeteredExecution: mocks.prepareMeteredExecution,

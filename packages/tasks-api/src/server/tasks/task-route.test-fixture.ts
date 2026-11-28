@@ -174,6 +174,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
 }));
 
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: vi.fn(async () => true),
+}));
+
 vi.mock('./generate-task-embedding', () => ({
   generateTaskEmbedding: vi.fn(() => Promise.resolve()),
 }));

@@ -4,9 +4,14 @@ const mocks = vi.hoisted(() => ({
   authorize: vi.fn(),
   execute: vi.fn(),
   listModels: vi.fn(),
+  lookupAiDataConsent: vi.fn(),
   parse: vi.fn((value) => value),
 }));
 
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: mocks.lookupAiDataConsent,
+}));
 vi.mock('@/lib/session-api', () => ({
   authorizeAiStudioWorkspaceRequest: mocks.authorize,
 }));
@@ -147,6 +152,34 @@ describe('AI Studio saved-key playground route', () => {
     );
 
     expect(response.status).toBe(401);
+    expect(mocks.execute).not.toHaveBeenCalled();
+  });
+
+  it('refuses native callers without AI data consent before execution', async () => {
+    authorizeWithKey();
+    mocks.lookupAiDataConsent.mockResolvedValue(false);
+
+    const response = await POST(
+      new Request('https://ai.example/playground', {
+        body: JSON.stringify({
+          endpoint: 'responses',
+          keyId: KEY_ID,
+          maxOutputTokens: 1024,
+          maxSteps: 4,
+          model: 'google/gemini-2.5-flash',
+          prompt: 'Hello',
+          tools: [],
+        }),
+        headers: { authorization: 'Bearer supabase-jwt' },
+        method: 'POST',
+      }),
+      context
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'ai_consent_required',
+    });
     expect(mocks.execute).not.toHaveBeenCalled();
   });
 });

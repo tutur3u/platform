@@ -56,7 +56,7 @@ function extractTextFromTipTap(content: unknown, depth = 0): string {
   return '';
 }
 
-interface GenerateTaskEmbeddingOptions {
+export interface GenerateTaskEmbeddingOptions {
   taskId: string;
   taskName: string;
   taskDescription?: string | null;

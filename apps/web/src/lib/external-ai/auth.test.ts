@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   getBearerToken: vi.fn(),
+  lookupAiDataConsent: vi.fn(),
   verifyAppSessionRequest: vi.fn(),
   verifyMembership: vi.fn(),
 }));
@@ -15,6 +16,10 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
+}));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: mocks.lookupAiDataConsent,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: mocks.verifyMembership,
@@ -212,6 +217,32 @@ describe('authenticateExternalAiRequest', () => {
     });
     await expect(authenticateExternalAiRequest(request())).resolves.toEqual(
       expect.objectContaining({ appId: 'cybershield35' })
+    );
+  });
+
+  it('refuses a consent-required token until its user allows Mira AI data', async () => {
+    mocks.verifyAppSessionRequest.mockReturnValue({
+      claims: {
+        scopes: ['workspace:session', 'ai:use', 'ai:consent-required'],
+        sub: 'user-1',
+        target_app: 'cybershield35',
+        workspace_id: workspaceId,
+      },
+      ok: true,
+    });
+    mocks.lookupAiDataConsent.mockResolvedValue(false);
+
+    await expect(
+      authenticateExternalAiRequest(request())
+    ).rejects.toMatchObject({ code: 'ai_consent_required', status: 403 });
+    expect(mocks.lookupAiDataConsent).toHaveBeenCalledWith(
+      'user-1',
+      expect.anything()
+    );
+
+    mocks.lookupAiDataConsent.mockResolvedValue(true);
+    await expect(authenticateExternalAiRequest(request())).resolves.toEqual(
+      expect.objectContaining({ actorId: 'user-1' })
     );
   });
 });

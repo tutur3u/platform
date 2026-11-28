@@ -7,6 +7,10 @@ const authMocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: vi.fn(async () => true),
+}));
 vi.mock('@/lib/app-session-user', () => ({
   resolveAuthenticatedSessionUser: authMocks.resolveAuthenticatedSessionUser,
 }));

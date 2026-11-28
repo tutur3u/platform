@@ -1,3 +1,4 @@
+import { requiresAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -413,6 +414,7 @@ export async function createSourceTaskFromPlanItem({
   if (!payload) return { task: null };
 
   const taskAuth: TaskRouteAuthContext = {
+    aiConsentRequired: requiresAiDataConsent(request),
     supabase: auth.supabase,
     user: auth.user,
   };

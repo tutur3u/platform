@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   getHiveMemberByUserId: vi.fn(),
+  lookupAiDataConsent: vi.fn(),
   runHiveWorkflow: vi.fn(),
 }));
 
@@ -13,6 +14,12 @@ vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
   createClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: (...args: unknown[]) =>
+    mocks.lookupAiDataConsent(...args),
 }));
 
 vi.mock('@/lib/hive/hive-db', () => ({
@@ -45,8 +52,9 @@ function createAccessClient({
   };
 }
 
-function hiveRunRequest() {
+function hiveRunRequest(aiConsentRequired = false) {
   const { token } = createAppSessionToken({
+    aiConsentRequired,
     email: 'hive@example.com',
     targetApp: 'hive',
     userId: '00000000-0000-4000-8000-000000000002',
@@ -71,6 +79,8 @@ describe('Hive workflow run route', () => {
     mocks.createAdminClient.mockReset();
     mocks.getHiveMemberByUserId.mockReset();
     mocks.runHiveWorkflow.mockReset();
+    mocks.lookupAiDataConsent.mockReset();
+    mocks.lookupAiDataConsent.mockResolvedValue(false);
     mocks.createAdminClient.mockResolvedValue(createAccessClient());
     mocks.getHiveMemberByUserId.mockResolvedValue({ enabled: true });
     mocks.runHiveWorkflow.mockResolvedValue({
@@ -99,5 +109,21 @@ describe('Hive workflow run route', () => {
       serverId: 'server-1',
       workflowId: 'workflow-1',
     });
+  });
+
+  it('refuses consent-required app sessions without AI data consent', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(hiveRunRequest(true), {
+      params: Promise.resolve({
+        serverId: 'server-1',
+        workflowId: 'workflow-1',
+      }),
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'ai_consent_required',
+    });
+    expect(mocks.runHiveWorkflow).not.toHaveBeenCalled();
   });
 });

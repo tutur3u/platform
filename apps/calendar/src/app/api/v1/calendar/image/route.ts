@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   checkAiCredits,
   deductAiCredits,
@@ -12,6 +13,9 @@ async function extractEventsFromImage(
   req: NextRequest,
   { supabase, user }: SessionAuthContext
 ) {
+  const consentResponse = await enforceAiDataConsent(req, user.id);
+  if (consentResponse) return consentResponse;
+
   try {
     const { base64Image } = await req.json();
     if (

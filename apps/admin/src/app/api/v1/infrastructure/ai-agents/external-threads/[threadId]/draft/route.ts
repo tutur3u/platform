@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { draftAiAgentExternalResponse } from '@/lib/ai-agents/external-chat-actions';
@@ -18,6 +19,9 @@ async function draftResponse(request: NextRequest, params: RouteParams) {
   if (!access.ok) {
     return access.response;
   }
+
+  const consentResponse = await enforceAiDataConsent(request, access.user.id);
+  if (consentResponse) return consentResponse;
 
   const body = await request.json().catch(() => null);
   const parsed = draftSchema.safeParse(body ?? {});

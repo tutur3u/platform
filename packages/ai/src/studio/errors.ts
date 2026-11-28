@@ -1,4 +1,5 @@
 export type AiStudioErrorCode =
+  | 'ai_consent_required'
   | 'invalid_api_key'
   | 'insufficient_credits'
   | 'invalid_request_error'

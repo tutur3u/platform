@@ -1,3 +1,4 @@
+import { hasAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import {
   type AppCoordinationTokenClaims,
@@ -5,6 +6,7 @@ import {
 } from '@tuturuuu/auth/app-coordination';
 import { verifyAppSessionRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { AI_CONSENT_REQUIRED_SCOPE } from '@tuturuuu/utils/ai-consent-session';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   hasGrantedScope,
@@ -175,6 +177,19 @@ export async function authenticateExternalAiRequest(
     throw invalidExternalCredential(
       'The external-app user no longer has access to this workspace.'
     );
+  }
+
+  // Mira AI data consent: a token stamped consent-required reaches Gemini only
+  // after its user allowed it.
+  if (
+    claims.scopes.includes(AI_CONSENT_REQUIRED_SCOPE) &&
+    !(await hasAiDataConsent(claims.sub, sbAdmin))
+  ) {
+    throw new AiStudioError('ai_consent_required', {
+      code: 'ai_consent_required',
+      status: 403,
+      type: 'permission_error',
+    });
   }
 
   return {

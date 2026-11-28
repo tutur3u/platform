@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { type NextRequest, NextResponse } from 'next/server';
 import { HiveAiAccessError } from '@/lib/hive/ai';
 import { runHiveNpcInteraction } from '@/lib/hive/npc-interactions';
@@ -28,6 +29,12 @@ export async function POST(request: NextRequest, context: RouteContext) {
       if (!access.ok) {
         return access.response;
       }
+
+      const consentResponse = await enforceAiDataConsent(
+        request,
+        access.access.user.id
+      );
+      if (consentResponse) return consentResponse;
 
       const body = await request.json().catch(() => null);
       const parsed = hiveNpcRunSchema.safeParse(body);

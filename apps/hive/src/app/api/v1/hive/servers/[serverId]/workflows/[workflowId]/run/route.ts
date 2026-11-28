@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { type NextRequest, NextResponse } from 'next/server';
 import { runHiveWorkflow } from '@/lib/hive/workflows';
 import {
@@ -21,6 +22,12 @@ export async function POST(request: NextRequest, { params }: Params) {
   return withHiveRoute(request, ROUTE, async () => {
     const access = await requireHiveAccess(request);
     if (!access.ok) return access.response;
+
+    const consentResponse = await enforceAiDataConsent(
+      request,
+      access.access.user.id
+    );
+    if (consentResponse) return consentResponse;
 
     const body = await request.json().catch(() => ({}));
     const parsed = hiveWorkflowRunPayloadSchema.safeParse(body);

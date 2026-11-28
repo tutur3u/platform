@@ -11,6 +11,11 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export type TaskRouteAuthContext = {
+  /**
+   * Set by internal callers that build their own task request: whether the
+   * originating request needs Mira AI data consent before Gemini embedding.
+   */
+  aiConsentRequired?: boolean;
   appSession?: boolean;
   supabase: TypedSupabaseClient;
   user: SupabaseUser;

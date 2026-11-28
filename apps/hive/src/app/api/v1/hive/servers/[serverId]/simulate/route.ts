@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { type NextRequest, NextResponse } from 'next/server';
 import { runHiveSimulationTick } from '@/lib/hive/simulation';
 import { requireHiveAdmin, withHiveRoute } from '../../../_shared';
@@ -13,6 +14,12 @@ export async function POST(request: NextRequest, { params }: Params) {
   return withHiveRoute(request, route, async () => {
     const access = await requireHiveAdmin(request);
     if (!access.ok) return access.response;
+
+    const consentResponse = await enforceAiDataConsent(
+      request,
+      access.access.user.id
+    );
+    if (consentResponse) return consentResponse;
 
     const results = await runHiveSimulationTick({ force: true, serverId });
     const result = results[0];

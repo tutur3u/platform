@@ -6,11 +6,16 @@ const mocks = vi.hoisted(() => ({
   beginExternalAiStudioRun: vi.fn(),
   calculateAiStudioUsageCost: vi.fn(),
   createAdminClient: vi.fn(),
+  lookupAiDataConsent: vi.fn(),
   settleAiStudioRun: vi.fn(),
   recordAiStudioRunStep: vi.fn(),
   settleExternalAiStudioRun: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: mocks.lookupAiDataConsent,
+}));
 vi.mock('./public-credential', () => ({
   authenticatePublicAiRequest: mocks.authenticatePublicAiRequest,
   EXTERNAL_AI_SCOPE: 'ai:use',
@@ -35,6 +40,27 @@ import {
 } from './public-api';
 
 describe('AI Studio billing policy', () => {
+  it('refuses a consent-required external-app session before reserving a run', async () => {
+    mocks.lookupAiDataConsent.mockResolvedValueOnce(false);
+    await expect(
+      prepareMeteredExecution({
+        credential: {
+          actorId: 'user-1',
+          appId: 'external',
+          kind: 'external-app',
+          scopes: ['workspace:session', 'ai:use', 'ai:consent-required'],
+          workspaceId: 'workspace',
+        },
+        feature: 'responses',
+        maxUsage: { inputTokens: 10 },
+        modelId: 'google/gemini-2.5-flash',
+        request: new Request('https://ai.tuturuuu.com/v1/responses'),
+      })
+    ).rejects.toMatchObject({ code: 'ai_consent_required', status: 403 });
+    expect(mocks.lookupAiDataConsent).toHaveBeenCalledWith('user-1', undefined);
+    expect(mocks.beginExternalAiStudioRun).not.toHaveBeenCalled();
+    expect(mocks.beginAiStudioRun).not.toHaveBeenCalled();
+  });
   it('reserves real credits for a first-party capability, never external unmetered usage', async () => {
     await prepareMeteredExecution({
       credential: {

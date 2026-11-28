@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { streamText } from 'ai';
@@ -13,6 +14,8 @@ const requestSchema = z.object({
 export async function POST(req: Request) {
   const auth = await authorizeInfrastructureAdminRequest();
   if (!auth.ok) return auth.response;
+  const consentResponse = await enforceAiDataConsent(req, auth.user.id);
+  if (consentResponse) return consentResponse;
 
   const parsed = requestSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {

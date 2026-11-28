@@ -1,3 +1,4 @@
+import { requiresAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -29,7 +30,9 @@ export const POST = withSessionAuth<Params>(
         await readJson(request)
       );
 
-      return await instantiateTaskTemplate(context, resolved.template, parsed);
+      return await instantiateTaskTemplate(context, resolved.template, parsed, {
+        aiConsentRequired: requiresAiDataConsent(request),
+      });
     } catch (error) {
       return handleUnknownTaskTemplateError(
         error,

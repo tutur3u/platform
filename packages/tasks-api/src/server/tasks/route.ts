@@ -41,7 +41,7 @@ import {
 } from './board-task-cursor';
 import { resolveCreateTaskSortKey } from './create-sort-key';
 import { insertWorkspaceTask } from './insert-workspace-task';
-import { generateTaskEmbedding } from './generate-task-embedding';
+import { dispatchTaskEmbedding } from './dispatch-task-embedding';
 import {
   buildTaskRelationshipSummary,
   lookupWorkspacePersonal,
@@ -2287,15 +2287,14 @@ export async function handleTaskRoutePOST(
       }
     }
 
-    generateTaskEmbedding({
+    void dispatchTaskEmbedding(request, {
+      aiConsentRequired: auth.aiConsentRequired,
       taskId: data.id,
       taskName: data.name,
       taskDescription: data.description,
       supabase: sbAdmin,
       userId: user.id,
       wsId: normalizedWorkspaceId,
-    }).catch((err) => {
-      console.error('Failed to generate embedding in background:', err);
     });
 
     const task = {

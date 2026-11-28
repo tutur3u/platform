@@ -33,7 +33,7 @@ export function requestRequiresAiDataConsent(
     .get('authorization')
     ?.match(/^Bearer\s+(\S+)/iu)?.[1];
   if (bearer && !isAppCoordinationToken(bearer)) return true;
-  return requestCarriesConsentRequiredAppSession(request);
+  return requestCarriesConsentRequiredAppSession(request, bearer);
 }
 
 /** Whether a verified app-coordination token carries the consent stamp. */
@@ -46,24 +46,45 @@ export function appSessionRequiresAiConsent(token: string) {
 }
 
 function requestCarriesConsentRequiredAppSession(
-  request: Pick<Request, 'headers'>
+  request: Pick<Request, 'headers'>,
+  schemeBearer: string | undefined
 ) {
   const tokens = new Set<string>();
   const bearer = getBearerAppCoordinationToken(request);
   if (bearer) tokens.add(bearer);
-  for (const part of request.headers.get('cookie')?.split(';') ?? []) {
-    const value = part.slice(part.indexOf('=') + 1).trim();
-    if (!part.includes('=') || !isAppCoordinationToken(value)) continue;
-    try {
-      tokens.add(decodeURIComponent(value));
-    } catch {
-      tokens.add(value);
-    }
+  if (schemeBearer && isAppCoordinationToken(schemeBearer)) {
+    tokens.add(schemeBearer);
+  }
+  for (const value of readCookieValues(request)) {
+    if (isAppCoordinationToken(value)) tokens.add(value);
   }
   for (const token of tokens) {
     if (appSessionRequiresAiConsent(token)) return true;
   }
   return false;
+}
+
+/**
+ * Every cookie value in [request], URL-decoded the way the app-session reader
+ * decodes them (raw value kept when an escape is malformed). Values are read
+ * regardless of cookie name, so every app-session cookie the authenticator
+ * accepts is covered.
+ */
+function readCookieValues(request: Pick<Request, 'headers'>) {
+  const values: string[] = [];
+  for (const part of request.headers.get('cookie')?.split(';') ?? []) {
+    const separator = part.indexOf('=');
+    if (separator < 0) continue;
+    const raw = part.slice(separator + 1).trim();
+    values.push(raw);
+    try {
+      const decoded = decodeURIComponent(raw).trim();
+      if (decoded !== raw) values.push(decoded);
+    } catch {
+      // Malformed escapes: the raw value above is the only candidate.
+    }
+  }
+  return values;
 }
 
 /**

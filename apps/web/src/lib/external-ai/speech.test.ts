@@ -12,6 +12,10 @@ vi.mock('@tuturuuu/ai/studio/metering', () => ({
   calculateAiStudioUsageCost: mocks.calculateCost,
   settleExternalAiStudioRun: mocks.settleRun,
 }));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: vi.fn(async () => true),
+}));
 vi.mock('./auth', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./auth')>();
   return {

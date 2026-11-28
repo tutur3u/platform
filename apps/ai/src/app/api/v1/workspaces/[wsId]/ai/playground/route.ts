@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import type { AiStudioCredential } from '@tuturuuu/ai/studio/auth';
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
@@ -123,6 +124,8 @@ export async function POST(
       'manage_ai_keys'
     );
     if (!auth.ok) return auth.response;
+    const consentResponse = await enforceAiDataConsent(request, auth.user.id);
+    if (consentResponse) return consentResponse;
 
     const body = playgroundSchema.parse(await request.json());
     const credential = await savedKeyCredential(auth, body.keyId);

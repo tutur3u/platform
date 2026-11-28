@@ -55,6 +55,50 @@ describe('Mira AI consent for app sessions', () => {
     ).toBe(true);
   });
 
+  it('reads URL-encoded app-session cookies the way the authenticator does', () => {
+    const stamped = session([AI_CONSENT_REQUIRED_SCOPE]);
+    const encoded = `%74${stamped.slice(1)}`;
+    for (const name of [
+      'tuturuuu_app_session',
+      'tuturuuu_web_app_session',
+      'tuturuuu_app_session_refresh',
+    ]) {
+      expect(
+        requestRequiresAiDataConsent(
+          request({ cookie: `a=1; ${name}=${encoded}` })
+        )
+      ).toBe(true);
+    }
+    expect(
+      requestRequiresAiDataConsent(
+        request({
+          cookie: `tuturuuu_app_session=${encodeURIComponent(stamped)}`,
+        })
+      )
+    ).toBe(true);
+    expect(
+      requestRequiresAiDataConsent(
+        request({ cookie: 'tuturuuu_app_session=%E0%A4%A' })
+      )
+    ).toBe(false);
+  });
+
+  it('matches the bearer scheme case-insensitively with extra whitespace', () => {
+    const stamped = session([AI_CONSENT_REQUIRED_SCOPE]);
+    for (const authorization of [
+      `bearer ${stamped}`,
+      `BEARER ${stamped}`,
+      `Bearer   ${stamped}`,
+    ]) {
+      expect(requestRequiresAiDataConsent(request({ authorization }))).toBe(
+        true
+      );
+    }
+    expect(
+      requestRequiresAiDataConsent(request({ authorization: 'bearer eyJ.x' }))
+    ).toBe(true);
+  });
+
   it('keeps an unstamped app session exempt and ignores forged stamps', () => {
     expect(
       requestRequiresAiDataConsent(

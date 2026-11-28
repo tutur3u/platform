@@ -14,6 +14,7 @@ import {
 } from '@tuturuuu/ai/studio/request';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types';
+import { assertExternalAppAiConsent } from './external-app-ai-consent';
 import {
   authenticatePublicAiRequest,
   EXTERNAL_AI_SCOPE,
@@ -179,6 +180,7 @@ export async function prepareMeteredExecution({
   const credential =
     providedCredential ??
     (await authenticatePublicAiRequest(request, requiredExternalScope));
+  await assertExternalAppAiConsent(credential);
   if (requiredModelType) {
     await assertAiStudioModelType(modelId, requiredModelType);
   }

@@ -588,7 +588,8 @@ export async function resolveDefaultTemplateListId(
 export async function instantiateTaskTemplate(
   context: TaskTemplatesRouteContext,
   template: TaskTemplateRow,
-  parsed: z.infer<typeof instantiateTaskTemplateSchema>
+  parsed: z.infer<typeof instantiateTaskTemplateSchema>,
+  options: { aiConsentRequired?: boolean } = {}
 ) {
   const list = await resolveDefaultTemplateListId(
     context,
@@ -639,6 +640,7 @@ export async function instantiateTaskTemplate(
     }
   ) as NextRequest;
   const taskAuth: TaskRouteAuthContext = {
+    aiConsentRequired: options.aiConsentRequired,
     supabase: context.supabase,
     user: context.user,
   };
