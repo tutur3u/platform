@@ -169,19 +169,20 @@ export function PolishScene() {
             data-testid="open-settings-fixture"
             onClick={() => setSettingsOpen(true)}
           >
-            {t('settings')}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="fixed bottom-4 left-4 z-[60]"
-            data-testid="open-focus-overlay-dialog"
-            onClick={() => setOverlayOpen(true)}
-          >
-            Open overlay
+            {t('classroom.title')}
           </Button>
         </header>
+
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          style={{ position: 'fixed', bottom: 16, left: 16, zIndex: 60 }}
+          data-testid="open-focus-overlay-dialog"
+          onClick={() => setOverlayOpen(true)}
+        >
+          Open overlay
+        </Button>
 
         <div className="grid min-h-0 flex-1 grid-cols-2 gap-4">
           <div
@@ -237,10 +238,11 @@ export function PolishScene() {
         <Dialog open={overlayOpen} onOpenChange={setOverlayOpen}>
           <DialogContent
             data-testid="focus-overlay-dialog"
-            className="z-[70] sm:max-w-sm"
+            style={{ zIndex: 70 }}
+            className="sm:max-w-sm"
           >
             <DialogHeader>
-              <DialogTitle>{t('settings')}</DialogTitle>
+              <DialogTitle>{t('classroom.title')}</DialogTitle>
               <DialogDescription>{t('share.title')}</DialogDescription>
             </DialogHeader>
           </DialogContent>
