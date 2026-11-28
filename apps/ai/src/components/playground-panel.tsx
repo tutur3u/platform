@@ -8,14 +8,16 @@ import {
   type AiStudioPlaygroundTool,
   createAiStudioKey,
   getAiStudioKeys,
-  getAiStudioPublicModels,
-  getAiStudioSavedKeyModels,
-  runAiStudioPlayground,
-  runAiStudioSavedKeyPlayground,
 } from '@tuturuuu/internal-api/ai-studio';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  playgroundPublicModels,
+  playgroundRun,
+  playgroundSavedKeyModels,
+  playgroundSavedKeyRun,
+} from '@/lib/playground-api';
 import {
   defaultPlaygroundModel,
   textPlaygroundModels,
@@ -65,11 +67,11 @@ export function PlaygroundPanel({
   const savedModelsQuery = useQuery({
     enabled: Boolean(selectedSavedKeyId),
     queryFn: () =>
-      getAiStudioSavedKeyModels(workspaceId, selectedSavedKeyId ?? ''),
+      playgroundSavedKeyModels(workspaceId, selectedSavedKeyId ?? ''),
     queryKey: ['ai-studio-playground-models', workspaceId, selectedSavedKeyId],
   });
   const modelsMutation = useMutation({
-    mutationFn: (value: string) => getAiStudioPublicModels(value),
+    mutationFn: (value: string) => playgroundPublicModels(value),
     onError: (error) => toast.error(error.message),
     onSuccess: (models) => {
       if (!model && models[0]) setModel(models[0].id);
@@ -102,8 +104,8 @@ export function PlaygroundPanel({
         tools: enabledTools,
       };
       return selectedSavedKeyId
-        ? runAiStudioSavedKeyPlayground(workspaceId, selectedSavedKeyId, input)
-        : runAiStudioPlayground(secret, input);
+        ? playgroundSavedKeyRun(workspaceId, selectedSavedKeyId, input)
+        : playgroundRun(secret, input);
     },
     onError: (error) => toast.error(error.message),
   });

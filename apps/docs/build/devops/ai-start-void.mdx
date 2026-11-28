@@ -1,7 +1,7 @@
 ---
 title: "AI Studio on Start + Void"
 description: "AI Studio Worker identity, acceptance commands, smoke checks and Vercel rollback packet."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-28"
 audience: developers
 ---
 
@@ -62,6 +62,113 @@ Confirm expected page/auth behavior, the exact accepted source SHA in build
 info, and `x-tuturuuu-runtime: native`. Smoke both the canonical subdomain and
 the `https://tuturuuu.com/ai` mount if that mount is admitted by the cutover.
 This packet does not authorize routing or provider changes.
+
+## Mount at tuturuuu.com/ai
+
+The production artifact serves `ai.tuturuuu.com` at its root and
+`tuturuuu.com/ai` under its base. The gateway mount is one change: `/ai,/ai/*`
+in `GATEWAY_MOUNTED_PATHS`, the `MOUNT_AI` binding to `tuturuuu-ai`, and `/ai`
+in `PENDING_WEB_MOUNTS`.
+
+| Request on `tuturuuu.com` | Served by |
+| --- | --- |
+| `/ai`, `/ai/en`, `/ai/vi` without a session cookie | AI Studio answers `307` to the AI product page (`/products/ai`, or `/vi/products/ai`), keeping the query |
+| Other `/ai/...` pages | AI Studio with Web's shared session; a signed-out visitor goes to `/login` and returns through `/ai/verify-token` |
+| `/ai/v1/...` | AI Studio's key-authenticated public API, including streaming |
+| `/ai/api/...`, `/ai/_serverFn/...`, `/ai/assets/...` | AI Studio |
+| `/ai/chats/...` | Web (publicly shared chats), listed in `apps/gateway/src/mount-web-paths.ts` |
+| `/products/ai`, `/vi/ai`, `/en/ai`, `/api/...` | Web, outside the mount |
+
+The documented public API base stays `https://ai.tuturuuu.com/v1`. The
+Playground calls the API and its saved-key routes on the origin and base that
+serve the page (`apps/ai/src/lib/playground-api.ts`): the apex mount cannot
+call the subdomain cross-origin, and an unprefixed `/api` path there reaches
+Web. A mounted app refuses `/api/auth/verify-app-token` and
+`/api/auth/refresh-app-session` with `409`; it never mints an app session.
+
+### Activation order
+
+A committed mount is not held back by any later step. The `gateway` job of
+`web-opennext.yaml` runs on a `production` push that touches `apps/web`,
+`apps/gateway` or `packages`, merges every committed mount into the live
+config, and moves traffic when `GATEWAY_CF_VERSION_UPLOAD_LIVE` is `true`. A
+manual gateway publish from a commit that has the entry does the same. Land the
+mount change on `main` only when all of these hold:
+
+1. `tuturuuu-ai` serves, at 100%, a production-profile build
+   (`VITE_AI_NATIVE_PROFILE=production`) of a commit with this mount support.
+   Without a mount-capable build, `/ai` can answer `404` or call the Playground
+   cross-origin; without the Worker, the gateway upload fails and blocks every
+   gateway release.
+2. The live gateway version and the current `tuturuuu-ai` deployment are
+   captured for rollback.
+3. No workspace uses the handle `ai` or `chats` in a way that the mount or the
+   Web carve-out would shadow.
+4. The gateway write is acknowledged for the exact commit.
+
+After the write, capture the live gateway version and run
+`node scripts/active-app-mounts.mjs --live <version.json>`. While `/ai` is in
+`PENDING_WEB_MOUNTS`, Web keeps linking to `ai.tuturuuu.com`. Until Web
+lists `ai`, a login that starts on the mount does not return there: Web treats
+`/ai/verify-token` as its own callback and continues to the `nextUrl` path
+without the base. Test signed-in pages with an existing `tuturuuu.com` session,
+then remove `/ai` from `PENDING_WEB_MOUNTS` in its own change, rebuild the Web
+families and repeat the signed-out round trip.
+
+No automatic or manual publisher in the repository publishes `tuturuuu-ai`:
+`ai-cloudflare.yaml` builds and seals both profiles without deploying, and the
+`ai` recipe in `wave1-native-profiles.json` has no workflow that runs it. Step 1
+needs a qualified publisher first.
+
+### Mounted smoke
+
+- `/ai?utm=a&utm=b` signed out: `307` to `/products/ai?utm=a&utm=b`;
+  `/ai/vi` goes to `/vi/products/ai`.
+- `/ai/personal/playground` signed out: `307` to `/login` with a `returnUrl`
+  of `https://tuturuuu.com/ai/verify-token`.
+- Signed in: `/ai` opens the app; a localized deep link with duplicate query
+  keys keeps them; sign-out ends the shared session.
+- `/ai/api/build-info`: `200`, `appName` `ai`, the accepted commit and
+  `x-tuturuuu-runtime: native`.
+- `/ai/v1/models` without a key: `401` JSON, never a Web redirect. With a test
+  key, a streaming `/ai/v1/responses` call returns `text/event-stream` and a
+  disconnect settles the run as `aborted`.
+- Playground, manual key and saved key: model list and a run stay under
+  `/ai/`.
+- `/ai/chats/<public chat id>`, `/products/ai`, `/vi/ai` and
+  `/api/v1/ai/chats` still answer from Web (`x-gateway-family`, not `MOUNT`).
+- Assets: run `python3 apps/gateway/scripts/mounted_assets_smoke.py --subdomain-url https://ai.tuturuuu.com/auth-error --apex-url https://tuturuuu.com/ai/auth-error --app-worker tuturuuu-ai --app-version "$AI_VERSION_UUID" --gateway-version "$GATEWAY_VERSION_UUID"`.
+
+In CI, `mounted-login.runtime.mjs` checks the emitted production Worker's
+signed-out root, login return, refused session minting and API paths on the
+`https` apex, and `stream-cancellation.runtime.mjs` also streams through
+`/ai/v1`. The signed-in round trip is covered by
+`apps/ai/src/proxy-mounted-login.test.ts` with provider fixtures; confirm it
+live.
+
+### Mount rollback
+
+For a full-cutover rollback, restore legacy routing and Web targets before
+removing apex dispatch:
+
+1. Pause gateway publication until live routing and committed config agree.
+2. If the legacy-host redirect is active, reassign `ai.tuturuuu.com/*` back to
+   `tuturuuu-ai` first.
+3. If `/ai` has already left `PENDING_WEB_MOUNTS`, restore Web's legacy AI
+   targets (`PENDING_WEB_MOUNTS` or the captured prior Web family version)
+   before rolling the gateway back.
+4. Roll `tuturuuu-gateway` back to the captured previous version ID
+   (`cf workers deployments create --worker tuturuuu-gateway --strategy percentage --versions '[{"version_id":"<previous>","percentage":100}]'`).
+5. Revert the mount commits before resuming gateway publication: the deploy
+   helper keeps live mount paths and bindings, so reverting the source alone
+   does not remove a live mount, and publishing the unreverted source adds it
+   again.
+
+The legacy-host redirect is a separate step. When `ai.tuturuuu.com` moves to
+`tuturuuu-apex-redirect`, only browser navigations answer `301`
+(`Cache-Control: no-store`). `/v1`, `/api`, `/assets`, `verify-token`, every
+mutation and non-navigation fetches still reach `tuturuuu-ai`, so API keys,
+SDK clients and Colab keep working.
 
 ## Rollback
 

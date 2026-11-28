@@ -1,7 +1,7 @@
 ---
 title: AI Studio
 description: Operate Tuturuuu AI Studio policies, credentials, traces, and workspace credit metering.
-updatedAt: "2026-11-01"
+updatedAt: "2026-11-28"
 audience: developers
 ---
 
@@ -9,6 +9,26 @@ AI Studio is the workspace-scoped development surface at
 `https://ai.tuturuuu.com`. It is a registered satellite app and uses the same
 workspace session, permissions, settings, and billing context as other Tuturuuu
 apps.
+
+## Addresses and signed-out visitors
+
+AI Studio also has a mount at `https://tuturuuu.com/ai`, which uses Web's
+shared session. It takes effect only with an acknowledged gateway release; see
+[the mount runbook](/build/devops/ai-start-void#mount-at-tuturuuucomai).
+
+| Visit | Result |
+| --- | --- |
+| `tuturuuu.com/ai` (also `/ai/en`, `/ai/vi`), signed out | The AI product page, in Vietnamese for `/ai/vi` |
+| `tuturuuu.com/ai`, signed in | AI Studio |
+| Any other mounted page, signed out | Sign-in, then back to that page once Web lists the mount |
+| `tuturuuu.com/vi/ai` | The Vietnamese AI product page, served by Web |
+| `tuturuuu.com/ai/chats/<id>` | The publicly shared chat, served by Web |
+
+The public API base in developer docs and SDKs is `https://ai.tuturuuu.com/v1`.
+The Mira consent box links to `tuturuuu.com/products/ai`, so signed-in readers
+see the product explanation rather than the workspace app. Regression coverage:
+`apps/ai/src/proxy-mounted-login.test.ts` and
+`apps/gateway/src/ai-mount.test.ts`.
 
 ## Provider availability and step timing
 

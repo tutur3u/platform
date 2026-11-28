@@ -23,6 +23,7 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME, WEB_APP_URL } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 import { createAiPublicUrl } from './lib/ai-public-url';
+import { signedOutMountRootRedirect } from './lib/mounted-marketing-redirect';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PATHS = new Set([
@@ -159,6 +160,8 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
   }
 
   if (mounted) {
+    const marketing = signedOutMountRootRedirect(request);
+    if (marketing) return marketing;
     if (stripLocale(request.nextUrl.pathname) !== '/auth-error') {
       const auth = await mountedAuth.auth(request);
       if (auth.status >= 400 || auth.headers.has('location')) return auth;

@@ -18,7 +18,7 @@ export const MIRA_BOX_RECORDS_TRANSCRIPT = true;
 const LINKS = {
   privacy: 'https://tuturuuu.com/privacy',
   terms: 'https://tuturuuu.com/terms',
-  ai: 'https://tuturuuu.com/ai',
+  ai: 'https://tuturuuu.com/products/ai',
 } as const;
 
 /** Info keys shown beside the box in a room-capture meeting, in order; every

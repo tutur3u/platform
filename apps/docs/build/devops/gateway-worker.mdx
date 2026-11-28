@@ -331,6 +331,12 @@ never cached by the gateway. Nested paths without a `/<app>/*` entry,
 lookalikes (`/learning`) and unlisted or unbound paths go to the web families. Regression coverage lives in
 `apps/gateway/src/worker-mount.test.ts`.
 
+A Web page can live under a mounted app's base. List it in
+`apps/gateway/src/mount-web-paths.ts`: the path and its subtree stay on the web
+families while the rest of `/<app>/*` reaches the app. `/ai/chats` (publicly
+shared chats) is listed; see
+[AI Studio at tuturuuu.com/ai](/build/devops/ai-start-void#mount-at-tuturuuucomai).
+
 ### Version-pinned asset smoke
 
 Before activating any mounted app, check the candidate HTML on both its

@@ -9,7 +9,7 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 
 export async function startFixtureWorker(
   t,
-  { bindings = {}, outboundService } = {}
+  { bindings = {}, outboundService, secure = false } = {}
 ) {
   assert.equal(process.env.CI, 'true', 'Requires an emitted native artifact');
   const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
@@ -40,6 +40,7 @@ export async function startFixtureWorker(
     build: { bundle: false, processEntrypoint: false },
     dev: {
       remote: false,
+      ...(secure ? { origin: { secure: true } } : {}),
       watch: false,
       persist: false,
       inspector: false,
@@ -64,6 +65,7 @@ export async function startFixtureWorker(
   return {
     config,
     origin,
+    fetch: (url, init) => worker.fetch(url, init),
     request(
       path,
       { method = 'GET', headers = {}, host = 'ai.tuturuuu.com' } = {}

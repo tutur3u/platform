@@ -31,6 +31,8 @@ export default defineBridgeAppConfig(
     wrapResponse(response, { request, mounts }) {
       const result = new Response(response.body, response);
       result.headers.set('X-Robots-Tag', 'noindex, nofollow');
+      // Release smoke checks read this to tell the native Worker apart.
+      result.headers.set('x-tuturuuu-runtime', 'native');
       const url = new URL(request.url);
       const mount = mounts && resolveAppBase(url, { ...mounts, app: 'ai' });
       const path = url.pathname.slice(mount?.basePath.length ?? 0);

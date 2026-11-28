@@ -64,6 +64,8 @@ function localizedPrefixes(prefixes: readonly string[]) {
 
 const MACHINE_PATHS = localizedPrefixes(MACHINE_PATH_PREFIXES);
 const APP_MACHINE_PATHS = new Map([
+  // AI Studio's key-authenticated public API.
+  ['ai', localizedPrefixes(['/v1'])],
   ['calendar', localizedPrefixes(['/_calendar/functions'])],
   ['mail', localizedPrefixes(['/_mail'])],
   [

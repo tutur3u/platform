@@ -1,6 +1,7 @@
 import { acceptanceRobots, isAcceptanceHost } from './acceptance-host';
 import { lmsRedirectDestination } from './lms-redirect';
 import { mastermindRedirect } from './mastermind-redirect';
+import { isWebOwnedMountPath } from './mount-web-paths';
 import { withOriginAuth } from './origin-ip-proof';
 import { serviceWorkerScriptRefusal } from './service-worker-scripts';
 import {
@@ -97,6 +98,7 @@ export function mountedAppBinding(
   const { pathname } = url;
   const mount = `/${pathname.split('/')[1] ?? ''}`;
   if (!MOUNT_PATH_PATTERN.test(mount) || mount === '/api') return null;
+  if (isWebOwnedMountPath(pathname)) return null;
   const listed = (env.GATEWAY_MOUNTED_PATHS ?? '')
     .split(',')
     .map((entry) => entry.trim());
