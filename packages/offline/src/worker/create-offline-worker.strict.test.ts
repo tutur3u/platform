@@ -264,7 +264,7 @@ describe('strict bypass prefixes', () => {
     // Every app's emitted worker is accepted only without self-removal
     // (scripts/ci/wave1-native-runtime.mjs asserts the same pattern).
     const source = readFileSync(
-      join(import.meta.dirname, 'create-offline-worker.ts'),
+      join(__dirname, 'create-offline-worker.ts'),
       'utf8'
     );
     expect(source).not.toMatch(/registration\.unregister/u);
