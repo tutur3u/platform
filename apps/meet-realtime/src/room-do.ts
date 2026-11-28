@@ -370,13 +370,11 @@ export class MeetRoomDurableObject implements DurableObject {
       }
     }
     this.snapshot = this.connectionState(undefined, token);
-    if (
-      !(await this.scheduleMediaCleanup()) &&
-      this.snapshot.budget &&
-      !this.snapshot.ended
-    )
+    const now = Date.now();
+    await this.scheduleMediaCleanup(now);
+    if (this.snapshot.budget && !this.snapshot.ended)
       await this.scheduleSweep(
-        expiryDeadline(this.snapshot.budget.expiresAt, Date.now())
+        expiryDeadline(this.snapshot.budget.expiresAt, now)
       );
     if (this.snapshot.usage && this.snapshot.presence[token.userId])
       if (Object.keys(this.snapshot.usage.devices).length < 4096)

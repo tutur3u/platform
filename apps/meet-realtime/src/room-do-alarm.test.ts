@@ -206,14 +206,26 @@ test('schedules a non-finite expiry once; the sweep clears it', async () => {
   assert.ok(!sweeps.includes(now));
 });
 
+const BASE_CLOCK = Date.parse('2026-11-28T08:00:00Z');
+
 function mediaCleanupFixture(options: {
   env?: Partial<MeetRoomEnv>;
   cleanupAttempts?: number;
   nextCleanupAt?: number;
+  expiresAt?: number;
   ended?: boolean;
+  tracks?: Record<
+    string,
+    { sessionId: string; userId: string; trackName: string; mid: string }
+  >;
 }) {
-  let clock = Date.parse('2026-11-28T08:00:00Z');
+  let clock = BASE_CLOCK;
   const OriginalDate = Date;
+  const OriginalResponse = globalThis.Response;
+  const OriginalWebSocketPair = (globalThis as { WebSocketPair?: unknown })
+    .WebSocketPair;
+  const sockets: WebSocket[] = [];
+  let joining: WebSocket | undefined;
   globalThis.Date = class extends OriginalDate {
     constructor(value?: string | number) {
       super(value ?? clock);
@@ -222,6 +234,17 @@ function mediaCleanupFixture(options: {
       return clock;
     }
   } as unknown as DateConstructor;
+  Object.assign(globalThis, {
+    Response: class extends OriginalResponse {
+      constructor(body?: BodyInit | null, init?: ResponseInit) {
+        super(body, init?.status === 101 ? { ...init, status: 200 } : init);
+      }
+    },
+    WebSocketPair: class {
+      0 = {};
+      1 = joining;
+    },
+  });
 
   const base = admitOrHold(
     createMeetRoomSnapshot(),
@@ -232,9 +255,12 @@ function mediaCleanupFixture(options: {
     ...base,
     ended: options.ended ?? true,
     presence: options.ended === false ? base.presence : {},
+    tracks: options.tracks ?? {},
     lifecycle: { version: 1, hadConnection: true },
     budget: {
-      expiresAt: options.ended === false ? clock + 3_600_000 : clock,
+      expiresAt:
+        options.expiresAt ??
+        (options.ended === false ? clock + 3_600_000 : clock),
       accountedAt: clock,
       participantMilliseconds: 0,
       maxPublishers: 10,
@@ -281,7 +307,10 @@ function mediaCleanupFixture(options: {
       {
         storage,
         setWebSocketAutoResponse: () => {},
-        getWebSockets: () => [],
+        getWebSockets: () => sockets,
+        acceptWebSocket: (socket: WebSocket) => {
+          sockets.push(socket);
+        },
         waitUntil: () => {},
         blockConcurrencyWhile: (run: () => Promise<void>) => run(),
       } as unknown as DurableObjectState,
@@ -298,6 +327,28 @@ function mediaCleanupFixture(options: {
   return {
     get room() {
       return room;
+    },
+    async join(joinToken = token) {
+      let attachment: unknown = { token: joinToken };
+      const socket = {
+        readyState: WebSocket.OPEN as number,
+        send: () => undefined,
+        close: () => undefined,
+        serializeAttachment: (value: unknown) => {
+          attachment = value;
+        },
+        deserializeAttachment: () => attachment,
+      } as unknown as WebSocket;
+      joining = socket;
+      await room.fetch(
+        new Request('https://room.example/realtime', {
+          headers: {
+            'x-meet-token': JSON.stringify(joinToken),
+            Upgrade: 'websocket',
+          },
+        })
+      );
+      return socket;
     },
     setEnv(next: Partial<MeetRoomEnv>) {
       env = { ...env, ...next };
@@ -329,6 +380,7 @@ function mediaCleanupFixture(options: {
     errors,
     snapshot: () =>
       values.get('snapshot') as {
+        ended?: boolean;
         budget?: {
           pendingPublications?: unknown[];
           cleanupAttempts?: number;
@@ -338,6 +390,9 @@ function mediaCleanupFixture(options: {
       },
     restore() {
       globalThis.Date = OriginalDate;
+      globalThis.Response = OriginalResponse;
+      (globalThis as { WebSocketPair?: unknown }).WebSocketPair =
+        OriginalWebSocketPair;
       console.warn = origWarn;
       console.error = origError;
     },
@@ -570,3 +625,17 @@ for (const fenceValue of ['true', '1']) {
     }
   });
 }
+
+test('WebSocket join arms budget expiry when it is earlier than backed-off media cleanup', async () => {
+  const f = mediaCleanupFixture({
+    ended: false,
+    expiresAt: BASE_CLOCK + 60_000,
+    nextCleanupAt: BASE_CLOCK + 15 * 60_000,
+  });
+  try {
+    await f.join();
+    assert.equal(f.currentAlarm(), BASE_CLOCK + 60_000);
+  } finally {
+    f.restore();
+  }
+});
