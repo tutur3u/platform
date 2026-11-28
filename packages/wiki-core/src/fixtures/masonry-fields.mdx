@@ -1,0 +1,11 @@
+<ResponseField name="breakpoints" type="object" default="undefined">
+  **Optional** responsive breakpoint configuration. Keys are viewport widths in pixels, values are the number of columns to display at or above that width.
+
+  **v0.3.0 Breaking Change**: Now optional (default: `undefined`). When not provided, uses fixed `columns` value.
+
+  Example configuration:
+  - `640px`: 1 column (mobile)
+  - `768px`: 2 columns (tablet)
+  - `1024px`: 3 columns (desktop)
+  - `1280px`: 4 columns (large desktop)
+</ResponseField>

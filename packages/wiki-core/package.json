@@ -1,0 +1,41 @@
+{
+  "name": "@tuturuuu/wiki-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./api": "./src/api.ts",
+    "./lettin": "./src/lettin.ts",
+    "./markdown": "./src/markdown.ts",
+    "./render": "./src/render.ts",
+    "./safety": "./src/safety.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --project tsconfig.typecheck.json"
+  },
+  "packageManager": "bun@1.4.4",
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "github-slugger": "2.0.0",
+    "remark-directive": "^4.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.1",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "unified": "^11.0.5",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^26.6.5",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

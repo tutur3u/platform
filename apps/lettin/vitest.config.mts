@@ -16,8 +16,20 @@ export default defineConfig({
         )
       ),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '#secret-env': fileURLToPath(
+        new URL(
+          '../../packages/supabase/src/next/secret-env.ts',
+          import.meta.url
+        )
+      ),
       '@tuturuuu/supabase/next/server': fileURLToPath(
         new URL('../../packages/supabase/src/next/server.ts', import.meta.url)
+      ),
+      '@tuturuuu/supabase/next/proxy': fileURLToPath(
+        new URL('../../packages/supabase/src/next/proxy.ts', import.meta.url)
+      ),
+      '@tuturuuu/supabase/next/common': fileURLToPath(
+        new URL('../../packages/supabase/src/next/common.ts', import.meta.url)
       ),
       '@tuturuuu/supabase/next/user': fileURLToPath(
         new URL('../../packages/supabase/src/next/user.ts', import.meta.url)

@@ -1,0 +1,9 @@
+{
+  "extends": "@tuturuuu/typescript-config/typecheck.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"]
+  },
+  "include": ["src"]
+}
