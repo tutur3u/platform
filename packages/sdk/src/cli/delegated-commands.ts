@@ -5,6 +5,7 @@ export function isDelegatedCommand(command: string | undefined) {
     command === 'board' ||
     command === 'resources' ||
     command === 'storage' ||
+    command === 'ci' ||
     command === 'git' ||
     command === 'check' ||
     command === 'doctor' ||
@@ -16,6 +17,12 @@ export function isDelegatedCommand(command: string | undefined) {
 }
 
 export async function runDelegatedCommand(argv: string[]) {
+  if (argv[0] === 'ci') {
+    process.exitCode = await (
+      await import('./ci.js')
+    ).runCiCommand(argv.slice(1));
+    return;
+  }
   if (argv[0] === 'board')
     return (await import('./board-command.js')).runBoardCommand(argv.slice(1));
   if (argv[0] === 'doctor')
