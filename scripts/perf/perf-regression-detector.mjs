@@ -41,6 +41,7 @@ import {
   deploymentFailureRecords,
   fetchProductionFailures,
 } from './perf-deploy-failures.mjs';
+import { failIfMisrouted, isEntryPoint } from './perf-entry.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const APPS_PATH = resolve(HERE, 'perf-apps.json');
@@ -424,9 +425,8 @@ async function main() {
   }
 }
 
-if (
-  process.argv[1] &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (isEntryPoint(import.meta.url)) {
   await main();
+} else {
+  failIfMisrouted(import.meta.url);
 }

@@ -20,7 +20,6 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs as parseNodeArgs } from 'node:util';
 import {
   DEFAULT_READY_LISTS,
@@ -34,6 +33,7 @@ import {
   taskKeyOf,
   verifyPreconditionSkipReason,
 } from './perf-dispatch-gate-rules.mjs';
+import { failIfMisrouted, isEntryPoint } from './perf-entry.mjs';
 import { parseCandidates } from './perf-regression-detector.mjs';
 import {
   CANDIDATE_INSUFFICIENT_DATA,
@@ -54,6 +54,7 @@ export function parseGateArgs(argv) {
       detection: { type: 'string' },
       'detector-exit': { type: 'string', default: '0' },
       'degraded-reason': { type: 'string' },
+      'expect-nonempty': { type: 'boolean', default: false },
       'ready-lists': { type: 'string', default: DEFAULT_READY_LISTS.join(',') },
       'window-minutes': {
         type: 'string',
@@ -84,6 +85,7 @@ export function parseGateArgs(argv) {
     detection: values.detection ?? null,
     detectorExit,
     degradedReason: values['degraded-reason']?.trim() || null,
+    expectNonEmpty: Boolean(values['expect-nonempty']),
     windowMinutes,
     readyLists: values['ready-lists']
       .split(',')
@@ -207,6 +209,7 @@ export function evaluateDispatchGate({
   detection = null,
   detectorExit = 0,
   degradedReason = null,
+  expectNonEmpty = false,
   readyLists = DEFAULT_READY_LISTS,
   windowMinutes = DEFAULT_WINDOW_MINUTES,
 } = {}) {
@@ -219,6 +222,9 @@ export function evaluateDispatchGate({
   }
   if (!Array.isArray(detection.candidates)) {
     return degradedResult(tasks, 'missing_candidate_output');
+  }
+  if (expectNonEmpty && tasks.length === 0) {
+    return degradedResult(tasks, 'empty_task_list');
   }
 
   const readySet = new Set(readyLists);
@@ -362,6 +368,7 @@ export function runCli(argv = process.argv.slice(2)) {
             tasks,
             detection: loaded.value,
             detectorExit: options.detectorExit,
+            expectNonEmpty: options.expectNonEmpty,
             readyLists: options.readyLists,
             windowMinutes: options.windowMinutes,
           })
@@ -376,10 +383,7 @@ export function runCli(argv = process.argv.slice(2)) {
   return { result, text };
 }
 
-if (
-  process.argv[1] &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (isEntryPoint(import.meta.url)) {
   try {
     const { text } = runCli();
     process.stdout.write(text);
@@ -387,4 +391,6 @@ if (
     console.error(error?.message ?? error);
     process.exitCode = 2;
   }
+} else {
+  failIfMisrouted(import.meta.url);
 }

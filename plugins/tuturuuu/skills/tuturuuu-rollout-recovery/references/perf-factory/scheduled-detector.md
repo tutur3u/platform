@@ -35,10 +35,14 @@ Setup:
    command and record its exit code (`DETECTOR_EXIT`). Its `candidates[]`
    entries carry `state` (`ready`, `insufficient_data`, or `unchecked`),
    `observedRequests`, `minRequests` and `transition`.
-   Exit 2 means a configuration or API problem: append one line to
+   Exit 2 means a configuration or API problem, incomplete staging, or a
+   detector that exited 0 with empty stdout or without writing `--out` (the
+   wrapper removes any stale `--out` before running): append one line to
    `tmp/perf-factory/dispatcher.log` and pass `--detector-exit 2` to the
    dispatch gate (which fails closed so nothing dispatches; the daily agent-log
-   review picks up repeats). Never print or store `CLOUDFLARE_*` values.
+   review picks up repeats). When staging `scripts/perf/` into a temp
+   directory, use a canonical (`pwd -P`) staging path and copy all runtime
+   modules plus `perf-apps.json`. Never print or store `CLOUDFLARE_*` values.
    Then run
    `node scripts/perf/perf-observability-alerts.mjs --out tmp/perf-factory/detections/<UTC stamp>-slo.json`
    for firing SLO burn alerts from Admin. It reads `PERF_FACTORY_ADMIN_ORIGIN`

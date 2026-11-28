@@ -21,6 +21,7 @@ import { writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { failIfMisrouted, isEntryPoint } from './perf-entry.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -237,8 +238,9 @@ async function main() {
   process.stdout.write(text);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url))
+if (isEntryPoint(import.meta.url))
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;
   });
+else failIfMisrouted(import.meta.url);

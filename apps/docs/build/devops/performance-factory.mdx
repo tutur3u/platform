@@ -45,12 +45,17 @@ scripts/perf/run-detector-local.sh rerun \
 
 It needs `CLOUDFLARE_API_TOKEN` (Analytics and Workers read),
 `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_ZONE_ID` in the environment and never
-prints them. Exit code 2 means configuration or API failure. `--fixture`
-replays a recorded series for backtests. On the M4, the wrapper loads the
-three values from the login Keychain under account `fleet` and services
-`com.tuturuuu.perf-factory.cloudflare`, `com.tuturuuu.perf-factory.cloudflare-account`,
-and `com.tuturuuu.perf-factory.cloudflare-zone`. Fixture runs skip Keychain.
-Production failure intake uses the local authenticated GitHub CLI.
+prints them. Exit code 2 means configuration or API failure, missing staged
+runtime files, or a detector run that exited 0 with empty stdout or without
+writing its `--out` file (the wrapper removes any stale `--out` before running).
+`--fixture` replays a recorded series for backtests. On the M4, the wrapper
+loads the three values from the login Keychain under account `fleet` and
+services `com.tuturuuu.perf-factory.cloudflare`,
+`com.tuturuuu.perf-factory.cloudflare-account`, and
+`com.tuturuuu.perf-factory.cloudflare-zone`. Fixture runs skip Keychain.
+Production failure intake uses the local authenticated GitHub CLI. When staging
+`scripts/perf/` into a temporary directory, use a canonical (`pwd -P`) staging
+directory and copy all runtime modules plus `perf-apps.json`.
 
 ## Workflow
 

@@ -12,8 +12,8 @@
 // never printed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { failIfMisrouted, isEntryPoint } from './perf-entry.mjs';
 
 export const ORIGIN_ENV = 'PERF_FACTORY_ADMIN_ORIGIN';
 export const TOKEN_ENV = 'PERF_FACTORY_ADMIN_TOKEN';
@@ -74,14 +74,13 @@ async function main() {
   console.log(`observability alerts: ${regressions.length} regression(s)`);
 }
 
-if (
-  process.argv[1] &&
-  resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-) {
+if (isEntryPoint(import.meta.url)) {
   main().catch((error) => {
     console.error(
       error instanceof Error ? error.message : 'Alerts intake failed'
     );
     process.exitCode = 2;
   });
+} else {
+  failIfMisrouted(import.meta.url);
 }
