@@ -7,6 +7,7 @@ import NotificationDigestEmail, {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { withWebCronLogDrain as withCronLogDrain } from '@/lib/cron/web-cron';
+import { verifyBearerSecrets } from '@/lib/cron-bearer-auth';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import {
   beginBatchDeliveryAttempt,
@@ -51,10 +52,11 @@ export async function GET(req: NextRequest) {
 
 async function handleGET(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    if (
+      !verifyBearerSecrets(req.headers.get('authorization'), [
+        process.env.CRON_SECRET,
+      ])
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

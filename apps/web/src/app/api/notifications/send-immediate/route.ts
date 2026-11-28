@@ -4,6 +4,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import NotificationDigestEmail from '@tuturuuu/transactional/emails/notification-digest';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { verifyBearerSecrets } from '@/lib/cron-bearer-auth';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
 import {
   getNotificationSkipReason,
@@ -42,14 +43,10 @@ import { getPushPreferenceSkipReason } from '@/lib/notifications/push-eligibilit
 import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 export async function POST(req: NextRequest) {
   try {
-    const authHeader = req.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    const cronControlToken = process.env.CRON_CONTROL_DELIVERY_TOKEN;
-    const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY;
-    const isAuthorized =
-      (cronSecret && authHeader === `Bearer ${cronSecret}`) ||
-      (cronControlToken && authHeader === `Bearer ${cronControlToken}`) ||
-      (supabaseServiceKey && authHeader === `Bearer ${supabaseServiceKey}`);
+    const isAuthorized = verifyBearerSecrets(req.headers.get('authorization'), [
+      process.env.CRON_SECRET,
+      process.env.CRON_CONTROL_DELIVERY_TOKEN,
+    ]);
 
     if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
