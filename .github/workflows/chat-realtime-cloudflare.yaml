@@ -19,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.sha }}-${{ github.run_id }}
+  group: ${{ github.workflow }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
 
 jobs:

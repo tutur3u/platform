@@ -2,7 +2,6 @@ const assert = require('node:assert/strict');
 const { test } = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 const {
-  evaluateIf,
   repository,
   repositoryId,
   headSha,
@@ -34,11 +33,6 @@ function push(overrides = {}, event = {}) {
 function dispatch(ref = 'refs/heads/main') {
   return push({ event_name: 'workflow_dispatch', ref });
 }
-const group = (github) =>
-  evaluateIf(
-    `(${workflow.concurrency.group.replace(/^\$\{\{|\}\}$/gu, '')}) == 'supabase-staging-migration'`,
-    { run_id: 9, ...github }
-  );
 function proof(github, compareDefault = 'identical', targetStep = step) {
   return runGate(targetStep, github, { compareDefault });
 }
@@ -59,10 +53,13 @@ test('staging uses protected main push and main-only dispatch without a preview 
       }),
       ['migrate']
     );
-    assert.equal(group(github), true);
   }
   assert.equal(workflow.concurrency['cancel-in-progress'], false);
-  assert.equal(workflow.concurrency.queue, 'max');
+  assert.deepEqual(migrate.concurrency, {
+    group: 'supabase-staging-migration',
+    'cancel-in-progress': false,
+    queue: 'max',
+  });
 });
 
 test('real staging shell binds push commit and retains behind-main ancestry', () => {
@@ -153,7 +150,6 @@ test('staging dispatch is main-only and uses its exact runner SHA', () => {
     'refs/heads/feature/x',
   ]) {
     assert.equal(proof(dispatch(ref)).ok, false);
-    assert.equal(group(dispatch(ref)), ref === 'refs/heads/Main');
   }
   assert.equal(proof({ ...dispatch(), sha: 'not-a-sha' }).ok, false);
 });
@@ -170,7 +166,6 @@ test('staging admission and lock reject invalid automatic triggers', () => {
     push({ event_name: 'workflow_run' }),
   ]) {
     assert.deepEqual(runningJobs(workflow, context), []);
-    assert.equal(group(context), false);
   }
 });
 

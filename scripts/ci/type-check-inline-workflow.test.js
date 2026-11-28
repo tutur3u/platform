@@ -53,7 +53,7 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.equal(job.name, 'Type Check');
   assert.equal(prJob.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
-  assert.match(prJob['runs-on'], /\|\| 'ubuntu-latest' \}\}$/);
+  assert.equal(prJob['runs-on'], 'ubuntu-latest');
   assert.match(prJob.if, /github\.event_name == 'pull_request'/);
   assert.match(prJob.if, /github\.event\.pull_request\.draft == false/);
   const withoutCredentials = (steps) =>

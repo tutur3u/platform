@@ -235,6 +235,7 @@ function checkRun(run, p, repository, workflow) {
 const directPushContracts = new Set([
   '74fb269fcc135b0467c19d82286f1c3484c7d4f7',
   '1389bebec73ba2585dba8fcd28c143343dd78f53',
+  '3603d67e31b276b97bdf36d683a9b5555e751278',
 ]);
 const contracts = [
   [
@@ -248,6 +249,7 @@ const contracts = [
       '40f1cc37c1b4c0ed2b9976019c95eb145311c77d',
       '74fb269fcc135b0467c19d82286f1c3484c7d4f7',
       '1389bebec73ba2585dba8fcd28c143343dd78f53',
+      '3603d67e31b276b97bdf36d683a9b5555e751278',
     ],
   ],
   [

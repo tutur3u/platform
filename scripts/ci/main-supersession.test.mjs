@@ -63,8 +63,9 @@ test('the top-level workflow comes from the caller ref, also in reusable jobs', 
   assert.equal(topLevelWorkflowFile(''), '');
 });
 
-test('only main pushes of listed workflows supersede', () => {
-  assert.equal(supersedesOnMain(env()), true);
+test('no main push supersedes while the policy inventory is empty', () => {
+  assert.deepEqual([...SUPERSEDING_MAIN_WORKFLOWS], []);
+  assert.equal(supersedesOnMain(env()), false);
   // Scripts and tests inheriting a main push environment are unaffected.
   assert.equal(
     supersedesOnMain(env({ MAIN_SUPERSESSION_CHECK: undefined })),

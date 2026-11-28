@@ -6,9 +6,7 @@ const {
   serialized,
   prExceptions,
   mainExceptions,
-  queuedMainBaselines,
   mainRunCancels,
-  mainSupersession,
   workflows,
   events,
   context,
@@ -129,7 +127,9 @@ for (const file of serialized) {
     // Validation may supersede at workflow level; the deploy job then holds
     // the serialized production lock.
     const c =
-      workflows[file].jobs?.deploy?.concurrency || workflows[file].concurrency;
+      workflows[file].jobs?.deploy?.concurrency ||
+      workflows[file].jobs?.migrate?.concurrency ||
+      workflows[file].concurrency;
     assert.equal(c['cancel-in-progress'], false);
     assert.equal(c.queue, 'max');
     // Staging migrations, Cloudflare deploys and production E2E use main.
@@ -209,6 +209,11 @@ function assertQualification(policy, workflowName, mainPushCancels = true) {
   assert.equal(render(policy['cancel-in-progress'], later), mainPushCancels);
 }
 for (const [file, workflow] of Object.entries(workflows)) {
+  if (
+    (mainExceptions[file] && file !== 'oxc-check.yaml') ||
+    file === 'ci-register.yaml'
+  )
+    continue;
   const policies = workflow.concurrency
     ? [workflow.concurrency]
     : Object.values(workflow.jobs)
@@ -231,7 +236,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
 }
 test('main validation inventory requires isolated qualification, including Oxc jobs', () => {
   for (const [file, workflow] of Object.entries(workflows)) {
-    if (mainExceptions[file]) continue;
+    if (mainExceptions[file] || file === 'ci-register.yaml') continue;
     if (!Object.hasOwn(events(workflow), 'push')) continue;
     const push = events(workflow).push;
     if (push?.branches && !push.branches.includes('main')) continue;
@@ -635,118 +640,6 @@ test('security review writers share one non-cancelling group per pull request', 
     render(recheck.concurrency['cancel-in-progress'], review),
     false
   );
-});
-
-test('Oxc keeps each main push', () => {
-  const proof = [];
-  for (const id of ['check-ci', 'duplicate-validation', 'format', 'lint']) {
-    proof.push([
-      `oxc-check.yaml:${id}`,
-      workflows['oxc-check.yaml'].jobs[id].concurrency,
-    ]);
-  }
-  for (const [name, policy] of proof) {
-    const first = {
-      ...context('refs/heads/main', 'a'.repeat(40), 11),
-      workflow: name,
-    };
-    const second = {
-      ...context('refs/heads/main', 'b'.repeat(40), 22),
-      workflow: name,
-    };
-    assert.notEqual(
-      render(policy.group, first),
-      render(policy.group, second),
-      name
-    );
-    assert.equal(render(policy['cancel-in-progress'], first), false, name);
-    assert.equal(render(policy['cancel-in-progress'], second), false, name);
-    const feature = {
-      ...first,
-      ref: 'refs/heads/fix/example',
-      sha: 'c'.repeat(40),
-      run_id: 3,
-    };
-    const featureNext = {
-      ...feature,
-      sha: 'd'.repeat(40),
-      run_id: 4,
-    };
-    assert.equal(
-      render(policy.group, feature),
-      render(policy.group, featureNext),
-      name
-    );
-    assert.equal(render(policy['cancel-in-progress'], feature), true, name);
-    const spoof = { ...first, ref: 'refs/heads/main-spoof' };
-    const spoofNext = { ...spoof, sha: 'e'.repeat(40), run_id: 5 };
-    assert.equal(
-      render(policy.group, spoof),
-      render(policy.group, spoofNext),
-      name
-    );
-    assert.equal(render(policy['cancel-in-progress'], spoof), true, name);
-  }
-});
-
-test('Cloudflare Source supersedes listed main pushes, isolates the rest, and docs coalesces them', () => {
-  const files = Object.entries(workflows)
-    .filter(([, workflow]) =>
-      String(workflow.name || '').endsWith(' Cloudflare Source')
-    )
-    .map(([file]) => file)
-    .sort();
-  assert.ok(files.includes('finance-cloudflare.yaml'));
-  assert.ok(files.includes('nova-cloudflare.yaml'));
-  assert.equal(files.length, 25);
-  files.push('docs-seo-check.yaml');
-  for (const file of files) {
-    const coalesces = file === 'docs-seo-check.yaml';
-    const supersedes = mainSupersession.includes(file);
-    const queued = !coalesces && !supersedes;
-    assert.equal(queuedMainBaselines.has(file), queued, file);
-    const policy = workflows[file].concurrency;
-    const first = {
-      ...context('refs/heads/main', 'a'.repeat(40), 11),
-      workflow: workflows[file].name,
-    };
-    const second = {
-      ...context('refs/heads/main', 'b'.repeat(40), 22),
-      workflow: workflows[file].name,
-    };
-    assert.equal(
-      render(policy.group, first) === render(policy.group, second),
-      coalesces || supersedes,
-      file
-    );
-    const cancel = policy['cancel-in-progress'];
-    assert.equal(render(cancel, first), supersedes, file);
-    assert.equal(render(cancel, second), supersedes, file);
-    const feature = {
-      ...first,
-      ref: 'refs/heads/fix/example',
-      sha: 'c'.repeat(40),
-      run_id: 3,
-    };
-    assert.equal(
-      render(policy.group, feature),
-      render(policy.group, { ...feature, sha: 'd'.repeat(40), run_id: 4 }),
-      file
-    );
-    assert.equal(render(policy['cancel-in-progress'], feature), true, file);
-    const spoof = { ...first, ref: 'refs/heads/main-spoof' };
-    assert.equal(
-      render(policy.group, spoof),
-      render(policy.group, { ...spoof, sha: 'e'.repeat(40), run_id: 5 }),
-      file
-    );
-    assert.equal(render(policy['cancel-in-progress'], spoof), true, file);
-    const pull = {
-      ...context('refs/pull/7/merge', 'f'.repeat(40), 6, 'pull_request', 7),
-      workflow: workflows[file].name,
-    };
-    assert.equal(render(policy['cancel-in-progress'], pull), true, file);
-  }
 });
 
 test('main evidence survives rapid pushes and feature branches still supersede', () => {

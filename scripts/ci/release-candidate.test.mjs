@@ -212,7 +212,7 @@ test('pruning keeps the newest three and drops week-old candidates', () => {
   );
 });
 
-test('the dispatched list covers every always-on main workflow a later push supersedes', () => {
+test('always-on main workflow attempts survive subsequent pushes', () => {
   const shared = [];
   for (const [file, workflow] of Object.entries(helpers.workflows)) {
     if (!helpers.pushesMain(workflow) || helpers.mainExceptions[file]) continue;
@@ -230,10 +230,7 @@ test('the dispatched list covers every always-on main workflow a later push supe
     );
     if (first === next) shared.push(file);
   }
-  const forced = DISPATCHED_WORKFLOWS.filter(
-    (file) => file !== 'cron-control-cloudflare.yaml'
-  );
-  assert.deepEqual(shared.sort(), forced);
+  assert.deepEqual(shared.sort(), []);
   for (const file of OBSERVED_WORKFLOWS) {
     const workflow = helpers.workflows[file];
     // Oxc keeps its locks on jobs. A `queue: max` lock never drops a pending

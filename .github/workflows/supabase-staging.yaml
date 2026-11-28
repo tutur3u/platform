@@ -6,11 +6,9 @@ on:
       - main
   workflow_dispatch:
 
-# Invalid triggers use a private lock and cannot block a real migration.
 concurrency:
-  group: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected && github.event.ref == github.ref && github.event.repository.full_name == github.repository && github.event.repository.id == github.repository_id && github.event.after == github.sha && github.event.deleted == false)) && 'supabase-staging-migration' || format('supabase-staging-migration-ignored-{0}', github.run_id) }}
+  group: supabase-staging-${{ github.event_name }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
-  queue: max
 
 permissions:
   contents: read
@@ -23,6 +21,10 @@ jobs:
     # exact ref, repository and commit before checking out any target source.
     if: >-
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.ref_protected && github.event.ref == github.ref && github.event.repository.full_name == github.repository && github.event.repository.id == github.repository_id && github.event.after == github.sha && github.event.deleted == false)
+    concurrency:
+      group: supabase-staging-migration
+      cancel-in-progress: false
+      queue: max
     timeout-minutes: 15
     runs-on: ubuntu-latest
     # Restricted to main so other branches cannot read the migration credentials.

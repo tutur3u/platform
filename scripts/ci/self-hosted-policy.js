@@ -1,81 +1,64 @@
-const HOST_LABELS = ['studio', 'macbook1'].map(
-  (host) => `ttr-selfhosted-${host}`
-);
-const TRUST_GUARD =
-  "github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.base.repo.full_name == github.repository";
-const ROUTE = `\${{ ${TRUST_GUARD} && contains(fromJSON('${JSON.stringify(HOST_LABELS)}'), vars.CI_VALIDATION_RUNNER) && vars.CI_VALIDATION_RUNNER || 'ubuntu-latest' }}`;
-const OWNERS = new Set([
-  'type-check.yaml:type-check-pr',
-  'turbo-unit-tests.yaml:test-shards-pr',
-]);
+const hostedLabel =
+  /^(?:ubuntu|macos|windows)-(?:latest|\d+(?:\.\d+)?)(?:-arm)?$|^xcode-27$/u;
 
-function lintSelfHostedWorkflows(workflows) {
+function runnerLabels(file, job, desktopPlatforms) {
+  const route = job['runs-on'];
+  if (route === '${{ matrix.os }}') {
+    const matrix = job.strategy?.matrix;
+    if (!Array.isArray(matrix?.os) || !matrix.os.length) return [];
+    return [
+      ...matrix.os,
+      ...(matrix.include || []).flatMap((row) =>
+        Object.hasOwn(row, 'os') ? [row.os] : []
+      ),
+    ];
+  }
+  if (
+    file === 'desktop-beta.yaml' &&
+    route === '${{ matrix.runner }}' &&
+    job.strategy?.matrix ===
+      '${{ fromJSON(needs.release-status.outputs.matrix) }}'
+  ) {
+    return Object.values(desktopPlatforms).map(({ runner }) => runner);
+  }
+  if (
+    route ===
+    "${{ github.event_name == 'workflow_dispatch' && inputs.target == 'ios' && 'macos-15' || 'ubuntu-latest' }}"
+  ) {
+    return ['macos-15', 'ubuntu-latest'];
+  }
+  return [route];
+}
+
+async function lintSelfHostedWorkflows(workflows) {
+  const { DESKTOP_PLATFORMS } =
+    await import('../desktop-deployment/platforms.mjs');
   const errors = [];
+  // Scan reusable callees and every direct job. The hosted-only policy also
+  // covers forks and PR-target without relying on caller or job conditions.
   for (const [file, workflow] of Object.entries(workflows)) {
     for (const [id, job] of Object.entries(workflow.jobs || {})) {
-      const route = JSON.stringify(job['runs-on'] || '');
-      if (
-        !route.includes('ttr-selfhosted-') &&
-        !route.includes('CI_VALIDATION_RUNNER')
-      )
-        continue;
-      const key = `${file}:${id}`;
-      const reject = (reason) => errors.push(`${key}: ${reason}`);
-      if (!OWNERS.has(key))
-        reject(
-          'runner routing is restricted to Test and Type Check PR variants'
+      if (!Object.hasOwn(job, 'runs-on')) continue;
+      const labels = runnerLabels(file, job, DESKTOP_PLATFORMS);
+      if (!labels.length || labels.some((label) => !hostedLabel.test(label))) {
+        errors.push(
+          `${file}:${id}: runs-on must select a GitHub-hosted runner`
         );
-      if (job['runs-on'] !== ROUTE)
-        reject(
-          'missing exact same-repository PR guard or runner label allowlist'
-        );
-      if (
-        JSON.stringify(job.permissions) !== JSON.stringify({ contents: 'read' })
-      )
-        reject('permissions must be exactly contents: read');
-      if (!String(job.if).includes("github.event_name == 'pull_request'"))
-        reject('job must be PR-only; pushes retain hosted coverage');
-      if (
-        /secrets\b|id-token|TURBO_TOKEN|TURBO_TEAM/.test(
-          JSON.stringify([workflow.env, job])
-        )
-      )
-        reject('credentials are forbidden');
-      if (job.environment || job.services || job.container)
-        reject('privileged execution context is forbidden');
-      for (const step of job.steps || []) {
-        if (
-          step.uses === './.github/actions/run-with-turbo-remote-cache' &&
-          (step.with?.token || step.with?.team)
-        )
-          reject('tokened Turbo cache inputs are forbidden');
-        if (/^actions\/cache(?:\/save)?@/.test(step.uses || ''))
-          reject('cache writes are forbidden');
-        if (
-          step.uses === './.github/actions/setup-bun-with-retry' &&
-          step.with?.['cache-enabled'] !==
-            "${{ runner.environment != 'self-hosted' }}"
-        )
-          reject('persistent Bun cache must be disabled');
-        if (
-          /^actions\/checkout@/.test(step.uses || '') &&
-          ![false, "${{ runner.environment != 'self-hosted' }}"].includes(
-            step.with?.['persist-credentials']
-          )
-        )
-          reject('checkout credentials must not persist');
       }
     }
   }
   return errors;
 }
-module.exports = { HOST_LABELS, ROUTE, lintSelfHostedWorkflows };
 
-if (require.main === module) {
+module.exports = { lintSelfHostedWorkflows };
+
+async function main() {
   const { readAllWorkflows } = require('./workflow-yaml-test-helper');
-  const errors = lintSelfHostedWorkflows(
+  const errors = await lintSelfHostedWorkflows(
     readAllWorkflows(undefined, { raw: true })
   );
   for (const error of errors) console.error(error);
   process.exitCode = errors.length ? 1 : 0;
 }
+
+if (require.main === module) main();

@@ -44,7 +44,7 @@ test('checked-in CodeQL is the only CodeQL configuration and scans every change'
   assert.doesNotMatch(switchboard, /'security-checks\.yaml'/);
 });
 
-test('CodeQL main pushes coalesce without cancelling and pull requests still supersede', () => {
+test('CodeQL main pushes retain individual runs and pull requests still supersede', () => {
   const policy = workflows['codeql.yml'].concurrency;
   const first = {
     ...context('refs/heads/main', 'a'.repeat(40), 11),
@@ -54,10 +54,7 @@ test('CodeQL main pushes coalesce without cancelling and pull requests still sup
     ...context('refs/heads/main', 'b'.repeat(40), 22),
     workflow: 'CodeQL Manual Fallback',
   };
-  // The active scan finishes and a newer push replaces only the pending run;
-  // the next scan diffs from the last successful push scan, so the replaced
-  // commit is still analyzed (scripts/ci/codeql-push-scope.js).
-  assert.equal(render(policy.group, first), render(policy.group, second));
+  assert.notEqual(render(policy.group, first), render(policy.group, second));
   assert.equal(queuedMainBaselines.has('codeql.yml'), false);
   assert.equal(render(policy['cancel-in-progress'], first), false);
   assert.equal(render(policy['cancel-in-progress'], second), false);

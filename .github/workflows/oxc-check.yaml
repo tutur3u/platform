@@ -33,7 +33,6 @@ jobs:
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: oxc-check.yaml
-      pr_runner: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) }}
 
   duplicate-validation:
     concurrency:
@@ -42,7 +41,7 @@ jobs:
     name: Check completed validation
     needs: [check-ci]
     if: (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-please--branches--') && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
       contents: read
@@ -81,7 +80,7 @@ jobs:
       cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
     name: Oxfmt Format Check
     timeout-minutes: 10
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     needs: [check-ci, duplicate-validation, plan]
     if: ${{ (!cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && (needs.plan.result != 'success' || needs.plan.outputs.run != 'false')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
@@ -131,7 +130,7 @@ jobs:
       cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
     name: Oxlint Lint Check
     timeout-minutes: 10
-    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     needs: [check-ci, duplicate-validation, plan]
     if: ${{ (!cancelled() && needs.check-ci.result == 'success' && (needs.duplicate-validation.result != 'success' || needs.duplicate-validation.outputs.run_checks != 'false') && needs.check-ci.outputs.should_run == 'true' && (needs.plan.result != 'success' || needs.plan.outputs.run != 'false')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:

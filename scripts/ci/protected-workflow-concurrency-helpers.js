@@ -1,9 +1,7 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+const { matchesGlob } = require('node:path');
 const vm = require('node:vm');
-const { readWorkflow } = require('./workflow-yaml-test-helper');
-const workflowRoot = path.resolve(__dirname, '../../.github/workflows');
+const { readAllWorkflows } = require('./workflow-yaml-test-helper');
 const serialized = [
   'ci-reconciler.yaml',
   'colab-cloudflare.yaml',
@@ -59,7 +57,7 @@ const prExceptions = {
 const mainExceptions = {
   ...prExceptions,
   'supabase-staging.yaml':
-    'Protected main migrations serialize exact-SHA marker evidence',
+    'The migration job serializes exact-SHA marker evidence',
   'release-sdk-dev.yaml':
     'Dev publication retains its serial npm dist-tag lock',
   // PR revisions supersede; main never cancels an active staging upload.
@@ -78,8 +76,6 @@ const mainExceptions = {
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
   'vault-witness-cloudflare.yaml':
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
-  'ci-register.yaml':
-    'Shadow CI registration: one non-cancelling run per main SHA; the coordinator keeps the first registration of a SHA',
 };
 // These workflows do not cancel a main push, and each main SHA has its own
 // group. A shared "latest" group drops the previous pending run when
@@ -89,6 +85,7 @@ const queuedMainBaselines = new Set([
   'e2e-smoke-report-only.yaml',
   'mail-e2e-report-only.yaml',
   'oxc-check.yaml',
+  'supabase-staging.yaml',
   'turbo-unit-tests.yaml',
   'type-check.yaml',
 ]);
@@ -106,19 +103,24 @@ for (const file of mainSupersession)
 function mainRunCancels(file) {
   return !queuedMainBaselines.has(file) && !boundedMainProducers.has(file);
 }
-const workflows = Object.fromEntries(
-  fs
-    .readdirSync(workflowRoot)
-    .filter((file) => /\.ya?ml$/.test(file))
-    .map((file) => [file, readWorkflow(file)])
-);
+const workflows = readAllWorkflows();
 function pushesMain(workflow) {
   if (!Object.hasOwn(events(workflow), 'push')) return false;
   const push = events(workflow).push;
-  return (
-    (!push?.branches || push.branches.includes('main')) &&
-    !push?.['branches-ignore']?.includes('main')
-  );
+  if (push?.branches) {
+    return push.branches.reduce((included, pattern) => {
+      const negated = pattern.startsWith('!');
+      return matchesGlob('main', negated ? pattern.slice(1) : pattern)
+        ? !negated
+        : included;
+    }, false);
+  }
+  if (push?.['branches-ignore']) {
+    return !push['branches-ignore'].some((pattern) =>
+      matchesGlob('main', pattern)
+    );
+  }
+  return !(push?.tags || push?.['tags-ignore']);
 }
 const mainArtifactProducers = Object.keys(workflows).filter(
   (file) =>

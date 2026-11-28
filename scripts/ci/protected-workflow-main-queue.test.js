@@ -1,34 +1,12 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
-  boundedMainProducers,
   mainArtifactProducers,
   mainSupersession,
   context,
-  pushesMain,
   render,
   workflows,
 } = require('./protected-workflow-concurrency-helpers.js');
-
-for (const file of boundedMainProducers) {
-  test(`${file}: main keeps the active run and shares the default pending slot`, () => {
-    const { concurrency: policy, name: workflow } = workflows[file];
-    assert.ok(pushesMain(workflows[file]));
-    const first = { ...context('refs/heads/main'), workflow };
-    const latest = { ...first, sha: 'latest', run_id: 3 };
-    assert.equal(render(policy.group, first), render(policy.group, latest));
-    assert.equal(render(policy['cancel-in-progress'], first), false);
-    assert.equal(render(policy['cancel-in-progress'], latest), false);
-    assert.equal(policy.queue, undefined);
-    assert.equal(
-      render(policy['cancel-in-progress'], {
-        ...latest,
-        ref: 'refs/heads/main-spoof',
-      }),
-      true
-    );
-  });
-}
 
 // Listed pure CI producers supersede on main instead; see
 // scripts/ci/main-supersession-workflows.test.js.
@@ -84,4 +62,113 @@ test('generated Cloudflare callers preserve pending main artifacts', async () =>
     render(group, pr),
     render(group, { ...pr, sha: 'second', run_id: 2 })
   );
+});
+
+test('Oxc keeps each main push', () => {
+  const proof = [];
+  for (const id of ['check-ci', 'duplicate-validation', 'format', 'lint']) {
+    proof.push([
+      `oxc-check.yaml:${id}`,
+      workflows['oxc-check.yaml'].jobs[id].concurrency,
+    ]);
+  }
+  for (const [name, policy] of proof) {
+    const first = {
+      ...context('refs/heads/main', 'a'.repeat(40), 11),
+      workflow: name,
+    };
+    const second = {
+      ...context('refs/heads/main', 'b'.repeat(40), 22),
+      workflow: name,
+    };
+    assert.notEqual(
+      render(policy.group, first),
+      render(policy.group, second),
+      name
+    );
+    assert.equal(render(policy['cancel-in-progress'], first), false, name);
+    assert.equal(render(policy['cancel-in-progress'], second), false, name);
+    const feature = {
+      ...first,
+      ref: 'refs/heads/fix/example',
+      sha: 'c'.repeat(40),
+      run_id: 3,
+    };
+    const featureNext = {
+      ...feature,
+      sha: 'd'.repeat(40),
+      run_id: 4,
+    };
+    assert.equal(
+      render(policy.group, feature),
+      render(policy.group, featureNext),
+      name
+    );
+    assert.equal(render(policy['cancel-in-progress'], feature), true, name);
+    const spoof = { ...first, ref: 'refs/heads/main-spoof' };
+    const spoofNext = { ...spoof, sha: 'e'.repeat(40), run_id: 5 };
+    assert.equal(
+      render(policy.group, spoof),
+      render(policy.group, spoofNext),
+      name
+    );
+    assert.equal(render(policy['cancel-in-progress'], spoof), true, name);
+  }
+});
+
+test('Cloudflare Source and docs preserve every main push', () => {
+  const files = Object.entries(workflows)
+    .filter(([, workflow]) =>
+      String(workflow.name || '').endsWith(' Cloudflare Source')
+    )
+    .map(([file]) => file)
+    .sort();
+  assert.ok(files.includes('finance-cloudflare.yaml'));
+  assert.ok(files.includes('nova-cloudflare.yaml'));
+  assert.equal(files.length, 25);
+  files.push('docs-seo-check.yaml');
+  for (const file of files) {
+    const supersedes = mainSupersession.includes(file);
+    const policy = workflows[file].concurrency;
+    const first = {
+      ...context('refs/heads/main', 'a'.repeat(40), 11),
+      workflow: workflows[file].name,
+    };
+    const second = {
+      ...context('refs/heads/main', 'b'.repeat(40), 22),
+      workflow: workflows[file].name,
+    };
+    assert.equal(
+      render(policy.group, first) === render(policy.group, second),
+      supersedes,
+      file
+    );
+    const cancel = policy['cancel-in-progress'];
+    assert.equal(render(cancel, first), supersedes, file);
+    assert.equal(render(cancel, second), supersedes, file);
+    const feature = {
+      ...first,
+      ref: 'refs/heads/fix/example',
+      sha: 'c'.repeat(40),
+      run_id: 3,
+    };
+    assert.equal(
+      render(policy.group, feature),
+      render(policy.group, { ...feature, sha: 'd'.repeat(40), run_id: 4 }),
+      file
+    );
+    assert.equal(render(policy['cancel-in-progress'], feature), true, file);
+    const spoof = { ...first, ref: 'refs/heads/main-spoof' };
+    assert.equal(
+      render(policy.group, spoof),
+      render(policy.group, { ...spoof, sha: 'e'.repeat(40), run_id: 5 }),
+      file
+    );
+    assert.equal(render(policy['cancel-in-progress'], spoof), true, file);
+    const pull = {
+      ...context('refs/pull/7/merge', 'f'.repeat(40), 6, 'pull_request', 7),
+      workflow: workflows[file].name,
+    };
+    assert.equal(render(policy['cancel-in-progress'], pull), true, file);
+  }
 });

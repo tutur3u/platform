@@ -14,7 +14,7 @@ permissions:
 
 # One run per main commit, never cancelled: each SHA registers once.
 concurrency:
-  group: ci-register-${{ github.sha }}
+  group: ci-register-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
   cancel-in-progress: false
 
 jobs:

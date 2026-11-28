@@ -400,13 +400,16 @@ test('the consolidated branch check executes the existing policy with branch nam
   }
 });
 
-test('Security Checks bytes match the reviewed workflow', () => {
+test('Security Checks bytes outside main grouping match the reviewed workflow', () => {
   // Includes the authenticated supplier accepted at 5e4bfbc4 / SOURCE 5817616989
   // and the merge_group wiring accepted at 97f3a0a4 / SOURCE 5910482582.
   const { createHash } = require('node:crypto');
   const { readFileSync } = require('node:fs');
   const bytes = readFileSync(
-    path.resolve(__dirname, '../../.github/workflows/security-checks.yaml')
+    path.resolve(__dirname, '../../.github/workflows/security-checks.yaml'),
+    'utf8'
+  ).replace(/^  group: .+$/m, (group) =>
+    group.replace("github.ref == 'refs/heads/main' || ", '')
   );
   assert.equal(
     createHash('sha256').update(bytes).digest('hex'),

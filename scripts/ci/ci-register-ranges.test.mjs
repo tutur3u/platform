@@ -18,6 +18,11 @@ test('workflows real CI diffs from another commit are marked, not decided', () =
   );
   assert.equal(
     uncomputedRange('ai-cloudflare.yaml', SUPERSEDING_MAIN_WORKFLOWS),
+    null
+  );
+  const superseding = ['ai-cloudflare.yaml'];
+  assert.equal(
+    uncomputedRange('ai-cloudflare.yaml', superseding),
     'last green main run'
   );
   assert.equal(
@@ -36,7 +41,7 @@ test('workflows real CI diffs from another commit are marked, not decided', () =
       { file: 'oxc-check.yaml', paths: [], ignore: [] },
     ],
     files: ['docs/readme.md'],
-    superseding: SUPERSEDING_MAIN_WORKFLOWS,
+    superseding,
     decide: (file) => {
       decided.push(file);
       return { shouldRun: false, reason: 'not affected' };

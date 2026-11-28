@@ -17,11 +17,6 @@ on:
         type: boolean
         default: false
         description: "Also detect release-only PR changes; other events always run"
-      pr_runner:
-        required: false
-        type: boolean
-        default: false
-        description: "Select the dedicated PR runner pool; callers pass the full routing condition"
     outputs:
       affected_jobs:
         description: "Affected validation jobs; absent keys retain validation"
@@ -43,7 +38,7 @@ permissions:
 jobs:
   check:
     name: Check CI Config
-    runs-on: ${{ inputs.pr_runner && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     outputs:
       affected_jobs: ${{ steps.check_config.outputs.affected_jobs }}
       run_checks: ${{ steps.pr_release_relevance.outputs.run_checks || steps.release_relevance.outputs.run_checks || 'true' }}
