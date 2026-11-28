@@ -7,6 +7,7 @@ const mocks = {
     supabase: {},
     user: { id: 'user-1' },
   },
+  blocked: new Set<string>() as Set<string> | null,
   callPrivateChatRpc: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
   resolveChatRouteContext: vi.fn(),
@@ -36,6 +37,11 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>
   ) => mocks.resolveChatRouteContext(...args),
+}));
+
+vi.mock('@/lib/chat/safety', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/chat/safety')>()),
+  loadChatBlockedUserIdsForWrite: async () => mocks.blocked,
 }));
 
 vi.mock('@/lib/chat/agent-discovery', () => ({
@@ -85,6 +91,7 @@ async function callPatch(body: unknown) {
 describe('chat conversation patch', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.blocked = new Set();
     mocks.resolveChatRouteContext.mockResolvedValue({
       context: { normalizedWsId: 'workspace-1' },
       ok: true,
@@ -153,6 +160,46 @@ describe('chat conversation patch', () => {
       'chat_update_conversation',
       expect.objectContaining({ p_input: {} })
     );
+  });
+
+  it.each([
+    ['blocked sender', new Set(['blocked-user'])],
+    ['failed block lookup', null],
+  ])(
+    'hides the latest message for a %s after the update commits',
+    async (_label, blocked) => {
+      mocks.blocked = blocked;
+      mocks.callPrivateChatRpc.mockResolvedValue({
+        ...conversation,
+        latestMessage: {
+          content: 'hidden',
+          reactions: [],
+          senderId: 'blocked-user',
+        },
+      });
+
+      const response = await callPatch({ pinned: true });
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        conversation: { ...conversation, latestMessage: null },
+      });
+    }
+  );
+
+  it('keeps the latest message from someone the reader did not block', async () => {
+    mocks.blocked = new Set(['blocked-user']);
+    const latestMessage = { content: 'hi', reactions: [], senderId: 'friend' };
+    mocks.callPrivateChatRpc.mockResolvedValue({
+      ...conversation,
+      latestMessage,
+    });
+
+    const response = await callPatch({ pinned: true });
+
+    await expect(response.json()).resolves.toEqual({
+      conversation: { ...conversation, latestMessage },
+    });
   });
 
   it('rejects a mute value that is not a boolean', async () => {

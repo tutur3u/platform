@@ -7,6 +7,7 @@ const mocks = {
     supabase: null as unknown,
     user: { id: 'user-1' },
   },
+  blocked: new Set<string>() as Set<string> | null,
   callPrivateChatRpc: vi.fn(),
   chatRpcErrorResponse: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
@@ -35,6 +36,10 @@ vi.mock('@/lib/chat/realtime', () => ({
   getChatRealtimeAudience: () => ({ scope: 'users', userIds: ['user-1'] }),
   publishChatRealtimeEvent: (...args: unknown[]) =>
     mocks.publishChatRealtimeEvent(...args),
+}));
+vi.mock('@/lib/chat/safety', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/chat/safety')>()),
+  loadChatBlockedUserIdsForWrite: async () => mocks.blocked,
 }));
 vi.mock('@/lib/chat/realtime-worker', () => ({
   isChatRealtimeWorkerConfigured: () => true,
@@ -81,6 +86,7 @@ function createRouteContext() {
 describe('chat read state route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.blocked = new Set();
     mocks.resolveChatRouteContext.mockResolvedValue({
       context: { normalizedWsId: 'workspace-1' },
       ok: true,
@@ -154,6 +160,63 @@ describe('chat read state route', () => {
       type: 'read.updated',
       userId: 'user-1',
       wsId: 'workspace-1',
+    });
+  });
+
+  it.each([
+    ['blocked sender', new Set(['blocked-user'])],
+    ['failed block lookup', null],
+  ])(
+    'hides the latest message for a %s after the read commits',
+    async (_label, blocked) => {
+      mocks.blocked = blocked;
+      mocks.callPrivateChatRpc.mockResolvedValueOnce({
+        ...conversation,
+        latestMessage: {
+          content: 'hidden',
+          reactions: [],
+          senderId: 'blocked-user',
+        },
+      });
+
+      const { POST } = await import('./route');
+      const response = await POST(
+        createRequest(null) as never,
+        createRouteContext()
+      );
+
+      expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({
+        conversation: { ...conversation, latestMessage: null },
+      });
+    }
+  );
+
+  it('hides blocked reactors on a visible latest message', async () => {
+    mocks.blocked = new Set(['blocked-user']);
+    mocks.callPrivateChatRpc.mockResolvedValueOnce({
+      ...conversation,
+      latestMessage: {
+        content: 'hello',
+        reactions: [
+          { count: 2, emoji: 'x', userIds: ['blocked-user', 'friend'] },
+        ],
+        senderId: 'friend',
+      },
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      createRequest(null) as never,
+      createRouteContext()
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      conversation: {
+        latestMessage: {
+          reactions: [{ count: 1, emoji: 'x', userIds: ['friend'] }],
+        },
+      },
     });
   });
 

@@ -9,6 +9,7 @@ const mocks = {
   },
   capMaxOutputTokensByCredits: vi.fn(),
   callPrivateChatRpc: vi.fn(),
+  getChatBlockedUserIds: vi.fn(),
   checkAiCredits: vi.fn(),
   createAdminClient: vi.fn(),
   deductAiCredits: vi.fn(),
@@ -92,6 +93,13 @@ vi.mock('@/lib/chat/agent-discovery', () => ({
   ) => mocks.updateAiChatConversationTitle(...args),
 }));
 
+vi.mock('@/lib/chat/safety', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/chat/safety')>()),
+  getChatBlockedUserIds: (
+    ...args: Parameters<typeof mocks.getChatBlockedUserIds>
+  ) => mocks.getChatBlockedUserIds(...args),
+}));
+
 vi.mock('@/lib/chat/realtime', () => ({
   getChatRealtimeAudience: () => ({ conversationId: 'conversation-1' }),
   publishChatRealtimeEvent: (
@@ -167,6 +175,7 @@ describe('chat conversation generated title route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRouteContext();
+    mocks.getChatBlockedUserIds.mockResolvedValue(new Set());
     mocks.checkAiCredits.mockResolvedValue({
       allowed: true,
       errorCode: null,
@@ -286,6 +295,77 @@ describe('chat conversation generated title route', () => {
         }),
         type: 'conversation.updated',
       })
+    );
+  });
+
+  it('leaves messages from people the reader blocked out of the title prompt', async () => {
+    mocks.getChatBlockedUserIds.mockResolvedValue(new Set(['blocked-user']));
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') {
+        return [
+          {
+            ...messages[0],
+            content: 'blocked words',
+            senderId: 'blocked-user',
+          },
+          { ...messages[2], content: 'visible words' },
+        ];
+      }
+      if (name === 'chat_update_conversation') {
+        return {
+          ...conversation,
+          latestMessage: {
+            content: 'blocked words',
+            reactions: [],
+            senderId: 'blocked-user',
+          },
+          title: 'Recent Planning Decisions',
+        };
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(200);
+    expect(mocks.getChatBlockedUserIds).toHaveBeenCalledWith('user-1');
+    const [{ prompt }] = mocks.generateText.mock.calls[0] as [
+      { prompt: string },
+    ];
+    expect(prompt).toContain('visible words');
+    expect(prompt).not.toContain('blocked words');
+    await expect(response.json()).resolves.toMatchObject({
+      conversation: { latestMessage: null },
+    });
+  });
+
+  it('refuses the title when only blocked people wrote the recent messages', async () => {
+    mocks.getChatBlockedUserIds.mockResolvedValue(new Set(['blocked-user']));
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_messages') {
+        return [{ ...messages[0], senderId: 'blocked-user' }];
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(404);
+    expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
+  it('does not generate a title when the block lookup fails', async () => {
+    mocks.getChatBlockedUserIds.mockRejectedValue(new Error('lookup failed'));
+
+    const response = await callRoute();
+
+    expect(response.status).toBe(500);
+    expect(mocks.generateText).not.toHaveBeenCalled();
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
+      'chat_update_conversation',
+      expect.anything()
     );
   });
 

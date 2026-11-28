@@ -1,4 +1,9 @@
-import { getChatBlockedUserIds, hideBlockedPreviews } from '@/lib/chat/safety';
+import {
+  getChatBlockedUserIds,
+  hideBlockedPreviewAfterWrite,
+  hideBlockedPreviews,
+  loadChatBlockedUserIdsForWrite,
+} from '@/lib/chat/safety';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -484,6 +489,10 @@ export const POST = withSessionAuth<RouteParams>(
         input.initialAiSettings = admission.settings;
         input.modelId = admission.settings.modelId;
       }
+      // A replayed create or an existing direct conversation comes back with
+      // its last message, so the response hides a blocked sender's preview
+      // without failing the committed create.
+      const blockedLookup = loadChatBlockedUserIdsForWrite(auth.user.id);
       const rawConversation = await callPrivateChatRpc<unknown>(
         'chat_create_conversation',
         {
@@ -530,7 +539,15 @@ export const POST = withSessionAuth<RouteParams>(
         });
       }
 
-      return NextResponse.json({ conversation }, { status: 201 });
+      return NextResponse.json(
+        {
+          conversation: hideBlockedPreviewAfterWrite(
+            conversation,
+            await blockedLookup
+          ),
+        },
+        { status: 201 }
+      );
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to create chat conversation');
     }

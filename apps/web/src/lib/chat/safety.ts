@@ -150,6 +150,22 @@ export function loadChatBlockedUserIdsForWrite(actorUserId: string) {
 }
 
 /**
+ * Hides a blocked sender's last-message preview on a conversation a write
+ * returned. Without a block list it drops the preview, so a failed lookup
+ * never shows blocked content and the committed write still answers.
+ */
+export function hideBlockedPreviewAfterWrite<T extends object>(
+  conversation: T,
+  blocked: Set<string> | null
+): T {
+  const preview = conversation as T & WithPreview;
+  if (!preview.latestMessage) return conversation;
+  if (!blocked) return { ...conversation, latestMessage: null };
+  const [visible] = hideBlockedPreviews([preview], blocked);
+  return visible ?? conversation;
+}
+
+/**
  * Hides blocked reactors on a message a write returned. Without a block list
  * it returns no reactions, so a failed lookup never shows a blocked reactor.
  */

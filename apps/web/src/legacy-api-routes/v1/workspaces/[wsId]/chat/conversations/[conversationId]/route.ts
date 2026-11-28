@@ -19,6 +19,10 @@ import {
 } from '@/lib/chat/realtime';
 import { publishLatestChatRevocation } from '@/lib/chat/realtime-revocations';
 import { isChatRealtimeWorkerConfigured } from '@/lib/chat/realtime-worker';
+import {
+  hideBlockedPreviewAfterWrite,
+  loadChatBlockedUserIdsForWrite,
+} from '@/lib/chat/safety';
 
 type RouteParams = {
   conversationId: string;
@@ -66,6 +70,7 @@ export const PATCH = withSessionAuth<RouteParams>(
       conversationInput.pinned !== undefined ||
       conversationInput.title !== undefined;
 
+    const blockedLookup = loadChatBlockedUserIdsForWrite(auth.user.id);
     try {
       let conversation: ChatConversation | undefined;
       if (updatesConversation) {
@@ -106,7 +111,12 @@ export const PATCH = withSessionAuth<RouteParams>(
         wsId: context.context.normalizedWsId,
       });
 
-      return NextResponse.json({ conversation });
+      return NextResponse.json({
+        conversation: hideBlockedPreviewAfterWrite(
+          conversation,
+          await blockedLookup
+        ),
+      });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to update conversation');
     }

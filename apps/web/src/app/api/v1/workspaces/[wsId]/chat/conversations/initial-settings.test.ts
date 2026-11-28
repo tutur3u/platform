@@ -39,6 +39,10 @@ vi.mock('@/lib/chat/private-rpc', async (importOriginal) => ({
   resolveChatRouteContext: (...args: unknown[]) => mocks.context(...args),
   callPrivateChatRpc: (...args: unknown[]) => mocks.rpc(...args),
 }));
+vi.mock('@/lib/chat/safety', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/chat/safety')>()),
+  loadChatBlockedUserIdsForWrite: async () => new Set<string>(),
+}));
 vi.mock('@tuturuuu/ai/credits/resolve-plan-model', () => ({
   resolvePlanModel: (...args: unknown[]) => mocks.resolveModel(...args),
 }));

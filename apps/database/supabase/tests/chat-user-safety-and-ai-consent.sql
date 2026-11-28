@@ -1,5 +1,6 @@
 -- Regression coverage for 20261128170000_chat_user_blocks.sql,
--- 20261128170500_chat_content_reports.sql and 20261128171000_mira_ai_data_consent.sql. Decision and scope:
+-- 20261128170500_chat_content_reports.sql, 20261128171000_mira_ai_data_consent.sql
+-- and 20261128172000_chat_blocks_shared_content.sql. Decision and scope:
 -- apps/docs/platform/chat-safety-and-ai-consent.mdx.
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -43,6 +44,48 @@ insert into private.chat_messages(id, conversation_id, sender_id, kind, content)
 
 insert into private.chat_friend_requests(requester_user_id, recipient_user_id, status)
 values ('00000000-0000-4000-8000-00000000a002', '00000000-0000-4000-8000-00000000a001', 'accepted');
+
+-- c004: a group whose shared links, files and photos come from both a and b.
+insert into public.workspace_default_permissions(ws_id, permission, member_type, enabled) values
+  ('00000000-0000-4000-8000-00000000b001', 'view_chat', 'MEMBER', true)
+on conflict(ws_id, permission, member_type) do update set enabled = excluded.enabled;
+insert into private.chat_conversations(id, ws_id, type, direct_key, created_by) values
+  ('00000000-0000-4000-8000-00000000c004', '00000000-0000-4000-8000-00000000b001',
+   'group', null, '00000000-0000-4000-8000-00000000a001');
+insert into private.chat_conversation_members(conversation_id, user_id) values
+  ('00000000-0000-4000-8000-00000000c004', '00000000-0000-4000-8000-00000000a001'),
+  ('00000000-0000-4000-8000-00000000c004', '00000000-0000-4000-8000-00000000a002');
+insert into private.chat_messages(id, conversation_id, sender_id, kind, content) values
+  ('00000000-0000-4000-8000-00000000d004', '00000000-0000-4000-8000-00000000c004',
+   '00000000-0000-4000-8000-00000000a002', 'user', 'see https://blocked.example/x'),
+  ('00000000-0000-4000-8000-00000000d005', '00000000-0000-4000-8000-00000000c004',
+   '00000000-0000-4000-8000-00000000a001', 'user', 'mine https://own.example/y');
+insert into private.chat_message_attachments(
+  id, conversation_id, message_id, uploader_id, storage_path, filename, content_type
+) values
+  ('00000000-0000-4000-8000-00000000e001', '00000000-0000-4000-8000-00000000c004',
+   '00000000-0000-4000-8000-00000000d004', '00000000-0000-4000-8000-00000000a002',
+   'safety/e001.png', 'blocked.png', 'image/png'),
+  ('00000000-0000-4000-8000-00000000e002', '00000000-0000-4000-8000-00000000c004',
+   '00000000-0000-4000-8000-00000000d004', '00000000-0000-4000-8000-00000000a002',
+   'safety/e002.pdf', 'blocked.pdf', 'application/pdf'),
+  ('00000000-0000-4000-8000-00000000e003', '00000000-0000-4000-8000-00000000c004',
+   '00000000-0000-4000-8000-00000000d005', '00000000-0000-4000-8000-00000000a001',
+   'safety/e003.pdf', 'own.pdf', 'application/pdf'),
+  ('00000000-0000-4000-8000-00000000e004', '00000000-0000-4000-8000-00000000c004',
+   '00000000-0000-4000-8000-00000000d005', '00000000-0000-4000-8000-00000000a002',
+   'safety/e004.pdf', 'uploaded-by-blocked.pdf', 'application/pdf');
+
+create function pg_temp.shared_ids(p_kind text, p_key text)
+returns text[]
+language sql
+as $$
+  select coalesce(array_agg(item ->> p_key order by item ->> p_key), '{}')
+  from jsonb_array_elements(private.chat_list_shared_content(
+    '00000000-0000-4000-8000-00000000b001',
+    '00000000-0000-4000-8000-00000000c004',
+    '00000000-0000-4000-8000-00000000a001') -> p_kind) item;
+$$;
 
 -- Structure and privileges ---------------------------------------------------
 select ok((select bool_and(relrowsecurity) from pg_class where oid in (
@@ -189,6 +232,18 @@ select is((private.chat_conversation_json(
   ->> 'unreadCount')::int, 0,
   'the sender never counts their own message as unread');
 
+select is(pg_temp.shared_ids('links', 'url'), array['https://own.example/y'],
+  'shared links skip a link the blocked person sent');
+select is(pg_temp.shared_ids('photos', 'id'), '{}'::text[],
+  'shared photos skip a photo on the blocked person''s message');
+select is(pg_temp.shared_ids('files', 'id'),
+  array['00000000-0000-4000-8000-00000000e003'],
+  'shared files skip files the blocked person sent or uploaded');
+select is(jsonb_array_length(private.chat_list_shared_content(
+    '00000000-0000-4000-8000-00000000b001', '00000000-0000-4000-8000-00000000c004',
+    '00000000-0000-4000-8000-00000000a002') -> 'links'), 2,
+  'the blocked person still sees every shared link (the block is one-sided)');
+
 select lives_ok($$ select private.chat_create_friend_request_by_email(
     '00000000-0000-4000-8000-00000000b001',
     '00000000-0000-4000-8000-00000000a002', 'nobody-here@example.invalid') $$,
@@ -216,6 +271,16 @@ select is((private.external_chat_conversation_json(
     '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a001')
   ->> 'unreadCount')::int, 1,
   'after unblocking, the external-chat inbox counts the group message again');
+select is(pg_temp.shared_ids('links', 'url'),
+  array['https://blocked.example/x', 'https://own.example/y'],
+  'after unblocking, the blocked person''s shared link shows again');
+select is(pg_temp.shared_ids('photos', 'id'),
+  array['00000000-0000-4000-8000-00000000e001'],
+  'after unblocking, the shared photo shows again');
+select is(pg_temp.shared_ids('files', 'id'),
+  array['00000000-0000-4000-8000-00000000e002', '00000000-0000-4000-8000-00000000e003',
+        '00000000-0000-4000-8000-00000000e004'],
+  'after unblocking, every shared file shows again');
 select lives_ok($$
   insert into private.chat_messages(conversation_id, sender_id, kind, content)
   values ('00000000-0000-4000-8000-00000000c001',

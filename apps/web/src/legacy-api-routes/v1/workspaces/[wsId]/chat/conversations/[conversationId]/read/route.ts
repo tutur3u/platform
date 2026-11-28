@@ -12,6 +12,10 @@ import {
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
 import { isChatRealtimeWorkerConfigured } from '@/lib/chat/realtime-worker';
+import {
+  hideBlockedPreviewAfterWrite,
+  loadChatBlockedUserIdsForWrite,
+} from '@/lib/chat/safety';
 
 type RouteParams = {
   conversationId: string;
@@ -84,19 +88,27 @@ export const POST = withSessionAuth<RouteParams>(
       p_ws_id: context.context.normalizedWsId,
     };
 
-    try {
-      const conversation = await setReadState(rpcParams);
+    // The read state commits before the response, so the block lookup for
+    // its preview runs beside the write and never fails it.
+    const blockedLookup = loadChatBlockedUserIdsForWrite(auth.user.id);
+    const respond = async (conversation: ChatConversation | null) =>
+      NextResponse.json({
+        conversation: conversation
+          ? hideBlockedPreviewAfterWrite(conversation, await blockedLookup)
+          : conversation,
+      });
 
-      return NextResponse.json({ conversation });
+    try {
+      return await respond(await setReadState(rpcParams));
     } catch (error) {
       if (parsed.data.messageId && isStaleReadAnchorError(error)) {
         try {
-          const conversation = await setReadState({
-            ...rpcParams,
-            p_message_id: null,
-          });
-
-          return NextResponse.json({ conversation });
+          return await respond(
+            await setReadState({
+              ...rpcParams,
+              p_message_id: null,
+            })
+          );
         } catch (retryError) {
           return chatRpcErrorResponse(
             retryError,

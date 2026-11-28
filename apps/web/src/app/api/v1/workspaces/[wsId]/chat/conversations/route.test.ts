@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
     user: { id: 'user-1' },
   },
   blocked: new Set<string>(),
+  blockedForWrite: new Set<string>() as Set<string> | null,
   callPrivateChatRpc: vi.fn(),
   canModerateChat: vi.fn(),
   getPermissions: vi.fn(),
@@ -48,6 +49,7 @@ vi.mock('server-only', () => ({}));
 vi.mock('@/lib/chat/safety', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/chat/safety')>()),
   getChatBlockedUserIds: async () => mocks.blocked,
+  loadChatBlockedUserIdsForWrite: async () => mocks.blockedForWrite,
 }));
 vi.mock('@/lib/chat/moderation', () => ({
   canModerateChat: (...args: Parameters<typeof mocks.canModerateChat>) =>
@@ -472,6 +474,43 @@ describe('durable conversation creation', () => {
       conversation: durableConversation,
     });
     expect(mocks.callPrivateChatRpc).toHaveBeenCalledTimes(1);
+  });
+  it.each([
+    ['blocked sender', new Set(['blocked-user'])],
+    ['failed block lookup', null],
+  ])('hides a replayed preview for a %s', async (_label, blocked) => {
+    mocks.blockedForWrite = blocked;
+    mocks.callPrivateChatRpc.mockResolvedValue({
+      ...durableConversation,
+      latestMessage: { content: 'hidden', senderId: 'blocked-user' },
+    });
+    try {
+      const response = await callPost();
+      expect(response.status).toBe(201);
+      expect((await response.json()).conversation.latestMessage).toBeNull();
+    } finally {
+      mocks.blockedForWrite = new Set();
+    }
+  });
+  it('keeps a replayed preview from someone the reader did not block', async () => {
+    mocks.blockedForWrite = new Set(['blocked-user']);
+    const latestMessage = {
+      content: 'hello',
+      senderId: 'friend',
+      reactions: [],
+    };
+    mocks.callPrivateChatRpc.mockResolvedValue({
+      ...durableConversation,
+      latestMessage,
+    });
+    try {
+      const response = await callPost();
+      expect((await response.json()).conversation.latestMessage).toEqual(
+        latestMessage
+      );
+    } finally {
+      mocks.blockedForWrite = new Set();
+    }
   });
   it('returns the normal durable receipt', async () => {
     expect((await callPost()).status).toBe(201);

@@ -30,6 +30,11 @@ import {
   getChatRealtimeAudience,
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
+import {
+  filterBlockedSenders,
+  getChatBlockedUserIds,
+  hideBlockedPreviewAfterWrite,
+} from '@/lib/chat/safety';
 
 type RouteParams = {
   conversationId: string;
@@ -71,17 +76,21 @@ export const POST = withSessionAuth<RouteParams>(
         p_ws_id: context.context.normalizedWsId,
       });
 
-      const messages = await callPrivateChatRpc<ChatMessage[]>(
-        'chat_list_messages',
-        {
+      // A failed block lookup refuses the title, so a blocked person's words
+      // never reach the model.
+      const [messages, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatMessage[]>('chat_list_messages', {
           p_actor_user_id: auth.user.id,
           p_before: null,
           p_conversation_id: params.conversationId,
           p_limit: 5,
           p_ws_id: context.context.normalizedWsId,
-        }
+        }),
+        getChatBlockedUserIds(auth.user.id),
+      ]);
+      const titleMessages = normalizeTitleMessages(
+        filterBlockedSenders(messages ?? [], blocked)
       );
-      const titleMessages = normalizeTitleMessages(messages ?? []);
 
       if (titleMessages.length === 0) {
         return NextResponse.json(
@@ -125,7 +134,10 @@ export const POST = withSessionAuth<RouteParams>(
         wsId: context.context.normalizedWsId,
       });
 
-      return NextResponse.json({ conversation, title });
+      return NextResponse.json({
+        conversation: hideBlockedPreviewAfterWrite(conversation, blocked),
+        title,
+      });
     } catch (error) {
       console.error('Failed to generate chat title', {
         conversationId: params.conversationId,

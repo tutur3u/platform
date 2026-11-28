@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   hideBlockedMessageContent,
+  hideBlockedPreviewAfterWrite,
   hideBlockedPreviews,
   hideBlockedReactors,
   hideBlockedReactorsAfterWrite,
@@ -94,5 +95,24 @@ describe('write responses', () => {
     expect(
       hideBlockedReactorsAfterWrite(message('m1', 'friend'), lookup).reactions
     ).toEqual([]);
+  });
+
+  it('drops a write response preview without a block list', () => {
+    const conversation = { id: 'c1', latestMessage: message('m1', 'friend') };
+
+    expect(hideBlockedPreviewAfterWrite(conversation, null)).toEqual({
+      id: 'c1',
+      latestMessage: null,
+    });
+    expect(
+      hideBlockedPreviewAfterWrite(
+        { id: 'c2', latestMessage: message('m2', 'blocked') },
+        blocked
+      ).latestMessage
+    ).toBeNull();
+    expect(
+      hideBlockedPreviewAfterWrite(conversation, blocked).latestMessage
+        ?.reactions
+    ).toEqual([{ count: 1, emoji: 'x', userIds: ['friend'] }]);
   });
 });
