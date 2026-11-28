@@ -383,6 +383,10 @@
       "component": "whiteboard",
       "package-name": "@tuturuuu/whiteboard"
     },
+    "packages/wiki-core": {
+      "component": "wiki-core",
+      "package-name": "@tuturuuu/wiki-core"
+    },
     "packages/workflows": {
       "component": "workflows",
       "package-name": "@tuturuuu/workflows"
