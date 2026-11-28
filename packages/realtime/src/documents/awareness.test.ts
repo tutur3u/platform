@@ -14,6 +14,42 @@ import {
 } from './mira-presence';
 
 describe('authenticated cursor wire boundary', () => {
+  it('relays only the cursor identity and position in a restricted room', () => {
+    const doc = new Y.Doc();
+    const receiveDoc = new Y.Doc();
+    const sender = new Awareness(doc);
+    const receive = new Awareness(receiveDoc);
+    try {
+      sender.setLocalState({
+        user: {
+          id: 'spoof',
+          name: 'Alex',
+          color: '#123456',
+          email: 'alex@example.invalid',
+          accountId: '10000000-0000-4000-8000-000000000001',
+        },
+        cursor: { anchor: 1, head: 2 },
+        extra: '10000000-0000-4000-8000-000000000002',
+      });
+      const normalized = normalizeAwarenessUpdate(
+        encodeAwarenessUpdate(sender, [doc.clientID]),
+        'actor',
+        undefined,
+        true
+      )!;
+      applyAwarenessUpdate(receive, normalized.update, 'fixture');
+      expect(receive.getStates().get(doc.clientID)).toEqual({
+        user: { id: 'actor', name: 'Alex', color: '#123456' },
+        cursor: { anchor: 1, head: 2 },
+      });
+    } finally {
+      sender.destroy();
+      receive.destroy();
+      doc.destroy();
+      receiveDoc.destroy();
+    }
+  });
+
   it('binds a forged user identity to the signed actor and ignores other clients', () => {
     const doc = new Y.Doc();
     const peerDoc = new Y.Doc();

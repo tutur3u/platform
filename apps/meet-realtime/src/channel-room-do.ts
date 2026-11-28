@@ -13,6 +13,7 @@ import {
   verifyRealtimePayload,
 } from '../../../packages/realtime/src/core/token';
 import {
+  allowedCursorUser,
   awarenessRemoval,
   normalizeAwarenessUpdate,
 } from '../../../packages/realtime/src/documents/awareness';
@@ -261,7 +262,8 @@ export class ChannelRoomDurableObject implements DurableObject {
           const own = normalizeAwarenessUpdate(
             Uint8Array.from(parsed.payload),
             attachment.ticket.userId,
-            attachment.awarenessClientId
+            attachment.awarenessClientId,
+            attachment.ticket.topic.startsWith('meeting-document-')
           );
           if (!own) return;
           if (
@@ -290,23 +292,36 @@ export class ChannelRoomDurableObject implements DurableObject {
             16384
         )
           return socket.close(1009, 'Presence exceeds limit');
+        const user = parsed.type === 'track' ? parsed.payload.user : null;
         attachment.presence =
-          parsed.type === 'track'
-            ? {
-                ...parsed.payload,
-                ...(parsed.payload.user &&
-                typeof parsed.payload.user === 'object'
-                  ? {
-                      user: {
-                        ...parsed.payload.user,
-                        id: attachment.ticket.userId,
-                      },
-                    }
-                  : {}),
-                user_id: attachment.ticket.userId,
-                userId: attachment.ticket.userId,
-              }
-            : null;
+          parsed.type !== 'track'
+            ? null
+            : attachment.ticket.topic.startsWith('meeting-document-')
+              ? // People outside the workspace join meeting documents: relay
+                // only the authenticated id and the cursor name and color.
+                {
+                  user: {
+                    ...allowedCursorUser(user),
+                    id: attachment.ticket.userId,
+                  },
+                  user_id: attachment.ticket.userId,
+                  userId: attachment.ticket.userId,
+                }
+              : {
+                  ...parsed.payload,
+                  ...(user && typeof user === 'object' && !Array.isArray(user)
+                    ? {
+                        user: {
+                          ...user,
+                          id: attachment.ticket.userId,
+                        },
+                      }
+                    : Array.isArray(user)
+                      ? { user: undefined }
+                      : {}),
+                  user_id: attachment.ticket.userId,
+                  userId: attachment.ticket.userId,
+                };
         socket.serializeAttachment(attachment);
         this.broadcast({ type: 'presence', state: this.presenceState() });
       }

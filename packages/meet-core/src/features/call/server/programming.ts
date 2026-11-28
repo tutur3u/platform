@@ -37,6 +37,7 @@ import { PlaygroundCreate } from '@tuturuuu/utils/playground-schema';
 import { playgroundTemplates } from '@tuturuuu/utils/playground-templates';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
+import { isOutsideMeetViewer } from './outside-viewer';
 import { callRoomService, type SignedInMeetCallAccess } from './room-service';
 
 type Access = SignedInMeetCallAccess;
@@ -178,9 +179,10 @@ async function meetingProgrammingScope(
           : `playground:${selection.id}`
         : `meeting:${access.meeting.id}:${selection.kind}:${selection.id}:${selection.language}`,
     displayName: access.displayName,
-    // The participant may be outside the workspace; the browser ticket names
-    // the host's account only by a room binding.
-    bindOwner: true,
+    // An outside viewer's browser ticket names the host only by a room
+    // binding; the host's and members' tickets keep the plain owner, which
+    // programming rooms of every version accept.
+    bindOwner: isOutsideMeetViewer(access),
   };
 }
 

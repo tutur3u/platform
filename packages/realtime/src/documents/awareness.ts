@@ -18,6 +18,17 @@ function encode(entry: Entry) {
   encoding.writeVarString(encoder, JSON.stringify(entry.state));
   return encoding.toUint8Array(encoder);
 }
+const USER_KEYS = ['name', 'color'] as const;
+/** The cursor identity fields a restricted room relays: name and color. */
+export function allowedCursorUser(value: unknown) {
+  const user: Record<string, string> = {};
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return user;
+  for (const key of USER_KEYS) {
+    const field = (value as Record<string, unknown>)[key];
+    if (typeof field === 'string') user[key] = field.slice(0, 120);
+  }
+  return user;
+}
 function withoutReserved(value: Record<string, unknown>) {
   const next = { ...value };
   for (const key of MIRA_RESERVED_AWARENESS_KEYS) delete next[key];
@@ -30,7 +41,12 @@ function withoutReserved(value: Record<string, unknown>) {
 export function normalizeAwarenessUpdate(
   update: Uint8Array,
   userId: string,
-  knownClientId?: number
+  knownClientId?: number,
+  /**
+   * Relay only `user` (id, name, color) and `cursor`: rooms that people
+   * outside the workspace join must not carry arbitrary client fields.
+   */
+  restricted = false
 ) {
   if (update.byteLength > 16384) throw new Error('Awareness exceeds limit');
   const decoder = decoding.createDecoder(update);
@@ -55,7 +71,12 @@ export function normalizeAwarenessUpdate(
   if (!own) return null;
   if (own.clientId === MIRA_AWARENESS_CLIENT_ID)
     throw new Error('Reserved awareness client');
-  if (own.state)
+  if (own.state && restricted)
+    own.state = {
+      ...('cursor' in own.state ? { cursor: own.state.cursor } : {}),
+      user: { ...allowedCursorUser(own.state.user), id: userId },
+    };
+  else if (own.state)
     own.state = {
       ...withoutReserved(own.state),
       user: {

@@ -1,5 +1,9 @@
 import 'server-only';
 import {
+  openPreviewOwner,
+  sealPreviewOwner,
+} from '@tuturuuu/realtime/core/opaque-ids';
+import {
   signRealtimePayload,
   verifyRealtimePayload,
 } from '@tuturuuu/realtime/core/token';
@@ -20,17 +24,20 @@ export function previewCapabilityPrefix(input: {
     input.prefix.includes(`/${PREVIEW_CAPABILITY_SEGMENT}/`)
   )
     return input.prefix;
+  const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
+  // The capability sits in URLs the browser reads, and a Meet viewer may be
+  // outside the workspace, so the owner travels sealed.
   const token = signRealtimePayload(
     {
       aud: 'tuturuuu.playground-preview',
-      ownerId: input.ownerId,
+      ownerSeal: sealPreviewOwner(secret, input, input.ownerId),
       projectId: input.projectId,
       port: input.port,
       meetingId: input.meetingId,
       roomId: input.roomId,
       exp: Math.floor(Date.now() / 1000) + 60,
     },
-    process.env.MEET_REALTIME_TOKEN_SECRET
+    secret
   );
   return `${input.prefix}${PREVIEW_CAPABILITY_SEGMENT}/${token}/`;
 }
@@ -41,8 +48,9 @@ export function readPreviewCapability(
   token: string,
   expected: { port: number; projectId?: string; roomId?: string }
 ) {
+  const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
   const parsed = PlaygroundPreviewCapability.safeParse(
-    verifyRealtimePayload(token, process.env.MEET_REALTIME_TOKEN_SECRET)
+    verifyRealtimePayload(token, secret)
   );
   if (
     !parsed.success ||
@@ -53,5 +61,10 @@ export function readPreviewCapability(
     (expected.projectId && parsed.data.projectId !== expected.projectId)
   )
     throw new Error('Invalid preview capability');
-  return parsed.data;
+  const { ownerSeal, ...scope } = parsed.data;
+  const ownerId = ownerSeal
+    ? openPreviewOwner(secret, scope, ownerSeal)
+    : scope.ownerId;
+  if (!ownerId) throw new Error('Invalid preview capability');
+  return { ...scope, ownerId };
 }

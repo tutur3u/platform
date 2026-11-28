@@ -7,6 +7,7 @@ import {
   rewritePreviewAsset,
   rewritePreviewHtml,
 } from './playground-preview-assets';
+import { signRealtimePayload } from '@tuturuuu/realtime/core/token';
 import {
   previewCapabilityPrefix,
   readPreviewCapability,
@@ -98,6 +99,42 @@ it('denies expired, altered, wrong-project, wrong-port and wrong-room capabiliti
   });
   expect(denied?.status).toBe(403);
   expect(mocks.execute).not.toHaveBeenCalled();
+});
+it('never shows the owner account id in the preview URLs a browser receives', async () => {
+  preview('text/html', '<script type="module" src="/src/main.js"></script>');
+  const html = await (
+    await playgroundPreviewResponse({ ...input, roomId, path: '/' })
+  ).text();
+  expect(html).not.toContain(ownerId);
+  const prefix = html.match(/<base href="([^"]+)"/)![1]!;
+  const token = prefix.split('/_ttr-preview/')[1]!.split('/')[0]!;
+  const payload = JSON.parse(
+    Buffer.from(token.split('.')[0]!, 'base64url').toString('utf8')
+  );
+  expect(JSON.stringify(payload)).not.toContain(ownerId);
+  expect(payload.ownerId).toBeUndefined();
+  expect(readPreviewCapability(token, { port: 3000, roomId }).ownerId).toBe(
+    ownerId
+  );
+  // The seal is bound to its scope: moving it to another port fails closed.
+  const moved = signRealtimePayload(
+    { ...payload, port: 3001 },
+    'disposable-fixture-secret'
+  );
+  expect(() => readPreviewCapability(moved, { port: 3001, roomId })).toThrow();
+});
+it('reads a capability minted with a plain owner during a rollout', () => {
+  const token = signRealtimePayload(
+    {
+      aud: 'tuturuuu.playground-preview',
+      ownerId,
+      projectId,
+      port: 3000,
+      exp: Math.floor(Date.now() / 1000) + 30,
+    },
+    'disposable-fixture-secret'
+  );
+  expect(readPreviewCapability(token, { port: 3000 }).ownerId).toBe(ownerId);
 });
 it('keeps native loopback capability prefixes and binary assets intact', async () => {
   const prefix = `http://127.0.0.1:4567/${'a'.repeat(64)}/preview/3000/`;

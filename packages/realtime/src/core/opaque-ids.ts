@@ -3,6 +3,7 @@ import {
   createDecipheriv,
   createHmac,
   randomBytes,
+  timingSafeEqual,
 } from 'node:crypto';
 
 /**
@@ -58,6 +59,13 @@ export function collaborationOwnerBinding(
   return uuidFromHmac(secret, `collaboration-owner:${roomId}:${ownerId}`);
 }
 
+/** Constant-time comparison of two ids; different lengths never match. */
+function sameId(left: string, right: string) {
+  const a = Buffer.from(left);
+  const b = Buffer.from(right);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 /**
  * Whether a programming room ticket names the room's owner: by account id, or,
  * for a browser join ticket only, by the owner binding.
@@ -67,11 +75,13 @@ export function collaborationTicketOwnerMatches(
   ticket: { kind: string; ownerId: string },
   room: { roomId: string; ownerId: string }
 ) {
-  if (ticket.ownerId === room.ownerId) return true;
+  if (sameId(ticket.ownerId, room.ownerId)) return true;
   return (
     ticket.kind === 'join' &&
-    ticket.ownerId ===
+    sameId(
+      ticket.ownerId,
       collaborationOwnerBinding(secret, room.roomId, room.ownerId)
+    )
   );
 }
 
@@ -79,28 +89,76 @@ const SEAL_IV_BYTES = 12;
 const SEAL_TAG_BYTES = 16;
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
-function sealKey(secret: string | undefined) {
-  return createHmac('sha256', secretKey(secret))
-    .update('tuturuuu.channels.owner-seal.v1')
-    .digest();
+/**
+ * Encrypts an account id for a token its holder can read (AES-256-GCM with a
+ * key derived per purpose from the secret, authenticated over `context`).
+ */
+function sealId(
+  secret: string | undefined,
+  purpose: string,
+  context: string,
+  id: string
+) {
+  const key = createHmac('sha256', secretKey(secret)).update(purpose).digest();
+  const iv = randomBytes(SEAL_IV_BYTES);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  cipher.setAAD(Buffer.from(context));
+  const encrypted = Buffer.concat([cipher.update(id), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), encrypted]).toString(
+    'base64url'
+  );
 }
 
+/** The id in a seal for this purpose and context, or null when it is invalid. */
+function openId(
+  secret: string | undefined,
+  purpose: string,
+  context: string,
+  seal: string
+) {
+  try {
+    const raw = Buffer.from(seal, 'base64url');
+    if (raw.length <= SEAL_IV_BYTES + SEAL_TAG_BYTES || raw.length > 256)
+      return null;
+    const key = createHmac('sha256', secretKey(secret))
+      .update(purpose)
+      .digest();
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      key,
+      raw.subarray(0, SEAL_IV_BYTES)
+    );
+    decipher.setAAD(Buffer.from(context));
+    decipher.setAuthTag(
+      raw.subarray(SEAL_IV_BYTES, SEAL_IV_BYTES + SEAL_TAG_BYTES)
+    );
+    const id = Buffer.concat([
+      decipher.update(raw.subarray(SEAL_IV_BYTES + SEAL_TAG_BYTES)),
+      decipher.final(),
+    ]).toString('utf8');
+    return GUID.test(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+const CHANNEL_SEAL = 'tuturuuu.channels.owner-seal.v1';
+
 /**
- * Encrypts a document channel's owner id for a client-held ticket (AES-256-GCM,
- * bound to the topic). Only the channel room, which holds the secret, opens it
- * to bind the room and sign its workspace checkpoint.
+ * Encrypts a document channel's owner id for a client-held ticket, bound to
+ * the topic. Only the channel room, which holds the secret, opens it to bind
+ * the room and sign its workspace checkpoint.
  */
 export function sealChannelOwner(
   secret: string | undefined,
   topic: string,
   ownerId: string
 ) {
-  const iv = randomBytes(SEAL_IV_BYTES);
-  const cipher = createCipheriv('aes-256-gcm', sealKey(secret), iv);
-  cipher.setAAD(Buffer.from(`tuturuuu.channels.owner:${topic}`));
-  const encrypted = Buffer.concat([cipher.update(ownerId), cipher.final()]);
-  return Buffer.concat([iv, cipher.getAuthTag(), encrypted]).toString(
-    'base64url'
+  return sealId(
+    secret,
+    CHANNEL_SEAL,
+    `tuturuuu.channels.owner:${topic}`,
+    ownerId
   );
 }
 
@@ -110,32 +168,12 @@ export function openChannelOwner(
   topic: string,
   seal: string
 ) {
-  try {
-    const raw = Buffer.from(seal, 'base64url');
-    if (raw.length <= SEAL_IV_BYTES + SEAL_TAG_BYTES || raw.length > 256)
-      return null;
-    const decipher = createDecipheriv(
-      'aes-256-gcm',
-      sealKey(secret),
-      raw.subarray(0, SEAL_IV_BYTES)
-    );
-    decipher.setAAD(Buffer.from(`tuturuuu.channels.owner:${topic}`));
-    decipher.setAuthTag(
-      raw.subarray(SEAL_IV_BYTES, SEAL_IV_BYTES + SEAL_TAG_BYTES)
-    );
-    const owner = Buffer.concat([
-      decipher.update(raw.subarray(SEAL_IV_BYTES + SEAL_TAG_BYTES)),
-      decipher.final(),
-    ]).toString('utf8');
-    return GUID.test(owner) ? owner : null;
-  } catch {
-    return null;
-  }
+  return openId(secret, CHANNEL_SEAL, `tuturuuu.channels.owner:${topic}`, seal);
 }
 
 /**
  * The owner a channel ticket names: the sealed owner when the ticket carries
- * one, otherwise its plain `ownerId` (service tickets and older clients).
+ * one, otherwise its plain `ownerId` (service and member tickets).
  */
 export function channelTicketOwner(
   secret: string | undefined,
@@ -144,4 +182,30 @@ export function channelTicketOwner(
   if (ticket.ownerSeal)
     return openChannelOwner(secret, ticket.topic, ticket.ownerSeal);
   return ticket.ownerId ?? null;
+}
+
+const PREVIEW_SEAL = 'tuturuuu.playground-preview.owner-seal.v1';
+type PreviewScope = { projectId: string; port: number; roomId?: string };
+const previewContext = (scope: PreviewScope) =>
+  `tuturuuu.playground-preview:${scope.projectId}:${scope.port}:${scope.roomId ?? ''}`;
+
+/**
+ * Encrypts a playground preview's owner id for the capability embedded in
+ * preview URLs, bound to the project, port and room it authorizes.
+ */
+export function sealPreviewOwner(
+  secret: string | undefined,
+  scope: PreviewScope,
+  ownerId: string
+) {
+  return sealId(secret, PREVIEW_SEAL, previewContext(scope), ownerId);
+}
+
+/** The owner id in a preview capability seal, or null when it is invalid. */
+export function openPreviewOwner(
+  secret: string | undefined,
+  scope: PreviewScope,
+  seal: string
+) {
+  return openId(secret, PREVIEW_SEAL, previewContext(scope), seal);
 }

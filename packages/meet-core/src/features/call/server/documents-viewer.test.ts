@@ -172,25 +172,44 @@ describe('document tabs metadata', () => {
 });
 
 describe('document channel join', () => {
-  it.each(Object.keys(id) as Viewer[])(
-    'gives the %s a ticket without platform account ids',
+  const joinAs = async (viewer: Viewer) => {
+    const joined = await joinMeetingDocument(access(viewer), 'primary');
+    const [encoded] = joined.token.split('.');
+    const readable = Buffer.from(encoded!, 'base64url').toString('utf8');
+    const ticket = channelTicketSchema.parse(
+      verifyRealtimePayload(joined.token, SECRET)
+    );
+    return {
+      joined,
+      ticket,
+      wire: `${readable}${JSON.stringify({ ...joined, token: '' })}`,
+    };
+  };
+
+  it('gives a signed-in outsider a ticket without platform account ids', async () => {
+    const { joined, ticket, wire } = await joinAs('outsider');
+    for (const name of Object.keys(id) as Viewer[])
+      expect(wire).not.toContain(id[name]);
+    const alias = meetRoomAccountAlias(SECRET, ROOM, id.outsider);
+    expect(ticket.userId).toBe(alias);
+    expect(joined.user.id).toBe(alias);
+    expect(ticket.ownerId).toBeUndefined();
+    expect(openChannelOwner(SECRET, ticket.topic, ticket.ownerSeal!)).toBe(
+      id.host
+    );
+  });
+
+  it.each(['host', 'member'] as const)(
+    'gives the %s the room alias and the plain owner every room accepts',
     async (viewer) => {
-      const joined = await joinMeetingDocument(access(viewer), 'primary');
-      const [encoded] = joined.token.split('.');
-      const readable = Buffer.from(encoded!, 'base64url').toString('utf8');
-      const wire = `${readable}${JSON.stringify({ ...joined, token: '' })}`;
-      for (const name of Object.keys(id) as Viewer[])
-        expect(wire).not.toContain(id[name]);
-      const ticket = channelTicketSchema.parse(
-        verifyRealtimePayload(joined.token, SECRET)
-      );
+      const { joined, ticket, wire } = await joinAs(viewer);
       const alias = meetRoomAccountAlias(SECRET, ROOM, id[viewer]);
       expect(ticket.userId).toBe(alias);
       expect(joined.user.id).toBe(alias);
-      expect(ticket.ownerId).toBeUndefined();
-      expect(openChannelOwner(SECRET, ticket.topic, ticket.ownerSeal!)).toBe(
-        id.host
-      );
+      expect(ticket.ownerId).toBe(id.host);
+      expect(ticket.ownerSeal).toBeUndefined();
+      // Only the owner is named; presence identity stays the alias.
+      for (const name of others('host')) expect(wire).not.toContain(id[name]);
     }
   );
 

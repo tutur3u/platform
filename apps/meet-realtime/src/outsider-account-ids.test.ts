@@ -11,6 +11,7 @@ import {
   meetRoomAccountAlias,
   sealChannelOwner,
 } from '../../../packages/realtime/src/core/opaque-ids';
+import { signRealtimePayload } from '../../../packages/realtime/src/core/token';
 import { ChannelRoomDurableObject } from './channel-room-do';
 import { CollaborationRoomDurableObject } from './collaboration-room-do';
 
@@ -265,7 +266,7 @@ function collaborationFixture() {
     );
     return { response, socket: pairs.at(-1)?.[1] };
   };
-  return { ticket, send };
+  return { room, ticket, send };
 }
 
 test('a programming room shows an outsider no account ids in presence', async () => {
@@ -308,4 +309,80 @@ test('a programming room accepts an owner binding only on a browser join', async
     collaboration.ticket('member', { ownerId: id.member })
   );
   assert.equal(forged.response.status, 403);
+});
+
+test('a programming refresh crosses between the plain owner and the binding', async () => {
+  const collaboration = collaborationFixture();
+  const plain = collaboration.ticket('member', { ownerId: id.host });
+  const bound = collaboration.ticket('member');
+  for (const [first, next] of [
+    [plain, bound],
+    [bound, plain],
+  ] as const) {
+    const { response, socket } = await collaboration.send(first);
+    assert.equal(response.status, 200);
+    await collaboration.room.webSocketMessage(
+      socket as unknown as WebSocket,
+      JSON.stringify({
+        type: 'authenticate',
+        token: signRealtimePayload(next, SECRET),
+      })
+    );
+    assert.equal(socket!.closed, undefined, 'refresh kept the socket open');
+  }
+  const { socket } = await collaboration.send(plain);
+  await collaboration.room.webSocketMessage(
+    socket as unknown as WebSocket,
+    JSON.stringify({
+      type: 'authenticate',
+      token: signRealtimePayload(
+        {
+          ...bound,
+          ownerId: collaborationOwnerBinding(SECRET, 'other', id.host),
+        },
+        SECRET
+      ),
+    })
+  );
+  assert.equal(socket!.closed, 1008);
+});
+
+test('member tickets with a plain owner and outsider seals share one document', async () => {
+  const channel = channelFixture();
+  const member = await channel.join(
+    channelTicket('member', { ownerSeal: undefined, ownerId: id.host })
+  );
+  const outsider = await channel.join(channelTicket('outsider'));
+  assert.equal(member.response.status, 200);
+  assert.equal(outsider.response.status, 200);
+  // Meeting documents relay only the cursor identity from presence.
+  channel.room.webSocketMessage(
+    member.socket as unknown as WebSocket,
+    JSON.stringify({
+      type: 'track',
+      payload: {
+        user: {
+          id: id.member,
+          name: 'Member',
+          color: '#123456',
+          email: 'm@x.invalid',
+        },
+        accountId: id.member,
+      },
+    })
+  );
+  const last = JSON.parse(outsider.socket!.frames.at(-1)!);
+  const [entry] = Object.values(last.state)[0] as Record<string, unknown>[];
+  assert.deepEqual(Object.keys(entry!).sort(), [
+    'presence_ref',
+    'user',
+    'userId',
+    'user_id',
+  ]);
+  assert.deepEqual(Object.keys(entry!.user as object).sort(), [
+    'color',
+    'id',
+    'name',
+  ]);
+  assert.ok(!outsider.socket!.frames.join('\n').includes(id.member));
 });

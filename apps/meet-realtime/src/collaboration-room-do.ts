@@ -140,11 +140,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
     if (
       !this.metadata ||
       ticket.roomId !== this.metadata.roomId ||
-      !ownerMatches(
-        this.env.MEET_REALTIME_TOKEN_SECRET,
-        ticket,
-        this.metadata
-      ) ||
+      !this.owns(ticket) ||
       ticket.resourceId !== this.metadata.resourceId ||
       ticket.resource !== this.metadata.resource ||
       ticket.meetingId !== this.metadata.meetingId
@@ -244,7 +240,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
           next.data.exp * 1000 <= Date.now() ||
           next.data.roomId !== attachment.ticket.roomId ||
           next.data.userId !== attachment.ticket.userId ||
-          next.data.ownerId !== attachment.ticket.ownerId ||
+          !this.owns(next.data) ||
           next.data.resourceId !== attachment.ticket.resourceId ||
           next.data.resource !== attachment.ticket.resource ||
           next.data.meetingId !== attachment.ticket.meetingId
@@ -291,6 +287,11 @@ export class CollaborationRoomDurableObject implements DurableObject {
     } catch {
       socket.close(1008, 'Invalid document update');
     }
+  }
+  /** Names this room's owner: plainly, or bound on a browser join. */
+  private owns(ticket: CollaborationTicket) {
+    const secret = this.env.MEET_REALTIME_TOKEN_SECRET;
+    return !!this.metadata && ownerMatches(secret, ticket, this.metadata);
   }
   private async programmingMira(request: Request, ticket: CollaborationTicket) {
     return handleProgrammingMiraFix({

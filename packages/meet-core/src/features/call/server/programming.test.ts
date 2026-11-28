@@ -203,22 +203,22 @@ it('rejects a checkpoint if the host has already closed the programming room', a
 });
 
 it.each([
-  ['host', true],
-  ['member', false],
-  ['signed-in outsider', false],
-])(
-  'asks for a browser ticket that binds the host instead of naming them (%s)',
-  async (_viewer, isHost) => {
+  ['host', true, 'open', false],
+  ['member', false, 'open', false],
+  ['signed-in outsider', false, 'lobby', true],
+] as const)(
+  'binds the host in the browser ticket only for an outside viewer (%s)',
+  async (_viewer, isHost, admission, bindOwner) => {
     mocks.room.mockResolvedValue({
       selection: { kind: 'playground', id: 'project', language: 'python' },
     });
     mocks.elevated.mockResolvedValue(true);
     mocks.metadata.mockResolvedValue({ id: 'project', revision: 1 });
     mocks.ticket.mockResolvedValue({ token: 'ticket' });
-    await joinMeetingProgramming({ ...access, isHost });
+    await joinMeetingProgramming({ ...access, isHost, admission });
     expect(mocks.ticket).toHaveBeenCalledWith(
       expect.objectContaining({
-        bindOwner: true,
+        bindOwner,
         role: isHost ? 'owner' : 'editor',
       }),
       expect.any(Function),

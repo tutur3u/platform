@@ -1297,34 +1297,51 @@ signed-in people outside the workspace (lobby admission).
 - **Document channel tickets and presence.** Every participant's channel ticket
   carries the room alias as `userId`, and the join response returns it as
   `user.id`, so channel presence, cursor labels and awareness show aliases for
-  the host and members too. The ticket names the meeting owner only as
-  `ownerSeal`, AES-256-GCM sealed with a key derived from the realtime secret
-  and bound to the topic. The channel Durable Object opens it to bind the room
-  and to sign its workspace checkpoint with the real owner, which never leaves
-  the server. Service tickets (Mira's caret, checkpoints) keep a plain
-  `ownerId`.
-- **Programming collaboration.** A Meet programming join ticket names the host
-  by a room-scoped owner binding (an HMAC, not the account id). The
-  collaboration Durable Object accepts that binding only on browser join
-  tickets; seed, checkpoint, runner and Mira tickets stay server-side with the
-  real owner. Every programming room, in Meet and in hosted playgrounds,
-  broadcasts presence with a room-scoped presence id instead of the account id,
-  and the ticket response returns the viewer's own presence id as `actorId`. A
-  join ticket still carries its holder's own account id.
-- **Deploy order.** The Meet realtime Worker must deploy before the Meet and web
-  apps that issue sealed or bound tickets; an older Durable Object refuses them.
+  the host and members too. An outside viewer's ticket names the meeting owner
+  only as `ownerSeal`, AES-256-GCM sealed with a key derived from the realtime
+  secret and bound to the topic; the host's and members' tickets, and service
+  tickets (Mira's caret, checkpoints), name the owner plainly as `ownerId`. The
+  channel Durable Object accepts either, opens the seal to bind the room, and
+  signs its workspace checkpoint with the real owner. Meeting-document presence
+  and awareness relay only `user` (`id`, `name`, `color`) and the cursor; other
+  client fields are dropped.
+- **Programming collaboration.** An outside viewer's programming join ticket
+  names the host by a room-scoped owner binding (an HMAC, not the account id);
+  the host's and members' tickets keep the plain owner. The collaboration
+  Durable Object accepts the binding only on browser join tickets, and an
+  in-band ticket refresh may switch between the two shapes. Seed, checkpoint,
+  runner and Mira tickets stay server-side with the real owner. Every
+  programming room, in Meet and in hosted playgrounds, broadcasts presence with
+  a room-scoped presence id instead of the account id, and the ticket response
+  returns the viewer's own presence id as `actorId`. A join ticket still carries
+  its holder's own account id.
+- **Playground previews.** The preview capability embedded in preview URLs
+  (`/_ttr-preview/<token>/`) carries the owner sealed to its project, port and
+  room, never the plain id. Capabilities that name the owner plainly are still
+  read, so tokens minted during a rollout keep working for their 60 seconds.
+- **Release order.** Any order is safe: no ticket shape sends an outside viewer
+  a raw account id, and every Durable Object accepts both the plain and the
+  sealed or bound owner. While an app that issues the new tickets runs against
+  an older Meet realtime Worker, outside viewers cannot open documents or
+  programming rooms (the older room refuses the seal and binding) until the
+  Worker updates; the host and members are unaffected. In either mixed state a
+  person's own programming cursor can appear among the other participants
+  until both sides update.
 - Regression coverage:
   `packages/realtime/src/core/opaque-ids.test.ts` (alias derivation, seal
-  integrity, binding scope),
+  integrity and scope, binding scope),
+  `packages/realtime/src/documents/awareness.test.ts` (restricted awareness),
   `packages/meet-core/src/features/call/server/documents-viewer.test.ts` (host,
   member and outside viewers for tabs, commands and channel tickets),
+  `programming.test.ts` (binding only for outside viewers),
   `room-service-guest-boundary.test.ts` (guests refused),
   `packages/storage-core/src/lib/programming-collaboration-ids.test.ts` (Meet and
-  hosted playground tickets), and
-  `apps/meet-realtime/src/outsider-account-ids.test.ts` (channel and
-  programming Durable Objects deliver no account ids to an outside socket and
-  still authorize the owner). The local Wrangler checks in
-  `apps/meet-realtime/tests/` exercise sealed and bound tickets in workerd.
+  hosted playground tickets), `playground-preview.test.ts` (sealed preview
+  capability), and `apps/meet-realtime/src/outsider-account-ids.test.ts`
+  (channel and programming Durable Objects deliver no account ids to an outside
+  socket, accept both owner shapes, and refresh across them). The local
+  Wrangler checks in `apps/meet-realtime/tests/` exercise sealed and bound
+  tickets in workerd.
 
 ### Guests without an account
 

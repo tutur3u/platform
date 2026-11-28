@@ -166,7 +166,15 @@ export const PlaygroundRunnerExport = z
 export const PlaygroundPreviewCapability = z
   .object({
     aud: z.literal('tuturuuu.playground-preview'),
-    ownerId: z.guid(),
+    /** Accepted for capabilities minted before owners were sealed. */
+    ownerId: z.guid().optional(),
+    /** The owner id sealed to this project, port and room. */
+    ownerSeal: z
+      .string()
+      .min(1)
+      .max(256)
+      .regex(/^[A-Za-z0-9_-]+$/)
+      .optional(),
     projectId: z.guid(),
     port: z.number().int().min(1024).max(65535),
     meetingId: z.guid().optional(),

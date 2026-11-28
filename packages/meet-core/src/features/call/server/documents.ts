@@ -21,6 +21,7 @@ import {
 } from '@tuturuuu/utils/account-benefits-server';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
+import { isOutsideMeetViewer } from './outside-viewer';
 import { callRoomService, type SignedInMeetCallAccess } from './room-service';
 
 type Access = SignedInMeetCallAccess;
@@ -76,7 +77,7 @@ export function meetingDocumentsForViewer(
     documents,
     {
       accountId: access.user.id,
-      seesAccountIds: access.isHost || access.admission !== 'lobby',
+      seesAccountIds: !isOutsideMeetViewer(access),
     },
     (accountId) =>
       secret
@@ -131,9 +132,10 @@ export async function joinMeetingDocument(
   const secret = realtimeSecret();
   if (!secret) throw new MeetCallAccessError(503, 'Realtime unavailable');
   const { topic, ...document } = await meetingDocumentChannel(access, tabId);
-  // Everyone in the channel is known by the room alias, and the owner travels
-  // sealed: the ticket is readable by its holder, who may be outside the
-  // workspace, and presence and cursors reach every participant.
+  // Everyone in the channel is known by the room alias, because presence and
+  // cursors reach every participant. The ticket is readable by its holder, so
+  // an outside viewer's names the owner only sealed; the host's and members'
+  // name the owner plainly, which channel rooms of every version accept.
   const participantId = meetRoomAccountAlias(
     secret,
     aliasRoom(access),
@@ -144,7 +146,11 @@ export async function joinMeetingDocument(
     kind: 'join',
     topic,
     userId: participantId,
-    ownerSeal: sealChannelOwner(secret, topic, access.meeting.creator_id),
+    ...(isOutsideMeetViewer(access)
+      ? {
+          ownerSeal: sealChannelOwner(secret, topic, access.meeting.creator_id),
+        }
+      : { ownerId: access.meeting.creator_id }),
     documentId: document.documentId,
     version: document.revision,
     role: 'editor',

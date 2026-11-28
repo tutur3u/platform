@@ -7,7 +7,9 @@ import {
   collaborationTicketOwnerMatches,
   meetRoomAccountAlias,
   openChannelOwner,
+  openPreviewOwner,
   sealChannelOwner,
+  sealPreviewOwner,
 } from './opaque-ids';
 
 const SECRET = 'opaque-id-fixture-secret';
@@ -136,5 +138,35 @@ describe('sealed channel owners', () => {
       OWNER
     );
     expect(channelTicketOwner(SECRET, { topic: 'task-editor-x' })).toBeNull();
+  });
+});
+
+describe('sealed playground preview owners', () => {
+  const scope = {
+    projectId: '40000000-0000-4000-8000-000000000001',
+    port: 3000,
+  };
+  it('open only for the project, port and room they were sealed to', () => {
+    const seal = sealPreviewOwner(SECRET, { ...scope, roomId: 'room' }, OWNER);
+    expect(Buffer.from(seal, 'base64url').toString('latin1')).not.toContain(
+      OWNER
+    );
+    expect(openPreviewOwner(SECRET, { ...scope, roomId: 'room' }, seal)).toBe(
+      OWNER
+    );
+    expect(openPreviewOwner(SECRET, scope, seal)).toBeNull();
+    expect(
+      openPreviewOwner(SECRET, { ...scope, port: 3001, roomId: 'room' }, seal)
+    ).toBeNull();
+    expect(
+      openPreviewOwner('another-secret', { ...scope, roomId: 'room' }, seal)
+    ).toBeNull();
+  });
+
+  it('never open as a channel seal, or the reverse', () => {
+    const preview = sealPreviewOwner(SECRET, scope, OWNER);
+    expect(openChannelOwner(SECRET, TOPIC, preview)).toBeNull();
+    const channel = sealChannelOwner(SECRET, TOPIC, OWNER);
+    expect(openPreviewOwner(SECRET, scope, channel)).toBeNull();
   });
 });
