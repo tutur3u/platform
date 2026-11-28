@@ -23,7 +23,10 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { filterBlockedSenders, getChatBlockedUserIds } from '@/lib/chat/safety';
+import {
+  getChatBlockedUserIds,
+  hideBlockedMessageContent,
+} from '@/lib/chat/safety';
 import {
   getChatRealtimeAudience,
   publishChatRealtimeEvent,
@@ -152,9 +155,10 @@ export const GET = withSessionAuth<RouteParams>(
         getChatBlockedUserIds(auth.user.id),
       ]);
 
-      // People the reader blocked stay hidden, including in shared groups.
+      // People the reader blocked stay hidden, including in shared groups
+      // and in the reactions on everyone else's messages.
       return NextResponse.json({
-        messages: filterBlockedSenders(messages ?? [], blocked).map(
+        messages: hideBlockedMessageContent(messages ?? [], blocked).map(
           normalizeChatMessageTimestamp
         ),
       });

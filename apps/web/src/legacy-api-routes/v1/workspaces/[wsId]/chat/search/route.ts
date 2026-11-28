@@ -6,7 +6,10 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { filterBlockedSenders, getChatBlockedUserIds } from '@/lib/chat/safety';
+import {
+  getChatBlockedUserIds,
+  hideBlockedMessageContent,
+} from '@/lib/chat/safety';
 
 type RouteParams = {
   wsId: string;
@@ -37,7 +40,7 @@ export const GET = withSessionAuth<RouteParams>(
       ]);
 
       return NextResponse.json({
-        messages: filterBlockedSenders(messages ?? [], blocked),
+        messages: hideBlockedMessageContent(messages ?? [], blocked),
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to search chat messages');

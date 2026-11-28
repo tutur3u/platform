@@ -17,7 +17,7 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 
 vi.mock('@/lib/chat/safety', () => ({
-  filterBlockedSenders: <T>(messages: T[]) => messages,
+  hideBlockedMessageContent: <T>(messages: T[]) => messages,
   getChatBlockedUserIds: async () => new Set<string>(),
 }));
 

@@ -18,6 +18,10 @@ import {
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
 import {
+  hideBlockedReactorsAfterWrite,
+  loadChatBlockedUserIdsForWrite,
+} from '@/lib/chat/safety';
+import {
   deleteExternalChatMessageIfBound,
   isExternalChatConversation,
 } from '@/lib/external-chat/delivery';
@@ -101,16 +105,18 @@ export const PATCH = withSessionAuth<RouteParams>(
           { status: 404 }
         );
       }
-      const conversation = await callPrivateChatRpc<ChatConversation | null>(
-        'chat_get_conversation',
-        {
+      const [conversation, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatConversation | null>('chat_get_conversation', {
           p_actor_user_id: auth.user.id,
           p_conversation_id: params.conversationId,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
+        }),
+        loadChatBlockedUserIdsForWrite(auth.user.id),
+      ]);
+      // The caller's copy hides people they blocked from its reactions.
+      const visibleMessage = hideBlockedReactorsAfterWrite(message, blocked);
 
-      if (!conversation) return NextResponse.json({ message });
+      if (!conversation) return NextResponse.json({ message: visibleMessage });
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
@@ -121,7 +127,7 @@ export const PATCH = withSessionAuth<RouteParams>(
         wsId: context.context.normalizedWsId,
       });
 
-      return NextResponse.json({ message });
+      return NextResponse.json({ message: visibleMessage });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to edit chat message');
     }
@@ -187,6 +193,7 @@ export const DELETE = withSessionAuth<RouteParams>(
           { status: 404 }
         );
       }
+      const blockedLookup = loadChatBlockedUserIdsForWrite(auth.user.id);
 
       // The deletion stands once committed, so a site that does not accept
       // it is reported beside a 200 rather than as an error: a failure
@@ -207,16 +214,19 @@ export const DELETE = withSessionAuth<RouteParams>(
         });
       }
 
-      const conversation = await callPrivateChatRpc<ChatConversation | null>(
-        'chat_get_conversation',
-        {
+      const [conversation, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatConversation | null>('chat_get_conversation', {
           p_actor_user_id: auth.user.id,
           p_conversation_id: params.conversationId,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
+        }),
+        blockedLookup,
+      ]);
 
-      const body = externalDelete ? { externalDelete, message } : { message };
+      const visibleMessage = hideBlockedReactorsAfterWrite(message, blocked);
+      const body = externalDelete
+        ? { externalDelete, message: visibleMessage }
+        : { message: visibleMessage };
       if (!conversation) return NextResponse.json(body);
 
       await publishChatRealtimeEvent({

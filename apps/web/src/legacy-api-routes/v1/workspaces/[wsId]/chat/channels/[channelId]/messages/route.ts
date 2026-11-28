@@ -8,7 +8,10 @@ import {
   resolveChatRouteContext,
   toLegacyMessage,
 } from '@/lib/chat/private-rpc';
-import { filterBlockedSenders, getChatBlockedUserIds } from '@/lib/chat/safety';
+import {
+  getChatBlockedUserIds,
+  hideBlockedMessageContent,
+} from '@/lib/chat/safety';
 
 type RouteParams = {
   channelId: string;
@@ -41,7 +44,7 @@ export const GET = withSessionAuth<RouteParams>(
       ]);
 
       return NextResponse.json({
-        messages: filterBlockedSenders(messages ?? [], blocked).map(
+        messages: hideBlockedMessageContent(messages ?? [], blocked).map(
           toLegacyMessage
         ),
       });

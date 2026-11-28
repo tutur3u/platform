@@ -258,7 +258,7 @@ describe('chat message route safety gates', () => {
     expect(mocks.notifyChatMessageRecipients).not.toHaveBeenCalled();
   });
 
-  it('hides messages from people the reader blocked', async () => {
+  it('hides messages and reactions from blocked people', async () => {
     mocks.callPrivateChatRpc.mockImplementation(async (fn: string) => {
       if (fn === 'chat_list_blocked_users') {
         return [{ userId: 'blocked-user' }];
@@ -267,6 +267,10 @@ describe('chat message route safety gates', () => {
         {
           ...userMessage,
           id: 'm1',
+          reactions: [
+            { count: 2, emoji: 'x', userIds: ['friend', 'blocked-user'] },
+            { count: 1, emoji: 'y', userIds: ['blocked-user'] },
+          ],
           senderId: 'friend',
           sender: { id: 'friend' },
         },
@@ -288,7 +292,12 @@ describe('chat message route safety gates', () => {
     );
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { messages: { id: string }[] };
+    const body = (await response.json()) as {
+      messages: { id: string; reactions: unknown[] }[];
+    };
     expect(body.messages.map((message) => message.id)).toEqual(['m1']);
+    expect(body.messages[0]?.reactions).toEqual([
+      { count: 1, emoji: 'x', userIds: ['friend'] },
+    ]);
   });
 });

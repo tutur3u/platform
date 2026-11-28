@@ -129,6 +129,49 @@ describe('connected chat message mutations', () => {
     );
   });
 
+  it('hides blocked people from the returned reactions', async () => {
+    mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
+      if (name === 'chat_edit_message') {
+        return {
+          ...message,
+          content: 'edit',
+          reactions: [
+            { count: 2, emoji: 'x', userIds: ['friend', 'blocked-user'] },
+            { count: 1, emoji: 'y', userIds: ['blocked-user'] },
+          ],
+        };
+      }
+      if (name === 'chat_get_conversation') {
+        return { id: 'conversation-1', members: [], type: 'channel' };
+      }
+      if (name === 'chat_list_blocked_users') {
+        return [{ userId: 'blocked-user' }];
+      }
+      throw new Error(`Unexpected RPC ${name}`);
+    });
+    const { PATCH } = await import('./route');
+    const response = await PATCH(
+      new Request('http://localhost', {
+        body: JSON.stringify({ content: 'edit' }),
+        method: 'PATCH',
+      }) as never,
+      {
+        params: Promise.resolve({
+          conversationId: 'conversation-1',
+          messageId: 'message-1',
+          wsId: 'workspace-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      message: {
+        reactions: [{ count: 1, emoji: 'x', userIds: ['friend'] }],
+      },
+    });
+  });
+
   it.each([
     ['PATCH', 'chat_edit_message'],
     ['DELETE', 'chat_delete_message'],
