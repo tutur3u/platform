@@ -2147,7 +2147,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String chatSafetyReportDescription(Object name) {
-    return '$name sẽ không được thông báo. Đội ngũ của chúng tôi xem xét báo cáo trong vòng 24 giờ.';
+    return '$name sẽ không được thông báo. Đội ngũ của chúng tôi xem xét báo cáo và gỡ nội dung vi phạm tiêu chuẩn cộng đồng.';
   }
 
   @override

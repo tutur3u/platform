@@ -56,9 +56,8 @@ describe('staff chat reports queue', () => {
   });
 
   it('refuses non-staff before any SQL call', async () => {
-    const { StaffReadError } = await import(
-      '@/app/api/v1/product-feedback/staff-access'
-    );
+    const { StaffReadError } =
+      await import('@/app/api/v1/product-feedback/staff-access');
     mocks.resolveStaffActor.mockRejectedValueOnce(new StaffReadError(403));
     const { PATCH } = await import('./route');
     const response = await PATCH(

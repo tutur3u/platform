@@ -25,6 +25,13 @@ const mocks = vi.hoisted(() => ({
 
 // Run the real eligibility decision over the mocked tier and mint config;
 // credits and workspace naming are fixed fixtures.
+vi.mock('@tuturuuu/ai/chat/ai-data-consent', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/ai/chat/ai-data-consent')
+  >()),
+  hasAiDataConsent: vi.fn(async () => true),
+}));
+
 vi.mock('@/lib/live/eligibility', async () => {
   const actual = await vi.importActual<typeof import('@/lib/live/eligibility')>(
     '@/lib/live/eligibility'

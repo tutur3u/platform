@@ -37,7 +37,7 @@ vi.mock('@/lib/chat/agent-discovery', () => ({
 }));
 vi.mock('@/lib/chat/safety', () => ({
   getChatBlockedUserIds: async () => new Set<string>(),
-  hideBlockedPreviews: <T,>(conversations: T[]) => conversations,
+  hideBlockedPreviews: <T>(conversations: T[]) => conversations,
 }));
 vi.mock('@/lib/chat/moderation', () => ({
   canModerateChat: (...args: Parameters<typeof mocks.canModerateChat>) =>

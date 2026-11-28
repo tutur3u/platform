@@ -14,6 +14,11 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/ai-observability` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/ai-observability/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/ai-settings` | GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/ai-settings/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/[attachmentId]` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/attachments/%5BattachmentId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/attachments/upload-url/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/external-context` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/external-context/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/link-previews` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/link-previews/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/messages/%5BmessageId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/conversations/%5BconversationId%5D/messages/route.ts) |
@@ -29,6 +34,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/chat/reactions/retire` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/reactions/retire/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/realtime` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/realtime/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/realtime/ticket` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/realtime/ticket/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/reports` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/reports/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/search` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/search/route.ts) |
 | `/api/v1/workspaces/[wsId]/cite/library/[[...segments]]` | DELETE, GET, PATCH, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/cite/library/%5B%5B...segments%5D%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/consolidate-users` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/consolidate-users/route.ts) |
@@ -188,11 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/people-registry/managers` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/managers/route.ts) |
 | `/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/consents` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/persons/%5BpersonId%5D/consents/route.ts) |
 | `/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/facts` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/persons/%5BpersonId%5D/facts/route.ts) |
-| `/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/identities` | PATCH, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/persons/%5BpersonId%5D/identities/route.ts) |
-| `/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/relationships` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/persons/%5BpersonId%5D/relationships/route.ts) |
-| `/api/v1/workspaces/[wsId]/people-registry/persons/[personId]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/persons/%5BpersonId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/rules` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/persons/%5BpersonId%5D/rules/route.ts) |
-| `/api/v1/workspaces/[wsId]/people-registry/persons` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/persons/route.ts) |
-| `/api/v1/workspaces/[wsId]/people-registry` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/people-registry/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

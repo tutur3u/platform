@@ -2161,7 +2161,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chatSafetyReportDescription(Object name) {
-    return '$name won\'t be told. Our team reviews reports within 24 hours.';
+    return '$name won\'t be told. Our team reviews reports and removes content that breaks the community guidelines.';
   }
 
   @override

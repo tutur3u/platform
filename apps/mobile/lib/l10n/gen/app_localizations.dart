@@ -4174,7 +4174,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatSafetyReportDescription.
   ///
   /// In en, this message translates to:
-  /// **'{name} won\'t be told. Our team reviews reports within 24 hours.'**
+  /// **'{name} won\'t be told. Our team reviews reports and removes content that breaks the community guidelines.'**
   String chatSafetyReportDescription(Object name);
 
   /// No description provided for @chatSafetyReportFailed.

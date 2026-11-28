@@ -6,10 +6,7 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import {
-  filterBlockedSenders,
-  getChatBlockedUserIds,
-} from '@/lib/chat/safety';
+import { filterBlockedSenders, getChatBlockedUserIds } from '@/lib/chat/safety';
 
 type RouteParams = {
   wsId: string;

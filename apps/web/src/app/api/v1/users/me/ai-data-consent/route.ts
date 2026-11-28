@@ -60,10 +60,9 @@ const authOptions = {
 // native-app requests without it; see
 // apps/docs/platform/chat-safety-and-ai-consent.mdx.
 export const GET = withSessionAuth(async (_req, { user }) => {
-  const { data, error } = await (await privateRpc()).rpc(
-    'get_ai_data_consent',
-    { p_user_id: user.id }
-  );
+  const { data, error } = await (
+    await privateRpc()
+  ).rpc('get_ai_data_consent', { p_user_id: user.id });
   if (error) {
     console.error('AI data consent read failed', { code: error.code });
     return NextResponse.json(
@@ -93,15 +92,14 @@ export const PUT = withSessionAuth(async (req, { user }) => {
     );
   }
 
-  const { data, error } = await (await privateRpc()).rpc(
-    'record_ai_data_consent',
-    {
-      p_user_id: user.id,
-      p_granted: parsed.data.granted,
-      p_source: parsed.data.source,
-      p_policy_version: parsed.data.policyVersion,
-    }
-  );
+  const { data, error } = await (
+    await privateRpc()
+  ).rpc('record_ai_data_consent', {
+    p_user_id: user.id,
+    p_granted: parsed.data.granted,
+    p_source: parsed.data.source,
+    p_policy_version: parsed.data.policyVersion,
+  });
   if (error) {
     console.error('AI data consent write failed', { code: error.code });
     return NextResponse.json(

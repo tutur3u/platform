@@ -212,7 +212,12 @@ describe('chat message route safety gates', () => {
         return [{ userId: 'blocked-user' }];
       }
       return [
-        { ...userMessage, id: 'm1', senderId: 'friend', sender: { id: 'friend' } },
+        {
+          ...userMessage,
+          id: 'm1',
+          senderId: 'friend',
+          sender: { id: 'friend' },
+        },
         {
           ...userMessage,
           id: 'm2',

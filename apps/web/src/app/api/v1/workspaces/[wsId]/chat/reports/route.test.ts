@@ -20,7 +20,10 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   chatRpcErrorResponse: (error: { code?: string }) =>
     Response.json(
       { message: 'failed' },
-      { status: error.code === '42501' ? 403 : error.code === 'P0002' ? 404 : 500 }
+      {
+        status:
+          error.code === '42501' ? 403 : error.code === 'P0002' ? 404 : 500,
+      }
     ),
   resolveChatRouteContext: (...args: unknown[]) =>
     mocks.resolveChatRouteContext(...args),
@@ -145,7 +148,11 @@ describe('chat reports route', () => {
   it('rejects unknown reasons and malformed conversation ids', async () => {
     const { POST } = await import('./route');
     const badReason = await POST(
-      post({ subjectType: 'user', reportedUserId: USER, reason: 'meh' }) as never,
+      post({
+        subjectType: 'user',
+        reportedUserId: USER,
+        reason: 'meh',
+      }) as never,
       ctx
     );
     const badConversation = await POST(
@@ -170,7 +177,11 @@ describe('chat reports route', () => {
     });
     const { POST } = await import('./route');
     const response = await POST(
-      post({ subjectType: 'user', reportedUserId: USER, reason: 'spam' }) as never,
+      post({
+        subjectType: 'user',
+        reportedUserId: USER,
+        reason: 'spam',
+      }) as never,
       ctx
     );
     expect(response.status).toBe(429);
@@ -183,7 +194,11 @@ describe('chat reports route', () => {
     });
     const { POST } = await import('./route');
     const response = await POST(
-      post({ subjectType: 'user', reportedUserId: USER, reason: 'spam' }) as never,
+      post({
+        subjectType: 'user',
+        reportedUserId: USER,
+        reason: 'spam',
+      }) as never,
       ctx
     );
     expect(response.status).toBe(403);

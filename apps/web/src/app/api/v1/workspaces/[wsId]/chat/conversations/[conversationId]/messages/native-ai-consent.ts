@@ -3,6 +3,7 @@ import {
   hasAiDataConsent,
   requiresAiDataConsent,
 } from '@tuturuuu/ai/chat/ai-data-consent';
+import type { NextResponse } from 'next/server';
 import type { ChatConversation } from '@/lib/chat/private-rpc';
 
 /**
@@ -19,7 +20,7 @@ export async function nativeAiConversationConsentRefusal({
   loadConversation: () => Promise<ChatConversation | null>;
   request: Request;
   userId: string;
-}): Promise<Response | null> {
+}): Promise<NextResponse | null> {
   if (!requiresAiDataConsent(request)) return null;
   if (await hasAiDataConsent(userId)) return null;
   const conversation = await loadConversation().catch(() => null);

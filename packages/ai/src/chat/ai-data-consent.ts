@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
 
 /**
  * Mira AI data consent (Apple 5.1.2(i)). Mira sends a person's text, files,
@@ -60,7 +61,7 @@ export async function hasAiDataConsent(
 }
 
 export function aiConsentRequiredResponse() {
-  return Response.json(
+  return NextResponse.json(
     { code: AI_CONSENT_REQUIRED_CODE, message: AI_CONSENT_REQUIRED_CODE },
     { status: 403, headers: { 'Cache-Control': 'private, no-store' } }
   );
@@ -74,7 +75,7 @@ export async function enforceAiDataConsent(
   request: Request,
   userId: string,
   admin?: unknown
-): Promise<Response | null> {
+): Promise<NextResponse | null> {
   if (!requiresAiDataConsent(request)) return null;
   if (await hasAiDataConsent(userId, admin)) return null;
   return aiConsentRequiredResponse();

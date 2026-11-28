@@ -4,7 +4,10 @@ import {
   resolveStaffActor,
   StaffReadError,
 } from '@/app/api/v1/product-feedback/staff-access';
-import { callPrivateChatRpc, chatRpcErrorResponse } from '@/lib/chat/private-rpc';
+import {
+  callPrivateChatRpc,
+  chatRpcErrorResponse,
+} from '@/lib/chat/private-rpc';
 
 const headers = { 'Cache-Control': 'private, no-store' };
 
@@ -37,7 +40,10 @@ async function staffActor(request: Request) {
 function staffRpcError(error: unknown) {
   const code = (error as { code?: string }).code;
   if (code === 'PT403') {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403, headers });
+    return NextResponse.json(
+      { message: 'Forbidden' },
+      { status: 403, headers }
+    );
   }
   if (code === 'PT503') {
     return NextResponse.json(
@@ -76,7 +82,10 @@ export async function GET(request: Request) {
     );
     return NextResponse.json({ reports: reports ?? [] }, { headers });
   } catch (error) {
-    return staffRpcError(error) ?? chatRpcErrorResponse(error, 'Failed to load reports');
+    return (
+      staffRpcError(error) ??
+      chatRpcErrorResponse(error, 'Failed to load reports')
+    );
   }
 }
 
@@ -101,6 +110,9 @@ export async function PATCH(request: Request) {
     });
     return NextResponse.json(result, { headers });
   } catch (error) {
-    return staffRpcError(error) ?? chatRpcErrorResponse(error, 'Failed to update report');
+    return (
+      staffRpcError(error) ??
+      chatRpcErrorResponse(error, 'Failed to update report')
+    );
   }
 }

@@ -1,7 +1,4 @@
-import {
-  getChatBlockedUserIds,
-  hideBlockedPreviews,
-} from '@/lib/chat/safety';
+import { getChatBlockedUserIds, hideBlockedPreviews } from '@/lib/chat/safety';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
