@@ -85,8 +85,10 @@ revoke all on function private.chat_can_invite_user(uuid, uuid) from public, ano
 grant execute on function private.chat_can_invite_user(uuid, uuid) to service_role;
 
 -- A direct conversation between a blocked pair is frozen: no new message of
--- any kind (user, assistant, system), no edit and no reaction, whichever RPC
--- writes it. Soft deletes stay allowed so people can remove their own words.
+-- any kind (user, assistant, system), no edit, no restore and no new
+-- reaction, whichever RPC writes it. Soft deletes stay allowed so people can
+-- remove their own words, and so do removing their own reactions and the
+-- foreign-key cleanups that null a sender or reply target.
 create function private.chat_direct_conversation_blocked(
   p_conversation_id uuid
 )
@@ -120,10 +122,34 @@ security definer
 set search_path = private, public, pg_temp
 as $$
 begin
+  -- Updates that add no words pass: the soft delete written by
+  -- private.chat_delete_message (content '' plus deleted_at/updated_at), and
+  -- changes that leave content and deleted_at alone, such as the FK
+  -- ON DELETE SET NULL of sender_id or reply_to_message_id. Restoring a
+  -- deleted message, editing content or metadata, re-targeting a reply and
+  -- moving a message all stay frozen.
   if tg_op = 'UPDATE'
-    and new.content is not distinct from old.content
+    and new.conversation_id = old.conversation_id
+    and new.kind = old.kind
+    and new.created_at is not distinct from old.created_at
+    and new.edited_at is not distinct from old.edited_at
     and new.metadata is not distinct from old.metadata
-    and new.reply_to_message_id is not distinct from old.reply_to_message_id then
+    and (new.sender_id is not distinct from old.sender_id or new.sender_id is null)
+    and (
+      new.reply_to_message_id is not distinct from old.reply_to_message_id
+      or new.reply_to_message_id is null
+    )
+    and (
+      (
+        new.content is not distinct from old.content
+        and new.deleted_at is not distinct from old.deleted_at
+      )
+      or (
+        old.deleted_at is null
+        and new.deleted_at is not null
+        and new.content = ''
+      )
+    ) then
     return new;
   end if;
 
@@ -170,10 +196,50 @@ $$;
 revoke all on function private.chat_guard_blocked_direct_reaction() from public, anon, authenticated, service_role;
 -- tuturuuu: no-grant (trigger)
 
+-- Only INSERT is guarded: removing one's own reaction after a block adds
+-- nothing to the conversation, so DELETE stays allowed.
 create trigger chat_message_reactions_block_guard
   before insert on private.chat_message_reactions
   for each row
   execute function private.chat_guard_blocked_direct_reaction();
+
+-- Re-check a new direct conversation after chat_create_conversation takes its
+-- direct-key advisory lock. chat_block_user takes the same lock, so a block
+-- that commits between the invite check and the member insert still refuses
+-- the DM. AFTER INSERT skips ON CONFLICT DO UPDATE paths (mute, pin, rejoin of
+-- an existing member row), which only touch an already frozen conversation.
+create function private.chat_guard_blocked_direct_member()
+returns trigger
+language plpgsql
+security definer
+set search_path = private, public, pg_temp
+as $$
+begin
+  if exists (
+    select 1
+    from private.chat_conversations c
+    join private.chat_conversation_members other
+      on other.conversation_id = c.id
+     and other.user_id <> new.user_id
+    where c.id = new.conversation_id
+      and c.type = 'direct'
+      and private.chat_users_blocked(new.user_id, other.user_id)
+  ) then
+    raise exception 'chat_target_not_invitable'
+      using errcode = '42501';
+  end if;
+
+  return null;
+end;
+$$;
+
+revoke all on function private.chat_guard_blocked_direct_member() from public, anon, authenticated, service_role;
+-- tuturuuu: no-grant (trigger)
+
+create trigger chat_conversation_members_block_guard
+  after insert on private.chat_conversation_members
+  for each row
+  execute function private.chat_guard_blocked_direct_member();
 
 -- New friend requests between a blocked pair are dropped without an error, so
 -- chat_create_friend_request_by_email still answers {queued:true} and never
@@ -285,6 +351,16 @@ begin
       using errcode = '22023';
   end if;
 
+  -- Same key as the direct-conversation lock in chat_create_conversation, so a
+  -- block and a DM creation for this pair serialize.
+  perform pg_advisory_xact_lock(hashtextextended(
+    (
+      select string_agg(pair.user_id::text, ':' order by pair.user_id::text)
+      from unnest(array[p_actor_user_id, p_target_user_id]) as pair(user_id)
+    ),
+    0
+  ));
+
   insert into private.chat_user_blocks (blocker_user_id, blocked_user_id)
   values (p_actor_user_id, p_target_user_id)
   on conflict do nothing;
@@ -380,5 +456,99 @@ $$;
 
 revoke all on function private.chat_list_blocked_users(uuid) from public, anon, authenticated;
 grant execute on function private.chat_list_blocked_users(uuid) to service_role;
+
+-- Messages from people the viewer blocked are hidden on read, so they never
+-- count as unread. The NOT EXISTS probes the (blocker, blocked) primary key.
+create or replace function private.chat_conversation_json(
+  p_conversation_id uuid,
+  p_actor_user_id uuid
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = private, public, pg_temp
+as $$
+declare
+  conversation_json jsonb;
+begin
+  select jsonb_build_object(
+    'id', c.id,
+    'wsId', c.ws_id,
+    'type', c.type,
+    'title', c.title,
+    'description', c.description,
+    'aiEnabled', c.ai_enabled,
+    'metadata', c.metadata,
+    'createdBy', c.created_by,
+    'createdAt', c.created_at::text,
+    'updatedAt', c.updated_at::text,
+    'archivedAt', c.archived_at::text,
+    'memberCount', (
+      select count(*)::int
+      from private.chat_conversation_members cm_count
+      where cm_count.conversation_id = c.id
+        and cm_count.archived_at is null
+    ),
+    'unreadCount', (
+      select count(*)::int
+      from private.chat_messages m
+      left join private.chat_conversation_members own_member
+        on own_member.conversation_id = c.id
+       and own_member.user_id = p_actor_user_id
+      where m.conversation_id = c.id
+        and m.deleted_at is null
+        and coalesce(m.sender_id, '00000000-0000-0000-0000-000000000000'::uuid) <> p_actor_user_id
+        and m.created_at > coalesce(own_member.last_read_at, '-infinity'::timestamptz)
+        and not exists (
+          select 1
+          from private.chat_user_blocks viewer_block
+          where viewer_block.blocker_user_id = p_actor_user_id
+            and viewer_block.blocked_user_id = m.sender_id
+        )
+    ),
+    'latestMessage', (
+      select private.chat_message_json(m_latest)
+      from private.chat_messages m_latest
+      where m_latest.conversation_id = c.id
+        and m_latest.deleted_at is null
+      order by m_latest.created_at desc
+      limit 1
+    ),
+    'members', (
+      select coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'id', cm.id,
+            'conversationId', cm.conversation_id,
+            'userId', cm.user_id,
+            'role', cm.role,
+            'joinedAt', cm.joined_at::text,
+            'lastReadAt', cm.last_read_at::text,
+            'mutedAt', cm.muted_at::text,
+            'pinnedAt', cm.pinned_at::text,
+            'archivedAt', cm.archived_at::text,
+            'user', private.chat_member_profile_json(c.ws_id, cm.user_id)
+          )
+          order by cm.role = 'owner' desc, cm.joined_at
+        ),
+        '[]'::jsonb
+      )
+      from private.chat_conversation_members cm
+      where cm.conversation_id = c.id
+        and cm.archived_at is null
+    )
+  )
+  into conversation_json
+  from private.chat_conversations c
+  where c.id = p_conversation_id
+    and c.archived_at is null;
+
+  return conversation_json;
+end;
+$$;
+
+revoke all on function private.chat_conversation_json(uuid, uuid) from public, anon, authenticated;
+grant execute on function private.chat_conversation_json(uuid, uuid) to service_role;
 
 commit;

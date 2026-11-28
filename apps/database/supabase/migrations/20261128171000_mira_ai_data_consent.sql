@@ -7,7 +7,8 @@
 --   * private.user_ai_data_consent_events  append-only audit
 --   * private.record_ai_data_consent        write, service_role only (Web API)
 --   * private.get_ai_data_consent           read one user's decision
---   * private.has_ai_data_consent           the Mira gate (default: false)
+--   * private.has_ai_data_consent           the Mira gate (default: false),
+--                                            optionally bound to a policy version
 --
 -- Default is no consent: a person who never answered is treated as "not now".
 -- Decision and scope: apps/docs/platform/chat-safety-and-ai-consent.mdx.
@@ -228,8 +229,11 @@ revoke all on function private.get_ai_data_consent(uuid)
   from public, anon, authenticated, service_role;
 grant execute on function private.get_ai_data_consent(uuid) to service_role;
 
+-- With p_policy_version, only a grant recorded under that exact policy text
+-- counts, so a policy revision asks everyone again.
 create function private.has_ai_data_consent(
-  p_user_id uuid
+  p_user_id uuid,
+  p_policy_version text default null
 )
 returns boolean
 language sql
@@ -241,11 +245,12 @@ as $$
     select c.granted
     from private.user_ai_data_consent c
     where c.user_id = p_user_id
+      and (p_policy_version is null or c.policy_version = p_policy_version)
   ), false);
 $$;
 
-revoke all on function private.has_ai_data_consent(uuid)
+revoke all on function private.has_ai_data_consent(uuid, text)
   from public, anon, authenticated, service_role;
-grant execute on function private.has_ai_data_consent(uuid) to service_role;
+grant execute on function private.has_ai_data_consent(uuid, text) to service_role;
 
 commit;

@@ -37,7 +37,9 @@ insert into private.chat_conversation_members(conversation_id, user_id) values
 
 insert into private.chat_messages(id, conversation_id, sender_id, kind, content) values
   ('00000000-0000-4000-8000-00000000d001', '00000000-0000-4000-8000-00000000c001',
-   '00000000-0000-4000-8000-00000000a002', 'user', 'send me your password');
+   '00000000-0000-4000-8000-00000000a002', 'user', 'send me your password'),
+  ('00000000-0000-4000-8000-00000000d002', '00000000-0000-4000-8000-00000000c001',
+   '00000000-0000-4000-8000-00000000a001', 'user', 'my own words');
 
 insert into private.chat_friend_requests(requester_user_id, recipient_user_id, status)
 values ('00000000-0000-4000-8000-00000000a002', '00000000-0000-4000-8000-00000000a001', 'accepted');
@@ -61,11 +63,11 @@ select ok(not has_function_privilege('authenticated',
   and not has_function_privilege('authenticated',
     'private.record_ai_data_consent(uuid,boolean,text,text)', 'EXECUTE')
   and not has_function_privilege('authenticated',
-    'private.has_ai_data_consent(uuid)', 'EXECUTE')
+    'private.has_ai_data_consent(uuid,text)', 'EXECUTE')
   and has_function_privilege('service_role',
     'private.chat_block_user(uuid,uuid)', 'EXECUTE')
   and has_function_privilege('service_role',
-    'private.has_ai_data_consent(uuid)', 'EXECUTE'),
+    'private.has_ai_data_consent(uuid,text)', 'EXECUTE'),
   'block, report and consent functions run only as service_role');
 
 -- Blocking -----------------------------------------------------------------
@@ -127,17 +129,52 @@ select throws_ok($$
   values ('00000000-0000-4000-8000-00000000d001',
           '00000000-0000-4000-8000-00000000a002', 'x') $$,
   '42501', 'chat_blocked', 'reactions cannot be added across a block');
-select lives_ok($$
-  update private.chat_messages set deleted_at = now()
-  where id = '00000000-0000-4000-8000-00000000d001';
-  update private.chat_messages set deleted_at = null
+select throws_ok($$
+  update private.chat_messages set metadata = '{"spoof": true}'::jsonb
   where id = '00000000-0000-4000-8000-00000000d001' $$,
+  '42501', 'chat_blocked', 'message metadata cannot be edited across a block');
+select throws_ok($$
+  update private.chat_messages set content = ''
+  where id = '00000000-0000-4000-8000-00000000d001' $$,
+  '42501', 'chat_blocked', 'blanking content without deleting is still an edit');
+select lives_ok($$ select private.chat_delete_message(
+    '00000000-0000-4000-8000-00000000b001', '00000000-0000-4000-8000-00000000c001',
+    '00000000-0000-4000-8000-00000000a001', '00000000-0000-4000-8000-00000000d002') $$,
   'people can still delete their own messages in a blocked DM');
+select ok((select deleted_at is not null and content = '' from private.chat_messages
+    where id = '00000000-0000-4000-8000-00000000d002'),
+  'the blocked-DM delete is stored as the usual soft delete');
+select throws_ok($$
+  update private.chat_messages set deleted_at = null
+  where id = '00000000-0000-4000-8000-00000000d002' $$,
+  '42501', 'chat_blocked', 'a deleted DM message cannot be restored across a block');
+select throws_ok($$
+  update private.chat_messages set content = 'rewritten'
+  where id = '00000000-0000-4000-8000-00000000d002' $$,
+  '42501', 'chat_blocked', 'a deleted DM message cannot be rewritten across a block');
+select throws_ok($$
+  insert into private.chat_conversations(id, ws_id, type, direct_key, created_by)
+  values ('00000000-0000-4000-8000-00000000c003', '00000000-0000-4000-8000-00000000b001',
+          'direct', 'a001:a002:second', '00000000-0000-4000-8000-00000000a001');
+  insert into private.chat_conversation_members(conversation_id, user_id) values
+    ('00000000-0000-4000-8000-00000000c003', '00000000-0000-4000-8000-00000000a001');
+  insert into private.chat_conversation_members(conversation_id, user_id) values
+    ('00000000-0000-4000-8000-00000000c003', '00000000-0000-4000-8000-00000000a002') $$,
+  '42501', 'chat_target_not_invitable',
+  'a new DM between a blocked pair is refused at member insert');
 select lives_ok($$
   insert into private.chat_messages(conversation_id, sender_id, kind, content)
   values ('00000000-0000-4000-8000-00000000c002',
           '00000000-0000-4000-8000-00000000a002', 'user', 'group hello') $$,
   'group messages still store (they are hidden from the blocker on read)');
+select is((private.chat_conversation_json(
+    '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a001')
+  ->> 'unreadCount')::int, 0,
+  'messages from a blocked sender do not count as unread for the blocker');
+select is((private.chat_conversation_json(
+    '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a002')
+  ->> 'unreadCount')::int, 0,
+  'the sender never counts their own message as unread');
 
 select lives_ok($$ select private.chat_create_friend_request_by_email(
     '00000000-0000-4000-8000-00000000b001',
@@ -158,6 +195,10 @@ select is(jsonb_array_length(private.chat_list_blocked_users('00000000-0000-4000
 select is(private.chat_unblock_user(
     '00000000-0000-4000-8000-00000000a001', '00000000-0000-4000-8000-00000000a002') ->> 'blocked',
   'false', 'unblocking removes the block');
+select is((private.chat_conversation_json(
+    '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a001')
+  ->> 'unreadCount')::int, 1,
+  'after unblocking, the group message counts as unread again');
 select lives_ok($$
   insert into private.chat_messages(conversation_id, sender_id, kind, content)
   values ('00000000-0000-4000-8000-00000000c001',
@@ -217,6 +258,10 @@ select is((select granted from private.record_ai_data_consent(
   true, 'Allow is recorded');
 select ok(private.has_ai_data_consent('00000000-0000-4000-8000-00000000a001'),
   'Mira may send after Allow');
+select ok(private.has_ai_data_consent('00000000-0000-4000-8000-00000000a001', '2026-11-28'),
+  'Allow counts for the policy version it was given under');
+select ok(not private.has_ai_data_consent('00000000-0000-4000-8000-00000000a001', '2027-01-01'),
+  'Allow under another policy version does not count for the current one');
 select is((select withdrawn_at is not null from private.record_ai_data_consent(
     '00000000-0000-4000-8000-00000000a001', false, 'mobile_settings', '2026-11-28')),
   true, 'revoking stamps withdrawn_at');
