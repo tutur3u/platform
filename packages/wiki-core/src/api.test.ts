@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  wikiAssetMetadataSchema,
+  wikiAssetUploadSchema,
   wikiBulkSchema,
   wikiCreatePageSchema,
+  wikiDeleteRedirectSchema,
   wikiGetPageQuerySchema,
   wikiPublishPageSchema,
   wikiSavePageSchema,
@@ -58,6 +61,59 @@ describe('wiki route payloads', () => {
         operations: Array.from({ length: 51 }, () => operation),
       }).success
     ).toBe(false);
+  });
+
+  it('derives the write source on the server and requires a readable title', () => {
+    const body = { type: 'doc' };
+    const page = { body, slug: 'draft', title: '  Draft  ' };
+    const revision = { body, base_revision: 1, title: 'Draft' };
+    expect(wikiCreatePageSchema.parse(page).title).toBe('Draft');
+    expect(
+      wikiCreatePageSchema.safeParse({ ...page, title: '   ' }).success
+    ).toBe(false);
+    expect(
+      wikiCreatePageSchema.safeParse({ ...page, source: 'import' }).success
+    ).toBe(false);
+    expect(
+      wikiSavePageSchema.safeParse({ ...revision, source: 'import' }).success
+    ).toBe(false);
+    expect(
+      wikiBulkSchema.safeParse({
+        operations: [{ ...page, op: 'create', source: 'import' }],
+      }).success
+    ).toBe(false);
+  });
+
+  it('separates client image hints from persisted file properties', () => {
+    const hints = { alt: 'Diagram', width: 4096, height: 1 };
+    const file = { sha256: 'a'.repeat(64), mime: 'image/png', bytes: 10 };
+    expect(wikiAssetUploadSchema.parse(hints)).toEqual(hints);
+    expect(
+      wikiAssetUploadSchema.safeParse({ ...hints, width: 4097 }).success
+    ).toBe(false);
+    for (const [key, value] of Object.entries(file)) {
+      expect(
+        wikiAssetUploadSchema.safeParse({ ...hints, [key]: value }).success
+      ).toBe(false);
+    }
+    expect(
+      wikiAssetMetadataSchema.safeParse({ ...hints, ...file }).success
+    ).toBe(true);
+  });
+
+  it('requires source paths for redirect mutations', () => {
+    expect(
+      wikiUpsertRedirectSchema.safeParse({
+        from_path: '',
+        to_url: '/wiki/tuturuuu/new',
+      }).success
+    ).toBe(false);
+    expect(wikiDeleteRedirectSchema.safeParse({ from_path: '' }).success).toBe(
+      false
+    );
+    expect(
+      wikiDeleteRedirectSchema.safeParse({ from_path: 'old' }).success
+    ).toBe(true);
   });
 
   it('accepts canonical paths, positive query revisions and wiki-only redirects', () => {

@@ -1,4 +1,4 @@
-import GithubSlugger from 'github-slugger';
+import GithubSlugger, { slug } from 'github-slugger';
 import { z } from 'zod';
 import { markdownTableCellAttrs } from './markdown-tables';
 import type { RichTextNode } from './types';
@@ -281,13 +281,16 @@ function validateDocument(
       const label = (node.content ?? [])
         .map((child) => child.text ?? child.attrs?.alt ?? '')
         .join('');
-      let id = slugger.slug(label);
-      if (!id) id = slugger.slug('section');
-      while (ids.has(id)) id = slugger.slug(label || 'section');
-      if (wikiHeadingIdSchema.safeParse(id).success) {
-        node.attrs.id = id;
-        ids.add(id);
-      }
+      const candidate = slug(label)
+        .slice(0, 500)
+        .replace(/[\uD800-\uDBFF]$/u, '');
+      const base = wikiHeadingIdSchema.safeParse(candidate).success
+        ? candidate
+        : 'section';
+      let id = slugger.slug(base);
+      while (ids.has(id)) id = slugger.slug(base);
+      node.attrs.id = id;
+      ids.add(id);
     }
     node.content?.forEach(setIds);
   }

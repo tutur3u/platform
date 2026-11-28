@@ -47,6 +47,11 @@ describe('shared-origin HTML', () => {
     '/wiki/tuturuuu/../private',
     'https://tuturuuu.com/wiki/tuturuuu/%2e%2e/private',
     '/api/v1/example',
+    '/wiki/tuturuuu?',
+    'https://tuturuuu.com/wiki/tuturuuu?#anchor',
+    'mailto://sample.example/path',
+    'http://tuturuuu.com/wiki/tuturuuu',
+    'https:///example.com',
     'https://www.tuturuuu.com/api/v1/example',
   ])('refuses unsupported URL syntax %j', (href) => {
     expect(() =>

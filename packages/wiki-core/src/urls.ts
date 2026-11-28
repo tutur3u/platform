@@ -24,19 +24,22 @@ export function parseWikiLink(value: string): URL | undefined {
       decodeURIComponent(value);
       return url;
     }
+    const destination = value.split('#', 1)[0] ?? '';
     if (value.startsWith('/')) {
       // Check the raw path before the URL parser normalizes dot segments.
-      return wikiPath.test(value.split(/[?#]/, 1)[0] ?? '') &&
-        !url.search &&
-        validFragment(url.hash)
+      return wikiPath.test(destination) && validFragment(url.hash)
         ? url
         : undefined;
     }
     if (/^mailto:/i.test(value)) {
-      return url.pathname && !/%0[ad]/i.test(value) ? url : undefined;
+      return url.pathname &&
+        !value.slice('mailto:'.length).startsWith('/') &&
+        !/%0[ad]/i.test(value)
+        ? url
+        : undefined;
     }
     if (
-      !/^https?:\/\//i.test(value) ||
+      !/^https?:\/\/[^/?#]/i.test(value) ||
       !url.hostname ||
       url.username ||
       url.password
@@ -46,7 +49,8 @@ export function parseWikiLink(value: string): URL | undefined {
       const rawPath = /^https?:\/\/[^/?#]+([^?#]*)/i.exec(value)?.[1] ?? '';
       if (
         !wikiPath.test(rawPath) ||
-        url.search ||
+        destination.includes('?') ||
+        url.protocol !== 'https:' ||
         url.port ||
         !validFragment(url.hash)
       )

@@ -124,6 +124,99 @@ describe('public safety scan', () => {
     );
   });
 
+  it.each([
+    ['＠', 'personal email address', 'example＠gmail.com'],
+    [
+      'format characters in ID',
+      '32-hex identifier',
+      '0123456789abcdef\u200B0123456789abcdef',
+    ],
+    ['normalized credential name', 'secret assignment', 'ＡＰＩ_ＫＥＹ=sample'],
+    [
+      'format characters in credential name',
+      'secret assignment',
+      'API_\u00ADKEY=sample',
+    ],
+    ['lowercase assignment', 'secret assignment', 'api_key=sample'],
+    ['signing key', 'secret assignment', 'SIGNING_KEY=sample'],
+    ['service role key', 'secret assignment', 'SERVICE_ROLE_KEY=sample'],
+    [
+      'format characters in hashed term',
+      'customer name without consent',
+      'testcus\u200Dtomerfixture',
+    ],
+    [
+      'uppercase Supabase host',
+      'Supabase project host',
+      `${'A'.repeat(20)}.SUPABASE.CO`,
+    ],
+    [
+      'uppercase staging worker',
+      'staging worker name',
+      'TUTURUUU-SAMPLE-STAGING',
+    ],
+    ['uppercase worker host', 'workers.dev hostname', 'SAMPLE.WORKERS.DEV'],
+    [
+      'bounded Cloudflare labels',
+      'Cloudflare account workers.dev host',
+      'sample.account.workers.dev',
+    ],
+    ['internal host', 'internal hostname', 'one.two.internal'],
+    ['compressed mapped loopback', 'private network address', '::ffff:7f00:1'],
+    [
+      'expanded mapped private IP',
+      'private network address',
+      '0:0:0:0:0:ffff:a00:1',
+    ],
+    ['mapped dotted IP', 'private network address', '[::ffff:192.168.0.1]'],
+    ['IPv6 unspecified', 'private network address', '[::]'],
+  ])('detects %s', (_case, rule, value) => {
+    const findings = scanPublicSafety({ type: 'doc' }, undefined, {
+      title: value,
+    });
+    expect(findings.map((item) => item.rule)).toContain(rule);
+  });
+
+  it('allows benign lookalikes', () => {
+    const title =
+      'api_key SIGNING_KEYS=value item::value testcustomerfixtures example@gmail.org [::ffff:808:808] host.example';
+    expect(scanPublicSafety({ type: 'doc' }, undefined, { title })).toEqual([]);
+  });
+
+  it.each([1, 2, 3])(
+    'inspects href content after %i decoding passes',
+    (passes) => {
+      let reference = '%53%52%2D123';
+      for (let i = 1; i < passes; i++)
+        reference = reference.replaceAll('%', '%25');
+      expect(
+        scan(`[Reference](https://example.com/?ref=${reference})`)
+      ).toContainEqual({
+        rule: 'internal security register ID',
+        location: 'body.content.0.content.0.marks.0.attrs.href',
+      });
+    }
+  );
+
+  it.each([
+    ['long prose token', 'a'.repeat(1_999_800)],
+    ['long hyphenated token', 'a-'.repeat(999_900)],
+    [
+      'dense host labels and assignment name',
+      'one.'.repeat(250_000) + 'A'.repeat(999_800),
+    ],
+  ])('keeps near-limit scan time bounded for %s', (_case, value) => {
+    const body = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: value }] },
+      ],
+    };
+    const started = performance.now();
+    expect(scanPublicSafety(body)).toEqual([]);
+    expect(performance.now() - started).toBeLessThan(2000);
+  });
+
   it('fails closed on unknown components and ignores content-address hashes', () => {
     expect(
       scanPublicSafety({ type: 'doc', content: [{ type: 'FutureComponent' }] })

@@ -25,7 +25,7 @@ export const wikiRevisionSchema = z.number().int().min(1).max(2_147_483_647);
 export const wikiIdempotencyKeySchema = z.uuid();
 export const wikiBodyHashSchema = z.string().regex(/^[a-f0-9]{64}$/);
 
-const title = z.string().min(1).max(200);
+const title = z.string().trim().min(1).max(200);
 const description = z.string().max(2000);
 const message = z.string().max(500).optional();
 const revisionFields = {
@@ -33,7 +33,6 @@ const revisionFields = {
   description: description.optional(),
   body: wikiDocumentSchema,
   message,
-  source: z.enum(['ui', 'cli', 'api', 'import']).optional(),
   agent_label: z.string().max(100).optional(),
 };
 
@@ -107,8 +106,9 @@ export const wikiBulkSchema = z
       });
   });
 
+const redirectFromPath = wikiPagePathSchema.min(1);
 const redirectFields = {
-  from_path: wikiPagePathSchema,
+  from_path: redirectFromPath,
   status: z.union([z.literal(301), z.literal(302)]).default(301),
 };
 export const wikiUpsertRedirectSchema = z.union([
@@ -121,9 +121,17 @@ export const wikiUpsertRedirectSchema = z.union([
   }),
 ]);
 export const wikiDeleteRedirectSchema = z.strictObject({
-  from_path: wikiPagePathSchema,
+  from_path: redirectFromPath,
 });
-export const wikiAssetMetadataSchema = z.strictObject({
+const dimension = z.number().int().min(1).max(4096).optional();
+export const wikiAssetUploadSchema = z.strictObject({
+  width: dimension,
+  height: dimension,
+  alt: z.string().max(1000).optional(),
+});
+
+/** Persist only file properties computed by the server. */
+export const wikiAssetMetadataSchema = wikiAssetUploadSchema.extend({
   sha256: wikiBodyHashSchema,
   mime: z.enum([
     'image/png',
@@ -133,9 +141,6 @@ export const wikiAssetMetadataSchema = z.strictObject({
     'image/svg+xml',
   ]),
   bytes: z.number().int().min(1).max(10_000_000),
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
-  alt: z.string().max(1000).optional(),
 });
 export const wikiAuditSchema = z.strictObject({
   public_only: z.boolean().default(false),

@@ -61,6 +61,20 @@ describe('wiki Markdown', () => {
     expect(parseWikiMarkdown(stringifyWikiMarkdown(body)).body).toEqual(body);
   });
 
+  it('reserves explicit IDs before generating heading slugs', () => {
+    const { body } = parseWikiMarkdown(
+      '## Intro\n\n## !!!\n\n## ???\n\n## Original:anchor{#intro}\n\n## Reserved:anchor{#section}'
+    );
+    expect(body.content?.map((node) => node.attrs?.id)).toEqual([
+      'intro-1',
+      'section-1',
+      'section-2',
+      'intro',
+      'section',
+    ]);
+    expect(parseWikiMarkdown(stringifyWikiMarkdown(body)).body).toEqual(body);
+  });
+
   it('round-trips GFM tasks, reference links, nested marks and titled code', () => {
     const original = parseWikiMarkdown(
       [

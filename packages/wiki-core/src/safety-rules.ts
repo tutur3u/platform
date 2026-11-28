@@ -11,7 +11,7 @@ export const PUBLIC_SAFETY_RULES = [
   ],
   [
     'Cloudflare account workers.dev host',
-    /\b[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*\.workers\.dev\b/i,
+    /(?<![a-z0-9-])[a-z0-9][a-z0-9-]{0,62}\.[a-z0-9][a-z0-9-]{0,62}\.workers\.dev\b/i,
   ],
   [
     'private network address',
@@ -21,10 +21,10 @@ export const PUBLIC_SAFETY_RULES = [
     'token-shaped secret',
     /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9_-]{30,}|AKIA[0-9A-Z]{16}|xox[bap]-[A-Za-z0-9-]{10,}|sbp_[a-z0-9]{30,})\b|-----BEGIN [A-Z ]*PRIVATE KEY-----/,
   ],
-  ['JWT-shaped token', /\beyJ[A-Za-z0-9_-]{10,}\.eyJ/],
-  ['Supabase project host', /\b[a-z]{20}\.supabase\.(?:co|in)\b/],
+  ['JWT-shaped token', /(?<![A-Za-z0-9_-])eyJ[A-Za-z0-9_-]{10,}\.eyJ/],
+  ['Supabase project host', /\b[a-z]{20}\.supabase\.(?:co|in)\b/i],
   ['agent or thread identifier', /\bmcp:(?:launch:|[0-9a-f]{8}-)/],
-  ['personal email address', /[\w.+-]+@gmail\.com\b/i],
+  ['personal email address', /(?<![\w.+-])[\w.+-]+@gmail\.com\b/i],
 ] as const;
 
 export const TERM_SALT = 'e6b1b0ab4a648d7bdf07d985';
@@ -57,12 +57,18 @@ export const MAX_TERM_WORDS = 3;
 export const PUBLIC_ONLY_SAFETY_RULES = [
   [
     'staging host',
-    /\b(?:web|calendar|contacts|finance|meet|mail|apps)\.tutur3u\.com\b|\b[a-z0-9][a-z0-9-]*(?:\.staging\.tutur3u\.com|-staging\.tutur3u\.com)\b/,
+    /\b(?:web|calendar|contacts|finance|meet|mail|apps)\.tutur3u\.com\b|(?<![a-z0-9-])[a-z0-9][a-z0-9-]{0,62}(?:\.staging\.tutur3u\.com|-staging\.tutur3u\.com)\b/i,
   ],
-  ['staging worker name', /\btuturuuu-[a-z0-9-]*staging[a-z0-9-]*\b/],
+  [
+    'staging worker name',
+    /(?<![a-z0-9-])tuturuuu-[a-z0-9-]{0,62}staging[a-z0-9-]{0,62}(?![a-z0-9-])/i,
+  ],
   [
     'bypass secret name',
     /\b[A-Z0-9_]*(?:AUTOMATION_BYPASS|BYPASS_SECRET|AUTH_BYPASS|PROTECTION_BYPASS)[A-Z0-9_]*\b/,
   ],
-  ['workers.dev hostname', /\b[a-z0-9][a-z0-9-]*\.workers\.dev\b/],
+  [
+    'workers.dev hostname',
+    /(?<![a-z0-9-])[a-z0-9][a-z0-9-]{0,62}\.workers\.dev\b/i,
+  ],
 ] as const;

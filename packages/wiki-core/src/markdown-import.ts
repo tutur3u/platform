@@ -1,4 +1,3 @@
-import GithubSlugger from 'github-slugger';
 import type { Nodes, PhrasingContent, Root } from 'mdast';
 import { z } from 'zod';
 import { parseSource, WikiMarkdownError } from './markdown-format';
@@ -62,7 +61,6 @@ export function parseWikiMarkdown(
   if (frontmatter && !frontmatter.success)
     return error(tree, 'Expected a frontmatter mapping');
 
-  const slugger = new GithubSlugger();
   type Definition = Extract<Nodes, { type: 'definition' }>;
   let definitions = new Map<string, Definition>();
   function visitAst(root: Root, scope: Map<string, Definition>) {
@@ -273,14 +271,10 @@ export function parseWikiMarkdown(
           parts.pop();
         }
         const content = phrasing(parts, depth);
-        const computedId = slugger.slug(
-          content.map((part) => part.text ?? part.attrs?.alt ?? '').join('')
-        );
-        id ??= computedId || slugger.slug('section');
         return [
           {
             type: 'heading',
-            attrs: { level: node.depth, id },
+            attrs: { level: node.depth, ...(id !== undefined && { id }) },
             ...(content.length && { content }),
           },
         ];
