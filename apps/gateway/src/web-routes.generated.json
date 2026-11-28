@@ -832,6 +832,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/chat-reports"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/cite/[...path]"
     },
     {
@@ -1577,6 +1582,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/users/me/ai-data-consent"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/users/me/analytics-consent"
     },
     {
@@ -1822,6 +1832,16 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/chat/blocks/[userId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/chat/blocks"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/chat/channels/[channelId]/messages"
     },
     {
@@ -1938,6 +1958,11 @@
       "family": "api-core",
       "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/chat/realtime/ticket"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/chat/reports"
     },
     {
       "family": "api-core",
@@ -4258,6 +4283,11 @@
       "family": "dashboard",
       "localized": true,
       "pattern": "/[wsId]/changelog"
+    },
+    {
+      "family": "dashboard",
+      "localized": true,
+      "pattern": "/[wsId]/chat-reports"
     },
     {
       "family": "dashboard",

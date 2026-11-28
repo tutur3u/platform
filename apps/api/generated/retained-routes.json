@@ -874,7 +874,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/assistant/live/eligibility/route.ts",
-    "sourceSha256": "03f9b8d35a548e0ebd20b733c3fd9335c6645395601a5a3179273f52a21baccb",
+    "sourceSha256": "2c81c120dfef376e5a6326d64a96b73943d1f3da8601b69c45c423993b6f5892",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -884,7 +884,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
-    "sourceSha256": "eb7dfc895e4db25e5472df1e4f23a0a8a896e29d1dfac026937eb9e49f74d24d",
+    "sourceSha256": "e0ced9a8a4bdbbc7851bb8458fc003a723e56640b479a044ec6d1e70a0071af8",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -894,7 +894,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/assistant/live/tools/execute/route.ts",
-    "sourceSha256": "b8a25b8cbca426386739f349cb0c888122fdd0cb6384ff7e8793c278898e771d",
+    "sourceSha256": "1da1cab30a8cebf1c0006732f6b6765242f2ba750c0633ba381320873c6b2059",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1275,6 +1275,16 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/calendar/auth/accounts/route.ts",
     "sourceSha256": "79aa38922a43567b224175addbcb6c81610d9e984edc49dee9b5eb2e58501638",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/chat-reports",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/chat-reports/route.ts",
+    "sourceSha256": "deed68b3844000d2862ad9a1a49333ad5d19d5e8d6765b5750b4782941303248",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2094,7 +2104,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/live/token/route.ts",
-    "sourceSha256": "a52b2b3dc2cfe5d896d7c537c8cfde21ffbe116f69c2ff8605ba5ab4556c405b",
+    "sourceSha256": "dab699c144bc9f0ad2f4dd7ee48c20a364edb2c0ed1f4ad865cec6202c755f44",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3080,6 +3090,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/users/me/ai-data-consent",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/users/me/ai-data-consent/route.ts",
+    "sourceSha256": "3c12b014454a0868f93b8158497cbc497847eb8489749ad79cc3f0f27db84a13",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/users/me/analytics-consent",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -3570,6 +3590,26 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/chat/blocks/{userId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/blocks/[userId]/route.ts",
+    "sourceSha256": "d14cd1d8094c8dddc7841cd30ddc2a6226289aecdb357219cbf5e6536b45b6d4",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/chat/blocks",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/blocks/route.ts",
+    "sourceSha256": "71c2432e9d30c59840cdea0de5a650fd625fb97b9157289491dc4be54739cd60",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/chat/channels/{channelId}/messages",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -3684,7 +3724,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
-    "sourceSha256": "5365ab6cdb5dfc9f8ee31d4f83f0b0735533cb70f86eb5c3bc9863d4f9b6b9fc",
+    "sourceSha256": "7c7afb47d280ecc69bba8a8e955502b78a2eab800ff114244b29f21808074564",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3744,7 +3784,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts",
-    "sourceSha256": "cd8b04dddc4e8ec713a099d9382a070c0fab38d33705307b8df6543b90e1c189",
+    "sourceSha256": "ff429c8c9f8ffb72a36e8937c095b5906967db0122392668221a066f5a1809e0",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3805,6 +3845,16 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/realtime/ticket/route.ts",
     "sourceSha256": "edd7b1ef84a390efe3490ac7033915ff1f3dedfaead913f39aee5ba384c010f1",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/chat/reports",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/reports/route.ts",
+    "sourceSha256": "3431156ee75c55b4c4091636d7d27dfba854fc95953e275d890295f9b70f5281",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
