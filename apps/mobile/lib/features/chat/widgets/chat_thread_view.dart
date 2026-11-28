@@ -9,6 +9,7 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/data/chat_link_preview_store.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+import 'package:mobile/features/chat/widgets/chat_ai_consent.dart';
 import 'package:mobile/features/chat/widgets/chat_avatar.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
 import 'package:mobile/features/chat/widgets/chat_format.dart';
@@ -53,6 +54,8 @@ class ChatThreadView extends StatelessWidget {
     this.canDeleteOthers = false,
     this.onSafetyAction,
     this.composerBlocked = false,
+    this.heldDraft,
+    this.onHeldDraftTaken,
     super.key,
   });
 
@@ -103,6 +106,11 @@ class ChatThreadView extends StatelessWidget {
   /// Whether this direct conversation is blocked either way, which replaces
   /// the composer with an explanation.
   final bool composerBlocked;
+
+  /// Text of a send the server refused for missing AI consent, handed back
+  /// to the composer; [onHeldDraftTaken] reports that it was taken.
+  final String? heldDraft;
+  final VoidCallback? onHeldDraftTaken;
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +177,15 @@ class ChatThreadView extends StatelessWidget {
             onCancelReply: onCancelReply,
             onTypingChanged: onTypingChanged,
             onTypingStopped: onTypingStopped,
+            // Mira replies in AI conversations come from Google Gemini.
+            beforeSend: selected.type == ChatConversationType.ai
+                ? () => ensureChatAiConsent(context)
+                : null,
+            restoreDraft: heldDraft,
+            onDraftRestored: () {
+              onHeldDraftTaken?.call();
+              if (context.mounted) askChatAiConsentAgain(context);
+            },
           ),
       ],
     );

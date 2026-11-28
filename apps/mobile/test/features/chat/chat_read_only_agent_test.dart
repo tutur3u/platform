@@ -28,6 +28,7 @@ void main() {
         };
       }
       if (path.endsWith('/friend-requests')) return {};
+      if (path.endsWith('/chat/blocks')) return {'blocks': <Object>[]};
       throw StateError('Unexpected API request: $path');
     });
     when(
@@ -85,7 +86,8 @@ void main() {
       cubit.state.selectedMessages.single.content,
       'Read-only agent channel',
     );
-    verify(() => api.getJson(any())).called(2);
+    // The conversation page, its messages and the blocked set.
+    verify(() => api.getJson(any())).called(3);
     final agent = cubit.state.selectedConversation!;
     await cubit.sendMessage('Should not send');
     await cubit.togglePin(agent);

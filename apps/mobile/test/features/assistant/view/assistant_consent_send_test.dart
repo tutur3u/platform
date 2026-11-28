@@ -6,7 +6,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import '../consent/mira_ai_consent_fakes.dart';
 import 'background_reply_harness.dart';
 
-const _sheet = ValueKey('mira-consent-sheet');
+const ValueKey<String> _sheet = ValueKey('mira-consent-sheet');
 
 void main() {
   testWidgets(
@@ -21,11 +21,11 @@ void main() {
       addTearDown(controller.dispose);
       addTearDown(() => h.dispose(tester));
       await h.mount(tester, aiConsent: controller);
-      final draft = tester
-          .widget<AssistantComposerDock>(find.byType(AssistantComposerDock))
-          .controller;
-
-      draft.text = 'Synthetic question';
+      final draft =
+          tester
+              .widget<AssistantComposerDock>(find.byType(AssistantComposerDock))
+              .controller
+            ..text = 'Synthetic question';
       await tester.pump();
       await tester.tap(find.byKey(const ValueKey('assistant-send')));
       await tester.pumpAndSettle();

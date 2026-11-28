@@ -42,8 +42,9 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 l10n.chatFriendRequests,
-                style: AppTokens.of(context).typography.large
-                    .copyWith(fontWeight: FontWeight.w700),
+                style: AppTokens.of(
+                  context,
+                ).typography.large.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: AppSpacing.sm),
               AppTextField(

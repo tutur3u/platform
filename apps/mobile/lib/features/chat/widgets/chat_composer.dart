@@ -25,6 +25,9 @@ class ChatComposer extends StatefulWidget {
     this.onCancelReply,
     this.onTypingChanged,
     this.onTypingStopped,
+    this.beforeSend,
+    this.restoreDraft,
+    this.onDraftRestored,
     super.key,
   });
 
@@ -45,6 +48,14 @@ class ChatComposer extends StatefulWidget {
   /// Called when the field loses focus, which ends the typing signal.
   final VoidCallback? onTypingStopped;
 
+  /// Resolves whether a send may go out; false keeps the draft unsent.
+  final Future<bool> Function()? beforeSend;
+
+  /// Text handed back after a refused send; filled in when the field is
+  /// empty, then reported through [onDraftRestored].
+  final String? restoreDraft;
+  final VoidCallback? onDraftRestored;
+
   @override
   State<ChatComposer> createState() => _ChatComposerState();
 }
@@ -53,6 +64,7 @@ class _ChatComposerState extends State<ChatComposer> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focus = FocusNode();
   bool _hasText = false;
+  bool _admitting = false;
   String _lastText = '';
 
   @override
@@ -60,11 +72,28 @@ class _ChatComposerState extends State<ChatComposer> {
     super.initState();
     _controller.addListener(_syncHasText);
     _focus.addListener(_onFocusChanged);
+    _takeRestoredDraft();
+  }
+
+  void _takeRestoredDraft() {
+    final draft = widget.restoreDraft;
+    if (draft == null) return;
+    if (draft.isNotEmpty && _controller.text.trim().isEmpty) {
+      _controller.value = TextEditingValue(
+        text: draft,
+        selection: TextSelection.collapsed(offset: draft.length),
+      );
+    }
+    final restored = widget.onDraftRestored;
+    if (restored != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => restored());
+    }
   }
 
   @override
   void didUpdateWidget(covariant ChatComposer oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.restoreDraft != oldWidget.restoreDraft) _takeRestoredDraft();
     if (widget.replyTo != null && widget.replyTo?.id != oldWidget.replyTo?.id) {
       _focus.requestFocus();
     }
@@ -151,12 +180,19 @@ class _ChatComposerState extends State<ChatComposer> {
     );
   }
 
-  void _send() {
-    if (widget.isSending || widget.isUploadingAttachment) return;
+  Future<void> _send() async {
+    if (widget.isSending || widget.isUploadingAttachment || _admitting) return;
     final text = _controller.text.trim();
     if (text.isEmpty && widget.pendingAttachments.isEmpty) return;
+    final admit = widget.beforeSend;
+    if (admit != null) {
+      _admitting = true;
+      final allowed = await admit();
+      _admitting = false;
+      if (!allowed || !mounted || widget.isSending) return;
+    }
     widget.onSend(text);
-    _controller.clear();
+    if (_controller.text.trim() == text) _controller.clear();
   }
 
   @override
@@ -229,7 +265,7 @@ class _ChatComposerState extends State<ChatComposer> {
                   maxLines: 6,
                   enabled: !widget.isSending,
                   textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _send(),
+                  onSubmitted: (_) => unawaited(_send()),
                 ),
                 trailing: [
                   AppIconButton(
@@ -241,7 +277,7 @@ class _ChatComposerState extends State<ChatComposer> {
                     icon: widget.isSending
                         ? const AppLoadingIndicator.inline()
                         : const Icon(LucideIcons.arrowUp),
-                    onPressed: canSend ? _send : null,
+                    onPressed: canSend ? () => unawaited(_send()) : null,
                   ),
                 ],
               ),

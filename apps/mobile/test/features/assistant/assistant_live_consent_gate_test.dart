@@ -44,7 +44,7 @@ void main() {
   late FakeMiraAiConsentGate gate;
   late AssistantLiveCubit cubit;
   late int tokenCalls;
-  Object? tokenFailure;
+  Exception? tokenFailure;
 
   setUp(() {
     repository = _Repository();

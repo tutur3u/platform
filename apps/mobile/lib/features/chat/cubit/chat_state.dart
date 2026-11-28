@@ -43,6 +43,7 @@ class ChatState extends Equatable {
     this.loadingOlderConversationId,
     this.blockedUsers = const [],
     this.blockedConversationIds = const {},
+    this.heldDraft,
     this.error,
   });
 
@@ -56,6 +57,10 @@ class ChatState extends Equatable {
   final Map<String, List<ChatMessage>> messages;
   final String? selectedConversationId;
   final List<ChatAttachment> pendingAttachments;
+
+  /// An AI send the server refused for missing Mira AI data consent; the
+  /// composer of that conversation takes its text back.
+  final ({String conversationId, String text})? heldDraft;
   final List<ChatUserProfile> directoryResults;
   final List<ChatMessage> searchResults;
   final ChatFriendRequests friendRequests;
@@ -266,6 +271,7 @@ class ChatState extends Equatable {
     Object? loadingOlderConversationId = _chatStateSentinel,
     List<ChatBlockedUser>? blockedUsers,
     Set<String>? blockedConversationIds,
+    Object? heldDraft = _chatStateSentinel,
     Object? error = _chatStateSentinel,
     bool clearError = false,
   }) {
@@ -320,6 +326,9 @@ class ChatState extends Equatable {
       blockedUsers: blockedUsers ?? this.blockedUsers,
       blockedConversationIds:
           blockedConversationIds ?? this.blockedConversationIds,
+      heldDraft: heldDraft == _chatStateSentinel
+          ? this.heldDraft
+          : heldDraft as ({String conversationId, String text})?,
       error: clearError
           ? null
           : error == _chatStateSentinel
@@ -360,6 +369,7 @@ class ChatState extends Equatable {
     loadingOlderConversationId,
     blockedUsers,
     blockedConversationIds,
+    heldDraft,
     error,
   ];
 }

@@ -7,6 +7,7 @@ import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -50,8 +51,9 @@ void main() {
     gate = FakeMiraAiConsentGate();
     calls = [];
     reply = Stream.empty;
-    when(() => repository.hasUnknownChatCreation(any()))
-        .thenAnswer((_) async => false);
+    when(
+      () => repository.hasUnknownChatCreation(any()),
+    ).thenAnswer((_) async => false);
     when(() => repository.currentActorId).thenReturn('actor');
     when(() => preferences.matchesResetActor('actor')).thenReturn(true);
     when(
@@ -73,8 +75,9 @@ void main() {
         cacheOrigin: any(named: 'cacheOrigin'),
       ),
     ).thenAnswer((_) async => restored);
-    when(() => repository.fetchRecentChats(wsId: any(named: 'wsId')))
-        .thenAnswer((_) async => []);
+    when(
+      () => repository.fetchRecentChats(wsId: any(named: 'wsId')),
+    ).thenAnswer((_) async => []);
     when(
       () => repository.uploadAttachment(
         wsId: any(named: 'wsId'),

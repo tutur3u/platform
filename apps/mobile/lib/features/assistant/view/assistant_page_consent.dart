@@ -33,7 +33,7 @@ extension _AssistantPageConsent on _AssistantPageState {
     final controller = _aiConsent;
     if (controller == null || controller.granted) return true;
     if (!mounted) return false;
-    return ensureMiraAiConsent(context, controller);
+    return await ensureMiraAiConsent(context, controller);
   }
 
   /// A revoke stops a running Live session from sending anything new.

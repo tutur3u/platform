@@ -26,7 +26,7 @@ Future<bool> ensureMiraAiConsent(
   if (controller.granted) return true;
   if (await controller.ensureKnown()) return true;
   if (!context.mounted) return false;
-  return controller.prompt(() async {
+  return await controller.prompt(() async {
     final allowed = await showAppSheet<bool>(
       context: context,
       builder: (_) =>

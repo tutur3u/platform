@@ -10,6 +10,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
 import 'package:mobile/features/chat/data/chat_link_preview_store.dart';
 import 'package:mobile/features/chat/data/chat_realtime_client.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';

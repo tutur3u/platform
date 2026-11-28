@@ -171,7 +171,7 @@ class _AssistantPageState extends State<AssistantPage>
     final consent? => _AssistantPageAiConsentGate(this, consent),
     null => null,
   };
-  late final VoidCallback _aiConsentListener = () => _observeAiConsent();
+  late final VoidCallback _aiConsentListener = _observeAiConsent;
   late final MiraResponseReportRepository _reportRepository =
       widget.reportRepository ?? MiraResponseReportRepository();
   final _voiceCapture = AssistantVoiceCaptureCubit();
@@ -312,10 +312,9 @@ class _AssistantPageState extends State<AssistantPage>
       if (!_keepLiveWhileBrowsing || !mounted) {
         return {'screen': 'unavailable'};
       }
-      final uri = GoRouter.maybeOf(context)
-          ?.routerDelegate
-          .currentConfiguration
-          .uri;
+      final uri = GoRouter.maybeOf(
+        context,
+      )?.routerDelegate.currentConfiguration.uri;
       return assistantMobileScreenContext(uri);
     },
   );

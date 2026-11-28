@@ -14,9 +14,9 @@ void main() {
       final requests = <http.Request>[];
       final api = syntheticAuthedApi((request) async {
         requests.add(request);
-        final granted = request.method == 'PUT'
-            ? (jsonDecode(request.body) as Map)['granted'] == true
-            : false;
+        final granted =
+            request.method == 'PUT' &&
+            (jsonDecode(request.body) as Map)['granted'] == true;
         return http.Response(
           jsonEncode({
             'granted': granted,
@@ -54,8 +54,11 @@ void main() {
     });
 
     test('only an explicit true is consent', () {
-      expect(MiraAiConsent.fromJson({'granted': 'true'}).granted, isFalse);
-      expect(MiraAiConsent.fromJson({}).granted, isFalse);
+      expect(
+        MiraAiConsent.fromJson(const {'granted': 'true'}).granted,
+        isFalse,
+      );
+      expect(MiraAiConsent.fromJson(const {}).granted, isFalse);
     });
   });
 

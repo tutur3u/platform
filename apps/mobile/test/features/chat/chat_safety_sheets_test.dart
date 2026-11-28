@@ -155,8 +155,9 @@ void main() {
 
   testWidgets('the report sheet posts the report and confirms', (tester) async {
     _phone(tester);
-    when(() => harness.api.postJson(_reportsPath, any()))
-        .thenAnswer((_) async => {'reportId': 'r-1', 'blocked': true});
+    when(
+      () => harness.api.postJson(_reportsPath, any()),
+    ).thenAnswer((_) async => {'reportId': 'r-1', 'blocked': true});
     await tester.runAsync(harness.open);
     await tester.pumpApp(_thread(harness.cubit));
     await tester.pumpAndSettle();
@@ -190,9 +191,9 @@ void main() {
     await tester.pumpAndSettle();
 
     final payload =
-        verify(() => harness.api.postJson(_reportsPath, captureAny()))
-                .captured
-                .single
+        verify(
+              () => harness.api.postJson(_reportsPath, captureAny()),
+            ).captured.single
             as Map<String, dynamic>;
     expect(payload, {
       'subjectType': 'message',
@@ -209,8 +210,9 @@ void main() {
 
   testWidgets('a user report can leave blocking unchecked', (tester) async {
     _phone(tester);
-    when(() => harness.api.postJson(_reportsPath, any()))
-        .thenAnswer((_) async => {'reportId': 'r-2', 'blocked': false});
+    when(
+      () => harness.api.postJson(_reportsPath, any()),
+    ).thenAnswer((_) async => {'reportId': 'r-2', 'blocked': false});
     await tester.runAsync(harness.open);
     await tester.pumpApp(_thread(harness.cubit));
     await tester.pumpAndSettle();
@@ -222,15 +224,16 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('chat-report-reason-spam')));
     final alsoBlock = find.byKey(const ValueKey('chat-report-also-block'));
     await tester.ensureVisible(alsoBlock);
+    await tester.pumpAndSettle();
     await tester.tap(alsoBlock);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('chat-report-send')));
     await tester.pumpAndSettle();
 
     final payload =
-        verify(() => harness.api.postJson(_reportsPath, captureAny()))
-                .captured
-                .single
+        verify(
+              () => harness.api.postJson(_reportsPath, captureAny()),
+            ).captured.single
             as Map<String, dynamic>;
     expect(payload, {
       'subjectType': 'user',
@@ -260,8 +263,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('chat-block-confirm')));
     await tester.pumpAndSettle();
 
-    verify(() => harness.api.postJson(_blocksPath, {'userId': 'ada'}))
-        .called(1);
+    verify(
+      () => harness.api.postJson(_blocksPath, {'userId': 'ada'}),
+    ).called(1);
     expect(find.text('Ada blocked'), findsOneWidget);
     expect(find.text('message 1'), findsNothing);
     expect(find.text("You can't message this person"), findsOneWidget);

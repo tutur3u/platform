@@ -45,6 +45,10 @@ void main() {
   );
 
   testWidgets('shows the disclosure and Not now sends nothing', (tester) async {
+    tester.view
+      ..physicalSize = const Size(1170, 2532)
+      ..devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
     await pumpAsk(tester);
     await tester.tap(find.text('Ask'));
     await tester.pumpAndSettle();
@@ -58,11 +62,17 @@ void main() {
     }
     expect(find.textContaining('Settings › Privacy'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('mira-consent-privacy')));
+    final privacy = find.byKey(const ValueKey('mira-consent-privacy'));
+    await tester.ensureVisible(privacy);
+    await tester.pumpAndSettle();
+    await tester.tap(privacy);
     await tester.pumpAndSettle();
     expect(opened.single, Uri.parse('https://tuturuuu.com/privacy'));
 
-    await tester.tap(find.byKey(const ValueKey('mira-consent-not-now')));
+    final notNow = find.byKey(const ValueKey('mira-consent-not-now'));
+    await tester.ensureVisible(notNow);
+    await tester.pumpAndSettle();
+    await tester.tap(notNow);
     await tester.pumpAndSettle();
     expect(answers, [false]);
     expect(repository.saves, isEmpty);

@@ -98,9 +98,9 @@ class AssistantMessageActions extends StatelessWidget {
                             ? AppButtonVariant.primary
                             : AppButtonVariant.ghost,
                         icon: Icon(reaction.icon),
-                        onPressed: () =>
-                            Navigator.of(context)
-                                .pop(AssistantReactToMessage(reaction.value)),
+                        onPressed: () => Navigator.of(
+                          context,
+                        ).pop(AssistantReactToMessage(reaction.value)),
                       ),
                     ),
                   ),

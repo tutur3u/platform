@@ -106,7 +106,8 @@ extension ChatCubitActions on ChatCubit {
       return;
     }
 
-    final attachments = state.pendingAttachments
+    final heldAttachments = state.pendingAttachments;
+    final attachments = heldAttachments
         .map((attachment) => attachment.toDraft())
         .toList(growable: false);
     // Only a loaded, live, synced target is sent; a local row's id never
@@ -133,6 +134,30 @@ extension ChatCubitActions on ChatCubit {
         state.selectedConversationId != conversation.id) {
       return;
     }
+    var stored = false;
+    // Refused for missing consent before storing: hand the send back so
+    // nothing is lost and nothing re-sends on its own.
+    void holdForConsent() {
+      if (!_scopeActive) return;
+      final current = state.selectedConversationId == conversation.id;
+      _emitState(
+        state.copyWith(
+          isSending: false,
+          streamingAssistantText: '',
+          heldDraft: (
+            conversationId: conversation.id,
+            text: stored ? '' : trimmed,
+          ),
+          pendingAttachments: current && !stored
+              ? [...heldAttachments, ...state.pendingAttachments]
+              : null,
+          replyToMessageId: current && !stored && state.replyToMessageId == null
+              ? replyToMessageId
+              : state.replyToMessageId,
+        ),
+      );
+    }
+
     _sendSubscription = _repository
         .sendMessageStream(
           wsId,
@@ -142,9 +167,25 @@ extension ChatCubitActions on ChatCubit {
           replyToMessageId: replyToMessageId,
         )
         .listen(
-          _handleMessageStreamEvent,
+          (event) {
+            if (event is ChatStreamErrorEvent &&
+                (event.code == miraAiConsentRequiredCode ||
+                    event.message == miraAiConsentRequiredCode)) {
+              holdForConsent();
+              return;
+            }
+            if (event is ChatStreamMessageEvent ||
+                event is ChatStreamMessagesEvent) {
+              stored = true;
+            }
+            _handleMessageStreamEvent(event);
+          },
           onError: (Object error) {
             if (!_scopeActive) return;
+            if (isMiraAiConsentRequired(error)) {
+              holdForConsent();
+              return;
+            }
             if (isChatBlockedError(error)) {
               _markConversationBlocked(conversation.id);
               return;
@@ -164,6 +205,11 @@ extension ChatCubitActions on ChatCubit {
             );
           },
         );
+  }
+
+  /// The composer took back [ChatState.heldDraft].
+  void takeHeldDraft() {
+    if (state.heldDraft != null) _emitState(state.copyWith(heldDraft: null));
   }
 
   Future<void> uploadAttachment(PlatformFile file) async {

@@ -122,7 +122,7 @@ ApiClient syntheticAuthedApi(
           headers: {'content-type': 'application/json'},
         );
       }
-      return handle(request);
+      return await handle(request);
     }),
   );
 }

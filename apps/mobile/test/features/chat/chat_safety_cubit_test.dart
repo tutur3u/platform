@@ -55,8 +55,9 @@ void main() {
       const ChatUserProfile(id: 'ada', displayName: 'Ada'),
     );
 
-    verify(() => harness.api.postJson(_blocksPath, {'userId': 'ada'}))
-        .called(1);
+    verify(
+      () => harness.api.postJson(_blocksPath, {'userId': 'ada'}),
+    ).called(1);
     expect(harness.cubit.state.visibleSelectedMessages.map((m) => m.senderId), [
       'me',
       'grace',

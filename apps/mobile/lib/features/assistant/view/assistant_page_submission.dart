@@ -12,6 +12,7 @@ extension _AssistantPageSubmission on _AssistantPageState {
     if (_aiConsentPending && (!await _ensureAiConsent() || !guard.current)) {
       return;
     }
+    if (!mounted) return;
     final shellState = _shellCubit.state;
     final chatState = _chatCubit.state;
     final submittedReplyId = chatState.replyTarget?.id;

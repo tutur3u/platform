@@ -162,6 +162,10 @@ class _ThreadPane extends StatelessWidget {
             linkPreviews: cubit.linkPreviews,
             canDeleteOthers: state.canModerateSelected,
             composerBlocked: state.isSelectedComposerBlocked,
+            heldDraft: state.heldDraft?.conversationId == conversation?.id
+                ? state.heldDraft?.text
+                : null,
+            onHeldDraftTaken: cubit.takeHeldDraft,
             onSafetyAction:
                 conversation != null &&
                     ChatCubit.isServerConversationId(conversation.id)

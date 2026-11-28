@@ -208,7 +208,12 @@ void main() {
     read.complete(page('Alice private'));
     await loading;
     expect(cubit.state.conversations, isEmpty);
-    verifyNever(() => repo.api.getJson(any()));
+    // The blocked-set read starts while Alice is still the actor; its result
+    // is fenced like every other read. Nothing else may be fetched.
+    verifyNever(
+      () => repo.api.getJson(any(that: isNot(endsWith('/chat/blocks')))),
+    );
+    expect(cubit.state.blockedUsers, isEmpty);
     await cubit.close();
   });
 }
