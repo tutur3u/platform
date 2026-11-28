@@ -456,6 +456,64 @@ test('confirms HTTP 404 session-gone on first attempt with zero warnings, errors
   }
 });
 
+test('retries unrecognized 404 responses within the bound and logs status/errorCode only with one terminal error', async () => {
+  const f = mediaCleanupFixture({});
+  try {
+    let closeCalls = 0;
+    const html404 = new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 <html><body>proxy-secret-body sfu-session-1</body></html>',
+      404
+    );
+    const route404 = new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 {"errorCode":"route_not_found","errorDescription":"secret-session-1"}',
+      404,
+      'route_not_found',
+      'secret-session-1'
+    );
+    f.setSfu({
+      closeTracks: async () => {
+        closeCalls++;
+        throw closeCalls === 1 ? html404 : route404;
+      },
+      getSession: async () => {
+        throw closeCalls === 1 ? html404 : route404;
+      },
+    });
+    await f.room.alarm();
+    while (f.currentAlarm() !== null) {
+      f.advanceToAlarm();
+      await f.room.alarm();
+    }
+    assert.equal(closeCalls, MEET_MEDIA_CLEANUP_MAX_ATTEMPTS);
+    assert.equal(f.snapshot().budget?.cleanupStopped, true);
+    assert.equal(f.snapshot().budget?.pendingPublications?.length, 1);
+    assert.equal(f.warnings.length, MEET_MEDIA_CLEANUP_MAX_ATTEMPTS - 1);
+    assert.equal(f.errors.length, 1);
+    assert.deepEqual(f.warnings[0]?.[1], {
+      reason: 'sfu_unrecognized_not_found',
+      status: 404,
+      attempts: 1,
+      maxAttempts: MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+      remaining: 1,
+    });
+    assert.deepEqual(f.errors[0]?.[1], {
+      reason: 'sfu_unrecognized_not_found',
+      status: 404,
+      errorCode: 'route_not_found',
+      attempts: MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+      maxAttempts: MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+      remaining: 1,
+    });
+    const serialized = JSON.stringify([...f.warnings, ...f.errors]);
+    assert.ok(!serialized.includes('proxy-secret-body'));
+    assert.ok(!serialized.includes('secret-session-1'));
+    assert.ok(!serialized.includes('sfu-session-1'));
+    assert.equal(f.currentAlarm(), null);
+  } finally {
+    f.restore();
+  }
+});
+
 test('legacy stuck snapshots at attempt 32 terminate after one final check', async () => {
   const f = mediaCleanupFixture({ cleanupAttempts: 32, nextCleanupAt: 0 });
   try {

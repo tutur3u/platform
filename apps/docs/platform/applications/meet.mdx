@@ -673,10 +673,13 @@ When a room ends, expires, retires tracks or rejects an uncommitted publication,
 in `budget.pendingPublications` and closes them via
 `PUT /apps/{appId}/sessions/{sessionId}/tracks/close` (`force: true`), falling
 back to `GET /apps/{appId}/sessions/{sessionId}` when confirmation is missing.
-Provider HTTP `404`/`410` responses for an already-expired session (excluding
-app-level `app_not_found`), session-gone error codes and already-closed track
-error codes count as confirmed closure and clear the pending entries without
-further retries.
+Provider responses with positive session-gone evidence (known session-gone
+`errorCode` values, or HTTP `404`/`410` carrying an explicit Cloudflare
+session-gone `errorDescription`) and already-closed track error codes count as
+confirmed closure and clear the pending entries without further retries.
+Unrecognized HTTP `404`/`410` responses (such as HTML/plain-text proxy pages,
+bare bodies, unknown JSON shapes, or app/route-not-found codes) are retried
+within the retry budget and log `status` and `errorCode` only.
 
 Every cleanup attempt reserves its counter in Durable Object storage before any
 SFU fetch, so crashes or isolate restarts cannot replenish retries. Failed

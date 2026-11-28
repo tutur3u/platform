@@ -681,9 +681,12 @@ CI; a migration direction does not authorize production cutover.
 
 `MeetRoomDurableObject` closes retired or ended-room Cloudflare Realtime SFU
 publications in `cleanupRoomPublications` (`apps/meet-realtime/src/room-maintenance.ts`).
-Provider HTTP `404`/`410` session-gone responses (excluding `app_not_found`) and
-already-closed track error codes confirm closure immediately without a follow-up
-`GET /sessions/{sessionId}` lookup.
+Provider responses with positive session-gone evidence (known session-gone
+`errorCode` values, or HTTP `404`/`410` with an explicit Cloudflare session-gone
+`errorDescription`) and already-closed track error codes confirm closure
+immediately without a follow-up `GET /sessions/{sessionId}` lookup; unrecognized
+`404`/`410` responses retry within the same bound and emit secret-free
+`status`/`errorCode` logs.
 
 Each attempt persists its retry reservation in Durable Object storage before
 making any SFU fetch. Failed attempts back off exponentially from 10 seconds

@@ -206,26 +206,83 @@ it('treats HTTP 404 on fallback or legacy getSession as confirmed', async () => 
   expect(legacy.budget?.pendingPublications).toEqual([]);
 });
 
-it('does not treat app-level 404 misconfiguration as confirmed', async () => {
-  const appMissing = new CloudflareSfuError(
-    'cloudflare_sfu_request_failed:404 {"errorCode":"app_not_found","errorDescription":"App not found"}',
-    404,
-    'app_not_found',
-    'App not found'
-  );
-  await expect(
-    closeBudgetPublications(
-      snapshot([one]),
-      async () => {
-        throw appMissing;
-      },
-      undefined,
-      async () => {
-        throw appMissing;
-      }
-    )
-  ).rejects.toThrow('app_not_found');
-});
+it.each([
+  {
+    name: 'app_not_found JSON 404',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 {"errorCode":"app_not_found","errorDescription":"App not found"}',
+      404,
+      'app_not_found',
+      'App not found'
+    ),
+  },
+  {
+    name: 'not_found_app_error JSON 404',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 {"errorCode":"not_found_app_error","errorDescription":"App not found"}',
+      404,
+      'not_found_app_error',
+      'App not found'
+    ),
+  },
+  {
+    name: 'route_not_found JSON 404',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 {"errorCode":"route_not_found","errorDescription":"Route not found"}',
+      404,
+      'route_not_found',
+      'Route not found'
+    ),
+  },
+  {
+    name: 'HTML 404 proxy page',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 <html><body><h1>404 Session not found</h1></body></html>',
+      404
+    ),
+  },
+  {
+    name: 'bare 404 with no body',
+    error: new CloudflareSfuError('cloudflare_sfu_request_failed:404', 404),
+  },
+  {
+    name: 'bare 410 with no body',
+    error: new CloudflareSfuError('cloudflare_sfu_request_failed:410', 410),
+  },
+  {
+    name: 'unknown-shape JSON 404',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 {"message":"Session not found","error":"session_not_found"}',
+      404
+    ),
+  },
+  {
+    name: 'generic not_found JSON 404 without session description',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404 {"errorCode":"not_found"}',
+      404,
+      'not_found'
+    ),
+  },
+])(
+  'retries unrecognized $name instead of confirming closure',
+  async ({ error }) => {
+    const state = snapshot([one]);
+    await expect(
+      closeBudgetPublications(
+        state,
+        async () => {
+          throw error;
+        },
+        undefined,
+        async () => {
+          throw error;
+        }
+      )
+    ).rejects.toBe(error);
+    expect(state.budget.pendingPublications).toHaveLength(1);
+  }
+);
 
 it('treats already-closed track error codes and session-gone JSON responses as confirmed', async () => {
   const getSession = vi.fn();
@@ -254,6 +311,22 @@ it('treats already-closed track error codes and session-gone JSON responses as c
   );
   expect(sessionGone.budget?.pendingPublications).toEqual([]);
   expect(getSession).not.toHaveBeenCalled();
+
+  const sessionExpired410 = await closeBudgetPublications(
+    snapshot([one]),
+    async () => {
+      throw new CloudflareSfuError(
+        'cloudflare_sfu_request_failed:410 {"errorDescription":"Session has expired"}',
+        410,
+        undefined,
+        'Session has expired'
+      );
+    },
+    undefined,
+    getSession
+  );
+  expect(sessionExpired410.budget?.pendingPublications).toEqual([]);
+  expect(getSession).not.toHaveBeenCalled();
 });
 
 it('summarizes provider cleanup errors without leaking raw bodies or identifiers', () => {
@@ -269,6 +342,31 @@ it('summarizes provider cleanup errors without leaking raw bodies or identifiers
     reason: 'sfu_http_error',
     status: 503,
     errorCode: 'internal_error',
+  });
+  expect(
+    describeProviderCleanupError(
+      new CloudflareSfuError(
+        'cloudflare_sfu_request_failed:404 {"errorCode":"route_not_found","errorDescription":"session-secret-123"}',
+        404,
+        'route_not_found',
+        'session-secret-123'
+      )
+    )
+  ).toEqual({
+    reason: 'sfu_unrecognized_not_found',
+    status: 404,
+    errorCode: 'route_not_found',
+  });
+  expect(
+    describeProviderCleanupError(
+      new CloudflareSfuError(
+        'cloudflare_sfu_request_failed:404 <html><body>secret-body</body></html>',
+        404
+      )
+    )
+  ).toEqual({
+    reason: 'sfu_unrecognized_not_found',
+    status: 404,
   });
   expect(describeProviderCleanupError(new TypeError('network down'))).toEqual({
     reason: 'provider_request_error',

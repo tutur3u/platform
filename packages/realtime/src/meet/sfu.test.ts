@@ -172,6 +172,37 @@ describe('CloudflareSfuClient', () => {
       /cloudflare_sfu_request_failed:400.*decoding_error/u
     );
   });
+
+  it('leaves errorCode and errorDescription unset for HTML, bare, or unknown-shape JSON 404 responses', async () => {
+    const responses = [
+      () =>
+        new Response('<html><body>404 Session not found</body></html>', {
+          status: 404,
+          headers: { 'Content-Type': 'text/html' },
+        }),
+      () => new Response(null, { status: 404 }),
+      () =>
+        Response.json(
+          { message: 'Session not found', error: 'session_not_found' },
+          { status: 404 }
+        ),
+      () => Response.json(['session_not_found'], { status: 404 }),
+    ];
+    for (const makeResponse of responses) {
+      const client = new CloudflareSfuClient({
+        appId: 'app-1',
+        appSecret: 'secret-1',
+        fetch: vi.fn(async () => makeResponse()) as unknown as typeof fetch,
+      });
+      const error = (await client
+        .closeTracks({ sessionId: 'session-1', tracks: [{ mid: '0' }] })
+        .catch((caught: unknown) => caught)) as CloudflareSfuError;
+      expect(error).toBeInstanceOf(CloudflareSfuError);
+      expect(error.status).toBe(404);
+      expect(error.errorCode).toBeUndefined();
+      expect(error.errorDescription).toBeUndefined();
+    }
+  });
 });
 
 it('reads provider session state without inventing legacy track identifiers', async () => {

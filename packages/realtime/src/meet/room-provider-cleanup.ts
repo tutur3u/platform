@@ -26,8 +26,12 @@ const TRACK_GONE_CODES = new Set([
 const TRACK_GONE_DESCRIPTION =
   /doesn't exist|does not exist|already closed|not found/i;
 
-const APP_NOT_FOUND_DESCRIPTION =
-  /\bapp(?:lication)?\s+not\s+found\b|\binvalid\s+app\b/i;
+const SESSION_GONE_DESCRIPTION =
+  /\bsession\b(?:\s+(?:is|was|has(?:\s+been)?))?\s+(?:not\s+found|doesn't\s+exist|does\s+not\s+exist|already\s+closed|closed|expired|gone)\b/i;
+
+const NON_SESSION_ERROR_CODE = /(?:^|_)app(?:$|_)|(?:^|_)route(?:$|_)/i;
+
+const SAFE_ERROR_CODE = /^[a-z0-9_.:-]{1,64}$/i;
 
 function isProviderSessionGoneCode(code: unknown): boolean {
   return typeof code === 'string' && SESSION_GONE_CODES.has(code);
@@ -41,6 +45,12 @@ function isProviderTrackGone(track: ProviderTrack): boolean {
     typeof track.errorDescription === 'string' &&
     TRACK_GONE_DESCRIPTION.test(track.errorDescription)
   );
+}
+
+function nonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
 }
 
 function readProviderErrorInfo(error: unknown): {
@@ -59,12 +69,8 @@ function readProviderErrorInfo(error: unknown): {
     typeof record.status === 'number' && Number.isInteger(record.status)
       ? record.status
       : undefined;
-  let errorCode =
-    typeof record.errorCode === 'string' ? record.errorCode : undefined;
-  let errorDescription =
-    typeof record.errorDescription === 'string'
-      ? record.errorDescription
-      : undefined;
+  let errorCode = nonEmptyString(record.errorCode);
+  let errorDescription = nonEmptyString(record.errorDescription);
   if (typeof record.message === 'string') {
     const match = /^cloudflare_sfu_request_failed:(\d+)(?:\s+(.*))?$/s.exec(
       record.message
@@ -73,14 +79,15 @@ function readProviderErrorInfo(error: unknown): {
       status ??= Number(match[1]);
       if (match[2] && (!errorCode || !errorDescription)) {
         try {
-          const parsed = JSON.parse(match[2]) as {
-            errorCode?: unknown;
-            errorDescription?: unknown;
-          };
-          if (!errorCode && typeof parsed?.errorCode === 'string')
-            errorCode = parsed.errorCode;
-          if (!errorDescription && typeof parsed?.errorDescription === 'string')
-            errorDescription = parsed.errorDescription;
+          const parsed: unknown = JSON.parse(match[2]);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            const payload = parsed as {
+              errorCode?: unknown;
+              errorDescription?: unknown;
+            };
+            errorCode ??= nonEmptyString(payload.errorCode);
+            errorDescription ??= nonEmptyString(payload.errorDescription);
+          }
         } catch {
           // Message tail may be truncated or plain text.
         }
@@ -94,10 +101,11 @@ function isProviderSessionGoneError(error: unknown): boolean {
   const { status, errorCode, errorDescription } = readProviderErrorInfo(error);
   if (isProviderSessionGoneCode(errorCode)) return true;
   if (status !== 404 && status !== 410) return false;
-  if (errorCode === 'app_not_found') return false;
-  if (errorDescription && APP_NOT_FOUND_DESCRIPTION.test(errorDescription))
-    return false;
-  return true;
+  if (errorCode && NON_SESSION_ERROR_CODE.test(errorCode)) return false;
+  return (
+    typeof errorDescription === 'string' &&
+    SESSION_GONE_DESCRIPTION.test(errorDescription)
+  );
 }
 
 /** Secret-free diagnostic summary for media cleanup logs. */
@@ -107,14 +115,20 @@ export function describeProviderCleanupError(error: unknown): {
   errorCode?: string;
 } {
   const { status, errorCode } = readProviderErrorInfo(error);
+  const safeErrorCode =
+    errorCode && SAFE_ERROR_CODE.test(errorCode) ? errorCode : undefined;
   if (status !== undefined) {
     return {
-      reason: 'sfu_http_error',
+      reason:
+        status === 404 || status === 410
+          ? 'sfu_unrecognized_not_found'
+          : 'sfu_http_error',
       status,
-      ...(errorCode ? { errorCode } : {}),
+      ...(safeErrorCode ? { errorCode: safeErrorCode } : {}),
     };
   }
-  if (errorCode) return { reason: 'sfu_provider_error', errorCode };
+  if (safeErrorCode)
+    return { reason: 'sfu_provider_error', errorCode: safeErrorCode };
   if (error instanceof Error) {
     if (error.message.includes('lookup'))
       return { reason: 'provider_lookup_failed' };

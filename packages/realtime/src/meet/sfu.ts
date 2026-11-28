@@ -107,14 +107,21 @@ export class CloudflareSfuClient {
       let errorDescription: string | undefined;
       if (detail) {
         try {
-          const parsed = JSON.parse(detail) as {
-            errorCode?: unknown;
-            errorDescription?: unknown;
-          };
-          if (typeof parsed?.errorCode === 'string')
-            errorCode = parsed.errorCode;
-          if (typeof parsed?.errorDescription === 'string')
-            errorDescription = parsed.errorDescription;
+          const parsed: unknown = JSON.parse(detail);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            const payload = parsed as {
+              errorCode?: unknown;
+              errorDescription?: unknown;
+            };
+            if (typeof payload.errorCode === 'string') {
+              const trimmed = payload.errorCode.trim();
+              if (trimmed) errorCode = trimmed;
+            }
+            if (typeof payload.errorDescription === 'string') {
+              const trimmed = payload.errorDescription.trim();
+              if (trimmed) errorDescription = trimmed;
+            }
+          }
         } catch {
           // Non-JSON provider body; status and snippet remain on the message.
         }
