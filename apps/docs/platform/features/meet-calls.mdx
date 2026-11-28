@@ -1180,6 +1180,42 @@ remove any permission.
   `packages/meet-core/src/features/call/components/participant-identity-badge.test.tsx`
   for the classification, rendering, tooltip and both locales.
 
+### Account ids on the call socket
+
+People outside the workspace never receive another person's platform user id
+from the call socket.
+
+- **Scope.** Presence snapshots (`presence`), presence deltas
+  (`presence.delta`) and room chat lines (`chat.message`), including chat
+  replayed on admission, from the Durable Object and from the local Bun server.
+- **Who sees real ids.** The host and workspace members (tokens with open
+  admission) receive frames unchanged, because participant management, media
+  overrides, meeting AI speaker attribution and transcript names read them.
+- **Who sees opaque ids.** Anonymous guests and signed-in people outside the
+  workspace (lobby tokens) receive, in place of every other person's
+  `accountId`, an id derived on the server as an HMAC of the account id with
+  `MEET_REALTIME_TOKEN_SECRET`, scoped to the room. It keeps the UUID shape, is
+  the same in snapshots, deltas and chat for one room, so one account's devices
+  still group together, and differs between rooms, so it cannot link a person
+  across meetings. Without the secret the id is omitted instead.
+- **Exception.** A viewer always receives its own `accountId`, so its other
+  devices still match it (shared-microphone back-off) and its own capture keeps
+  its attribution.
+- **Server state is unchanged.** Admission, removal bans, consent, attendance
+  and moderation keep reading the real ids from the room snapshot; only the wire
+  copy for each viewer changes.
+- **Not covered.** Device ids (`userId`) are separate per-tab identities, but a
+  member token issued without a device id uses the account id as its `userId`.
+  Quiz Arena player and buzz entries name players by account id. Both reach
+  outside viewers and are tracked separately.
+- Regression coverage:
+  `packages/realtime/src/meet/room-viewer-identity.test.ts` (member, host,
+  guest, outside account and self viewers across snapshots, deltas, chat and
+  the delta and legacy socket paths) and
+  `apps/meet-realtime/src/room-do-guest-account-ids.test.ts` (a guest admitted
+  through the Durable Object receives no host or member account id, with and
+  without the secret).
+
 ### Guests without an account
 
 **Allow guests without an account** is off by default and only the host can turn

@@ -7,6 +7,8 @@ import {
   receivesMeetManagerMessage,
   receivesMeetToolFrame,
 } from '../../../packages/realtime/src/meet';
+import { createMeetRoomAccountAlias } from '../../../packages/realtime/src/meet/room-account-alias';
+import { meetFrameForViewer } from '../../../packages/realtime/src/meet/room-viewer-identity';
 
 export type MeetWebSocket = ServerWebSocket<{
   token: MeetRealtimeTokenPayload;
@@ -33,13 +35,18 @@ export function getRoom(roomId: string): RoomState {
   return created;
 }
 
+const accountAlias = createMeetRoomAccountAlias(
+  () => process.env.MEET_REALTIME_TOKEN_SECRET
+);
+
 export function send(ws: MeetWebSocket, message: MeetRealtimeServerMessage) {
   // The same rule as the Durable Object: private activity views and the board
   // reach only people admitted at this moment, in a room that has not ended.
   const { token } = ws.data;
   const snapshot = rooms.get(token.roomId)?.snapshot ?? NO_ROOM;
   if (!receivesMeetToolFrame(snapshot, token, message)) return;
-  ws.send(JSON.stringify(message));
+  // Viewers outside the workspace never receive other people's account ids.
+  ws.send(JSON.stringify(meetFrameForViewer(message, token, accountAlias)));
 }
 
 function eachClient(

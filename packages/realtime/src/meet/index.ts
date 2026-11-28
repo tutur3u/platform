@@ -41,6 +41,7 @@ export {
   MEET_ASSISTANT_USER_ID,
 } from './assistant-mentions';
 export * from './room-presence-diff';
+export * from './room-viewer-identity';
 export * from './simulcast-layers';
 export * from './room-media-quality';
 export * from './stream-tiers';

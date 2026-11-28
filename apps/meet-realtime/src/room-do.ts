@@ -21,6 +21,7 @@ import {
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
 import { isMeetMessageWithinLimit } from '../../../packages/realtime/src/meet/message-size';
+import { createMeetRoomAccountAlias } from '../../../packages/realtime/src/meet/room-account-alias';
 import {
   expireEmptyRoom,
   observeRoomConnections,
@@ -78,6 +79,9 @@ export class MeetRoomDurableObject implements DurableObject {
     read: () => this.snapshot,
     fullPresence: (roomId) => this.presence.full(roomId),
     announcements: () => liveRoomAnnouncements(this.snapshot),
+    accountAlias: createMeetRoomAccountAlias(
+      () => this.env?.MEET_REALTIME_TOKEN_SECRET
+    ),
   });
   private broadcast = this.delivery.broadcast;
 

@@ -26,6 +26,11 @@ import {
 import type { RoomAttachment } from './room-service';
 import type { RoomUsage } from './room-usage';
 import type { TranscriptionRoomState } from './transcription';
+import {
+  isMeetViewerScopedFrame,
+  type MeetAccountAlias,
+  meetFrameForViewer,
+} from './room-viewer-identity';
 
 export { meetTrackKey } from './room-tracks';
 
@@ -319,6 +324,17 @@ export function remoteMeetTracks(state: MeetRoomSnapshot, userId: string) {
   return Object.values(state.tracks).filter((track) => track.userId !== userId);
 }
 
+function frameNamesAccount(
+  message: MeetRealtimeServerMessage,
+  accountId: string
+) {
+  if (message.type === 'presence')
+    return message.presence.some((p) => p.accountId === accountId);
+  if (message.type === 'presence.delta')
+    return message.upserted.some((p) => p.accountId === accountId);
+  return message.type === 'chat.message' && message.accountId === accountId;
+}
+
 export type MeetRoomSocketAttachment = {
   token: MeetRealtimeTokenPayload;
   presenceSeq?: number;
@@ -339,11 +355,14 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
   read,
   fullPresence,
   announcements,
+  accountAlias,
 }: {
   sockets: () => Socket[];
   read: () => MeetRoomSnapshot;
   fullPresence: (roomId: string) => MeetRealtimeServerMessage;
   announcements: () => MeetRealtimeServerMessage[];
+  /** Opaque per-room account ids for viewers outside the workspace. */
+  accountAlias?: MeetAccountAlias;
 }) {
   const attachmentOf = (socket: Socket) =>
     socket.deserializeAttachment() as MeetRoomSocketAttachment | null;
@@ -351,16 +370,45 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
     const token = attachmentOf(socket)?.token;
     return token && !hasMeetMediaContextConflict(read(), token) ? token : null;
   };
+  // Outside viewers absent from a frame share one projected wire per frame.
+  const viewerWires = new WeakMap<
+    MeetRealtimeServerMessage,
+    Map<string, string>
+  >();
+  function viewerWire(
+    message: MeetRealtimeServerMessage,
+    viewed: MeetRealtimeServerMessage,
+    viewer: { accountId?: string; roomId: string }
+  ) {
+    const own = viewer.accountId ?? '';
+    const key = `${viewer.roomId}\n${own && frameNamesAccount(message, own) ? own : ''}`;
+    let wires = viewerWires.get(message);
+    if (!wires) viewerWires.set(message, (wires = new Map()));
+    let wire = wires.get(key);
+    if (wire === undefined) {
+      wire = JSON.stringify(viewed);
+      wires.set(key, wire);
+    }
+    return wire;
+  }
   function sendTo(
     socket: Socket,
     message: MeetRealtimeServerMessage,
-    wire?: string
+    shared?: string
   ) {
+    let wire = shared;
     // Private activity views and the board need someone admitted right now.
     if (isMeetPrivateToolFrame(message)) {
       const recipient = tokenOf(socket);
       if (!recipient || !receivesMeetToolFrame(read(), recipient, message))
         return;
+    }
+    // Viewers outside the workspace never receive other people's account ids.
+    if (isMeetViewerScopedFrame(message)) {
+      const viewer = attachmentOf(socket)?.token;
+      if (!viewer) return;
+      const viewed = meetFrameForViewer(message, viewer, accountAlias);
+      if (viewed !== message) wire = viewerWire(message, viewed, viewer);
     }
     try {
       socket.send(wire ?? JSON.stringify(message));
