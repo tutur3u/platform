@@ -96,3 +96,58 @@ macOS hosts can differ from the Linux CI runners. A failure that depends on
 process-group signals, filesystem case or timing should be confirmed on a CI
 runner before treating it as a regression. Record confirmed flakes and timing
 evidence in the development-tooling skill's `references/ci-learnings.md`.
+
+## Fleet status webhook Worker
+
+The Worker stores a bounded projection of signed GitHub Actions, check-suite,
+pull request, and push deliveries. Set the repository allowlist explicitly.
+The Worker starts disabled in configuration, and the Durable Object starts
+stopped. The operator start endpoint enables stored work only when the
+configuration flag is also enabled. An authenticated
+`POST /v1/control/stop` persists the stop before acknowledging it. An admitted
+fallback can finish before stop is acknowledged. The stopped object rejects
+reads and ingest and starts no fallback, including after a runtime restart.
+
+Use independent secrets named `GITHUB_WEBHOOK_SECRET`,
+`FLEET_STATUS_READ_TOKEN`, and `FLEET_STATUS_OPERATOR_TOKEN`. The reader token
+grants access to all configured repositories, so only issue it to fleet
+principals authorized for that set. The optional
+`FLEET_STATUS_GITHUB_TOKEN` needs only repository Actions read permission.
+It is sent solely to GitHub from the Worker. Clients receive private,
+non-cacheable projections without raw webhook payloads or credentials.
+GitHub's HMAC authenticates the original bytes before payload parsing.
+
+The status API reads `/v1/repos/<owner>/<repo>/commits/<sha>/status`.
+Pull request projections use `/v1/repos/<owner>/<repo>/pulls/<number>`.
+Coverage is complete only for a recent complete GitHub snapshot. Webhook-only
+projections can be partial and do not establish a terminal CI gate.
+
+| Path | Operation bound |
+| --- | --- |
+| Invalid webhook signature or body larger than 1 MiB | No Durable Object request or write |
+| Accepted signed event | One Durable Object request and one state write, with at most 3,600 accepted events per repository per UTC hour |
+| Duplicate delivery or older event | One Durable Object request and zero state writes |
+| Status without reconciliation | One Durable Object request and zero state writes |
+| Fallback reconciliation | One GitHub request, no retries, a four-second deadline, and at most two state writes |
+| Fallback across the allowlist | One request per repository per 60 seconds, capped at eight repositories, or 480 requests per rolling hour |
+| Stopped object | Zero upstream requests and zero event or budget writes |
+
+The Durable Object reserves a reconciliation slot before the upstream request,
+so failed responses and restarts consume the slot. It retains at most 96 event
+projections, 256 delivery IDs and one reconciliation snapshot per configured
+repository. It schedules no background jobs. The bounds count application
+operations. Hosted provider billing and throughput require deployed telemetry.
+
+Run isolated checks from the repository root with the host resource broker.
+
+```sh
+ttr resources run -- bun --cwd apps/fleet-status test
+ttr resources run -- bun --cwd apps/fleet-status verify:runtime
+```
+
+The fixture tests assert zero Durable Object requests for invalid ingress,
+one ingest write for repeated deliveries, one upstream request for distinct
+SHAs sharing a repository cooldown, and no additional upstream work after
+stop. The Workerd check uses disposable secrets and SQLite persistence and
+exercises six concurrent copies of the same delivery and the stop fence across
+a runtime restart. Its fallback transport is disabled.
