@@ -91,8 +91,6 @@ function buildMailRuntimeEnv(baseEnv, sb) {
 
 function playwrightArgs() {
   return [
-    '--cwd',
-    'apps/mail',
     'x',
     '--no-install',
     'playwright',
@@ -232,15 +230,16 @@ async function runSuite(root, baseEnv) {
     runtimeEnv
   );
 
-  const server = spawn('bun', ['--cwd', 'apps/mail', 'run', 'start:legacy'], {
-    cwd: root,
+  const mailDir = path.join(root, 'apps/mail');
+  const server = spawn('bun', ['run', 'start:legacy'], {
+    cwd: mailDir,
     env: runtimeEnv,
     stdio: 'inherit',
   });
 
   try {
     await waitForServer(MAIL_URL, server);
-    runSync(root, 'bun', playwrightArgs(), runtimeEnv);
+    runSync(mailDir, 'bun', playwrightArgs(), runtimeEnv);
   } finally {
     await stopChild(server);
   }

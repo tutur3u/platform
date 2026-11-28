@@ -85,9 +85,10 @@ test('buildMailRuntimeEnv sets loopback production runtime flags and skips dev w
   assert.equal(env.PLAYWRIGHT_JSON_OUTPUT_NAME, REPORT_RELATIVE_PATH);
 });
 
-test('playwrightArgs runs apps/mail suite with json/html reporting and zero retries', () => {
+test('playwrightArgs runs playwright with json/html reporting and zero retries', () => {
   const args = playwrightArgs();
-  assert.ok(args.includes('apps/mail'));
+  assert.equal(args[0], 'x');
+  assert.ok(args.includes('playwright'));
   assert.ok(args.includes('--reporter=line,html,json'));
   assert.ok(args.includes('--retries=0'));
 });
