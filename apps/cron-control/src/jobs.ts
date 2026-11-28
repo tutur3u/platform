@@ -1,3 +1,4 @@
+import { RECONCILE_JOB } from './processors/auto-publish-reconcile/catalog';
 import { MOBILE_ISSUES_JOB } from './processors/mobile-issues';
 import { TASKS_RECURRENCE_JOB } from './processors/tasks-recurrence';
 import { isWebJob } from './web-gate';
@@ -42,6 +43,7 @@ export type WorkerProcessorId =
   | 'observability-product-analytics'
   | 'observability-retention'
   | 'observability-slo-burn'
+  | typeof RECONCILE_JOB
   | 'qa-test-user-cleanup'
   | 'storage-access-audit-retention'
   | typeof TASKS_RECURRENCE_JOB;
@@ -75,6 +77,9 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'observability-product-analytics': 'rollup_product_analytics_daily',
   'observability-retention': 'prune_observability_rollups',
   'observability-slo-burn': 'evaluate_observability_slos',
+  // Read-only reconciler: its only database call is the deduplicated root
+  // operator alert for flagged auto-publish state.
+  [RECONCILE_JOB]: 'send_root_operator_alert',
   // Lists expired accounts; the Worker then drives the ledger and Auth deletes.
   'qa-test-user-cleanup': 'qa_test_list_expired',
   'storage-access-audit-retention': 'prune_storage_access_events',
@@ -343,6 +348,19 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     workerProcessor: 'mastermind-ship',
     timeoutMs: 20_000,
   }),
+  // Hourly (minute 0 of the existing 30-minute trigger). Read-only: GitHub
+  // fence variables and the production ref, then each automatic Worker's
+  // active deployment and build-info, within a fixed request budget. Stays
+  // out of CRON_CONTROL_ENABLED_JOBS until the release owner admits it; see
+  // apps/docs/build/devops/production-auto-publish-reconciler.mdx.
+  job(
+    RECONCILE_JOB,
+    '*/30 * * * *',
+    'web',
+    '/rest/v1/rpc/send_root_operator_alert',
+    'idempotent',
+    { everyMinutes: 60, workerProcessor: RECONCILE_JOB, timeoutMs: 45_000 }
+  ),
   job(
     'provider-cost-collection',
     '17 3 * * *',

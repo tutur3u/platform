@@ -243,6 +243,7 @@
                   "build/devops/standalone-api",
                   "build/devops/native-start-migration",
                   "build/devops/serving-workers-publication",
+                  "build/devops/production-auto-publish-reconciler",
                   "build/devops/wave1-cutover-packets",
                   "build/devops/wave1-production-publication",
                   "build/devops/mail-local-workerd-acceptance",

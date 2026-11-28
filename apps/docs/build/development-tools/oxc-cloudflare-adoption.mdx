@@ -455,6 +455,20 @@ store calls through stop, restart, backoff, failure and rate-limit cases. The
 [runbook](../devops/mastermind-ship-collector.mdx) owns enablement and stop.
 Hosted execution and billed usage remain rollout evidence.
 
+### Production auto-publish reconciler envelope
+
+The `production-auto-publish-reconcile` Cron Control job is default-off and
+adds no trigger: it runs at minute 0 of the existing 30-minute trigger.
+A run makes at most 39 GET requests (GitHub variables and ref, Cloudflare
+deployments, public build-info), at most one alert RPC and about 15 ledger
+calls, with no in-run retry and a 60-second wall cap. Its alert dedupe key
+covers the flagged facts, so a persisting state notifies once. The durable
+job stop ends work before the next provider call, and five failed slots stop
+it. `apps/cron-control/src/auto-publish-reconcile.test.ts` counts calls
+through stop, restart, failure, paging and slow-provider cases. The
+[runbook](../devops/production-auto-publish-reconciler.mdx) owns enablement
+and stop.
+
 ### Mastermind Inbox push envelope
 
 With dispatch off, signed fleet publishes do no extra reads or sends. An

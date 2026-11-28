@@ -1,4 +1,5 @@
 import { purgeAccountsAudit } from './accounts-audit-retention';
+import { RECONCILE_JOB, reconcileAutoPublish } from './auto-publish-reconcile';
 import type { WorkerProcessorId } from '../jobs';
 import { settleUnbilledAiCharges } from './ai-credit-unbilled-settlement';
 import { purgeAiStudioRetention } from './ai-studio-retention';
@@ -57,6 +58,7 @@ export const WORKER_PROCESSORS: Record<
   'observability-product-analytics': rollupProductAnalytics,
   'observability-retention': pruneObservability,
   'observability-slo-burn': evaluateObservabilitySlos,
+  [RECONCILE_JOB]: reconcileAutoPublish,
   'qa-test-user-cleanup': cleanupQaTestUsers,
   'storage-access-audit-retention': pruneStorageAccessEvents,
   [TASKS_RECURRENCE_JOB]: generateRecurringTasks,

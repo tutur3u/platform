@@ -1,0 +1,137 @@
+---
+title: Production auto-publish reconciler
+description: The read-only Cron Control job that flags stale auto-publish stop fences, leftover split or staged Worker deployments and Workers off the production SHA, with its credentials, bounds, deduplication and stop fence.
+updatedAt: "2026-11-28"
+---
+
+The `production-auto-publish-reconcile` job in
+[Cron Control](/build/devops/cloudflare-cron-control) checks, once an hour,
+that automatic production publication has left nothing behind. It only
+reads: it never dispatches a workflow, writes a GitHub variable, secret or
+setting, or changes a Cloudflare Worker, version or deployment. It reports
+through the shared root operator alert, the same path as SLO burn and cost
+alerts ([observability](/build/devops/observability-analytics)).
+
+The job is registered but **disabled**: it is not listed in
+`CRON_CONTROL_ENABLED_JOBS`. Admitting it is a staged transition (see
+[Enable](#enable)) that needs the release owner's approval.
+
+## What it flags
+
+| Flag | Source | Condition |
+| --- | --- | --- |
+| Stale stop fence | GitHub repository variables `PRODUCTION_AUTO_PUBLISH` and `PRODUCTION_AUTO_PUBLISH_<FAMILY>` | The value is `stopped` and its last update is older than the stop window (24 hours), or the value is `stopped:<ISO until>[:reason]` and `until` has passed |
+| Leftover split | Cloudflare active deployment of each automatic Worker | The deployment holds more than one version, or one version below 100% (a 0% candidate stage counts), and was created longer ago than the split TTL (120 minutes) |
+| Lagging Worker | Public `/api/build-info` of each automatic Worker against `refs/heads/production` | The build-info commit differs from the production SHA for longer than the lag window (120 minutes), counted from the first run that saw the ref at that SHA |
+
+Any other fence value publishes, so only `stopped` and the `stopped:` form
+are checked. The first sighting of each production SHA is kept as a single
+pending-work item in the Cron Control ledger, so the lag window starts when
+the ref moved rather than at the commit's own date. Credential expiry is not
+checked here; the token rotation reminder owns it.
+
+The automatic Workers are listed in
+`apps/cron-control/src/processors/auto-publish-reconcile/catalog.ts`. They are
+the serving Workers of `scripts/ci/serving-workers-apps.mjs`, read at each
+app's first origin, and a test fails when the two lists differ. Admin and the
+vinext families join when their own automatic publication lands.
+
+Windows can be tuned with optional text bindings, each a whole number within
+bounds; anything else keeps the default:
+`AUTO_PUBLISH_RECONCILE_STOP_WINDOW_HOURS` (1 to 720),
+`AUTO_PUBLISH_RECONCILE_SPLIT_TTL_MINUTES` and
+`AUTO_PUBLISH_RECONCILE_LAG_WINDOW_MINUTES` (30 to 10,080).
+
+## Credentials
+
+Both are operator-installed Worker secrets, read by name and sent only to
+their own provider. Neither appears in logs, alert text or alert data.
+
+- `AUTO_PUBLISH_RECONCILE_CLOUDFLARE_TOKEN`: an account API token with
+  **Workers Scripts Read** only, no zone permissions. It reads deployments;
+  it cannot upload, stage, promote or roll back. The account comes from the
+  existing `CLOUDFLARE_ACCOUNT_ID` binding.
+- `AUTO_PUBLISH_RECONCILE_GITHUB_TOKEN`: a fine-grained token for the
+  `tutur3u/platform` repository only, with **Variables: read** and
+  **Contents: read**. GitHub has no narrower grant for a named variable, so
+  the token can read every repository variable value, which are not secrets,
+  but cannot read secrets or write variables, refs or settings.
+
+Each half runs on its own: without the GitHub token, only splits are checked;
+without the Cloudflare token, only fences and lag. With neither, the run
+fails without any request. The deploy coordinator holds no GitHub
+credential, which is why this job lives in Cron Control.
+
+## Bounds
+
+| Bound | Limit |
+| --- | --- |
+| Workers scanned | The catalog, at most 16 |
+| Provider requests | 5 variable pages, 1 ref read, 1 deployments read and 1 build-info read per Worker: at most 39, enforced by a request budget |
+| Alerts | At most one RPC per run |
+| Wall time | 60 seconds, inside the 90-second processor deadline of its 120-second lease |
+| Per request | 15 seconds, 1 MiB body, redirects refused |
+| Retries | None in a run; the next hourly slot is the retry |
+
+A variable listing longer than five pages fails the run instead of paging on,
+so a fence is never missed silently. A refused, rate-limited or timed-out
+Cloudflare read ends that run's Cloudflare reads.
+
+## Deduplication and outcomes
+
+An alert's dedupe key is
+`auto-publish:reconcile:<32 hex of SHA-256 over the sorted finding ids>`.
+Each id names its fact: the variable and its update time, the Worker and its
+deployment id, or the Worker with its live and production SHAs. The same
+state on later slots reuses the key, and `private.send_root_operator_alert`
+answers `null` without notifying anyone. A new fact makes a new key and one
+new alert. A clean state sends nothing.
+
+| Outcome | When |
+| --- | --- |
+| `ok` | Every configured source was read; an alert, if any, was delivered or was already sent |
+| `degraded` | A half is unconfigured, a build-info read failed, or the alert found no recipient (the key is released, so the next slot delivers it) |
+| `failed` | A GitHub or Cloudflare API read failed, no credential is set, or the alert RPC failed; no alert is sent for a partial read |
+| `unknown` | The alert RPC answer was unreadable |
+| `stopped` | The job's durable stop was seen |
+
+Five consecutive failed slots exhaust the job's failure budget and stop it,
+like any Cron Control job.
+
+## Stop and resume
+
+The job checks its durable ledger stop before the GitHub reads, before the
+production ref read, before each Worker and before the alert. The operator
+stop needs no deploy:
+
+```bash
+curl -X POST -H "Authorization: Bearer $CRON_CONTROL_OPERATOR_TOKEN" \
+  https://<cron-control-host>/control/jobs/production-auto-publish-reconcile/stop
+```
+
+A stopped job claims no slot and makes no request. `resume` lifts the stop.
+Removing the id from `CRON_CONTROL_ENABLED_JOBS` disables it in the next
+publication.
+
+## Enable
+
+1. Install both secrets on `tuturuuu-cron-control` with the permissions above.
+2. In one reviewed change, add `production-auto-publish-reconcile` to
+   `CRON_CONTROL_ENABLED_JOBS` in `apps/cron-control/cloudflare.config.ts`,
+   update `scripts/ci/fixtures/cf-worker-parity/cron-control.json` (the
+   serving identity becomes `previousIdentity`, the new list `identity`) with
+   a `transition.decision` that names the job, and update the registration
+   test in `apps/cron-control/src/auto-publish-reconcile.test.ts`, which
+   fails while the job is listed. The trigger set does not change: the job
+   runs at minute 0 of the existing `*/30 * * * *` trigger.
+3. Publish Cron Control through its workflow after the release owner's
+   approval, then confirm the first hourly slot in `GET /control/jobs`.
+
+## Cost envelope
+
+At 24 slots a day a run makes at most 39 reads of the GitHub and Cloudflare
+APIs (not billed per call), at most one database RPC and about 15 ledger
+calls. The six build-info reads are Worker requests on the serving Workers:
+144 a day. `apps/cron-control/src/auto-publish-reconcile.test.ts` counts
+calls through the healthy, flagged, repeated, stopped, failing, restarted,
+paged and slow cases.
