@@ -365,4 +365,130 @@ describe('workspace settings route guest self-join access', () => {
     });
     expect(mocks.resolveFinanceRouteAuthContext).not.toHaveBeenCalled();
   });
+
+  it('rejects GET on non-allowlisted config ids when caller lacks manage_workspace_settings', async () => {
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'normalized-ws',
+        permissions: {
+          membershipType: 'MEMBER',
+          withoutPermission: (perm: string) =>
+            perm === 'manage_workspace_settings',
+        },
+        sbAdmin: createAdmin().admin,
+      },
+      response: null,
+    });
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/settings/INTERNAL_ADMIN_CONFIG'
+      ),
+      {
+        params: Promise.resolve({
+          configId: 'INTERNAL_ADMIN_CONFIG',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.getWorkspaceConfig).not.toHaveBeenCalled();
+  });
+
+  it('allows GET on non-allowlisted config ids when caller holds manage_workspace_settings', async () => {
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'normalized-ws',
+        permissions: {
+          membershipType: 'MEMBER',
+          withoutPermission: () => false,
+        },
+        sbAdmin: createAdmin().admin,
+      },
+      response: null,
+    });
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/settings/INTERNAL_ADMIN_CONFIG'
+      ),
+      {
+        params: Promise.resolve({
+          configId: 'INTERNAL_ADMIN_CONFIG',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ value: 'true' });
+  });
+
+  it('allows GET on allowlisted member-readable configs without manage_workspace_settings', async () => {
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'normalized-ws',
+        permissions: {
+          membershipType: 'MEMBER',
+          withoutPermission: (perm: string) =>
+            perm === 'manage_workspace_settings',
+        },
+        sbAdmin: createAdmin().admin,
+      },
+      response: null,
+    });
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/settings/DEFAULT_CURRENCY'
+      ),
+      {
+        params: Promise.resolve({
+          configId: 'DEFAULT_CURRENCY',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ value: 'true' });
+  });
+
+  it('rejects GET on allowlisted configs when caller is a guest', async () => {
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'normalized-ws',
+        permissions: {
+          membershipType: 'GUEST',
+          withoutPermission: () => false,
+        },
+        sbAdmin: createAdmin().admin,
+      },
+      response: null,
+    });
+    const { GET } =
+      await import('@/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route');
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/settings/DEFAULT_CURRENCY'
+      ),
+      {
+        params: Promise.resolve({
+          configId: 'DEFAULT_CURRENCY',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.getWorkspaceConfig).not.toHaveBeenCalled();
+  });
 });

@@ -63,7 +63,11 @@ and rollback profile is in
 Use the workspace management flow to create/manage supported links and inspect
 available analytics. Analytics represent the events the implementation records;
 they are not proof of unique people, conversions, or the destination's state.
-Workspace permissions still govern management and analytics.
+Workspace permissions still govern management and analytics. Setting, changing
+or removing a link password (`PATCH`/`DELETE /api/v1/link-shortener/[linkId]/password`)
+requires being the link creator or holding `manage_workspace_settings` in the
+owning workspace. Regression coverage lives in
+`apps/web/src/legacy-api-routes/v1/link-shortener/[linkId]/password/route.test.ts`.
 
 ## Search policy
 

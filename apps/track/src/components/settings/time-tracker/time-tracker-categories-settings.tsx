@@ -1,9 +1,10 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useWorkspaceCategories } from '@tuturuuu/hooks/hooks/use-workspace-categories';
 import { getCategoryColor } from '@tuturuuu/hooks/utils/time-tracker-category-colors';
 import { Copy, Edit, MoreHorizontal, Plus, Trash2 } from '@tuturuuu/icons';
+import { checkWorkspacePermission } from '@tuturuuu/internal-api/settings';
 import type { TimeTrackingCategory } from '@tuturuuu/types';
 import {
   AlertDialog,
@@ -53,6 +54,7 @@ import { CopyFromWorkspaceDialog } from './copy-from-workspace-dialog';
 
 interface TimeTrackerCategoriesSettingsProps {
   wsId: string;
+  userId?: string;
 }
 
 const CATEGORY_COLORS = [
@@ -70,11 +72,27 @@ const CATEGORY_COLORS = [
 
 export function TimeTrackerCategoriesSettings({
   wsId,
+  userId,
 }: TimeTrackerCategoriesSettingsProps) {
   const t = useTranslations('settings.time_tracker.categories_management');
   const queryClient = useQueryClient();
   const { data: categories, isLoading: isLoadingCategories } =
     useWorkspaceCategories({ wsId });
+  const { data: canManageCategories = false } = useQuery({
+    queryKey: ['workspace-time-tracking-categories-manage', wsId, userId],
+    queryFn: async () => {
+      const [workspaceSettings, timeTrackingRequests] = await Promise.all([
+        checkWorkspacePermission(wsId, 'manage_workspace_settings', userId),
+        checkWorkspacePermission(wsId, 'manage_time_tracking_requests', userId),
+      ]);
+      return (
+        workspaceSettings.hasPermission || timeTrackingRequests.hasPermission
+      );
+    },
+    enabled: Boolean(wsId && userId),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
 
   const categoryNameId = useId();
   const categoryDescriptionId = useId();
@@ -212,17 +230,19 @@ export function TimeTrackerCategoriesSettings({
       <SettingsSection
         action={
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsCopyDialogOpen(true)}
-              className="shrink-0"
-            >
-              <Copy className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {t('copy_from_workspace')}
-              </span>
-              <span className="sm:hidden">{t('copy_short')}</span>
-            </Button>
+            {canManageCategories && (
+              <Button
+                variant="outline"
+                onClick={() => setIsCopyDialogOpen(true)}
+                className="shrink-0"
+              >
+                <Copy className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {t('copy_from_workspace')}
+                </span>
+                <span className="sm:hidden">{t('copy_short')}</span>
+              </Button>
+            )}
             <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
               <DialogTrigger asChild>
                 <Button onClick={openAddDialog} className="shrink-0">
@@ -277,27 +297,29 @@ export function TimeTrackerCategoriesSettings({
                 </div>
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => openEditDialog(category)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    {t('edit')}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => setCategoryToDelete(category)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('delete')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {canManageCategories && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditDialog(category)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      {t('edit')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setCategoryToDelete(category)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {t('delete')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </SettingsSectionBlock>
           ))
         )}

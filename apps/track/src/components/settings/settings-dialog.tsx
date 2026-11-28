@@ -164,7 +164,7 @@ export function SettingsDialog({
         <TimeTrackerGeneralSettings wsId={wsId} />
       )}
       {activeTab === 'time_tracker_categories' && wsId && (
-        <TimeTrackerCategoriesSettings wsId={wsId} />
+        <TimeTrackerCategoriesSettings wsId={wsId} userId={user?.id} />
       )}
       {activeTab === 'time_tracker_goals' && wsId && (
         <TimeTrackerGoalsSettings wsId={wsId} />

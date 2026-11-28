@@ -89,6 +89,7 @@ describe('workspace setting config route', () => {
 
     mocks.getPermissions.mockResolvedValue({
       wsId: 'normalized-ws',
+      membershipType: 'MEMBER' as const,
       withoutPermission: vi.fn(() => false),
     });
 

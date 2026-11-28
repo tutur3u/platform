@@ -384,3 +384,14 @@ Admin Worker. Configure the same 32-byte base64url key on both sides of
 this handoff. The Worker retains custody of its separate docs stats
 credential. The Web route tests cover entitlement, token scope, signed
 request fields, and aggregate response validation.
+
+## Workspace config reads (`GET /settings/[configId]`)
+
+Reading an arbitrary workspace config via
+`GET /api/v1/workspaces/[wsId]/settings/[configId]` requires
+`manage_workspace_settings`. Non-sensitive UI configs needed by every active
+workspace member (finance currency/defaults, invoice flags, contact status
+labels, attendance manager visibility, default database group filters and
+time-tracking grace-period/future-session toggles) are explicitly allowlisted
+for active members; guests are denied. Regression coverage lives in
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route.test.ts`.

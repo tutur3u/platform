@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => {
 
   const workspaceWhiteboardsTable = {
     select: vi.fn((query: string) => {
-      if (query === 'id, snapshot') {
+      if (query === 'id, creator_id, snapshot') {
         return {
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => {
         };
       }
 
-      if (query === 'id') {
+      if (query === 'id, creator_id') {
         return {
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -106,6 +106,7 @@ describe('whiteboard route', () => {
     mocks.existingMaybeSingle.mockResolvedValue({
       data: {
         id: 'board-1',
+        creator_id: 'user-1',
         snapshot: {
           elements: [
             {
@@ -188,7 +189,7 @@ describe('whiteboard route', () => {
 
   it('deletes whiteboard storage files before removing the whiteboard record', async () => {
     mocks.existingMaybeSingle.mockResolvedValue({
-      data: { id: 'board-1' },
+      data: { id: 'board-1', creator_id: 'user-1' },
       error: null,
     });
     mocks.list

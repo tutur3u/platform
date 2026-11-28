@@ -114,3 +114,15 @@ removes cookies and `Authorization` before the handler runs. The Worker uses
 the emitted Worker gate and the signed-in root browser gate
 (`apps/track/cloudflare/root-browser.profile.mjs`: signed-in `/` and `/vi`
 land on the personal timer in English and Vietnamese).
+
+## Category management permissions
+
+Any active workspace member can list and create time-tracking categories (`GET`
+and `POST /api/v1/workspaces/[wsId]/time-tracking/categories`, preserving
+inline creation from timer and missed-entry flows). Editing, deleting or
+copying categories (`PATCH`, `DELETE`, `POST /copy`) requires
+`manage_workspace_settings` or `manage_time_tracking_requests`, and the Track
+settings dialog hides copy, edit and delete controls unless the caller holds
+one of those permissions. Regression coverage lives in
+`apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/categories/permissions.test.ts`
+and `apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/categories/permissions.test.ts`.

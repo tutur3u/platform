@@ -3,10 +3,32 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { extractWhiteboardImageFileIds } from '@/lib/whiteboards/snapshot';
 import { requireWhiteboardAccess } from '../access';
+
+async function canManageWhiteboard(
+  request: Request,
+  wsId: string,
+  user: { id: string },
+  creatorId: string | null
+): Promise<boolean> {
+  if (creatorId && creatorId === user.id) return true;
+  const permissions = await getPermissions({ wsId, user, request });
+  return Boolean(permissions?.containsPermission('manage_workspace_settings'));
+}
+
+function hasWhiteboardMetadataMutation(
+  body: z.infer<typeof updateWhiteboardSchema>
+): boolean {
+  return (
+    Object.hasOwn(body, 'title') ||
+    Object.hasOwn(body, 'description') ||
+    Object.hasOwn(body, 'archived_at')
+  );
+}
 
 const paramsSchema = z.object({
   boardId: z.guid(),
@@ -171,7 +193,7 @@ export async function PATCH(
     const access = await requireWhiteboardAccess(request, parsedParams.wsId);
     if ('error' in access) return access.error;
 
-    const { sbAdmin, wsId } = access;
+    const { sbAdmin, user, wsId } = access;
     const body = updateWhiteboardSchema.parse(await request.json());
     const storagePrefix = getWhiteboardStoragePrefix(
       wsId,
@@ -179,33 +201,51 @@ export async function PATCH(
     );
     let removedImagePaths: string[] = [];
 
+    const { data: existingWhiteboard, error: existingWhiteboardError } =
+      await sbAdmin
+        .from('workspace_whiteboards')
+        .select('id, creator_id, snapshot')
+        .eq('ws_id', wsId)
+        .eq('id', parsedParams.boardId)
+        .maybeSingle();
+
+    if (existingWhiteboardError) {
+      console.error(
+        'Error loading existing whiteboard for update:',
+        existingWhiteboardError
+      );
+      return NextResponse.json(
+        { error: 'Failed to update whiteboard' },
+        { status: 500 }
+      );
+    }
+
+    if (!existingWhiteboard) {
+      return NextResponse.json(
+        { error: 'Whiteboard not found' },
+        { status: 404 }
+      );
+    }
+
+    if (
+      hasWhiteboardMetadataMutation(body) &&
+      !(await canManageWhiteboard(
+        request,
+        wsId,
+        user,
+        existingWhiteboard.creator_id
+      ))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Only the board creator or workspace managers can edit board metadata or archive status',
+        },
+        { status: 403 }
+      );
+    }
+
     if (Object.hasOwn(body, 'snapshot')) {
-      const { data: existingWhiteboard, error: existingWhiteboardError } =
-        await sbAdmin
-          .from('workspace_whiteboards')
-          .select('id, snapshot')
-          .eq('ws_id', wsId)
-          .eq('id', parsedParams.boardId)
-          .maybeSingle();
-
-      if (existingWhiteboardError) {
-        console.error(
-          'Error loading existing whiteboard snapshot for cleanup:',
-          existingWhiteboardError
-        );
-        return NextResponse.json(
-          { error: 'Failed to update whiteboard' },
-          { status: 500 }
-        );
-      }
-
-      if (!existingWhiteboard) {
-        return NextResponse.json(
-          { error: 'Whiteboard not found' },
-          { status: 404 }
-        );
-      }
-
       const previousImageFileIds = extractWhiteboardImageFileIds(
         existingWhiteboard.snapshot,
         storagePrefix
@@ -282,11 +322,11 @@ export async function DELETE(
     const access = await requireWhiteboardAccess(request, parsedParams.wsId);
     if ('error' in access) return access.error;
 
-    const { sbAdmin, wsId } = access;
+    const { sbAdmin, user, wsId } = access;
     const { data: existingWhiteboard, error: existingWhiteboardError } =
       await sbAdmin
         .from('workspace_whiteboards')
-        .select('id')
+        .select('id, creator_id')
         .eq('ws_id', wsId)
         .eq('id', parsedParams.boardId)
         .maybeSingle();
@@ -306,6 +346,20 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Whiteboard not found' },
         { status: 404 }
+      );
+    }
+
+    if (
+      !(await canManageWhiteboard(
+        request,
+        wsId,
+        user,
+        existingWhiteboard.creator_id
+      ))
+    ) {
+      return NextResponse.json(
+        { error: 'Only the board creator or workspace managers can delete it' },
+        { status: 403 }
       );
     }
 

@@ -1,9 +1,13 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import {
+  ATTENDANCE_SHOW_MANAGERS_CONFIG_ID,
+  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_FEATURED_GROUPS_CONFIG_ID,
   ENABLE_CMS_GAMES_CONFIG_ID,
   ENABLE_GUEST_SELF_JOIN_FROM_WORKSPACE_USER_EMAIL_CONFIG_ID,
+  FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
 } from '@tuturuuu/internal-api/workspace-configs';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
@@ -30,6 +34,27 @@ const UUID_PATTERN =
 // currency, so its app session must be accepted for that config alongside the
 // finance/platform audiences. Other finance-gated configs stay finance-only.
 const INVENTORY_FINANCE_CONFIG_IDS = new Set(['DEFAULT_CURRENCY']);
+
+// Non-sensitive workspace UI configuration ids that any active workspace member
+// may read through GET /settings/[configId]. All other config ids require
+// `manage_workspace_settings`.
+const MEMBER_READABLE_WORKSPACE_CONFIG_IDS = new Set<string>([
+  'DEFAULT_CURRENCY',
+  'default_wallet_id',
+  'default_category_id',
+  FINANCE_DEFAULT_RECONCILIATION_CATEGORY_CONFIG_ID,
+  'ENABLE_EXPERIMENTAL_FINANCE',
+  'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD',
+  'INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION',
+  'INVOICE_USE_ATTENDANCE_BASED_CALCULATION',
+  'user_status_labels',
+  ATTENDANCE_SHOW_MANAGERS_CONFIG_ID,
+  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
+  DATABASE_FEATURED_GROUPS_CONFIG_ID,
+  'ALLOW_FUTURE_SESSIONS',
+  'TIME_TRACKING_REQUEST_STATUS_CHANGE_GRACE_PERIOD_MINUTES',
+]);
 
 function financeAuthTargetsForConfig(
   configId: string
@@ -284,7 +309,24 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({}, { status: access.response.status });
   }
 
-  const { normalizedWsId: wsId, sbAdmin } = access.context;
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+
+  if (permissions.membershipType !== 'MEMBER') {
+    return NextResponse.json(
+      { message: 'Guests cannot read workspace settings' },
+      { status: 403 }
+    );
+  }
+
+  if (
+    !MEMBER_READABLE_WORKSPACE_CONFIG_IDS.has(id) &&
+    permissions.withoutPermission('manage_workspace_settings')
+  ) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions to read workspace settings' },
+      { status: 403 }
+    );
+  }
 
   if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
     const { data, errorMessage } = await listWorkspaceDefaultIncludedGroupIds(

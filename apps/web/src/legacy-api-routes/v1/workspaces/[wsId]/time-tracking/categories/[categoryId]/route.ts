@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
@@ -36,6 +37,28 @@ export async function PATCH(
     if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      user,
+      wsId: normalizedWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+    if (
+      permissions.withoutPermission('manage_workspace_settings') &&
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient permissions to manage time tracking categories',
+        },
         { status: 403 }
       );
     }
@@ -136,6 +159,28 @@ export async function DELETE(
     if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      user,
+      wsId: normalizedWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+    if (
+      permissions.withoutPermission('manage_workspace_settings') &&
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient permissions to manage time tracking categories',
+        },
         { status: 403 }
       );
     }

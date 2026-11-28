@@ -28,7 +28,7 @@ paths in the app; until then Web serves boards itself (see
 
 | Decision | Scope and default | Exceptions |
 | --- | --- | --- |
-| Access | Any workspace member can list, open, create, edit, archive and delete boards. There is no separate permission. | Non-members and signed-out visitors get the sign-in redirect or a not-found page. |
+| Access | Any workspace member can list, open, create boards and save canvas snapshots (`PATCH { snapshot }`). Changing board metadata (`title`, `description`), archiving (`archived_at`) and deleting a board require being the board creator or holding `manage_workspace_settings`. | Non-members and signed-out visitors get the sign-in redirect or a not-found page. |
 | Workspace tier | The tier gate stays in Web's sidebar entry (`requiredWorkspaceTier` for `whiteboards`, always shown). The app does not add a second gate. | None. |
 | Live collaboration | On in every workspace except a personal one, for every tier: shared canvas, cursors, presence avatars. | A personal workspace is edited alone, so no channel is opened. |
 | Data and API ownership | Boards, snapshots and images stay behind Web's `/api/v1/workspaces/<id>/whiteboards` routes and Web's realtime checkpoint route. The app reaches them through `@tuturuuu/internal-api/whiteboards`. | None. |
@@ -39,6 +39,7 @@ paths in the app; until then Web serves boards itself (see
 
 - Client contract: `packages/internal-api/src/whiteboards.test.ts`.
 - List endpoint: `apps/web/src/__tests__/whiteboards-list-route.test.ts`.
+- Board mutation authorization (creator or `manage_workspace_settings`): `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/whiteboards/[boardId]/route.test.ts`.
 - Persistence and image adapters: `apps/whiteboards/src/lib/whiteboards/workspace-adapters.test.ts`.
 - Pages and not-found handling: `apps/whiteboards/src/features/whiteboards/pages.test.tsx`.
 - Web redirects (with the held Web change): `apps/web/src/lib/workspace-satellite-redirect.test.ts`.

@@ -1,4 +1,8 @@
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
@@ -16,9 +20,10 @@ export async function POST(
     if (!auth.ok) return auth.response;
     const { user } = auth;
     const supabase = auth.supabase;
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     // Verify workspace access for target workspace
     const memberCheck = await verifyWorkspaceMembershipType({
-      wsId: wsId,
+      wsId: normalizedWsId,
       userId: user.id,
       supabase: supabase,
     });
@@ -33,6 +38,28 @@ export async function POST(
     if (!memberCheck.ok) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
+        { status: 403 }
+      );
+    }
+
+    const permissions = await getPermissions({
+      user,
+      wsId: normalizedWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json(
+        { error: 'Failed to resolve permissions' },
+        { status: 500 }
+      );
+    }
+    if (
+      permissions.withoutPermission('manage_workspace_settings') &&
+      permissions.withoutPermission('manage_time_tracking_requests')
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient permissions to manage time tracking categories',
+        },
         { status: 403 }
       );
     }
@@ -93,23 +120,30 @@ export async function POST(
     const { data: existingCategories } = await supabase
       .from('time_tracking_categories')
       .select('name, description')
-      .eq('ws_id', wsId);
+      .eq('ws_id', normalizedWsId);
 
-    const existingCategoriesMap = new Map(
-      existingCategories?.map((cat) => [
-        cat.name.toLowerCase(),
-        cat.description?.toLowerCase() || '',
-      ]) || []
+    const existingCategoriesMap = new Map<string, string>(
+      existingCategories?.map(
+        (cat: { name: string; description?: string | null }) => [
+          cat.name.toLowerCase(),
+          cat.description?.toLowerCase() || '',
+        ]
+      ) || []
     );
 
     // Filter out categories that already exist (case-insensitive name matching)
     const categoriesToCreate = sourceCategories.filter(
-      (cat) => !existingCategoriesMap.has(cat.name.toLowerCase())
+      (cat: {
+        name: string;
+        description?: string | null;
+        color?: string | null;
+      }) => !existingCategoriesMap.has(cat.name.toLowerCase())
     );
 
     // Identify categories that already exist
-    const existingMatchingCategories = sourceCategories.filter((cat) =>
-      existingCategoriesMap.has(cat.name.toLowerCase())
+    const existingMatchingCategories = sourceCategories.filter(
+      (cat: { name: string }) =>
+        existingCategoriesMap.has(cat.name.toLowerCase())
     );
 
     if (categoriesToCreate.length === 0) {
@@ -125,12 +159,18 @@ export async function POST(
     }
 
     // Create new categories in target workspace
-    const newCategories = categoriesToCreate.map((cat) => ({
-      ws_id: wsId,
-      name: cat.name,
-      description: cat.description,
-      color: cat.color,
-    }));
+    const newCategories = categoriesToCreate.map(
+      (cat: {
+        name: string;
+        description?: string | null;
+        color?: string | null;
+      }) => ({
+        ws_id: normalizedWsId,
+        name: cat.name,
+        description: cat.description,
+        color: cat.color,
+      })
+    );
 
     const { data: createdCategories, error: createError } = await supabase
       .from('time_tracking_categories')

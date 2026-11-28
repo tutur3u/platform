@@ -7,10 +7,24 @@ import {
   MAX_LONG_TEXT_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import bcrypt from 'bcryptjs';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+
+async function canManageLinkPassword(
+  request: NextRequest,
+  wsId: string,
+  user: { id: string },
+  creatorId: string | null
+): Promise<boolean> {
+  if (creatorId && creatorId === user.id) return true;
+  const permissions = await getPermissions({ wsId, user, request });
+  return Boolean(permissions?.containsPermission('manage_workspace_settings'));
+}
 
 const passwordUpdateSchema = z.object({
   currentPassword: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
@@ -52,7 +66,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // Get the link and verify ownership
     const { data: link, error: fetchError } = await sbAdmin
       .from('shortened_links')
-      .select('id, ws_id, password_hash')
+      .select('id, ws_id, creator_id, password_hash')
       .eq('id', linkId)
       // Meeting links are managed by the Meet API and never take a password.
       .is('meet_meeting_id', null)
@@ -78,6 +92,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (
+      !(await canManageLinkPassword(request, link.ws_id, user, link.creator_id))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Only the link creator or workspace managers can manage link passwords',
+        },
+        { status: 403 }
+      );
     }
 
     // If link already has a password, verify current password
@@ -188,7 +214,7 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     // Get the link and verify ownership
     const { data: link, error: fetchError } = await sbAdmin
       .from('shortened_links')
-      .select('id, ws_id, password_hash')
+      .select('id, ws_id, creator_id, password_hash')
       .eq('id', linkId)
       // Meeting links are managed by the Meet API and never take a password.
       .is('meet_meeting_id', null)
@@ -213,6 +239,18 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
 
     if (!workspaceMember.ok) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (
+      !(await canManageLinkPassword(request, link.ws_id, user, link.creator_id))
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Only the link creator or workspace managers can manage link passwords',
+        },
+        { status: 403 }
+      );
     }
 
     // If link has a password, verify current password
