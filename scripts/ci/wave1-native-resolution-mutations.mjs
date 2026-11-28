@@ -492,10 +492,15 @@ try {
       'wave1-native-production-fence.test.mjs',
       'K2:',
       (s) =>
-        s.replace(
-          /assertActiveVersionsPresent\(\{\s*deployments: deployments\.slice\(0, 1\),\s*versionItems,\s*\}\);/u,
-          '/* mutated */'
-        ),
+        s
+          .replace(
+            /assertActiveVersionsPresent\(\{\s*deployments: deployments\.slice\(0, 1\),\s*versionItems,\s*\}\);/u,
+            '/* mutated */'
+          )
+          .replace(
+            /assertActiveVersionsPresent\(\{\s*deployments,\s*versionItems,\s*confirmedMissingHistoricalIds,\s*\}\);/u,
+            '/* mutated */'
+          ),
     ],
     [
       'call-site F2 assertLiveRollbackUnchanged removed',
