@@ -1,9 +1,27 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  assertResolvedVersionsAbsent,
   isResolvedFailedNoWrite,
   matchesFailedNoWriteResolution,
 } from './wave1-native-production-resolution.mjs';
+
+const RECEIPT_BASELINE = {
+  deployment: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
+  version: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
+};
+// Live rollback captured in the 28 November 2026 read-only pre-publication capture.
+const CURRENT_BASELINE = {
+  deployment: 'eb610155-8e35-4fea-89df-3ec80c1be5c6',
+  version: '808c2f3b-9979-4ccc-92a3-879043f25163',
+};
+const reviewedRecords = JSON.parse(
+  readFileSync(
+    new URL('./wave1-native-production-resolutions.json', import.meta.url),
+    'utf8'
+  )
+);
 
 function originalFixture() {
   const resolution = {
@@ -15,8 +33,10 @@ function originalFixture() {
     runAttempt: '1',
     sha: 'ac8beee09e9700b453a55e193db5957985e01956',
     digest: '2116459bf121f09a7a714889d13d291a9823b451285747602a67eb0e50435b97',
-    baselineDeploymentId: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
-    baselineVersionId: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
+    receiptBaselineDeploymentId: RECEIPT_BASELINE.deployment,
+    receiptBaselineVersionId: RECEIPT_BASELINE.version,
+    currentBaselineDeploymentId: CURRENT_BASELINE.deployment,
+    currentBaselineVersionId: CURRENT_BASELINE.version,
   };
   // Each external object is independent. A mutated receipt cannot rewrite a job or run.
   const context = {
@@ -41,20 +61,13 @@ function originalFixture() {
         '2116459bf121f09a7a714889d13d291a9823b451285747602a67eb0e50435b97',
       state: 'pending',
       rollback: {
-        id: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
-        versions: [
-          {
-            version_id: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
-            percentage: 100,
-          },
-        ],
+        id: RECEIPT_BASELINE.deployment,
+        versions: [{ version_id: RECEIPT_BASELINE.version, percentage: 100 }],
       },
     },
     rollback: {
-      id: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
-      versions: [
-        { version_id: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0', percentage: 100 },
-      ],
+      id: CURRENT_BASELINE.deployment,
+      versions: [{ version_id: CURRENT_BASELINE.version, percentage: 100 }],
     },
   };
   return { resolution, context };
@@ -82,6 +95,43 @@ function replayFixture() {
   };
   return p;
 }
+
+/** Build the observed context for one record, exactly as the history reader would. */
+function contextFor(record) {
+  const runId = Number(record.runId);
+  return {
+    env: {
+      GITHUB_REPOSITORY: record.repository,
+      GITHUB_RUN_ID: String(runId + 2),
+    },
+    app: record.app,
+    worker: record.worker,
+    run: { id: runId, head_sha: record.sha },
+    job: { run_id: runId, run_attempt: Number(record.runAttempt) },
+    receipt: {
+      app: record.app,
+      worker: record.worker,
+      runId: record.runId,
+      runAttempt: record.runAttempt,
+      sha: record.sha,
+      digest: record.digest,
+      state: 'pending',
+      rollback: {
+        id: record.receiptBaselineDeploymentId,
+        versions: [
+          { version_id: record.receiptBaselineVersionId, percentage: 100 },
+        ],
+      },
+    },
+    rollback: {
+      id: record.currentBaselineDeploymentId,
+      versions: [
+        { version_id: record.currentBaselineVersionId, percentage: 100 },
+      ],
+    },
+  };
+}
+
 for (const [runId, fixture] of [
   ['40413173161', originalFixture],
   ['40428329193', replayFixture],
@@ -90,6 +140,17 @@ for (const [runId, fixture] of [
     const { resolution, context } = fixture();
     assert.equal(matchesFailedNoWriteResolution(resolution, context), true);
     assert.equal(isResolvedFailedNoWrite(context), true);
+  });
+
+  test(`legacy baseline keys refuse even when every split baseline matches (${runId})`, () => {
+    const { resolution, context } = fixture();
+    // The split predicates all pass here; only the legacy-key predicate can refuse.
+    const legacy = {
+      ...resolution,
+      baselineDeploymentId: RECEIPT_BASELINE.deployment,
+      baselineVersionId: RECEIPT_BASELINE.version,
+    };
+    assert.equal(matchesFailedNoWriteResolution(legacy, context), false);
   });
 
   const cases = [
@@ -198,7 +259,7 @@ for (const [runId, fixture] of [
       },
     ],
     [
-      'current deployment id',
+      'live (current) deployment id',
       ({ context: c }) => {
         c.rollback.id = '22222222-2222-2222-2222-222222222222';
       },
@@ -210,7 +271,7 @@ for (const [runId, fixture] of [
       },
     ],
     [
-      'current version split',
+      'live (current) version split',
       ({ context: c }) => {
         c.rollback.versions[0].percentage = 99;
       },
@@ -219,6 +280,13 @@ for (const [runId, fixture] of [
       'receipt version split',
       ({ context: c }) => {
         c.receipt.rollback.versions[0].percentage = 99;
+      },
+    ],
+    [
+      'legacy baseline key present',
+      ({ resolution: r }) => {
+        r.baselineDeploymentId = RECEIPT_BASELINE.deployment;
+        r.baselineVersionId = RECEIPT_BASELINE.version;
       },
     ],
   ];
@@ -232,3 +300,78 @@ for (const [runId, fixture] of [
       );
     });
 }
+
+for (const record of reviewedRecords.filter(
+  (r) =>
+    r.outcome === 'failed-no-write' &&
+    Object.hasOwn(r, 'currentBaselineDeploymentId')
+))
+  test(`reviewed split record admits only its own identities (${record.runId} ${record.sha.slice(0, 8)})`, () => {
+    const context = contextFor(record);
+    assert.equal(matchesFailedNoWriteResolution(record, context), true);
+    assert.equal(
+      matchesFailedNoWriteResolution(record, {
+        ...context,
+        run: { ...context.run, head_sha: 'b'.repeat(40) },
+      }),
+      false
+    );
+  });
+
+for (const record of reviewedRecords.filter(
+  (r) => !Object.hasOwn(r, 'currentBaselineDeploymentId')
+))
+  test(`legacy reviewed record with a stale baseline refuses (${record.runId} ${record.sha.slice(0, 8)})`, () => {
+    const stale = {
+      ...record,
+      receiptBaselineDeploymentId: record.baselineDeploymentId,
+      receiptBaselineVersionId: record.baselineVersionId,
+      currentBaselineDeploymentId: record.baselineDeploymentId,
+      currentBaselineVersionId: record.baselineVersionId,
+    };
+    assert.equal(
+      matchesFailedNoWriteResolution(record, contextFor(stale)),
+      false
+    );
+  });
+
+for (const record of reviewedRecords.filter(
+  (r) => r.outcome === 'failed-no-write' && r.app === 'calendar'
+)) {
+  test(`hosted version carrying a resolved SHA refuses (${record.runId} ${record.sha.slice(0, 8)})`, () => {
+    assert.throws(
+      () =>
+        assertResolvedVersionsAbsent({
+          app: 'calendar',
+          versions: [{ annotations: { 'workers/message': record.sha } }],
+        }),
+      /owner reconciliation required/u
+    );
+  });
+
+  test(`hosted version carrying a resolved digest refuses (${record.runId} ${record.digest.slice(0, 8)})`, () => {
+    assert.throws(
+      () =>
+        assertResolvedVersionsAbsent({
+          app: 'calendar',
+          versions: [{ annotations: { 'workers/tag': record.digest } }],
+        }),
+      /owner reconciliation required/u
+    );
+  });
+}
+
+test('the live Calendar version is not a resolved identity', () => {
+  assert.doesNotThrow(() =>
+    assertResolvedVersionsAbsent({
+      app: 'calendar',
+      versions: [
+        {
+          annotations: {
+            'workers/message': 'fc1b211e61584277daa83895ab3a61718e091a19',
+          },
+        },
+      ],
+    })
+  );
+});

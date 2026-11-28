@@ -85,11 +85,45 @@ runs since the planner gained the job, allowing proven pre-upload refusals
 (`uploadNeverStarted`) and `superseded` preflights.
 Keep the original artifact unchanged. An owner-resolved `failed-no-write` attempt
 can be matched only through the reviewed append-only production resolutions file,
-with exact run/attempt/SHA/digest and both original/current rollback baselines.
-Continue checking other history; a later started pending replay remains fenced.
-Refuse a hosted version matching either the resolved SHA or digest before the
-replay. Keep run, job, artifact and receipt fixtures independent, and run the
-21-predicate mutation harness when changing resolution matching.
+with exact run/attempt/SHA/digest, the receipt's own captured rollback
+(`receiptBaselineDeploymentId`/`receiptBaselineVersionId`, which must equal
+`receipt.rollback`) and the live rollback read at preflight
+(`currentBaselineDeploymentId`/`currentBaselineVersionId`, which must equal the
+preflight `rollback`). Legacy `baseline*` records never match; keep them as
+history and append a split record instead. A changed live rollback therefore
+fails closed, as does a hosted version carrying the resolved SHA or digest:
+`assertResolvedVersionsAbsent` stays required for every record and runs over a
+bounded-pagination version inventory (`readAllVersions`: an explicit empty page
+is the provider's documented terminal signal; the guard cannot prove more; for
+positive `total_pages` the empty page must be strictly beyond `total_pages`;
+once `has_more: true`, a non-empty cursor, `page < total_pages`, or
+`seen < total_count` is advertised, the next page must be non-empty; metadata
+can only advance or refuse on contradiction, never terminate early on a
+non-empty page; cursor-mode inventories refuse; absent `result.items` is empty
+only when metadata agrees; missing/malformed 8-4-4-4-12 UUID `item.id` fails
+closed; UUIDs are canonicalized to lowercase everywhere for duplicate
+detection, `total_count` counting, and deployment membership; up to 10 pages
+and strictly `< 100` unique versions). Before `assertResolvedVersionsAbsent`,
+`assertActiveVersionsPresent` also requires every version ID referenced by ANY
+deployment in the full `GET /deployments` history (active, gradual splits,
+historical deployments, and rollback) to appear in the version inventory.
+Residual & compensation: a metadata-free silent truncation of an undeployed
+version is an accepted residual (the October Calendar attempts failed at upload
+with CF `10021` so no October version should exist); before the Calendar
+dispatch, Automations performs a one-time release-day manual audit with a
+read-only Workers Scripts Read token (two `/versions` pagination passes with
+`per_page=100` and a small `per_page` whose lowercase ID sets must match, plus
+`GET /deployments`, recording counts/IDs in release notes, revoking the token,
+and stopping if any version carries an October SHA or digest). Upload admission
+also re-reads the live deployment id and version split before uploading
+(`assertLiveRollbackUnchanged`), refusing with zero writes on any drift since
+preflight. Continue checking
+other history; a later started pending replay remains fenced. Keep run, job,
+artifact and receipt fixtures independent, and run the 41-mutant harness
+(22 predicates + 14 helper-body guards + 1 model-based invariant + 4
+`wave1-native-production.mjs` call-site guards:
+`node scripts/ci/wave1-native-resolution-mutations.mjs --out <file>`)
+when changing resolution matching or preflight/upload guards.
 Upload diagnostics retain only allowlisted process/code fields and bounded,
 sanitized provider messages or one ERROR headline. Never retain raw child output
 or error causes, and never infer write failure from a diagnostic alone. See the
@@ -123,8 +157,10 @@ so both enforce the upload limits. Qualification has no environment membership o
 forwarded credentials; trusted-main staging builds read the two public repository
 variables. Keep protected environments and deploy/control tokens on publication only.
 Use a backward scan for partial-token removal at line and capture boundaries;
-do not reintroduce an unanchored trailing-run regex. Keep both exact no-write
-resolutions append-only and run all 21 predicate mutations against each entry.
+do not reintroduce an unanchored trailing-run regex. Keep the no-write
+resolutions append-only: the October Calendar receipts for runs 40413173161 and
+40428329193 each have a split-baseline record, and every split record must pass
+all 22 predicate mutations.
 Run `scripts/ci/wave1-native-production.test.mjs` for counting transport/CLI,
 no-route profile, held-policy, unknown-outcome and workflow-secret regressions.
 

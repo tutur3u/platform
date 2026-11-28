@@ -217,6 +217,18 @@ test('matching active version reconciles without another upload', async (t) => {
   assert.equal(p.state.writes, 0);
 });
 
+test('a hosted version carrying a resolved no-write SHA refuses before upload', async (t) => {
+  const p = setup(t);
+  // The live rollback version is hosted and carries the reviewed Calendar no-write
+  // source (run 40413173161); a split-baseline record cannot override it.
+  p.state.ids = [oldId];
+  p.state.versionAnnotations = {
+    'workers/message': 'ac8beee09e9700b453a55e193db5957985e01956',
+  };
+  await assert.rejects(p.run(), /owner reconciliation required/u);
+  assert.equal(p.state.writes, 0);
+});
+
 test('topology change after upload is not accepted', async (t) => {
   const p = setup(t);
   p.state.duringUpload = true;

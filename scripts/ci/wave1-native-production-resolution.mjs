@@ -8,13 +8,20 @@ const resolutions = JSON.parse(
   )
 );
 
-/** Match one reviewed record without trusting agreement between external objects. */
+/**
+ * Match one reviewed record without trusting agreement between external objects.
+ * `receiptBaseline*` must equal the baseline the receipt captured; `currentBaseline*`
+ * must equal the live rollback read at preflight. Legacy `baseline*` keys never match.
+ */
 export function matchesFailedNoWriteResolution(
   resolution,
   { env, app, worker, run, job, receipt, rollback }
 ) {
-  const baseline = [
-    { version_id: resolution.baselineVersionId, percentage: 100 },
+  const receiptBaseline = [
+    { version_id: resolution.receiptBaselineVersionId, percentage: 100 },
+  ];
+  const currentBaseline = [
+    { version_id: resolution.currentBaselineVersionId, percentage: 100 },
   ];
   return (
     resolution.outcome === 'failed-no-write' &&
@@ -34,10 +41,11 @@ export function matchesFailedNoWriteResolution(
     receipt.digest === resolution.digest &&
     receipt.state === 'pending' &&
     !Object.hasOwn(receipt, 'versionId') &&
-    rollback.id === resolution.baselineDeploymentId &&
-    receipt.rollback?.id === resolution.baselineDeploymentId &&
-    isDeepStrictEqual(rollback.versions, baseline) &&
-    isDeepStrictEqual(receipt.rollback?.versions, baseline)
+    rollback.id === resolution.currentBaselineDeploymentId &&
+    receipt.rollback?.id === resolution.receiptBaselineDeploymentId &&
+    isDeepStrictEqual(rollback.versions, currentBaseline) &&
+    isDeepStrictEqual(receipt.rollback?.versions, receiptBaseline) &&
+    !Object.keys(resolution).some((key) => key.startsWith('baseline'))
   );
 }
 
@@ -52,7 +60,9 @@ export function isResolvedFailedNoWrite(context) {
  * A resolved no-write source or digest is an app-level identity: it must not be
  * hosted by any production Worker that app publishes to, including a Worker
  * whose name differs from the one recorded in the resolution. Only the bypass
- * predicate above is pinned to the recorded Worker.
+ * predicate above is pinned to the recorded Worker. This check stays required
+ * for every split-baseline record, so a hosted version blocks admission even
+ * when both baselines match.
  */
 export function assertResolvedVersionsAbsent({ app, versions }) {
   for (const resolution of resolutions) {

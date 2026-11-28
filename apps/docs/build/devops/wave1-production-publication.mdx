@@ -41,6 +41,66 @@ every Cloudflare write.
    accepted receipt that wrote it. When it is newer than the candidate, the
    attempt records `superseded` and uploads nothing.
 
+   A `failed-no-write` receipt the release owner resolved is admitted only by a
+   reviewed split-baseline record: exact run, attempt, SHA and digest, the
+   receipt's own captured rollback, and the live rollback read by this preflight.
+   Preflight reads the hosted-version inventory using bounded, fail-closed
+   pagination before checking that no hosted version carries a resolved SHA or
+   digest: an explicit empty page is the provider's documented terminal signal;
+   the guard cannot prove more (for positive `total_pages`, the empty page must
+   be strictly beyond `total_pages`; once `has_more: true`, a non-empty cursor,
+   `page < total_pages`, or `seen < total_count` is advertised, the next page
+   must be non-empty; absent `result.items` counts as empty only when
+   `success === true`, `result` is an object, and metadata does not contradict
+   it, matching `cloudflare-typescript` `V4PagePagination`; any row without a
+   valid 8-4-4-4-12 hex UUID `id` fails closed, and UUIDs are canonicalized to
+   lowercase everywhere they are compared or counted for duplicate detection,
+   `total_count`, and deployment membership). Pagination metadata
+   (`total_count`, `total_pages`, `per_page`, `count`, `page`, `has_more`,
+   cursors) is used only to advance or refuse on contradiction, never to
+   terminate early on a non-empty page; cursor-mode inventories, duplicate
+   version IDs (including case aliases), >10 pages, or >=100 unique versions
+   refuse. As an independent cross-source check, preflight requires the
+   returned inventory to contain every version ID referenced by ANY deployment
+   in the full `GET /deployments` history (active deployment, gradual splits,
+   and all returned historical deployments, plus the rollback deployment when
+   reconciling) before checking resolved SHAs/digests, so an empty or truncated
+   listing omitting any deployed version cannot slip past
+   `assertResolvedVersionsAbsent`. Before the upload step transitions to
+   `pending` or uploads a version, it re-reads the live deployment id and
+   version split with its deploy credential and refuses with zero writes if
+   either changed since preflight (closing drift up to the single API
+   round-trip). Legacy single-baseline records never match.
+   `scripts/ci/wave1-native-production-guards-model.test.mjs` pins the
+   accepted/refused server behaviour matrix across honest numbered-page servers
+   (accepted for all `N` in `0..12`), dishonest/non-numbered servers (refused:
+   cursor mode, ignored `page`, `has_more` followed by empty/omitted `items`,
+   dropped last page with `total_pages`/`total_count`/`has_more`, early empty
+   page, truncated totals, mid-walk error, empty/omitted active version, and
+   omitted historical deployed version), and the documented metadata-free
+   early-empty-page residual (`accepted-by-design`).
+
+   **Documented residual and one-time Calendar release-day manual audit:**
+   Because Cloudflare's `/versions` endpoint gives no server-signed
+   completeness proof, a metadata-free silent truncation of an undeployed
+   version (page 1 returning `[active]` with no `result_info`, page 2 returning
+   `[]` with no metadata) is indistinguishable from a 1-version Worker; an
+   explicit empty page is the provider's documented terminal signal and the
+   guard cannot prove more. The October Calendar attempts failed at upload with
+   Cloudflare error `10021`, so no October version should exist. As a
+   compensating control before the Calendar production dispatch, Automations
+   runs a one-time release-day manual audit:
+   - Use a temporary read-only Workers Scripts Read token.
+   - Run two `/versions` pagination passes (`per_page=100` and a small
+     `per_page`, for example `per_page=10`); confirm the two canonicalized
+     lowercase version ID sets are identical.
+   - List all deployments (`GET .../deployments`) and confirm every deployed
+     version ID appears in that version set.
+   - Record the version and deployment counts and IDs in the release notes.
+   - Revoke the temporary read token immediately after the audit.
+   - **STOP** and do not dispatch if any hosted version carries an October SHA
+     or digest.
+
    The history reads each run one attempt at a time, in pages of 30 jobs,
    because GitHub answers the all-attempts listing of a much-rerun run with a
    502. A rerun lists each job it did not run again as a copy under the new

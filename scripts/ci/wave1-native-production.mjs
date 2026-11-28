@@ -13,6 +13,11 @@ import {
   verify,
 } from './wave1-native-artifact.mjs';
 import { assertNoEarlierUpload } from './wave1-native-production-history.mjs';
+import {
+  assertActiveVersionsPresent,
+  assertLiveRollbackUnchanged,
+  readAllVersions,
+} from './wave1-native-production-guards.mjs';
 import { assertResolvedVersionsAbsent } from './wave1-native-production-resolution.mjs';
 import {
   logSkippedSettingsCheck,
@@ -301,15 +306,23 @@ export async function main({
         deployments.deployments.length > 0,
       'Initial private Worker and rollback version must be provisioned'
     );
-    const versions = await provider(`${script}/versions?per_page=100`);
-    assert.ok(
-      Array.isArray(versions.items) && versions.items.length < 100,
-      'Version history exceeds bounded reconciliation'
-    );
+    const versionItems = await readAllVersions({
+      script,
+      token: topologyToken,
+      fetchJson: (url, credential) =>
+        boundedJson(url, credential, boundedFetch),
+    });
+    assertActiveVersionsPresent({
+      deployments: deployments.deployments,
+      versionItems,
+    });
     const matches = [];
     const observedVersions = [];
-    for (const item of versions.items) {
-      assert.match(item.id ?? '', /^[a-f0-9-]{36}$/);
+    for (const item of versionItems) {
+      assert.match(
+        item.id ?? '',
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      );
       const version = await provider(`${script}/versions/${item.id}`);
       observedVersions.push(version);
       if (matchesVersion(version, sha, digest)) matches.push(version.id);
@@ -336,6 +349,12 @@ export async function main({
       'No earlier rollback deployment; require the original receipt'
     );
     const rollback = requireRollback(candidates);
+    if (matches.length)
+      assertActiveVersionsPresent({
+        deployments: deployments.deployments,
+        rollback,
+        versionItems,
+      });
     record = {
       schema: 1,
       app,
@@ -499,6 +518,16 @@ export async function main({
     deadline.throwIfAborted();
     let manifest;
     if (!record.reconciled) {
+      // Re-confirm the live deployment id and version split immediately before
+      // transitioning to pending or uploading so a deployment landed after
+      // preflight fails closed with zero writes.
+      await assertLiveRollbackUnchanged({
+        script,
+        token,
+        fetchJson: (url, credential) =>
+          boundedJson(url, credential, boundedFetch),
+        expected: record.rollback,
+      });
       record.state = 'pending';
       save();
       // One bounded upload. Exceptions remain pending, including a lost CLI receipt.

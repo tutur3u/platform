@@ -1,39 +1,34 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
   assertNoEarlierUpload,
   uploadStepName,
 } from './wave1-native-production-history.mjs';
 
-const resolutions = [
-  {
-    app: 'calendar',
-    worker: 'tuturuuu-calendar',
-    runId: '40413173161',
-    runAttempt: '1',
-    sha: 'ac8beee09e9700b453a55e193db5957985e01956',
-    digest: '2116459bf121f09a7a714889d13d291a9823b451285747602a67eb0e50435b97',
-    baselineDeploymentId: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
-    baselineVersionId: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
-  },
-  {
-    app: 'calendar',
-    worker: 'tuturuuu-calendar',
-    runId: '40428329193',
-    runAttempt: '1',
-    sha: '766c457a4c17797c6b62bb4a8a5c607bdfa0b91b',
-    digest: '6dec01d9d95a94cfe543afddc402ea15cb4b1018d03fd335aaca08463b2ba51b',
-    baselineDeploymentId: 'e77a63b0-ec5d-46bf-bb89-b1829066ba90',
-    baselineVersionId: '1a7cbbd0-d3a2-415f-8b75-890a1412c3f0',
-  },
-];
+// The reviewed split-baseline records only; legacy entries cannot admit any receipt.
+const resolutions = JSON.parse(
+  readFileSync(
+    new URL('./wave1-native-production-resolutions.json', import.meta.url),
+    'utf8'
+  )
+).filter((record) => Object.hasOwn(record, 'currentBaselineDeploymentId'));
 const currentSha = 'a'.repeat(40);
 function fixture(resolution) {
   const originalId = Number(resolution.runId);
   const currentId = originalId + 2;
+  // Live rollback at preflight (currentBaseline*) and the receipt's own captured rollback.
   const baseline = {
-    id: resolution.baselineDeploymentId,
-    versions: [{ version_id: resolution.baselineVersionId, percentage: 100 }],
+    id: resolution.currentBaselineDeploymentId,
+    versions: [
+      { version_id: resolution.currentBaselineVersionId, percentage: 100 },
+    ],
+  };
+  const receiptBaseline = {
+    id: resolution.receiptBaselineDeploymentId,
+    versions: [
+      { version_id: resolution.receiptBaselineVersionId, percentage: 100 },
+    ],
   };
   const receipt = {
     app: resolution.app,
@@ -43,7 +38,7 @@ function fixture(resolution) {
     runId: resolution.runId,
     runAttempt: resolution.runAttempt,
     state: 'pending',
-    rollback: structuredClone(baseline),
+    rollback: structuredClone(receiptBaseline),
   };
   const state = {
     originalId,
@@ -221,7 +216,7 @@ for (const resolution of resolutions) {
     [
       'an uploaded version',
       (p) => {
-        p.state.receipt.versionId = resolution.baselineVersionId;
+        p.state.receipt.versionId = resolution.receiptBaselineVersionId;
       },
     ],
     [

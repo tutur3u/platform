@@ -91,7 +91,7 @@ export function setup(
   const state = {
     writes: 0,
     active: oldId,
-    ids: [],
+    ids: [oldId],
     prior: false,
     attached: false,
     attachedHostname: undefined,
@@ -155,6 +155,7 @@ export function setup(
   const version = (id) => ({
     id,
     annotations:
+      state.versionAnnotationsById?.[id] ??
       state.versionAnnotations ??
       (id === newId
         ? { 'workers/message': sha, 'workers/tag': digest }
@@ -341,9 +342,9 @@ export function setup(
       result = receipt.profile.secrets.map((name) => ({ name }));
     else if (url.endsWith('/deployments'))
       result = {
-        deployments: [
+        deployments: state.deployments ?? [
           {
-            id: 'deployment',
+            id: state.deploymentId ?? 'deployment',
             versions: state.split ?? [
               { version_id: state.active, percentage: 100 },
             ],
@@ -358,9 +359,28 @@ export function setup(
               ]),
         ],
       };
-    else if (url.endsWith('/versions?per_page=100'))
-      result = { items: state.ids.map((id) => ({ id })) };
-    else if (/\/versions\/[a-f0-9-]+$/.test(url))
+    else if (url.includes('/versions?per_page=100')) {
+      if (state.versionsResponse) return state.versionsResponse(url);
+      const splitIds = (state.split ?? []).map((entry) => entry.version_id);
+      const allIds = [
+        ...new Set(
+          [oldId, state.active, ...splitIds, ...state.ids].filter(Boolean)
+        ),
+      ];
+      const page = Number(/[?&]page=(\d+)/u.exec(url)?.[1] ?? 1);
+      const items = page === 1 ? allIds.map((id) => ({ id })) : [];
+      return Response.json({
+        success: true,
+        result: { items },
+        result_info: {
+          page,
+          per_page: 100,
+          count: items.length,
+          total_count: allIds.length,
+          total_pages: allIds.length ? 1 : 0,
+        },
+      });
+    } else if (/\/versions\/[a-f0-9-]+$/.test(url))
       result = version(url.split('/').at(-1));
     else throw new Error('Unexpected request');
     return Response.json({ success: true, result });

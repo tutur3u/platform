@@ -33,5 +33,48 @@
       "calendar-reconcile-40428329193.json, 2026-10-27T00:55:55.620Z: all 13 versions individually read, no matching source SHA or digest, no version newer than baseline 1a7cbbd0",
       "calendar-p15-capture-2026-10-27T00-54-13.102Z/worker-summary.json: deployment e77a63b0 and version 1a7cbbd0 unchanged, route-free Worker, canonical DNS-only, cutover domain absent"
     ]
+  },
+  {
+    "repository": "tutur3u/platform",
+    "app": "calendar",
+    "worker": "tuturuuu-calendar",
+    "runId": "40413173161",
+    "runAttempt": "1",
+    "sha": "ac8beee09e9700b453a55e193db5957985e01956",
+    "digest": "2116459bf121f09a7a714889d13d291a9823b451285747602a67eb0e50435b97",
+    "receiptBaselineDeploymentId": "e77a63b0-ec5d-46bf-bb89-b1829066ba90",
+    "receiptBaselineVersionId": "1a7cbbd0-d3a2-415f-8b75-890a1412c3f0",
+    "currentBaselineDeploymentId": "eb610155-8e35-4fea-89df-3ec80c1be5c6",
+    "currentBaselineVersionId": "808c2f3b-9979-4ccc-92a3-879043f25163",
+    "outcome": "failed-no-write",
+    "authority": "Original no-write evidence: release owner custody receipt, 27 October 2026. Current-baseline split prepared 28 November 2026 against the live-pre capture; hosted-version absence check still required",
+    "evidence": [
+      "Mastermind CF audit summary: 05:38:04 assets session and 05:38:06-07 asset uploads succeeded; no Upload Version or Create Worker Deployment after those assets",
+      "calendar-reconcile-40413173161.json: all 13 versions read, zero exact SHA/digest matches; receipt baseline e77a63b0/1a7cbbd0 remained active at 100%",
+      "Live-pre capture 2026-11-28T01:22:34Z (read-only): tuturuuu-calendar deployment eb610155-8e35-4fea-89df-3ec80c1be5c6, version 808c2f3b-9979-4ccc-92a3-879043f25163 at 100%, version message fc1b211e61584277daa83895ab3a61718e091a19 (neither the resolved SHA nor digest)",
+      "Records 1 and 2 are retained unchanged as history; their legacy baseline keys cannot match the split-baseline predicate"
+    ]
+  },
+  {
+    "repository": "tutur3u/platform",
+    "app": "calendar",
+    "worker": "tuturuuu-calendar",
+    "runId": "40428329193",
+    "runAttempt": "1",
+    "sha": "766c457a4c17797c6b62bb4a8a5c607bdfa0b91b",
+    "digest": "6dec01d9d95a94cfe543afddc402ea15cb4b1018d03fd335aaca08463b2ba51b",
+    "receiptBaselineDeploymentId": "e77a63b0-ec5d-46bf-bb89-b1829066ba90",
+    "receiptBaselineVersionId": "1a7cbbd0-d3a2-415f-8b75-890a1412c3f0",
+    "currentBaselineDeploymentId": "eb610155-8e35-4fea-89df-3ec80c1be5c6",
+    "currentBaselineVersionId": "808c2f3b-9979-4ccc-92a3-879043f25163",
+    "outcome": "failed-no-write",
+    "authority": "Original no-write evidence: release owner custody receipt, 27 October 2026 (definitive provider rejection). Current-baseline split prepared 28 November 2026 against the live-pre capture; hosted-version absence check still required",
+    "evidence": [
+      "Run 40428329193 attempt 1 sanitized publication receipt: CF code 10021, total encoded sourcemap size 90851 KiB exceeds 60 MiB; original pending artifact retained unchanged",
+      "calendar-reconcile-40428329193.json, 2026-10-27T00:55:55.620Z: all 13 versions individually read, no matching source SHA or digest, no version newer than receipt baseline 1a7cbbd0",
+      "calendar-p15-capture-2026-10-27T00-54-13.102Z/worker-summary.json: receipt baseline deployment e77a63b0 and version 1a7cbbd0 unchanged, route-free Worker, canonical DNS-only, cutover domain absent",
+      "Live-pre capture 2026-11-28T01:22:34Z (read-only): tuturuuu-calendar deployment eb610155-8e35-4fea-89df-3ec80c1be5c6, version 808c2f3b-9979-4ccc-92a3-879043f25163 at 100%, version message fc1b211e61584277daa83895ab3a61718e091a19 (neither the resolved SHA nor digest)",
+      "Records 1 and 2 are retained unchanged as history; their legacy baseline keys cannot match the split-baseline predicate"
+    ]
   }
 ]
