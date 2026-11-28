@@ -119,3 +119,22 @@ describe('flush of a guest-authored board', () => {
     expect(h.ops.flushes).toBe(1);
   });
 });
+
+describe('canonicalScene', () => {
+  it('keeps an own __proto__ key and never pollutes a prototype', () => {
+    const base = { id: 'rect-1', type: 'rectangle', version: 1 };
+    // JSON.parse makes `__proto__` an own data property.
+    const plain = JSON.parse(JSON.stringify(base)) as BoardElement;
+    const withProto = JSON.parse(
+      '{"id":"rect-1","type":"rectangle","version":1,"__proto__":{"polluted":true}}'
+    ) as BoardElement;
+    expect(Object.keys(withProto)).toContain('__proto__');
+
+    const text = canonicalScene([withProto]);
+    expect(canonicalScene([plain])).not.toBe(text);
+    expect(text).toContain('"__proto__":{"polluted":true}');
+    expect(JSON.parse(text)[0]).not.toHaveProperty('polluted');
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    expect(Object.prototype).not.toHaveProperty('polluted');
+  });
+});

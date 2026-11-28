@@ -290,11 +290,16 @@ export function chunkElements(
 const byId = (elements: readonly BoardElement[]) =>
   [...elements].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-/** A JSON value with every object's keys in sorted order, recursively. */
+/**
+ * A JSON value with every object's keys in sorted order, recursively. The
+ * copies have no prototype, so an own `__proto__` key (which `JSON.parse`
+ * produces) stays an ordinary property of the canonical text instead of
+ * replacing the copy's prototype.
+ */
 function sortKeys(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(sortKeys);
   if (value === null || typeof value !== 'object') return value;
-  const sorted: Record<string, unknown> = {};
+  const sorted: Record<string, unknown> = Object.create(null);
   for (const key of Object.keys(value).sort())
     sorted[key] = sortKeys((value as Record<string, unknown>)[key]);
   return sorted;

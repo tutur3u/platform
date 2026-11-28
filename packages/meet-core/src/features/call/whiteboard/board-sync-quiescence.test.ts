@@ -90,8 +90,11 @@ class Editor {
   receive(remote: Element[]) {
     const live = this.scene.filter((element) => !element.isDeleted);
     if (this.mode === 'current') {
-      this.baseline = applyRemoteElements(live, remote, (elements) =>
-        this.updateScene(elements as Element[])
+      this.baseline = applyRemoteElements(
+        live,
+        remote,
+        (elements) => this.updateScene(elements as Element[]),
+        () => this.scene
       ) as Element[];
     } else {
       const merged = unorderedMerge(live, remote);
@@ -283,6 +286,73 @@ describe('board sync at rest', () => {
     // Idle: nothing more is queued, and a redundant relay changes nothing.
     for (const editor of editors)
       expect(editor.receive(copy(editor.scene))).toEqual([]);
+  });
+
+  it('leaves every editor with the same content for every element', () => {
+    const { room, editors } = run('current', 200);
+    const guest1 = editors.find((editor) => editor.name === 'guest1')!;
+    const held = (editor: Editor, id: string) => {
+      const element = editor.scene.find((candidate) => candidate.id === id);
+      expect(element, `${editor.name} holds ${id}`).toBeDefined();
+      return element as Element;
+    };
+    /** Sorted-key JSON of an element without `omit`. */
+    const content = (element: Element, omit: readonly string[] = []) =>
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(element)
+            .filter(([key]) => !omit.includes(key))
+            .sort(([a], [b]) => (a < b ? -1 : 1))
+        )
+      );
+
+    for (const [id, stored] of room.scene) {
+      const copies = editors.map((editor) => held(editor, id));
+      // The room strips a guest arrow's label binding and relays the stripped
+      // arrow to the other editors only; its author keeps the binding until
+      // it next edits the arrow.
+      const omit =
+        id === 'arrow-1' ? ['versionNonce', 'boundElements'] : ['versionNonce'];
+      if (id === 'arrow-1') {
+        for (const editor of editors)
+          expect(held(editor, id).boundElements).toEqual(
+            editor === guest1 ? [{ id: 'label-1', type: 'text' }] : []
+          );
+      }
+      // Everything but the nonce matches on every editor: data, index and
+      // version.
+      for (const element of copies)
+        expect(content(element, omit)).toBe(content(copies[0]!, omit));
+
+      if (id === 'text-1') {
+        // `text-1` and `g2-text` were drawn with the same index, so each editor
+        // repaired `text-1` (ordered after `g2-text` by id) to `a2V` when it
+        // applied them. The repair is deterministic in index and version, but
+        // Excalidraw draws a random versionNonce for it, and a repair made
+        // while applying a remote batch is never sent, so the nonces stay
+        // per-editor until the next real edit of `text-1` supersedes them.
+        expect(stored).toMatchObject({ index: 'a2', version: 1 });
+        for (const element of copies)
+          expect(element).toMatchObject({ index: 'a2V', version: 2 });
+        expect(
+          new Set(copies.map((element) => element.versionNonce)).size
+        ).toBe(editors.length);
+      } else {
+        // Every element no editor repaired matches the room's version and
+        // nonce exactly on every editor.
+        for (const element of copies)
+          expect(element).toMatchObject({
+            index: stored.index,
+            version: stored.version,
+            versionNonce: stored.versionNonce,
+          });
+      }
+    }
+    // No editor holds an element the room does not.
+    for (const editor of editors)
+      expect(editor.scene.map((element) => element.id).sort()).toEqual(
+        [...room.scene.keys()].sort()
+      );
   });
 
   it('stores the guest arrow without its label and the label as text', () => {

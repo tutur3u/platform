@@ -173,7 +173,8 @@ export const WhiteboardEditor = forwardRef<
         previousElementsRef.current = applyRemoteElements(
           api.getSceneElements(),
           remote,
-          (elements) => api.updateScene({ elements })
+          (elements) => api.updateScene({ elements }),
+          () => api.getSceneElementsIncludingDeleted()
         );
       } finally {
         applyingRemoteRef.current = false;

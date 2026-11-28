@@ -6,19 +6,21 @@ import { mergeElements } from './elements';
  * `updateScene`) and returns the baseline the next local change is diffed
  * against.
  *
- * The baseline is copied after `update` returns: Excalidraw repairs invalid
- * fractional indices of the elements it is handed in place and bumps their
- * versions. Those repairs are part of applying the remote batch, not local
- * edits, so they must never be broadcast; otherwise peers that order the
- * scene differently re-index and re-send the same elements to each other
- * without end.
+ * The baseline is read back through `read` (the scene including deleted
+ * elements) after `update` returns: Excalidraw repairs invalid fractional
+ * indices of the elements it is handed and bumps their versions, either in
+ * place or on copies it stores in the scene. Those repairs are part of
+ * applying the remote batch, not local edits, so they must never be
+ * broadcast; otherwise peers that order the scene differently re-index and
+ * re-send the same elements to each other without end. Reading the scene
+ * back, rather than the array handed to `update`, covers both behaviours.
  */
 export function applyRemoteElements(
   local: readonly ExcalidrawElement[],
   remote: readonly ExcalidrawElement[],
-  update: (elements: ExcalidrawElement[]) => void
+  update: (elements: ExcalidrawElement[]) => void,
+  read: () => readonly ExcalidrawElement[]
 ): ExcalidrawElement[] {
-  const merged = mergeElements(local, remote);
-  update(merged);
-  return merged.map((element) => ({ ...element }));
+  update(mergeElements(local, remote));
+  return read().map((element) => ({ ...element }));
 }

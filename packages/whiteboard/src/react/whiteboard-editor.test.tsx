@@ -12,6 +12,7 @@ const canvas = vi.hoisted(() => ({
   props: null as null | Record<string, any>,
   api: {
     getSceneElements: vi.fn(() => [] as unknown[]),
+    getSceneElementsIncludingDeleted: vi.fn(() => [] as unknown[]),
     getAppState: vi.fn(() => ({ viewBackgroundColor: '#fff', gridSize: null })),
     getFiles: vi.fn(() => ({})),
     updateScene: vi.fn(),
@@ -238,91 +239,115 @@ describe('WhiteboardEditor', () => {
     expect(load).not.toHaveBeenCalled();
   });
 
-  it('never sends the index repairs Excalidraw makes while applying a remote batch', async () => {
-    const sent: unknown[] = [];
-    let handlers: any = null;
-    const transport = {
-      connect: (next: any) => {
-        handlers = next;
-        next.onStatus('connected');
-        return () => {};
-      },
-      sendElementChanges: vi.fn(async (batch: unknown) => {
-        sent.push(batch);
-      }),
-      sendCursor: async () => {},
-      sendSelection: async () => {},
-    };
-    const local = { ...makeElement('local'), index: 'a1' };
-    let scene: any[] = [local];
-    canvas.api.getSceneElements.mockImplementation(() => scene);
-    // Excalidraw re-indexes out-of-order elements in place and bumps them.
-    canvas.api.updateScene.mockImplementation(({ elements }: any) => {
-      if (!elements) return;
-      let previous = '';
-      for (const element of elements) {
-        if (element.index <= previous) {
-          element.index = `${previous}V`;
-          element.version += 1;
-          element.versionNonce += 1;
-        }
-        previous = element.index;
-      }
-      scene = elements;
-    });
-    const user = { id: 'me', displayName: 'Me' };
-
-    render(
-      <WhiteboardEditor theme="light" collaboration={{ transport, user }} />
-    );
-    await screen.findByTestId('canvas');
-    await vi.waitFor(() => expect(handlers).not.toBeNull());
-
-    vi.useFakeTimers();
-    const state = { scrollX: 0, scrollY: 0, zoom: { value: 1 } };
-    act(() => canvas.props?.onChange(scene, state));
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(200);
-    });
-    sent.length = 0;
-
-    act(() => {
-      handlers.onElementChanges({
-        senderId: 'peer',
-        timestamp: 1,
-        changes: [
-          { type: 'insert', element: { ...makeElement('early'), index: 'a0' } },
-          { type: 'insert', element: { ...makeElement('same'), index: 'a1' } },
-        ],
+  // Excalidraw 0.18 repairs out-of-order indices on the elements it is handed;
+  // a later version may store repaired copies instead. Neither is sent.
+  it.each([
+    ['in place', false],
+    ['on copies', true],
+  ])(
+    'never sends the index repairs Excalidraw makes %s while applying a remote batch',
+    async (_mode, copies) => {
+      const sent: unknown[] = [];
+      let handlers: any = null;
+      const transport = {
+        connect: (next: any) => {
+          handlers = next;
+          next.onStatus('connected');
+          return () => {};
+        },
+        sendElementChanges: vi.fn(async (batch: unknown) => {
+          sent.push(batch);
+        }),
+        sendCursor: async () => {},
+        sendSelection: async () => {},
+      };
+      const local = { ...makeElement('local'), index: 'a1' };
+      let scene: any[] = [local];
+      canvas.api.getSceneElements.mockImplementation(() => scene);
+      canvas.api.getSceneElementsIncludingDeleted.mockImplementation(
+        () => scene
+      );
+      // Excalidraw re-indexes out-of-order elements and bumps them.
+      canvas.api.updateScene.mockImplementation(({ elements }: any) => {
+        if (!elements) return;
+        let previous = '';
+        scene = elements.map((element: any) => {
+          let next = element;
+          if (element.index <= previous) {
+            next = copies ? { ...element } : element;
+            next.index = `${previous}V`;
+            next.version += 1;
+            next.versionNonce += 1;
+          }
+          previous = next.index;
+          return next;
+        });
       });
-    });
-    // Ordered by index, with the tie broken by id; only `same` needed a repair.
-    expect(scene.map((element) => element.id)).toEqual([
-      'early',
-      'local',
-      'same',
-    ]);
-    act(() => canvas.props?.onChange(scene, state));
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(200);
-    });
-    expect(sent).toEqual([]);
+      const user = { id: 'me', displayName: 'Me' };
 
-    // A real local edit still goes out.
-    scene = scene.map((element) =>
-      element.id === 'local' ? { ...element, version: 9, x: 5 } : element
-    );
-    act(() => canvas.props?.onChange(scene, state));
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(200);
-    });
-    expect(sent).toHaveLength(1);
-    expect((sent[0] as any).changes.map((c: any) => c.element.id)).toEqual([
-      'local',
-    ]);
-    canvas.api.getSceneElements.mockImplementation(() => []);
-    canvas.api.updateScene.mockImplementation(() => {});
-  });
+      render(
+        <WhiteboardEditor theme="light" collaboration={{ transport, user }} />
+      );
+      await screen.findByTestId('canvas');
+      await vi.waitFor(() => expect(handlers).not.toBeNull());
+
+      vi.useFakeTimers();
+      const state = { scrollX: 0, scrollY: 0, zoom: { value: 1 } };
+      act(() => canvas.props?.onChange(scene, state));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      sent.length = 0;
+
+      act(() => {
+        handlers.onElementChanges({
+          senderId: 'peer',
+          timestamp: 1,
+          changes: [
+            {
+              type: 'insert',
+              element: { ...makeElement('early'), index: 'a0' },
+            },
+            {
+              type: 'insert',
+              element: { ...makeElement('same'), index: 'a1' },
+            },
+          ],
+        });
+      });
+      // Ordered by index, with the tie broken by id; only `same` needed a repair.
+      expect(scene.map((element) => element.id)).toEqual([
+        'early',
+        'local',
+        'same',
+      ]);
+      expect(scene.find((element) => element.id === 'same')).toMatchObject({
+        index: 'a1V',
+        version: 2,
+      });
+      act(() => canvas.props?.onChange(scene, state));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(sent).toEqual([]);
+
+      // A real local edit still goes out.
+      scene = scene.map((element) =>
+        element.id === 'local' ? { ...element, version: 9, x: 5 } : element
+      );
+      act(() => canvas.props?.onChange(scene, state));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(200);
+      });
+      expect(sent).toHaveLength(1);
+      expect((sent[0] as any).changes.map((c: any) => c.element.id)).toEqual([
+        'local',
+      ]);
+      canvas.api.getSceneElements.mockImplementation(() => []);
+      canvas.api.getSceneElementsIncludingDeleted.mockImplementation(() => []);
+      canvas.api.updateScene.mockImplementation(() => {});
+    }
+  );
 
   it('restores the remembered viewport', async () => {
     const storage = {
