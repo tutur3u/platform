@@ -19,6 +19,7 @@ COPY apps/cms/package.json ./apps/cms/package.json
 COPY apps/database/package.json ./apps/database/package.json
 COPY apps/drive/package.json ./apps/drive/package.json
 COPY apps/external/package.json ./apps/external/package.json
+COPY apps/fleet-status/package.json ./apps/fleet-status/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json

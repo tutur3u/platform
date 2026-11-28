@@ -165,6 +165,7 @@ export const PRODUCTION_FLEET = {
   backend: inactive('paused runtime (AGENTS.md)'),
   'tanstack-web': inactive('paused runtime (AGENTS.md)'),
   database: inactive('local Supabase project, not a Worker'),
+  'fleet-status': inactive('disabled and unrouted; deployment requires ACK'),
   worlds: inactive(
     'hostname activation and first publication pending approval'
   ),
