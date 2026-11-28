@@ -8,6 +8,7 @@ import {
   evaluateIntake,
   extractCandidates,
   isIntakeBlocked,
+  loadTasks,
   parseIsoWithZone,
   runCli,
 } from './perf-dispatch-gate.mjs';
@@ -534,4 +535,22 @@ test('intake-check CLI enforces exact-id skip and degraded-reason emits code mar
     'DEGRADED: dispatch gate closed (extract_candidates_failed)'
   );
   assert.deepEqual(extractFailed.dispatchable, []);
+});
+
+test('loadTasks reads JSON files, handles EISDIR for mirror dirs, and rethrows ENOENT', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'perf-dispatch-load-tasks-'));
+  const filePath = join(dir, 'tasks.json');
+  writeFileSync(filePath, JSON.stringify({ tasks: [FORMS_TASK] }));
+  assert.deepEqual(loadTasks(filePath), [FORMS_TASK]);
+
+  const mirrorDir = mkdtempSync(join(tmpdir(), 'perf-dispatch-mirrors-'));
+  writeFileSync(join(mirrorDir, 'b.json'), JSON.stringify({ id: 'b' }));
+  writeFileSync(join(mirrorDir, 'a.json'), JSON.stringify({ id: 'a' }));
+  writeFileSync(join(mirrorDir, 'ignore.txt'), 'not-json');
+  assert.deepEqual(loadTasks(mirrorDir), [{ id: 'a' }, { id: 'b' }]);
+
+  assert.throws(
+    () => loadTasks(join(dir, 'does-not-exist.json')),
+    (error) => error?.code === 'ENOENT'
+  );
 });

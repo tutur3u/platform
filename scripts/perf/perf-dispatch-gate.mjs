@@ -12,13 +12,7 @@
 //     [--out candidates.json]
 //   node scripts/perf/perf-dispatch-gate.mjs intake-check
 //     --detection <detection.json> [--out intake.json]
-import {
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs as parseNodeArgs } from 'node:util';
 import {
@@ -97,15 +91,18 @@ export function parseGateArgs(argv) {
 
 /** Load task records from a JSON file (`[...]` or `{ tasks }`) or mirror dir. */
 export function loadTasks(targetPath) {
-  const stats = statSync(targetPath);
-  if (stats.isDirectory()) {
+  try {
+    const document = JSON.parse(readFileSync(targetPath, 'utf8'));
+    return Array.isArray(document) ? document : (document?.tasks ?? []);
+  } catch (error) {
+    if (error?.code !== 'EISDIR') {
+      throw error;
+    }
     return readdirSync(targetPath)
       .filter((name) => name.endsWith('.json'))
       .sort()
       .map((name) => JSON.parse(readFileSync(join(targetPath, name), 'utf8')));
   }
-  const document = JSON.parse(readFileSync(targetPath, 'utf8'));
-  return Array.isArray(document) ? document : (document?.tasks ?? []);
 }
 
 /**
