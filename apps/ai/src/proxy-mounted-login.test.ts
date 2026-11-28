@@ -83,24 +83,32 @@ beforeEach(() => {
 
 describe('signed-out visits to tuturuuu.com/ai', () => {
   it.each([
-    ['', '/products/ai'],
-    ['/', '/products/ai'],
-    ['/en', '/products/ai'],
-    ['/en/', '/products/ai'],
-    ['/vi', '/vi/products/ai'],
-    ['/vi/', '/vi/products/ai'],
-  ])('keeps the AI product page for the root %j', async (path, page) => {
-    const response = await proxy(mounted(`${path}?utm=a&utm=b%2Fc`));
+    ['', '/products/ai', 'GET'],
+    ['/', '/products/ai', 'GET'],
+    ['/', '/products/ai', 'HEAD'],
+    ['/en', '/products/ai', 'GET'],
+    ['/en/', '/products/ai', 'GET'],
+    ['/vi', '/vi/products/ai', 'GET'],
+    ['/vi/', '/vi/products/ai', 'HEAD'],
+  ])(
+    'keeps the AI product page for the root %j (%s)',
+    async (path, page, method) => {
+      const response = await proxy(
+        mounted(`${path}?utm=a&utm=b%2Fc`, { method })
+      );
 
-    expect(response.status).toBe(307);
-    expect(location(response)).toBe(
-      `https://tuturuuu.com${page}?utm=a&utm=b%2Fc`
-    );
-    expect(response.headers.get('cache-control')).toBe('private, no-store');
-    expect(mocks.updateSession).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(307);
+      expect(location(response)).toBe(
+        `https://tuturuuu.com${page}?utm=a&utm=b%2Fc`
+      );
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(mocks.updateSession).not.toHaveBeenCalled();
+    }
+  );
 
   it.each([
+    ['//', 'GET'],
+    ['//', 'HEAD'],
     ['/personal', 'GET'],
     ['/vi/personal/playground', 'GET'],
     ['/envoy', 'GET'],

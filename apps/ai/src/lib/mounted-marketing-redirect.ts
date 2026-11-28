@@ -5,7 +5,9 @@ import { type NextRequest, NextResponse } from 'next/server';
 const ROOT_DESTINATIONS = new Map([
   ['/', '/products/ai'],
   ['/en', '/products/ai'],
+  ['/en/', '/products/ai'],
   ['/vi', '/vi/products/ai'],
+  ['/vi/', '/vi/products/ai'],
 ]);
 
 /**
@@ -18,9 +20,7 @@ export function signedOutMountRootRedirect(
   request: NextRequest
 ): NextResponse | null {
   if (request.method !== 'GET' && request.method !== 'HEAD') return null;
-  const destination = ROOT_DESTINATIONS.get(
-    request.nextUrl.pathname.replace(/(?<=.)\/$/u, '')
-  );
+  const destination = ROOT_DESTINATIONS.get(request.nextUrl.pathname);
   if (!destination || hasSupportedSupabaseAuthCookie(request)) return null;
   const target = new URL(destination, SHARED_APP_ORIGIN);
   target.search = request.nextUrl.search;

@@ -135,8 +135,10 @@ needs a qualified publisher first.
   disconnect settles the run as `aborted`.
 - Playground, manual key and saved key: model list and a run stay under
   `/ai/`.
-- `/ai/chats/<public chat id>`, `/products/ai`, `/vi/ai` and
-  `/api/v1/ai/chats` still answer from Web (`x-gateway-family`, not `MOUNT`).
+- `/ai/chats/<public chat id>`, `/vi/ai`, and `/api/v1/ai/chats` still answer
+  from Web (`x-gateway-family`, not `MOUNT`). `/products/ai` renders outside
+  the AI mount (`x-gateway-cache` is not `MOUNT`; anonymous requests may be
+  served by the `products` Marketing group or Web).
 - Assets: run `python3 apps/gateway/scripts/mounted_assets_smoke.py --subdomain-url https://ai.tuturuuu.com/auth-error --apex-url https://tuturuuu.com/ai/auth-error --app-worker tuturuuu-ai --app-version "$AI_VERSION_UUID" --gateway-version "$GATEWAY_VERSION_UUID"`.
 
 In CI, `mounted-login.runtime.mjs` checks the emitted production Worker's

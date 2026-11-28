@@ -28,20 +28,29 @@ test(
       return;
     }
 
-    for (const [path, destination] of [
-      ['/ai', '/products/ai'],
-      ['/ai/vi', '/vi/products/ai'],
+    for (const [path, destination, method] of [
+      ['/ai', '/products/ai', 'GET'],
+      ['/ai/', '/products/ai', 'HEAD'],
+      ['/ai/en', '/products/ai', 'GET'],
+      ['/ai/en/', '/products/ai', 'GET'],
+      ['/ai/vi', '/vi/products/ai', 'GET'],
+      ['/ai/vi/', '/vi/products/ai', 'HEAD'],
     ]) {
-      const response = await call(`${path}?utm=a&utm=b`);
-      assert.equal(response.status, 307, path);
+      const response = await call(`${path}?utm=a&utm=b`, { method });
+      assert.equal(response.status, 307, `${method} ${path}`);
       assert.equal(
         response.headers.get('location'),
-        `https://tuturuuu.com${destination}?utm=a&utm=b`
+        `https://tuturuuu.com${destination}?utm=a&utm=b`,
+        `${method} ${path}`
       );
       assert.equal(response.headers.get('x-tuturuuu-runtime'), 'native');
     }
 
-    for (const path of ['/ai/personal/playground', '/ai/verify-token']) {
+    for (const path of [
+      '/ai//',
+      '/ai/personal/playground',
+      '/ai/verify-token',
+    ]) {
       const response = await call(path);
       assert.equal(response.status, 307, path);
       const login = new URL(response.headers.get('location'));
