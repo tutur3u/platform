@@ -113,11 +113,13 @@ describe('isServerToServerAppCall', () => {
 
 describe('isUpskiiAppCredentialCall', () => {
   const basic = { authorization: `Basic ${btoa('upskii:secret')}` };
+  const liveClassPath = '/api/v1/integrations/upskii/live-class';
 
-  it('matches only POST with a Basic token on the three exact paths', () => {
+  it('matches only POST with a Basic token on the exact paths', () => {
     for (const path of [
       '/api/v1/integrations/upskii/introspect',
       '/api/v1/integrations/upskii/link-status',
+      liveClassPath,
       '/api/v1/integrations/upskii/unlink',
     ]) {
       expect(isUpskiiAppCredentialCall(req(path, { headers: basic }))).toBe(
@@ -139,5 +141,36 @@ describe('isUpskiiAppCredentialCall', () => {
         })
       )
     ).toBe(false);
+  });
+
+  it('recognises a live-class POST without a User-Agent', () => {
+    expect(
+      isServerToServerAppCall(req(liveClassPath, { headers: basic }))
+    ).toBe(true);
+  });
+
+  it('does not exempt missing or malformed Basic headers on live-class', () => {
+    for (const request of [
+      req(liveClassPath),
+      req(liveClassPath, { headers: { authorization: 'Basic invalid!' } }),
+    ]) {
+      expect(isUpskiiAppCredentialCall(request)).toBe(false);
+      expect(isServerToServerAppCall(request)).toBe(false);
+    }
+  });
+
+  it('does not exempt neighbouring live-class paths', () => {
+    for (const path of [
+      `${liveClassPath}-extra`,
+      `${liveClassPath}/child`,
+      `${liveClassPath}/`,
+      '/api/v1/integrations/upskii/Live-class',
+      '/api/v1/integrations/upskii/%6cive-class',
+      '/api/v1/integrations/upskii//live-class',
+    ]) {
+      expect(isUpskiiAppCredentialCall(req(path, { headers: basic }))).toBe(
+        false
+      );
+    }
   });
 });

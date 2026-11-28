@@ -22,6 +22,7 @@ export const APP_TOKEN_EXCHANGE_PATH = '/api/v1/auth/app-token/exchange';
 export const UPSKII_BASIC_CREDENTIAL_PATHS: ReadonlySet<string> = new Set([
   '/api/v1/integrations/upskii/introspect',
   '/api/v1/integrations/upskii/link-status',
+  '/api/v1/integrations/upskii/live-class',
   '/api/v1/integrations/upskii/unlink',
 ]);
 
