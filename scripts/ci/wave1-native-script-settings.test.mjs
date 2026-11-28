@@ -10,7 +10,10 @@ import { waitForScriptObservability } from './wave1-native-script-settings.mjs';
 import { productionFailureMessage } from './wave1-native-upload-error.mjs';
 
 const require = createRequire(import.meta.url);
-const { publisher } = require('./wave1-native-publication-harness.cjs');
+const {
+  newId: stagingNewId,
+  publisher,
+} = require('./wave1-native-publication-harness.cjs');
 
 const emitsNone = async () => ({ name: 'fixture' });
 function fakeClock() {
@@ -173,7 +176,7 @@ test('staging retries a failed settings read inside the bound', async (t) => {
   await p.run();
   assert.equal(p.state.settingsReads, 2);
   assert.equal(p.state.settingsWaitMs, 5_000);
-  assert.equal(p.state.active, newId);
+  assert.equal(p.state.active, stagingNewId);
 });
 
 test('staging reports a persistent settings read failure as a settings incident', async (t) => {
@@ -185,7 +188,7 @@ test('staging reports a persistent settings read failure as a settings incident'
   });
   assert.equal(p.state.settingsReads, 12);
   assert.equal(p.state.writes, 1);
-  assert.equal(p.state.active, newId);
+  assert.equal(p.state.active, stagingNewId);
 });
 
 test('production retries a failed settings read inside the bound', async (t) => {
