@@ -55,6 +55,13 @@ const advanced: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
   },
   {
+    id: 'fleetStatus',
+    app: 'fleet-status',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
     id: 'mastermind',
     app: 'mastermind',
     category: 'internal',

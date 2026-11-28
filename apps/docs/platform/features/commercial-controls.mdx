@@ -76,6 +76,8 @@ also support touch users. Internal infrastructure is opt-in in the comparison an
 from tier access. Standard platform gates share `feature-tier-policy.ts` with web.
 Add capabilities, explanations in both locales, and source evidence when changing
 an app's public scope. The inventory regression fails when an app is unrepresented.
+Fleet Status appears only in the internal view across all tiers. Its Worker is
+disabled and unrouted by default, and deployment requires separate approval.
 
 Approved capacity changes are marked **awaiting rollout** until the database policy
 and required meters are deployed. Current database storage defaults remain
