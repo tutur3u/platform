@@ -215,6 +215,19 @@ async function runSuite(root, baseEnv) {
   runSync(
     root,
     'bun',
+    [
+      'turbo:local',
+      'run',
+      'build',
+      '--filter=@tuturuuu/mail^...',
+      '--concurrency=2',
+    ],
+    runtimeEnv
+  );
+
+  runSync(
+    root,
+    'bun',
     ['--filter', '@tuturuuu/mail', 'build:legacy'],
     runtimeEnv
   );
