@@ -186,4 +186,42 @@ describe('mobile Live turn persistence', () => {
     ).toBe(413);
     expect(mocks.createClient).not.toHaveBeenCalled();
   });
+
+  it('rejects a temporary auth token minted for a different workspace', async () => {
+    mocks.validateAiTempAuthRequest.mockResolvedValue({
+      status: 'valid',
+      context: { user: { id: 'caller' }, wsId: 'workspace-x' },
+    });
+    mocks.normalizeWorkspaceId.mockResolvedValue('workspace-y');
+
+    const response = await POST(request({ ...body, wsId: 'workspace-y' }));
+    expect(response.status).toBe(403);
+    expect(mocks.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('allows a temporary auth token when its workspace matches the request workspace', async () => {
+    mocks.validateAiTempAuthRequest.mockResolvedValue({
+      status: 'valid',
+      context: { user: { id: 'caller' }, wsId: 'workspace' },
+    });
+    const ownership = query({ data: { id: chatId }, error: null });
+    const messages = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      contains: vi.fn().mockResolvedValue({ data: [], error: null }),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+    };
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) =>
+        table === 'ai_chats' ? ownership : messages
+      ),
+    });
+
+    const response = await POST(request());
+    expect(response.status).toBe(200);
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith(
+      expect.objectContaining({ wsId: 'workspace', userId: 'caller' })
+    );
+  });
 });

@@ -72,6 +72,18 @@ export async function POST(request: Request) {
     }
 
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
+    if (
+      tempAuth.status === 'valid' &&
+      tempAuth.context.wsId &&
+      tempAuth.context.wsId !== normalizedWsId
+    ) {
+      return Response.json(
+        { error: 'Temporary session is not authorized for this workspace' },
+        { status: 403 }
+      );
+    }
+
     const membership = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
       userId: user.id,
