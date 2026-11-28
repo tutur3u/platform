@@ -220,3 +220,11 @@ it('returns 500 when workspace membership lookup fails', async () => {
   expect(f.send).not.toHaveBeenCalled();
   warn.mockRestore();
 });
+
+it('rejects non-string accessKeySecret payloads with 400 before buffer allocation', async () => {
+  const response = await sendRequest('workspace-id', 'recipient@example.test', {
+    length: 50_000_000,
+  } as unknown as string);
+  expect(response.status).toBe(400);
+  expect(f.send).not.toHaveBeenCalled();
+});

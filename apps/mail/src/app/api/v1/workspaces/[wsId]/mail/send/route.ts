@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
@@ -18,9 +18,17 @@ import { DEV_MODE } from '@/constants/common';
 import { sanitizeMailHtml } from '@/lib/mail/html';
 import { safeErrorFields, safeLogWorkspaceId } from '@/lib/mail/log-safety';
 
-function secretsEqual(provided: string, expected: string): boolean {
-  const digest = (value: string) => createHash('sha256').update(value).digest();
-  return timingSafeEqual(digest(provided), digest(expected));
+function secretsEqual(provided: unknown, expected: unknown): boolean {
+  if (typeof provided !== 'string' || typeof expected !== 'string') {
+    return false;
+  }
+  const providedBuf = Buffer.from(provided, 'utf8');
+  const expectedBuf = Buffer.from(expected, 'utf8');
+  if (providedBuf.length !== expectedBuf.length) {
+    timingSafeEqual(expectedBuf, expectedBuf);
+    return false;
+  }
+  return timingSafeEqual(providedBuf, expectedBuf);
 }
 
 function getDisallowedRecipients(
@@ -73,7 +81,12 @@ export async function POST(
     );
   }
 
-  if (!data.config?.accessKeyId || !data.config?.accessKeySecret) {
+  if (
+    typeof data.config?.accessKeyId !== 'string' ||
+    typeof data.config?.accessKeySecret !== 'string' ||
+    !data.config.accessKeyId ||
+    !data.config.accessKeySecret
+  ) {
     return NextResponse.json(
       { message: 'Missing email configuration' },
       { status: 400 }
