@@ -178,8 +178,10 @@ function visibleText(node: RichTextNode): string {
 }
 
 const maxHrefDecodePasses = 8;
-// Reject legacy overlong encodings of "/" before UTF-8 replaces them.
-const overlongSlash = /%(?:c0%af|e0%80%af|f0%80%80%af)/i;
+// A continuation byte can be escaped one or more layers deeper than its
+// lead byte. Check those prefixes before a decoder replaces either byte.
+const overlongUtf8 =
+  /%(?:25)*(?:c[01]%(?:25)*[89ab][0-9a-f]|e0%(?:25)*[89][0-9a-f]|f0%(?:25)*8[0-9a-f]|f[89abcd]%(?:25)*[89ab][0-9a-f])/i;
 const percentByte = /%[0-9a-f]{2}/i;
 const hrefDecoder = new TextDecoder('utf-8', { ignoreBOM: true });
 
@@ -197,7 +199,12 @@ function decodeContiguousPercentRuns(value: string): string {
 
 // Pass 0 is the whole string, so a malformed raw escape still rejects.
 // Later passes decode each valid run alone: a literal "%" cannot abort them.
-export function decodeWikiHrefPass(value: string, pass: number): string {
+export function decodeWikiHrefPass(
+  value: string,
+  pass: number,
+  reportOverlong?: () => void
+): string {
+  if (overlongUtf8.test(value)) reportOverlong?.();
   return pass === 0
     ? decodeURIComponent(value)
     : decodeContiguousPercentRuns(value);
@@ -254,10 +261,11 @@ export function scanPublicSafety(
           pass < maxHrefDecodePasses && decoded.includes('%');
           pass++
         ) {
-          if (overlongSlash.test(decoded)) report('unsupported link', field);
           let next: string;
           try {
-            next = decodeWikiHrefPass(decoded, pass);
+            next = decodeWikiHrefPass(decoded, pass, () =>
+              report('unsupported link', field)
+            );
           } catch {
             if (pass === 0) report('unsupported link', field);
             break;

@@ -273,6 +273,43 @@ describe('public safety scan', () => {
     });
   });
 
+  it.each([
+    '?h=host%25C0%25AEinternal',
+    '?ip=127%25C0%25AE0%25C0%25AE0%25C0%25AE1',
+    '?p=C:%25C1%259CUsers%25C1%259Calice',
+    '?ref=SR%25C0%25AD123',
+    '?s=API_KEY%25C0%25BDsecret',
+    '?ip=%25C0%25BA%25C0%25BA1',
+    '?ref=%25C1%2593R-123',
+    '?h=host%25E0%2580%25AEinternal',
+    '?h=host%25F0%2580%2580%25AEinternal',
+    '?p=%25F8%2580%2580%2580%25AFUsers%252Falice%252F',
+    '?p=%25FC%2580%2580%2580%2580%25AFUsers%252Falice%252F',
+    '?p=%25C0%2525AFUsers%252Falice%252F',
+    '?p=%2525C0%25AFUsers%252Falice%252F',
+  ])('rejects an overlong UTF-8 sequence in %s', (query) => {
+    expect(scan(`[Example](https://example.com/${query})`)).toContainEqual({
+      rule: 'unsupported link',
+      location: 'body.content.0.content.0.marks.0.attrs.href',
+    });
+  });
+
+  it.each([
+    ['contiguous overlong bytes', '%25C0%25AE'],
+    ['split overlong bytes', '%25C0%2525AF'],
+    ['legacy six-byte sequence', '%25FC%2580%2580%2580%2580%25AF'],
+  ])('rejects a 2 MB href with %s in bounded time', (_case, unit) => {
+    const value = `https://example.com/?p=${unit.repeat(
+      Math.ceil(2_000_000 / unit.length)
+    )}`;
+    const reportOverlong = vi.fn();
+    const started = performance.now();
+    const decoded = decodeWikiHrefPass(value, 0, reportOverlong);
+    decodeWikiHrefPass(decoded, 1, reportOverlong);
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(reportOverlong).toHaveBeenCalled();
+  });
+
   it('rejects a register ID requiring nine decoding passes', () => {
     const layer = '%25' + '25'.repeat(7);
     expect(
