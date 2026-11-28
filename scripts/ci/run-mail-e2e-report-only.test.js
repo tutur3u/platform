@@ -82,6 +82,7 @@ test('buildMailRuntimeEnv sets loopback production runtime flags and skips dev w
   assert.equal(env.MAIL_E2E_SKIP_WEB_SERVER, '1');
   assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, 'http://127.0.0.1:8001');
   assert.equal(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, 'pk-test');
+  assert.equal(env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS, '1');
   assert.equal(env.PLAYWRIGHT_JSON_OUTPUT_NAME, REPORT_RELATIVE_PATH);
 });
 

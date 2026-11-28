@@ -84,6 +84,7 @@ function buildMailRuntimeEnv(baseEnv, sb) {
     TUTURUUU_APP_COORDINATION_SECRET:
       baseEnv.TUTURUUU_APP_COORDINATION_SECRET ||
       'local-e2e-app-coordination-secret',
+    TUTURUUU_LOCAL_E2E_AUTH_BYPASS: '1',
     PORT: String(MAIL_PORT),
     PLAYWRIGHT_JSON_OUTPUT_NAME: REPORT_RELATIVE_PATH,
   };
