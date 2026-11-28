@@ -48,6 +48,23 @@ function createPrecacheName(
   return `${namespace}-precache-${(hash >>> 0).toString(36)}`;
 }
 
+function validatePathPrefixes(name: string, prefixes: readonly string[]) {
+  for (const prefix of prefixes) {
+    if (!/^\/[^/]/u.test(prefix) || prefix.endsWith('/')) {
+      throw new RangeError(
+        `${name} entries must start with "/" and have no trailing slash`
+      );
+    }
+  }
+  return prefixes;
+}
+
+function isUnderPrefix(pathname: string, prefixes: readonly string[]) {
+  return prefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
 function resolveEntryUrl(entry: PrecacheEntry | string) {
   return typeof entry === 'string' ? entry : entry.url;
 }
@@ -199,6 +216,7 @@ export class TuturuuuServiceWorker {
   private readonly maxRuntimeCacheEntries: number | undefined;
   private readonly additionalCaching: RuntimeCachingRule[];
   private readonly bypassPathPrefixes: readonly string[];
+  private readonly strictBypassPathPrefixes: readonly string[];
   private readonly clientsClaim: boolean;
   private readonly navigationPreload: boolean;
   private readonly offlineFallbackUrl: string;
@@ -227,14 +245,14 @@ export class TuturuuuServiceWorker {
     this.clientsClaim = config.clientsClaim ?? true;
     this.navigationPreload = config.navigationPreload ?? true;
     this.additionalCaching = config.additionalCaching ?? [];
-    this.bypassPathPrefixes = config.bypassPathPrefixes ?? [];
-    for (const prefix of this.bypassPathPrefixes) {
-      if (!/^\/[^/]/u.test(prefix) || prefix.endsWith('/')) {
-        throw new RangeError(
-          'bypassPathPrefixes entries must start with "/" and have no trailing slash'
-        );
-      }
-    }
+    this.bypassPathPrefixes = validatePathPrefixes(
+      'bypassPathPrefixes',
+      config.bypassPathPrefixes ?? []
+    );
+    this.strictBypassPathPrefixes = validatePathPrefixes(
+      'strictBypassPathPrefixes',
+      config.strictBypassPathPrefixes ?? []
+    );
     const namespace = config.cacheNamespace ?? DEFAULT_CACHE_NAMESPACE;
     if (!CACHE_NAMESPACE_PATTERN.test(namespace)) {
       throw new RangeError(
@@ -265,6 +283,13 @@ export class TuturuuuServiceWorker {
     });
     self.addEventListener('fetch', (event) => {
       const fetchEvent = event as FetchEvent;
+      // Strict mounts never reach respondWith, navigations included, so the
+      // browser fetches them itself and Cache Storage is never consulted. With
+      // navigation preload enabled the browser discards the unused preload
+      // response and may request the page twice; that cost is accepted over
+      // handing a strict mount any response this worker produced.
+      if (this.refusesScope() || this.isStrictlyBypassedPath(fetchEvent))
+        return;
       const response = this.handleFetch(fetchEvent);
       if (response) {
         fetchEvent.respondWith(response);
@@ -272,7 +297,38 @@ export class TuturuuuServiceWorker {
     });
   }
 
+  /**
+   * True when this registration's scope lies under a strict mount, or is a
+   * narrower-than-root scope that string-prefix covers one (for example a
+   * script registering this worker at `/mastermind/` through
+   * `Service-Worker-Allowed: /`). Such a worker unregisters and stays inert.
+   */
+  private refusesScope() {
+    const scope = self.registration?.scope;
+    if (!scope || this.strictBypassPathPrefixes.length === 0) return false;
+    const { pathname } = new URL(scope, self.location.origin);
+    return (
+      isUnderPrefix(pathname, this.strictBypassPathPrefixes) ||
+      (pathname !== '/' &&
+        this.strictBypassPathPrefixes.some((prefix) =>
+          prefix.startsWith(pathname)
+        ))
+    );
+  }
+
+  private async unregisterRefusedScope() {
+    try {
+      await self.registration.unregister();
+    } catch (error) {
+      console.warn('[offline] Could not unregister a refused scope.', error);
+    }
+  }
+
   private async install() {
+    if (this.refusesScope()) {
+      await this.unregisterRefusedScope();
+      return;
+    }
     const cache = await caches.open(this.precacheName);
     const urls = this.precacheEntries.map(resolveEntryUrl);
     const results = await Promise.allSettled(
@@ -298,6 +354,10 @@ export class TuturuuuServiceWorker {
   }
 
   private async activate() {
+    if (this.refusesScope()) {
+      await this.unregisterRefusedScope();
+      return;
+    }
     if (this.maxRuntimeCacheEntries === 0)
       await caches.delete(this.runtimeCacheName);
     // Other apps on the same origin keep their caches; only this namespace is pruned.
@@ -311,6 +371,8 @@ export class TuturuuuServiceWorker {
         .map((name) => caches.delete(name))
     );
 
+    await this.purgeStrictEntries();
+
     if (this.navigationPreload && self.registration.navigationPreload) {
       await self.registration.navigationPreload.enable();
     }
@@ -318,6 +380,52 @@ export class TuturuuuServiceWorker {
     if (this.clientsClaim) {
       await self.clients.claim();
     }
+  }
+
+  /** Deletes strict-mount entries from every cache this worker owns. */
+  private async purgeStrictEntries() {
+    if (this.strictBypassPathPrefixes.length === 0) return;
+    const custom = new Set(
+      this.additionalCaching.flatMap((rule) =>
+        rule.cacheName ? [rule.cacheName] : []
+      )
+    );
+    const names = (await caches.keys()).filter(
+      (name) =>
+        name === this.runtimeCacheName ||
+        this.ownPrecachePattern.test(name) ||
+        custom.has(name)
+    );
+    await Promise.all(
+      names.map(async (name) => {
+        try {
+          const cache = await caches.open(name);
+          const keys = await cache.keys();
+          await Promise.all(
+            keys
+              .filter((key) => {
+                const url = new URL(key.url, self.location.origin);
+                return (
+                  url.origin === self.location.origin &&
+                  isUnderPrefix(url.pathname, this.strictBypassPathPrefixes)
+                );
+              })
+              .map((key) => cache.delete(key))
+          );
+        } catch (error) {
+          console.warn('[offline] Could not purge a strict mount.', error);
+        }
+      })
+    );
+  }
+
+  private isStrictlyBypassedPath(event: FetchEvent) {
+    if (this.strictBypassPathPrefixes.length === 0) return false;
+    const url = new URL(event.request.url, self.location.origin);
+    return (
+      url.origin === self.location.origin &&
+      isUnderPrefix(url.pathname, this.strictBypassPathPrefixes)
+    );
   }
 
   private handleFetch(event: FetchEvent) {
@@ -385,10 +493,7 @@ export class TuturuuuServiceWorker {
   private isBypassedPath(url: URL) {
     return (
       url.origin === self.location.origin &&
-      this.bypassPathPrefixes.some(
-        (prefix) =>
-          url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)
-      )
+      isUnderPrefix(url.pathname, this.bypassPathPrefixes)
     );
   }
 

@@ -420,6 +420,23 @@ worker never answers the mount; `CF_Authorization` is `Path=/mastermind`,
 are per host; the app-visible cookies hold no Web, app or Supabase session;
 and owner removal is immediate.
 
+### Service worker on the apex
+
+Web's worker (`apps/web/src/app/sw.ts`, scope `/`) lists `/mastermind` in
+`strictBypassPathPrefixes`, not the ordinary one-origin bypass list. For any
+request under it, navigations included, the fetch handler returns without
+`respondWith`, so the browser goes to the network and neither Cache Storage nor
+Web's offline page can answer. With navigation preload on, the browser discards
+the unused preload and may fetch the page twice; that cost is accepted.
+Activation deletes `/mastermind` entries from every cache the worker owns, and a
+registration whose scope lies under `/mastermind` (reachable through Web's
+`Service-Worker-Allowed: /`) unregisters itself and handles no fetches.
+Browsers that still run a worker without this release can serve Web's offline
+page for a failed `/mastermind` navigation; no server change reaches them, so
+that residual is covered by profile admission and owner risk acceptance.
+Coverage: `packages/offline/src/worker/create-offline-worker.strict.test.ts`
+and `apps/web/src/app/sw-app-prefixes.test.ts`.
+
 ## Production release
 
 `productionPublicationPolicy.mastermind` admits the `tuturuuu-mastermind`

@@ -32,10 +32,20 @@ const ONE_ORIGIN_APP_PREFIXES = [
   '/track',
 ] as const;
 
+/**
+ * Mounts this worker must never answer at all, navigations included: a
+ * response from Cache Storage or the offline page could stand in for the
+ * mounted document, and any apex script can write Cache Storage. Activation
+ * purges their cached entries, and a registration scoped under one
+ * unregisters itself. See docs: build/devops/mastermind-web.
+ */
+const STRICT_ONE_ORIGIN_APP_PREFIXES = ['/mastermind'] as const;
+
 const worker = createOfflineWorker({
   // Web's original cache names; changing this orphans installed caches.
   cacheNamespace: 'tuturuuu-offline',
   bypassPathPrefixes: ONE_ORIGIN_APP_PREFIXES,
+  strictBypassPathPrefixes: STRICT_ONE_ORIGIN_APP_PREFIXES,
   // Route families deploy independently, so stored HTML can name chunks the
   // serving version no longer has. Pages always come from the network; only
   // the precached offline page answers a failed navigation.

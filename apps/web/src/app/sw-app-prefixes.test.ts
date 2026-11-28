@@ -16,7 +16,23 @@ function bypassPrefixes() {
   return [...match[1].matchAll(/'([^']+)'/gu)].map((entry) => entry[1]);
 }
 
+function strictPrefixes() {
+  const match = source.match(
+    /const STRICT_ONE_ORIGIN_APP_PREFIXES = \[([\s\S]*?)\] as const;/u
+  );
+  if (!match?.[1]) throw new Error('STRICT_ONE_ORIGIN_APP_PREFIXES not found');
+  return [...match[1].matchAll(/'([^']+)'/gu)].map((entry) => entry[1]);
+}
+
 describe('Web service worker one-origin bypass', () => {
+  it('strictly bypasses the Mastermind mount and wires the strict list', () => {
+    expect(strictPrefixes()).toContain('/mastermind');
+    expect(bypassPrefixes()).not.toContain('/mastermind');
+    expect(source).toMatch(
+      /strictBypassPathPrefixes: STRICT_ONE_ORIGIN_APP_PREFIXES,/u
+    );
+  });
+
   it('keeps every mounted app path out of the root worker', () => {
     const prefixes = bypassPrefixes();
     for (const path of [
