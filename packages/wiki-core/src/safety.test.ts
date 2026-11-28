@@ -1,7 +1,11 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import { parseWikiMarkdown } from './markdown';
-import { hashWikiSafetyTerm, scanPublicSafety } from './safety';
+import {
+  decodeWikiHrefPass,
+  hashWikiSafetyTerm,
+  scanPublicSafety,
+} from './safety';
 
 vi.mock('./safety-rules', async (original) => {
   const rules = await original<typeof import('./safety-rules')>();
@@ -185,6 +189,8 @@ describe('public safety scan', () => {
       '0:0:0:0:0:0:0:1.',
     ],
     ['loopback after a dot', 'private network address', 'host.::1'],
+    ['loopback before a double dot', 'private network address', '::1..'],
+    ['loopback before a domain label', 'private network address', '::1.com'],
     ['IPv6 unspecified', 'private network address', '[::]'],
   ])('detects %s', (_case, rule, value) => {
     const findings = scanPublicSafety({ type: 'doc' }, undefined, {
@@ -214,9 +220,12 @@ describe('public safety scan', () => {
     }
   );
 
-  it.each(['https://example.com/50%25-off', 'https://example.com/?q=100%25'])(
-    'allows literal percent encoding in %s',
-    (href) => expect(scan(`[Example](${href})`)).toEqual([])
+  it.each([
+    'https://example.com/50%25-off',
+    'https://example.com/?q=100%25',
+    'https://example.com/?bad=%25FF',
+  ])('allows literal percent encoding in %s', (href) =>
+    expect(scan(`[Example](${href})`)).toEqual([])
   );
 
   it('rejects malformed percent encoding on the raw href', () => {
@@ -224,6 +233,52 @@ describe('public safety scan', () => {
       rule: 'unsupported link',
       location: 'body.content.0.content.0.marks.0.attrs.href',
     });
+  });
+
+  it.each([
+    'https://example.com/50%25-off?ref=%2553%2552%252D123',
+    'https://example.com/?ref=%2553%2552%252D123&note=100%25',
+    'https://example.com/?a=%25&b=%2553%2552%252D123',
+    'https://example.com/?bad=%25FF&ref=%2553%2552%252D123',
+    'https://example.com/?bad=%25FF&ref=%252553%252552%25252D123',
+  ])(
+    'reports an encoded register ID beside a literal percent in %s',
+    (href) => {
+      expect(scan(`[Example](${href})`)).toContainEqual({
+        rule: 'internal security register ID',
+        location: 'body.content.0.content.0.marks.0.attrs.href',
+      });
+    }
+  );
+
+  it('rejects a malformed escape beside an encoded register ID', () => {
+    const findings = scan(
+      '[Example](https://example.com/?q=%zz&ref=%2553%2552%252D123)'
+    );
+    expect(findings).toContainEqual({
+      rule: 'unsupported link',
+      location: 'body.content.0.content.0.marks.0.attrs.href',
+    });
+    expect(findings.map(({ rule }) => rule)).not.toContain(
+      'internal security register ID'
+    );
+  });
+
+  it.each([
+    ['repeated escaped percent', '%25'],
+    ['repeated double-escaped percent', '%2525'],
+  ])('decodes a 2 MB %s href in bounded time', (_case, unit) => {
+    const value = unit.repeat(Math.ceil(2_000_000 / unit.length));
+    expect(value.length).toBeGreaterThanOrEqual(2_000_000);
+    const started = performance.now();
+    let decoded = value;
+    for (let pass = 0; pass < 3 && decoded.includes('%'); pass++) {
+      const next = decodeWikiHrefPass(decoded, pass);
+      if (next === decoded) break;
+      decoded = next;
+    }
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(decoded).toBe('%'.repeat(value.length / unit.length));
   });
 
   it.each(['a:b', 'aa:bb', '12:34'])(

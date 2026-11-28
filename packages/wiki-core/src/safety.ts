@@ -51,8 +51,10 @@ const maxHashedWordLength = 128;
 const assignment = /(?<![a-z0-9_])([a-z0-9_]+)["']?\s*[:=]\s*(?=\S)/gi;
 const secretName =
   /token|secret|password|passwd|credential|bypass|_key(?:_|$)/i;
+// A dotted decimal continues the address. A dot before a non-digit does not,
+// so ::1. ::1.. and ::1.com stay candidates.
 const ipv6Candidate =
-  /(?<![0-9a-f:])[0-9a-f:]{2,39}(?:\.\d{1,3}){0,3}(?![0-9a-f:]|\.[0-9a-f:.])/gi;
+  /(?<![0-9a-f:])[0-9a-f:]{2,39}(?:\.\d{1,3}){0,3}(?![0-9a-f:]|\.\d)/gi;
 
 function normalizeSafetyText(value: string): string {
   return value.normalize('NFKC').replace(/\p{Cf}/gu, '');
@@ -175,6 +177,31 @@ function visibleText(node: RichTextNode): string {
   return (node.content ?? []).map(visibleText).join(separator);
 }
 
+function decodePercentRun(run: string): string {
+  try {
+    return decodeURIComponent(run);
+  } catch {
+    // A byte run that is not UTF-8 still yields its ASCII bytes. Leaving
+    // the whole run in place would hide a sibling sequence such as %53.
+    return run.replace(/%([0-9a-f]{2})/gi, (encoded, hex: string) => {
+      const byte = Number.parseInt(hex, 16);
+      return byte <= 0x7f ? String.fromCharCode(byte) : encoded;
+    });
+  }
+}
+
+function decodeContiguousPercentRuns(value: string): string {
+  return value.replace(/(?:%[0-9a-f]{2})+/gi, decodePercentRun);
+}
+
+// Pass 0 is the whole string, so a malformed raw escape still rejects.
+// Later passes decode each valid run alone: a literal "%" cannot abort them.
+export function decodeWikiHrefPass(value: string, pass: number): string {
+  return pass === 0
+    ? decodeURIComponent(value)
+    : decodeContiguousPercentRuns(value);
+}
+
 /** Run at publish time with a trusted visibility snapshot and the revision metadata. */
 export function scanPublicSafety(
   input: unknown,
@@ -224,7 +251,7 @@ export function scanPublicSafety(
         for (let pass = 0; pass < 3 && decoded.includes('%'); pass++) {
           let next: string;
           try {
-            next = decodeURIComponent(decoded);
+            next = decodeWikiHrefPass(decoded, pass);
           } catch {
             if (pass === 0) report('unsupported link', field);
             break;
