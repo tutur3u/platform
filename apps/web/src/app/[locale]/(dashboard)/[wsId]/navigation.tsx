@@ -183,6 +183,15 @@ export async function WorkspaceNavigationLinks({
             children: [],
             matchExact: true,
           } satisfies DashboardNavigationLink,
+          {
+            id: 'chat-reports',
+            title: t('chat-reports.title'),
+            href: `/${personalOrWsId}/chat-reports`,
+            aliases: [`/${personalOrWsId}/chat-reports`],
+            icon: createDashboardNavigationIcon('ShieldAlert', 'h-5 w-5'),
+            children: [],
+            matchExact: true,
+          } satisfies DashboardNavigationLink,
         ]
       : []),
     {

@@ -561,6 +561,11 @@
       "import": "./dist/notes-voice.js",
       "require": "./dist/notes-voice.js"
     },
+    "./chat-reports": {
+      "types": "./dist/chat-reports.d.ts",
+      "import": "./dist/chat-reports.js",
+      "require": "./dist/chat-reports.js"
+    },
     "./product-feedback": {
       "types": "./dist/product-feedback.d.ts",
       "import": "./dist/product-feedback.js",
