@@ -1,3 +1,4 @@
+import { projectFleetRows } from './fleet-account-input.mjs';
 import { describeEnvironment, peerUrlAllowed } from './peer-lanes.mjs';
 import { normalizeT3Accounting, normalizeT3Quota } from './usage-normalize.mjs';
 
@@ -128,8 +129,13 @@ export async function readT3Usage({
   url.searchParams.set('orchestrationProtocol', '2');
   url.searchParams.set('wsTicket', ticket);
   const result = await readUsageRpc(url, { openSocket, signal, now });
-  return {
+  const usage = {
     ...normalizeT3Quota(result.quota, now),
     ...normalizeT3Accounting(result.accounting, { trackSources: true }),
   };
+  // Private rows for the fleet account view. Non-enumerable, so neither a
+  // spread nor serialization can carry them into the published snapshot.
+  return Object.defineProperty(usage, 'fleetRows', {
+    value: projectFleetRows(result.quota),
+  });
 }

@@ -29,6 +29,16 @@ write only the tool's own host-wide ledger/history under
 owner thread only. There is no automatic recovery, failover, top-up, credit
 purchase, timer, or daemon.
 
+## Fleet-wide accounts
+
+`status --json` describes one host. Its `accounts` are collapsed across that
+host's aliases and carry no cross-host account key, and an identity taken from a
+config-home path is only meaningful on that host. Do not merge this output
+across hosts. The Mastermind fleet publisher builds the fleet account view from
+each machine's uncollapsed T3 provider rows; see
+[Fleet account view](../../apps/docs/platform/features/mobile-mastermind.mdx#fleet-account-view)
+for its private input contract and failure semantics.
+
 ## Pacing & routing config
 
 - **Pacing**: Per-account and per-window pacing computes `remainingPercent`,

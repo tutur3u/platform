@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { mergeCollectedAccounts } from './fleet-account-input.mjs';
 import { fleetText } from './scrub.mjs';
 import { readT3Usage } from './t3-usage.mjs';
 
@@ -92,18 +93,23 @@ export function usageCollector({
   const configured = configuredMachines(configs);
   if (!configured.size) return null;
   return async (fleetMachines) => {
+    // Private per-machine rows for the fleet account view; never serialized.
+    const reads = new Map();
     const annotated = await Promise.all(
       fleetMachines.slice(0, MAX_MACHINES).map(async ({ id, label }) => {
         const machine = { id, label: fleetText(label, 48) || id };
         const config = configured.get(id);
         if (!config) return unread(machine, 'not_configured');
         try {
-          const result = await collect({
+          const reply = await collect({
             ...config,
             bearer: readSecret(path.join(root, 'usage-readers', id)),
             signal,
             now,
           });
+          const { fleetRows: _private, ...result } = reply;
+          if (['complete', 'partial'].includes(result.quota.kind))
+            reads.set(id, reply.fleetRows);
           return {
             ...machine,
             ...result,
@@ -170,12 +176,26 @@ export function usageCollector({
       quota: [quota.kind, quota.reason],
       accounting: [accounting.kind, accounting.reason],
     }));
+    const listed = new Set(fleetMachines.map((machine) => machine.id));
+    const collected = {
+      machines: fleetMachines.slice(0, MAX_MACHINES).map(({ id }) => ({
+        id,
+        environmentId: configured.get(id)?.environmentId,
+        rows: reads.get(id) ?? null,
+      })),
+      complete:
+        fleetMachines.length <= MAX_MACHINES &&
+        [...configured.keys()].every((id) => listed.has(id)),
+    };
     return {
       path: ROUTE,
       body: JSON.stringify(snapshot),
       hash: createHash('sha256')
         .update(JSON.stringify(fingerprint))
         .digest('hex'),
+      /** One entry per provider account; kept on this host. */
+      mergeAccounts: (laneSources, at) =>
+        mergeCollectedAccounts(collected, laneSources, at),
     };
   };
 }

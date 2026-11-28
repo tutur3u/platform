@@ -14,6 +14,11 @@ import {
   readResolved,
 } from './decision-extras.mjs';
 import { pullAlerts } from './alerts-pull.mjs';
+import {
+  fleetAccountsView,
+  fleetLaneSources,
+  readLocalLanes,
+} from './fleet-account-input.mjs';
 import { fitToBudget } from './fit-to-budget.mjs';
 import {
   buildFleetState,
@@ -300,6 +305,20 @@ function writePrivateJson(file, value) {
   fs.renameSync(temp, file);
 }
 
+/** Replaces or removes the private fleet account view; never throws. */
+function writeFleetAccounts(
+  file,
+  { configured, usageSnapshot, laneSources, at }
+) {
+  try {
+    if (configured)
+      writePrivateJson(file, fleetAccountsView(usageSnapshot, laneSources, at));
+    else fs.rmSync(file, { force: true });
+  } catch {
+    // The optional view never interrupts publishing; its age shows a miss.
+  }
+}
+
 /** Writes each pulled answer as `<decisionId>.r<revision>.json` (mode 0600). */
 export function storeAnswers(answersDir, answers) {
   const written = [];
@@ -374,6 +393,7 @@ export async function runOnce({
   const db = openDatabase(paths.database);
   let rows;
   let todayOutcomes;
+  let localLanes = null;
   try {
     rows = readFleetRows(
       db,
@@ -381,6 +401,7 @@ export async function runOnce({
       orchestratorThreadId,
       customPattern ? [customPattern] : undefined
     );
+    localLanes = readLocalLanes(db);
     try {
       todayOutcomes = readTodayOutcomes(db, now);
     } catch {
@@ -431,6 +452,12 @@ export async function runOnce({
   } catch {
     // The cache only smooths missed probes; publishing goes on without it.
   }
+  const laneSources = fleetLaneSources({
+    localId: localMachine.id,
+    localLanes,
+    peers: peerResult.peers,
+    ids: peerMachineIds(rows.peers, localMachine.id),
+  });
   rows = { ...rows, peers: peerResult.peers };
   const { decisions, skipped } = readDecisions(paths.openDir);
   // Preview images upload before the snapshot that names them.
@@ -540,6 +567,13 @@ export async function runOnce({
   }
 
   const usageSnapshot = await usage;
+  writeFleetAccounts(path.join(paths.root, 'usage-fleet-accounts.json'), {
+    configured: Boolean(config.usageMachines?.length),
+    usageSnapshot,
+    laneSources,
+    // Readings may postdate the tick's start; age them against merge time.
+    at: new Date(now.getTime() + (Date.now() - tickStartedAt)),
+  });
   let usagePublished;
   const usageStampFile = path.join(paths.root, 'last-usage-publish.json');
   const usageStamp = usageSnapshot ? readJson(usageStampFile) : {};

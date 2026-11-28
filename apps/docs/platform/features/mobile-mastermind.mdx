@@ -357,7 +357,8 @@ records the product rules of the shell entry and every tab.
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
   `fleet-state.mjs`, `fit-to-budget.mjs`, `recovery-summary.mjs`, `lane-outcomes.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`, `review-extras.mjs`,
   `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,
-  `usage-normalize.mjs`, `t3-usage.mjs`, `poke.mjs`, `web-call.mjs`,
+  `usage-normalize.mjs`, `t3-usage.mjs`, `fleet-account-input.mjs`,
+  `fleet-account-merge.mjs`, `poke.mjs`, `web-call.mjs`,
   `private-files.mjs`, `secret-decision.mjs`, `secret-protocol.mjs` and
   `secret-spool.mjs`, with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
@@ -582,6 +583,116 @@ records the product rules of the shell entry and every tab.
   `apps/web/src/lib/mastermind/fleet/publisher-output.test.ts` (worst-case
   publisher output through the real edge guard, contract and body cap) and
   `apps/mobile/test/features/mastermind/fleet/`.
+
+### Fleet account view
+
+Each publisher run with `usageMachines` also writes one entry per provider
+account to `~/.local/share/fleet-sync/usage-fleet-accounts.json` (mode 0600).
+The file stays on the publisher host. It is not part of the Usage snapshot, and
+Web and the mobile clients do not read it.
+
+The rule:
+
+- Remaining percent is taken once per account and window, from the newest
+  eligible reading across every machine and instance alias.
+- Lane counts add across aliases and machines.
+- When any machine cannot count its lanes, every account total is `unknown`.
+  Such a machine may run lanes on any account, including one it does not list.
+
+`fleet-account-input.mjs` builds a private in-memory input from each machine's
+`server.getConfig` rows and lane listing. `fleet-account-merge.mjs` validates
+and merges it. Both ship in the installed publisher set. The input is never
+written or sent:
+
+| Field | Values |
+| --- | --- |
+| `v`, `coverage` | `1`; `complete`, or `partial` when a fleet machine past the 12-machine usage cap, or a configured reader outside the fleet list, is left out |
+| `hosts[].host` | unique fleet machine id |
+| `hosts[].read` | `ok`, or `failed` when the quota section was not read or its rows are ambiguous (a repeated instance id, more than 64 rows). A failed host has `lanes: unknown` and no accounts |
+| `hosts[].lanes` | `counted` or `unknown` |
+| `accounts[]` | `accountKey`, `provider`, `instanceId` (unique per host), `activeLanes` (a non-negative safe integer on a counted host, otherwise `unknown`), `readings` (at most 32) |
+| `readings[]` | `windowId`, `kind` (`session`, `weekly`, `monthly`, `other` or `unknown`), `scope` (`modelIds`, `providerIds`), `usedPercent`, `resetsAt`, `observedAt`, `authoritative` |
+
+Unknown fields are rejected, so raw identity cannot travel with a row. A bad
+percentage or time does not reject the input; it makes that reading ineligible.
+
+**Account identity.** `accountKey` is a truncated SHA-256 over the provider and
+its authenticated login: the lower-cased email plus `workspaceId`. Claude and
+Codex require the workspace, because one email can hold several quota accounts.
+Other providers may use the email alone. Without a login, T3's
+`usageLimits.credentialFingerprint` identifies the account. A row with neither
+gets an `unidentified-` key unique to that machine and instance, so it never
+merges (`identity: unestablished`). Instance ids and config-home paths never
+identify an account: both repeat across machines and logins. The key is opaque,
+not a secret; someone who already knows a login can recompute it. Machines that
+report different identity sources for one login stay separate. Rows enter the
+merge before any alias collapse, so a stale or non-authoritative alias cannot
+hide another alias's eligible reading.
+
+**Eligibility.** A reading counts only if all of these hold:
+
+- its window kind is known (`authoritative`);
+- `usedPercent` is a finite number from 0 to 100;
+- `observedAt` has an explicit timezone, is no later than the merge time (no
+  future skew) and is at most five minutes old;
+- `resetsAt` has an explicit timezone and is in the future.
+
+An unstarted window is the one exception to the reset rule: a session window at
+0% with no reset, or an Antigravity `gemini-` or `3p-` window at 0% with an
+epoch reset. A publisher or peer clock that runs ahead makes its newest readings
+ineligible until the merge time passes them. A parity test in
+`packages/agent-quota` pins these rules to that package's freshness helpers with
+zero future skew.
+
+Eligible readings rank by newest observation. Ties go to the higher usage, then
+the later reset, then host and instance id. A window is identified by its id
+(or kind), kind and sorted, de-duplicated model and provider ids.
+
+**Lanes.** A lane is a thread with a queued, preparing, starting, running or
+waiting run. The publishing host counts each thread and provider instance once
+from its T3 run projection, leaving out held queued runs. A linked machine
+counts only from a live, complete listing with no uncounted overflow, and its
+listing cannot tell held queued runs apart, so it counts them. A machine's lanes
+are `unknown` when:
+
+- its listing or projection cannot be read;
+- an active lane has no provider instance, or one missing from that machine's
+  account rows;
+- one thread is active on two machines;
+- its reader and its lane listing name different T3 environments, or two
+  readers share one environment;
+- the publishing host's reader names a linked environment.
+
+A linked machine that is offline, unconfigured or listed only partially
+therefore makes all totals `unknown` until it is counted again. A listing is
+partial when it reaches the 300-lane cap or its page limit.
+
+**Output.** With `status: ok` the file has `generatedAt`, `coverage`, `hosts`
+(each `host`, `read` and `lanes`) and `accounts`. Each account has
+`accountKey`, `provider`, `identity`, `instances`, `hosts`, `windows`,
+`remainingPercent`, `fresh`, `activeCount` and `lanesByHost`. Each window has
+`windowId`, `kind`, `scope`, `fresh`, `remainingPercent`, `resetsAt`,
+`observedAt` and `source` (host and instance). A window with no eligible reading
+has `fresh: false` and null values; a stale percentage is never shown. The
+account's `remainingPercent` is its tightest eligible window, model-scoped
+windows included, so use the per-window values to judge one model. `fresh` is
+true only when every window has an eligible reading, so check it before treating
+the account value as complete. `lanesByHost` lists the machines that report the
+account.
+
+**Failure semantics.** When the usage read or the merge fails, the file is
+replaced with `status: unavailable` and one `reason`: `usage_unavailable`,
+`fleet_input_invalid` or `fleet_merge_failed`. Error text is not stored.
+Removing `usageMachines` deletes the file. A run that fails before this step, or
+cannot write the file, leaves the previous one, and so does an older publisher
+after a rollback. Consumers must treat a file whose `generatedAt` is more than
+two minutes old, or any status other than `ok`, as unknown. Building or writing
+the view never changes the published snapshots.
+
+Regression coverage: `scripts/mastermind-fleet/fleet-account-merge.test.mjs`,
+`scripts/mastermind-fleet/fleet-account-input.test.mjs`,
+`scripts/mastermind-fleet/fleet-account-collector.test.mjs` and
+`packages/agent-quota/tests/fleet-publisher-parity.test.ts`.
 
 ### Iris activity and recovery coverage
 
