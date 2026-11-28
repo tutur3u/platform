@@ -7652,6 +7652,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get meetMiraAudioUnmute => 'Bật âm thanh Mira';
 
   @override
+  String get meetMiraConsentBlocked => 'Hãy cho phép chia sẻ với Google Gemini để hỏi Mira.';
+
+  @override
   String get meetMiraCost => 'Mira';
 
   @override

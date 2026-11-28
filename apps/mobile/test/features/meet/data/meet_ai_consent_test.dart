@@ -45,10 +45,7 @@ class _Repository extends MeetRepository {
 }
 
 http.Response _consentRefusal() => http.Response(
-  jsonEncode({
-    'code': 'ai_consent_required',
-    'message': 'ai_consent_required',
-  }),
+  jsonEncode({'code': 'ai_consent_required', 'message': 'ai_consent_required'}),
   403,
   headers: {'content-type': 'application/json'},
 );

@@ -14527,6 +14527,12 @@ abstract class AppLocalizations {
   /// **'Unmute Mira audio'**
   String get meetMiraAudioUnmute;
 
+  /// No description provided for @meetMiraConsentBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow sharing with Google Gemini to ask Mira.'**
+  String get meetMiraConsentBlocked;
+
   /// No description provided for @meetMiraCost.
   ///
   /// In en, this message translates to:

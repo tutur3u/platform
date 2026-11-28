@@ -276,11 +276,8 @@ class MeetRepository {
         entityId: messageId,
         payload: payload,
         pendingValue: (_) => {'pending': true},
-        send: () => _api.postJson(
-          path,
-          payload,
-          timeout: const Duration(seconds: 125),
-        ),
+        send: () =>
+            _api.postJson(path, payload, timeout: const Duration(seconds: 125)),
       ),
     );
   }

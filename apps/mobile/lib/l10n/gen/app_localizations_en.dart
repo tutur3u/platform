@@ -7732,6 +7732,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetMiraAudioUnmute => 'Unmute Mira audio';
 
   @override
+  String get meetMiraConsentBlocked => 'Allow sharing with Google Gemini to ask Mira.';
+
+  @override
   String get meetMiraCost => 'Mira';
 
   @override
