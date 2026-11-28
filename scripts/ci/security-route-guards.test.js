@@ -269,6 +269,65 @@ test('a wrapper header cannot hide inline handlers, foreign imports, or non-api 
     `${wrapperHeader}import * as route0 from '@/legacy-api-routes/../lib/open';\nimport { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';\nexport const { GET } = createWorkspaceRouteHandlers([[[], { GET: route0.GET }]]);`,
     `${wrapperHeader}import * as route0 from '@/legacy-api-routes/v1/roles/route';\nimport { guard } from '@/legacy-api-routes/../lib/route-guard';\nimport { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';\nexport const { GET } = createWorkspaceRouteHandlers([[[], { GET: guard }]]);`,
     `${wrapperHeader}import * as route0 from '@/legacy-api-routes/v1/roles/route';\nimport { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';\nexport const { GET } = createWorkspaceRouteHandlers([[[], { GET: globalThis.openHandler }]]);`,
+    `${wrapperHeader}import * as route0 from '@/legacy-api-routes/v1/workspaces/[wsId]/roles/route';\nimport { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';\nexport const { GET } = createWorkspaceRouteHandlers([[['a\\', '], { GET: route0.GET }]]); export const POST = async () => Response.json({ open: true }); void ([ //'], { GET: route0.GET }]]);`,
   ])
     assert.equal(routeIsGuarded(root, wrapperRoutePath, source), false);
+});
+
+test('generated wrapper parser handles adversarial long repeated inputs in linear time', () => {
+  const root = fixtureRoot({
+    'apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/route.ts':
+      'export async function GET() { return Response.json({}); }',
+  });
+  const importBlock = `${wrapperHeader}import * as route0 from '@/legacy-api-routes/v1/workspaces/[wsId]/roles/route';\nimport { createWorkspaceRouteHandlers } from '@/legacy-api-routes/workspace-route-group';\n`;
+  const adversarialExports = `${importBlock}export const { ${'GET '.repeat(3000)} } = createWorkspaceRouteHandlers([[[], { GET: route0.GET }]]);`;
+  const adversarialTable = `${importBlock}export const { GET } = createWorkspaceRouteHandlers([[[], { ${'GET: route0.GET '.repeat(3000)} }]]);`;
+  const adversarialSegments = `${importBlock}export const { GET } = createWorkspaceRouteHandlers([[[${"'a', ".repeat(3000)}'a'], { GET: route0.POST }]]);`;
+
+  for (const input of [
+    adversarialExports,
+    adversarialTable,
+    adversarialSegments,
+  ]) {
+    const start = performance.now();
+    assert.equal(routeIsGuarded(root, wrapperRoutePath, input), false);
+    const elapsedMs = performance.now() - start;
+    assert.ok(
+      elapsedMs < 200,
+      `expected linear-time rejection (<200ms), took ${elapsedMs.toFixed(1)}ms`
+    );
+  }
+});
+
+test('result-helper guard handles dollar-prefixed identifiers safely', () => {
+  const root = fixtureRoot({});
+  const guardedSource = `
+    export async function POST(req: Request) {
+      const $auth$ = await authorizeFleetPublisher(req);
+      if (!$auth$.ok) return $auth$.response;
+      return Response.json({ ok: true });
+    }
+  `;
+  const unguardedSource = `
+    export async function POST(req: Request) {
+      const $auth$ = await authorizeFleetPublisher(req);
+      return Response.json({ ok: true });
+    }
+  `;
+  assert.equal(
+    routeIsGuarded(
+      root,
+      'apps/web/src/app/api/v1/test/route.ts',
+      guardedSource
+    ),
+    true
+  );
+  assert.equal(
+    routeIsGuarded(
+      root,
+      'apps/web/src/app/api/v1/test/route.ts',
+      unguardedSource
+    ),
+    false
+  );
 });

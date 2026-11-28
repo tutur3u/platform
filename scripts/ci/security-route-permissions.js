@@ -152,8 +152,8 @@ const PUBLIC_ROUTE_ALLOWLIST = {
   },
 };
 
-function escape(value) {
-  return value.replace(/[$]/g, '\\$');
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function callsHelper(code) {
@@ -168,7 +168,7 @@ function enforcesResultHelper(code) {
     'g'
   );
   for (const match of code.matchAll(assignment)) {
-    const name = escape(match[1]);
+    const name = escapeRegExp(match[1]);
     const rest = code.slice(match.index + match[0].length);
     const deniedReturn = new RegExp(
       `\\bif\\s*\\(\\s*${name}\\s*\\)\\s*\\{?\\s*return\\s+${name}(?!\\.)\\b`

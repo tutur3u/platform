@@ -168,12 +168,17 @@ const WRAPPER_GUARD_IMPORT = new RegExp(
   `^import \\{\\s*guard\\s*\\} from '${LEGACY_GUARD_PATH}';$`,
   'gm'
 );
-const WRAPPER_EXPORT =
-  /^export const \{\s*(?:(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\s*,?\s*)+\}\s*=\s*createWorkspaceRouteHandlers\(\s*\[([\s\S]*)\]\s*(?:,\s*guard\s*)?,?\s*\);?$/;
-const WRAPPER_ENTRY =
-  /\[\s*\[\s*(?:'[^']*'(?:\s*,\s*'[^']*')*\s*,?\s*)?\]\s*,\s*\{\s*((?:(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\s*:\s*route\d+\.(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\s*,?\s*)+)\}\s*,?\s*\]/g;
-const WRAPPER_HANDLER_REF =
-  /(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\s*:\s*(route\d+)\.(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)/g;
+const HTTP_METHODS = new Set([
+  'GET',
+  'HEAD',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'OPTIONS',
+]);
+const WRAPPER_EXPORT_PREFIX =
+  /^export const \{([A-Z,\s]+)\}\s*=\s*createWorkspaceRouteHandlers\(\s*\[/;
 
 const LEGACY_ROUTE_IMPORT = new RegExp(
   `^import \\* as legacyRoute from '(${LEGACY_ROUTE_PATH})';$`,
@@ -184,17 +189,128 @@ const LEGACY_HEAD_IMPORT =
 const LEGACY_EXPORT_LINE =
   /^export const (?:GET = createLegacyGetHandler\(legacyRoute\.GET\)|HEAD = createLegacyHeadHandler\(GET\)|(GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS) = legacyRoute\.\1);$/;
 
+function parseWrapperExport(remainder) {
+  const prefixMatch = WRAPPER_EXPORT_PREFIX.exec(remainder);
+  if (!prefixMatch) return null;
+  const rawMethods = prefixMatch[1].trim();
+  if (!rawMethods) return null;
+  const methodTokens = rawMethods.split(',').map((token) => token.trim());
+  if (methodTokens.at(-1) === '') methodTokens.pop();
+  if (
+    methodTokens.length === 0 ||
+    !methodTokens.every((method) => HTTP_METHODS.has(method))
+  )
+    return null;
+
+  const closeBracket = remainder.lastIndexOf(']');
+  if (closeBracket < prefixMatch[0].length) return null;
+  let suffix = remainder.slice(closeBracket + 1).trim();
+  if (suffix.endsWith(';')) suffix = suffix.slice(0, -1).trim();
+  if (!suffix.endsWith(')')) return null;
+  suffix = suffix.slice(0, -1).trim();
+  if (suffix.endsWith(',')) suffix = suffix.slice(0, -1).trim();
+  if (suffix !== '' && !/^,\s*guard$/.test(suffix)) return null;
+  return remainder.slice(prefixMatch[0].length, closeBracket);
+}
+
+function skipWs(text, index) {
+  let pos = index;
+  while (pos < text.length && /\s/.test(text[pos])) pos += 1;
+  return pos;
+}
+
+function readIdent(text, index) {
+  let pos = index;
+  while (pos < text.length && /[A-Za-z0-9_]/.test(text[pos])) pos += 1;
+  return pos;
+}
+
 function isValidDispatchTable(tableBody, importedRoutes) {
+  let pos = skipWs(tableBody, 0);
   let entryCount = 0;
-  let valid = true;
-  const leftover = tableBody.replace(WRAPPER_ENTRY, (_match, handlers) => {
-    entryCount += 1;
-    for (const ref of handlers.matchAll(WRAPPER_HANDLER_REF)) {
-      if (ref[1] !== ref[3] || !importedRoutes.has(ref[2])) valid = false;
+
+  while (pos < tableBody.length) {
+    if (tableBody[pos] !== '[') return false;
+    pos = skipWs(tableBody, pos + 1);
+
+    // Parse segment array: [ 'seg1', 'seg2', ... ]
+    if (tableBody[pos] !== '[') return false;
+    pos = skipWs(tableBody, pos + 1);
+    while (pos < tableBody.length && tableBody[pos] !== ']') {
+      if (tableBody[pos] !== "'") return false;
+      pos += 1;
+      while (pos < tableBody.length && tableBody[pos] !== "'") {
+        if (
+          tableBody[pos] === '\\' ||
+          tableBody[pos] === '\n' ||
+          tableBody[pos] === '\r'
+        )
+          return false;
+        pos += 1;
+      }
+      if (tableBody[pos] !== "'") return false;
+      pos = skipWs(tableBody, pos + 1);
+      if (tableBody[pos] === ',') {
+        pos = skipWs(tableBody, pos + 1);
+      } else if (tableBody[pos] !== ']') {
+        return false;
+      }
     }
-    return '';
-  });
-  return valid && entryCount > 0 && /^[\s,]*$/.test(leftover);
+    if (tableBody[pos] !== ']') return false;
+    pos = skipWs(tableBody, pos + 1);
+    if (tableBody[pos] !== ',') return false;
+    pos = skipWs(tableBody, pos + 1);
+
+    // Parse handler map: { GET: route0.GET, ... }
+    if (tableBody[pos] !== '{') return false;
+    pos = skipWs(tableBody, pos + 1);
+    let handlerCount = 0;
+    while (pos < tableBody.length && tableBody[pos] !== '}') {
+      const keyEnd = readIdent(tableBody, pos);
+      const key = tableBody.slice(pos, keyEnd);
+      if (!HTTP_METHODS.has(key)) return false;
+      pos = skipWs(tableBody, keyEnd);
+      if (tableBody[pos] !== ':') return false;
+      pos = skipWs(tableBody, pos + 1);
+
+      const routeEnd = readIdent(tableBody, pos);
+      const routeVar = tableBody.slice(pos, routeEnd);
+      if (!/^route\d+$/.test(routeVar) || !importedRoutes.has(routeVar))
+        return false;
+      pos = routeEnd;
+      if (tableBody[pos] !== '.') return false;
+      pos += 1;
+
+      const methodEnd = readIdent(tableBody, pos);
+      const method = tableBody.slice(pos, methodEnd);
+      if (method !== key) return false;
+      handlerCount += 1;
+      pos = skipWs(tableBody, methodEnd);
+
+      if (tableBody[pos] === ',') {
+        pos = skipWs(tableBody, pos + 1);
+      } else if (tableBody[pos] !== '}') {
+        return false;
+      }
+    }
+    if (tableBody[pos] !== '}' || handlerCount === 0) return false;
+    pos = skipWs(tableBody, pos + 1);
+
+    if (tableBody[pos] === ',') {
+      pos = skipWs(tableBody, pos + 1);
+    }
+    if (tableBody[pos] !== ']') return false;
+    pos = skipWs(tableBody, pos + 1);
+    entryCount += 1;
+
+    if (tableBody[pos] === ',') {
+      pos = skipWs(tableBody, pos + 1);
+    } else if (pos < tableBody.length) {
+      return false;
+    }
+  }
+
+  return entryCount > 0;
 }
 
 function resolvesToScannedLegacyRoute(root, file, specifier) {
@@ -227,9 +343,9 @@ function isGeneratedLegacyWrapper(root, file, source) {
       .replace(WRAPPER_HELPER_IMPORT, '')
       .replace(WRAPPER_GUARD_IMPORT, '')
       .trim();
-    const exportMatch = WRAPPER_EXPORT.exec(remainder);
-    if (!exportMatch) return false;
-    return isValidDispatchTable(exportMatch[1], importedRoutes);
+    const tableBody = parseWrapperExport(remainder);
+    if (tableBody === null) return false;
+    return isValidDispatchTable(tableBody, importedRoutes);
   }
 
   // Template 2: single-route legacy wrapper (legacyRoute.*)
