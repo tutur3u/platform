@@ -35,6 +35,7 @@ import {
   resourceQueueStatus,
   spawnResourceCommand,
 } from './resources-queue';
+import { reclaimReport } from './resources-reclaim-report';
 import {
   installedResourceShims,
   setupResources,
@@ -466,18 +467,7 @@ export async function runResourcesCommand(argv: string[]) {
   if (action === 'reclaim') {
     const apply = options.includes('--apply');
     const slots = await reclaimResourceSlots(home, apply);
-    for (const slot of slots)
-      process.stdout.write(
-        'backup' in slot
-          ? `Reclaimed ${slot.path}. Receipt backed up to ${slot.backup}\n`
-          : `Would reclaim ${slot.path}.\n`
-      );
-    if (!slots.length)
-      process.stdout.write('No dead resource slots to reclaim.\n');
-    else if (!apply)
-      process.stdout.write(
-        'Use --apply to back up receipts and reclaim these slots.\n'
-      );
+    process.stdout.write(await reclaimReport(home, slots, apply));
     return;
   }
   if (action === 'monitor') {

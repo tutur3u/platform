@@ -2013,14 +2013,20 @@ numbered slot only when a valid receipt identifies an absent owner and any
 recorded child PID and process group are gone. The original receipt is saved to
 `<resource-home>/backups/reclaimed-slots/` before the slot is removed.
 Live or unverifiable processes, slots without receipts, legacy locks and queue
-tickets stay in place.
+tickets stay in place. Each kept numbered slot is printed as `Kept <slot>:` with
+its reason, such as a live broker PID or a child process group that still has
+members. Reclaim never signals those processes; the owning job must end them
+(for example, a leaked child that ignores SIGTERM keeps its group alive until it
+is killed by its owner). Rerun the preview after they exit.
 
 Applying setup and failed `run` launcher validation also recover dead slots
 under the mutex, even when the launchers cannot admit work. If a launcher
 error persists, wait for owners and waiters to drain, then rerun authorized
 setup from the owning CLI with the existing roots and shell settings.
 `setup --dry-run` leaves slots untouched. The tests in
-`resources-reclaim.test.ts` cover a surviving child process group, concurrent
+`resources-reclaim.test.ts` and `resources-reclaim-report.test.ts` cover a
+surviving child process group, kept-slot preview diagnostics (out-of-range PIDs,
+capped group-member lists, and post-apply inspection errors), concurrent
 admission, backup failure and recovery through setup and stale launchers.
 
 ### Cross-project budget on a shared host

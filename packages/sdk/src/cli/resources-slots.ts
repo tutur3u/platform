@@ -63,7 +63,7 @@ export function processAlive(pid?: number) {
   if (!pid || pid < 1) return false;
   return processTargetAlive(pid);
 }
-function processTargetAlive(pid: number) {
+export function processTargetAlive(pid: number) {
   try {
     process.kill(pid, 0);
     return true;
@@ -456,7 +456,10 @@ async function releaseMutex(path: string, token: string) {
   if (current?.token === token) await rm(path, { recursive: true });
   else await rm(join(path, 'reclaim'), { force: true });
 }
-async function numberedSlotPaths(home: string, configured?: ResourceConfig) {
+export async function numberedSlotPaths(
+  home: string,
+  configured?: ResourceConfig
+) {
   const config = configured ?? (await readResourceConfig(home));
   const maxLanes = config ? resourceMaxLanes(config) : 1;
   const slots = join(home, 'slots');
@@ -484,7 +487,7 @@ async function numberedSlotPaths(home: string, configured?: ResourceConfig) {
   return Array.from({ length: maxLanes }, (_, i) => join(slots, String(i)));
 }
 
-function ownerAndGroupGone({ pid, childPid }: ResourceOwner) {
+export function ownerAndGroupGone({ pid, childPid }: ResourceOwner) {
   // Only a kernel ESRCH proves absence. In particular, an incomplete ps
   // snapshot or an inaccessible process must never make a receipt eligible.
   return (

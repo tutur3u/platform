@@ -282,7 +282,10 @@ Apply rechecks the numbered slot under the admission mutex and backs up its
 original receipt under `<resource-home>/backups/reclaimed-slots/` before
 removing it. Only a receipt whose recorded owner, child PID and child process
 group are absent is eligible. Missing receipts, live jobs, legacy locks and queue
-tickets stay in place. The preview leaves the broker state untouched.
+tickets stay in place. The preview leaves the broker state untouched. A kept
+numbered slot is printed as `Kept <slot>:` with its surviving PID or process
+group; end that process through its owner, then rerun the preview. Reclaim never
+signals processes, and an "occupied" slot with no dead candidate is not reclaimable.
 
 Applying setup and failed `run` launcher validation use the same recovery
 before the idle check or launcher error. If the launchers still need refresh,
