@@ -25,7 +25,9 @@ permissions:
 
 jobs:
   plan:
-    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    # Main pushes always run the full workspace type-check and ignore plan
+    # outputs, so skip allocating a planner VM on main push.
+    if: ${{ ((github.event_name != 'push' || github.ref != 'refs/heads/main') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
       actions: read
       contents: read

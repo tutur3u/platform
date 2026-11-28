@@ -86,6 +86,10 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.match(job.if, /!cancelled\(\)/);
   assert.match(prJob.if, /!cancelled\(\)/);
   assert.doesNotMatch(String(workflow.jobs.plan.if), /!cancelled\(\)/);
+  assert.match(
+    String(workflow.jobs.plan.if),
+    /github\.event_name != 'push' \|\| github\.ref != 'refs\/heads\/main'/
+  );
   assert.match(job.if, /github\.event_name != 'pull_request'/);
   const checkouts = job.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
