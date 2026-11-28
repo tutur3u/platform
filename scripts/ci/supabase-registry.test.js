@@ -74,6 +74,7 @@ test('every active Supabase-starting job uses ECR Public without GHCR login', ()
           [
             'supabase-baseline.yaml',
             'mail-profile-runtime-contract.yaml',
+            'mail-e2e-report-only.yaml',
           ].includes(name)
             ? 'full'
             : 'contract',
@@ -102,7 +103,7 @@ test('every active Supabase-starting job uses ECR Public without GHCR login', ()
       }
     }
   }
-  assert.equal(count, 24);
+  assert.equal(count, 25);
   assert.equal(
     existsSync(new URL('../../.github/actions/login-supabase-registry', base)),
     false

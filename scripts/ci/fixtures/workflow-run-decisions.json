@@ -70,6 +70,7 @@
   "lms-cloudflare.yaml": ["path-filters"],
   "mail-calendar-tasks-builds.yaml": ["path-filters"],
   "mail-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
+  "mail-e2e-report-only.yaml": ["path-filters"],
   "mail-profile-runtime-contract.yaml": ["path-filters"],
   "marketing-cloudflare.yaml": ["path-filters"],
   "mastermind-cloudflare.yaml": ["path-filters", "planner-affected-gate"],

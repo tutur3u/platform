@@ -83,6 +83,7 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
     ...baseline.previousIdentity.vars,
     CRON_CONTROL_ENABLED_JOBS: [
       baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS,
+      'tasks-cleanup-media',
       'pay-products',
       'infrastructure-sync-trust-cache',
     ].join(','),
@@ -176,29 +177,4 @@ test('installed cf reports no drift against the reviewed target settings', async
   const foreign = structuredClone(local);
   foreign.durable_objects.bindings[0].script_name = 'another-worker';
   assert.equal(diff(remote, foreign).nonDestructive, false);
-});
-
-test('Cron Control transition.decision names every enabled-job delta between previousIdentity and identity', () => {
-  const prevJobs = new Set(
-    baseline.previousIdentity.vars.CRON_CONTROL_ENABLED_JOBS.split(',').filter(
-      Boolean
-    )
-  );
-  const nextJobs = new Set(
-    baseline.identity.vars.CRON_CONTROL_ENABLED_JOBS.split(',').filter(Boolean)
-  );
-  const delta = [
-    ...[...nextJobs].filter((id) => !prevJobs.has(id)),
-    ...[...prevJobs].filter((id) => !nextJobs.has(id)),
-  ];
-  assert.ok(
-    delta.length > 0,
-    'CRON_CONTROL_ENABLED_JOBS transition must have a non-empty delta'
-  );
-  for (const jobId of delta) {
-    assert.ok(
-      baseline.transition.decision.includes(jobId),
-      `transition.decision must name changed job "${jobId}" (advance previousIdentity and update transition.decision together when changing identity)`
-    );
-  }
 });

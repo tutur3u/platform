@@ -87,6 +87,7 @@ const mainExceptions = {
 // Oxc keeps job-level mutation locks outside a shared group.
 const queuedMainBaselines = new Set([
   'e2e-smoke-report-only.yaml',
+  'mail-e2e-report-only.yaml',
   'oxc-check.yaml',
   'turbo-unit-tests.yaml',
   'type-check.yaml',
