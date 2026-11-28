@@ -4,6 +4,7 @@ import { installedBuildIdentity } from './build-identity';
 const args = process.argv.slice(2);
 const board =
   args[0] === 'board' || (args[0] === 'help' && args[1] === 'board');
+const ci = args[0] === 'ci' || (args[0] === 'help' && args[1] === 'ci');
 const local = args[0] === 'backlog' || args[0] === 'operational-memory';
 const externalUpskii = args[0] === 'external' && args[1] === 'upskii';
 const separator = args.indexOf('--');
@@ -14,7 +15,7 @@ const run =
   args[0] !== 'fleet' &&
   args[0] !== 'resources' &&
   args[0] !== 'storage' &&
-  args[0] !== 'ci' &&
+  !ci &&
   args[0] !== 'balancer' &&
   args[0] !== 'git' &&
   args[0] !== 'doctor' &&
@@ -32,9 +33,11 @@ const run =
       ? import('./upskii/index.js').then(({ runUpskiiCommand }) =>
           runUpskiiCommand(args.slice(2))
         )
-      : args[0] === 'ci'
+      : ci
         ? import('./ci.js').then(async ({ runCiCommand }) => {
-            process.exitCode = await runCiCommand(args.slice(1));
+            process.exitCode = await runCiCommand(
+              args[0] === 'help' ? ['--help'] : args.slice(1)
+            );
           })
         : args[0] === 'infra'
           ? import('./infra/index.js').then(({ runInfraCommand }) =>

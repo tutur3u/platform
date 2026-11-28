@@ -113,7 +113,6 @@ export function renderStatus(
       `  ${(run.conclusion ?? run.status).padEnd(16)} ${run.workflow}${run.event ? ` [${run.event}]` : ''}${run.attempt && run.attempt > 1 ? ` attempt ${run.attempt}` : ''}  ${run.url ?? ''}`
     );
   if (status.runs.length === 0) lines.push('  no matching workflow runs yet');
-  if (status.truncated)
-    lines.push('  (more than 100 runs for this SHA; showing the first page)');
+  if (status.truncated) lines.push('  (run list is incomplete for this SHA)');
   return lines.join('\n');
 }

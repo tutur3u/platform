@@ -1,4 +1,12 @@
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdirSync, rmSync, rmdirSync, writeFileSync } from 'node:fs';
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  rmdir,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -136,13 +144,46 @@ describe('single-flight dedup', () => {
     const { createHash } = await import('node:crypto');
     const name = createHash('sha256').update('k').digest('hex').slice(0, 40);
     await cache.get('other', 'https://x/other', { ttl }); // creates the dir
+    const lock = join(dir, `${name}.lock`);
+    await mkdir(lock);
     await writeFile(
-      join(dir, `${name}.lock`),
+      join(lock, '00000000-0000-4000-8000-000000000001'),
       JSON.stringify({ pid: 999_999, token: 't', createdAt: clock })
     );
     const result = await cache.get('k', 'https://x/k', { ttl });
     expect(result.source).toBe('fetched');
     expect(calls.map((c) => c.url)).toContain('https://x/k');
+  });
+  it('keeps a replacement lock when a second reader reaps the dead owner', async () => {
+    const { createHash } = await import('node:crypto');
+    const hash = createHash('sha256').update('k').digest('hex').slice(0, 40);
+    const lock = join(dir, `${hash}.lock`);
+    const dead = join(lock, '00000000-0000-4000-8000-000000000001');
+    const replacement = join(lock, '00000000-0000-4000-8000-000000000002');
+    await mkdir(lock);
+    await writeFile(dead, JSON.stringify({ pid: 999_999 }));
+    const { calls, upstream } = recorder(() => response(200, { ok: true }));
+    const cache = cacheWith(upstream, {
+      isAlive: () => {
+        rmSync(dead);
+        rmdirSync(lock);
+        mkdirSync(lock);
+        writeFileSync(replacement, JSON.stringify({ pid: process.pid }));
+        return false;
+      },
+      sleep: async () => {
+        expect(JSON.parse(await readFile(replacement, 'utf8'))).toEqual({
+          pid: process.pid,
+        });
+        expect(calls).toHaveLength(0);
+        await rm(replacement);
+        await rmdir(lock);
+      },
+    });
+    expect((await cache.get('k', 'https://x/k', { ttl })).source).toBe(
+      'fetched'
+    );
+    expect(calls).toHaveLength(1);
   });
 });
 

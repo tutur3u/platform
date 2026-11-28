@@ -1,5 +1,13 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { link, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  rmdir,
+  writeFile,
+} from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { writeFileAtomically } from './atomic-file';
@@ -221,31 +229,61 @@ export function createCiCache(options: CiCacheOptions) {
   });
 
   const tryLock = async (key: string, token: string) => {
-    const temporary = `${lockPath(key)}.${token}.tmp`;
+    const path = lockPath(key);
+    const temporary = `${path}.${token}.tmp`;
+    await mkdir(temporary, { mode: 0o700 });
     try {
       await writeFile(
-        temporary,
-        JSON.stringify({ pid: process.pid, token, createdAt: now() }),
+        join(temporary, token),
+        JSON.stringify({ pid: process.pid, createdAt: now() }),
         { flag: 'wx', mode: 0o600 }
       );
-      await link(temporary, lockPath(key));
+      await rename(temporary, path);
       return true;
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'EEXIST') return false;
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'EEXIST' || code === 'ENOTEMPTY' || code === 'ENOTDIR')
+        return false;
       throw error;
     } finally {
-      await rm(temporary, { force: true });
+      await rm(temporary, { recursive: true, force: true });
     }
   };
 
   const releaseLock = async (key: string, token: string) => {
-    const lock = await readJson<{ token?: string }>(lockPath(key));
-    if (lock?.token === token) await rm(lockPath(key), { force: true });
+    const path = lockPath(key);
+    // A replacement owns a different file and is published as a nonempty
+    // directory. Removing this generation cannot remove the replacement.
+    try {
+      await rm(join(path, token), { force: true });
+      await rmdir(path);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (
+        code !== 'ENOENT' &&
+        code !== 'ENOTEMPTY' &&
+        code !== 'EEXIST' &&
+        code !== 'ENOTDIR'
+      )
+        throw error;
+    }
   };
 
   const breakStaleLock = async (key: string) => {
+    const path = lockPath(key);
+    let files: string[];
+    try {
+      files = await readdir(path);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT' || code === 'ENOTDIR') return false;
+      throw error;
+    }
+    const [token] = files;
+    if (files.length !== 1 || !token || !/^[a-f0-9-]{36}$/.test(token))
+      return false;
     const lock = await readJson<{ pid?: number; createdAt?: number }>(
-      lockPath(key)
+      join(path, token)
     );
     if (!lock) return false;
     const abandoned =
@@ -253,7 +291,7 @@ export function createCiCache(options: CiCacheOptions) {
         ? lock.pid !== process.pid && !isAlive(lock.pid)
         : typeof lock.createdAt === 'number' &&
           now() - lock.createdAt > lockStaleMs;
-    if (abandoned) await rm(lockPath(key), { force: true });
+    if (abandoned) await releaseLock(key, token);
     return abandoned;
   };
 
