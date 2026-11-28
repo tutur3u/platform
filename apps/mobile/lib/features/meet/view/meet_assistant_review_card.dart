@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/meet/data/meet_room_assistant.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -25,6 +26,7 @@ class MeetAssistantReviewCard extends StatefulWidget {
 class _MeetAssistantReviewCardState extends State<MeetAssistantReviewCard> {
   bool _busy = false;
   bool _failed = false;
+  bool _consent = false;
 
   Future<void> _decide(String action) async {
     if (_busy) return;
@@ -73,13 +75,17 @@ class _MeetAssistantReviewCardState extends State<MeetAssistantReviewCard> {
     setState(() {
       _busy = true;
       _failed = false;
+      _consent = false;
     });
     try {
-      await widget.assistant.decide(
+      final sent = await widget.assistant.decide(
         messageId: id,
         revision: revision,
         action: action,
       );
+      if (!sent && mounted) setState(() => _consent = true);
+    } on MeetAiConsentRequiredException {
+      if (mounted) setState(() => _consent = true);
     } on Object {
       if (mounted) setState(() => _failed = true);
     } finally {
@@ -138,10 +144,12 @@ class _MeetAssistantReviewCardState extends State<MeetAssistantReviewCard> {
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
-              if (_failed) ...[
+              if (_failed || _consent) ...[
                 const SizedBox(height: 8),
                 Text(
-                  l10n.meetMiraActionFailed,
+                  _consent
+                      ? l10n.meetMiraConsentBlocked
+                      : l10n.meetMiraActionFailed,
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
@@ -153,11 +161,13 @@ class _MeetAssistantReviewCardState extends State<MeetAssistantReviewCard> {
                   children: approvals.isNotEmpty
                       ? [
                           FilledButton.icon(
+                            key: const ValueKey('meet-mira-review-approve'),
                             onPressed: () => unawaited(_decide('approve')),
                             icon: const Icon(Icons.check_circle_outline),
                             label: Text(l10n.meetMiraApprove),
                           ),
                           OutlinedButton.icon(
+                            key: const ValueKey('meet-mira-review-deny'),
                             onPressed: () => unawaited(_decide('deny')),
                             icon: const Icon(Icons.block_outlined),
                             label: Text(l10n.meetMiraDeny),
@@ -165,11 +175,13 @@ class _MeetAssistantReviewCardState extends State<MeetAssistantReviewCard> {
                         ]
                       : [
                           FilledButton.icon(
+                            key: const ValueKey('meet-mira-review-share'),
                             onPressed: () => unawaited(_decide('share')),
                             icon: const Icon(Icons.share_outlined),
                             label: Text(l10n.meetShareWithEveryone),
                           ),
                           OutlinedButton.icon(
+                            key: const ValueKey('meet-mira-review-discard'),
                             onPressed: () => unawaited(_decide('discard')),
                             icon: const Icon(Icons.delete_outline),
                             label: Text(l10n.meetMiraDiscard),

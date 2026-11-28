@@ -4228,6 +4228,7 @@
   "meetMiraAudioMute": "Mute Mira audio",
   "meetMiraAudioRetry": "Retry Mira audio",
   "meetMiraAudioUnmute": "Unmute Mira audio",
+  "meetMiraConsentBlocked": "Allow sharing with Google Gemini to ask Mira.",
   "meetMiraCost": "Mira",
   "meetMiraDeny": "Deny actions",
   "meetMiraDiscard": "Discard draft",

@@ -6,6 +6,29 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/meet/meet_meeting.dart';
 import 'package:mobile/data/repositories/meet_cache.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
+
+/// The server refused a Meet Mira request because the signed-in user has not
+/// allowed sharing Mira content with Google Gemini.
+class MeetAiConsentRequiredException implements Exception {
+  const MeetAiConsentRequiredException();
+
+  @override
+  String toString() => 'MeetAiConsentRequiredException';
+}
+
+/// Runs a Meet Mira request, turning a server consent refusal into
+/// [MeetAiConsentRequiredException].
+Future<T> _guardAiConsent<T>(Future<T> Function() send) async {
+  try {
+    return await send();
+  } on ApiException catch (error) {
+    if (isMiraAiConsentRequired(error)) {
+      throw const MeetAiConsentRequiredException();
+    }
+    rethrow;
+  }
+}
 
 class MeetRepository {
   MeetRepository({ApiClient? apiClient}) : _api = apiClient ?? ApiClient();
@@ -184,14 +207,15 @@ class MeetRepository {
     required String timezone,
     required List<Map<String, dynamic>> history,
   }) async {
-    final response = await _api
-        .postJson(MeetEndpoints.personalAssistant(wsId, meetingId), {
-          'requestId': requestId,
-          'startedAt': startedAt,
-          'question': question,
-          'timezone': timezone,
-          'history': history,
-        }, timeout: const Duration(seconds: 125));
+    final response = await _guardAiConsent(
+      () => _api.postJson(MeetEndpoints.personalAssistant(wsId, meetingId), {
+        'requestId': requestId,
+        'startedAt': startedAt,
+        'question': question,
+        'timezone': timezone,
+        'history': history,
+      }, timeout: const Duration(seconds: 125)),
+    );
     final text = response['text'] as String?;
     if (text == null || text.trim().isEmpty) {
       throw StateError('Meet private answer unavailable');
@@ -204,10 +228,12 @@ class MeetRepository {
     String meetingId, {
     required String messageId,
     required String timezone,
-  }) => _api.postJson(MeetEndpoints.roomAssistant(wsId, meetingId), {
-    'messageId': messageId,
-    'timezone': timezone,
-  }, timeout: const Duration(seconds: 125));
+  }) => _guardAiConsent(
+    () => _api.postJson(MeetEndpoints.roomAssistant(wsId, meetingId), {
+      'messageId': messageId,
+      'timezone': timezone,
+    }, timeout: const Duration(seconds: 125)),
+  );
 
   Future<List<dynamic>> listMiraReviews(String wsId, String meetingId) =>
       readThroughJsonList(
@@ -241,16 +267,21 @@ class MeetRepository {
       'revision': revision,
       'action': action,
     };
-    return await queueOrSendValue<Map<String, dynamic>>(
-      feature: 'meet',
-      method: 'POST',
-      path: path,
-      workspaceId: wsId,
-      entityId: messageId,
-      payload: payload,
-      pendingValue: (_) => {'pending': true},
-      send: () =>
-          _api.postJson(path, payload, timeout: const Duration(seconds: 125)),
+    return await _guardAiConsent(
+      () => queueOrSendValue<Map<String, dynamic>>(
+        feature: 'meet',
+        method: 'POST',
+        path: path,
+        workspaceId: wsId,
+        entityId: messageId,
+        payload: payload,
+        pendingValue: (_) => {'pending': true},
+        send: () => _api.postJson(
+          path,
+          payload,
+          timeout: const Duration(seconds: 125),
+        ),
+      ),
     );
   }
 

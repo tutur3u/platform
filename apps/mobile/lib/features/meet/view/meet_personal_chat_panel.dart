@@ -2,13 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
-import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/data/meet_personal_chat.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 class MeetPersonalChatPanel extends StatefulWidget {
-  const MeetPersonalChatPanel({required this.call, super.key});
+  const MeetPersonalChatPanel({
+    required this.chat,
+    required this.share,
+    super.key,
+  });
 
-  final MeetCallController call;
+  final MeetPersonalChat chat;
+
+  /// Posts an approved answer to the room chat.
+  final Future<void> Function(String body) share;
 
   @override
   State<MeetPersonalChatPanel> createState() => _MeetPersonalChatPanelState();
@@ -26,7 +33,7 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
   Future<void> _ask() async {
     final question = _input.text.trim();
     if (question.isEmpty) return;
-    final sent = await widget.call.personalChat.ask(question);
+    final sent = await widget.chat.ask(question);
     if (sent && mounted) _input.clear();
   }
 
@@ -39,7 +46,7 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
         ),
       );
       if (approved == null || approved.isEmpty) return;
-      await widget.call.sendMessage(approved);
+      await widget.share(approved);
     } on Object {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -50,9 +57,9 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: widget.call.personalChat,
+    animation: widget.chat,
     builder: (context, _) {
-      final chat = widget.call.personalChat;
+      final chat = widget.chat;
       final l10n = context.l10n;
       return Column(
         children: [
@@ -101,7 +108,9 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
-                l10n.meetPrivateRequestFailed,
+                chat.consentRequired
+                    ? l10n.meetMiraConsentBlocked
+                    : l10n.meetPrivateRequestFailed,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ),
@@ -112,6 +121,7 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
               children: [
                 Expanded(
                   child: TextField(
+                    key: const ValueKey('meet-assistant-input'),
                     controller: _input,
                     enabled: !chat.pending,
                     maxLength: 2000,
@@ -125,6 +135,7 @@ class _MeetPersonalChatPanelState extends State<MeetPersonalChatPanel> {
                   ),
                 ),
                 IconButton(
+                  key: const ValueKey('meet-assistant-send'),
                   tooltip: l10n.meetSend,
                   onPressed: chat.pending ? null : () => unawaited(_ask()),
                   icon: const Icon(Icons.send_outlined),

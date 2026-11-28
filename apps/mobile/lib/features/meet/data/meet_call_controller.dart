@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
 import 'package:mobile/features/meet/data/meet_call_notices.dart';
 import 'package:mobile/features/meet/data/meet_native_media.dart';
 import 'package:mobile/features/meet/data/meet_personal_chat.dart';
@@ -485,6 +486,12 @@ class MeetCallController extends ChangeNotifier {
       _sendPresence();
       if (!_disposed) notifyListeners();
     }
+  }
+
+  /// Runs [gate] before every private and room Mira request in this call.
+  void useAiConsentGate(MiraAiConsentGate? gate) {
+    personalChat.aiConsentGate = gate;
+    roomAssistant.aiConsentGate = gate;
   }
 
   Future<String> sendMessage(String body) async {

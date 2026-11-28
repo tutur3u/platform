@@ -7,6 +7,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/ui/components/app_toggle_row.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/data/meet_room_assistant.dart';
 import 'package:mobile/features/meet/data/meet_room_code.dart';
 import 'package:mobile/features/meet/view/meet_assistant_review_card.dart';
 import 'package:mobile/features/meet/view/meet_personal_chat_panel.dart';
@@ -78,6 +79,7 @@ Future<void> showMeetChatSheet(
                       text: sheetContext.l10n.meetEveryone,
                     ),
                     Tab(
+                      key: const ValueKey('meet-assistant-tab'),
                       icon: const Icon(Icons.lock_outline),
                       text: sheetContext.l10n.meetPrivateMira,
                     ),
@@ -87,7 +89,10 @@ Future<void> showMeetChatSheet(
                   child: TabBarView(
                     children: [
                       _roomChatPanel(call, input),
-                      MeetPersonalChatPanel(call: call),
+                      MeetPersonalChatPanel(
+                        chat: call.personalChat,
+                        share: call.sendMessage,
+                      ),
                     ],
                   ),
                 ),
@@ -155,12 +160,15 @@ Widget _roomChatPanel(MeetCallController call, TextEditingController input) =>
                 children: [
                   Expanded(
                     child: Text(
-                      call.roomAssistant.error == 'reviews_failed'
+                      call.roomAssistant.consentRequired
+                          ? context.l10n.meetMiraConsentBlocked
+                          : call.roomAssistant.error == 'reviews_failed'
                           ? context.l10n.meetMiraReviewFailed
                           : context.l10n.meetMiraReplyFailed,
                     ),
                   ),
                   TextButton.icon(
+                    key: const ValueKey('meet-mira-retry'),
                     onPressed: () => unawaited(
                       call.roomAssistant.retryMessageId == null
                           ? call.roomAssistant.refreshReviews()
@@ -182,6 +190,7 @@ Widget _roomChatPanel(MeetCallController call, TextEditingController input) =>
             children: [
               Expanded(
                 child: TextField(
+                  key: const ValueKey('meet-room-chat-input'),
                   controller: input,
                   maxLength: 2000,
                   decoration: InputDecoration(
@@ -192,6 +201,7 @@ Widget _roomChatPanel(MeetCallController call, TextEditingController input) =>
                 ),
               ),
               IconButton(
+                key: const ValueKey('meet-room-chat-send'),
                 tooltip: context.l10n.meetSend,
                 onPressed: () => unawaited(_send(context, input, call)),
                 icon: const Icon(Icons.send_outlined),
@@ -209,6 +219,12 @@ Future<void> _send(
 ) async {
   final body = input.text.trim();
   if (body.isEmpty) return;
+  // A message that asks Mira waits for AI data consent; Not now keeps it in
+  // the composer and sends nothing to the room.
+  if (MeetRoomAssistant.hasMention(body) &&
+      !await call.roomAssistant.admitAiConsent()) {
+    return;
+  }
   input.clear();
   try {
     await call.sendMessage(body);

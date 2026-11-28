@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
+import 'package:mobile/features/meet/data/meet_ai_consent.dart';
 
 class MeetRoomAssistant extends ChangeNotifier {
   MeetRoomAssistant({
@@ -22,6 +24,15 @@ class MeetRoomAssistant extends ChangeNotifier {
   String? retryMessageId;
   bool _disposed = false;
 
+  /// Checked before every Mira request; null sends as before.
+  MiraAiConsentGate? aiConsentGate;
+
+  bool get consentRequired => error == meetAiConsentRequiredError;
+
+  /// Whether a room message mentioning Mira may be sent, asking the user for
+  /// AI data consent when needed.
+  Future<bool> admitAiConsent() => admitMeetAiConsent(aiConsentGate);
+
   static bool hasMention(String body) => RegExp(
     r'(^|[\s\(\[\{\"\x27,:;!?])@(?:mira|ttr|tuturuuu)(?=$|[^a-zA-Z0-9_-])',
     caseSensitive: false,
@@ -30,6 +41,16 @@ class MeetRoomAssistant extends ChangeNotifier {
 
   Future<void> ask(String messageId) async {
     if (thinking) return;
+    if (!await admitAiConsent()) {
+      // Not now sends nothing; Retry asks again.
+      if (!_disposed) {
+        retryMessageId = messageId;
+        error = meetAiConsentRequiredError;
+        notifyListeners();
+      }
+      return;
+    }
+    if (_disposed || thinking) return;
     thinking = true;
     retryMessageId = messageId;
     error = null;
@@ -43,6 +64,12 @@ class MeetRoomAssistant extends ChangeNotifier {
       );
       await refreshReviews();
       if (!_disposed) retryMessageId = null;
+    } on MeetAiConsentRequiredException {
+      // Kept for Retry; the refused request is not sent again by itself.
+      if (!_disposed) {
+        error = meetAiConsentRequiredError;
+        aiConsentGate?.consentRequired();
+      }
     } on Object {
       if (!_disposed) error = 'generation_failed';
     } finally {
@@ -88,19 +115,31 @@ class MeetRoomAssistant extends ChangeNotifier {
     }
   }
 
-  Future<void> decide({
+  /// Sends a review decision; false when the user chose Not now on the
+  /// consent sheet and nothing was sent. Throws
+  /// [MeetAiConsentRequiredException] when the server refused for missing
+  /// consent, after asking the user again.
+  Future<bool> decide({
     required String messageId,
     required int revision,
     required String action,
   }) async {
-    await _repository.decideMiraReview(
-      workspaceId,
-      meetingId,
-      messageId: messageId,
-      revision: revision,
-      action: action,
-    );
+    // The Meet gateway refuses every review decision without consent.
+    if (!await admitAiConsent()) return false;
+    try {
+      await _repository.decideMiraReview(
+        workspaceId,
+        meetingId,
+        messageId: messageId,
+        revision: revision,
+        action: action,
+      );
+    } on MeetAiConsentRequiredException {
+      aiConsentGate?.consentRequired();
+      rethrow;
+    }
     await refreshReviews();
+    return true;
   }
 
   @override

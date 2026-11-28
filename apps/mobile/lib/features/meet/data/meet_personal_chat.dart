@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
+import 'package:mobile/features/meet/data/meet_ai_consent.dart';
 
 class MeetPersonalTurn {
   const MeetPersonalTurn({required this.body, required this.assistant});
@@ -29,12 +31,24 @@ class MeetPersonalChat extends ChangeNotifier {
   final turns = <MeetPersonalTurn>[];
   String? error;
   bool pending = false;
+
+  /// Checked before every question; null sends as before.
+  MiraAiConsentGate? aiConsentGate;
   bool _disposed = false;
   ({String question, String requestId, int startedAt})? _retry;
 
   Future<bool> ask(String rawQuestion) async {
     final question = rawQuestion.trim();
     if (pending || question.isEmpty) return false;
+    // Not now keeps the question in the composer and sends nothing.
+    if (!await admitMeetAiConsent(aiConsentGate)) {
+      if (!_disposed) {
+        error = meetAiConsentRequiredError;
+        notifyListeners();
+      }
+      return false;
+    }
+    if (_disposed || pending) return false;
     final retry = _retry?.question == question
         ? _retry!
         : (
@@ -74,6 +88,13 @@ class MeetPersonalChat extends ChangeNotifier {
       if (turns.length > 40) turns.removeRange(0, turns.length - 40);
       _retry = null;
       return true;
+    } on MeetAiConsentRequiredException {
+      // The question stays in the composer; it is not sent again by itself.
+      if (!_disposed) {
+        error = meetAiConsentRequiredError;
+        aiConsentGate?.consentRequired();
+      }
+      return false;
     } on ApiException catch (exception) {
       if (!_disposed) {
         if (exception.statusCode == 422) _retry = null;
@@ -90,6 +111,8 @@ class MeetPersonalChat extends ChangeNotifier {
       }
     }
   }
+
+  bool get consentRequired => error == meetAiConsentRequiredError;
 
   @override
   void dispose() {

@@ -8,6 +8,7 @@ import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/meet_repository.dart';
 import 'package:mobile/features/meet/data/meet_call_controller.dart';
+import 'package:mobile/features/meet/view/meet_ai_consent_gate.dart';
 import 'package:mobile/features/meet/view/meet_collaboration_page.dart';
 import 'package:mobile/features/meet/view/meet_device_choice.dart';
 import 'package:mobile/features/meet/view/meet_ended_review.dart';
@@ -70,7 +71,9 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _call.addListener(_onCallUpdated);
+    _call
+      ..useAiConsentGate(meetAiConsentGate(this))
+      ..addListener(_onCallUpdated);
     unawaited(_checkRoomBeforeMedia());
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
@@ -218,6 +221,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
+          key: const ValueKey('meet-join'),
           onPressed: _join,
           icon: const Icon(Icons.login),
           label: Text(l10n.meetJoin),
@@ -638,6 +642,7 @@ class _MeetNativeRoomPageState extends State<MeetNativeRoomPage>
                             ],
                           ),
                           IconButton.filledTonal(
+                            key: const ValueKey('meet-chat-open'),
                             tooltip: l10n.meetChat,
                             onPressed: () =>
                                 unawaited(_notices.openChat(context, _call)),
