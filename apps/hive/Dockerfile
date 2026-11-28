@@ -109,6 +109,7 @@ COPY packages/users-core/package.json ./packages/users-core/package.json
 COPY packages/users-ui/package.json ./packages/users-ui/package.json
 COPY packages/utils/package.json ./packages/utils/package.json
 COPY packages/whiteboard/package.json ./packages/whiteboard/package.json
+COPY packages/wiki-core/package.json ./packages/wiki-core/package.json
 COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
 COPY packages/worlds/package.json ./packages/worlds/package.json

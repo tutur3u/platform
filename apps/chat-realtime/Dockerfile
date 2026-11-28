@@ -137,6 +137,7 @@ COPY packages/sso/package.json ./packages/sso/package.json
 COPY packages/start-bridge/package.json ./packages/start-bridge/package.json
 COPY packages/vault-crypto/package.json ./packages/vault-crypto/package.json
 COPY packages/whiteboard/package.json ./packages/whiteboard/package.json
+COPY packages/wiki-core/package.json ./packages/wiki-core/package.json
 
 # Keep this install command in sync with scripts/check-docker-web.js.
 # Retries mitigate flaky registry resolution and BuildKit cache issues.
