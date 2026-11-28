@@ -515,3 +515,15 @@ for (const [name, input] of Object.entries(INVALID)) {
     );
   });
 }
+
+test('rejects inherited contract fields and accepts null-prototype records', () => {
+  const input = fleet([]);
+  assert.throws(
+    () => mergeFleetAccounts(Object.create(input), NOW),
+    /fleet_input_invalid/
+  );
+  assert.deepEqual(
+    mergeFleetAccounts(Object.assign(Object.create(null), input), NOW).accounts,
+    []
+  );
+});

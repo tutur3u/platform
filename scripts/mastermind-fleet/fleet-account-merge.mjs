@@ -13,7 +13,7 @@ export const FLEET_MAX_HOSTS = 64;
 export const FLEET_MAX_ROWS = 64;
 export const FLEET_MAX_READINGS = 32;
 const MAX_ID = 128;
-const MAX_SCOPE_IDS = 128;
+export const FLEET_MAX_SCOPE_IDS = 128;
 
 const HOST = /^[a-z0-9][a-z0-9._-]{0,63}$/;
 const PROVIDER = /^[a-z0-9][a-z0-9._-]{0,47}$/i;
@@ -132,6 +132,8 @@ function check(condition) {
 /** A plain object carrying only contract fields, so nothing else rides along. */
 function checkShape(value, keys) {
   check(value !== null && typeof value === 'object' && !Array.isArray(value));
+  const proto = Object.getPrototypeOf(value);
+  check(proto === Object.prototype || proto === null);
   check(Object.keys(value).every((key) => keys.includes(key)));
 }
 
@@ -149,7 +151,7 @@ function checkReading(reading) {
   if (reading.scope === undefined) return;
   checkShape(reading.scope, KEYS.scope);
   for (const ids of Object.values(reading.scope)) {
-    checkList(ids, MAX_SCOPE_IDS);
+    checkList(ids, FLEET_MAX_SCOPE_IDS);
     check(ids.every(isId));
   }
 }

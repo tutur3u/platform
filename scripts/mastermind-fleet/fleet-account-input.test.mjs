@@ -76,7 +76,7 @@ test('derives one opaque key per provider login and workspace', () => {
 });
 
 test('requires a workspace where one login holds several accounts', () => {
-  for (const name of ['claude', 'codex'])
+  for (const name of ['claude', 'codex', 'Claude', 'CODEX'])
     assert.equal(providerAccountKey(name, auth({})), null);
   for (const name of ['cursor', 'grok'])
     assert.match(providerAccountKey(name, auth({})), /^acct-/);
@@ -158,9 +158,6 @@ test('keeps each window with its scope and leaves bad values to the merge', () =
               modelIds: ['m2', 'm1'],
               providerIds: [],
             },
-            { id: 'bad-scope', kind: 'weekly', modelIds: 'm1' },
-            { id: 'bad-ids', kind: 'weekly', providerIds: [1] },
-            null,
           ],
         },
       }),
@@ -507,4 +504,66 @@ test('names why there is no view without echoing the error', () => {
     ),
     { status: 'ok', v: 1, lanes: 1, at: NOW }
   );
+});
+
+test('requires a bounded email address before deriving a login account', () => {
+  for (const email of [
+    'a@localhost',
+    'a @example.com',
+    'a@@example.com',
+    `${'a'.repeat(255)}@example.com`,
+  ]) {
+    assert.equal(keyOf(auth({ email, workspaceId: WORKSPACE })), null);
+  }
+});
+
+test('a malformed window disqualifies its whole row without hiding other accounts', () => {
+  for (const badWindow of [
+    null,
+    [],
+    { modelIds: 'm1' },
+    { providerIds: [1] },
+    ...['modelIds', 'providerIds'].map((key) => ({
+      [key]: Array.from({ length: 129 }, (_, i) => `id-${i}`),
+    })),
+  ]) {
+    const valid = limits();
+    const rows = projectFleetRows({
+      providers: [
+        provider('bad', {
+          usageLimits: { ...valid, windows: [...valid.windows, badWindow] },
+        }),
+        provider(
+          'healthy',
+          auth({ email: 'other@example.com', workspaceId: WORKSPACE })
+        ),
+      ],
+    });
+    const input = buildFleetAccountInput({
+      machines: [{ id: 'm4', environmentId: 'local', rows }],
+      complete: true,
+      laneSources: new Map(),
+    });
+    const { accounts } = mergeFleetAccounts(input, NOW);
+    assert.equal(accounts.length, 2);
+    assert.equal(
+      accounts.find((account) => !account.fresh)?.remainingPercent,
+      null
+    );
+    assert.equal(
+      accounts.find((account) => account.fresh)?.remainingPercent,
+      90
+    );
+  }
+});
+
+test('local lane reads fail on missing, empty or nontext thread ids', () => {
+  for (const id of [null, '', 1, ['thread']]) {
+    const db = {
+      prepare: () => ({
+        all: () => [{ thread_id: id, provider_instance_id: 'a' }],
+      }),
+    };
+    assert.equal(readLocalLanes(db), null);
+  }
 });

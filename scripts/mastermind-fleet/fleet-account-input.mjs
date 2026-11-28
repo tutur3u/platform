@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import {
   FLEET_MAX_READINGS,
   FLEET_MAX_ROWS,
+  FLEET_MAX_SCOPE_IDS,
   mergeFleetAccounts,
 } from './fleet-account-merge.mjs';
 import { ACTIVE_RUN_STATUSES } from './fleet-state.mjs';
@@ -47,7 +48,11 @@ export function providerAccountKey(provider, row) {
   if (row?.auth?.status !== 'authenticated') return null;
   const email = text(row.auth.email).toLowerCase();
   const workspace = text(row.auth.workspaceId);
-  if (email.includes('@') && (workspace || !WORKSPACE_PROVIDERS.has(provider)))
+  if (
+    email.length <= 254 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
+    (workspace || !WORKSPACE_PROVIDERS.has(provider.toLowerCase()))
+  )
     return opaqueKey('acct', [provider, 'login', email, workspace]);
   const fingerprint = text(row.usageLimits?.credentialFingerprint);
   return FINGERPRINT.test(fingerprint)
@@ -60,7 +65,12 @@ function scopeFor(window) {
   for (const key of ['modelIds', 'providerIds']) {
     const ids = window[key];
     if (ids === undefined || ids === null) continue;
-    if (!Array.isArray(ids) || !ids.every(isId)) return null;
+    if (
+      !Array.isArray(ids) ||
+      ids.length > FLEET_MAX_SCOPE_IDS ||
+      !ids.every(isId)
+    )
+      return null;
     if (ids.length) scope[key] = [...ids];
   }
   return scope;
@@ -85,26 +95,27 @@ function readingsFor(row) {
     limits.windows.length > FLEET_MAX_READINGS
   )
     return [];
-  return limits.windows.flatMap((window) => {
-    if (!window || typeof window !== 'object') return [];
-    const known = WINDOW_KINDS.has(window.kind);
-    const kind = known ? window.kind : 'unknown';
+  const readings = [];
+  for (const window of limits.windows) {
+    if (!window || typeof window !== 'object' || Array.isArray(window))
+      return [];
     const scope = scopeFor(window);
     if (!scope) return [];
-    return [
-      {
-        windowId: isId(window.id) ? window.id : kind,
-        kind,
-        scope,
-        usedPercent: Number.isFinite(window.usedPercent)
-          ? window.usedPercent
-          : null,
-        resetsAt: reportedTime(window.resetsAt),
-        observedAt: reportedTime(limits.checkedAt),
-        authoritative: known,
-      },
-    ];
-  });
+    const known = WINDOW_KINDS.has(window.kind);
+    const kind = known ? window.kind : 'unknown';
+    readings.push({
+      windowId: isId(window.id) ? window.id : kind,
+      kind,
+      scope,
+      usedPercent: Number.isFinite(window.usedPercent)
+        ? window.usedPercent
+        : null,
+      resetsAt: reportedTime(window.resetsAt),
+      observedAt: reportedTime(limits.checkedAt),
+      authoritative: known,
+    });
+  }
+  return readings;
 }
 
 /**
@@ -133,7 +144,14 @@ export function projectFleetRows(config) {
 
 /** A lane list, or null when any active lane has no provider instance. */
 function lanesFrom(rows) {
-  return rows.every((row) => isId(row.instanceId)) ? rows : null;
+  return rows.every(
+    (row) =>
+      isId(row.instanceId) &&
+      typeof row.threadId === 'string' &&
+      row.threadId.length > 0
+  )
+    ? rows
+    : null;
 }
 
 /** Active lanes of the publishing host; held queued runs use no quota. */

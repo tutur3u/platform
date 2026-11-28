@@ -18,7 +18,8 @@ const SHARED = {
 };
 const OTHER = { ...SHARED, workspaceId: 'fixture-org-other' };
 const FINGERPRINT = 'cd'.repeat(32);
-const PRIVATE = /fixture-org|cd{8}|acct-|unidentified-|fleetRows|accountKey/;
+const PRIVATE =
+  /fixture-org|(?:cd){8}|acct-|unidentified-|fleetRows|accountKey/;
 const ago = (ms) => new Date(NOW.getTime() - ms).toISOString();
 
 function provider(
@@ -440,4 +441,8 @@ test('an unwritable view never interrupts publishing', async () => {
   const result = await publish(paths).run();
   assert.equal(result.published, true);
   assert.equal(result.usagePublished, true);
+});
+
+test('privacy assertion detects the fixture credential fingerprint on its own', () => {
+  assert.match(JSON.stringify({ value: FINGERPRINT }), PRIVATE);
 });

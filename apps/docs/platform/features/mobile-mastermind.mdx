@@ -614,7 +614,9 @@ written or sent:
 | `readings[]` | `windowId`, `kind` (`session`, `weekly`, `monthly`, `other` or `unknown`), `scope` (`modelIds`, `providerIds`), `usedPercent`, `resetsAt`, `observedAt`, `authoritative` |
 
 Unknown fields are rejected, so raw identity cannot travel with a row. A bad
-percentage or time does not reject the input; it makes that reading ineligible.
+percentage or time makes that reading ineligible. The collector excludes all
+readings from a provider row if any window is malformed or its model or provider
+ID list exceeds 128 entries. Other rows remain available.
 
 **Account identity.** `accountKey` is a truncated SHA-256 over the provider and
 its authenticated login: the lower-cased email plus `workspaceId`. Claude and
