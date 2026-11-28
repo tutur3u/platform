@@ -145,3 +145,30 @@ Longest queues (p90): Nova Cloudflare Source / check-ci / Check CI Config 29.2 m
 Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
 
 No workflow change; no failed-then-passed job, so no flake fix. scripts/check-docker-web.test.js had 5 failures on main, hidden because default discovery and the disabled docker-setup-check workflow skip it: every new workspace package had to be copied into the retired apps/tanstack-web Dockerfile and mounted as a dev volume in docker-compose.web.yml, and the chat-realtime Dockerfile lagged meet-realtime by 35 manifests. apps/chat-realtime is an active Cloudflare Worker with live CI and its image sits in the production sidecar compose, so its Dockerfile now copies every manifest. test(ci): scope docker web check to active runtimes skips manifest completeness for directories in PAUSED_APP_DIRECTORIES and per-package dev volumes while root dev:web:docker routes to scripts/paused-runtimes.js; a fixture-driven policy test in paused-runtimes.test.js keeps chat, meet and web Dockerfiles strict and proves both checks return on resumption. Result: 5 failing to 0 of 85. Rollback condition: Docker setup or apps/tanstack-web resumes without restoring the root command or PAUSED_APP_DIRECTORIES entry.
+
+## 2026-11-28 | Daily CI sample
+
+Window 2026-11-27T00:33 to 2026-11-28T00:33 UTC, main branch: 1000 workflow runs (730 success, 152 cancelled, 84 skipped, 33 failure, 1 in_progress). Job timing covers 120 sampled runs; execution uses successful jobs only.
+
+| Slowest workflows (wall) | p50 / p90 (n) |
+| --- | ---: |
+| Rewise Cloudflare Source | 48.3 min / 48.8 min (3) |
+| Playground Cloudflare Source | 48.2 min / 50.2 min (2) |
+| Contacts Cloudflare Source | 48.1 min / 49.9 min (3) |
+| Ai Cloudflare Source | 47.3 min / 47.4 min (3) |
+| Chat Cloudflare Source | 47.2 min / 50.3 min (3) |
+| Finance Cloudflare Source | 46.8 min / 51.3 min (3) |
+
+| Slowest jobs (execution) | p50 / p90 (n) | queue p90 |
+| --- | ---: | ---: |
+| Meet Cloudflare / validate | 10.5 min / 11.5 min (4) | 21 s |
+| Mail Calendar Tasks builds / calendar-native | 9.6 min / 10.7 min (2) | 67 s |
+| Test / Root script tests (24) | 6.1 min / 6.9 min (2) | 5 s |
+| Parley Cloudflare / validate | 5.0 min / 5.5 min (2) | 62 s |
+| Meet Cloudflare / Accept restored Meet artifact | 4.1 min / 4.1 min (1) | 5 s |
+| Workspace Cloudflare Source / native / validate | 4.0 min / 4.0 min (1) | 2.3 min |
+
+Longest queues (p90): Infrastructure Cloudflare Source / check-ci / Check CI Config 29.5 min; Native Calendar Cloudflare / check-ci / Check CI Config 28.9 min; Whiteboards Cloudflare Source / check-ci / Check CI Config 28.5 min; Tools Cloudflare Source / check-ci / Check CI Config 27.6 min.
+Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
+
+No workflow or test change, and no failed-then-passed job, so no flake fix. Cloudflare Source wall p50 rose again to 46-48 min (22-24 min on 2026-11-21, 36-38 min on 2026-11-24) while job execution stayed at 2-10 min and 152 of 1000 main runs were cancelled: the time is hosted-pool queue (Check CI Config p90 28-30 min), not execution, and main pushes already supersede in a shared per-workflow group (cancel-in-progress on non-production pushes, 11752b1a92). Further cuts need the affected-gate consumer redesign recorded on 2026-11-20 rather than a daily edit. The 33 main failures (Oxc format, CodeQL base commit, root script tests) were already owned by the CI/e2e lane, so they were not duplicated; recheck them in the next sample before treating any as a flake. Rollback condition: not applicable, nothing changed.
