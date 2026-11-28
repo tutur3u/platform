@@ -9,7 +9,9 @@ export const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function canonicalDeploymentId(id) {
-  return typeof id === 'string' && UUID_PATTERN.test(id) ? id.toLowerCase() : id;
+  return typeof id === 'string' && UUID_PATTERN.test(id)
+    ? id.toLowerCase()
+    : id;
 }
 
 export function splitOf(versions) {
@@ -23,7 +25,10 @@ export function sameSplit(actual, expected) {
   const shape = (list) =>
     JSON.stringify(
       splitOf(list)
-        .map(({ version_id, percentage }) => [canonicalDeploymentId(version_id), percentage])
+        .map(({ version_id, percentage }) => [
+          canonicalDeploymentId(version_id),
+          percentage,
+        ])
         .sort()
     );
   return shape(actual) === shape(expected);

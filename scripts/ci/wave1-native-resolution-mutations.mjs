@@ -46,7 +46,11 @@ assert.equal(
 );
 const scratch = mkdtempSync(join(tmpdir(), 'wave1-fence-mutations-'));
 try {
-  for (const name of [testName, 'wave1-native-production-resolutions.json', 'wave1-production-deployments.mjs'])
+  for (const name of [
+    testName,
+    'wave1-native-production-resolutions.json',
+    'wave1-production-deployments.mjs',
+  ])
     cpSync(join(root, name), join(scratch, name));
   const runTest = (file) =>
     spawnSync(
@@ -135,14 +139,18 @@ try {
   const rawUuidSource = source.replaceAll('canonicalDeploymentId(', '(');
   writeFileSync(join(scratch, moduleName), rawUuidSource);
   const rawUuidResult = run();
-  assert.match(rawUuidResult.stdout, /^not ok .*R8: receipt and live baselines/mu);
+  assert.match(
+    rawUuidResult.stdout,
+    /^not ok .*R8: receipt and live baselines/mu
+  );
   rows.push({ guard: 'R8 raw baseline UUID comparison', result: 'killed' });
   writeFileSync(join(scratch, moduleName), source);
 
   // Guard mutants for F1 (complete version inventory pagination) and F2 (pre-upload live rollback check).
   const guardsModule = 'wave1-native-production-guards.mjs';
   const guardsTest = 'wave1-native-production-guards.test.mjs';
-  const deploymentHistoryTest = 'wave1-native-production-deployment-history.test.mjs';
+  const deploymentHistoryTest =
+    'wave1-native-production-deployment-history.test.mjs';
   const modelTest = 'wave1-native-production-guards-model.test.mjs';
   const guardsSource = readFileSync(join(root, guardsModule), 'utf8');
   for (const name of [
@@ -306,12 +314,16 @@ try {
     [
       'R8 deployment traversal stops on first page',
       'R8:',
-      (s) => s.replace("    const pageItems = rawItems ?? [];", "    if (resource === 'deployments') return rawItems;\n    const pageItems = rawItems ?? [];"),
+      (s) =>
+        s.replace(
+          '    const pageItems = rawItems ?? [];',
+          "    if (resource === 'deployments') return rawItems;\n    const pageItems = rawItems ?? [];"
+        ),
     ],
     [
       'R8 missing historical detail accepted without confirmation',
       'R8:',
-      (s) => s.replace('assert.ok(await isVersionMissing(id),', 'assert.ok(true,'),
+      (s) => s.replace('await isVersionMissing(id)', 'true'),
     ],
     [
       'K2 assertActiveVersionsPresent membership check removed',
@@ -345,7 +357,9 @@ try {
     const mutated = mutator(guardsSource);
     assert.notEqual(mutated, guardsSource, `Mutator had no effect: ${label}`);
     writeFileSync(join(scratch, guardsModule), mutated);
-    const res = runTest(expectedPrefix === 'R8:' ? deploymentHistoryTest : modelTest);
+    const res = runTest(
+      expectedPrefix === 'R8:' ? deploymentHistoryTest : modelTest
+    );
     const failed = [...res.stdout.matchAll(/^not ok \d+ - (.+)$/gmu)].map(
       (m) => m[1]
     );

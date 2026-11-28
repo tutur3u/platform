@@ -342,22 +342,25 @@ export function setup(
       result = receipt.profile.secrets.map((name) => ({ name }));
     else if (url.endsWith('/deployments') || url.includes('/deployments?'))
       result = {
-        deployments: url.includes("&page=") ? [] : state.deployments ?? [
-          {
-            id: state.deploymentId ?? 'a0000000-0000-0000-0000-000000000001',
-            versions: state.split ?? [
-              { version_id: state.active, percentage: 100 },
-            ],
-          },
-          ...(state.noRollbackHistory
-            ? []
-            : [
-                {
-                  id: 'a0000000-0000-0000-0000-000000000002',
-                  versions: [{ version_id: oldId, percentage: 100 }],
-                },
-              ]),
-        ],
+        deployments: url.includes('&page=')
+          ? []
+          : (state.deployments ?? [
+              {
+                id:
+                  state.deploymentId ?? 'a0000000-0000-0000-0000-000000000001',
+                versions: state.split ?? [
+                  { version_id: state.active, percentage: 100 },
+                ],
+              },
+              ...(state.noRollbackHistory
+                ? []
+                : [
+                    {
+                      id: 'a0000000-0000-0000-0000-000000000002',
+                      versions: [{ version_id: oldId, percentage: 100 }],
+                    },
+                  ]),
+            ]),
       };
     else if (url.includes('/versions?per_page=100')) {
       if (state.versionsResponse) return state.versionsResponse(url);

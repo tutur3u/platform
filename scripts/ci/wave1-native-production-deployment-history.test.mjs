@@ -26,7 +26,10 @@ test('R8: deployment history requires an explicit empty terminal page', async ()
   await assert.rejects(readAllDeployments({ ...options, maxPages: 2 }));
   reads = 0;
   pages[2] = undefined;
-  await assert.rejects(readAllDeployments(options), /Malformed version inventory/u);
+  await assert.rejects(
+    readAllDeployments(options),
+    /Malformed version inventory/u
+  );
 });
 
 test('R8: confirmed historical absence cannot excuse a missing rollback or active version', async () => {
@@ -41,16 +44,31 @@ test('R8: confirmed historical absence cannot excuse a missing rollback or activ
     isVersionMissing: async (id) => id === historical,
   });
   assertActiveVersionsPresent({ ...fixture, confirmedMissingHistoricalIds });
-  await assert.rejects(confirmMissingHistoricalVersions({
-    ...fixture,
-    isVersionMissing: async () => false,
-  }), /Incomplete version inventory/u);
-  assert.throws(() => assertActiveVersionsPresent({
-    ...fixture, confirmedMissingHistoricalIds, rollback: deployments[1],
-  }), /rollback deployment/u);
-  assert.throws(() => assertActiveVersionsPresent({
-    ...fixture, versionItems: [], confirmedMissingHistoricalIds: new Set([active]),
-  }), /active deployment/u);
+  await assert.rejects(
+    confirmMissingHistoricalVersions({
+      ...fixture,
+      isVersionMissing: async () => false,
+    }),
+    /Incomplete version inventory/u
+  );
+  assert.throws(
+    () =>
+      assertActiveVersionsPresent({
+        ...fixture,
+        confirmedMissingHistoricalIds,
+        rollback: deployments[1],
+      }),
+    /rollback deployment/u
+  );
+  assert.throws(
+    () =>
+      assertActiveVersionsPresent({
+        ...fixture,
+        versionItems: [],
+        confirmedMissingHistoricalIds: new Set([active]),
+      }),
+    /active deployment/u
+  );
 });
 
 test('R8: live rollback compares UUID case without ignoring its split', async () => {
@@ -66,5 +84,8 @@ test('R8: live rollback compares UUID case without ignoring its split', async ()
   };
   await assertLiveRollbackUnchanged(options);
   options.expected.versions[0].percentage = 99;
-  await assert.rejects(assertLiveRollbackUnchanged(options), /version split changed/u);
+  await assert.rejects(
+    assertLiveRollbackUnchanged(options),
+    /version split changed/u
+  );
 });

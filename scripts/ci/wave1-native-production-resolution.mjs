@@ -5,8 +5,12 @@ import { isDeepStrictEqual } from 'node:util';
 
 const canonicalSplit = (versions) =>
   Array.isArray(versions)
-    ? versions.map((version) =>
-        version && { ...version, version_id: canonicalDeploymentId(version.version_id) }
+    ? versions.map(
+        (version) =>
+          version && {
+            ...version,
+            version_id: canonicalDeploymentId(version.version_id),
+          }
       )
     : versions;
 
@@ -53,8 +57,14 @@ export function matchesFailedNoWriteResolution(
       canonicalDeploymentId(resolution.currentBaselineDeploymentId) &&
     canonicalDeploymentId(receipt.rollback?.id) ===
       canonicalDeploymentId(resolution.receiptBaselineDeploymentId) &&
-    isDeepStrictEqual(canonicalSplit(rollback.versions), canonicalSplit(currentBaseline)) &&
-    isDeepStrictEqual(canonicalSplit(receipt.rollback?.versions), canonicalSplit(receiptBaseline)) &&
+    isDeepStrictEqual(
+      canonicalSplit(rollback.versions),
+      canonicalSplit(currentBaseline)
+    ) &&
+    isDeepStrictEqual(
+      canonicalSplit(receipt.rollback?.versions),
+      canonicalSplit(receiptBaseline)
+    ) &&
     !Object.keys(resolution).some((key) => key.startsWith('baseline'))
   );
 }

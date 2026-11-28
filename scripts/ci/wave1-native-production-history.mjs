@@ -368,7 +368,8 @@ export async function assertNoEarlierUpload({
       assert.match(receipt.digest ?? '', /^[a-f0-9]{64}$/);
       assert.ok(
         rollback.versions.some(
-          (version) => canonicalDeploymentId(version.version_id) ===
+          (version) =>
+            canonicalDeploymentId(version.version_id) ===
             canonicalDeploymentId(receipt.versionId)
         ),
         'Earlier accepted version is not the rollback baseline; owner reconciliation required'

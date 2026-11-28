@@ -303,15 +303,15 @@ export async function main({
         names.some((secret) => secret.name === name),
         `Missing production secret name: ${name}`
       );
-    const fetchJson = (url, credential) => boundedJson(url, credential, boundedFetch);
+    const fetchJson = (url, credential) =>
+      boundedJson(url, credential, boundedFetch);
     const deployments = await readAllDeployments({
       script,
       token: topologyToken,
       fetchJson,
     });
     assert.ok(
-      Array.isArray(deployments) &&
-        deployments.length > 0,
+      Array.isArray(deployments) && deployments.length > 0,
       'Initial private Worker and rollback version must be provisioned'
     );
     const versionItems = await readAllVersions({
@@ -324,23 +324,24 @@ export async function main({
       deployments: deployments.slice(0, 1),
       versionItems,
     });
-    const confirmedMissingHistoricalIds = await confirmMissingHistoricalVersions({
-      deployments,
-      versionItems,
-      isVersionMissing: async (id) =>
-        (await boundedJson(
-          `${script}/versions/${id}`,
-          topologyToken,
-          boundedFetch,
-          undefined,
-          undefined,
-          (errors) =>
-            Array.isArray(errors) &&
-            errors.length === 1 &&
-            Number.isInteger(errors[0]?.code) &&
-            /^worker version not found\.?$/i.test(errors[0]?.message ?? '')
-        )) === null,
-    });
+    const confirmedMissingHistoricalIds =
+      await confirmMissingHistoricalVersions({
+        deployments,
+        versionItems,
+        isVersionMissing: async (id) =>
+          (await boundedJson(
+            `${script}/versions/${id}`,
+            topologyToken,
+            boundedFetch,
+            undefined,
+            undefined,
+            (errors) =>
+              Array.isArray(errors) &&
+              errors.length === 1 &&
+              Number.isInteger(errors[0]?.code) &&
+              /^worker version not found\.?$/i.test(errors[0]?.message ?? '')
+          )) === null,
+      });
     assertActiveVersionsPresent({
       deployments,
       versionItems,
@@ -360,7 +361,8 @@ export async function main({
         canonicalDeploymentId(item.id),
         'Hosted version detail does not match the inventory ID'
       );
-      if (matchesVersion(version, sha, digest)) matches.push(canonicalDeploymentId(version.id));
+      if (matchesVersion(version, sha, digest))
+        matches.push(canonicalDeploymentId(version.id));
     }
     assertResolvedVersionsAbsent({ app, versions: observedVersions });
     assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
@@ -378,7 +380,8 @@ export async function main({
           (deployment) =>
             Array.isArray(deployment.versions) &&
             !deployment.versions.some(
-              (version) => canonicalDeploymentId(version.version_id) ===
+              (version) =>
+                canonicalDeploymentId(version.version_id) ===
                 canonicalDeploymentId(matches[0])
             )
         )
@@ -430,9 +433,9 @@ export async function main({
         fetcher: boundedFetch,
         readVersion: async (id) =>
           observedVersions.find(
-            (version) => canonicalDeploymentId(version.id) === canonicalDeploymentId(id)
-          ) ??
-          (await provider(`${script}/versions/${id}`)),
+            (version) =>
+              canonicalDeploymentId(version.id) === canonicalDeploymentId(id)
+          ) ?? (await provider(`${script}/versions/${id}`)),
       });
       if (newer) {
         record = {

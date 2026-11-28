@@ -2,7 +2,11 @@
 // publisher: complete hosted-version inventory traversal and live-rollback
 // re-verification immediately before upload.
 import assert from 'node:assert/strict';
-import { canonicalDeploymentId, sameSplit, UUID_PATTERN as VERSION_ID_RE } from './wave1-production-deployments.mjs';
+import {
+  canonicalDeploymentId,
+  sameSplit,
+  UUID_PATTERN as VERSION_ID_RE,
+} from './wave1-production-deployments.mjs';
 
 const isMoreFlag = (value) =>
   value !== undefined && value !== null && value !== false;
@@ -71,7 +75,8 @@ export async function readAllVersions({
     );
     const rawItems = response.result[itemKey];
     assert.ok(
-      (itemKey === 'items' && rawItems === undefined) || Array.isArray(rawItems),
+      (itemKey === 'items' && rawItems === undefined) ||
+        Array.isArray(rawItems),
       'Malformed version inventory'
     );
     const pageItems = rawItems ?? [];
@@ -339,13 +344,22 @@ export async function confirmMissingHistoricalVersions({
   const seen = new Set(versionItems.map(({ id }) => canonicalDeploymentId(id)));
   const missing = new Set();
   for (const deployment of deployments.slice(1)) {
-    assert.ok(Array.isArray(deployment.versions), 'Malformed deployment history');
+    assert.ok(
+      Array.isArray(deployment.versions),
+      'Malformed deployment history'
+    );
     for (const entry of deployment.versions) {
       assert.match(entry?.version_id ?? '', VERSION_ID_RE);
       const id = canonicalDeploymentId(entry.version_id);
       if (seen.has(id) || missing.has(id)) continue;
-      assert.ok(missing.size < 100, 'Historical version checks exceed reconciliation bound');
-      assert.ok(await isVersionMissing(id), `Incomplete version inventory: deployed version ${id} missing from version list`);
+      assert.ok(
+        missing.size < 100,
+        'Historical version checks exceed reconciliation bound'
+      );
+      assert.ok(
+        await isVersionMissing(id),
+        `Incomplete version inventory: deployed version ${id} missing from version list`
+      );
       missing.add(id);
     }
   }

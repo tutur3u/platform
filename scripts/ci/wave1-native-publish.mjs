@@ -178,7 +178,10 @@ export async function boundedJson(
   if (!response.ok) {
     assert.equal(data.success, false, 'Unrecognized missing Worker response');
     if (typeof allowNotFound === 'function') {
-      assert.ok(allowNotFound(data.errors), 'Unrecognized missing version response');
+      assert.ok(
+        allowNotFound(data.errors),
+        'Unrecognized missing version response'
+      );
     } else {
       assert.deepEqual(
         data.errors?.map((error) => error.code),
