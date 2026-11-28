@@ -1,6 +1,6 @@
 'use client';
 
-import type { MeetLiveActivityDraftResult } from '@tuturuuu/internal-api';
+import type { MeetLiveActivityDraftResult } from '@tuturuuu/internal-api/meet-live-activities';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 

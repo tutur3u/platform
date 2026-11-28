@@ -17,6 +17,7 @@ export default defineConfig({
       '@tuturuuu/internal-api/chat',
       '@tuturuuu/internal-api/client',
       '@tuturuuu/internal-api/meet-call',
+      '@tuturuuu/internal-api/meet-live-activities',
       '@tuturuuu/internal-api/meet-whiteboard',
       '@tuturuuu/internal-api/meetings',
       '@tuturuuu/internal-api/storage',

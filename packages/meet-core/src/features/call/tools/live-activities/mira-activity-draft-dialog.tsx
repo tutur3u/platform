@@ -2,13 +2,13 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { AlertCircle, Loader2, Sparkles } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   draftMeetLiveActivity,
-  InternalApiError,
   type MeetLiveActivityDraftDifficulty,
   type MeetLiveActivityDraftKind,
   type MeetLiveActivityDraftResult,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/meet-live-activities';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
