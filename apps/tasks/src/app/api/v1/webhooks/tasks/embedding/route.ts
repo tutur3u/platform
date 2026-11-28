@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
+import { hasAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   createMeteredTextEmbedding,
   GEMINI_EMBEDDING_2_DIMENSIONS,
@@ -22,7 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (webhookSecret !== expectedSecret) {
+    if (!secretsMatch(webhookSecret, expectedSecret)) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
@@ -133,6 +135,15 @@ export async function POST(req: Request) {
       });
     }
 
+    // The webhook has no caller provenance, so it embeds only for a task
+    // creator who allowed Mira AI data sharing with Google Gemini.
+    if (!(await hasAiDataConsent(billableUserId))) {
+      return NextResponse.json({
+        message: 'Embedding generation skipped: no AI data consent',
+        taskId,
+      });
+    }
+
     const embeddingResult = await createMeteredTextEmbedding({
       metadata: {
         operation: 'webhook_task_embedding_generation',
@@ -214,4 +225,10 @@ function extractTextFromTipTap(content: any): string {
   }
 
   return '';
+}
+
+function secretsMatch(provided: string | null, expected: string) {
+  if (provided === null) return false;
+  const digest = (value: string) => createHash('sha256').update(value).digest();
+  return timingSafeEqual(digest(provided), digest(expected));
 }

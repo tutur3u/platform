@@ -10,7 +10,8 @@ export async function prepareTaskFollowup(
   access: Awaited<ReturnType<typeof followupAccess>>,
   boardId: string,
   payload: Extract<ReturnType<typeof buildFollowupPayload>, { listId: string }>,
-  sourceUrl?: string
+  sourceUrl?: string,
+  aiConsentRequired = false
 ) {
   const [board, list, members] = await Promise.all([
     access.db
@@ -83,7 +84,14 @@ export async function prepareTaskFollowup(
         body: JSON.stringify(body),
       }),
       { params: Promise.resolve({ wsId: access.workspaceId }) },
-      { appSession: true, supabase: access.db, user: access.user }
+      // The internal request carries no caller credentials, so the caller's
+      // Mira AI data consent requirement travels explicitly.
+      {
+        aiConsentRequired,
+        appSession: true,
+        supabase: access.db,
+        user: access.user,
+      }
     );
     // A failure can occur after insertion. Keep the receipt pending unless success is confirmed.
     if (!response.ok) return { error: 'Task save could not be confirmed' };

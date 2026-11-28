@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  consent: vi.fn(),
   createMeteredTextEmbedding: vi.fn(),
   from: vi.fn(),
   maybeSingle: vi.fn(),
@@ -15,6 +16,10 @@ vi.mock('@tuturuuu/ai/embeddings/metered', () => ({
   createMeteredTextEmbedding: (...args: unknown[]) =>
     mocks.createMeteredTextEmbedding(...args),
   GEMINI_EMBEDDING_2_DIMENSIONS: 3,
+}));
+
+vi.mock('@tuturuuu/ai/chat/ai-data-consent', () => ({
+  hasAiDataConsent: (...args: unknown[]) => mocks.consent(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -54,6 +59,7 @@ describe('task embedding webhook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('SUPABASE_WEBHOOK_SECRET', 'configured-webhook-secret');
+    mocks.consent.mockResolvedValue(true);
 
     mocks.maybeSingle.mockResolvedValue({
       data: {
@@ -163,6 +169,22 @@ describe('task embedding webhook', () => {
       embedding: JSON.stringify([0.1, 0.2, 0.3]),
     });
     expect(mocks.updateEq).toHaveBeenCalledWith('id', 'task-1');
+  });
+
+  it('skips the embedding when the task creator has no AI data consent', async () => {
+    mocks.consent.mockResolvedValue(false);
+    const request = createRequest({ secret: 'configured-webhook-secret' });
+    const { POST } = await import('./route');
+
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Embedding generation skipped: no AI data consent',
+      taskId: 'task-1',
+    });
+    expect(mocks.consent).toHaveBeenCalledWith('user-1');
+    expect(mocks.createMeteredTextEmbedding).not.toHaveBeenCalled();
   });
 
   it('keeps event validation with the configured secret', async () => {

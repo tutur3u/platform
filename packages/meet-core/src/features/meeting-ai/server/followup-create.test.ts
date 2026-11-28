@@ -11,6 +11,10 @@ const mock = vi.hoisted(() => ({
   prepareEvent: vi.fn(),
   prepareTask: vi.fn(),
 }));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: vi.fn(async () => true),
+}));
 vi.mock('./followup-event', () => ({
   prepareCalendarFollowup: mock.prepareEvent,
 }));
@@ -102,7 +106,8 @@ it('uses the verified actor and reviewed destination, then stores a private rece
       assignee_ids: [userId],
       end_date: '2026-09-15T02:00:00.000Z',
     }),
-    undefined
+    undefined,
+    false
   );
   expect(result.url).toContain(`tasks.tuturuuu.com/${wsId}/tasks/`);
   expect(mock.receipt).toHaveBeenCalledWith(
@@ -262,7 +267,20 @@ it('lets the Meet host create a manual task outside the notes pilot with a canon
     expect.objectContaining({ canManage: true }),
     boardId,
     expect.objectContaining({ end_date: '2026-09-15T02:00:00.000Z' }),
-    `https://meet.tuturuuu.com/${wsId}/meetings/${meetingId}`
+    `https://meet.tuturuuu.com/${wsId}/meetings/${meetingId}`,
+    false
+  );
+});
+it('carries a native caller consent requirement into the Tasks write', async () => {
+  const native = request();
+  native.headers.set('authorization', 'Bearer native.supabase.jwt');
+  await createFollowup(native, params);
+  expect(mock.prepareTask).toHaveBeenCalledWith(
+    expect.anything(),
+    boardId,
+    expect.anything(),
+    undefined,
+    true
   );
 });
 it('denies manual tasks from readers and denies manual Calendar writes', async () => {

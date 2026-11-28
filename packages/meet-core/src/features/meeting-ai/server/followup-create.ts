@@ -1,3 +1,4 @@
+import { requiresAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import 'server-only';
 import { createMeetWorkspaceTools } from '@tuturuuu/ai/meetings/workspace-tools';
@@ -134,7 +135,13 @@ async function createFollowupAttempt(
   };
   const save =
     payload.listId !== undefined
-      ? await prepareTaskFollowup(access, input.boardId, payload, sourceUrl)
+      ? await prepareTaskFollowup(
+          access,
+          input.boardId,
+          payload,
+          sourceUrl,
+          requiresAiDataConsent(request)
+        )
       : await prepareCalendarFollowup(access.db, access.workspaceId, payload);
   const room = await getMeetCallAccess(access.meetingId, 'Participant');
   if (room.user.id !== access.user.id)

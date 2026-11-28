@@ -79,6 +79,7 @@ it('passes the Meet actor and selected assignees to Tasks after preflight', asyn
   expect(JSON.parse(body.description).content).toHaveLength(2);
   expect(await context.params).toEqual({ wsId: 'workspace' });
   expect(auth).toEqual({
+    aiConsentRequired: false,
     appSession: true,
     user: access.user,
     supabase: access.db,
@@ -132,4 +133,16 @@ it('persists a clickable meeting backlink for a task with no description', async
       ],
     },
   ]);
+});
+it('forwards the caller consent requirement to Tasks', async () => {
+  const { access } = fixture();
+  const save = await prepareTaskFollowup(
+    access as never,
+    'board',
+    payload,
+    undefined,
+    true
+  );
+  await save();
+  expect(handler.mock.calls[0]?.[2]).toMatchObject({ aiConsentRequired: true });
 });
