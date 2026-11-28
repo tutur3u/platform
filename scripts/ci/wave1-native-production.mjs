@@ -13,6 +13,7 @@ import {
   publicInputsDigest,
   verify,
 } from './wave1-native-artifact.mjs';
+import { isHistoricalVersionNotFound } from './wave1-native-historical-version.mjs';
 import { assertNoEarlierUpload } from './wave1-native-production-history.mjs';
 import {
   assertActiveVersionsPresent,
@@ -30,7 +31,6 @@ import { profiles } from './wave1-native-profile.mjs';
 import { ABUSE_GUARD_SERVICE_BINDING } from './wave1-source-admissions.mjs';
 import {
   boundedJson,
-  isHistoricalVersionNotFound,
   matchesVersion,
   requireRollback,
   uploadArtifact,

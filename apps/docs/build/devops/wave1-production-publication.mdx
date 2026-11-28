@@ -292,7 +292,8 @@ replaces another.
 - `scripts/ci/wave1-native-production-fence.test.mjs` covers preflight refusal and the default-off historical exception.
 - `scripts/ci/wave1-native-production-guards.test.mjs` covers inventory bounds and live rollback checks.
 - `scripts/ci/wave1-native-production-guards-model.test.mjs` covers inventory pagination behavior.
-- `scripts/ci/wave1-native-production-deployment-history.test.mjs` covers deployment pagination, historical lookup responses, and UUID case aliases.
+- `scripts/ci/wave1-native-production-deployment-history.test.mjs` covers deployment pagination and live rollback UUID case aliases.
+- `scripts/ci/wave1-native-historical-version.test.mjs` covers historical lookup responses and serving-SHA proof across UUID case aliases.
 
 - `scripts/ci/wave1-production-staged.test.mjs`: end-to-end sequence with fakes.
 - `scripts/ci/wave1-production-health.test.mjs`: health gate, smoke contract,
