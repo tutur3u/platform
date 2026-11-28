@@ -106,14 +106,20 @@ detection, `total_count` counting, and deployment membership; up to 10 pages
 and strictly `< 100` unique versions). Before `assertResolvedVersionsAbsent`,
 `assertActiveVersionsPresent` also requires every version ID referenced by ANY
 deployment in the full `GET /deployments` history (active, gradual splits,
-historical deployments, and rollback) to appear in the version inventory.
+historical deployments, and rollback) against the version inventory. Deployment
+pagination requires an explicit empty terminal page within the read bound. An
+absent historical ID requires a version-detail HTTP 404 with a structured Worker
+version not-found error. This exception requires Iris’s approval. Active and
+rollback IDs always require inventory membership.
 Residual & compensation: a metadata-free silent truncation of an undeployed
-version is an accepted residual (the October Calendar attempts failed at upload
-with CF `10021` so no October version should exist); before the Calendar
+version is an accepted residual. Both October Calendar attempts failed at upload.
+Run `40428329193` recorded Cloudflare error `10021`. Run `40413173161` has no
+captured provider error. Before the Calendar
 dispatch, Automations performs a one-time release-day manual audit with a
 read-only Workers Scripts Read token (two `/versions` pagination passes with
 `per_page=100` and a small `per_page` whose lowercase ID sets must match, plus
-`GET /deployments`, recording counts/IDs in release notes, revoking the token,
+paginated `GET /deployments`, inspecting every listed version’s SHA and digest,
+recording counts/IDs in release notes, revoking the token,
 and stopping if any version carries an October SHA or digest). Upload admission
 also re-reads the live deployment id and version split before uploading
 (`assertLiveRollbackUnchanged`), refusing with zero writes on any drift since

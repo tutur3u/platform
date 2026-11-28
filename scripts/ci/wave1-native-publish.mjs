@@ -86,7 +86,7 @@ export function requireRollback(deployments) {
   assert.equal(typeof latest.id, 'string');
   assert.ok(Array.isArray(latest.versions) && latest.versions.length);
   for (const version of latest.versions) {
-    assert.match(version.version_id, /^[a-f0-9-]{36}$/);
+    assert.match(version.version_id, /^[a-f0-9-]{36}$/i);
     assert.ok(Number.isFinite(version.percentage) && version.percentage > 0);
   }
   assert.equal(
@@ -177,11 +177,15 @@ export async function boundedJson(
   const data = JSON.parse(Buffer.concat(chunks).toString());
   if (!response.ok) {
     assert.equal(data.success, false, 'Unrecognized missing Worker response');
-    assert.deepEqual(
-      data.errors?.map((error) => error.code),
-      [10007],
-      'Unrecognized missing Worker response'
-    );
+    if (typeof allowNotFound === 'function') {
+      assert.ok(allowNotFound(data.errors), 'Unrecognized missing version response');
+    } else {
+      assert.deepEqual(
+        data.errors?.map((error) => error.code),
+        [10007],
+        'Unrecognized missing Worker response'
+      );
+    }
     return null;
   }
   return data;

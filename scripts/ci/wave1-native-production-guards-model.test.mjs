@@ -557,7 +557,7 @@ test('K2: assertActiveVersionsPresent requires active and rollback version ids i
         rollback,
         versionItems: [{ id: v1 }],
       }),
-    /active deployment version .* missing/u
+    /rollback deployment version .* missing/u
   );
 });
 

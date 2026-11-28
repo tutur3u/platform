@@ -42,7 +42,7 @@ function emittedManifestIn(runnerTemp) {
 const { fixture } = require('./wave1-native-test-fixture.cjs');
 export const sha = 'a'.repeat(40);
 export const oldId = '11111111-1111-1111-1111-111111111111';
-export const newId = '22222222-2222-2222-2222-222222222222';
+export const newId = 'b2222222-2222-2222-2222-222222222222';
 const publicInputs = {
   NEXT_PUBLIC_SUPABASE_URL: 'https://production-fixture.example.com',
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ['sb', 'publishable', 'fixture'].join(
@@ -153,7 +153,7 @@ export function setup(
     RUNNER_TEMP: runnerTemp,
   };
   const version = (id) => ({
-    id,
+    id: state.uppercaseVersionDetail ? id.toUpperCase() : id,
     annotations:
       state.versionAnnotationsById?.[id] ??
       state.versionAnnotations ??
@@ -340,11 +340,11 @@ export function setup(
           : state.scriptSettings;
     } else if (url.endsWith('/secrets'))
       result = receipt.profile.secrets.map((name) => ({ name }));
-    else if (url.endsWith('/deployments'))
+    else if (url.endsWith('/deployments') || url.includes('/deployments?'))
       result = {
-        deployments: state.deployments ?? [
+        deployments: url.includes("&page=") ? [] : state.deployments ?? [
           {
-            id: state.deploymentId ?? 'deployment',
+            id: state.deploymentId ?? 'a0000000-0000-0000-0000-000000000001',
             versions: state.split ?? [
               { version_id: state.active, percentage: 100 },
             ],
@@ -353,7 +353,7 @@ export function setup(
             ? []
             : [
                 {
-                  id: 'older-deployment',
+                  id: 'a0000000-0000-0000-0000-000000000002',
                   versions: [{ version_id: oldId, percentage: 100 }],
                 },
               ]),

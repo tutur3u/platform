@@ -1,3 +1,4 @@
+import { canonicalDeploymentId } from './wave1-production-deployments.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
@@ -367,7 +368,8 @@ export async function assertNoEarlierUpload({
       assert.match(receipt.digest ?? '', /^[a-f0-9]{64}$/);
       assert.ok(
         rollback.versions.some(
-          (version) => version.version_id === receipt.versionId
+          (version) => canonicalDeploymentId(version.version_id) ===
+            canonicalDeploymentId(receipt.versionId)
         ),
         'Earlier accepted version is not the rollback baseline; owner reconciliation required'
       );

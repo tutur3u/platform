@@ -375,3 +375,12 @@ test('the live Calendar version is not a resolved identity', () => {
     })
   );
 });
+
+test('R8: receipt and live baselines accept mixed-case UUIDs', () => {
+  const { resolution, context } = originalFixture();
+  for (const baseline of [context.receipt.rollback, context.rollback]) {
+    baseline.id = baseline.id.toUpperCase();
+    baseline.versions[0].version_id = baseline.versions[0].version_id.toUpperCase();
+  }
+  assert.equal(matchesFailedNoWriteResolution(resolution, context), true);
+});

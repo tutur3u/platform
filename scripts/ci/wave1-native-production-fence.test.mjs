@@ -302,9 +302,9 @@ test('R6-2: uppercase duplicate of active version id satisfying total_count refu
 test('R6-3: version inventory omitting a version from an earlier deployment in GET /deployments refuses with zero writes', async (t) => {
   const p = setup(t);
   p.state.deployments = [
-    { id: 'd2', versions: [{ version_id: oldId, percentage: 100 }] },
+    { id: 'a0000000-0000-0000-0000-000000000002', versions: [{ version_id: oldId, percentage: 100 }] },
     {
-      id: 'd1',
+      id: 'a0000000-0000-0000-0000-000000000001',
       versions: [
         { version_id: oldId, percentage: 50 },
         { version_id: PAGE2_ID, percentage: 50 },

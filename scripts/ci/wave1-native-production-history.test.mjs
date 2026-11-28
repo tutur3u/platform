@@ -13,7 +13,7 @@ import {
 
 const sha = 'a'.repeat(40);
 const earlierSha = 'b'.repeat(40);
-const versionId = '11111111-1111-1111-1111-111111111111';
+const versionId = 'a1111111-1111-1111-1111-111111111111';
 function fixture() {
   const env = {
     GITHUB_REPOSITORY: 'fixture/repo',
@@ -115,6 +115,7 @@ function fixture() {
 
 test('current in-progress attempt is ignored and accepted baseline closes earlier app history', async () => {
   const p = fixture();
+  p.state.receipt.versionId = versionId.toUpperCase();
   await p.run();
   assert.equal(p.state.reads, 1);
 });

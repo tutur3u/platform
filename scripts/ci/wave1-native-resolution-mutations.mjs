@@ -46,7 +46,7 @@ assert.equal(
 );
 const scratch = mkdtempSync(join(tmpdir(), 'wave1-fence-mutations-'));
 try {
-  for (const name of [testName, 'wave1-native-production-resolutions.json'])
+  for (const name of [testName, 'wave1-native-production-resolutions.json', 'wave1-production-deployments.mjs'])
     cpSync(join(root, name), join(scratch, name));
   const runTest = (file) =>
     spawnSync(
@@ -132,17 +132,24 @@ try {
     result: 'killed',
     failedTests: guardFailures,
   });
+  const rawUuidSource = source.replaceAll('canonicalDeploymentId(', '(');
+  writeFileSync(join(scratch, moduleName), rawUuidSource);
+  const rawUuidResult = run();
+  assert.match(rawUuidResult.stdout, /^not ok .*R8: receipt and live baselines/mu);
+  rows.push({ guard: 'R8 raw baseline UUID comparison', result: 'killed' });
   writeFileSync(join(scratch, moduleName), source);
 
   // Guard mutants for F1 (complete version inventory pagination) and F2 (pre-upload live rollback check).
   const guardsModule = 'wave1-native-production-guards.mjs';
   const guardsTest = 'wave1-native-production-guards.test.mjs';
+  const deploymentHistoryTest = 'wave1-native-production-deployment-history.test.mjs';
   const modelTest = 'wave1-native-production-guards-model.test.mjs';
   const guardsSource = readFileSync(join(root, guardsModule), 'utf8');
   for (const name of [
     guardsModule,
     guardsTest,
     modelTest,
+    deploymentHistoryTest,
     'wave1-production-deployments.mjs',
   ])
     cpSync(join(root, name), join(scratch, name));
@@ -170,7 +177,7 @@ try {
   assert.ok(f2Start > 0, 'assertLiveRollbackUnchanged must exist');
   writeFileSync(
     join(scratch, guardsModule),
-    `import assert from 'node:assert/strict';\nimport { sameSplit } from './wave1-production-deployments.mjs';\nconst VERSION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nconst normalizeVersionId = (id) => id.toLowerCase();\nexport async function readAllVersions({ script, token, fetchJson }) {\n  const response = await fetchJson(\`\${script}/versions?per_page=100\`, token);\n  return response.result.items;\n}\n${guardsSource.slice(k2Start)}`
+    `import assert from 'node:assert/strict';\nimport { canonicalDeploymentId, sameSplit } from './wave1-production-deployments.mjs';\nconst VERSION_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\nexport async function readAllVersions({ script, token, fetchJson }) {\n  const response = await fetchJson(\`\${script}/versions?per_page=100\`, token);\n  return response.result.items;\n}\n${guardsSource.slice(k2Start)}`
   );
   const f1Result = runTest(guardsTest);
   const f1Failures = [
@@ -232,8 +239,8 @@ try {
       'J2:',
       (s) =>
         s.replace(
-          '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
-          '/^[a-f0-9-]{36}$/'
+          "assert.match(item.id ?? '', VERSION_ID_RE);",
+          "assert.match(item.id ?? '', /^[a-f0-9-]{36}$/);"
         ),
     ],
     [
@@ -248,7 +255,7 @@ try {
     [
       'K1 empty page after advertised continuation check removed',
       'K1:',
-      (s) => s.replace('!continuationAdvertised,', 'true,'),
+      (s) => s.replace('!continuationAdvertised,', 'true ||'),
     ],
   ]) {
     const mutated = mutator(guardsSource);
@@ -292,16 +299,31 @@ try {
   // K2, R6-2, and R6-3 guard mutants killed by modelTest.
   for (const [label, expectedPrefix, mutator] of [
     [
+      'R8 raw live deployment UUID comparison',
+      'R8:',
+      (s) => s.replace('canonicalDeploymentId(expected?.id)', 'expected?.id'),
+    ],
+    [
+      'R8 deployment traversal stops on first page',
+      'R8:',
+      (s) => s.replace("    const pageItems = rawItems ?? [];", "    if (resource === 'deployments') return rawItems;\n    const pageItems = rawItems ?? [];"),
+    ],
+    [
+      'R8 missing historical detail accepted without confirmation',
+      'R8:',
+      (s) => s.replace('assert.ok(await isVersionMissing(id),', 'assert.ok(true,'),
+    ],
+    [
       'K2 assertActiveVersionsPresent membership check removed',
       'K2:',
-      (s) => s.replace('observedIds.has(id),', 'true,'),
+      (s) => s.replace('observedIds.has(id) ||', 'true ||'),
     ],
     [
       'R6-2 UUID case-canonicalization removed in readAllVersions',
       'R6-2:',
       (s) =>
         s.replace(
-          'const canonicalId = normalizeVersionId(item.id);',
+          'const canonicalId = canonicalDeploymentId(item.id);',
           'const canonicalId = item.id;'
         ),
     ],
@@ -310,7 +332,7 @@ try {
       'R6-2:',
       (s) =>
         s.replace(
-          '.map((item) => normalizeVersionId(item.id))',
+          '.map((item) => canonicalDeploymentId(item.id))',
           '.map((item) => item.id)'
         ),
     ],
@@ -323,7 +345,7 @@ try {
     const mutated = mutator(guardsSource);
     assert.notEqual(mutated, guardsSource, `Mutator had no effect: ${label}`);
     writeFileSync(join(scratch, guardsModule), mutated);
-    const res = runTest(modelTest);
+    const res = runTest(expectedPrefix === 'R8:' ? deploymentHistoryTest : modelTest);
     const failed = [...res.stdout.matchAll(/^not ok \d+ - (.+)$/gmu)].map(
       (m) => m[1]
     );
@@ -450,7 +472,7 @@ try {
       'K2:',
       (s) =>
         s.replace(
-          /assertActiveVersionsPresent\(\{\s*deployments: deployments\.deployments,\s*versionItems,\s*\}\);/u,
+          /assertActiveVersionsPresent\(\{\s*deployments,\s*versionItems,\s*confirmedMissingHistoricalIds,\s*\}\);/u,
           '/* mutated */'
         ),
     ],

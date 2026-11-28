@@ -2,12 +2,7 @@
 // publisher: complete hosted-version inventory traversal and live-rollback
 // re-verification immediately before upload.
 import assert from 'node:assert/strict';
-import { sameSplit } from './wave1-production-deployments.mjs';
-
-const VERSION_ID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const normalizeVersionId = (id) => id.toLowerCase();
+import { canonicalDeploymentId, sameSplit, UUID_PATTERN as VERSION_ID_RE } from './wave1-production-deployments.mjs';
 
 const isMoreFlag = (value) =>
   value !== undefined && value !== null && value !== false;
@@ -43,6 +38,8 @@ export async function readAllVersions({
   fetchJson,
   maxPages = 10,
   maxVersions = 100,
+  resource = 'versions',
+  itemKey = 'items',
 }) {
   const seenCursors = new Set();
   const seenIds = new Set();
@@ -60,10 +57,10 @@ export async function readAllVersions({
     );
     const url =
       page === 1
-        ? `${script}/versions?per_page=100`
+        ? `${script}/${resource}?per_page=100`
         : cursor !== null
-          ? `${script}/versions?per_page=100&cursor=${encodeURIComponent(cursor)}`
-          : `${script}/versions?per_page=100&page=${page}`;
+          ? `${script}/${resource}?per_page=100&cursor=${encodeURIComponent(cursor)}`
+          : `${script}/${resource}?per_page=100&page=${page}`;
     const response = await fetchJson(url, token);
     assert.equal(response?.success, true, 'Provider observation failed');
     assert.ok(
@@ -72,9 +69,9 @@ export async function readAllVersions({
         !Array.isArray(response.result),
       'Malformed version inventory'
     );
-    const rawItems = response.result.items;
+    const rawItems = response.result[itemKey];
     assert.ok(
-      rawItems === undefined || Array.isArray(rawItems),
+      (itemKey === 'items' && rawItems === undefined) || Array.isArray(rawItems),
       'Malformed version inventory'
     );
     const pageItems = rawItems ?? [];
@@ -85,7 +82,7 @@ export async function readAllVersions({
         'Malformed version inventory item'
       );
       assert.match(item.id ?? '', VERSION_ID_RE);
-      const canonicalId = normalizeVersionId(item.id);
+      const canonicalId = canonicalDeploymentId(item.id);
       assert.ok(
         !seenIds.has(canonicalId),
         'Duplicate version id in version inventory'
@@ -262,6 +259,7 @@ export function assertActiveVersionsPresent({
   deployments,
   rollback = null,
   versionItems,
+  confirmedMissingHistoricalIds = new Set(),
 }) {
   assert.ok(
     Array.isArray(deployments) && deployments.length > 0,
@@ -290,7 +288,7 @@ export function assertActiveVersionsPresent({
           ? 'Malformed active deployment version id'
           : 'Malformed deployment history version id'
       );
-      const canonical = normalizeVersionId(entry.version_id);
+      const canonical = canonicalDeploymentId(entry.version_id);
       if (!requiredIds.has(canonical)) requiredIds.set(canonical, kind);
     }
   }
@@ -305,9 +303,8 @@ export function assertActiveVersionsPresent({
         VERSION_ID_RE,
         'Malformed rollback deployment version id'
       );
-      const canonical = normalizeVersionId(entry.version_id);
-      if (!requiredIds.has(canonical))
-        requiredIds.set(canonical, 'active deployment');
+      const canonical = canonicalDeploymentId(entry.version_id);
+      requiredIds.set(canonical, 'rollback deployment');
     }
   }
   const observedIds = new Set(
@@ -315,13 +312,44 @@ export function assertActiveVersionsPresent({
       .filter(
         (item) => typeof item?.id === 'string' && VERSION_ID_RE.test(item.id)
       )
-      .map((item) => normalizeVersionId(item.id))
+      .map((item) => canonicalDeploymentId(item.id))
   );
   for (const [id, kind] of requiredIds)
     assert.ok(
-      observedIds.has(id),
+      observedIds.has(id) ||
+        (kind === 'deployed' && confirmedMissingHistoricalIds.has(id)),
       `Incomplete version inventory: ${kind} version ${id} missing from version list`
     );
+}
+
+export async function readAllDeployments(options) {
+  return readAllVersions({
+    ...options,
+    resource: 'deployments',
+    itemKey: 'deployments',
+    maxVersions: 101,
+  });
+}
+
+export async function confirmMissingHistoricalVersions({
+  deployments,
+  versionItems,
+  isVersionMissing,
+}) {
+  const seen = new Set(versionItems.map(({ id }) => canonicalDeploymentId(id)));
+  const missing = new Set();
+  for (const deployment of deployments.slice(1)) {
+    assert.ok(Array.isArray(deployment.versions), 'Malformed deployment history');
+    for (const entry of deployment.versions) {
+      assert.match(entry?.version_id ?? '', VERSION_ID_RE);
+      const id = canonicalDeploymentId(entry.version_id);
+      if (seen.has(id) || missing.has(id)) continue;
+      assert.ok(missing.size < 100, 'Historical version checks exceed reconciliation bound');
+      assert.ok(await isVersionMissing(id), `Incomplete version inventory: deployed version ${id} missing from version list`);
+      missing.add(id);
+    }
+  }
+  return missing;
 }
 
 /**
@@ -344,8 +372,8 @@ export async function assertLiveRollbackUnchanged({
     'Live deployment missing before upload'
   );
   assert.equal(
-    live.id,
-    expected?.id,
+    canonicalDeploymentId(live.id),
+    canonicalDeploymentId(expected?.id),
     'Live deployment changed between preflight and upload; start a fresh read-only preflight'
   );
   assert.ok(

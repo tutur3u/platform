@@ -203,6 +203,7 @@ test('matching active version reconciles without another upload', async (t) => {
   const p = setup(t);
   p.state.ids = [newId];
   p.state.active = newId;
+  p.state.uppercaseVersionDetail = true;
   p.state.prior = true;
   const result = await p.run();
   assert.equal(p.state.settingsReads, 1);

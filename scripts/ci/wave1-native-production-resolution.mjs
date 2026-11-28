@@ -1,6 +1,14 @@
+import { canonicalDeploymentId } from './wave1-production-deployments.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { isDeepStrictEqual } from 'node:util';
+
+const canonicalSplit = (versions) =>
+  Array.isArray(versions)
+    ? versions.map((version) =>
+        version && { ...version, version_id: canonicalDeploymentId(version.version_id) }
+      )
+    : versions;
 
 const resolutions = JSON.parse(
   readFileSync(
@@ -41,10 +49,12 @@ export function matchesFailedNoWriteResolution(
     receipt.digest === resolution.digest &&
     receipt.state === 'pending' &&
     !Object.hasOwn(receipt, 'versionId') &&
-    rollback.id === resolution.currentBaselineDeploymentId &&
-    receipt.rollback?.id === resolution.receiptBaselineDeploymentId &&
-    isDeepStrictEqual(rollback.versions, currentBaseline) &&
-    isDeepStrictEqual(receipt.rollback?.versions, receiptBaseline) &&
+    canonicalDeploymentId(rollback.id) ===
+      canonicalDeploymentId(resolution.currentBaselineDeploymentId) &&
+    canonicalDeploymentId(receipt.rollback?.id) ===
+      canonicalDeploymentId(resolution.receiptBaselineDeploymentId) &&
+    isDeepStrictEqual(canonicalSplit(rollback.versions), canonicalSplit(currentBaseline)) &&
+    isDeepStrictEqual(canonicalSplit(receipt.rollback?.versions), canonicalSplit(receiptBaseline)) &&
     !Object.keys(resolution).some((key) => key.startsWith('baseline'))
   );
 }

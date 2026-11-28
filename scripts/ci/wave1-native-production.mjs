@@ -1,3 +1,4 @@
+import { canonicalDeploymentId } from './wave1-production-deployments.mjs';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -17,6 +18,8 @@ import {
   assertActiveVersionsPresent,
   assertLiveRollbackUnchanged,
   readAllVersions,
+  readAllDeployments,
+  confirmMissingHistoricalVersions,
 } from './wave1-native-production-guards.mjs';
 import { assertResolvedVersionsAbsent } from './wave1-native-production-resolution.mjs';
 import {
@@ -300,10 +303,15 @@ export async function main({
         names.some((secret) => secret.name === name),
         `Missing production secret name: ${name}`
       );
-    const deployments = await provider(`${script}/deployments`);
+    const fetchJson = (url, credential) => boundedJson(url, credential, boundedFetch);
+    const deployments = await readAllDeployments({
+      script,
+      token: topologyToken,
+      fetchJson,
+    });
     assert.ok(
-      Array.isArray(deployments.deployments) &&
-        deployments.deployments.length > 0,
+      Array.isArray(deployments) &&
+        deployments.length > 0,
       'Initial private Worker and rollback version must be provisioned'
     );
     const versionItems = await readAllVersions({
@@ -312,9 +320,27 @@ export async function main({
       fetchJson: (url, credential) =>
         boundedJson(url, credential, boundedFetch),
     });
-    assertActiveVersionsPresent({
-      deployments: deployments.deployments,
+    const confirmedMissingHistoricalIds = await confirmMissingHistoricalVersions({
+      deployments,
       versionItems,
+      isVersionMissing: async (id) =>
+        (await boundedJson(
+          `${script}/versions/${id}`,
+          topologyToken,
+          boundedFetch,
+          undefined,
+          undefined,
+          (errors) =>
+            Array.isArray(errors) &&
+            errors.length === 1 &&
+            Number.isInteger(errors[0]?.code) &&
+            /^worker version not found\.?$/i.test(errors[0]?.message ?? '')
+        )) === null,
+    });
+    assertActiveVersionsPresent({
+      deployments,
+      versionItems,
+      confirmedMissingHistoricalIds,
     });
     const matches = [];
     const observedVersions = [];
@@ -325,25 +351,34 @@ export async function main({
       );
       const version = await provider(`${script}/versions/${item.id}`);
       observedVersions.push(version);
-      if (matchesVersion(version, sha, digest)) matches.push(version.id);
+      assert.equal(
+        canonicalDeploymentId(version.id),
+        canonicalDeploymentId(item.id),
+        'Hosted version detail does not match the inventory ID'
+      );
+      if (matchesVersion(version, sha, digest)) matches.push(canonicalDeploymentId(version.id));
     }
     assertResolvedVersionsAbsent({ app, versions: observedVersions });
     assert.ok(matches.length <= 1, 'Ambiguous matching production versions');
     if (matches.length)
       assert.deepEqual(
-        deployments.deployments[0].versions,
-        [{ version_id: matches[0], percentage: 100 }],
+        deployments[0].versions.map((version) => ({
+          ...version,
+          version_id: canonicalDeploymentId(version.version_id),
+        })),
+        [{ version_id: canonicalDeploymentId(matches[0]), percentage: 100 }],
         'Matching production version must be active at 100% before upload'
       );
     const candidates = matches.length
-      ? deployments.deployments.filter(
+      ? deployments.filter(
           (deployment) =>
             Array.isArray(deployment.versions) &&
             !deployment.versions.some(
-              (version) => version.version_id === matches[0]
+              (version) => canonicalDeploymentId(version.version_id) ===
+                canonicalDeploymentId(matches[0])
             )
         )
-      : deployments.deployments;
+      : deployments;
     assert.ok(
       candidates.length > 0,
       'No earlier rollback deployment; require the original receipt'
@@ -351,9 +386,10 @@ export async function main({
     const rollback = requireRollback(candidates);
     if (matches.length)
       assertActiveVersionsPresent({
-        deployments: deployments.deployments,
+        deployments,
         rollback,
         versionItems,
+        confirmedMissingHistoricalIds,
       });
     record = {
       schema: 1,
@@ -385,11 +421,13 @@ export async function main({
       const { live, newer } = await supersedingSha({
         env,
         sha,
-        deployment: deployments.deployments[0],
+        deployment: deployments[0],
         baseline,
         fetcher: boundedFetch,
         readVersion: async (id) =>
-          observedVersions.find((version) => version.id === id) ??
+          observedVersions.find(
+            (version) => canonicalDeploymentId(version.id) === canonicalDeploymentId(id)
+          ) ??
           (await provider(`${script}/versions/${id}`)),
       });
       if (newer) {
@@ -474,9 +512,13 @@ export async function main({
       'Uploaded SHA/artifact identity mismatch'
     );
     const active = await provider(`${script}/deployments`);
-    assert.deepEqual(active.deployments?.[0]?.versions, [
-      { version_id: id, percentage: 100 },
-    ]);
+    assert.deepEqual(
+      active.deployments?.[0]?.versions?.map((entry) => ({
+        ...entry,
+        version_id: canonicalDeploymentId(entry.version_id),
+      })),
+      [{ version_id: canonicalDeploymentId(id), percentage: 100 }]
+    );
     if (expectedObservability === null) logSkippedSettingsCheck(p.name);
     else {
       // The settings poll carries its own 60 s bound; the topology readback
