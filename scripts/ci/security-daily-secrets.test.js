@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const { allowFinding } = require('./security-daily-secrets');
+const { ACCEPTED_FINDINGS, allowFinding } = require('./security-daily-secrets');
 const file = 'apps/web/e2e/helpers/environment.ts';
 const demoLine = fs
   .readFileSync(path.resolve(__dirname, '../../', file), 'utf8')
@@ -46,6 +46,42 @@ test('rejects a different line, path, rule or historical source content', () => 
     );
   assert.equal(
     allowFinding(finding, () => 'synthetic-other-value'),
+    false
+  );
+});
+test('every accepted finding records a rule, digest and reason', () => {
+  for (const entry of ACCEPTED_FINDINGS) {
+    assert.match(entry.rule, /^[a-z-]+$/);
+    assert.match(entry.digest, /^[0-9a-f]{64}$/);
+    assert.ok(entry.reason.length > 10);
+  }
+});
+test('allows the synthetic SDK session token only under its own rule', () => {
+  const sdkFile = 'packages/sdk/src/cli/upskii/product-commands.test.ts';
+  const sdkLine = fs
+    .readFileSync(path.resolve(__dirname, '../../', sdkFile), 'utf8')
+    .split('\n')[433];
+  const sdkFinding = {
+    File: sdkFile,
+    StartLine: 434,
+    EndLine: 434,
+    Commit: 'b'.repeat(40),
+    RuleID: 'generic-api-key',
+  };
+  assert.equal(
+    allowFinding(sdkFinding, () => sdkLine),
+    true
+  );
+  assert.equal(
+    allowFinding({ ...sdkFinding, RuleID: 'jwt' }, () => sdkLine),
+    false
+  );
+  assert.equal(
+    allowFinding(sdkFinding, () => `${sdkLine} `),
+    false
+  );
+  assert.equal(
+    allowFinding({ ...finding, RuleID: 'generic-api-key' }, () => demoLine),
     false
   );
 });
