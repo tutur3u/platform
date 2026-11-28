@@ -430,12 +430,20 @@ Web's offline page can answer. With navigation preload on, the browser discards
 the unused preload and may fetch the page twice; that cost is accepted.
 Activation deletes `/mastermind` entries from every cache the worker owns, and a
 registration whose scope lies under `/mastermind` (reachable through Web's
-`Service-Worker-Allowed: /`) unregisters itself and handles no fetches.
+`Service-Worker-Allowed: /`) unregisters itself and handles no fetches. A
+broader scope (`/`, `/m`) keeps serving its other paths, and its fetch handler
+still never answers `/mastermind`. Tasks' worker carries the same strict
+bypass. Cache Storage is writable by any script on the origin, so the offline
+page a failed navigation falls back to is rebuilt with only its body, its HTML
+content type and `Cache-Control: no-store`: a cached
+`Cross-Origin-Opener-Policy` or any other planted header never reaches the
+browser, and every worker on the apex keeps `cacheNavigations: false`.
 Browsers that still run a worker without this release can serve Web's offline
 page for a failed `/mastermind` navigation; no server change reaches them, so
 that residual is covered by profile admission and owner risk acceptance.
-Coverage: `packages/offline/src/worker/create-offline-worker.strict.test.ts`
-and `apps/web/src/app/sw-app-prefixes.test.ts`.
+Coverage: `packages/offline/src/worker/create-offline-worker.strict.test.ts`,
+`apps/web/src/app/sw-app-prefixes.test.ts` and
+`apps/tasks/src/app/sw-strict.test.ts`.
 
 ## Production release
 

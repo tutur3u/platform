@@ -31,6 +31,9 @@ describe('Web service worker one-origin bypass', () => {
     expect(source).toMatch(
       /strictBypassPathPrefixes: STRICT_ONE_ORIGIN_APP_PREFIXES,/u
     );
+    // Only the offline page answers a failed navigation, and the shared
+    // worker rebuilds it with safe headers; no cached page stands in.
+    expect(source).toMatch(/cacheNavigations: false,/u);
   });
 
   it('keeps every mounted app path out of the root worker', () => {

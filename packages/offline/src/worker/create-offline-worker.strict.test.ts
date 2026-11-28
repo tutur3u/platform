@@ -72,11 +72,16 @@ function boot(config: ServiceWorkerConfig, scope = `${ORIGIN}/`) {
   return {
     install: () => lifecycle('install'),
     activate: () => lifecycle('activate'),
-    dispatch(path: string, mode: string, destination = '') {
+    dispatch(
+      path: string,
+      mode: string,
+      destination = '',
+      preload: Response | null = new Response('preloaded')
+    ) {
       const respondWith = vi.fn();
       listeners.get('fetch')!({
         request: { url: `${ORIGIN}${path}`, method: 'GET', mode, destination },
-        preloadResponse: Promise.resolve(new Response('preloaded')),
+        preloadResponse: Promise.resolve(preload ?? undefined),
         respondWith,
         waitUntil: () => {},
       });
@@ -186,34 +191,70 @@ describe('strict bypass prefixes', () => {
     expect(claim).toHaveBeenCalled();
   });
 
-  it.each([
-    `${ORIGIN}/mastermind/`,
-    `${ORIGIN}/mastermind/vi/`,
-    `${ORIGIN}/master`,
-  ])('unregisters and stays inert when registered at %s', async (scope) => {
-    store('tuturuuu-offline-runtime-v1').set(
-      `${ORIGIN}/_next/static/web.js`,
-      new Response('web')
-    );
-    const web = boot(STRICT, scope);
-    await web.install();
-    await web.activate();
-    expect(unregister).toHaveBeenCalledTimes(2);
-    expect(claim).not.toHaveBeenCalled();
-    expect(network).not.toHaveBeenCalled();
-    expect(
-      web.dispatch('/_next/static/web.js', 'cors', 'script').mock.calls
-    ).toHaveLength(0);
-    expect(web.dispatch('/', 'navigate').mock.calls).toHaveLength(0);
-  });
-
-  it('keeps the root and unrelated scopes registered', async () => {
-    for (const scope of [`${ORIGIN}/`, `${ORIGIN}/tasks/`]) {
+  it.each([`${ORIGIN}/mastermind/`, `${ORIGIN}/mastermind/vi/`])(
+    'unregisters and stays inert when registered at %s',
+    async (scope) => {
+      store('tuturuuu-offline-runtime-v1').set(
+        `${ORIGIN}/_next/static/web.js`,
+        new Response('web')
+      );
       const web = boot(STRICT, scope);
       await web.install();
       await web.activate();
+      expect(unregister).toHaveBeenCalledTimes(2);
+      expect(claim).not.toHaveBeenCalled();
+      expect(network).not.toHaveBeenCalled();
+      expect(
+        web.dispatch('/_next/static/web.js', 'cors', 'script').mock.calls
+      ).toHaveLength(0);
+      expect(web.dispatch('/', 'navigate').mock.calls).toHaveLength(0);
+    }
+  );
+
+  it('keeps the root, broader and unrelated scopes registered', async () => {
+    for (const scope of [
+      `${ORIGIN}/`,
+      `${ORIGIN}/tasks/`,
+      `${ORIGIN}/m`,
+      `${ORIGIN}/master`,
+      `${ORIGIN}/mastermind-notes/`,
+    ]) {
+      const web = boot(STRICT, scope);
+      await web.install();
+      await web.activate();
+      // A broader scope still never answers the strict mount.
+      expect(web.dispatch('/mastermind/', 'navigate').mock.calls).toHaveLength(
+        0
+      );
     }
     expect(unregister).not.toHaveBeenCalled();
+  });
+
+  it('serves the cached offline page with its body and type only', async () => {
+    const web = boot(STRICT);
+    await web.install();
+    const [precache] = [...stores.keys()].filter((name) =>
+      name.startsWith('tuturuuu-offline-precache-')
+    );
+    store(precache!).set(
+      `${ORIGIN}/~offline`,
+      new Response('<p>offline</p>', {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cross-Origin-Opener-Policy': 'noopener-allow-popups',
+          'Content-Security-Policy': "script-src 'none'",
+          'Set-Cookie': 'x=1',
+        },
+      })
+    );
+    network.mockRejectedValue(new Error('offline'));
+    const respondWith = web.dispatch('/vi/tasks', 'navigate', '', null);
+    const response: Response = await respondWith.mock.calls[0]![0];
+    expect([...response.headers.keys()].sort()).toEqual([
+      'cache-control',
+      'content-type',
+    ]);
+    expect(await response.text()).toBe('<p>offline</p>');
   });
 
   it('rejects malformed strict prefixes', () => {

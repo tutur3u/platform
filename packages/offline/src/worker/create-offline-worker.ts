@@ -65,6 +65,26 @@ function isUnderPrefix(pathname: string, prefixes: readonly string[]) {
   );
 }
 
+/**
+ * Cache Storage is writable by any script on the origin, so a cached page
+ * could carry headers that change how the browser groups or trusts the
+ * document (`Cross-Origin-Opener-Policy` matching a mounted app's, for
+ * example). The fallback keeps only its body and content type.
+ */
+async function safeFallback(cached: Response) {
+  const type = cached.headers.get('Content-Type');
+  return new Response(await cached.blob(), {
+    status: 200,
+    headers: {
+      'Content-Type':
+        type && /^text\/html\b/iu.test(type)
+          ? type
+          : 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
 function resolveEntryUrl(entry: PrecacheEntry | string) {
   return typeof entry === 'string' ? entry : entry.url;
 }
@@ -298,21 +318,22 @@ export class TuturuuuServiceWorker {
   }
 
   /**
-   * True when this registration's scope lies under a strict mount, or is a
-   * narrower-than-root scope that string-prefix covers one (for example a
-   * script registering this worker at `/mastermind/` through
-   * `Service-Worker-Allowed: /`). Such a worker unregisters and stays inert.
+   * True when this registration's scope lies under a strict mount (for
+   * example a script registering this worker at `/mastermind/` through
+   * `Service-Worker-Allowed: /`). Such a worker serves nothing outside the
+   * mount, so it unregisters and stays inert. A broader scope (`/`, `/m`)
+   * keeps running for its other paths: the fetch handler never answers a
+   * strict-mount request whatever the scope.
    */
   private refusesScope() {
     const scope = self.registration?.scope;
     if (!scope || this.strictBypassPathPrefixes.length === 0) return false;
     const { pathname } = new URL(scope, self.location.origin);
-    return (
-      isUnderPrefix(pathname, this.strictBypassPathPrefixes) ||
-      (pathname !== '/' &&
-        this.strictBypassPathPrefixes.some((prefix) =>
-          prefix.startsWith(pathname)
-        ))
+    return isUnderPrefix(
+      pathname.endsWith('/') && pathname !== '/'
+        ? pathname.slice(0, -1)
+        : pathname,
+      this.strictBypassPathPrefixes
     );
   }
 
@@ -515,7 +536,8 @@ export class TuturuuuServiceWorker {
     }
 
     const precache = await caches.open(this.precacheName);
-    return (await precache.match(this.offlineFallbackUrl)) ?? Response.error();
+    const fallback = await precache.match(this.offlineFallbackUrl);
+    return fallback ? safeFallback(fallback) : Response.error();
   }
 }
 

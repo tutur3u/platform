@@ -7,4 +7,7 @@ createOfflineWorker({
   cacheNavigations: false,
   staticAssetsOnly: true,
   maxRuntimeCacheEntries: 160,
+  // Never answer the Mastermind mount, whatever scope this worker is given
+  // (docs: build/devops/mastermind-web).
+  strictBypassPathPrefixes: ['/mastermind'],
 }).addEventListeners();
