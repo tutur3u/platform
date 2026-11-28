@@ -2240,7 +2240,7 @@
   "chatSafetyReasonSexual": "Sexual content",
   "chatSafetyReasonSpam": "Spam or scam",
   "chatSafetyReasonViolence": "Violence or threats",
-  "chatSafetyReportDescription": "{name} won't be told. Our team reviews reports within 24 hours.",
+  "chatSafetyReportDescription": "{name} won't be told. Our team reviews reports and removes content that breaks the community guidelines.",
   "chatSafetyReportFailed": "Couldn't send the report. Try again.",
   "chatSafetyReportMessage": "Report message",
   "chatSafetyReportRateLimited": "Too many reports. Try again later.",

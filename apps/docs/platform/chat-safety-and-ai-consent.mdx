@@ -43,7 +43,7 @@ The server finds the message and **snapshots its content from the database**. Re
 
 Reports land in `private.chat_content_reports`. Verified Tuturuuu staff review them in the dashboard's **Chat reports** inbox, next to Product feedback, through `GET` and `PATCH /api/v1/chat-reports`. The route uses the product-feedback staff gate, and the SQL functions re-check the canonical registry (`private.assert_product_feedback_staff`: an active infrastructure employee) on every call.
 
-Snapshots are kept until a retention job scrubs resolved reports. That job isn't built yet; until it ships, resolved snapshots stay in place. The app tells reporters "we review every report within 24 hours". That response time is a commitment the moderation owner staffs.
+Snapshots are kept until a retention job scrubs resolved reports. That job isn't built yet; until it ships, resolved snapshots stay in place. The app promises review and removal of content that breaks the community guidelines, without a fixed response time.
 
 ## Mira AI data consent
 

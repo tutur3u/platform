@@ -2046,7 +2046,7 @@
   "chatSafetyReasonSexual": "Nội dung tình dục",
   "chatSafetyReasonSpam": "Tin rác hoặc lừa đảo",
   "chatSafetyReasonViolence": "Bạo lực hoặc đe dọa",
-  "chatSafetyReportDescription": "{name} sẽ không được thông báo. Đội ngũ của chúng tôi xem xét báo cáo trong vòng 24 giờ.",
+  "chatSafetyReportDescription": "{name} sẽ không được thông báo. Đội ngũ của chúng tôi xem xét báo cáo và gỡ nội dung vi phạm tiêu chuẩn cộng đồng.",
   "chatSafetyReportFailed": "Không gửi được báo cáo. Vui lòng thử lại.",
   "chatSafetyReportMessage": "Báo cáo tin nhắn",
   "chatSafetyReportRateLimited": "Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.",
