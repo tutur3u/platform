@@ -13,6 +13,7 @@ import {
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
 import { guardSourceBucket } from '@tuturuuu/utils/abuse-guard/source';
 import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
+import { AI_CONSENT_REQUIRED_SCOPE } from '@tuturuuu/utils/ai-consent-session';
 import {
   readRequiredMfaPolicy,
   satisfiesRequiredMfaPolicy,
@@ -174,6 +175,9 @@ export async function POST(request: NextRequest) {
   const policy = await getCliAppSessionPolicy();
   const session = createCliAppSession({
     accessExpiresInSeconds: policy.cliAccessTtlSeconds,
+    aiConsentRequired: verification.claims.scopes.includes(
+      AI_CONSENT_REQUIRED_SCOPE
+    ),
     email: getConfirmedAuthEmail(data.user),
     mfa: verification.claims.mfa,
     refreshExpiresInSeconds: policy.cliRefreshTtlSeconds,

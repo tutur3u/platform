@@ -12,6 +12,8 @@ import {
   hasAiDataConsent,
   requiresAiDataConsent,
 } from './ai-data-consent';
+import { AI_CONSENT_REQUIRED_SCOPE } from '@tuturuuu/utils/ai-consent-session';
+import { createAppCoordinationToken } from '@tuturuuu/utils/app-coordination-token';
 
 const req = (authorization?: string) =>
   new Request('https://test/api/ai/chat', {
@@ -61,5 +63,24 @@ describe('Mira AI data consent gate', () => {
     f.rpc.mockClear();
     expect(await enforceAiDataConsent(req(), 'u1')).toBeNull();
     expect(f.rpc).not.toHaveBeenCalled();
+  });
+
+  it('applies to app sessions stamped consent-required', async () => {
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret'.repeat(4));
+    const appSession = (scopes: string[]) =>
+      createAppCoordinationToken({
+        scopes: ['internal-app:session', ...scopes],
+        targetApp: 'platform',
+        userId: 'u1',
+      }).token;
+    const stamped = appSession([AI_CONSENT_REQUIRED_SCOPE]);
+    expect(requiresAiDataConsent(req(`Bearer ${appSession([])}`))).toBe(false);
+    expect(requiresAiDataConsent(req(`Bearer ${stamped}`))).toBe(true);
+
+    f.rpc.mockResolvedValue({ data: false, error: null });
+    expect(
+      (await enforceAiDataConsent(req(`Bearer ${stamped}`), 'u1'))?.status
+    ).toBe(403);
+    vi.unstubAllEnvs();
   });
 });

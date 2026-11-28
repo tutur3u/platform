@@ -1,4 +1,5 @@
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
+import { requireMeetAiDataConsent } from '../../../../../features/call/server/ai-data-consent';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { z } from 'zod';
 
@@ -49,6 +50,7 @@ export async function POST(
       .strict()
       .safeParse(await request.json().catch(() => null));
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid message');
+    await requireMeetAiDataConsent(request, access.user.id);
     const { generateMeetAssistant } =
       await import('@tuturuuu/meet-core/features/call/server/assistant-generation');
     return generateMeetAssistant(access, {

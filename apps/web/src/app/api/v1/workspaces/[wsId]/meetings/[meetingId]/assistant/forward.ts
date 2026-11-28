@@ -1,3 +1,7 @@
+import {
+  enforceAiDataConsent,
+  requiresAiDataConsent,
+} from '@tuturuuu/ai/chat/ai-data-consent';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
 import {
   normalizeWorkspaceId,
@@ -29,6 +33,11 @@ export async function forwardMeetAssistant(
       allowAppSessionAuth: { targetApp: 'meet' },
     });
     if (!auth.ok) return auth.response;
+    // POST sends a prompt (or resumes a reviewed turn) to Gemini.
+    if (request.method === 'POST') {
+      const consentRefusal = await enforceAiDataConsent(request, auth.user.id);
+      if (consentRefusal) return consentRefusal;
+    }
     let wsId: string;
     try {
       wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
@@ -103,7 +112,9 @@ export async function forwardMeetAssistant(
     if (action === 'assistant/review' && messageId !== null) {
       endpoint.searchParams.set('messageId', messageId);
     }
+    // Meet re-checks consent for a native caller's forwarded session.
     const session = createAppSessionToken({
+      ...(requiresAiDataConsent(request) ? { aiConsentRequired: true } : {}),
       email: auth.user.email,
       expiresInSeconds: 180,
       targetApp: 'meet',

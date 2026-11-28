@@ -4,6 +4,7 @@ import {
   verifyAppRedeemProof,
 } from '@tuturuuu/auth/app-redeem-proof';
 import {
+  appSessionClaimsRequireAiConsent,
   createAppSessionTokenPair,
   verifyAppSessionRefreshToken,
 } from '@tuturuuu/auth/app-session';
@@ -236,8 +237,13 @@ async function refreshCrossAppSession(
     policy,
     targetApp
   );
+  // The refresh token carries the consent stamp of the original handoff.
+  const aiConsentRequired = appSessionClaimsRequireAiConsent(
+    verification.claims
+  );
   const session = createAppSessionTokenPair(
     {
+      aiConsentRequired,
       email: getConfirmedAuthEmail(data.user),
       mfa: verification.claims.mfa,
       targetApp,
@@ -249,6 +255,7 @@ async function refreshCrossAppSession(
   );
 
   return jsonNoStore({
+    aiConsentRequired,
     mfa: verification.claims.mfa ?? null,
     appSessionExpiresAt: session.access.expiresAt,
     appSessionRefreshEarlySeconds: session.refreshEarlySeconds,

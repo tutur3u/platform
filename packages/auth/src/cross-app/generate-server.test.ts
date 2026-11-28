@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { readAiConsentBrowserOriginTransfer } from '@tuturuuu/utils/ai-consent-session';
 import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
 import fc from 'fast-check';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -143,4 +144,29 @@ it('never mints an unbound handoff for a Worker-only target', async () => {
   }
   expect(rpc).not.toHaveBeenCalled();
   expect(mocks.assurance).not.toHaveBeenCalled();
+});
+
+it('vouches for a browser origin only when the minting request is a cookie session', async () => {
+  const transferFor = async (headers?: HeadersInit) => {
+    const { rpc, supabase } = client();
+    await generateAssuredCrossAppToken(
+      new Request('https://tuturuuu.com/api/auth/generate-app-tokens', {
+        headers,
+      }),
+      supabase,
+      'rewise',
+      'web'
+    );
+    const args = rpc.mock.calls[0] as unknown as [
+      string,
+      { p_session_data: { aiConsentTransfer?: string } },
+    ];
+    return args[1].p_session_data.aiConsentTransfer;
+  };
+  expect(
+    readAiConsentBrowserOriginTransfer(await transferFor(), 'actor', 'rewise')
+  ).toBe(true);
+  expect(
+    await transferFor({ authorization: 'Bearer eyJhbGciOi.native' })
+  ).toBeUndefined();
 });

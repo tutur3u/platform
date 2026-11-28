@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { aiConsentBrowserOriginTransferFor } from '@tuturuuu/utils/ai-consent-session';
 import { mfaProofFromVerifiedClaims } from '@tuturuuu/utils/required-mfa-policy';
 import { checkRequiredAccountMfa } from '@tuturuuu/utils/required-mfa-request';
 import { createMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
@@ -39,12 +40,18 @@ export async function generateAssuredCrossAppToken(
       ? mfaProofFromVerifiedClaims(claims.data.claims)
       : null);
   const mfaTransfer = createMfaTransfer(data.user.id, targetApp, proof);
+  const aiConsentTransfer = aiConsentBrowserOriginTransferFor(
+    request,
+    data.user.id,
+    targetApp
+  );
   const result = await supabase.rpc('generate_cross_app_token', {
     p_user_id: data.user.id,
     p_origin_app: originApp,
     p_target_app: targetApp,
     p_expiry_seconds: Math.min(300, Math.max(1, expirySeconds)),
     p_session_data: {
+      ...(aiConsentTransfer ? { aiConsentTransfer } : {}),
       email: data.user.email ?? null,
       ...(mfaTransfer ? { mfaTransfer } : {}),
     },

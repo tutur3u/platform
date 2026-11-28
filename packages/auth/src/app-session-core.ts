@@ -1,3 +1,4 @@
+import { AI_CONSENT_REQUIRED_SCOPE } from '@tuturuuu/utils/ai-consent-session';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import {
   type AppCoordinationTokenClaims,
@@ -30,6 +31,12 @@ export const SUPABASE_AUTH_COOKIE_PATTERN =
 export type AppSessionTargetApp = AppName | string;
 
 export type AppSessionTokenPayload = {
+  /**
+   * Stamps the session as needing Mira AI data consent: its handoff was not
+   * minted from a browser cookie session. Access and refresh tokens both
+   * carry it, so a refresh keeps it.
+   */
+  aiConsentRequired?: boolean;
   email?: string | null;
   expiresInSeconds?: number;
   mfa?: MfaSessionProof;
@@ -99,7 +106,9 @@ export function createAppSessionToken(
       expiresInSeconds: payload.expiresInSeconds,
       mfa: payload.mfa,
       originApp: payload.originApp ?? 'web',
-      scopes: normalizeAppSessionScopes(payload.scopes),
+      scopes: normalizeAppSessionScopes(
+        withAiConsentScope(payload.scopes, payload.aiConsentRequired)
+      ),
       targetApp: payload.targetApp,
       userId: payload.userId,
     },
@@ -120,7 +129,9 @@ export function createAppSessionRefreshToken(
       expiresInSeconds: payload.expiresInSeconds,
       mfa: payload.mfa,
       originApp: payload.originApp ?? 'web',
-      scopes: normalizeAppSessionRefreshScopes(payload.scopes),
+      scopes: normalizeAppSessionRefreshScopes(
+        withAiConsentScope(payload.scopes, payload.aiConsentRequired)
+      ),
       targetApp: payload.targetApp,
       userId: payload.userId,
     },
@@ -286,6 +297,19 @@ function matchesAppSessionTarget(
     : [expectedTargetApp];
 
   return expectedTargetApps.includes(actualTargetApp);
+}
+
+function withAiConsentScope(scopes: string[] = [], aiConsentRequired = false) {
+  return aiConsentRequired && !scopes.includes(AI_CONSENT_REQUIRED_SCOPE)
+    ? [...scopes, AI_CONSENT_REQUIRED_SCOPE]
+    : scopes;
+}
+
+/** Whether verified app-session claims carry the AI consent stamp. */
+export function appSessionClaimsRequireAiConsent(
+  claims: Pick<AppCoordinationTokenClaims, 'scopes'>
+) {
+  return claims.scopes.includes(AI_CONSENT_REQUIRED_SCOPE);
 }
 
 function normalizeAppSessionScopes(scopes: string[] = []) {

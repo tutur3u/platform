@@ -1,3 +1,4 @@
+import { requestRequiresAiDataConsent } from '@tuturuuu/utils/ai-consent-session';
 import {
   AI_DATA_CONSENT_POLICY_VERSION,
   lookupAiDataConsent,
@@ -10,25 +11,23 @@ import { NextResponse } from 'next/server';
  * allowed it. The decision is stored server-side per user
  * (private.user_ai_data_consent) and defaults to "not allowed".
  *
- * Scope: requests from native apps, which authenticate with a bearer token,
- * and AI temp-auth tokens minted by such a request (the token validator
- * re-checks consent on every use). Browser sessions (cookie auth) are exempt
- * until the web consent surface ships; see
- * apps/docs/platform/chat-safety-and-ai-consent.mdx.
+ * Scope: requests from native apps, which authenticate with a bearer token;
+ * app sessions (`ttr_app_*`) whose handoff did not come from a browser cookie
+ * session (see @tuturuuu/utils/ai-consent-session); and AI temp-auth tokens
+ * minted by such a request (the token validator re-checks consent on every
+ * use). Browser sessions (cookie auth) are exempt until the web consent
+ * surface ships; see apps/docs/platform/chat-safety-and-ai-consent.mdx.
  */
 export { AI_DATA_CONSENT_POLICY_VERSION };
 export const AI_CONSENT_REQUIRED_CODE = 'ai_consent_required';
 
 /** Whether [request] comes from a native client that must show consent. */
 export function requiresAiDataConsent(request: Request) {
-  const bearer = request.headers
-    .get('authorization')
-    ?.match(/^Bearer\s+(\S+)/iu)?.[1];
-  // App-coordination tokens (ttr_app_*) are minted for browser surfaces: the
-  // satellite proxy attaches them from the first-party app-session cookie, and
-  // registered external apps use them server to server. Native apps use
-  // Supabase bearer tokens, so ttr_app_ follows the web scope.
-  return !!bearer && !bearer.startsWith('ttr_app_');
+  // Supabase bearer tokens come from native apps. App-coordination tokens
+  // (ttr_app_*) follow the web scope unless their session is stamped
+  // consent-required because its handoff was not minted from a browser
+  // cookie session.
+  return requestRequiresAiDataConsent(request);
 }
 
 /**

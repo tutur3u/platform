@@ -491,4 +491,34 @@ describe('cross-app app-session refresh route', () => {
     expect(response.headers.get('set-cookie')).toBeNull();
     expect(mint).not.toHaveBeenCalled();
   });
+
+  it.each([true, false])(
+    'carries the AI consent stamp (%s) of the original handoff',
+    async (aiConsentRequired) => {
+      const oldSession = createAppSessionTokenPair({
+        aiConsentRequired,
+        targetApp: 'learn',
+        userId: 'user-1',
+      });
+      const response = await POST(
+        request({ refreshToken: oldSession.refresh.token, targetApp: 'learn' })
+      );
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.aiConsentRequired).toBe(aiConsentRequired);
+      const access = appSession.verifyAppSessionToken(body.appSessionToken, {
+        targetApp: 'learn',
+      });
+      const refresh = appSession.verifyAppSessionRefreshToken(
+        body.appSessionRefreshToken,
+        { targetApp: 'learn' }
+      );
+      for (const verification of [access, refresh]) {
+        expect(
+          verification.ok &&
+            appSession.appSessionClaimsRequireAiConsent(verification.claims)
+        ).toBe(aiConsentRequired);
+      }
+    }
+  );
 });

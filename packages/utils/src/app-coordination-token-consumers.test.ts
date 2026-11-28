@@ -97,6 +97,18 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     calls: 1,
     gates: ['CLI_APP_REFRESH_SCOPE'],
   },
+  // Mira AI data consent: reads the signed consent-required scope from an app
+  // session, and accepts a browser-origin transfer only for the same subject
+  // and target app; it never authenticates a request on its own.
+  'packages/utils/src/ai-consent-session.ts': {
+    calls: 2,
+    gates: [
+      'AI_CONSENT_REQUIRED_SCOPE',
+      'verified.claims.sub',
+      'verified.claims.target_app',
+      'BROWSER_ORIGIN_TRANSFER_SCOPE',
+    ],
+  },
   // MFA policy evaluation only: binds the token subject to a principal the
   // route already authenticated; no scope gate (app_coordination typ only).
   'packages/utils/src/required-mfa-request.ts': {

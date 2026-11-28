@@ -170,8 +170,12 @@ async function verifyCrossAppToken(
     policy,
     parsed.data.targetApp
   );
+  // A handoff without a browser origin transfer was minted for a native
+  // caller, or straight through Supabase: its sessions need AI consent.
+  const aiConsentRequired = validation.aiConsentRequired !== false;
   const appSession = createAppSessionTokenPair(
     {
+      aiConsentRequired,
       email: validation.sessionData?.email ?? null,
       mfa: validation.mfa ?? undefined,
       targetApp: parsed.data.targetApp,
@@ -183,6 +187,7 @@ async function verifyCrossAppToken(
   );
 
   return jsonNoStore({
+    aiConsentRequired,
     mfa: validation.mfa ?? null,
     appSessionExpiresAt: appSession.access.expiresAt,
     appSessionRefreshEarlySeconds: appSession.refreshEarlySeconds,

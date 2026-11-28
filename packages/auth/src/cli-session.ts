@@ -1,3 +1,4 @@
+import { AI_CONSENT_REQUIRED_SCOPE } from '@tuturuuu/utils/ai-consent-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import {
   type AppCoordinationTokenClaims,
@@ -19,6 +20,8 @@ export const CLI_APP_REFRESH_TTL_SECONDS = 90 * 24 * 60 * 60;
 export type CliAppSessionPayload = {
   mfa?: MfaSessionProof;
   accessExpiresInSeconds?: number;
+  /** Stamps both tokens as needing Mira AI data consent. */
+  aiConsentRequired?: boolean;
   email?: string | null;
   refreshExpiresInSeconds?: number;
   userId: string;
@@ -54,6 +57,7 @@ export function createCliAppSession(
 ): CliAppSession {
   const access = createAppSessionToken(
     {
+      aiConsentRequired: payload.aiConsentRequired === true,
       email: payload.email ?? null,
       mfa: payload.mfa,
       expiresInSeconds:
@@ -72,7 +76,9 @@ export function createCliAppSession(
       expiresInSeconds:
         payload.refreshExpiresInSeconds ?? CLI_APP_REFRESH_TTL_SECONDS,
       originApp: 'cli',
-      scopes: [CLI_APP_REFRESH_SCOPE],
+      scopes: payload.aiConsentRequired
+        ? [CLI_APP_REFRESH_SCOPE, AI_CONSENT_REQUIRED_SCOPE]
+        : [CLI_APP_REFRESH_SCOPE],
       targetApp: CLI_APP_TARGET_APP,
       userId: payload.userId,
     },

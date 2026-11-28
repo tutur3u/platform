@@ -8,6 +8,7 @@ import {
   type SignedInMeetCallAccess,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { z } from 'zod';
+import { requireMeetAiDataConsent } from '../../../../../../features/call/server/ai-data-consent';
 import { readPersonalChatBody } from '../../../../../../features/call/server/personal-chat-body';
 import { readMiraDemoAuthority } from '../../../../../../features/live-assistant/server/demo-authority';
 import {
@@ -171,6 +172,7 @@ async function answerPrivateMira(
       'MIRA_DEPLOYMENT_DISABLED'
     );
   stage.name = 'consent';
+  await requireMeetAiDataConsent(request, access.user.id);
   const consent = await requirePrivateMiraChoice(access);
   stage.name = 'authority';
   const authority = await readMiraDemoAuthority({

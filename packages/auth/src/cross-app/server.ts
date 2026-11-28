@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { getVerifiedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { readAiConsentBrowserOriginTransfer } from '@tuturuuu/utils/ai-consent-session';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import {
@@ -32,6 +33,7 @@ import {
 
 type CrossAppTokenRow = {
   session_data?: {
+    aiConsentTransfer?: string;
     email?: string;
     mfaTransfer?: string;
   } | null;
@@ -39,6 +41,11 @@ type CrossAppTokenRow = {
 };
 
 type CrossAppTokenValidation = {
+  /**
+   * The handoff carried no valid browser origin transfer, so the sessions
+   * minted from it need Mira AI data consent.
+   */
+  aiConsentRequired?: boolean;
   mfa?: MfaSessionProof | null;
   appSessionExpiresAt?: string | null;
   appSessionRefreshEarlySeconds?: number | null;
@@ -134,9 +141,19 @@ export async function validateCrossAppTokenWithClient({
     targetApp
   );
   if (!(await isRequiredMfaProofAllowed(userId, mfa))) return null;
+  const {
+    aiConsentTransfer,
+    ...sessionData
+  }: NonNullable<CrossAppTokenRow['session_data']> =
+    firstRow.session_data ?? {};
   return {
+    aiConsentRequired: !readAiConsentBrowserOriginTransfer(
+      aiConsentTransfer,
+      userId,
+      targetApp
+    ),
     mfa,
-    sessionData: { ...firstRow.session_data, email: email ?? undefined },
+    sessionData: { ...sessionData, email: email ?? undefined },
     userId,
   };
 }
@@ -169,6 +186,7 @@ async function validateCrossAppTokenWithCentralVerifier({
   }
 
   const body = (await response.json().catch(() => null)) as {
+    aiConsentRequired?: unknown;
     mfa?: unknown;
     appSessionExpiresAt?: unknown;
     appSessionRefreshEarlySeconds?: unknown;
@@ -185,6 +203,7 @@ async function validateCrossAppTokenWithCentralVerifier({
   }
 
   return {
+    aiConsentRequired: body.aiConsentRequired === true,
     mfa: isMfaSessionProof(body.mfa) ? body.mfa : null,
     appSessionExpiresAt:
       typeof body.appSessionExpiresAt === 'string'
@@ -239,6 +258,7 @@ async function refreshAppSessionWithCentralVerifier({
   if (!response.ok) return { kind: 'invalid' };
 
   const body = (await response.json().catch(() => null)) as {
+    aiConsentRequired?: unknown;
     mfa?: unknown;
     appSessionExpiresAt?: unknown;
     appSessionRefreshEarlySeconds?: unknown;
@@ -257,6 +277,7 @@ async function refreshAppSessionWithCentralVerifier({
   return {
     kind: 'verified',
     validation: {
+      aiConsentRequired: body.aiConsentRequired === true,
       mfa: isMfaSessionProof(body.mfa) ? body.mfa : null,
       appSessionExpiresAt:
         typeof body.appSessionExpiresAt === 'string'
@@ -310,6 +331,7 @@ function createAppSessionResponse(
 ) {
   const localAppSession = createAppSessionTokenPair(
     {
+      aiConsentRequired: validation.aiConsentRequired === true,
       email: validation.sessionData?.email ?? null,
       mfa: validation.mfa ?? undefined,
       originApp: 'web',
@@ -378,6 +400,7 @@ async function createCliAppSessionResponse(
   const policy = await options.resolveCliSessionPolicy?.();
   const cliSession = createCliAppSession({
     accessExpiresInSeconds: policy?.cliAccessTtlSeconds,
+    aiConsentRequired: validation.aiConsentRequired === true,
     email: validation.sessionData?.email ?? null,
     mfa: validation.mfa ?? undefined,
     refreshExpiresInSeconds: policy?.cliRefreshTtlSeconds,

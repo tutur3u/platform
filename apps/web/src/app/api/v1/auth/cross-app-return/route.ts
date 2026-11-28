@@ -14,6 +14,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { aiConsentBrowserOriginTransferFor } from '@tuturuuu/utils/ai-consent-session';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
 import { getMountedAppVerifyTokenMatch } from '@tuturuuu/utils/internal-app-mounts';
 import {
@@ -506,10 +507,18 @@ async function createCrossAppReturn(
     target.targetApp,
     sessionAssuranceFromVerifiedClaims(sessionClaims)
   );
+  // Only a cookie session vouches for a browser origin; a handoff minted for
+  // a native bearer caller yields a consent-required app session.
+  const aiConsentTransfer = aiConsentBrowserOriginTransferFor(
+    request,
+    user.id,
+    target.targetApp
+  );
   const mintArgs = {
     p_expiry_seconds: 300,
     p_origin_app: 'web',
     p_session_data: {
+      ...(aiConsentTransfer ? { aiConsentTransfer } : {}),
       ...(assuranceTransfer ? { assuranceTransfer } : {}),
       email: user.email ?? null,
       ...(mfaTransfer ? { mfaTransfer } : {}),

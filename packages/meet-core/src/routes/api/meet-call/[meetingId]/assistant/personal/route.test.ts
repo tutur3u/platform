@@ -11,6 +11,7 @@ const fixture = vi.hoisted(() => ({
   logged: vi.fn(),
   shared: false,
   sharedAt: undefined as number | undefined,
+  aiConsent: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
@@ -81,6 +82,9 @@ vi.mock(
   '../../../../../../features/live-assistant/server/private-share',
   () => ({ forwardSharedTutorChat: fixture.forward })
 );
+vi.mock('../../../../../../features/call/server/ai-data-consent', () => ({
+  requireMeetAiDataConsent: fixture.aiConsent,
+}));
 vi.mock('../../../../../../features/call/server/personal-chat-request', () => ({
   requestPersonalMeetChat: fixture.privateRequest,
 }));
@@ -290,4 +294,16 @@ it('answers when the runtime returns the bindings without a Promise', async () =
   const response = await ask();
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ text: 'A private reply' });
+});
+
+it('checks Mira AI data consent before the private flow', async () => {
+  fixture.aiConsent.mockRejectedValue(
+    new MeetCallAccessError(403, 'ai_consent_required', 'ai_consent_required')
+  );
+  const response = await ask();
+  expect(response.status).toBe(403);
+  expect(await response.json()).toEqual({ code: 'ai_consent_required' });
+  expect(fixture.aiConsent).toHaveBeenCalledWith(expect.any(Request), 'actor');
+  expect(fixture.choice).not.toHaveBeenCalled();
+  expect(fixture.privateRequest).not.toHaveBeenCalled();
 });

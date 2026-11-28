@@ -3,6 +3,7 @@ import {
   generateMeetAssistant,
   type PrivateAssistantReview,
 } from '@tuturuuu/meet-core/features/call/server/assistant-generation';
+import { requireMeetAiDataConsent } from '../../../../../../features/call/server/ai-data-consent';
 import {
   callRoomService,
   roomRoute,
@@ -51,12 +52,15 @@ export async function POST(
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid review');
     const { messageId, revision, action } = input.data;
     await requireRoomMiraAuthority(access);
-    if (action === 'approve' || action === 'deny')
+    if (action === 'approve' || action === 'deny') {
+      // Resuming a reviewed turn calls Gemini again.
+      await requireMeetAiDataConsent(request, access.user.id);
       return generateMeetAssistant(access, {
         messageId,
         timezone: 'UTC',
         resume: { revision, approved: action === 'approve' },
       });
+    }
     return callRoomService(access, {
       action: action === 'share' ? 'ai.review.share' : 'ai.review.discard',
       messageId,

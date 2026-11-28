@@ -1,3 +1,7 @@
+import {
+  enforceAiDataConsent,
+  requiresAiDataConsent,
+} from '@tuturuuu/ai/chat/ai-data-consent';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
 import {
   normalizeWorkspaceId,
@@ -30,6 +34,8 @@ export async function POST(request: Request, { params }: Params) {
       allowAppSessionAuth: { targetApp: 'meet' },
     });
     if (!auth.ok) return auth.response;
+    const consentRefusal = await enforceAiDataConsent(request, auth.user.id);
+    if (consentRefusal) return consentRefusal;
     let wsId: string;
     try {
       wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
@@ -89,7 +95,9 @@ export async function POST(request: Request, { params }: Params) {
       `/api/meet-call/${encodeURIComponent(meetingId)}/assistant/personal`,
       origin
     );
+    // Meet re-checks consent for a native caller's forwarded session.
     const session = createAppSessionToken({
+      ...(requiresAiDataConsent(request) ? { aiConsentRequired: true } : {}),
       email: auth.user.email,
       expiresInSeconds: 180,
       targetApp: 'meet',
