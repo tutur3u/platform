@@ -6,6 +6,8 @@ const f = vi.hoisted(() => ({
   admin: vi.fn(),
   getUserById: vi.fn(),
   from: vi.fn(),
+  verifyWorkspaceMembershipType: vi.fn(),
+  eqCalls: [] as Array<[string, unknown]>,
 }));
 vi.mock('@tuturuuu/email-service', () => ({ sendWorkspaceEmail: f.send }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -14,6 +16,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/abuse-protection', () => ({
   extractIPFromHeaders: () => 'unknown',
   isIPBlocked: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  verifyWorkspaceMembershipType: f.verifyWorkspaceMembershipType,
 }));
 vi.mock('@/constants/common', () => ({ DEV_MODE: false }));
 vi.mock('@/lib/mail/html', () => ({
@@ -71,25 +76,30 @@ const cases = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  f.eqCalls.length = 0;
   f.send.mockResolvedValue({ success: true });
+  f.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
   const query = {
     select: vi.fn(),
-    eq: vi.fn(),
+    eq: vi.fn((col: string, val: unknown) => {
+      f.eqCalls.push([col, val]);
+      return query;
+    }),
     single: vi.fn(),
+    maybeSingle: vi.fn(),
     insert: vi.fn(),
   };
   query.select.mockReturnValue(query);
-  query.eq.mockReturnValue(query);
   query.insert.mockReturnValue(query);
-  query.single.mockResolvedValue({
-    data: {
-      ...staff,
-      user_id: staff.id,
-      display_name: 'Staff',
-      allowed_emails: null,
-    },
-    error: null,
-  });
+  const row = {
+    ...staff,
+    user_id: staff.id,
+    display_name: 'Staff',
+    allowed_emails: null,
+    value: 'synthetic-secret',
+  };
+  query.single.mockResolvedValue({ data: row, error: null });
+  query.maybeSingle.mockResolvedValue({ data: row, error: null });
   f.from.mockReturnValue(query);
   f.admin.mockResolvedValue({
     from: f.from,
@@ -102,7 +112,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function sendRequest(wsId: string, recipient: string) {
+function sendRequest(
+  wsId: string,
+  recipient: string,
+  accessKeySecret = 'synthetic-secret'
+) {
   return POST(
     new NextRequest('https://mail.test/api/send', {
       method: 'POST',
@@ -114,7 +128,7 @@ function sendRequest(wsId: string, recipient: string) {
         },
         config: {
           accessKeyId: 'synthetic-key',
-          accessKeySecret: 'synthetic-secret',
+          accessKeySecret,
         },
       }),
     }),
@@ -162,4 +176,47 @@ it('logs a blocked count when provider error text includes a recipient', async (
   expect(JSON.stringify([...warn.mock.calls, ...error.mock.calls])).not.toMatch(
     /[\w.+-]+@[\w-]+\.[\w.]+/u
   );
+});
+
+it('rejects a mismatched API key secret in constant time without SQL secret equality', async () => {
+  const response = await sendRequest(
+    'workspace-id',
+    'recipient@example.test',
+    'wrong-secret'
+  );
+  expect(response.status).toBe(401);
+  expect(f.eqCalls.some(([col]) => col === 'value')).toBe(false);
+  expect(f.verifyWorkspaceMembershipType).not.toHaveBeenCalled();
+  expect(f.send).not.toHaveBeenCalled();
+});
+
+it('rejects when API key owner is not a member of the target workspace', async () => {
+  f.verifyWorkspaceMembershipType.mockResolvedValue({
+    ok: false,
+    error: 'membership_missing',
+  });
+  const response = await sendRequest(
+    'other-workspace',
+    'recipient@example.test'
+  );
+  expect(response.status).toBe(403);
+  expect(f.verifyWorkspaceMembershipType).toHaveBeenCalledWith(
+    expect.objectContaining({
+      wsId: 'other-workspace',
+      userId: staff.id,
+    })
+  );
+  expect(f.send).not.toHaveBeenCalled();
+});
+
+it('returns 500 when workspace membership lookup fails', async () => {
+  f.verifyWorkspaceMembershipType.mockResolvedValue({
+    ok: false,
+    error: 'membership_lookup_failed',
+  });
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const response = await sendRequest('workspace-id', 'recipient@example.test');
+  expect(response.status).toBe(500);
+  expect(f.send).not.toHaveBeenCalled();
+  warn.mockRestore();
 });

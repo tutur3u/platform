@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { sendWorkspaceEmail } from '@tuturuuu/email-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
@@ -5,13 +6,22 @@ import {
   extractIPFromHeaders,
   isIPBlocked,
 } from '@tuturuuu/utils/abuse-protection';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import {
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
+} from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
 import { sanitizeMailHtml } from '@/lib/mail/html';
 import { safeErrorFields, safeLogWorkspaceId } from '@/lib/mail/log-safety';
+
+function secretsEqual(provided: string, expected: string): boolean {
+  const digest = (value: string) => createHash('sha256').update(value).digest();
+  return timingSafeEqual(digest(provided), digest(expected));
+}
 
 function getDisallowedRecipients(
   recipients: string[],
@@ -98,10 +108,9 @@ export async function POST(
   const { data: apiKey, error: apiKeyError } = await sbAdmin
     .schema('private')
     .from('internal_email_api_keys')
-    .select('user_id, allowed_emails')
+    .select('user_id, allowed_emails, value')
     .eq('id', data.config.accessKeyId)
-    .eq('value', data.config.accessKeySecret)
-    .single();
+    .maybeSingle();
 
   if (apiKeyError) {
     console.warn('Error fetching internal email API key', {
@@ -111,8 +120,36 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!apiKey) {
+  if (
+    !apiKey ||
+    typeof apiKey.value !== 'string' ||
+    !secretsEqual(data.config.accessKeySecret, apiKey.value)
+  ) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const targetWsId = resolveWorkspaceId(wsId);
+  const membership = await verifyWorkspaceMembershipType({
+    wsId: targetWsId,
+    userId: apiKey.user_id,
+    supabase: sbAdmin,
+  });
+
+  if (membership.error === 'membership_lookup_failed') {
+    console.warn('Error verifying workspace membership for email API key', {
+      wsId: safeLogWorkspaceId(targetWsId),
+    });
+    return NextResponse.json(
+      { message: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+
+  if (!membership.ok) {
+    return NextResponse.json(
+      { message: 'Workspace access denied' },
+      { status: 403 }
+    );
   }
 
   const { data: apiKeyUser, error: apiKeyUserError } = await sbAdmin
@@ -177,7 +214,7 @@ export async function POST(
         email: userEmail,
       },
       metadata: {
-        wsId,
+        wsId: targetWsId,
         userId: apiKeyUser.id,
         templateType: 'internal-email',
         ipAddress,
@@ -220,7 +257,7 @@ export async function POST(
     const { error } = await sbAdmin
       .from('internal_emails')
       .insert({
-        ws_id: wsId,
+        ws_id: targetWsId,
         user_id: apiKeyUser.id,
         source_email: `${apiKeyUser.display_name || 'Tuturuuu'} <${userEmail}>`,
         subject: data.mail.subject,
