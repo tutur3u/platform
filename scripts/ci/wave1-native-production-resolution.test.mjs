@@ -42,6 +42,7 @@ function fixture(resolution) {
   };
   const state = {
     originalId,
+    originalSha: resolution.sha,
     currentId,
     receipt,
     baseline,
@@ -90,7 +91,7 @@ function fixture(resolution) {
     if (url.includes('/artifacts?')) {
       const isOriginal = url.includes(`/runs/${original}/`);
       const id = isOriginal ? original : state.pendingId;
-      const sha = isOriginal ? resolution.sha : 'b'.repeat(40);
+      const sha = isOriginal ? state.originalSha : 'b'.repeat(40);
       const attempt = isOriginal ? String(state.artifactAttempt ?? 1) : '1';
       return Response.json({
         total_count: 1,
@@ -113,7 +114,7 @@ function fixture(resolution) {
       ...extra,
       {
         id: original,
-        head_sha: resolution.sha,
+        head_sha: state.originalSha,
         head_branch: 'production',
         run_attempt: 1,
       },
@@ -156,24 +157,27 @@ for (const resolution of resolutions) {
     assert.equal(p.state.receipt.state, 'pending');
   });
 
-  for (const [name, mutate] of [
+  for (const [name, mutate, rejection] of [
     [
       'job and receipt disagree about the attempt',
       (p) => {
         p.state.jobAttempt = 2;
       },
+      /Earlier production upload started or is unknown/u,
     ],
     [
       'artifact and job disagree about the attempt',
       (p) => {
         p.state.artifactAttempt = 2;
       },
+      /Earlier production upload started or is unknown/u,
     ],
     [
       'job and run disagree about the id',
       (p) => {
         p.state.jobOverride = { run_id: p.state.originalId - 1 };
       },
+      /Malformed publication job run/u,
     ],
     [
       'attempt 2',
@@ -197,6 +201,40 @@ for (const resolution of resolutions) {
       'different SHA',
       (p) => {
         p.state.receipt.sha = 'd'.repeat(40);
+      },
+    ],
+    [
+      'unreviewed run across the job, artifact, and receipt',
+      (p) => {
+        p.state.originalId -= 100;
+        p.state.receipt.runId = String(p.state.originalId);
+      },
+    ],
+    [
+      'unreviewed attempt across the job, artifact, and receipt',
+      (p) => {
+        p.state.jobAttempt = 2;
+        p.state.artifactAttempt = 2;
+        p.state.receipt.runAttempt = '2';
+      },
+    ],
+    [
+      'unreviewed SHA across the run, artifact, and receipt',
+      (p) => {
+        p.state.originalSha = 'd'.repeat(40);
+        p.state.receipt.sha = p.state.originalSha;
+      },
+    ],
+    [
+      'October receipt baseline also used as the live baseline',
+      (p) => {
+        p.state.baseline = structuredClone(p.state.receipt.rollback);
+      },
+    ],
+    [
+      'live baseline also used as the receipt baseline',
+      (p) => {
+        p.state.receipt.rollback = structuredClone(p.state.baseline);
       },
     ],
     [
@@ -235,6 +273,9 @@ for (const resolution of resolutions) {
     test(`${name} stays fenced (${resolution.runId})`, async () => {
       const p = fixture(resolution);
       mutate(p);
-      await assert.rejects(p.run(), /never replay|Malformed publication job/u);
+      await assert.rejects(
+        p.run(),
+        rejection ?? /Earlier upload is not accepted; never replay/u
+      );
     });
 }

@@ -12,6 +12,13 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
 
 ## Common
 
+- A reviewed failed-no-write resolution pins the exact run, attempt, source SHA
+  and artifact digest. Its receipt baseline must match the deployment and 100%
+  version split captured in the immutable receipt. Its current baseline must
+  independently match the live rollback observed during preflight. Preflight
+  also requires every resolved SHA and digest to be absent from hosted Worker
+  versions. Keep earlier resolution records when appending a reviewed record.
+  See [production publication](./wave1-production-publication).
 - Build (CI parity): `bun turbo:local run build --filter=@tuturuuu/<app> --concurrency=2`, then
   `node scripts/ci/wave1-native-artifact.mjs prepare <app> production <sha> <workers-subdomain>`,
   `node scripts/ci/wave1-native-runtime.mjs <app> production <sha>` (needs `CI=true`) and
