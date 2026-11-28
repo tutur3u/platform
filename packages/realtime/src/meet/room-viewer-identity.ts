@@ -40,10 +40,31 @@ function withAccount<
 }
 
 /**
+ * Uploaded avatars live under the account id in storage, so another person's
+ * avatar URL that names their account is left out; other avatar URLs stay.
+ */
+function withAvatar<T extends { accountId?: string; avatarUrl?: string }>(
+  entry: T,
+  viewer: Viewer
+): T {
+  const { accountId, avatarUrl } = entry;
+  if (
+    !accountId ||
+    !avatarUrl ||
+    accountId === viewer.accountId ||
+    !avatarUrl.includes(accountId)
+  )
+    return entry;
+  const { avatarUrl: _hidden, ...rest } = entry;
+  return rest as unknown as T;
+}
+
+/**
  * The frame one viewer receives. Members get the frame unchanged. For anyone
  * else, every presence, chat and Mira Live owner account id other than their
- * own is replaced by the room alias, or omitted when no alias is available.
- * Server state keeps the real ids; only the wire copy changes.
+ * own is replaced by the room alias, or omitted when no alias is available,
+ * and their uploaded avatar URLs are left out. Server state keeps the real ids;
+ * only the wire copy changes.
  */
 export function meetFrameForViewer(
   message: MeetRealtimeServerMessage,
@@ -56,18 +77,23 @@ export function meetFrameForViewer(
       return {
         ...message,
         presence: message.presence.map((p) =>
-          withAccount(p, 'accountId', viewer, alias)
+          withAccount(withAvatar(p, viewer), 'accountId', viewer, alias)
         ),
       };
     case 'presence.delta':
       return {
         ...message,
         upserted: message.upserted.map((p) =>
-          withAccount(p, 'accountId', viewer, alias)
+          withAccount(withAvatar(p, viewer), 'accountId', viewer, alias)
         ),
       };
     case 'chat.message':
-      return withAccount(message, 'accountId', viewer, alias);
+      return withAccount(
+        withAvatar(message, viewer),
+        'accountId',
+        viewer,
+        alias
+      );
     // Clients keep the owner only to mirror the room; none reads it.
     case 'assistant.live':
       return withAccount(message, 'ownerId', viewer, alias);

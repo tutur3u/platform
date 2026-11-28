@@ -4,6 +4,7 @@ import 'server-only';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
   getMeetRealtimeScopesForRole,
+  meetAccountDeviceId,
   type MeetRealtimeAdmission,
   type MeetRealtimeRole,
   meetRealtimeTokenPayloadSchema,
@@ -84,9 +85,19 @@ export async function getMeetCallSession({
       : await (
           await import('./classroom-policy')
         ).getMeetRoomCapacityLimits(meetingId, wsId);
+  // A member's connection id never equals the account id, which the call
+  // socket would show to guests. Without a device id it is the account's keyed
+  // room id, so reconnects and service calls keep one identity. A guest id is
+  // already a per-meeting pseudonym, not a platform account.
   const deviceUserId = deviceId
     ? await meetDeviceIdentity(userId, deviceId)
-    : userId;
+    : guest
+      ? userId
+      : await meetAccountDeviceId(
+          getMeetRealtimeTokenSecret(),
+          `${wsId}:${meetingId}`,
+          userId
+        );
   const role: MeetRealtimeRole = isHost && !guest ? 'host' : 'speaker';
   const payload = meetRealtimeTokenPayloadSchema.parse({
     admission: role === 'host' ? 'open' : guest ? 'lobby' : admission,

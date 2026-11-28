@@ -1190,13 +1190,14 @@ in the call socket frames listed below.
   on admission) and the Mira Live owner (`assistant.live`), on every send path:
   broadcasts, direct replies, the full snapshot after admission or a resync, the
   resync after a hibernated Durable Object restores, the live announcements sent
-  on admission, and the local Bun server.
+  with an admission approval (`admission.approved`) or an admitted `ready`
+  frame, and the local Bun server.
 - **Who sees real ids.** The host and workspace members (tokens with open
   admission) receive these frames unchanged. Among the web client's readers of
   another person's `accountId`, the participant actions menu (inherited media
   overrides) renders only for people who manage participants, the self-capture
-  coverage list names people by account id for the host, and meeting AI speaker
-  attribution tags remote audio by account id. The shared-microphone back-off
+  coverage list names people by account id for the host and co-hosts, and
+  meeting AI speaker attribution tags remote audio by account id. The shared-microphone back-off
   (`use-shared-room-audio.ts`, `shared-audio-policy.ts`) and the self snapshot
   in `call-state.ts` read only the viewer's own id. The Mira Live owner is
   stored by the client but not read.
@@ -1214,11 +1215,10 @@ in the call socket frames listed below.
 - **Server state is unchanged.** Admission, removal bans, consent, attendance
   and moderation keep reading the real ids from the room snapshot; only the wire
   copy for each viewer changes.
-- **Not covered here, tracked as separate follow-ups.** Breakout assignments
-  from classroom tools; the document, channel and programming collaboration
-  tickets and their presence for signed-in outsiders; Quiz Arena player and buzz
-  entries; and tokens issued without a device id, whose `userId` is the account
-  id itself.
+- **Not covered here, tracked as a separate follow-up.** The document, channel
+  and programming collaboration tickets and their presence for signed-in
+  outsiders. Connection ids, Quiz Arena and breakouts are covered under
+  Connection ids and service views below.
 - Regression coverage:
   `packages/realtime/src/meet/room-viewer-identity.test.ts` (host, member,
   guest, outside account and self viewers across snapshots, deltas, chat and the
@@ -1228,6 +1228,55 @@ in the call socket frames listed below.
   Durable Object: an admitted guest, with and without the secret; chat replayed
   on admission; a signed-in outside account; the resync after a restore and the
   Mira Live announcement on reconnect; and the local Bun server send).
+
+### Connection ids and service views
+
+The same rule covers connection ids and the room-service views that guests
+read.
+
+- **Connection ids.** A call token's `userId` never equals the platform
+  account id. With a device id it is the existing hash of account and device.
+  Without one (the workspace realtime-token API, used by mobile, or a browser
+  tab without storage) both issuers sign an HMAC of the account id with
+  `MEET_REALTIME_TOKEN_SECRET`, scoped to the room, and carry the account id
+  separately as `accountId`. The id is stable across reconnects and token
+  refreshes in one room, so presence, stage, recording ownership, removal by
+  device and the server's account lookups (`accountId ?? userId`) behave as
+  for any device. Room-service tokens without a device id use the same id.
+  Anonymous guest ids are per-meeting pseudonyms and are signed as issued.
+- **Quiz Arena.** Players and buzz entries are keyed by account id on the
+  server, so scoring, buzz order and wagers are unchanged. The `arena.state`
+  view for a guest or an outside account replaces every other player's id, in
+  the scoreboard and in each buzz queue alike, with the room alias described
+  above; the viewer's own id stays, so its row and buzz still match. Managers
+  keep real ids because judging and point changes address players by them.
+- **Breakouts.** Groups hold account ids on the server, so host assignment and
+  self-moves are unchanged. The `breakouts.read` view for a guest or an outside
+  account aliases other people in its group's member list and in the roster;
+  its own id stays, so its client finds its group. The host keeps real ids.
+- **Avatars.** Uploaded avatars are stored under the account id, so an outside
+  viewer receives another person's presence or chat avatar only when its URL
+  does not contain that account id. Provider avatars stay.
+- **Without the secret** the aliased ids in these views are empty strings. The
+  realtime server cannot verify tokens without the secret, so production rooms
+  always have one.
+- **Not covered.** Polls and live activities show participants no other
+  person's account id: poll views carry only the viewer's own response and
+  exports are manager-only, and icebreaker replies, game scores and Q&A
+  authors use connection ids. Room-service tokens signed by the web costs and
+  review routes, the Upskii live-class integration and the live assistant
+  worker carry the account id as `userId`; they read or change room state over
+  HTTP and do not join the call socket.
+- Regression coverage:
+  `packages/realtime/src/meet/room-account-ids.test.ts` (connection ids, Quiz
+  Arena views for host, member, guest, outside account and self, scoring and
+  avatars), `packages/realtime/src/meet/room-breakouts-account-ids.test.ts`
+  (breakout views per viewer class, joins and moves),
+  `apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.test.ts`
+  and `packages/meet-core/src/features/call/lib/call-session.test.ts` (both
+  issuers), and `apps/meet-realtime/src/room-do-guest-identity.test.ts` (a guest
+  in a Durable Object room receives no member or host account id from a
+  device-less member's frames, Quiz Arena or breakouts).
 
 ### Guests without an account
 

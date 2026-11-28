@@ -3,7 +3,12 @@ import {
   type ClassroomMutation,
   MAX_BREAKOUT_DURATION_MINUTES,
 } from './classroom-tools-schema';
+import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
+import {
+  type MeetAccountAlias,
+  seesMeetAccountIds,
+} from './room-viewer-identity';
 
 type Group = { id: number; memberIds: string[]; needsHelp: boolean };
 type Participant = { id: string; name: string };
@@ -31,6 +36,43 @@ export function breakoutRoster(snapshot: MeetRoomSnapshot): Participant[] {
       people.set(id, { id, name: person.displayName });
   }
   return [...people.values()];
+}
+
+/**
+ * The breakout view one participant receives. Groups hold account ids on the
+ * server, so assignment and moves keep working there. A viewer outside the
+ * workspace gets the room alias in place of every other person's id, in its
+ * group's member list and in the roster alike, so the two still match. Its own
+ * id stays, which is how its client finds its group. Hosts keep real ids: they
+ * assign people by them. Without an alias the id is left empty.
+ */
+export function breakoutsViewForViewer(
+  view: BreakoutsView,
+  viewer: Pick<
+    MeetRealtimeTokenPayload,
+    'accountId' | 'admission' | 'guest' | 'role' | 'roomId'
+  >,
+  alias?: MeetAccountAlias
+): BreakoutsView {
+  if (view.canManage || seesMeetAccountIds(viewer)) return view;
+  const id = (personId: string) =>
+    personId === view.actorId
+      ? personId
+      : (alias?.(viewer.roomId, personId) ?? '');
+  return {
+    ...view,
+    session: view.session && {
+      ...view.session,
+      groups: view.session.groups.map((group) => ({
+        ...group,
+        memberIds: group.memberIds.map(id),
+      })),
+    },
+    participants: view.participants.map((person) => ({
+      ...person,
+      id: id(person.id),
+    })),
+  };
 }
 
 export function activeBreakouts(room: RoomBreakouts | undefined, now: number) {

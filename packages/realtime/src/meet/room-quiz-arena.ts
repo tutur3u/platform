@@ -29,6 +29,8 @@ import {
   voidTileAwards,
 } from './room-quiz-arena-scoring';
 import { projectQuizArenaForUser } from './room-quiz-arena-view';
+import { quizArenaViewForViewer } from './room-quiz-arena-viewer';
+import type { MeetAccountAlias } from './room-viewer-identity';
 import type { RoomServiceResult, RoomServiceState } from './room-service';
 
 export * from './room-quiz-arena-export';
@@ -41,6 +43,7 @@ export {
   rankArenaEntries,
 } from './room-quiz-arena-scoring';
 export * from './room-quiz-arena-view';
+export * from './room-quiz-arena-viewer';
 
 /** Answers that arrive within this window after the timer still count. */
 const ANSWER_GRACE_MS = 2000;
@@ -139,7 +142,9 @@ function advanceBuzzer(tile: ArenaTile) {
 export function applyRoomQuizArena(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
-  command: QuizArenaRoomCommand
+  command: QuizArenaRoomCommand,
+  /** Opaque per-room player ids for viewers outside the workspace. */
+  accountAlias?: MeetAccountAlias
 ): RoomServiceResult {
   const accountId = token.accountId ?? token.userId;
   const canManage = !token.guest && canMeetRealtimeManageParticipants(token);
@@ -181,11 +186,10 @@ export function applyRoomQuizArena(
   if (command.action === 'arena.state')
     return {
       state: snapshot,
-      body: projectQuizArenaForUser(
-        arena,
-        accountId,
-        canManage,
-        command.sinceSeq
+      body: quizArenaViewForViewer(
+        projectQuizArenaForUser(arena, accountId, canManage, command.sinceSeq),
+        token,
+        accountAlias
       ),
     };
   if (command.action === 'arena.export') {

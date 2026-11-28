@@ -55,6 +55,7 @@ function isFiniteRoomLifecycleStep(step) {
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-mira-pending.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-mira-share.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-guest-account-ids.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-guest-identity.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/attendance-room-erase.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/attendance-directory-spill.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts" \\',

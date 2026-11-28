@@ -26,6 +26,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('@/lib/meet/realtime-token', () => ({
   getMeetRealtimeUrl: () => 'wss://realtime.example.test',
   signMeetJoinToken: mocks.sign,
+  meetAccountDeviceIdentity: async () => 'connection-id',
 }));
 
 import { POST } from './route';

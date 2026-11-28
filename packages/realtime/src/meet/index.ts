@@ -42,6 +42,7 @@ export {
 } from './assistant-mentions';
 export * from './room-presence-diff';
 export * from './room-viewer-identity';
+export { meetAccountDeviceId } from './device-identity';
 export * from './simulcast-layers';
 export * from './room-media-quality';
 export * from './stream-tiers';

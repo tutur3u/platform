@@ -46,6 +46,7 @@ import {
 } from './room-quiz-arena';
 import type { RoomProgrammingMira } from './room-programming-mira';
 import type { RoomRecording } from './room-recording';
+import type { MeetAccountAlias } from './room-viewer-identity';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
 import { locksClientTranscription } from './room-self-capture-state';
@@ -174,7 +175,7 @@ export function roomService(
   token: MeetRealtimeTokenPayload,
   input: unknown,
   features = meetClassFeatures(),
-  formsEnv: MeetRoomFormsEnv = {}
+  formsEnv: MeetRoomFormsEnv & { accountAlias?: MeetAccountAlias } = {}
 ): RoomServiceResult {
   const fail = (error: string, status = 403) => ({
     state: snapshot,
@@ -229,7 +230,12 @@ export function roomService(
   if (parsed.data.service === 'polls')
     return applyRoomPolls(snapshot, token, parsed.data.message);
   if (parsed.data.service === 'quizArena')
-    return applyRoomQuizArena(snapshot, token, parsed.data.message);
+    return applyRoomQuizArena(
+      snapshot,
+      token,
+      parsed.data.message,
+      formsEnv.accountAlias
+    );
   const accountId = token.accountId ?? token.userId;
   const admitted = Object.values(snapshot.presence).some(
     (person) => (person.accountId ?? person.userId) === accountId

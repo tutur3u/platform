@@ -221,9 +221,10 @@ describe('Meet realtime token route', () => {
       mode: 'call',
       role: 'speaker',
       roomId: `${WORKSPACE_ID}:${MEETING_ID}`,
-      userId: MEMBER_ID,
+      accountId: MEMBER_ID,
       wsId: WORKSPACE_ID,
     });
+    expect(payload?.userId).not.toBe(MEMBER_ID);
     expect(payload?.scopes).toContain('sfu:publish');
     expect(payload && canMeetRealtimePublish(payload, 'audio')).toBe(true);
     expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(
@@ -244,7 +245,7 @@ describe('Meet realtime token route', () => {
     expect(payload).toMatchObject({
       mode: 'call',
       role: 'speaker',
-      userId: MEMBER_ID,
+      accountId: MEMBER_ID,
     });
     expect(payload?.scopes).toContain('sfu:publish');
   });
@@ -265,12 +266,38 @@ describe('Meet realtime token route', () => {
     expect(payload).toMatchObject({
       mode: 'stream',
       role: 'host',
-      userId: CREATOR_ID,
+      accountId: CREATOR_ID,
     });
+    expect(payload?.userId).not.toBe(CREATOR_ID);
     expect(payload?.scopes).toEqual(
       expect.arrayContaining(['stream:control', 'sfu:publish'])
     );
     expect(payload && canMeetRealtimePublish(payload, 'video')).toBe(true);
+  });
+
+  it('never signs the account id as the connection id of a device-less token', async () => {
+    const read = async (body: unknown) =>
+      verifyMeetRealtimeToken(
+        (await (await requestToken(body)).json()).token,
+        TOKEN_SECRET
+      );
+    const first = await read({ mode: 'call' });
+    const again = await read({ mode: 'call' });
+    expect(first?.accountId).toBe(MEMBER_ID);
+    expect(first?.userId).not.toBe(MEMBER_ID);
+    expect(first?.userId).toMatch(
+      /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/
+    );
+    // A reconnect keeps one identity in the room.
+    expect(again?.userId).toBe(first?.userId);
+    // The id is keyed by the realtime secret, not derivable from the account.
+    process.env.MEET_REALTIME_TOKEN_SECRET = 'another-secret';
+    const response = await requestToken({ mode: 'call' });
+    const rekeyed = verifyMeetRealtimeToken(
+      (await response.json()).token,
+      'another-secret'
+    );
+    expect(rekeyed?.userId).not.toBe(first?.userId);
   });
 
   it('returns the configured public Meet realtime URL', async () => {

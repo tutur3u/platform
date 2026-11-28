@@ -1,5 +1,6 @@
 import {
   getMeetRealtimeScopesForRole,
+  meetAccountDeviceId,
   type MeetRealtimeAdmission,
   type MeetRealtimeRole,
   type MeetRealtimeRoomMode,
@@ -91,6 +92,23 @@ export function signMeetJoinToken(input: {
     payload,
     token: signMeetRealtimeToken(payload, getMeetRealtimeTokenSecret()),
   };
+}
+
+/**
+ * The room connection id for a member whose client sends no device id. It is
+ * keyed with the realtime secret, so it never exposes the account id and stays
+ * stable across reconnects in the room.
+ */
+export function meetAccountDeviceIdentity(
+  accountId: string,
+  wsId: string,
+  meetingId: string
+) {
+  return meetAccountDeviceId(
+    getMeetRealtimeTokenSecret(),
+    `${wsId}:${meetingId}`,
+    accountId
+  );
 }
 
 /** Keep each device distinct while binding it to the authenticated account. */

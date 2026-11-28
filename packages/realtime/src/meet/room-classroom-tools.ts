@@ -9,10 +9,12 @@ import {
   activeBreakouts,
   type BreakoutsView,
   breakoutRoster,
+  breakoutsViewForViewer,
   editBreakouts,
   type RoomBreakouts,
 } from './room-breakouts';
 import type { RoomServiceState } from './room-service';
+import type { MeetAccountAlias } from './room-viewer-identity';
 import {
   editWhiteboard,
   emptyWhiteboard,
@@ -30,7 +32,9 @@ export function applyRoomClassroomTools(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
-  now = Date.now()
+  now = Date.now(),
+  /** Opaque per-room ids for breakout viewers outside the workspace. */
+  accountAlias?: MeetAccountAlias
 ): ClassroomToolResponse | null {
   // The Meet app grants this scope only after checking the deployment and workspace.
   if (
@@ -83,7 +87,10 @@ export function applyRoomClassroomTools(
       canManage: host,
       serverNow: now,
     };
-    return { state: snapshot, body };
+    return {
+      state: snapshot,
+      body: breakoutsViewForViewer(body, token, accountAlias),
+    };
   }
 
   const parsed = classroomMutationSchema.safeParse(input);

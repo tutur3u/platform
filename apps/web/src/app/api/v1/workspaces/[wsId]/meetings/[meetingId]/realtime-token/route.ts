@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
   getMeetRealtimeUrl,
+  meetAccountDeviceIdentity,
   meetDeviceIdentity,
   signMeetJoinToken,
 } from '@/lib/meet/realtime-token';
@@ -151,9 +152,11 @@ export async function POST(request: Request, { params }: Params) {
       requestedMode: body.mode,
     });
 
+    // The connection id never equals the account id: the call socket shows it
+    // to everyone in the room, including guests outside the workspace.
     const deviceUserId = body.deviceId
       ? await meetDeviceIdentity(auth.user.id, body.deviceId)
-      : auth.user.id;
+      : await meetAccountDeviceIdentity(auth.user.id, wsId, meetingId);
     const classification = await isParleySession(meetingId).catch(() => {
       console.warn('Meet room capacity classification unavailable');
       return undefined;
@@ -174,7 +177,7 @@ export async function POST(request: Request, { params }: Params) {
           }
         );
     const signed = signMeetJoinToken({
-      accountId: body.deviceId ? auth.user.id : undefined,
+      accountId: auth.user.id,
       ...capacity,
       maxRoomDurationSeconds,
       displayName: getDisplayName(auth.user),

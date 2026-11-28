@@ -83,7 +83,11 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
   expect(response.status).toBe(200);
   expect(response.headers.get('cache-control')).toBe('private, no-store');
   const { token } = await response.json();
-  expect(verifyMeetRealtimeToken(token, secret)).toMatchObject({
+  const payload = verifyMeetRealtimeToken(token, secret);
+  // A signed-in person outside the workspace never gets its account id as the
+  // connection id the room shows to guests.
+  expect(payload?.userId).not.toBe(id);
+  expect(payload).toMatchObject({
     admission: 'lobby',
     limits: expect.objectContaining({
       maxRoomDurationSeconds: 36000,
@@ -94,7 +98,7 @@ it('refreshes an external guest as a lobby speaker for this meeting only', async
     displayName: 'Guest Display Name',
     meetingId: id,
     wsId: id,
-    userId: id,
+    accountId: id,
   });
   expect(mocks.access).toHaveBeenCalledWith(id, 'Guest');
   expect(mocks.capacity).toHaveBeenCalledExactlyOnceWith({

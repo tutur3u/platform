@@ -4974,7 +4974,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts",
-    "sourceSha256": "b1b52ddc76bf41e49e87672e6ad2bcfeb8732fcfed985248e18f745a4e14cab8",
+    "sourceSha256": "3f49d77db90bb739f8b32dc7123e99a73fc53ae2dff70ff9acce2fff65fa8caa",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

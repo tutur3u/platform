@@ -8,6 +8,8 @@ import {
 } from '../../../packages/realtime/src/meet/external-class-room';
 import type { MeetRoomFormsEnv } from '../../../packages/realtime/src/meet/room-forms';
 import type { MeetRealtimeTokenPayload } from '../../../packages/realtime/src/meet/primitives';
+import { createMeetRoomAccountAlias } from '../../../packages/realtime/src/meet/room-account-alias';
+import type { MeetAccountAlias } from '../../../packages/realtime/src/meet/room-viewer-identity';
 import { applyRoomBoardAccess } from '../../../packages/realtime/src/meet/room-board-access';
 import { applyRoomClassroomTools } from '../../../packages/realtime/src/meet/room-classroom-tools';
 import {
@@ -28,7 +30,21 @@ export type { RoomServiceState };
 /** The room's environment, plus the room ids that have an open socket. */
 export type RoomServiceEnv = MeetRoomFormsEnv & {
   connectedUsers?: ReadonlySet<string>;
+  MEET_REALTIME_TOKEN_SECRET?: string;
 };
+
+const aliases = new Map<string, MeetAccountAlias>();
+/** One cached alias per realtime secret, reused across service requests. */
+function accountAliasFor(secret: string | undefined) {
+  const key = secret?.trim();
+  if (!key) return undefined;
+  let alias = aliases.get(key);
+  if (!alias) {
+    alias = createMeetRoomAccountAlias(() => key);
+    aliases.set(key, alias);
+  }
+  return alias;
+}
 
 export function roomService(
   state: RoomServiceState,
@@ -94,9 +110,17 @@ function roomCommands(
   token: MeetRealtimeTokenPayload,
   input: unknown,
   features: MeetClassFeatures,
-  formsEnv: MeetRoomFormsEnv
+  formsEnv: RoomServiceEnv
 ): RoomServiceResult {
-  const classroom = applyRoomClassroomTools(state, token, input);
+  // Views sent to viewers outside the workspace alias other people's ids.
+  const accountAlias = accountAliasFor(formsEnv.MEET_REALTIME_TOKEN_SECRET);
+  const classroom = applyRoomClassroomTools(
+    state,
+    token,
+    input,
+    Date.now(),
+    accountAlias
+  );
   if (classroom) return classroom;
   const consent = applyMiraRoomConsent(state, token, input);
   if (consent) return consent;
@@ -106,6 +130,9 @@ function roomCommands(
   const transcript = applyMeetTranscriptConsent(state, token, input);
   if (transcript) return transcript;
   return fenceMiraRoomRequest(state, token, input, () =>
-    applyRoomService(state, token, input, features, formsEnv)
+    applyRoomService(state, token, input, features, {
+      ...formsEnv,
+      accountAlias,
+    })
   );
 }
