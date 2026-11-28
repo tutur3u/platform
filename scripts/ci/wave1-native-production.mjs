@@ -320,6 +320,10 @@ export async function main({
       fetchJson: (url, credential) =>
         boundedJson(url, credential, boundedFetch),
     });
+    assertActiveVersionsPresent({
+      deployments: deployments.slice(0, 1),
+      versionItems,
+    });
     const confirmedMissingHistoricalIds = await confirmMissingHistoricalVersions({
       deployments,
       versionItems,

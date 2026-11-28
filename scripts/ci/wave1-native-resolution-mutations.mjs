@@ -472,7 +472,7 @@ try {
       'K2:',
       (s) =>
         s.replace(
-          /assertActiveVersionsPresent\(\{\s*deployments,\s*versionItems,\s*confirmedMissingHistoricalIds,\s*\}\);/u,
+          /assertActiveVersionsPresent\(\{\s*deployments: deployments\.slice\(0, 1\),\s*versionItems,\s*\}\);/u,
           '/* mutated */'
         ),
     ],
