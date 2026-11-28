@@ -6,6 +6,7 @@ import {
   channelTicketSchema,
   channelClientFrameSchema as frame,
 } from '../../../packages/realtime/src/channels/schema';
+import { channelTicketOwner } from '../../../packages/realtime/src/core/opaque-ids';
 import { serviceRequestHeaders } from '../../../packages/realtime/src/core/service-request';
 import {
   signRealtimePayload,
@@ -71,19 +72,24 @@ export class ChannelRoomDurableObject implements DurableObject {
     if (!ticket || ticket.exp * 1000 <= Date.now())
       return new Response(null, { status: 401 });
     if (ticket.topic.startsWith('meeting-document-')) {
-      if (!ticket.documentId || !ticket.ownerId)
+      // Browser tickets seal the owner; only this room reads it.
+      const ownerId = channelTicketOwner(
+        this.env.MEET_REALTIME_TOKEN_SECRET,
+        ticket
+      );
+      if (!ticket.documentId || !ownerId)
         return new Response(null, { status: 403 });
       if (
         this.metadata &&
         (this.metadata.topic !== ticket.topic ||
           this.metadata.documentId !== ticket.documentId ||
-          this.metadata.ownerId !== ticket.ownerId)
+          this.metadata.ownerId !== ownerId)
       )
         return new Response(null, { status: 403 });
       if (!this.metadata) {
         this.metadata = {
           topic: ticket.topic,
-          ownerId: ticket.ownerId,
+          ownerId,
           documentId: ticket.documentId,
           checkpointAt: 0,
           version: ticket.version ?? 0,
@@ -197,7 +203,11 @@ export class ChannelRoomDurableObject implements DurableObject {
           next.data.exp * 1000 <= Date.now() ||
           next.data.topic !== attachment.ticket.topic ||
           next.data.userId !== attachment.ticket.userId ||
-          next.data.ownerId !== attachment.ticket.ownerId ||
+          channelTicketOwner(this.env.MEET_REALTIME_TOKEN_SECRET, next.data) !==
+            channelTicketOwner(
+              this.env.MEET_REALTIME_TOKEN_SECRET,
+              attachment.ticket
+            ) ||
           next.data.documentId !== attachment.ticket.documentId
         )
           return socket.close(1008, 'Invalid refresh');

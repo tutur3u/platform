@@ -23,7 +23,7 @@ vi.mock('../lib/call-access', () => {
 });
 vi.mock('../lib/guest-access', () => ({ getMeetGuestCallAccess: guestAccess }));
 
-import { meetCallRoomRoute } from './room-service';
+import { meetCallRoomRoute, roomRoute } from './room-service';
 
 beforeEach(() => guestAccess.mockReset());
 
@@ -52,3 +52,20 @@ it.each([
     expect(command).not.toHaveBeenCalled();
   }
 );
+
+it('refuses an anonymous guest before document or programming work', async () => {
+  // A valid guest session still never reaches document tabs, channel tickets
+  // or programming collaboration: those routes accept signed-in people only.
+  guestAccess.mockResolvedValue({ guest: true, user: { id: 'guest' } });
+  const work = vi.fn();
+  for (const path of ['document?view=tabs', 'document', 'programming']) {
+    const result = await roomRoute(
+      new Request(`https://meet.test/api/meet-call/room/${path}`),
+      'room',
+      work
+    );
+    expect(result.status).toBe(401);
+  }
+  expect(work).not.toHaveBeenCalled();
+  expect(guestAccess).not.toHaveBeenCalled();
+});

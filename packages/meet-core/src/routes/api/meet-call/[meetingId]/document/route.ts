@@ -4,7 +4,7 @@ import {
   joinMeetingDocument,
   meetingDocumentCommandSchema,
   readDocumentTabParam,
-  readMeetingDocuments,
+  readMeetingDocumentsForViewer,
   runMeetingDocumentCommand,
 } from '@tuturuuu/meet-core/features/call/server/documents';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
@@ -20,7 +20,7 @@ export async function GET(
   await connection();
   return roomRoute(request, (await params).meetingId, (access) =>
     new URL(request.url).searchParams.get('view') === 'tabs'
-      ? readMeetingDocuments(access)
+      ? readMeetingDocumentsForViewer(access)
       : joinMeetingDocument(access, readDocumentTabParam(request))
   );
 }

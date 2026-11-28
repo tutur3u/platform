@@ -1215,10 +1215,10 @@ in the call socket frames listed below.
 - **Server state is unchanged.** Admission, removal bans, consent, attendance
   and moderation keep reading the real ids from the room snapshot; only the wire
   copy for each viewer changes.
-- **Not covered here, tracked as a separate follow-up.** The document, channel
-  and programming collaboration tickets and their presence for signed-in
-  outsiders. Connection ids, Quiz Arena and breakouts are covered under
-  Connection ids and service views below.
+- **Covered in the sections below.** Connection ids, Quiz Arena, breakouts
+  and avatars follow Connection ids and service views; documents, channels,
+  programming collaboration and playground previews follow Account ids in
+  documents and collaboration. What remains is listed under Not covered there.
 - Regression coverage:
   `packages/realtime/src/meet/room-viewer-identity.test.ts` (host, member,
   guest, outside account and self viewers across snapshots, deltas, chat and the
@@ -1277,6 +1277,54 @@ read.
   issuers), and `apps/meet-realtime/src/room-do-guest-identity.test.ts` (a guest
   in a Durable Object room receives no member or host account id from a
   device-less member's frames, Quiz Arena or breakouts).
+
+### Account ids in documents and collaboration
+
+People outside the workspace never receive another person's platform user id
+from Meet documents or programming collaboration, matching the call-socket rule.
+Anonymous guests cannot open these surfaces at all; the rules below cover
+signed-in people outside the workspace (lobby admission).
+
+- **Document tabs metadata.** `GET .../document?view=tabs` and every tab command
+  return `tabs[].createdBy`, `mira.askedBy` and `edits[].askedBy`. The host and
+  workspace members receive them unchanged. An outside viewer receives, for
+  everyone else, the room alias: an HMAC of the account id with
+  `MEET_REALTIME_TOKEN_SECRET` over `meet-room-account:<wsId>:<meetingId>:<accountId>`,
+  the same derivation as the call socket, so one person has one alias across
+  presence, chat and documents of a meeting. Without the secret the field is
+  omitted. A viewer keeps its own id, which the client compares to decide what
+  it may close or review.
+- **Document channel tickets and presence.** Every participant's channel ticket
+  carries the room alias as `userId`, and the join response returns it as
+  `user.id`, so channel presence, cursor labels and awareness show aliases for
+  the host and members too. The ticket names the meeting owner only as
+  `ownerSeal`, AES-256-GCM sealed with a key derived from the realtime secret
+  and bound to the topic. The channel Durable Object opens it to bind the room
+  and to sign its workspace checkpoint with the real owner, which never leaves
+  the server. Service tickets (Mira's caret, checkpoints) keep a plain
+  `ownerId`.
+- **Programming collaboration.** A Meet programming join ticket names the host
+  by a room-scoped owner binding (an HMAC, not the account id). The
+  collaboration Durable Object accepts that binding only on browser join
+  tickets; seed, checkpoint, runner and Mira tickets stay server-side with the
+  real owner. Every programming room, in Meet and in hosted playgrounds,
+  broadcasts presence with a room-scoped presence id instead of the account id,
+  and the ticket response returns the viewer's own presence id as `actorId`. A
+  join ticket still carries its holder's own account id.
+- **Deploy order.** The Meet realtime Worker must deploy before the Meet and web
+  apps that issue sealed or bound tickets; an older Durable Object refuses them.
+- Regression coverage:
+  `packages/realtime/src/core/opaque-ids.test.ts` (alias derivation, seal
+  integrity, binding scope),
+  `packages/meet-core/src/features/call/server/documents-viewer.test.ts` (host,
+  member and outside viewers for tabs, commands and channel tickets),
+  `room-service-guest-boundary.test.ts` (guests refused),
+  `packages/storage-core/src/lib/programming-collaboration-ids.test.ts` (Meet and
+  hosted playground tickets), and
+  `apps/meet-realtime/src/outsider-account-ids.test.ts` (channel and
+  programming Durable Objects deliver no account ids to an outside socket and
+  still authorize the owner). The local Wrangler checks in
+  `apps/meet-realtime/tests/` exercise sealed and bound tickets in workerd.
 
 ### Guests without an account
 
@@ -3852,8 +3900,9 @@ Every admitted Meet participant can edit the room's private rich-text document.
 This document does not require a paid playground entitlement. It belongs to the
 meeting workspace and is created once per meeting. Cloudflare merges and persists
 Yjs updates, then checkpoints the rich-text content to the private workspace
-Document. Cursor labels and selected ranges use authenticated account identity;
-multiple connections from the same account remain separate sessions. Editing the
+Document. Cursor labels and selected ranges use the authenticated account's room
+alias (see Account ids in documents and collaboration); multiple connections
+from the same account remain separate sessions. Editing the
 workspace Document through another surface creates a conflict: a room checkpoint
 never overwrites that external edit silently. The durable room state is retained
 for reconciliation. Web and native editors display a backup conflict warning;

@@ -6,6 +6,7 @@ import {
   programmingDocumentSnapshot,
   Y,
 } from '../../../packages/realtime/src/collaboration';
+import { collaborationOwnerBinding } from '../../../packages/realtime/src/core/opaque-ids';
 import {
   signRealtimePayload,
   verifyRealtimePayload,
@@ -187,7 +188,10 @@ try {
     1,
     'refresh does not replay full project state'
   );
-  const editor = await connect('editor');
+  // A Meet browser ticket names the owner only by the room binding.
+  const editor = await connect('editor', {
+    ownerId: collaborationOwnerBinding(secret, roomId, ownerId),
+  });
   const viewer = await connect('viewer');
   owner.doc.getMap<Y.Text>('files').get('main.py')!.insert(0, '# owner\n');
   owner.update();
@@ -243,6 +247,13 @@ try {
       JSON.stringify(message).includes('"endColumn":3')
     ),
     'selected range reaches the other editor'
+  );
+  assert(
+    !editor.messages.some(
+      (message) =>
+        message.type === 'presence' && JSON.stringify(message).includes(ownerId)
+    ),
+    'presence never carries the owner account id'
   );
   viewer.update();
   await until(

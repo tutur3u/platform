@@ -11,6 +11,13 @@ export const channelTicketSchema = z
     kind: z.enum(['join', 'publish', 'document', 'document-checkpoint']),
     documentId: z.guid().optional(),
     ownerId: z.guid().optional(),
+    /** The owner id sealed for the channel room; client-held tickets use it. */
+    ownerSeal: z
+      .string()
+      .min(1)
+      .max(256)
+      .regex(/^[A-Za-z0-9_-]+$/)
+      .optional(),
     version: z.number().int().nonnegative().optional(),
     topic: channelTopicSchema,
     userId: z.guid(),

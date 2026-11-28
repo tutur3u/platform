@@ -202,6 +202,31 @@ it('rejects a checkpoint if the host has already closed the programming room', a
   });
 });
 
+it.each([
+  ['host', true],
+  ['member', false],
+  ['signed-in outsider', false],
+])(
+  'asks for a browser ticket that binds the host instead of naming them (%s)',
+  async (_viewer, isHost) => {
+    mocks.room.mockResolvedValue({
+      selection: { kind: 'playground', id: 'project', language: 'python' },
+    });
+    mocks.elevated.mockResolvedValue(true);
+    mocks.metadata.mockResolvedValue({ id: 'project', revision: 1 });
+    mocks.ticket.mockResolvedValue({ token: 'ticket' });
+    await joinMeetingProgramming({ ...access, isHost });
+    expect(mocks.ticket).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bindOwner: true,
+        role: isHost ? 'owner' : 'editor',
+      }),
+      expect.any(Function),
+      false
+    );
+  }
+);
+
 describe('Mira coding routes', () => {
   const selection = {
     kind: 'playground',

@@ -4,6 +4,7 @@ import {
   type ChannelTicket,
   channelTicketSchema,
 } from '../../../packages/realtime/src/channels/schema';
+import { sealChannelOwner } from '../../../packages/realtime/src/core/opaque-ids';
 import {
   signRealtimePayload,
   verifyRealtimePayload,
@@ -69,7 +70,9 @@ function token(userId: string, overrides: Partial<ChannelTicket> = {}) {
       kind: 'join',
       topic,
       userId,
-      ownerId,
+      // Browser tickets seal the owner; the room opens it in workerd and
+      // signs its checkpoint with the real owner the callback checks.
+      ownerSeal: sealChannelOwner(secret, topic, ownerId),
       documentId,
       role: 'editor',
       version: 0,

@@ -13,6 +13,10 @@ import {
   planRetryReservation,
   type RetryBudget,
 } from '../../../packages/realtime/src/core/retry-budget';
+import {
+  collaborationPresenceId,
+  collaborationTicketOwnerMatches as ownerMatches,
+} from '../../../packages/realtime/src/core/opaque-ids';
 import { serviceRequestHeaders } from '../../../packages/realtime/src/core/service-request';
 import {
   signRealtimePayload,
@@ -136,7 +140,11 @@ export class CollaborationRoomDurableObject implements DurableObject {
     if (
       !this.metadata ||
       ticket.roomId !== this.metadata.roomId ||
-      ticket.ownerId !== this.metadata.ownerId ||
+      !ownerMatches(
+        this.env.MEET_REALTIME_TOKEN_SECRET,
+        ticket,
+        this.metadata
+      ) ||
       ticket.resourceId !== this.metadata.resourceId ||
       ticket.resource !== this.metadata.resource ||
       ticket.meetingId !== this.metadata.meetingId
@@ -173,7 +181,12 @@ export class CollaborationRoomDurableObject implements DurableObject {
       windowAt: Date.now(),
       messages: 0,
       presence: {
-        userId: ticket.userId,
+        // Presence reaches every participant, so it never carries account ids.
+        userId: collaborationPresenceId(
+          this.env.MEET_REALTIME_TOKEN_SECRET,
+          ticket.roomId,
+          ticket.userId
+        ),
         displayName: ticket.displayName,
         connectionId,
         file: null,

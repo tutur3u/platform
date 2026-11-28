@@ -42,6 +42,7 @@
     "./meet/room-quiz-arena.ts": "./src/meet/room-quiz-arena.ts",
     "./meet/token": "./src/meet/token.ts",
     "./core/token": "./src/core/token.ts",
+    "./core/opaque-ids": "./src/core/opaque-ids.ts",
     "./collaboration": "./src/collaboration/index.ts",
     "./channels": "./src/channels/index.ts",
     "./channels/server": "./src/channels/server.ts",

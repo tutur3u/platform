@@ -271,6 +271,11 @@ export {
   roomDocumentTitleSchema,
 } from './room-documents';
 export {
+  type RoomDocumentsView,
+  type RoomDocumentsViewer,
+  roomDocumentsForViewer,
+} from './room-documents-viewer';
+export {
   isMeetJoinQrShown,
   MEET_JOIN_QR_AUTO_HIDE_MINUTES,
   MEET_ROOM_SETTINGS_FEATURES,

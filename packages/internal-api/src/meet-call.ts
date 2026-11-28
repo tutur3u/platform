@@ -552,6 +552,7 @@ export interface MeetingDocumentTab {
   id: string;
   kind: MeetingDocumentKind;
   title?: string;
+  /** A room alias for viewers outside the workspace, except their own tabs. */
   createdBy?: string;
   createdAt: number;
   updatedAt: number;
@@ -562,7 +563,8 @@ export interface MeetingDocumentMiraPresence {
   source: MeetingDocumentSource;
   status: 'editing' | 'reviewing';
   section?: string;
-  askedBy: string;
+  /** Absent, or a room alias, for viewers outside the workspace. */
+  askedBy?: string;
   updatedAt: number;
   expiresAt: number;
 }
@@ -571,7 +573,8 @@ export interface MeetingDocumentMiraEdit {
   tabId: string;
   source: MeetingDocumentSource;
   action: 'draft' | 'refine' | 'summarize';
-  askedBy: string;
+  /** Absent, or a room alias, for viewers outside the workspace. */
+  askedBy?: string;
   askedByName?: string;
   before: string;
   after: string;

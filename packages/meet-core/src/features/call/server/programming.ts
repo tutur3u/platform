@@ -178,6 +178,9 @@ async function meetingProgrammingScope(
           : `playground:${selection.id}`
         : `meeting:${access.meeting.id}:${selection.kind}:${selection.id}:${selection.language}`,
     displayName: access.displayName,
+    // The participant may be outside the workspace; the browser ticket names
+    // the host's account only by a room binding.
+    bindOwner: true,
   };
 }
 

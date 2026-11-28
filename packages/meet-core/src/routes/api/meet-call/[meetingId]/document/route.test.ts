@@ -66,6 +66,7 @@ vi.mock(
         actual.meetingDocumentCommandSchema ?? z.object({ action: z.string() }),
       joinMeetingDocument: fixture.join,
       readMeetingDocuments: fixture.read,
+      readMeetingDocumentsForViewer: fixture.read,
       runMeetingDocumentCommand: fixture.run,
       readDocumentTabParam: (request: Request) =>
         new URL(request.url).searchParams.get('tab') ?? 'primary',

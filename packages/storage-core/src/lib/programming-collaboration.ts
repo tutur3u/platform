@@ -1,5 +1,9 @@
 import 'server-only';
 import { collaborationTicketSchema } from '@tuturuuu/realtime/collaboration';
+import {
+  collaborationOwnerBinding,
+  collaborationPresenceId,
+} from '@tuturuuu/realtime/core/opaque-ids';
 import { signRealtimePayload } from '@tuturuuu/realtime/core/token';
 import type { PlaygroundProject } from '@tuturuuu/types/primitives/playgrounds';
 import {
@@ -40,7 +44,40 @@ type ProgrammingRoomScope = {
   role: 'owner' | 'editor' | 'viewer';
   displayName: string;
   meetingId?: string;
+  /**
+   * The browser ticket names the owner by a room binding instead of their
+   * account id. Meet sets it: a participant may be outside the workspace.
+   */
+  bindOwner?: boolean;
 };
+
+/**
+ * The ticket a browser holds, and the id its own presence carries in the
+ * room. Seed, checkpoint and runner tickets stay server-side and keep the
+ * owner's account id.
+ */
+function browserTicket(
+  scope: ProgrammingRoomScope,
+  payload: ReturnType<typeof programmingTicketPayload>,
+  secret: string
+) {
+  return {
+    token: signRealtimePayload(
+      scope.bindOwner
+        ? {
+            ...payload,
+            ownerId: collaborationOwnerBinding(
+              secret,
+              scope.roomId,
+              scope.ownerId
+            ),
+          }
+        : payload,
+      secret
+    ),
+    actorId: collaborationPresenceId(secret, scope.roomId, scope.actorId),
+  };
+}
 
 function programmingTicketPayload(
   scope: ProgrammingRoomScope,
@@ -118,9 +155,8 @@ export async function programmingRoomTicket(
     if (probe.ok && ((await probe.json()) as { ready: boolean }).ready)
       return {
         endpoint: url.toString(),
-        token: signRealtimePayload(payload, secret),
+        ...browserTicket(scope, payload, secret),
         role: scope.role,
-        actorId: scope.actorId,
       };
     if (!probe.ok) throw new AccountServiceError(503);
   }
@@ -143,9 +179,8 @@ export async function programmingRoomTicket(
   const saved = (await response.json()) as { revision?: number };
   return {
     endpoint: url.toString(),
-    token: signRealtimePayload(payload, secret),
+    ...browserTicket(scope, payload, secret),
     role: scope.role,
-    actorId: scope.actorId,
     revision: saved.revision,
   };
 }

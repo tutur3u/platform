@@ -1,5 +1,9 @@
 import 'server-only';
 import { channelTicketSchema } from '@tuturuuu/realtime/channels';
+import {
+  meetRoomAccountAlias,
+  sealChannelOwner,
+} from '@tuturuuu/realtime/core/opaque-ids';
 import { signRealtimePayload } from '@tuturuuu/realtime/core/token';
 import {
   meetingDocumentTopic,
@@ -7,6 +11,7 @@ import {
   type RoomDocumentTab,
   type readRoomDocuments,
   roomDocumentKindSchema,
+  roomDocumentsForViewer,
   roomDocumentTabIdSchema,
   roomDocumentTitleSchema,
 } from '@tuturuuu/realtime/meet';
@@ -48,6 +53,42 @@ export function readMeetingDocuments(access: Access) {
   });
 }
 
+function realtimeSecret() {
+  return process.env.MEET_REALTIME_TOKEN_SECRET?.trim() || undefined;
+}
+
+/** The call socket's room id; aliases match across presence, chat and documents. */
+function aliasRoom(access: Access) {
+  return `${access.meeting.ws_id}:${access.meeting.id}`;
+}
+
+/**
+ * Tab state as this viewer may read it. Signed-in people outside the workspace
+ * (lobby admission) receive the room alias in place of other people's account
+ * ids; the host and workspace members receive the state unchanged.
+ */
+export function meetingDocumentsForViewer(
+  access: Access,
+  documents: MeetingDocuments
+) {
+  const secret = realtimeSecret();
+  return roomDocumentsForViewer(
+    documents,
+    {
+      accountId: access.user.id,
+      seesAccountIds: access.isHost || access.admission !== 'lobby',
+    },
+    (accountId) =>
+      secret
+        ? meetRoomAccountAlias(secret, aliasRoom(access), accountId)
+        : undefined
+  );
+}
+
+export async function readMeetingDocumentsForViewer(access: Access) {
+  return meetingDocumentsForViewer(access, await readMeetingDocuments(access));
+}
+
 /** Resolves the channel identity a tab's ticket and Mira's frames must carry. */
 export async function meetingDocumentChannel(access: Access, tabId: string) {
   if (tabId === ROOM_DOCUMENT_PRIMARY_TAB_ID) {
@@ -87,13 +128,23 @@ export async function joinMeetingDocument(
   access: Access,
   tabId: string = ROOM_DOCUMENT_PRIMARY_TAB_ID
 ) {
+  const secret = realtimeSecret();
+  if (!secret) throw new MeetCallAccessError(503, 'Realtime unavailable');
   const { topic, ...document } = await meetingDocumentChannel(access, tabId);
+  // Everyone in the channel is known by the room alias, and the owner travels
+  // sealed: the ticket is readable by its holder, who may be outside the
+  // workspace, and presence and cursors reach every participant.
+  const participantId = meetRoomAccountAlias(
+    secret,
+    aliasRoom(access),
+    access.user.id
+  );
   const ticket = channelTicketSchema.parse({
     aud: 'tuturuuu.channels',
     kind: 'join',
     topic,
-    userId: access.user.id,
-    ownerId: access.meeting.creator_id,
+    userId: participantId,
+    ownerSeal: sealChannelOwner(secret, topic, access.meeting.creator_id),
     documentId: document.documentId,
     version: document.revision,
     role: 'editor',
@@ -103,10 +154,10 @@ export async function joinMeetingDocument(
     ...document,
     tabId,
     endpoint: channelEndpoint().toString(),
-    token: signRealtimePayload(ticket, process.env.MEET_REALTIME_TOKEN_SECRET),
+    token: signRealtimePayload(ticket, secret),
     role: 'editor' as const,
     user: {
-      id: access.user.id,
+      id: participantId,
       user_metadata: { display_name: access.displayName },
     },
   };
@@ -149,7 +200,7 @@ export type MeetingDocumentCommand = z.infer<
   typeof meetingDocumentCommandSchema
 >;
 
-export function runMeetingDocumentCommand(
+export async function runMeetingDocumentCommand(
   access: Access,
   command: MeetingDocumentCommand
 ) {
@@ -176,5 +227,8 @@ export function runMeetingDocumentCommand(
               editId: command.editId,
               decision: command.decision,
             };
-  return callRoomService<MeetingDocuments>(access, room);
+  return meetingDocumentsForViewer(
+    access,
+    await callRoomService<MeetingDocuments>(access, room)
+  );
 }

@@ -66,7 +66,8 @@ function isFiniteRoomLifecycleStep(step) {
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-room-do-guest-relay.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/whiteboard-worker.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-state.test.ts" \\',
-    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-checkpoint-request.test.ts"',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-checkpoint-request.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/outsider-account-ids.test.ts"',
   ].join('\n');
   return (
     /^\s+- name: Test durable room lifecycle and recovery$/mu.test(step) &&
