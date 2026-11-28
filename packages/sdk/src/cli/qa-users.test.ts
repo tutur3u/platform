@@ -190,7 +190,9 @@ describe('qa users', () => {
       staff: false,
       count: 1,
     });
-    expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ origin });
+    expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({
+      origin,
+    });
     const state = await readPrivate(target);
     expect(state.mode).toBe(0o600);
     expect(JSON.parse(state.text).cookies[1].domain).toBe('meet.tuturuuu.com');
@@ -207,7 +209,10 @@ describe('qa users', () => {
       { product: 'tuturuuu', role: 'member', ttl: '3h' },
     ]) {
       await expect(
-        runQaCommand({ client, flags, json: true, positionals: ['account', 'issue'] }, d)
+        runQaCommand(
+          { client, flags, json: true, positionals: ['account', 'issue'] },
+          d
+        )
       ).rejects.toThrow();
     }
     expect(fetch).not.toHaveBeenCalled();

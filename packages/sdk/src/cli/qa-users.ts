@@ -315,7 +315,10 @@ async function runProductQaCommand(options: QaCliOptions, deps: QaCliDeps) {
   const [command, subcommand, ...extra] = options.positionals;
   const { flags } = options;
   const product = getFlag(flags, 'product') ?? 'tuturuuu';
-  if (flags.product === true || (product !== 'tuturuuu' && product !== 'meet')) {
+  if (
+    flags.product === true ||
+    (product !== 'tuturuuu' && product !== 'meet')
+  ) {
     throw new Error('Supported QA products are tuturuuu and meet.');
   }
 
@@ -332,7 +335,9 @@ async function runProductQaCommand(options: QaCliOptions, deps: QaCliDeps) {
   if (mint) allowed.push('out');
   for (const key of Object.keys(flags)) {
     if (!allowed.includes(key) || (key !== 'json' && !getFlag(flags, key))) {
-      throw new Error('Unsupported or missing QA option value. Run `ttr qa --help`.');
+      throw new Error(
+        'Unsupported or missing QA option value. Run `ttr qa --help`.'
+      );
     }
   }
 
@@ -349,7 +354,8 @@ async function runProductQaCommand(options: QaCliOptions, deps: QaCliDeps) {
 
   // Both surfaces use the same ledger. A new run always gets its own workspace.
   const ttl = getFlag(flags, 'ttl') ?? '2h';
-  if (parseQaTtl(ttl) > 7200) throw new Error('Product QA accounts expire within 2h.');
+  if (parseQaTtl(ttl) > 7200)
+    throw new Error('Product QA accounts expire within 2h.');
   const account = await create(
     {
       ...options,
