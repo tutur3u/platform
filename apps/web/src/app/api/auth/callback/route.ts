@@ -52,6 +52,58 @@ function resolveParsedReturnUrl(parsedUrl: string): string {
     : parsedUrl;
 }
 
+const UNSAFE_NEXT_URL_PATTERN =
+  /^\/{2,}|\\|^[a-zA-Z][a-zA-Z0-9+.-]*:|[\u0000-\u001F\u007F]/;
+
+function decodeNextUrlForCheck(value: string): string | null {
+  let current = value;
+  for (let i = 0; i < 3; i += 1) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(current);
+    } catch {
+      return null;
+    }
+    if (UNSAFE_NEXT_URL_PATTERN.test(decoded)) {
+      return null;
+    }
+    if (decoded === current) {
+      return current;
+    }
+    current = decoded;
+  }
+  return UNSAFE_NEXT_URL_PATTERN.test(current) ? null : current;
+}
+
+function resolveSafeNextPath(
+  rawNextUrl: string | null,
+  redirectOrigin: string
+): string {
+  if (!rawNextUrl) return '/personal';
+  const trimmed = rawNextUrl.trim();
+  if (
+    !trimmed ||
+    UNSAFE_NEXT_URL_PATTERN.test(trimmed) ||
+    decodeNextUrlForCheck(trimmed) === null
+  ) {
+    return '/personal';
+  }
+  const candidate = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+  const normalized = normalizeAuthRedirectPath(
+    candidate,
+    redirectOrigin,
+    '/personal'
+  );
+  if (
+    !normalized.startsWith('/') ||
+    UNSAFE_NEXT_URL_PATTERN.test(normalized) ||
+    decodeNextUrlForCheck(normalized) === null
+  ) {
+    return '/personal';
+  }
+  return normalized;
+}
+
 /**
  * Validates a redirect URL to prevent open redirects.
  * Allows:
@@ -177,9 +229,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     multiAccount,
   } = parseResult.data;
 
-  // Normalize nextUrl by removing leading slashes to avoid double slashes
-  const normalizedNextUrl = _nextUrl?.replace(/^\/+/, '');
-
   // Create Supabase client for auth operations
   const supabase = await createClient();
 
@@ -287,8 +336,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.warn('[auth/callback] Invalid returnUrl, using default');
   }
 
-  // Use nextUrl or fall back to default
-  const defaultPath = normalizedNextUrl ? `/${normalizedNextUrl}` : '/personal';
+  // Use nextUrl (restricted to safe same-origin relative paths) or fall back to default
+  const defaultPath = resolveSafeNextPath(_nextUrl, redirectOrigin);
   const redirectUrl = replaceLegacyOnboardingDestination(
     new URL(defaultPath, redirectOrigin)
   );

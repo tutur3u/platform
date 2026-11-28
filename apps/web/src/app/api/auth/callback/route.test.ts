@@ -569,5 +569,57 @@ describe('auth callback route', () => {
       expect(location.pathname).not.toMatch(/evil/i);
       expect(location.searchParams.get('returnUrl') ?? '').not.toMatch(/evil/i);
     });
+
+    it.each([
+      [
+        '/en/personal/tasks?view=board',
+        'http://localhost/en/personal/tasks?view=board',
+      ],
+      [
+        'personal/tasks?view=board',
+        'http://localhost/personal/tasks?view=board',
+      ],
+    ])(
+      'allows safe same-origin relative nextUrl %s',
+      async (nextUrl, expected) => {
+        await expect(
+          redirectFor(
+            `http://localhost/api/auth/callback?nextUrl=${encodeURIComponent(nextUrl)}`
+          )
+        ).resolves.toBe(expected);
+      }
+    );
+
+    it.each([
+      '\\\\evil.test',
+      '/\\evil.test',
+      '\\evil.test',
+      '//evil.test/x',
+      '%2F%2Fevil.test%2Fx',
+      '/%2F%2Fevil.test',
+      '%2F%5Cevil.test',
+      '%5C%5Cevil.test',
+      '/%5Cevil.test',
+      'javascript:alert(1)',
+      'javascript%3Aalert(1)',
+      'data:text/html,evil',
+      'https://evil.test/phish',
+      'https%3A%2F%2Fevil.test',
+      'https%253A%252F%252Fevil.test',
+      'http://localhost/personal',
+    ])(
+      'rejects unsafe nextUrl %s and falls back to /personal',
+      async (nextUrl) => {
+        const location = new URL(
+          (await redirectFor(
+            `http://localhost/api/auth/callback?nextUrl=${encodeURIComponent(nextUrl)}`
+          )) ?? ''
+        );
+
+        expect(location.origin).toBe('http://localhost');
+        expect(location.pathname).toBe('/personal');
+        expect(location.search).toBe('');
+      }
+    );
   });
 });
