@@ -230,11 +230,17 @@ extension ChatCubitMessageMerge on ChatCubit {
   /// Applies an edit, deletion or reaction change to a loaded message without
   /// treating it as new activity: unloaded messages are ignored and the
   /// conversation's latest message and order stay put. [replaceReactions] is
-  /// false for payloads that may omit reactions, such as edits.
+  /// false for payloads that may omit reactions, such as edits. Edits and
+  /// reaction changes to a blocked sender's message are skipped; deletions
+  /// still apply so the removed content is gone after an unblock.
   void _patchMessage(ChatMessage patch, {bool replaceReactions = true}) {
     final existing = _findMessage(patch.conversationId, patch.id);
     if (existing == null) return;
     final deleted = patch.deletedAt != null;
+    if (!deleted &&
+        (_isFromBlockedSender(existing) || _isFromBlockedSender(patch))) {
+      return;
+    }
     final merged = existing.copyWith(
       content: deleted
           ? ''

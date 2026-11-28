@@ -121,11 +121,11 @@ class _ThreadPane extends StatelessWidget {
     final currentUserId = context.select<AuthCubit, String?>(
       (cubit) => cubit.state.user?.id,
     );
+    final typists = state.visibleTypingUserIds;
     final typingNames = [
       for (final member
           in conversation?.members ?? const <ChatConversationMember>[])
-        if (state.typingUserIds.contains(member.userId) &&
-            member.userId != currentUserId)
+        if (typists.contains(member.userId) && member.userId != currentUserId)
           member.user.displayName,
     ];
     return Padding(

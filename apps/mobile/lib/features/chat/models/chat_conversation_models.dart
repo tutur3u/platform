@@ -99,6 +99,7 @@ class ChatConversation extends Equatable {
     bool? aiEnabled,
     DateTime? createdAt,
     DateTime? archivedAt,
+    bool clearLatestMessage = false,
   }) {
     return ChatConversation(
       id: id ?? this.id,
@@ -108,7 +109,9 @@ class ChatConversation extends Equatable {
       title: title ?? this.title,
       description: description ?? this.description,
       createdBy: createdBy ?? this.createdBy,
-      latestMessage: latestMessage ?? this.latestMessage,
+      latestMessage: clearLatestMessage
+          ? null
+          : latestMessage ?? this.latestMessage,
       members: members ?? this.members,
       memberCount: memberCount ?? this.memberCount,
       metadata: metadata ?? this.metadata,

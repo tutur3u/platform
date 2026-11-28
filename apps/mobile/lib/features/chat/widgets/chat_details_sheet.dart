@@ -34,7 +34,7 @@ class _ChatDetailsSheetState extends State<ChatDetailsSheet> {
         final title = conversation.displayTitle(fallback: l10n.chatUntitled);
         final matches = _query.trim().isEmpty
             ? const <ChatMessage>[]
-            : state.selectedMessages
+            : state.visibleSelectedMessages
                   .where(
                     (message) => message.content.toLowerCase().contains(
                       _query.trim().toLowerCase(),

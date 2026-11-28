@@ -114,14 +114,54 @@ class ChatState extends Equatable {
     return senderId != null && ids.contains(senderId);
   }
 
-  /// The open thread without messages from blocked senders.
+  /// The open thread without messages from blocked senders, and without
+  /// blocked people in reaction counts. Filtering here rather than on
+  /// arrival also hides content that landed before the blocked set loaded.
   List<ChatMessage> get visibleSelectedMessages {
     final blocked = blockedUserIds;
     final all = selectedMessages;
     if (blocked.isEmpty) return all;
-    return all
-        .where((message) => !isFromBlockedSender(message, blocked))
-        .toList(growable: false);
+    return [
+      for (final message in all)
+        if (!isFromBlockedSender(message, blocked))
+          _withoutBlockedReactions(message, blocked),
+    ];
+  }
+
+  /// Typists in the open thread, leaving out blocked people.
+  Set<String> get visibleTypingUserIds {
+    final blocked = blockedUserIds;
+    return blocked.isEmpty ? typingUserIds : typingUserIds.difference(blocked);
+  }
+
+  /// [message] with blocked people removed from its reactions; a reaction
+  /// left with nobody is dropped.
+  static ChatMessage _withoutBlockedReactions(
+    ChatMessage message,
+    Set<String> blocked,
+  ) {
+    final touched = message.reactions.any(
+      (reaction) => reaction.userIds.any(blocked.contains),
+    );
+    if (!touched) return message;
+    final reactions = <ChatReactionSummary>[];
+    for (final reaction in message.reactions) {
+      final kept = reaction.userIds
+          .where((id) => !blocked.contains(id))
+          .toList(growable: false);
+      final removed = reaction.userIds.length - kept.length;
+      if (removed == 0) {
+        reactions.add(reaction);
+        continue;
+      }
+      final remaining = reaction.count - removed;
+      final count = remaining < kept.length ? kept.length : remaining;
+      if (count <= 0) continue;
+      reactions.add(
+        ChatReactionSummary(emoji: reaction.emoji, count: count, userIds: kept),
+      );
+    }
+    return message.copyWith(reactions: reactions);
   }
 
   /// Directory matches without blocked people.
@@ -188,7 +228,9 @@ class ChatState extends Equatable {
     if (replyId == null) return null;
     for (final message in selectedMessages) {
       if (message.id == replyId) {
-        return message.deletedAt == null ? message : null;
+        return message.deletedAt == null && !isFromBlockedSender(message)
+            ? message
+            : null;
       }
     }
     return null;
@@ -227,17 +269,28 @@ class ChatState extends Equatable {
     return messages[selectedId] ?? const [];
   }
 
+  /// Conversations of the current scope and filters. One whose latest
+  /// message came from a blocked sender shows no preview.
   List<ChatConversation> get visibleConversations {
-    return conversations
-        .where((conversation) {
-          final matchesScope = scope == ChatScope.personal
-              ? conversation.type == ChatConversationType.direct ||
-                    conversation.type == ChatConversationType.group
-              : conversation.type == ChatConversationType.channel ||
-                    conversation.type == ChatConversationType.ai;
-          return matchesScope && typeFilters.contains(conversation.type);
-        })
-        .toList(growable: false);
+    final blocked = blockedUserIds;
+    return [
+      for (final conversation in conversations)
+        if (_matchesScope(conversation))
+          switch (conversation.latestMessage) {
+            final latest? when isFromBlockedSender(latest, blocked) =>
+              conversation.copyWith(clearLatestMessage: true),
+            _ => conversation,
+          },
+    ];
+  }
+
+  bool _matchesScope(ChatConversation conversation) {
+    final matchesScope = scope == ChatScope.personal
+        ? conversation.type == ChatConversationType.direct ||
+              conversation.type == ChatConversationType.group
+        : conversation.type == ChatConversationType.channel ||
+              conversation.type == ChatConversationType.ai;
+    return matchesScope && typeFilters.contains(conversation.type);
   }
 
   ChatState copyWith({
