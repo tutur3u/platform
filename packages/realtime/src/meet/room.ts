@@ -332,6 +332,7 @@ function frameNamesAccount(
     return message.presence.some((p) => p.accountId === accountId);
   if (message.type === 'presence.delta')
     return message.upserted.some((p) => p.accountId === accountId);
+  if (message.type === 'assistant.live') return message.ownerId === accountId;
   return message.type === 'chat.message' && message.accountId === accountId;
 }
 
@@ -427,8 +428,8 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
         message.type === 'admission.approved' ||
         (message.type === 'ready' && message.admission === 'admitted')
       )
-        for (const active of announcements())
-          socket.send(JSON.stringify(active));
+        // Through sendTo, so tool filtering and viewer projection still apply.
+        for (const active of announcements()) sendTo(socket, active);
     } catch {
       // A closing socket is not an error worth surfacing to the room.
     }

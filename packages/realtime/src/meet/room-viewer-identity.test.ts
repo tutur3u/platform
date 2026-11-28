@@ -83,6 +83,12 @@ const chatFrame: MeetRealtimeServerMessage = {
   accountId: account.host,
   userId: tokens.host.userId,
 };
+const liveFrame: MeetRealtimeServerMessage = {
+  type: 'assistant.live',
+  sessionId: crypto.randomUUID(),
+  ownerId: account.host,
+  active: true,
+};
 const alias = createMeetRoomAccountAlias(() => SECRET);
 const realIdsIn = (wire: string, except?: string) =>
   ACCOUNT_IDS.filter((id) => id !== except && wire.includes(id));
@@ -163,6 +169,19 @@ describe('meetFrameForViewer', () => {
     expect(ids[0]).not.toBe(account.host);
   });
 
+  it('replaces the Mira Live owner for outside viewers only', () => {
+    expect(meetFrameForViewer(liveFrame, tokens.member, alias)).toBe(liveFrame);
+    expect(meetFrameForViewer(liveFrame, tokens.guest, alias)).toEqual({
+      ...liveFrame,
+      ownerId: meetRoomAccountAlias(SECRET, ROOM, account.host),
+    });
+    const own = { ...liveFrame, ownerId: account.external };
+    expect(meetFrameForViewer(own, tokens.external, alias)).toBe(own);
+    expect(meetFrameForViewer(liveFrame, tokens.guest)).not.toHaveProperty(
+      'ownerId'
+    );
+  });
+
   it('scopes the alias to the room and the secret', () => {
     const a = meetRoomAccountAlias(SECRET, ROOM, account.host);
     expect(a).toMatch(UUID);
@@ -196,7 +215,13 @@ describe('meetFrameForViewer', () => {
 });
 
 describe('socket delivery', () => {
-  function setup(options: { delta?: boolean } = {}) {
+  function setup(
+    options: {
+      delta?: boolean;
+      seq?: number;
+      announcements?: MeetRealtimeServerMessage[];
+    } = {}
+  ) {
     const people = Object.values(tokens);
     const sockets = people.map((t) => ({
       token: t,
@@ -205,7 +230,7 @@ describe('socket delivery', () => {
       close: vi.fn(),
       deserializeAttachment: (): MeetRoomSocketAttachment => ({
         token: t,
-        presenceSeq: 4,
+        presenceSeq: options.seq ?? 4,
         supportsPresenceDelta: options.delta ?? true,
       }),
       serializeAttachment: vi.fn<(value: MeetRoomSocketAttachment) => void>(),
@@ -213,19 +238,22 @@ describe('socket delivery', () => {
     const state = {
       ...createMeetRoomSnapshot(),
       presence: Object.fromEntries(presence.map((p) => [p.userId, p])),
+      presenceSeq: 4,
     };
     const delivery = createMeetRoomSocketDelivery({
       sockets: () => sockets,
       read: () => state,
       fullPresence: () => snapshotFrame,
-      announcements: () => [],
+      announcements: () => options.announcements ?? [],
       accountAlias: alias,
     });
     const wires = (name: keyof typeof tokens) =>
       sockets
         .find((s) => s.token === tokens[name])!
         .send.mock.calls.map(([wire]) => wire!);
-    return { delivery, wires };
+    const socketOf = (name: keyof typeof tokens) =>
+      sockets.find((s) => s.token === tokens[name])!;
+    return { delivery, wires, socketOf };
   }
 
   it('sends no other person’s account id to a guest, on any presence or chat path', () => {
@@ -254,5 +282,33 @@ describe('socket delivery', () => {
     delivery.broadcast([deltaFrame]);
     expect(wires('guest').join('')).not.toContain(account.otherGuest);
     expect(wires('otherGuest').join('')).not.toContain(account.guest);
+  });
+
+  it('sends live announcements through the same viewer projection', () => {
+    const { delivery, wires, socketOf } = setup({
+      announcements: [liveFrame],
+    });
+    const ready = { type: 'ready', admission: 'admitted' } as never;
+    for (const name of ['guest', 'member'] as const)
+      delivery.sendTo(socketOf(name), ready);
+    const guestLive = wires('guest').map((wire) => JSON.parse(wire));
+    expect(guestLive).toContainEqual(
+      expect.objectContaining({
+        type: 'assistant.live',
+        ownerId: meetRoomAccountAlias(SECRET, ROOM, account.host),
+      })
+    );
+    expect(realIdsIn(wires('guest').join(''), account.guest)).toEqual([]);
+    expect(wires('member').join('')).toContain(account.host);
+  });
+
+  it('resyncs restored sockets with the projected snapshot', () => {
+    const { delivery, wires } = setup({ seq: 1 });
+    delivery.resyncRestoredSockets();
+    for (const name of ['guest', 'external'] as const) {
+      expect(wires(name)).toHaveLength(1);
+      expect(realIdsIn(wires(name)[0]!, tokens[name].accountId)).toEqual([]);
+    }
+    expect(wires('member')[0]).toContain(account.guest);
   });
 });
