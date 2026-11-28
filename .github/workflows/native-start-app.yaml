@@ -266,10 +266,6 @@ jobs:
           path: ${{ runner.temp }}/native.tar.gz
           retention-days: 7
           if-no-files-found: error
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}
-          path: ${{ runner.temp }}/native-download
       - name: Prepare isolated empty restore workspace
         run: |
           rm -rf "$APP_DIR/dist" "$RUNNER_TEMP/native.tar.gz" node_modules "$APP_DIR/node_modules"
@@ -285,7 +281,11 @@ jobs:
           test ! -e "$RESTORE_ROOT/.turbo"
       - name: Install clean dependencies in isolated restore workspace
         working-directory: ${{ runner.temp }}/native-restore-workspace
-        run: bun install --frozen-lockfile --ignore-scripts
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.app }}-native-${{ env.SOURCE_SHA }}${{ env.ARTIFACT_SUFFIX }}
+          path: ${{ runner.temp }}/native-download
       - name: Restore into clean output with member/hash/source checks
         working-directory: ${{ runner.temp }}/native-restore-workspace
         run: python3 "$ARTIFACT_SCRIPT" restore "$APP_DIR" --archive "$RUNNER_TEMP/native-download/native.tar.gz" --receipt "$RUNNER_TEMP/native-restored-artifact.json"
