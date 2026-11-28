@@ -560,8 +560,14 @@ test('roadmap artifact admission rejects unlabelled PRs and preserves main dispa
         event: { pull_request: { labels: labels.map((name) => ({ name })) } },
       },
       needs: {
-        'check-ci': { outputs: { should_run: String(relevant) } },
-        'affected-gate': { outputs: { run: 'true' } },
+        'check-ci': {
+          result: 'success',
+          outputs: { should_run: String(relevant) },
+        },
+        'affected-gate': {
+          result: event === 'pull_request' ? 'success' : 'skipped',
+          outputs: event === 'pull_request' ? { run: 'true' } : {},
+        },
       },
     };
     return Object.fromEntries(

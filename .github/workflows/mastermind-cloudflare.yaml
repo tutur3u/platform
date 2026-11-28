@@ -114,9 +114,9 @@ concurrency:
 jobs:
   affected-gate:
     # Pull requests only: skip the heavy jobs when mastermind is unaffected.
-    # Other events never check out or run the gate: they resolve to run=true, so a
-    # gate failure can never block a production deploy. Any error also resolves to run=true.
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    # Non-PR events skip this job completely (0s, no runner allocated) so a
+    # gate failure can never block a main or production deploy.
+    if: ${{ (github.event_name == 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -151,7 +151,7 @@ jobs:
   # Build artifact delivery with required runtime evidence; no publisher credentials.
   artifact:
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -220,7 +220,7 @@ jobs:
         run: bun run test:runtime
   production-policy:
     needs: affected-gate
-    if: (github.ref == 'refs/heads/production' && needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (github.ref == 'refs/heads/production' && !cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
@@ -242,7 +242,7 @@ jobs:
   # captured serving version is still serving; any later failure restores it.
   deploy:
     needs: [artifact, production-policy]
-    if: (github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ (!cancelled() && needs.artifact.result == 'success' && needs.production-policy.result == 'success' && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     # Includes up to 5 minutes waiting for the coordinator's lane.
     timeout-minutes: 30

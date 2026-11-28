@@ -217,6 +217,19 @@ for (const [file, workflow] of gated) {
   });
 
   test(`${file}: jobs consume the gate with preserved status guards`, () => {
+    const gateIf = String(workflow.jobs['affected-gate'].if ?? '');
+    assert.equal(
+      evaluateExpression(gateIf, {
+        github: { event_name: 'push', ref: 'refs/heads/main' },
+      }),
+      false,
+      'affected-gate must skip on main push (no empty runner allocated)'
+    );
+    assert.equal(
+      evaluateExpression(gateIf, admittedPrContext('true')),
+      true,
+      'affected-gate must run on ready-for-ci PR'
+    );
     let consumers = 0;
     for (const [id, job] of Object.entries(workflow.jobs)) {
       if (id === 'affected-gate') continue;
@@ -232,20 +245,82 @@ for (const [file, workflow] of gated) {
         `${id}: must consume the app gate`
       );
       consumers += 1;
-      assert.ok(needsOf(job).includes('affected-gate'), `${id}: needs`);
+      const needs = needsOf(job);
+      assert.ok(needs.includes('affected-gate'), `${id}: needs`);
       assert.match(condition, /needs\.affected-gate\.outputs\.run == 'true'/u);
-      const retainedCancellation =
-        file === 'meet-cloudflare.yaml' && id === 'validate';
-      if (retainedCancellation) assert.match(condition, /!cancelled\(\)/u);
+      assert.match(condition, /!cancelled\(\)/u, id);
       assert.doesNotMatch(
-        retainedCancellation
-          ? condition.replace('!cancelled()', 'true')
-          : condition,
+        condition.replaceAll('!cancelled()', 'true'),
         /\b(always|failure|cancelled)\(\)/u,
         id
       );
+      for (const dep of needs) {
+        if (dep === 'affected-gate' || dep === 'production-policy') continue;
+        assert.match(
+          condition,
+          new RegExp(`needs\\.${dep}\\.result == 'success'`, 'u'),
+          `${id}: must fail closed when ${dep} does not succeed`
+        );
+      }
+      // On pull_request, a skipped affected-gate must never bypass the gate.
+      const prSkippedGate = admittedPrContext('');
+      prSkippedGate.needs['affected-gate'] = {
+        result: 'skipped',
+        outputs: {},
+      };
+      assert.equal(
+        evaluateExpression(condition, prSkippedGate),
+        false,
+        `${id}: PR cannot bypass a skipped affected-gate`
+      );
     }
     assert.ok(consumers > 0, 'a gate with no consumer is dead weight');
+
+    // Every transitive descendant of affected-gate (including deploy and
+    // native-publish-* jobs that reach affected-gate indirectly) must carry
+    // !cancelled() and explicit needs.<dep>.result == 'success' for every
+    // direct dependency; otherwise GitHub Actions' implicit success() skips
+    // them whenever the ancestor affected-gate is skipped on non-PR pushes.
+    const reachable = new Set(['affected-gate']);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const [id, job] of Object.entries(workflow.jobs)) {
+        if (reachable.has(id)) continue;
+        if (needsOf(job).some((dep) => reachable.has(dep))) {
+          reachable.add(id);
+          grew = true;
+        }
+      }
+    }
+    for (const [id, job] of Object.entries(workflow.jobs)) {
+      if (id === 'affected-gate' || !reachable.has(id)) continue;
+      const condition = String(job.if ?? '');
+      assert.match(
+        condition,
+        /!cancelled\(\)/u,
+        `${id}: transitive descendant of affected-gate must use !cancelled()`
+      );
+      assert.doesNotMatch(
+        condition.replaceAll('!cancelled()', 'true'),
+        /\b(always|failure|cancelled)\(\)/u,
+        `${id}: unexpected status function`
+      );
+      for (const dep of needsOf(job)) {
+        if (dep === 'affected-gate') continue;
+        if (
+          file === 'meet-cloudflare.yaml' &&
+          id === 'validate' &&
+          dep === 'production-policy'
+        )
+          continue;
+        assert.match(
+          condition,
+          new RegExp(`needs\\.${dep}\\.result == 'success'`, 'u'),
+          `${id}: transitive descendant must fail closed when ${dep} does not succeed`
+        );
+      }
+    }
   });
 }
 
@@ -258,9 +333,10 @@ for (const [file, workflow] of gated) {
     const affected = admittedPrContext('true');
     assert.equal(evaluateExpression(checkCi.if, skipped), false);
     assert.equal(evaluateExpression(checkCi.if, affected), true);
-    const push = admittedPrContext('true');
+    const push = admittedPrContext('');
     push.github.event_name = 'push';
     push.github.ref = 'refs/heads/main';
+    push.needs['affected-gate'] = { result: 'skipped', outputs: {} };
     assert.equal(evaluateExpression(checkCi.if, push), true);
     const unlabeled = admittedPrContext('true');
     unlabeled.github.event.pull_request.labels = [];

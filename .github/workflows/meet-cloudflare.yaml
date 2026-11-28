@@ -107,7 +107,7 @@ env:
   MEET_PRODUCTION: ${{ github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true) }}
 jobs:
   affected-gate:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: ${{ (github.event_name == 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -141,7 +141,7 @@ jobs:
           app: meet
   check-ci:
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       actions: read
@@ -154,7 +154,7 @@ jobs:
     outputs:
       realtime_sha256: ${{ steps.realtime-seal.outputs.sha256 }}
     needs: [check-ci, production-policy, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && ((github.ref != 'refs/heads/production' && inputs.release != true) || (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (!cancelled() && needs.check-ci.result == 'success' && needs.check-ci.outputs.should_run == 'true' && needs.check-ci.outputs.run_checks == 'true' && ((github.ref != 'refs/heads/production' && inputs.release != true) || (needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true')))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -459,7 +459,7 @@ jobs:
           retention-days: 3
           if-no-files-found: error
   restored-artifact:
-    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && needs.validate.result == 'success' && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     name: Accept restored Meet artifact
     needs: [validate, affected-gate]
     permissions:
@@ -536,7 +536,7 @@ jobs:
     name: Evaluate Meet production publication and exact-source CI
     permissions: { contents: read, actions: read }
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     outputs:
       allowed: ${{ steps.admission.outputs.superseded != 'true' && steps.policy.outputs.allowed == 'true' }}
@@ -562,7 +562,7 @@ jobs:
           if-no-files-found: warn
   deploy:
     needs: [validate, restored-artifact, production-policy]
-    if: ((github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ (!cancelled() && needs.validate.result == 'success' && needs.restored-artifact.result == 'success' && needs.production-policy.result == 'success' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
       contents: read
       deployments: write

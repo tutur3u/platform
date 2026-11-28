@@ -104,8 +104,8 @@ test('Cloudflare release relevance shares the existing config job and gates vali
     assert.equal(
       workflow.jobs.deploy.if,
       app === 'meet'
-        ? "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
-        : "github.ref == 'refs/heads/production'"
+        ? "${{ !cancelled() && needs.validate.result == 'success' && needs.restored-artifact.result == 'success' && needs.production-policy.result == 'success' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true' }}"
+        : "${{ !cancelled() && needs.validate.result == 'success' && github.ref == 'refs/heads/production' }}"
     );
     assert.equal(
       planner.jobs[`deploy-${app}-cloudflare`].uses,

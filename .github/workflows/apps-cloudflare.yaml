@@ -108,9 +108,9 @@ concurrency:
 jobs:
   affected-gate:
     # Pull requests only: skip the heavy jobs when apps is unaffected.
-    # Other events never check out or run the gate: they resolve to run=true, so a
-    # gate failure can never block a production deploy. Any error also resolves to run=true.
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    # Non-PR events skip this job completely (0s, no runner allocated) so a
+    # gate failure can never block a main or production deploy.
+    if: ${{ (github.event_name == 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -144,7 +144,7 @@ jobs:
           app: apps
   check-ci:
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/ci-check.yml
     permissions:
       actions: read
@@ -154,7 +154,7 @@ jobs:
       workflow_name: apps-cloudflare.yaml
   validate:
     needs: [check-ci, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && needs.check-ci.result == 'success' && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -390,7 +390,7 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
   restore-acceptance:
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (true)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && needs.validate.result == 'success' && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (true)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     needs: [validate, affected-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -466,7 +466,7 @@ jobs:
   # wave1-native-production.yaml, so the dual-profile qualification build
   # stays off the production branch.
   native-publication-profiles:
-    if: ${{ (needs.affected-gate.outputs.run == 'true' && (true) && github.ref != 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && needs.restore-acceptance.result == 'success' && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && (true) && github.ref != 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     needs: [restore-acceptance, affected-gate]
     permissions:
       contents: read
@@ -478,7 +478,7 @@ jobs:
 
   native-publish-staging:
     needs: native-publication-profiles
-    if: (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ (!cancelled() && needs.native-publication-profiles.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
       contents: read
       actions: read
@@ -504,7 +504,7 @@ jobs:
   # a rollback receipt and an unchanged serving-topology check.
   production-policy:
     needs: affected-gate
-    if: (needs.affected-gate.outputs.run == 'true' && github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (!cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true') && github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
@@ -524,7 +524,7 @@ jobs:
 
   native-publish-production:
     needs: [check-ci, production-policy, restore-acceptance]
-    if: (github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@') && needs.check-ci.outputs.should_run == 'true' && needs.production-policy.outputs.allowed == 'true' && needs.restore-acceptance.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: ${{ (!cancelled() && needs.check-ci.result == 'success' && needs.production-policy.result == 'success' && github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@') && needs.check-ci.outputs.should_run == 'true' && needs.production-policy.outputs.allowed == 'true' && needs.restore-acceptance.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     permissions:
       contents: read
       actions: read

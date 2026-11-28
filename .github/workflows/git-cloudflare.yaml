@@ -15,9 +15,9 @@ concurrency:
 jobs:
   affected-gate:
     # Pull requests only: skip the heavy jobs when git is unaffected.
-    # Other events never check out or run the gate: they resolve to run=true, so a
-    # gate failure can never block a production deploy. Any error also resolves to run=true.
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    # Non-PR events skip this job completely (0s, no runner allocated) so a
+    # gate failure can never block a main or production deploy.
+    if: ${{ (github.event_name == 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,7 +51,7 @@ jobs:
           app: git
   build:
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -109,7 +109,7 @@ jobs:
   # runtime acceptance on the restored archive. No secrets, no publication.
   native:
     needs: affected-gate
-    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
@@ -134,7 +134,7 @@ jobs:
         apps/git/cloudflare apps/git/src/routes apps/git/src/router.tsx apps/git/src/start.ts apps/git/vite.config.mts apps/git/void.config.ts apps/git/vitest.config.mts apps/git/tsconfig.json apps/git/tsconfig.cloudflare.json apps/git/package.json apps/git/start-bridge.routes.json apps/git/start-bridge.config.ts
   git-cutover-artifact:
     needs: [build, affected-gate]
-    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && needs.build.result == 'success' && ((github.event_name != 'pull_request' && needs.affected-gate.result == 'skipped') || needs.affected-gate.outputs.run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
