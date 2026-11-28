@@ -42,7 +42,7 @@ export interface ReconcileFinding {
   ageMinutes: number;
   /** Stable identity of the flagged fact; it feeds the dedupe key. */
   id: string;
-  kind: 'lag' | 'split' | 'stale-stop';
+  kind: 'dark' | 'lag' | 'split' | 'stale-stop';
   subject: string;
 }
 
@@ -97,7 +97,7 @@ function describe(findings: ReconcileFinding[], counts: Detail, sha: string) {
     .slice(0, MAX_ALERT_FINDINGS)
     .map((f) => `- ${f.kind} ${f.subject} (${f.ageMinutes} min)`);
   return [
-    `${counts.staleStops} stale stop fence(s), ${counts.splits} split deployment(s), ${counts.lagging} lagging Worker(s).`,
+    `${counts.staleStops} stale stop fence(s), ${counts.splits} split deployment(s), ${counts.lagging} lagging Worker(s), ${counts.dark} dark Worker(s).`,
     sha ? `Production ${sha.slice(0, 12)}.` : 'Production ref unread.',
     ...lines,
   ]
@@ -110,6 +110,7 @@ export async function reconcileAutoPublish(
 ): Promise<ProcessorResult> {
   const detail: Detail = {
     alerts: 0,
+    dark: 0,
     deduped: 0,
     flagged: 0,
     lagging: 0,
@@ -186,6 +187,7 @@ export async function reconcileAutoPublish(
   for (const worker of RECONCILE_WORKERS.slice(0, MAX_WORKERS)) {
     if (!(await context.fence())) return result('stopped');
     detail.workers++;
+    let missingDeployment = false;
     if (cloudflare) {
       try {
         const active = await readActiveDeployment(
@@ -195,8 +197,10 @@ export async function reconcileAutoPublish(
           worker.script
         );
         const now = context.now();
-        if (!active) detail.unreadable++;
-        else if (
+        if (!active) {
+          detail.unreadable++;
+          missingDeployment = true;
+        } else if (
           (active.versions.length !== 1 ||
             active.versions[0]!.percentage !== 100) &&
           now - active.createdAt > windows.splitTtlMs
@@ -220,34 +224,47 @@ export async function reconcileAutoPublish(
       }
     }
     if (!productionSha || seenAt === null) continue;
+    let live: string | null = null;
+    let stopReads = false;
     try {
-      const live = await readBuildInfoSha(
+      live = await readBuildInfoSha(
         deps,
         budget,
         worker.buildInfo,
         context.userAgent
       );
-      const now = context.now();
-      if (!live) detail.unreadable++;
-      else if (live !== productionSha && now - seenAt > windows.lagWindowMs)
+    } catch (error) {
+      if (!(error instanceof ShipSourceError)) throw error;
+      stopReads =
+        error.problem === 'rate-limited' || error.problem === 'timeout';
+    }
+    if (!live) detail.unreadable++;
+
+    const age = context.now() - seenAt;
+    if (age > windows.lagWindowMs) {
+      if (missingDeployment || !live) {
         findings.push({
-          ageMinutes: minutes(now - seenAt),
+          ageMinutes: minutes(age),
+          id: `dark:${worker.script}:${productionSha}`,
+          kind: 'dark',
+          subject: worker.script,
+        });
+      } else if (live !== productionSha) {
+        findings.push({
+          ageMinutes: minutes(age),
           id: `lag:${worker.script}:${live}:${productionSha}`,
           kind: 'lag',
           subject: worker.script,
         });
-    } catch (error) {
-      if (!(error instanceof ShipSourceError)) throw error;
-      // A public build-info read is not a provider API: it degrades the run.
-      detail.unreadable++;
-      if (error.problem === 'rate-limited' || error.problem === 'timeout')
-        break;
+      }
     }
+    if (stopReads) break;
   }
 
   for (const finding of findings) {
     if (finding.kind === 'stale-stop') detail.staleStops++;
     else if (finding.kind === 'split') detail.splits++;
+    else if (finding.kind === 'dark') detail.dark++;
     else detail.lagging++;
   }
   detail.flagged = findings.length;
@@ -262,6 +279,7 @@ export async function reconcileAutoPublish(
     p_title: `Auto-publish reconcile: ${findings.length} flagged`,
     p_description: describe(findings, detail, productionSha),
     p_data: {
+      dark: detail.dark,
       flagged: detail.flagged,
       lagging: detail.lagging,
       splits: detail.splits,

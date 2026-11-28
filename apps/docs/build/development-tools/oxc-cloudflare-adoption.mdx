@@ -459,7 +459,7 @@ Hosted execution and billed usage remain rollout evidence.
 
 The `production-auto-publish-reconcile` Cron Control job is default-off and
 adds no trigger: it runs at minute 0 of the existing 30-minute trigger.
-A run makes at most 39 GET requests (GitHub variables and ref, Cloudflare
+A run makes at most 38 GET requests (GitHub variables and ref, Cloudflare
 deployments, public build-info), at most one alert RPC and about 15 ledger
 calls, with no in-run retry and a 60-second wall cap. Its alert dedupe key
 covers the flagged facts, so a persisting state notifies once. The durable

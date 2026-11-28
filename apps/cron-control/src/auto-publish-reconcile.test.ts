@@ -78,11 +78,12 @@ function world() {
     ] as { name: string; value: string; updated_at: string }[],
     variablesTotal: null as number | null,
     productionSha: PROD,
-    deployments: new Map<string, Deployment>(),
+    deployments: new Map<string, Deployment | null>(),
     buildInfo: new Map<string, string>(),
     failCloudflare: null as number | null,
     failGithub: null as number | null,
     recipients: 2,
+    invalidAlertResponse: false,
     alerts: new Map<string, Record<string, unknown>>(),
     notifications: 0,
     stopAfterGithub: null as null | (() => Promise<void>),
@@ -108,6 +109,7 @@ function world() {
       if (state.recipients === 0) return Response.json(0);
       state.alerts.set(key, body);
       state.notifications += state.recipients;
+      if (state.invalidAlertResponse) return new Response('not JSON');
       return Response.json(state.recipients);
     }
     calls.push({
@@ -138,10 +140,11 @@ function world() {
         return new Response('nope', { status: state.failCloudflare });
       const script = url.pathname.split('/scripts/')[1]!.split('/')[0]!;
       const deployment = state.deployments.get(script);
-      if (!deployment) return new Response('missing', { status: 404 });
+      if (deployment === undefined)
+        return new Response('missing', { status: 404 });
       return Response.json({
         success: true,
-        result: { deployments: [deployment] },
+        result: { deployments: deployment ? [deployment] : [] },
       });
     }
     const sha = state.buildInfo.get(url.toString());
@@ -523,4 +526,47 @@ it('honors a stop that lands between the claim and the first read', async () => 
   expect(result.outcome).toBe('stopped');
   expect(fetchMock).not.toHaveBeenCalled();
   expect(pending).not.toHaveBeenCalled();
+});
+
+it.each(['404', 'empty deployments', 'unreadable build-info'] as const)(
+  'alerts once for a dark Worker with %s after the lag window',
+  async (failure) => {
+    const w = world();
+    const worker = RECONCILE_WORKERS[0]!;
+    if (failure === '404') w.state.deployments.delete(worker.script);
+    else if (failure === 'empty deployments')
+      w.state.deployments.set(worker.script, null);
+    else w.state.buildInfo.delete(worker.buildInfo);
+
+    expect(report(await w.run()).detail).toMatchObject({ dark: 0 });
+    expect(w.rpc).toHaveLength(0);
+    w.state.clock += 3 * HOUR;
+    const first = report(await w.run());
+    expect(first.outcome).toBe('degraded');
+    expect(first.detail).toMatchObject({ alerts: 1, dark: 1, flagged: 1 });
+    expect(w.rpc[0]).toMatchObject({
+      p_data: { findings: [{ kind: 'dark', subject: worker.script }] },
+    });
+    w.state.clock += HOUR;
+    expect(report(await w.run()).detail).toMatchObject({
+      alerts: 0,
+      deduped: 1,
+    });
+    expect(w.state.notifications).toBe(w.state.recipients);
+  }
+);
+
+it('reports an unreadable committed alert response as unknown and deduplicates the next slot', async () => {
+  const w = world();
+  w.state.invalidAlertResponse = true;
+  w.state.deployments.delete(RECONCILE_WORKERS[0]!.script);
+  await w.run();
+  w.state.clock += 3 * HOUR;
+  expect(report(await w.run()).outcome).toBe('unknown');
+  expect(w.rpc).toHaveLength(1);
+  expect(w.state.notifications).toBe(w.state.recipients);
+  w.state.clock += HOUR;
+  expect(report(await w.run()).detail).toMatchObject({ alerts: 0, deduped: 1 });
+  expect(w.rpc[1]?.p_dedupe_key).toBe(w.rpc[0]?.p_dedupe_key);
+  expect(w.state.notifications).toBe(w.state.recipients);
 });

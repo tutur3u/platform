@@ -23,6 +23,7 @@ The job is registered but **disabled**: it is not listed in
 | Stale stop fence | GitHub repository variables `PRODUCTION_AUTO_PUBLISH` and `PRODUCTION_AUTO_PUBLISH_<FAMILY>` | The value is `stopped` and its last update is older than the stop window (24 hours), or the value is `stopped:<ISO until>[:reason]` and `until` has passed |
 | Leftover split | Cloudflare active deployment of each automatic Worker | The deployment holds more than one version, or one version below 100% (a 0% candidate stage counts), and was created longer ago than the split TTL (120 minutes) |
 | Lagging Worker | Public `/api/build-info` of each automatic Worker against `refs/heads/production` | The build-info commit differs from the production SHA for longer than the lag window (120 minutes), counted from the first run that saw the ref at that SHA |
+| Dark Worker | Cloudflare active deployment or public `/api/build-info` | After the same lag window, the deployment read returns 404 or an empty deployment list, or build-info cannot supply a valid commit |
 
 Any other fence value publishes, so only `stopped` and the `stopped:` form
 are checked. The first sighting of each production SHA is kept as a single
@@ -67,7 +68,7 @@ credential, which is why this job lives in Cron Control.
 | Bound | Limit |
 | --- | --- |
 | Workers scanned | The catalog, at most 16 |
-| Provider requests | 5 variable pages, 1 ref read, 1 deployments read and 1 build-info read per Worker: at most 39, enforced by a request budget |
+| Provider requests | 5 variable pages, 1 ref read, 1 deployments read and 1 build-info read per Worker: at most 38, enforced by a request budget |
 | Alerts | At most one RPC per run |
 | Wall time | 60 seconds, inside the 90-second processor deadline of its 120-second lease |
 | Per request | 15 seconds, 1 MiB body, redirects refused |
@@ -82,15 +83,19 @@ Cloudflare read ends that run's Cloudflare reads.
 An alert's dedupe key is
 `auto-publish:reconcile:<32 hex of SHA-256 over the sorted finding ids>`.
 Each id names its fact: the variable and its update time, the Worker and its
-deployment id, or the Worker with its live and production SHAs. The same
+deployment id, a dark Worker with its production SHA, or the Worker with
+its live and production SHAs. The same
 state on later slots reuses the key, and `private.send_root_operator_alert`
 answers `null` without notifying anyone. A new fact makes a new key and one
-new alert. A clean state sends nothing.
+new alert. A clean state sends nothing. A dark Worker uses the same finding ID whether
+one or both reads are unavailable. A malformed alert response leaves the
+delivery outcome unknown. The next slot uses the same key if the findings
+are unchanged.
 
 | Outcome | When |
 | --- | --- |
 | `ok` | Every configured source was read; an alert, if any, was delivered or was already sent |
-| `degraded` | A half is unconfigured, a build-info read failed, or the alert found no recipient (the key is released, so the next slot delivers it) |
+| `degraded` | A half is unconfigured, a deployment is missing, a build-info read failed, or the alert found no recipient (the key is released, so the next slot delivers it) |
 | `failed` | A GitHub or Cloudflare API read failed, no credential is set, or the alert RPC failed; no alert is sent for a partial read |
 | `unknown` | The alert RPC answer was unreadable |
 | `stopped` | The job's durable stop was seen |
@@ -113,6 +118,36 @@ A stopped job claims no slot and makes no request. `resume` lifts the stop.
 Removing the id from `CRON_CONTROL_ENABLED_JOBS` disables it in the next
 publication.
 
+## Read-only rehearsal before enabling
+
+Keep the job disabled. Ask the release owner for a known 100%/0% deployment
+from an independently authorized rehearsal. Record the Worker, deployment ID,
+and expected version IDs. Use these requests from a disposable operator
+session and keep credentials and unrelated variable values out of the evidence.
+
+1. With the account token scoped to **Workers Scripts Read** only, send
+   `GET https://api.cloudflare.com/client/v4/accounts/{id}/workers/scripts/{script}/deployments`.
+   Expect HTTP 200 and check that `result.deployments[0]` matches the known
+   active deployment. Its `versions` must contain the serving ID at 100 and
+   the candidate ID at 0. Record the two percentages and whether the IDs
+   matched. The [API schema](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/)
+   lists a 0.01 minimum, while the [gradual deployment tooling](https://developers.cloudflare.com/workers/wrangler/commands/workers/#deployments-list)
+   supports zero. Keep the job disabled if the GET omits, rounds or rejects
+   the candidate, or if no known staged deployment is available.
+2. With a fine-grained token scoped only to `tutur3u/platform` and
+   **Variables: Read** plus **Contents: Read**, send
+   `GET https://api.github.com/repos/tutur3u/platform/actions/variables?per_page=30&page=1`.
+   Read subsequent pages only as needed, through page 5. Expect HTTP 200
+   and complete coverage of the reported total. Confirm any configured
+   `PRODUCTION_AUTO_PUBLISH` and `PRODUCTION_AUTO_PUBLISH_<FAMILY>` entries.
+   With the same token, send
+   `GET https://api.github.com/repos/tutur3u/platform/git/ref/heads/production`
+   and record the 40-character `object.sha`.
+3. Without credentials, send `GET https://{catalog-origin}/api/build-info`
+   for each catalog Worker. Expect HTTP 200 and a valid `commitHash` or
+   `commit`. Record the observed SHA and compare it with the production ref.
+   Give Iris the readback before requesting activation.
+
 ## Enable
 
 1. Install both secrets on `tuturuuu-cron-control` with the permissions above.
@@ -129,8 +164,7 @@ publication.
 
 ## Cost envelope
 
-At 24 slots a day a run makes at most 39 reads of the GitHub and Cloudflare
-APIs (not billed per call), at most one database RPC and about 15 ledger
+At 24 slots a day a run makes at most 38 GETs across GitHub, the Cloudflare deployment API and public build-info, at most one database RPC and about 15 ledger
 calls. The six build-info reads are Worker requests on the serving Workers:
 144 a day. `apps/cron-control/src/auto-publish-reconcile.test.ts` counts
 calls through the healthy, flagged, repeated, stopped, failing, restarted,
