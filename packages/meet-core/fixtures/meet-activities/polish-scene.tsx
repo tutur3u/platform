@@ -175,7 +175,7 @@ export function PolishScene() {
             type="button"
             size="sm"
             variant="outline"
-            className="fixed top-4 right-4 z-[60]"
+            className="fixed bottom-4 left-4 z-[60]"
             data-testid="open-focus-overlay-dialog"
             onClick={() => setOverlayOpen(true)}
           >

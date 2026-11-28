@@ -179,7 +179,8 @@ test('pressing Escape while a dialog is open inside focus view does not exit foc
   const tile = page.getByTestId(
     'participant-00000000-0000-4000-8000-000000000001-screen'
   );
-  await page.getByRole('button', { name: 'Focus on screen' }).click();
+  await tile.hover();
+  await tile.getByRole('button', { name: enMessages.meet.call.focus_view }).click();
   await expect(tile).toHaveAttribute('data-focus-view', 'true');
 
   // Open a dialog while focus view is active.
