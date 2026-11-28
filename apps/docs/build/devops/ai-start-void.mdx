@@ -77,7 +77,8 @@ in `PENDING_WEB_MOUNTS`.
 | `/ai/v1/...` | AI Studio's key-authenticated public API, including streaming |
 | `/ai/api/...`, `/ai/_serverFn/...`, `/ai/assets/...` | AI Studio |
 | `/ai/chats/...` | Web (publicly shared chats), listed in `apps/gateway/src/mount-web-paths.ts` |
-| `/products/ai`, `/vi/ai`, `/en/ai`, `/api/...` | Web, outside the mount |
+| `/products/ai`, `/vi/products/ai` | Marketing or Web, outside the mount |
+| `/vi/ai`, `/en/ai`, `/api/...` | Web, outside the mount |
 
 The documented public API base stays `https://ai.tuturuuu.com/v1`. The
 Playground calls the API and its saved-key routes on the origin and base that
