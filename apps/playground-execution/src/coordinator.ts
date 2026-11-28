@@ -106,6 +106,7 @@ export class PlaygroundCoordinator extends DurableObject<Env> {
       kind: 'accepted' as const,
       runId: run.run_id,
       startedAt: run.created_at,
+      deduplicated: admitted.kind === 'existing',
     };
   }
 

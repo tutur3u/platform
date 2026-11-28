@@ -240,3 +240,50 @@ test('an accepted Run logs only its runId and colo', async () => {
   assert.equal(lines[0].includes('secret stdin'), false);
   assert.equal(lines[0].includes(secret), false);
 });
+
+test('an idempotent Run retry does not log a duplicate admission event', async () => {
+  const fx = env();
+  const runId = '4e5f6071-8293-4a41-9cde-3f4a5b6c7d8e';
+  let calls = 0;
+  fx.env.PLAYGROUND_COORDINATOR.getByName = () => ({
+    enqueue: async () => {
+      calls += 1;
+      return {
+        kind: 'accepted',
+        runId,
+        startedAt: 9,
+        deduplicated: calls > 1,
+      };
+    },
+  });
+  const payload = JSON.stringify({
+    ownerId: '5f607182-9304-4b52-8def-4a5b6c7d8e9f',
+    projectId: '60718293-0415-4c63-9e0f-5b6c7d8e9fa0',
+    meetingId: MEETING,
+    requester: body.requester,
+    requestId: body.requestId,
+    revision: 1,
+    stdin: '',
+    sourceTicket: 't'.repeat(64),
+    exportTicket: 't'.repeat(64),
+  });
+  const lines = [];
+  const original = console.info;
+  console.info = (line) => lines.push(line);
+  try {
+    for (let i = 0; i < 2; i += 1) {
+      const request = new Request('https://execution.example/run', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${SECRET}` },
+        body: payload,
+      });
+      Object.defineProperty(request, 'cf', { value: { colo: 'SIN' } });
+      const response = await worker.fetch(request, fx.env);
+      assert.equal(response.status, 202);
+      assert.deepEqual(await response.json(), { runId, startedAt: 9 });
+    }
+  } finally {
+    console.info = original;
+  }
+  assert.equal(lines.length, 1);
+});

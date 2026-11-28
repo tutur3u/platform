@@ -350,7 +350,7 @@ timings and one boolean. No user, project, file, command, input or output value 
 
 | Event | Where | Fields |
 | --- | --- | --- |
-| `playground.run.accepted` | `/run`, on admission | `runId`, `colo` |
+| `playground.run.accepted` | `/run`, at most once per new reservation (idempotent retries do not log a duplicate event) | `runId`, `colo` |
 | `playground.run.guest` | the slot, once per guest attempt | `runId`, `slot`, `guestMs`, `outcome`, `firstInIsolate`, `exported` |
 
 - `colo` is the Cloudflare data centre that took the `/run` request. `/run` is
@@ -368,10 +368,14 @@ timings and one boolean. No user, project, file, command, input or output value 
 - `firstInIsolate` is true for the first guest this Worker isolate starts, as a
   rough proxy for a cold start. Every Run still starts a fresh container.
 
-Join the two events on `runId` to compare `guestMs` for first and later Runs
-against the first-Run latency users see. A Run that stops before a guest
-attempt (source fetch, claim, or a refusal before the guest attempt starts)
-logs no `playground.run.guest` event.
+Join the two events on `runId` to compare `guestMs` across first and later Runs
+(each new reservation logs `playground.run.accepted` at most once; idempotent
+retries return HTTP 202 without emitting a duplicate event). Because `guestMs`
+starts after source retrieval and isolate start-up, this join cannot measure
+user-visible first-Run latency on its own — measuring end-to-end first-Run
+latency requires a separate e2e timing measurement. A Run that stops before a
+guest attempt (source fetch, claim, or a refusal before the guest attempt
+starts) logs no `playground.run.guest` event.
 
 ## Image size baseline
 

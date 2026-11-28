@@ -78,14 +78,16 @@ export default {
         if (!input.success) return json(REJECTED, 400);
         const admission = await service.enqueue(input.data);
         if (admission.kind === 'accepted') {
-          // Identifiers only: no user, project, file, command or input values.
-          console.info(
-            JSON.stringify({
-              event: 'playground.run.accepted',
-              runId: admission.runId,
-              colo: request.cf?.colo,
-            })
-          );
+          if (!admission.deduplicated) {
+            // Identifiers only: no user, project, file, command or input values.
+            console.info(
+              JSON.stringify({
+                event: 'playground.run.accepted',
+                runId: admission.runId,
+                colo: request.cf?.colo,
+              })
+            );
+          }
           return json(
             { runId: admission.runId, startedAt: admission.startedAt },
             202
