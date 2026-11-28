@@ -1284,7 +1284,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/chat-reports/route.ts",
-    "sourceSha256": "8528eed8203bf0942e55405bde12ec369995047791749f4b31e3ec8b3b12b84f",
+    "sourceSha256": "7f7bf8e8c0bfb5cb8b5d93703311fdcf72e54e791b9af741d6bd53c43e9e1b45",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3094,7 +3094,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/users/me/ai-data-consent/route.ts",
-    "sourceSha256": "2a13f7cd904edfdb7251824c848ec388d8657926a0489b1eed4b5908dc9ec414",
+    "sourceSha256": "8bd6893cf50ce617e752fab0d0811fb8ea25d83cfd8be03839a93ffbff553113",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3504,7 +3504,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/ai/memory/items/route.ts",
-    "sourceSha256": "aa362603ca9082799924023a4377ba090e2a1acb986a19ae235a8a4cd58d6023",
+    "sourceSha256": "cb82e7a0cfbdcb6b48461af04e88c0457f21296cdde3315c61b2a659cec5d6dc",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3734,7 +3734,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/reactions/route.ts",
-    "sourceSha256": "47c9cf5ebbc4bfca8c9d490f9a71633d86428cbf2079ceb21c8730bb1d44705e",
+    "sourceSha256": "893b8ff6c729542b5a09ae349ab68e9fa64ca4d7342d68fe24645526344826f6",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3784,7 +3784,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/route.ts",
-    "sourceSha256": "1c68593852856a23b13e3a7f060b2b36c19a68c8229cefcc7ab99cf8afd9b9a9",
+    "sourceSha256": "69d4eef7913bb3ba31518a27f0f25843e857145c9adb1f55f4693f3491e079da",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5354,7 +5354,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts",
-    "sourceSha256": "9151bcd912e9a680b67e58369b4a528d8c7b580b92af4874430eabcbb6397778",
+    "sourceSha256": "28072a4852789e15f0cfcd23517fa8e45fbb9fbbacd9fc47eb4e1ef8a914bd79",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -6704,7 +6704,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/generate/route.ts",
-    "sourceSha256": "5a314bb012b0cf0a9096d95712f078d746709c1c899e591225534622077e5701",
+    "sourceSha256": "f1fb6b8a32bfe5b772bcd60f5ae483c4aed4027032f9c8a92704bf12ecfad8ca",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -6844,7 +6844,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/worlds/generation/route.ts",
-    "sourceSha256": "0763bef2129c58d83ef3f251dbb7c3b3b048e8af549f3161e76912d5b54fc62d",
+    "sourceSha256": "e8a1cca4daf2bbc0027f4bab39cdb7284d2fbbb262d7b7cbbe5c4d44c5eae7ab",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
