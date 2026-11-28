@@ -14,6 +14,10 @@ const mocks = vi.hoisted(() => ({
   withAiMemory: vi.fn(),
 }));
 
+const consent = vi.hoisted(() => ({ refusal: null as Response | null }));
+vi.mock('../../ai-data-consent', () => ({
+  enforceAiDataConsent: async () => consent.refusal,
+}));
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: Parameters<typeof mocks.google>) => mocks.google(...args),
 }));
@@ -137,6 +141,29 @@ describe('chat google summary route workspace authorization', () => {
     expect(response.status).toBe(401);
     expect(supabase.from).not.toHaveBeenCalled();
     expect(mocks.generateText).not.toHaveBeenCalled();
+  });
+
+  it('refuses a native caller without AI data consent before reading messages', async () => {
+    const supabase = createSupabase();
+    consent.refusal = Response.json(
+      { code: 'ai_consent_required' },
+      { status: 403 }
+    );
+    try {
+      const response = await createPATCH({
+        resolveAuth: async () => ({
+          ok: true,
+          supabase: supabase as never,
+          user: { id: 'native-user' } as never,
+        }),
+      })(request({ id: 'chat-1' }));
+
+      expect(response.status).toBe(403);
+      expect(supabase.from).not.toHaveBeenCalled();
+      expect(mocks.generateText).not.toHaveBeenCalled();
+    } finally {
+      consent.refusal = null;
+    }
   });
 
   it('requires a workspace at the Rewise factory boundary before message queries', async () => {

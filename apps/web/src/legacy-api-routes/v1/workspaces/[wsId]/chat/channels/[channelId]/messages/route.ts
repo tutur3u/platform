@@ -8,6 +8,10 @@ import {
   resolveChatRouteContext,
   toLegacyMessage,
 } from '@/lib/chat/private-rpc';
+import {
+  filterBlockedSenders,
+  getChatBlockedUserIds,
+} from '@/lib/chat/safety';
 
 type RouteParams = {
   channelId: string;
@@ -28,19 +32,21 @@ export const GET = withSessionAuth<RouteParams>(
     if (!context.ok) return context.response;
 
     try {
-      const messages = await callPrivateChatRpc<ChatMessage[]>(
-        'chat_list_messages',
-        {
+      const [messages, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatMessage[]>('chat_list_messages', {
           p_actor_user_id: auth.user.id,
           p_before: null,
           p_conversation_id: params.channelId,
           p_limit: 100,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
+        }),
+        getChatBlockedUserIds(auth.user.id),
+      ]);
 
       return NextResponse.json({
-        messages: (messages ?? []).map(toLegacyMessage),
+        messages: filterBlockedSenders(messages ?? [], blocked).map(
+          toLegacyMessage
+        ),
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load messages');

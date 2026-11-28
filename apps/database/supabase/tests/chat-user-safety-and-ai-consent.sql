@@ -1,5 +1,5 @@
--- Regression coverage for 20261128170000_chat_user_safety_blocks_reports.sql
--- and 20261128171000_mira_ai_data_consent.sql. Decision and scope:
+-- Regression coverage for 20261128170000_chat_user_blocks.sql,
+-- 20261128170500_chat_content_reports.sql and 20261128171000_mira_ai_data_consent.sql. Decision and scope:
 -- apps/docs/platform/chat-safety-and-ai-consent.mdx.
 begin;
 create extension if not exists pgtap with schema extensions;
@@ -83,6 +83,14 @@ select lives_ok($$ select private.chat_block_user(
 select throws_ok($$ select private.chat_block_user(
     '00000000-0000-4000-8000-00000000a001', '00000000-0000-4000-8000-00000000a001') $$,
   '22023', 'chat_block_self_invalid', 'nobody can block themselves');
+select throws_ok($$ select private.chat_block_user(
+    '00000000-0000-4000-8000-00000000a003', '00000000-0000-4000-8000-00000000a001') $$,
+  'P0002', 'chat_block_target_not_found',
+  'a stranger cannot block (or probe) an unrelated account');
+select throws_ok($$ select private.chat_block_user(
+    '00000000-0000-4000-8000-00000000a003', '00000000-0000-4000-8000-00000000ffff') $$,
+  'P0002', 'chat_block_target_not_found',
+  'an unknown id answers exactly like an unrelated one');
 
 select ok(not private.chat_can_invite_user(
     '00000000-0000-4000-8000-00000000a002', '00000000-0000-4000-8000-00000000a001'),
@@ -101,6 +109,30 @@ select throws_ok($$
   values ('00000000-0000-4000-8000-00000000c001',
           '00000000-0000-4000-8000-00000000a001', 'user', 'stop') $$,
   '42501', 'chat_blocked', 'the blocker cannot message across their own block either');
+select throws_ok($$
+  insert into private.chat_messages(conversation_id, sender_id, kind, content)
+  values ('00000000-0000-4000-8000-00000000c001', null, 'assistant', 'spoofed') $$,
+  '42501', 'chat_blocked', 'assistant-kind messages cannot slip into a blocked DM');
+select throws_ok($$
+  insert into private.chat_messages(conversation_id, sender_id, kind, content)
+  values ('00000000-0000-4000-8000-00000000c001',
+          '00000000-0000-4000-8000-00000000a002', 'system', 'renamed') $$,
+  '42501', 'chat_blocked', 'system messages cannot slip into a blocked DM');
+select throws_ok($$
+  update private.chat_messages set content = 'edited insult'
+  where id = '00000000-0000-4000-8000-00000000d001' $$,
+  '42501', 'chat_blocked', 'old DM messages cannot be edited across a block');
+select throws_ok($$
+  insert into private.chat_message_reactions(message_id, user_id, emoji)
+  values ('00000000-0000-4000-8000-00000000d001',
+          '00000000-0000-4000-8000-00000000a002', 'x') $$,
+  '42501', 'chat_blocked', 'reactions cannot be added across a block');
+select lives_ok($$
+  update private.chat_messages set deleted_at = now()
+  where id = '00000000-0000-4000-8000-00000000d001';
+  update private.chat_messages set deleted_at = null
+  where id = '00000000-0000-4000-8000-00000000d001' $$,
+  'people can still delete their own messages in a blocked DM');
 select lives_ok($$
   insert into private.chat_messages(conversation_id, sender_id, kind, content)
   values ('00000000-0000-4000-8000-00000000c002',
@@ -168,10 +200,14 @@ select throws_ok($$ select private.chat_submit_content_report(
     'user', '00000000-0000-4000-8000-00000000a002', null, null, null, 'nonsense', null) $$,
   '22023', 'chat_report_reason_invalid', 'unknown reasons are rejected');
 
-select is((private.chat_review_content_report(
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+select throws_ok($$ select private.chat_list_content_reports(
+    '00000000-0000-4000-8000-00000000a003', null, 50) $$,
+  'PT403', 'Feedback forbidden', 'a non-staff account cannot read the report queue');
+select throws_ok($$ select private.chat_review_content_report(
     (select id from private.chat_content_reports limit 1),
-    '00000000-0000-4000-8000-00000000a003', 'dismissed', 'not abuse') ->> 'status'),
-  'dismissed', 'staff can resolve a report');
+    '00000000-0000-4000-8000-00000000a003', 'dismissed', 'not abuse') $$,
+  'PT403', 'Feedback forbidden', 'a non-staff account cannot resolve reports');
 
 -- Mira AI data consent -----------------------------------------------------
 select ok(not private.has_ai_data_consent('00000000-0000-4000-8000-00000000a001'),

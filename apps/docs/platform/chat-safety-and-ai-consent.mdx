@@ -19,28 +19,31 @@ Both rules are enforced on the server. Client checks only improve the experience
 | Rule | Where it's enforced |
 |---|---|
 | Blocks are per user and apply across every workspace. | `private.chat_user_blocks` |
-| Neither person can message the other in a direct conversation. A send returns `403` with `chat_blocked`. | A `BEFORE INSERT` trigger on `private.chat_messages`, so every send path is covered |
+| A direct conversation between the pair is frozen: no new message of any kind (user, assistant or system), no edit and no reaction. A send returns `403` with `chat_blocked`. Soft deletes still work. | Triggers on `private.chat_messages` (insert and content update) and `private.chat_message_reactions`, so every write path is covered |
+| Only someone the blocker can meet in chat (a shared workspace, friend request or conversation) can be blocked. An unknown id answers like an unrelated one, so the route isn't an account-existence check. | `private.chat_users_can_meet` |
 | Neither person can start a DM with the other or add the other to a group. | `private.chat_can_invite_user` |
 | Friend requests between the pair are dropped silently. The send still returns `{queued:true}`, so a block (or whether an email has an account) is never revealed. Accepting across a block is refused. Blocking also ends the friendship and any pending request. | Triggers on `private.chat_friend_requests`, plus `private.chat_block_user` |
-| The blocker doesn't see the blocked person's messages (group conversations included), directory entries or friend requests. | Web API read routes, via `getChatBlockedUserIds` in `apps/web/src/lib/chat/safety.ts` |
+| The blocker doesn't see the blocked person's messages (group conversations included), search hits, conversation previews, directory entries or friend requests, and gets no push for their group messages. | Web API read routes and `notifyChatMessageRecipients`, via `apps/web/src/lib/chat/safety.ts` |
 | Realtime events aren't filtered on the server. The mobile client drops incoming messages from blocked senders. | `apps/mobile/lib/features/chat` |
 | The blocked person isn't notified. | |
 
 Hiding is one-way: content is hidden for the person who blocked. Sending and inviting are refused in both directions.
 
-**Known limit:** message pages are filtered after the database applies `limit`, so a page can come back shorter than requested.
+**Known limits:** message pages are filtered after the database applies `limit`, so a page can come back shorter than requested. A conversation's shared-content panel (files and links) isn't filtered yet.
 
 ## Reports
 
 `POST /api/v1/workspaces/{wsId}/chat/reports` takes one of these subjects:
 
 - `user`: allowed only when the reporter shares a workspace, a friend request or a conversation with that person.
-- `message`: someone else's user message in a conversation the reporter can open.
+- `message`: someone else's user message in a conversation the reporter can open, addressed from any workspace the conversation is reachable in.
 - `ai_response`: a Mira reply. That's an `ai-chat-*` / `legacy-ai-*` conversation owned by the reporter, or an assistant message in a native conversation the reporter can open.
 
 The server finds the message and **snapshots its content from the database**. Reports never trust text supplied by the client, and a snapshot survives a later edit or delete. Each reporter has one open report per subject (a repeat returns the existing report) and at most 30 reports an hour (`429`). An optional `alsoBlock` blocks the sender that SQL resolved, never an id sent by the client.
 
-Reports land in `private.chat_content_reports`. Verified Tuturuuu staff review them in the dashboard's **Chat reports** inbox, next to Product feedback, through `GET` and `PATCH /api/v1/chat-reports`. Both use the same staff gate as the product-feedback inbox. The app tells reporters "we review every report within 24 hours". That response time is a commitment the moderation owner staffs.
+Reports land in `private.chat_content_reports`. Verified Tuturuuu staff review them in the dashboard's **Chat reports** inbox, next to Product feedback, through `GET` and `PATCH /api/v1/chat-reports`. The route uses the product-feedback staff gate, and the SQL functions re-check the canonical registry (`private.assert_product_feedback_staff`: an active infrastructure employee) on every call.
+
+Snapshots are kept until a retention job scrubs resolved reports. That job isn't built yet; until it ships, resolved snapshots stay in place. The app tells reporters "we review every report within 24 hours". That response time is a commitment the moderation owner staffs.
 
 ## Mira AI data consent
 
@@ -48,15 +51,16 @@ Reports land in `private.chat_content_reports`. Verified Tuturuuu staff review t
 - API: `GET` and `PUT /api/v1/users/me/ai-data-consent`, with `{granted, source, policyVersion}`. The current policy version is `2026-11-28`.
 - Default: not allowed. A failed lookup also counts as not allowed.
 - Enforcement. Each of these returns `403 {code: "ai_consent_required"}` without consent:
-  - native AI conversation sends: `POST .../chat/conversations/{id}/messages` for AI conversations and first messages;
-  - the shared Mira chat handler (`createPOST` in Mira mode, used by `/api/ai/chat`);
-  - the mobile Live token mint (`/api/v1/assistant/live/token`). Live audio and video go straight from the device to Google, so the token is the only server-side gate.
+  - native AI conversation sends, before the message is stored: Mira chats, first messages and native `type = ai` conversations;
+  - the shared Gemini chat handler (`createPOST`, for any native request, Mira mode or not), the chat summary route and the conversation title route;
+  - AI temp-token minting for native callers (`/api/ai/temp-auth/token`), since a temp token carries no bearer;
+  - the Live token mints (`/api/v1/assistant/live/token` always, `/api/v1/live/token` for native callers) and the Live tool routes. Live audio and video go straight from the device to Google, so the token is the server-side gate.
 
   The mobile Live eligibility pre-check reports `reason: "ai_consent_required"`.
 - Shared helper: `packages/ai/src/chat/ai-data-consent.ts`.
 - Mobile: the consent sheet appears before the first text send, voice message, attachment upload or Live start (camera and screen included). Settings › Privacy has a switch to revoke. The on-device model needs no consent.
 
-**Intentional exception:** the server requires consent from native clients, meaning bearer-token requests other than first-party `ttr_app_*` app sessions. Browser sessions are exempt until a web consent surface ships. The web dashboard and the web Live token route (`/api/v1/live/token`) are unchanged. The iOS and Android apps are the store-distributed surfaces this decision covers.
+**Intentional exception:** the server requires consent from native clients, meaning bearer-token requests other than first-party `ttr_app_*` app sessions. A caller who repackages their own session as browser cookies is treated as a browser; the person doing that is the consent subject. Browser sessions are exempt until a web consent surface ships. The web dashboard and the web Live token route (`/api/v1/live/token`) are unchanged. The iOS and Android apps are the store-distributed surfaces this decision covers.
 
 ## Regression coverage
 

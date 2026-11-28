@@ -33,6 +33,21 @@ async function staffActor(request: Request) {
   }
 }
 
+// The SQL re-checks the canonical staff registry on every call.
+function staffRpcError(error: unknown) {
+  const code = (error as { code?: string }).code;
+  if (code === 'PT403') {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403, headers });
+  }
+  if (code === 'PT503') {
+    return NextResponse.json(
+      { message: 'Unavailable' },
+      { status: 503, headers }
+    );
+  }
+  return null;
+}
+
 // Staff moderation queue for chat and Mira reports. Only verified Tuturuuu
 // staff (the product-feedback staff gate) can read reported content.
 export async function GET(request: Request) {
@@ -54,13 +69,14 @@ export async function GET(request: Request) {
     const reports = await callPrivateChatRpc<unknown[]>(
       'chat_list_content_reports',
       {
+        p_actor_user_id: staff.actorId,
         p_limit: Number.isFinite(limit) ? limit : 50,
         p_status: status?.data ?? null,
       }
     );
     return NextResponse.json({ reports: reports ?? [] }, { headers });
   } catch (error) {
-    return chatRpcErrorResponse(error, 'Failed to load reports');
+    return staffRpcError(error) ?? chatRpcErrorResponse(error, 'Failed to load reports');
   }
 }
 
@@ -85,6 +101,6 @@ export async function PATCH(request: Request) {
     });
     return NextResponse.json(result, { headers });
   } catch (error) {
-    return chatRpcErrorResponse(error, 'Failed to update report');
+    return staffRpcError(error) ?? chatRpcErrorResponse(error, 'Failed to update report');
   }
 }

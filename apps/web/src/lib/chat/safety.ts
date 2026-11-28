@@ -35,6 +35,18 @@ export async function listChatBlockedUsers(actorUserId: string) {
  * from the actor; sending and inviting are refused in SQL for both sides.
  * A failed lookup throws, so a read never silently shows blocked content.
  */
+/**
+ * The people who blocked [userId]; their pushes for [userId]'s messages are
+ * skipped. Throws when the lookup fails.
+ */
+export async function getChatBlockerUserIds(userId: string) {
+  const blockers = await callPrivateChatRpc<string[] | null>(
+    'chat_list_blocker_user_ids',
+    { p_user_id: userId }
+  );
+  return new Set(Array.isArray(blockers) ? blockers : []);
+}
+
 export async function getChatBlockedUserIds(actorUserId: string) {
   const blocks = await listChatBlockedUsers(actorUserId);
   return new Set(blocks.map((block) => block.userId));
@@ -47,6 +59,23 @@ type WithSender = {
 
 function senderIdOf(value: WithSender) {
   return value.senderId ?? value.sender?.id ?? null;
+}
+
+type WithPreview = { latestMessage?: (WithSender & object) | null };
+
+/** Drops a conversation's last-message preview when a blocked person sent it. */
+export function hideBlockedPreviews<T extends WithPreview>(
+  conversations: T[],
+  blocked: Set<string>
+) {
+  if (blocked.size === 0) return conversations;
+  return conversations.map((conversation) => {
+    const latest = conversation.latestMessage;
+    const senderId = latest ? senderIdOf(latest) : null;
+    return senderId && blocked.has(senderId)
+      ? { ...conversation, latestMessage: null }
+      : conversation;
+  });
 }
 
 export function filterBlockedSenders<T extends WithSender>(

@@ -147,6 +147,7 @@ it('saves long completed replies, reopens, and sends a follow-up with the full p
         return { message: currentUser, replayed: false };
       }
       if (name === 'chat_get_conversation') return conversation;
+      if (name === 'chat_list_blocked_users') return [];
       if (name === 'chat_list_messages') return structuredClone(saved);
       if (name === 'chat_persist_ai_message_batch_idempotent') {
         const batch = batchSchema.parse(args);

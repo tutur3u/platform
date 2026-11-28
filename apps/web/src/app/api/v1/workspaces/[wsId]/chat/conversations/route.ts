@@ -1,3 +1,7 @@
+import {
+  getChatBlockedUserIds,
+  hideBlockedPreviews,
+} from '@/lib/chat/safety';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -328,6 +332,7 @@ export const GET = withSessionAuth<RouteParams>(
         aiAgentConversations,
         aiAgentExternalConversations,
         aiChatConversations,
+        blocked,
       ] = await Promise.all([
         // A search filters every conversation the viewer can list, so it
         // reads the whole list; a page of recent ones may miss matches.
@@ -363,10 +368,11 @@ export const GET = withSessionAuth<RouteParams>(
           user: auth.user,
           wsId: context.context.normalizedWsId,
         }),
+        getChatBlockedUserIds(auth.user.id),
       ]);
 
       const allConversations = [
-        ...(conversations ?? []),
+        ...hideBlockedPreviews(conversations ?? [], blocked),
         ...aiAgentConversations,
         ...aiAgentExternalConversations,
         ...aiChatConversations,

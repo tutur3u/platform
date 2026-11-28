@@ -138,7 +138,8 @@ export function createPOST(_options: CreatePostOptions = {}) {
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
       const { messageInsertMode = 'rpc', supabase, user } = auth;
-      if (isMiraMode && !_options.subscription) {
+      // Every native request to the Gemini route needs consent, Mira or not.
+      if (!_options.subscription) {
         const consentRefusal = await enforceAiDataConsent(
           req,
           user.id,

@@ -42,6 +42,7 @@ import {
   reserveExternalChatReply,
 } from '@/lib/external-chat/delivery';
 import { sendAiChatMessage } from './ai-chat-message';
+import { nativeAiConversationConsentRefusal } from './native-ai-consent';
 import {
   NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
   publishChatRealtimeMessages,
@@ -419,6 +420,20 @@ export const POST = withSessionAuth<RouteParams>(
           );
         }
       }
+    }
+
+    if (!externalReservation && parsed.data.kind === 'user') {
+      const consentRefusal = await nativeAiConversationConsentRefusal({
+        loadConversation: () =>
+          callPrivateChatRpc<ChatConversation>('chat_get_conversation', {
+            p_actor_user_id: auth.user.id,
+            p_conversation_id: params.conversationId,
+            p_ws_id: context.context.normalizedWsId,
+          }),
+        request,
+        userId: auth.user.id,
+      });
+      if (consentRefusal) return consentRefusal;
     }
 
     try {

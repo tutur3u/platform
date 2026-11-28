@@ -11,6 +11,7 @@ export class AiStreamError extends Error {
 
 export const SAFE_AI_DENIAL_CODES = new Set([
   'ACCESS_DENIED',
+  'ai_consent_required',
   'CHATGPT_CONNECTION_REQUIRED',
   'CREDIT_CHECK_FAILED',
   'CREDITS_EXHAUSTED',

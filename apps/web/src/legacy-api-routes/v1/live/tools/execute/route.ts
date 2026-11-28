@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   type AssigneeProfile,
   getWorkspaceMembers,
@@ -28,13 +29,13 @@ export async function POST(req: Request) {
   let functionName: string | undefined;
 
   try {
-    // 1. Authenticate user
     const supabase = await createClient(req);
     const { user } = await resolveAuthenticatedSessionUser(supabase);
-
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
+    const consentRefusal = await enforceAiDataConsent(req, user.id);
+    if (consentRefusal) return consentRefusal;
 
     const body = (await req.json()) as ToolCallRequest;
     const { wsId, args } = body;
@@ -219,8 +220,7 @@ async function getMyTasks(
     throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
   }
 
-  // Map RPC results to a simpler structure
-  // Note: The RPC already filters by p_list_statuses, so returned tasks are in specified statuses
+  // The RPC already filters by p_list_statuses; map to a simpler structure.
   type RpcTask = {
     task_id: string;
     task_name: string;

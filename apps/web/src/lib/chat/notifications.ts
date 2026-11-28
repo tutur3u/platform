@@ -2,6 +2,7 @@ import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { ChatConversation, ChatMessage } from './private-rpc';
+import { getChatBlockerUserIds } from './safety';
 
 type PrivateRpcClient = {
   rpc: (
@@ -61,11 +62,29 @@ export async function notifyChatMessageRecipients({
     return { createdCount: 0, failedCount: 0, recipientCount: 0 };
   }
 
-  const recipientUserIds = getChatPushRecipientUserIds({
+  let recipientUserIds = getChatPushRecipientUserIds({
     actorUserId,
     conversation,
     foregroundUserIds,
   });
+
+  // People who blocked the sender get no push for their group messages.
+  // An unknown block list sends nothing rather than risk notifying them.
+  if (actorUserId && recipientUserIds.length > 0) {
+    try {
+      const blockers = await getChatBlockerUserIds(actorUserId);
+      recipientUserIds = recipientUserIds.filter((id) => !blockers.has(id));
+    } catch (error) {
+      console.error('Chat push block lookup failed', {
+        code: (error as { code?: string }).code,
+      });
+      return {
+        createdCount: 0,
+        failedCount: recipientUserIds.length,
+        recipientCount: recipientUserIds.length,
+      };
+    }
+  }
 
   if (recipientUserIds.length === 0) {
     return { createdCount: 0, failedCount: 0, recipientCount: 0 };

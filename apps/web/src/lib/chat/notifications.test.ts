@@ -5,9 +5,14 @@ vi.mock('server-only', () => ({}));
 
 const mocks = {
   createAdminClient: vi.fn(),
+  blockers: vi.fn(),
   privateRpc: vi.fn(),
   serverError: vi.fn(),
 };
+
+vi.mock('./safety', () => ({
+  getChatBlockerUserIds: (...args: unknown[]) => mocks.blockers(...args),
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
@@ -96,6 +101,7 @@ describe('chat notifications', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.privateRpc.mockResolvedValue({ data: 'notification-1', error: null });
+    mocks.blockers.mockResolvedValue(new Set());
     mocks.createAdminClient.mockResolvedValue({
       schema: () => ({ rpc: mocks.privateRpc }),
     });
@@ -167,6 +173,41 @@ describe('chat notifications', () => {
         p_user_id: 'user-4',
       })
     );
+  });
+
+  it('skips members who blocked the sender', async () => {
+    mocks.blockers.mockResolvedValue(new Set(['user-2']));
+    const { notifyChatMessageRecipients } = await import('./notifications');
+
+    await expect(
+      notifyChatMessageRecipients({
+        actorUserId: 'user-1',
+        conversation,
+        message,
+        wsId: conversation.wsId,
+      })
+    ).resolves.toMatchObject({ createdCount: 1, recipientCount: 1 });
+    expect(mocks.blockers).toHaveBeenCalledWith('user-1');
+    expect(mocks.privateRpc).toHaveBeenCalledTimes(1);
+    expect(mocks.privateRpc).toHaveBeenCalledWith(
+      'create_chat_message_push_notification',
+      expect.objectContaining({ p_user_id: 'user-4' })
+    );
+  });
+
+  it('sends nothing when the block list cannot be read', async () => {
+    mocks.blockers.mockRejectedValue({ code: '57014' });
+    const { notifyChatMessageRecipients } = await import('./notifications');
+
+    await expect(
+      notifyChatMessageRecipients({
+        actorUserId: 'user-1',
+        conversation,
+        message,
+        wsId: conversation.wsId,
+      })
+    ).resolves.toMatchObject({ createdCount: 0 });
+    expect(mocks.privateRpc).not.toHaveBeenCalled();
   });
 
   it('notifies every eligible member for a system or external sender', async () => {

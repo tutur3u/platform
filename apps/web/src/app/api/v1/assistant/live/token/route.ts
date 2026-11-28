@@ -214,13 +214,13 @@ export async function POST(request: Request) {
       );
     }
 
+    // Mira Live streams voice, camera and screen to Gemini: consent first.
+    if (!(await hasAiDataConsent(user.id))) return aiConsentRequiredResponse();
     const billingWsId = await resolveMobileLiveBillingWorkspace(user.id);
     eligibility = await timing.measure('eligibility', () =>
       resolveLiveEligibility({ userId: actor.id, billingWsId })
     );
     if (!eligibility.eligible) return liveBlockedResponse(eligibility);
-    // Mira Live streams voice, camera and screen to Gemini: consent first.
-    if (!(await hasAiDataConsent(user.id))) return aiConsentRequiredResponse();
     const isFree = eligibility.isFree;
     const resolvedModel = model ?? LIVE_MODELS.flash;
     const allowedModels = new Set<string>(

@@ -5,6 +5,7 @@ import {
   createAdminClientMock,
   mocks,
   resetMessageRouteMocks,
+  userMessage,
 } from './route.test.harness';
 
 const consentRpc = vi.fn();
@@ -120,6 +121,64 @@ describe('chat message route safety gates', () => {
     );
   });
 
+  it('refuses a native follow-up to a native AI conversation before storing it', async () => {
+    mocks.createAdminClient.mockResolvedValue(adminWithConsent(false));
+    mocks.callPrivateChatRpc.mockImplementation(async (fn: string) =>
+      fn === 'chat_get_conversation' ? { id: 'c-ai', type: 'ai' } : null
+    );
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/workspace-1/chat/conversations/22222222-2222-4222-8222-222222222222/messages',
+        {
+          body: JSON.stringify({ content: 'hi Mira' }),
+          headers: {
+            Authorization: 'Bearer mobile-jwt',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        }
+      ) as never,
+      params('22222222-2222-4222-8222-222222222222')
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
+      'chat_send_message',
+      expect.anything()
+    );
+    expect(mocks.createAiChatPost).not.toHaveBeenCalled();
+  });
+
+  it('never gates a native message to a people conversation', async () => {
+    mocks.createAdminClient.mockResolvedValue(adminWithConsent(false));
+    mocks.callPrivateChatRpc.mockImplementation(async (fn: string) =>
+      fn === 'chat_get_conversation' ? { id: 'c-dm', type: 'direct' } : null
+    );
+
+    const { POST } = await import('./route');
+    await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/workspace-1/chat/conversations/22222222-2222-4222-8222-222222222222/messages',
+        {
+          body: JSON.stringify({ content: 'hi' }),
+          headers: {
+            Authorization: 'Bearer mobile-jwt',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        }
+      ) as never,
+      params('22222222-2222-4222-8222-222222222222')
+    );
+
+    expect(mocks.callPrivateChatRpc).toHaveBeenCalledWith(
+      'chat_send_message',
+      expect.anything()
+    );
+  });
+
   it('returns 403 when SQL refuses a message across a block', async () => {
     mocks.callPrivateChatRpc.mockRejectedValue({
       code: '42501',
@@ -153,8 +212,13 @@ describe('chat message route safety gates', () => {
         return [{ userId: 'blocked-user' }];
       }
       return [
-        { id: 'm1', sender: { id: 'friend' }, createdAt: '2026-11-28' },
-        { id: 'm2', sender: { id: 'blocked-user' }, createdAt: '2026-11-28' },
+        { ...userMessage, id: 'm1', senderId: 'friend', sender: { id: 'friend' } },
+        {
+          ...userMessage,
+          id: 'm2',
+          senderId: 'blocked-user',
+          sender: { id: 'blocked-user' },
+        },
       ];
     });
 
@@ -166,6 +230,7 @@ describe('chat message route safety gates', () => {
       params('22222222-2222-4222-8222-222222222222')
     );
 
+    expect(response.status).toBe(200);
     const body = (await response.json()) as { messages: { id: string }[] };
     expect(body.messages.map((message) => message.id)).toEqual(['m1']);
   });

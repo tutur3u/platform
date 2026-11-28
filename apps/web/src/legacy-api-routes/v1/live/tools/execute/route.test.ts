@@ -17,6 +17,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('server-only', () => ({}));
+// Consent is covered in packages/ai/src/chat/ai-data-consent.test.ts.
+vi.mock('@tuturuuu/ai/chat/ai-data-consent', () => ({
+  enforceAiDataConsent: async () => null,
+}));
 
 vi.mock('@tuturuuu/ai/embeddings/metered', () => ({
   createMeteredTextEmbedding: mocks.createMeteredTextEmbedding,

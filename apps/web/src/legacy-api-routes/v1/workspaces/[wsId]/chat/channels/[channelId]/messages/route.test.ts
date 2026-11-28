@@ -16,6 +16,11 @@ vi.mock('@/lib/api-auth', () => ({
       handler(request, mocks.auth, await routeContext?.params),
 }));
 
+vi.mock('@/lib/chat/safety', () => ({
+  filterBlockedSenders: <T,>(messages: T[]) => messages,
+  getChatBlockedUserIds: async () => new Set<string>(),
+}));
+
 vi.mock('@/lib/chat/private-rpc', () => ({
   callPrivateChatRpc: (...args: Parameters<typeof mocks.callPrivateChatRpc>) =>
     mocks.callPrivateChatRpc(...args),

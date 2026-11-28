@@ -13,6 +13,11 @@ const m = vi.hoisted(() => ({
   admin: vi.fn(),
   timezone: vi.fn(),
 }));
+// Consent is covered by the token route and packages/ai consent tests.
+vi.mock('@tuturuuu/ai/chat/ai-data-consent', () => ({
+  hasAiDataConsent: async () => true,
+  aiConsentRequiredResponse: () => Response.json({}, { status: 403 }),
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: async () => ({}),
   createAdminClient: m.admin,

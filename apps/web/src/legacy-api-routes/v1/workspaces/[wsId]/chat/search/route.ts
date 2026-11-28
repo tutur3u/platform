@@ -6,6 +6,10 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import {
+  filterBlockedSenders,
+  getChatBlockedUserIds,
+} from '@/lib/chat/safety';
 
 type RouteParams = {
   wsId: string;
@@ -25,17 +29,19 @@ export const GET = withSessionAuth<RouteParams>(
     const limit = Number(url.searchParams.get('limit') ?? 50);
 
     try {
-      const messages = await callPrivateChatRpc<ChatMessage[]>(
-        'chat_search_messages',
-        {
+      const [messages, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatMessage[]>('chat_search_messages', {
           p_actor_user_id: auth.user.id,
           p_limit: Number.isFinite(limit) ? limit : 50,
           p_query: query,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
+        }),
+        getChatBlockedUserIds(auth.user.id),
+      ]);
 
-      return NextResponse.json({ messages: messages ?? [] });
+      return NextResponse.json({
+        messages: filterBlockedSenders(messages ?? [], blocked),
+      });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to search chat messages');
     }

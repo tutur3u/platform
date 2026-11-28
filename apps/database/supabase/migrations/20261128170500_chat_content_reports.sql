@@ -1,271 +1,19 @@
--- Chat user safety: blocks and content reports (Apple 1.2, Play UGC policy).
+-- Chat and Mira content reports (Apple 1.2, Play UGC and AI-generated content
+-- policies): user, message and Mira-response reports for staff review.
 --
--- Shape:
---   * private.chat_user_blocks          one row per (blocker, blocked) pair
---   * private.chat_users_blocked(a, b)  true when either side blocked the other
---   * private.chat_can_invite_user      redefined: a blocked pair can't invite
---                                       each other into DMs or groups
---   * chat_messages insert guard        refuses a user message in a direct
---                                       conversation between a blocked pair,
---                                       on every insert path
---   * chat_friend_requests guards       silently drop new requests between a
---                                       blocked pair (keeps the email-lookup
---                                       privacy contract) and refuse accepting
---   * private.chat_content_reports      user, message and Mira-response
---                                       reports for staff review
+--   * private.chat_content_reports        one row per report, with a
+--                                         server-captured content snapshot
+--   * private.chat_submit_content_report  reporter-side write
+--   * private.chat_list_content_reports   staff queue (verified staff only)
+--   * private.chat_review_content_report  staff resolution
 --
--- Every function is service_role only; the Web API binds p_actor_user_id to
--- the verified session user. Product decision and scope:
+-- Every function is service_role only; the Web API binds the actor to the
+-- verified session user. Decision and scope:
 -- apps/docs/platform/chat-safety-and-ai-consent.mdx.
 
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
-
-create table private.chat_user_blocks (
-  blocker_user_id uuid not null references public.users(id) on update cascade on delete cascade,
-  blocked_user_id uuid not null references public.users(id) on update cascade on delete cascade,
-  created_at timestamptz not null default now(),
-  primary key (blocker_user_id, blocked_user_id),
-  constraint chat_user_blocks_not_self check (blocker_user_id <> blocked_user_id)
-);
-
-create index chat_user_blocks_blocked_idx
-  on private.chat_user_blocks (blocked_user_id, blocker_user_id);
-
-alter table private.chat_user_blocks enable row level security;
-revoke all on table private.chat_user_blocks from public, anon, authenticated;
-grant select, insert, delete on table private.chat_user_blocks to service_role;
-create policy chat_user_blocks_service_all
-  on private.chat_user_blocks
-  for all to service_role using (true) with check (true);
-
-create function private.chat_users_blocked(
-  p_user_a uuid,
-  p_user_b uuid
-)
-returns boolean
-language sql
-stable
-security definer
-set search_path = private, public, pg_temp
-as $$
-  select exists (
-    select 1
-    from private.chat_user_blocks b
-    where (b.blocker_user_id = p_user_a and b.blocked_user_id = p_user_b)
-       or (b.blocker_user_id = p_user_b and b.blocked_user_id = p_user_a)
-  );
-$$;
-
-revoke all on function private.chat_users_blocked(uuid, uuid) from public, anon, authenticated;
-grant execute on function private.chat_users_blocked(uuid, uuid) to service_role;
-
-create or replace function private.chat_can_invite_user(
-  p_actor_user_id uuid,
-  p_target_user_id uuid
-)
-returns boolean
-language sql
-stable
-security definer
-set search_path = private, public, pg_temp
-as $$
-  select
-    p_target_user_id <> p_actor_user_id
-    and not private.chat_users_blocked(p_actor_user_id, p_target_user_id)
-    and (
-      private.chat_users_share_workspace(p_actor_user_id, p_target_user_id)
-      or private.chat_users_are_friends(p_actor_user_id, p_target_user_id)
-    );
-$$;
-
-revoke all on function private.chat_can_invite_user(uuid, uuid) from public, anon, authenticated;
-grant execute on function private.chat_can_invite_user(uuid, uuid) to service_role;
-
--- A user message in a direct conversation between a blocked pair is refused
--- whichever RPC inserts it (send, idempotent send, first-message creation).
-create function private.chat_guard_blocked_direct_message()
-returns trigger
-language plpgsql
-security definer
-set search_path = private, public, pg_temp
-as $$
-begin
-  if new.kind <> 'user' or new.sender_id is null then
-    return new;
-  end if;
-
-  if exists (
-    select 1
-    from private.chat_conversations c
-    join private.chat_conversation_members m
-      on m.conversation_id = c.id
-     and m.user_id <> new.sender_id
-    where c.id = new.conversation_id
-      and c.type = 'direct'
-      and private.chat_users_blocked(new.sender_id, m.user_id)
-  ) then
-    raise exception 'chat_blocked'
-      using errcode = '42501';
-  end if;
-
-  return new;
-end;
-$$;
-
-revoke all on function private.chat_guard_blocked_direct_message() from public, anon, authenticated, service_role;
--- tuturuuu: no-grant (trigger)
-
-create trigger chat_messages_block_guard
-  before insert on private.chat_messages
-  for each row
-  execute function private.chat_guard_blocked_direct_message();
-
--- New friend requests between a blocked pair are dropped without an error, so
--- chat_create_friend_request_by_email still answers {queued:true} and never
--- reveals the block. Accepting across a block is refused.
-create function private.chat_guard_blocked_friend_request()
-returns trigger
-language plpgsql
-security definer
-set search_path = private, public, pg_temp
-as $$
-begin
-  if not private.chat_users_blocked(new.requester_user_id, new.recipient_user_id) then
-    return new;
-  end if;
-
-  if tg_op = 'INSERT' then
-    return null;
-  end if;
-
-  if new.status = 'accepted' and old.status is distinct from 'accepted' then
-    raise exception 'chat_blocked'
-      using errcode = '42501';
-  end if;
-
-  return new;
-end;
-$$;
-
-revoke all on function private.chat_guard_blocked_friend_request() from public, anon, authenticated, service_role;
--- tuturuuu: no-grant (trigger)
-
-create trigger chat_friend_requests_block_guard
-  before insert or update on private.chat_friend_requests
-  for each row
-  execute function private.chat_guard_blocked_friend_request();
-
-create function private.chat_block_user(
-  p_actor_user_id uuid,
-  p_target_user_id uuid
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = private, public, pg_temp
-as $$
-begin
-  if p_actor_user_id is null or p_target_user_id is null then
-    raise exception 'chat_block_target_invalid'
-      using errcode = '22023';
-  end if;
-
-  if p_actor_user_id = p_target_user_id then
-    raise exception 'chat_block_self_invalid'
-      using errcode = '22023';
-  end if;
-
-  if not exists (select 1 from public.users u where u.id = p_target_user_id) then
-    raise exception 'chat_block_target_not_found'
-      using errcode = 'P0002';
-  end if;
-
-  if (
-    select count(*) from private.chat_user_blocks b
-    where b.blocker_user_id = p_actor_user_id
-  ) >= 2000 then
-    raise exception 'chat_block_limit_reached'
-      using errcode = '22023';
-  end if;
-
-  insert into private.chat_user_blocks (blocker_user_id, blocked_user_id)
-  values (p_actor_user_id, p_target_user_id)
-  on conflict do nothing;
-
-  -- Blocking ends the friendship and any pending request in both directions.
-  update private.chat_friend_requests request
-  set status = 'declined',
-      responded_at = now()
-  where request.status in ('pending', 'accepted')
-    and (
-      (request.requester_user_id = p_actor_user_id and request.recipient_user_id = p_target_user_id)
-      or (request.requester_user_id = p_target_user_id and request.recipient_user_id = p_actor_user_id)
-    );
-
-  return jsonb_build_object('blocked', true, 'userId', p_target_user_id);
-end;
-$$;
-
-revoke all on function private.chat_block_user(uuid, uuid) from public, anon, authenticated;
-grant execute on function private.chat_block_user(uuid, uuid) to service_role;
-
-create function private.chat_unblock_user(
-  p_actor_user_id uuid,
-  p_target_user_id uuid
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = private, public, pg_temp
-as $$
-begin
-  if p_actor_user_id is null or p_target_user_id is null then
-    raise exception 'chat_block_target_invalid'
-      using errcode = '22023';
-  end if;
-
-  delete from private.chat_user_blocks b
-  where b.blocker_user_id = p_actor_user_id
-    and b.blocked_user_id = p_target_user_id;
-
-  return jsonb_build_object('blocked', false, 'userId', p_target_user_id);
-end;
-$$;
-
-revoke all on function private.chat_unblock_user(uuid, uuid) from public, anon, authenticated;
-grant execute on function private.chat_unblock_user(uuid, uuid) to service_role;
-
--- Only the people the actor blocked, with the actor-visible public profile.
-create function private.chat_list_blocked_users(
-  p_actor_user_id uuid
-)
-returns jsonb
-language sql
-stable
-security definer
-set search_path = private, public, pg_temp
-as $$
-  select coalesce(
-    jsonb_agg(
-      jsonb_build_object(
-        'userId', b.blocked_user_id,
-        'displayName', coalesce(u.display_name, u.handle),
-        'avatarUrl', u.avatar_url,
-        'createdAt', b.created_at
-      )
-      order by b.created_at desc
-    ),
-    '[]'::jsonb
-  )
-  from private.chat_user_blocks b
-  left join public.users u on u.id = b.blocked_user_id
-  where b.blocker_user_id = p_actor_user_id;
-$$;
-
-revoke all on function private.chat_list_blocked_users(uuid) from public, anon, authenticated;
-grant execute on function private.chat_list_blocked_users(uuid) to service_role;
 
 -- Content reports ----------------------------------------------------------
 
@@ -412,6 +160,7 @@ begin
     order by prev.created_at desc
     limit 1;
 
+    v_reported_user_id := null;
     v_ai_chat_id := v_message.chat_id;
     v_ai_chat_message_id := v_message.id;
     v_snapshot := jsonb_build_object(
@@ -433,7 +182,9 @@ begin
     join private.chat_conversations c on c.id = m.conversation_id
     where m.id = p_message_id
       and m.conversation_id = p_conversation_id
-      and c.ws_id = p_ws_id
+      and private.chat_can_address_conversation_workspace(
+        p_ws_id, c.ws_id, c.type, p_actor_user_id
+      )
       and m.deleted_at is null;
 
     if not found
@@ -487,22 +238,7 @@ begin
     end if;
 
     -- Only people the reporter can actually meet in chat can be reported.
-    if not (
-      private.chat_users_share_workspace(p_actor_user_id, v_reported_user_id)
-      or exists (
-        select 1 from private.chat_friend_requests request
-        where (request.requester_user_id = p_actor_user_id and request.recipient_user_id = v_reported_user_id)
-           or (request.requester_user_id = v_reported_user_id and request.recipient_user_id = p_actor_user_id)
-      )
-      or exists (
-        select 1
-        from private.chat_conversation_members mine
-        join private.chat_conversation_members theirs
-          on theirs.conversation_id = mine.conversation_id
-         and theirs.user_id = v_reported_user_id
-        where mine.user_id = p_actor_user_id
-      )
-    ) then
+    if not private.chat_users_can_meet(p_actor_user_id, v_reported_user_id) then
       raise exception 'chat_report_target_invalid'
         using errcode = '42501';
     end if;
@@ -527,9 +263,14 @@ begin
   limit 1;
 
   if v_report_id is not null then
-    return jsonb_build_object('reportId', v_report_id, 'duplicate', true);
+    return jsonb_build_object(
+      'reportId', v_report_id,
+      'duplicate', true,
+      'reportedUserId', v_reported_user_id
+    );
   end if;
 
+  begin
   insert into private.chat_content_reports (
     reporter_user_id, ws_id, subject_type, reported_user_id,
     conversation_id, message_id, ai_chat_id, ai_chat_message_id,
@@ -541,6 +282,24 @@ begin
     p_reason, v_details, v_snapshot
   )
   returning id into v_report_id;
+  exception
+    when unique_violation then
+      -- A concurrent identical report won the race; answer with that one.
+      select r.id
+      into v_report_id
+      from private.chat_content_reports r
+      where r.reporter_user_id = p_actor_user_id
+        and r.subject_type = p_subject_type
+        and coalesce(r.message_id, r.ai_chat_message_id, r.reported_user_id)
+          = coalesce(v_message_id, v_ai_chat_message_id, v_reported_user_id)
+        and r.status in ('open', 'reviewing')
+      limit 1;
+      return jsonb_build_object(
+        'reportId', v_report_id,
+        'duplicate', true,
+        'reportedUserId', v_reported_user_id
+      );
+  end;
 
   return jsonb_build_object(
     'reportId', v_report_id,
@@ -557,15 +316,21 @@ grant execute on function private.chat_submit_content_report(uuid, uuid, text, u
 
 -- Staff review (the Web API gates callers to verified Tuturuuu staff).
 create function private.chat_list_content_reports(
+  p_actor_user_id uuid,
   p_status text,
   p_limit integer
 )
 returns jsonb
-language sql
+language plpgsql
 stable
 security definer
 set search_path = private, public, pg_temp
 as $$
+begin
+  -- The canonical verified-staff check (active infrastructure employee).
+  perform private.assert_product_feedback_staff(p_actor_user_id);
+
+  return (
   select coalesce(jsonb_agg(row_json order by created_at desc), '[]'::jsonb)
   from (
     select
@@ -596,11 +361,13 @@ as $$
     where p_status is null or r.status = p_status
     order by r.created_at desc
     limit least(greatest(coalesce(p_limit, 50), 1), 200)
-  ) listed;
+  ) listed
+  );
+end;
 $$;
 
-revoke all on function private.chat_list_content_reports(text, integer) from public, anon, authenticated;
-grant execute on function private.chat_list_content_reports(text, integer) to service_role;
+revoke all on function private.chat_list_content_reports(uuid, text, integer) from public, anon, authenticated;
+grant execute on function private.chat_list_content_reports(uuid, text, integer) to service_role;
 
 create function private.chat_review_content_report(
   p_report_id uuid,
@@ -616,6 +383,8 @@ as $$
 declare
   v_id uuid;
 begin
+  perform private.assert_product_feedback_staff(p_reviewer_user_id);
+
   if p_status is null or p_status not in ('reviewing', 'actioned', 'dismissed') then
     raise exception 'chat_report_status_invalid'
       using errcode = '22023';

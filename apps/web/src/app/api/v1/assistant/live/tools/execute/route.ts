@@ -1,3 +1,7 @@
+import {
+  aiConsentRequiredResponse,
+  hasAiDataConsent,
+} from '@tuturuuu/ai/chat/ai-data-consent';
 import { resolveMiraTimezone } from '@tuturuuu/ai/chat/google/mira-timezone';
 import {
   miraClientCapabilitiesInputSchema,
@@ -48,6 +52,7 @@ export async function POST(request: Request) {
         ? tempAuth.context.user
         : (await resolveAuthenticatedSessionUser(supabase)).user;
     if (!user) return json({ error: 'Unauthorized' }, 401);
+    if (!(await hasAiDataConsent(user.id))) return aiConsentRequiredResponse();
     if (tempAuth.status === 'valid')
       supabase = await createAdminClient({ noCookie: true });
     const principal = { id: user.id, email: user.email ?? null };

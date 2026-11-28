@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { Behavior, Modality } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -65,6 +66,9 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     userId = user.id;
+    // Native clients stream audio and video to Gemini: consent first.
+    const consentRefusal = await enforceAiDataConsent(request, user.id);
+    if (consentRefusal) return consentRefusal;
 
     const accessWsId = await normalizeWorkspaceId(
       parsed.data.wsId,

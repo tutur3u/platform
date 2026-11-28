@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '../../ai-data-consent';
 import { google } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { convertToModelMessages, generateText, type UIMessage } from 'ai';
@@ -38,6 +39,8 @@ export function createPATCH(
       const auth =
         (await options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
+      const consentRefusal = await enforceAiDataConsent(req, auth.user.id);
+      if (consentRefusal) return consentRefusal;
       const { supabase } = auth;
 
       if (!wsId && options.requireWorkspaceId) {
