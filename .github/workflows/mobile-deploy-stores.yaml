@@ -575,6 +575,11 @@ jobs:
         if: steps.existing.outputs.present != 'true'
         run: node ../../scripts/mobile-validate-dart-defines.js .env.github
 
+      - name: Install iOS pods with refreshed specs
+        if: steps.existing.outputs.present != 'true'
+        working-directory: apps/mobile/ios
+        run: pod install --repo-update
+
       - name: Build iOS IPA
         if: steps.existing.outputs.present != 'true'
         shell: bash

@@ -152,6 +152,17 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   const android = parsed.jobs['publish-android-internal'];
   const ios = parsed.jobs['publish-ios-testflight'];
   assert.equal(ios.outputs, undefined);
+  const iosPods = step(ios, 'Install iOS pods with refreshed specs');
+  const iosBuild = step(ios, 'Build iOS IPA');
+  assert.equal(iosPods.if, iosBuild.if);
+  assert.equal(iosPods['working-directory'], 'apps/mobile/ios');
+  assert.equal(iosPods.run, 'pod install --repo-update');
+  assert.ok(
+    ios.steps.indexOf(iosPods) >
+      ios.steps.indexOf(step(ios, 'Install dependencies'))
+  );
+  assert.ok(ios.steps.indexOf(iosPods) < ios.steps.indexOf(iosBuild));
+
   const publish = step(
     android,
     'Publish Android App Bundle to Google Play internal'

@@ -590,6 +590,13 @@ entitlements match that decision before upload. Regression coverage:
 `scripts/ci/mobile-store-workflow.test.js` and
 `scripts/mobile-deployment/ios-signing.test.mjs`.
 
+Before archiving a new iOS build, the TestFlight job runs
+`pod install --repo-update` from `apps/mobile/ios` after Flutter dependency
+resolution. This refreshes cached CocoaPods specs before resolving native
+dependencies. When a Flutter plugin changes its native pod constraints, use a
+targeted `pod update` for the affected pods and commit the regenerated
+`apps/mobile/ios/Podfile.lock` with the plugin change.
+
 The `IOS_SIGNING_MODE` repository variable selects how the TestFlight job signs.
 Leave it unset or set it to `manual` to use the vault distribution certificate
 and App Store profile. Set it to `cloud` to let Xcode manage signing with the
