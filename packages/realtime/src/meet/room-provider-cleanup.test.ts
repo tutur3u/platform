@@ -235,6 +235,24 @@ it.each([
     ),
   },
   {
+    name: 'track-level description with a generic code',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404',
+      404,
+      'not_found',
+      'Track in session not found'
+    ),
+  },
+  {
+    name: 'track code with a session-level description',
+    error: new CloudflareSfuError(
+      'cloudflare_sfu_request_failed:404',
+      404,
+      'track_not_found',
+      'Session not found'
+    ),
+  },
+  {
     name: 'HTML 404 proxy page',
     error: new CloudflareSfuError(
       'cloudflare_sfu_request_failed:404 <html><body><h1>404 Session not found</h1></body></html>',

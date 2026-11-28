@@ -173,7 +173,7 @@ describe('CloudflareSfuClient', () => {
     );
   });
 
-  it('leaves errorCode and errorDescription unset for HTML, bare, or unknown-shape JSON 404 responses', async () => {
+  it('leaves errorCode and errorDescription unset for HTML, bare, blank, or unknown-shape JSON 404 responses', async () => {
     const responses = [
       () =>
         new Response('<html><body>404 Session not found</body></html>', {
@@ -184,6 +184,11 @@ describe('CloudflareSfuClient', () => {
       () =>
         Response.json(
           { message: 'Session not found', error: 'session_not_found' },
+          { status: 404 }
+        ),
+      () =>
+        Response.json(
+          { errorCode: '   ', errorDescription: '  ' },
           { status: 404 }
         ),
       () => Response.json(['session_not_found'], { status: 404 }),

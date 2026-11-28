@@ -27,9 +27,10 @@ const TRACK_GONE_DESCRIPTION =
   /doesn't exist|does not exist|already closed|not found/i;
 
 const SESSION_GONE_DESCRIPTION =
-  /\bsession\b(?:\s+(?:is|was|has(?:\s+been)?))?\s+(?:not\s+found|doesn't\s+exist|does\s+not\s+exist|already\s+closed|closed|expired|gone)\b/i;
+  /^(?:(?:the|this|requested|sfu|realtime)\s+)*session\b(?:\s+(?:is|was|has(?:\s+been)?))?\s+(?:not\s+found|doesn't\s+exist|does\s+not\s+exist|already\s+closed|closed|expired|gone)\b/i;
 
-const NON_SESSION_ERROR_CODE = /(?:^|_)app(?:$|_)|(?:^|_)route(?:$|_)/i;
+const NON_SESSION_ERROR_CODE =
+  /(?:^|[_.:-])(?:app|route|track|endpoint|peer|token|subscription)(?:$|[_.:-])/i;
 
 const SAFE_ERROR_CODE = /^[a-z0-9_.:-]{1,64}$/i;
 
