@@ -304,14 +304,14 @@
       "digest": "ac57299d58f8b899f5324ea68f80f6b1908a6b10f3d096bf2e10aa94f7388093"
     },
     ".github/workflows/native-start-app.yaml": {
-      "lines": 8,
-      "uses": 8,
+      "lines": 7,
+      "uses": 7,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
+        "decision": "https://github.com/tutur3u/platform/commit/4d1896483267579da49d629ed61939942cd0a509",
+        "reason": "Fanout Phase 1 folds isolated restore-acceptance into native-start-app validate, removing the duplicate WRANGLER_SEND_METRICS job env line (8 -> 7); remaining dry-run and types invocations unchanged."
       },
-      "digest": "cb1eac45554ff87ab8162c58fab72a218b6d4efffe8fbddbd3d6cfb272fabd5c"
+      "digest": "3ae2d77544a94c4819c1b5800b6f426422f07ef07b8704bf1d5acabba7c55051"
     },
     ".github/workflows/nova-cloudflare.yaml": {
       "lines": 8,

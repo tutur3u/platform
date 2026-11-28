@@ -127,9 +127,9 @@ API; any other egress fails the test. It covers:
   for an invalid app bearer)
 - central forwarding with a raw duplicate query and multiple `Set-Cookie` headers
 
-A clean `restore-acceptance` job restores the archive without rebuilding,
-dry-runs Wrangler again, repeats the same workerd suite, and verifies that the
-hashes are unchanged.
+An isolated restore stage inside `validate` downloads and restores the uploaded
+archive into a clean workspace without rebuilding, dry-runs Wrangler again,
+repeats the same workerd suite, and verifies that the hashes are unchanged.
 
 ## Release and rollback runbook
 

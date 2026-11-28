@@ -239,19 +239,18 @@ test('cache hits cannot bypass installation, either profile, or runtime acceptan
   }
 });
 
-test('only the staging validation job seeds caches; sibling and restore jobs never duplicate uploads', () => {
+test('only the staging validation job seeds caches; folded restore never duplicates cache uploads', () => {
   assert.equal(action.inputs.save.default, 'false');
-  const validateCache = native.jobs.validate.steps.find(
+  const validateCaches = native.jobs.validate.steps.filter(
     (step) => step.uses === `./${actionPath}`
   );
+  assert.equal(validateCaches.length, 1);
+  const validateCache = validateCaches[0];
   for (const profile of ['', 'VITE_FINANCE_NATIVE_PROFILE=production']) {
     assert.equal(
       enabled(validateCache.with.save, {}, { 'profile-env': profile }),
       profile ? 'false' : 'true'
     );
   }
-  const restore = native.jobs['restore-acceptance'].steps.find(
-    (step) => step.uses === `./${actionPath}`
-  );
-  assert.equal(restore.with.save, 'false');
+  assert.equal(native.jobs['restore-acceptance'], undefined);
 });

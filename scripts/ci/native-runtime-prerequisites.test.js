@@ -123,28 +123,117 @@ test('apt configuration failure prevents the prerequisite command', () => {
   assert.equal(fixture.result.stdout, '');
 });
 
-test('both native jobs retain bounded setup and mandatory runtime acceptance', () => {
+test('native validation retains bounded setup, mandatory runtime acceptance, and isolated empty-dir restore', () => {
   const workflow = readWorkflow('native-start-app.yaml');
-  for (const job of Object.values(workflow.jobs)) {
-    const setupIndex = job.steps.findIndex(
-      (step) => step.name === 'Install runtime prerequisites'
+  assert.deepEqual(Object.keys(workflow.jobs), ['validate']);
+  const job = workflow.jobs.validate;
+  const setupIndex = job.steps.findIndex(
+    (step) => step.name === 'Install runtime prerequisites'
+  );
+  const setup = job.steps[setupIndex];
+  assert.equal(setup.uses, `./${actionPath}`);
+  assert.equal(setup['timeout-minutes'], 10);
+  assert.equal(setup.if, "env.RUNTIME_SETUP_COMMAND != ''");
+  assert.equal(setup.with.command, expression('env.RUNTIME_SETUP_COMMAND'));
+  // An empty app-dir resolves to apps/<app>.
+  assert.equal(
+    setup.with['working-directory'],
+    expression("inputs.app-dir || format('apps/{0}', inputs.app)")
+  );
+  assert.equal(setup['continue-on-error'], undefined);
+  const runtime = job.steps[setupIndex + 1];
+  assert.equal(runtime['timeout-minutes'], 4);
+  assert.equal(runtime.run, 'bash -c "$RUNTIME_COMMAND"');
+  assert.equal(runtime['continue-on-error'], undefined);
+
+  // Folded restore-acceptance must start from a provably empty directory
+  // outside the build tree with zero dist, caches, or build node_modules.
+  const prepIndex = job.steps.findIndex(
+    (step) => step.name === 'Prepare isolated empty restore workspace'
+  );
+  assert.ok(prepIndex > setupIndex + 1);
+  const prep = job.steps[prepIndex];
+  assert.match(prep.run, /test -z "\$\(ls -A "\$RESTORE_ROOT"\)"/u);
+  assert.match(
+    prep.run,
+    /git archive "\$SOURCE_SHA" \| tar -x -C "\$RESTORE_ROOT"/u
+  );
+  for (const forbidden of [
+    '$RESTORE_ROOT/$APP_DIR/dist',
+    '$RESTORE_ROOT/$APP_DIR/.vite',
+    '$RESTORE_ROOT/node_modules',
+    '$RESTORE_ROOT/$APP_DIR/node_modules',
+    '$RESTORE_ROOT/.turbo',
+  ]) {
+    assert.ok(
+      prep.run.includes(`test ! -e "${forbidden}"`),
+      `missing isolation assertion for ${forbidden}`
     );
-    const setup = job.steps[setupIndex];
-    assert.equal(setup.uses, `./${actionPath}`);
-    assert.equal(setup['timeout-minutes'], 10);
-    assert.equal(setup.if, "env.RUNTIME_SETUP_COMMAND != ''");
-    assert.equal(setup.with.command, expression('env.RUNTIME_SETUP_COMMAND'));
-    // An empty app-dir resolves to apps/<app>.
-    assert.equal(
-      setup.with['working-directory'],
-      expression("inputs.app-dir || format('apps/{0}', inputs.app)")
-    );
-    assert.equal(setup['continue-on-error'], undefined);
-    const runtime = job.steps[setupIndex + 1];
-    assert.equal(runtime['timeout-minutes'], 4);
-    assert.equal(runtime.run, 'bash -c "$RUNTIME_COMMAND"');
-    assert.equal(runtime['continue-on-error'], undefined);
   }
+  const downloadStep = job.steps.find((step) =>
+    step.uses?.startsWith('actions/download-artifact@')
+  );
+  assert.ok(downloadStep, 'missing actions/download-artifact step for restore');
+  assert.equal(
+    downloadStep.with.name,
+    `${expression('inputs.app')}-native-${expression('env.SOURCE_SHA')}${expression('env.ARTIFACT_SUFFIX')}`
+  );
+  assert.equal(
+    downloadStep.with.path,
+    `${expression('runner.temp')}/native-download`
+  );
+  const restoreStep = job.steps.find(
+    (step) =>
+      step.name === 'Restore into clean output with member/hash/source checks'
+  );
+  assert.ok(restoreStep, 'missing restore step inside validate');
+  assert.match(
+    restoreStep.run,
+    /--archive "\$RUNNER_TEMP\/native-download\/native\.tar\.gz"/u
+  );
+  const restoredRuntime = job.steps.find(
+    (step) =>
+      step.name === 'Repeat emitted runtime acceptance on restored output'
+  );
+  assert.equal(restoredRuntime['timeout-minutes'], 4);
+  assert.equal(
+    restoredRuntime['working-directory'],
+    `${expression('runner.temp')}/native-restore-workspace/${expression("inputs.app-dir || format('apps/{0}', inputs.app)")}`
+  );
+  assert.match(restoredRuntime.run, /NEXT_PUBLIC_\*\|TUTURUUU_NOINDEX/u);
+  assert.match(
+    restoredRuntime.run,
+    /env "\$\{unset_args\[@\]\}" bash -c "\$RUNTIME_COMMAND"/u
+  );
+  assert.equal(restoredRuntime['continue-on-error'], undefined);
+
+  // Execute the empty-directory assertion against real temp directories to
+  // prove it succeeds only on an empty restore dir and fails closed if any
+  // file (including hidden files) is already present.
+  const probeRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'native-restore-'));
+  try {
+    const emptyDir = path.join(probeRoot, 'empty');
+    fs.mkdirSync(emptyDir);
+    const ok = spawnSync(
+      'bash',
+      ['-e', '-c', 'test -z "$(ls -A "$RESTORE_ROOT")"'],
+      { env: { ...process.env, RESTORE_ROOT: emptyDir } }
+    );
+    assert.equal(ok.status, 0);
+
+    const dirtyDir = path.join(probeRoot, 'dirty');
+    fs.mkdirSync(dirtyDir);
+    fs.writeFileSync(path.join(dirtyDir, '.stale'), 'x');
+    const fail = spawnSync(
+      'bash',
+      ['-e', '-c', 'test -z "$(ls -A "$RESTORE_ROOT")"'],
+      { env: { ...process.env, RESTORE_ROOT: dirtyDir } }
+    );
+    assert.notEqual(fail.status, 0);
+  } finally {
+    fs.rmSync(probeRoot, { recursive: true, force: true });
+  }
+
   const finance = readWorkflow('finance-cloudflare.yaml');
   for (const event of ['pull_request', 'push']) {
     assert.ok(finance.on[event].paths.includes(`${actionPath}/**`));
