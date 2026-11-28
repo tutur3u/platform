@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   AI_MEMORY_PRODUCTS,
   type AiMemoryProduct,
@@ -121,6 +122,12 @@ export async function GET(
     wsId: context.wsId,
   });
 
+  // Search embeds the query with Gemini; listing does not.
+  if (query) {
+    const consentRefusal = await enforceAiDataConsent(request, context.user.id);
+    if (consentRefusal) return consentRefusal;
+  }
+
   const result = query
     ? await searchAiMemories({
         category,
@@ -166,6 +173,9 @@ export async function POST(
   const { wsId: rawWsId } = await params;
   const context = await resolveMemoryRequestContext(request, rawWsId);
   if (!context.ok) return context.response;
+  // Storing a memory embeds its text with Gemini.
+  const consentRefusal = await enforceAiDataConsent(request, context.user.id);
+  if (consentRefusal) return consentRefusal;
 
   const parsed = createMemoryItemSchema.safeParse(await request.json());
   if (!parsed.success) {

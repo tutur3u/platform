@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   fix: vi.fn(),
   createService: vi.fn(),
   createGrounding: vi.fn(),
+  consent: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'synthetic-policy',
+  lookupAiDataConsent: mocks.consent,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/api-auth', () => ({
@@ -75,5 +80,25 @@ describe('POST /api/v1/cite/ai/fix-ref', () => {
     const response = await POST(request({ input: 'x' }) as never);
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'CREDITS_EXHAUSTED' });
+  });
+
+  it('refuses a native caller without Mira AI data consent before the model', async () => {
+    mocks.consent.mockResolvedValue(false);
+    const response = await POST(
+      new Request('https://tuturuuu.com/api/v1/cite/ai/fix-ref', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer native-jwt',
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ input: 'x' }),
+      }) as never
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'ai_consent_required',
+    });
+    expect(mocks.consent).toHaveBeenCalledWith('user-1', undefined);
+    expect(mocks.fix).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,6 @@
+import { AI_DATA_CONSENT_POLICY_VERSION } from '@tuturuuu/ai/chat/ai-data-consent';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { revokeUserAiTempAuthTokens } from '@tuturuuu/utils/ai-temp-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -85,7 +87,13 @@ export const PUT = withSessionAuth(async (req, { user }) => {
     );
   }
   const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
+  // An Allow only counts for the disclosure the server currently shows, so a
+  // grant for any other policy version is refused. A withdrawal always applies.
+  if (
+    !parsed.success ||
+    (parsed.data.granted &&
+      parsed.data.policyVersion !== AI_DATA_CONSENT_POLICY_VERSION)
+  ) {
     return NextResponse.json(
       { message: 'Invalid request data' },
       { status: 400, headers }
@@ -98,7 +106,7 @@ export const PUT = withSessionAuth(async (req, { user }) => {
     p_user_id: user.id,
     p_granted: parsed.data.granted,
     p_source: parsed.data.source,
-    p_policy_version: parsed.data.policyVersion,
+    p_policy_version: AI_DATA_CONSENT_POLICY_VERSION,
   });
   if (error) {
     console.error('AI data consent write failed', { code: error.code });
@@ -106,6 +114,12 @@ export const PUT = withSessionAuth(async (req, { user }) => {
       { message: 'Could not save the preference' },
       { status: 500, headers }
     );
+  }
+
+  // Withdrawal ends every cached AI temp-auth token for the user at once, so
+  // no in-flight token outlives the decision.
+  if (!parsed.data.granted && !(await revokeUserAiTempAuthTokens(user.id))) {
+    console.warn('AI temp-auth revocation after consent withdrawal failed');
   }
 
   const row = Array.isArray(data) ? (data[0] as ConsentRow) : null;

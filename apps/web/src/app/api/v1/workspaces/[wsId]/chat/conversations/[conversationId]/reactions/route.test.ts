@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  blocked: vi.fn(),
   callPrivateChatRpc: vi.fn(),
   from: vi.fn(),
   eq: vi.fn(),
@@ -39,6 +40,11 @@ vi.mock('@/lib/chat/private-rpc', () => ({
     ),
   resolveChatRouteContext: (...args: unknown[]) =>
     mocks.resolveChatRouteContext(...args),
+}));
+
+vi.mock('@/lib/chat/safety', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/chat/safety')>()),
+  getChatBlockedUserIds: (...args: unknown[]) => mocks.blocked(...args),
 }));
 
 vi.mock('@/lib/chat/realtime', () => ({
@@ -85,6 +91,7 @@ async function get(query = `messageId=${messageId}`) {
 describe('chat reaction route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.blocked.mockResolvedValue(new Set());
     const membershipQuery = {
       eq: mocks.eq,
       maybeSingle: mocks.maybeSingle,
@@ -313,6 +320,60 @@ describe('chat reaction route', () => {
     expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
   });
 
+  it('hides blocked reactors in the mutation receipt but not in realtime', async () => {
+    mocks.blocked.mockResolvedValue(new Set(['blocked-user']));
+    const reacted = {
+      ...message,
+      reactions: [
+        {
+          count: 2,
+          emoji: 'heart',
+          userIds: ['authenticated-actor', 'blocked-user'],
+        },
+      ],
+    };
+    mocks.callPrivateChatRpc.mockResolvedValueOnce({
+      message: reacted,
+      operation,
+    });
+    const response = await put({
+      emoji: 'heart',
+      messageId,
+      opId,
+      present: true,
+    });
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      message: {
+        ...message,
+        reactions: [
+          { count: 1, emoji: 'heart', userIds: ['authenticated-actor'] },
+        ],
+      },
+      operation,
+    });
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ message: reacted })
+    );
+  });
+
+  it('does not write when the block lookup fails', async () => {
+    mocks.blocked.mockRejectedValue({ code: 'XX000' });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const response = await put({
+        emoji: 'heart',
+        messageId,
+        opId,
+        present: true,
+      });
+      expect(response.status).toBe(500);
+      expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it('returns 404 for a missing message', async () => {
     mocks.callPrivateChatRpc.mockResolvedValueOnce(null);
     const response = await put({
@@ -370,6 +431,37 @@ describe('chat reaction route', () => {
         }
       );
       expect(mocks.publishChatRealtimeEvent).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 for a message sent by someone the reader blocked', async () => {
+      mocks.blocked.mockResolvedValue(new Set(['blocked-user']));
+      mocks.callPrivateChatRpc.mockResolvedValueOnce({
+        ...message,
+        senderId: 'blocked-user',
+        sender: { id: 'blocked-user' },
+      });
+      expect((await get()).status).toBe(404);
+      expect(mocks.blocked).toHaveBeenCalledWith('authenticated-actor');
+    });
+
+    it('hides blocked reactors from the reaction summaries', async () => {
+      mocks.blocked.mockResolvedValue(new Set(['blocked-user']));
+      mocks.callPrivateChatRpc.mockResolvedValueOnce({
+        ...message,
+        senderId: 'friend',
+        reactions: [
+          { count: 2, emoji: 'heart', userIds: ['friend', 'blocked-user'] },
+          { count: 1, emoji: 'fire', userIds: ['blocked-user'] },
+        ],
+      });
+      const response = await get();
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        message: { reactions: unknown[] };
+      };
+      expect(body.message.reactions).toEqual([
+        { count: 1, emoji: 'heart', userIds: ['friend'] },
+      ]);
     });
 
     it.each(['', 'messageId=', 'messageId=not-a-uuid'])(

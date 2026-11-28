@@ -7,6 +7,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 import {
+  AI_DATA_CONSENT_POLICY_VERSION,
   enforceAiDataConsent,
   hasAiDataConsent,
   requiresAiDataConsent,
@@ -40,6 +41,7 @@ describe('Mira AI data consent gate', () => {
     expect(await hasAiDataConsent('u1')).toBe(true);
     expect(f.rpc).toHaveBeenLastCalledWith('has_ai_data_consent', {
       p_user_id: 'u1',
+      p_policy_version: AI_DATA_CONSENT_POLICY_VERSION,
     });
   });
 

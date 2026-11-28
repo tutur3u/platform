@@ -1,3 +1,8 @@
+import {
+  enforceAiDataConsent,
+  hasAiDataConsent,
+  requiresAiDataConsent,
+} from '@tuturuuu/ai/chat/ai-data-consent';
 import { after, connection, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { notesVoiceWorkspace } from '@/lib/notes-voice/access';
@@ -28,6 +33,11 @@ export const POST = withSessionAuth<{ wsId: string }>(
         params.wsId
       );
       assertNotesVoiceAiEnabled(wsId);
+      // The recording is transcribed by Gemini after the response is sent, so
+      // a native caller's consent is checked here and again at admission.
+      const consentRefusal = await enforceAiDataConsent(request, auth.user.id);
+      if (consentRefusal) return consentRefusal;
+      const consentRequired = requiresAiDataConsent(request);
       const form = await readVoiceForm(request);
       const parsed = voiceRequestSchema.safeParse({
         requestId: form.get('requestId'),
@@ -53,7 +63,10 @@ export const POST = withSessionAuth<{ wsId: string }>(
         after(() =>
           runVoiceJob(owner, reservation.job, audio, async (phase) => {
             await notesVoiceWorkspace(auth.supabase, auth.user, wsId);
-            if (phase === 'provider_admission') assertNotesVoiceAiEnabled(wsId);
+            if (phase !== 'provider_admission') return;
+            assertNotesVoiceAiEnabled(wsId);
+            if (consentRequired && !(await hasAiDataConsent(auth.user.id)))
+              throw new NotesVoiceError(403, 'ai_consent_required');
           })
         );
       return NextResponse.json(publicVoiceJob(reservation.job), {

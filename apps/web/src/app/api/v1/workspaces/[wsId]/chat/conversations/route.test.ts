@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
     supabase: { from: vi.fn() },
     user: { id: 'user-1' },
   },
+  blocked: new Set<string>(),
   callPrivateChatRpc: vi.fn(),
   canModerateChat: vi.fn(),
   getPermissions: vi.fn(),
@@ -43,9 +44,10 @@ vi.mock('@/lib/chat/agent-discovery', () => ({
   ) => mocks.listRootAiAgentDiscoveryConversations(...args),
 }));
 
-vi.mock('@/lib/chat/safety', () => ({
-  getChatBlockedUserIds: async () => new Set<string>(),
-  hideBlockedPreviews: <T>(conversations: T[]) => conversations,
+vi.mock('server-only', () => ({}));
+vi.mock('@/lib/chat/safety', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/chat/safety')>()),
+  getChatBlockedUserIds: async () => mocks.blocked,
 }));
 vi.mock('@/lib/chat/moderation', () => ({
   canModerateChat: (...args: Parameters<typeof mocks.canModerateChat>) =>
@@ -363,6 +365,27 @@ describe('workspace chat conversations route', () => {
       expect.objectContaining({ p_limit: 41, p_offset: 0 })
     );
     expect(mocks.listRootAiAgentDiscoveryConversations).not.toHaveBeenCalled();
+  });
+
+  it('hides external previews sent by people the reader blocked', async () => {
+    mockRouteContext('workspace-1');
+    mocks.blocked = new Set(['blocked-user']);
+    mocks.callPrivateChatRpc.mockResolvedValue([
+      {
+        id: 'external-conversation',
+        latestMessage: { content: 'hidden', senderId: 'blocked-user' },
+        type: 'channel',
+      },
+    ]);
+
+    try {
+      const response = await callGet('workspace-1', '?scope=external');
+      await expect(response.json()).resolves.toMatchObject({
+        conversations: [{ id: 'external-conversation', latestMessage: null }],
+      });
+    } finally {
+      mocks.blocked = new Set();
+    }
   });
 
   it('rejects resource-intensive offsets on the external inbox', async () => {

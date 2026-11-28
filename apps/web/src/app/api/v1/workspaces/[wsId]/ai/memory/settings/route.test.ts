@@ -14,6 +14,21 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mocks.createClient,
   createAdminClient: () => ({ schema: () => ({ rpc: mocks.rpc }) }),
 }));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import('@tuturuuu/utils/ai-data-consent-store')
+    >();
+  return {
+    ...actual,
+    // The real lookup, reading through this test's admin client double.
+    lookupAiDataConsent: async (userId: string, admin?: unknown) =>
+      actual.lookupAiDataConsent(
+        userId,
+        admin ?? { schema: () => ({ rpc: mocks.rpc }) }
+      ),
+  };
+});
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   resolveAuthenticatedSessionUser: async (client: { user: unknown }) => ({
     user: client.user,
@@ -86,10 +101,11 @@ beforeEach(() => {
   mocks.membership.mockResolvedValue({ ok: true });
   mocks.normalized.mockResolvedValue('resolved-workspace');
   mocks.scope.mockImplementation((scope) => scope);
-  mocks.rpc.mockResolvedValue({
-    data: [{ enabled: false, products: {} }],
-    error: null,
-  });
+  mocks.rpc.mockImplementation(async (fn: string) =>
+    fn === 'has_ai_data_consent'
+      ? { data: true, error: null }
+      : { data: [{ enabled: false, products: {} }], error: null }
+  );
   mocks.memory.mockResolvedValue({ ok: true, value: [] });
 });
 it.each(cases)(

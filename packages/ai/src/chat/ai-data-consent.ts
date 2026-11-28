@@ -1,4 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  AI_DATA_CONSENT_POLICY_VERSION,
+  lookupAiDataConsent,
+} from '@tuturuuu/utils/ai-data-consent-store';
 import { NextResponse } from 'next/server';
 
 /**
@@ -7,29 +10,24 @@ import { NextResponse } from 'next/server';
  * allowed it. The decision is stored server-side per user
  * (private.user_ai_data_consent) and defaults to "not allowed".
  *
- * Scope: requests from native apps, which authenticate with a bearer token.
- * Browser sessions (cookie auth) are exempt until the web consent surface
- * ships; see apps/docs/platform/chat-safety-and-ai-consent.mdx.
+ * Scope: requests from native apps, which authenticate with a bearer token,
+ * and AI temp-auth tokens minted by such a request (the token validator
+ * re-checks consent on every use). Browser sessions (cookie auth) are exempt
+ * until the web consent surface ships; see
+ * apps/docs/platform/chat-safety-and-ai-consent.mdx.
  */
-export const AI_DATA_CONSENT_POLICY_VERSION = '2026-11-28';
+export { AI_DATA_CONSENT_POLICY_VERSION };
 export const AI_CONSENT_REQUIRED_CODE = 'ai_consent_required';
-
-type PrivateRpcClient = {
-  rpc: (
-    fn: string,
-    args: Record<string, unknown>
-  ) => PromiseLike<{ data: unknown; error: { code?: string } | null }>;
-};
-
-type AdminLike = { schema: (schema: 'private') => PrivateRpcClient };
 
 /** Whether [request] comes from a native client that must show consent. */
 export function requiresAiDataConsent(request: Request) {
   const bearer = request.headers
     .get('authorization')
     ?.match(/^Bearer\s+(\S+)/iu)?.[1];
-  // Satellite web apps carry first-party app-session tokens (ttr_app_*);
-  // they are browser surfaces and follow the web scope.
+  // App-coordination tokens (ttr_app_*) are minted for browser surfaces: the
+  // satellite proxy attaches them from the first-party app-session cookie, and
+  // registered external apps use them server to server. Native apps use
+  // Supabase bearer tokens, so ttr_app_ follows the web scope.
   return !!bearer && !bearer.startsWith('ttr_app_');
 }
 
@@ -41,23 +39,7 @@ export async function hasAiDataConsent(
   userId: string,
   admin?: unknown
 ): Promise<boolean> {
-  try {
-    const client = (admin ??
-      (await createAdminClient({ noCookie: true }))) as unknown as AdminLike;
-    const { data, error } = await client
-      .schema('private')
-      .rpc('has_ai_data_consent', { p_user_id: userId });
-    if (error) {
-      console.error('AI data consent lookup failed', { code: error.code });
-      return false;
-    }
-    return data === true;
-  } catch (error) {
-    console.error('AI data consent lookup failed', {
-      message: error instanceof Error ? error.message : 'unknown',
-    });
-    return false;
-  }
+  return lookupAiDataConsent(userId, admin);
 }
 
 export function aiConsentRequiredResponse() {

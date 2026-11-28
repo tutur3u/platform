@@ -9,6 +9,11 @@ import {
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
 import {
+  filterBlockedSenders,
+  getChatBlockedUserIds,
+  hideBlockedReactors,
+} from '@/lib/chat/safety';
+import {
   getChatRealtimeAudience,
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
@@ -91,22 +96,25 @@ export const GET = withSessionAuth<RouteParams>(
         context.context.normalizedWsId
       );
       if (membershipError) return membershipError;
-      const message = await callPrivateChatRpc<ChatMessage | null>(
-        'chat_get_reaction_message',
-        {
+      const [message, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatMessage | null>('chat_get_reaction_message', {
           p_actor_user_id: auth.user.id,
           p_conversation_id: params.conversationId,
           p_message_id: parsed.data,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
-      if (!message) {
+        }),
+        getChatBlockedUserIds(auth.user.id),
+      ]);
+      // A blocked person's message is hidden from the reader like in lists.
+      if (!message || filterBlockedSenders([message], blocked).length === 0) {
         return NextResponse.json(
           { message: 'Chat message not found' },
           { status: 404 }
         );
       }
-      return NextResponse.json({ message });
+      return NextResponse.json({
+        message: hideBlockedReactors(message, blocked),
+      });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat reaction');
     }
@@ -150,6 +158,8 @@ function createReactionMutationHandler(
           context.context.normalizedWsId
         );
         if (membershipError) return membershipError;
+        // Loaded before the write so a failed lookup never follows a commit.
+        const blocked = await getChatBlockedUserIds(auth.user.id);
 
         const args = {
           p_actor_user_id: auth.user.id,
@@ -201,7 +211,11 @@ function createReactionMutationHandler(
           });
         }
 
-        return NextResponse.json(result);
+        // Realtime carries the full summary; the reader's copy hides blocks.
+        return NextResponse.json({
+          ...result,
+          message: hideBlockedReactors(message, blocked),
+        });
       } catch (error) {
         return chatRpcErrorResponse(error, 'Failed to update chat reaction');
       }

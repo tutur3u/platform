@@ -14,6 +14,7 @@ import {
 } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { enforceAiDataConsent } from '../chat/ai-data-consent';
 import type { CreditSource as SharedCreditSource } from '../chat/credit-source';
 import { mapToUIMessages } from '../chat/google/chat-request-schema';
 import {
@@ -290,11 +291,9 @@ async function buildCompactMindContext({
 }
 
 function getMindStreamErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return `Mind AI could not finish: ${error.message}`;
-  }
-
-  return 'Mind AI could not finish this request.';
+  return error instanceof Error && error.message.trim()
+    ? `Mind AI could not finish: ${error.message}`
+    : 'Mind AI could not finish this request.';
 }
 
 export function createPOST(callbacks: MindRouteCallbacks) {
@@ -317,7 +316,8 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         ? await callbacks.resolveAuth(request)
         : await resolveAiRouteAuth(request);
       if (!auth.ok) return auth.response;
-
+      const consentRefusal = await enforceAiDataConsent(request, auth.user.id);
+      if (consentRefusal) return consentRefusal;
       const access = await callbacks.resolveAccess({
         auth,
         request,

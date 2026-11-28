@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   AI_MEMORY_PRODUCTS,
   type AiMemoryEditResult,
@@ -94,6 +95,9 @@ export async function PATCH(
 ) {
   const context = await authorized(request, params);
   if (!context.ok) return context.response;
+  // An edit re-embeds the memory with Gemini; reads and deletes do not.
+  const consentRefusal = await enforceAiDataConsent(request, context.user.id);
+  if (consentRefusal) return consentRefusal;
   let body: unknown;
   try {
     body = await request.json();

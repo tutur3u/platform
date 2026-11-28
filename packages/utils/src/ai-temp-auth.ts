@@ -1,4 +1,5 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { lookupAiDataConsent } from './ai-data-consent-store';
 import { AI_TEMP_AUTH_HEADER } from './ai-temp-auth-constants';
 import { isRequiredMfaProofAllowed } from './required-mfa-app-session';
 import { getUpstashRestRedisClient } from './upstash-rest';
@@ -21,6 +22,12 @@ export type AiTempAuthContext = {
   wsId?: string;
   creditWsId?: string;
   creditSource?: 'personal' | 'workspace';
+  /**
+   * Set when a native client (which must hold Mira AI data consent) minted the
+   * token. Validation re-checks the stored consent on every use, so the token
+   * never reaches Gemini for a user without consent.
+   */
+  aiConsentRequired?: boolean;
 };
 
 type AiTempAuthPayload = AiTempAuthContext & {
@@ -93,6 +100,7 @@ export async function mintAiTempAuthToken({
   wsId,
   creditWsId,
   creditSource,
+  aiConsentRequired,
 }: AiTempAuthContext): Promise<{
   token: string;
   expiresAt: number;
@@ -120,6 +128,7 @@ export async function mintAiTempAuthToken({
     ...(wsId ? { wsId } : {}),
     ...(creditWsId ? { creditWsId } : {}),
     ...(creditSource ? { creditSource } : {}),
+    ...(aiConsentRequired ? { aiConsentRequired: true } : {}),
     authVersion,
     issuedAt: now,
     expiresAt,
@@ -168,6 +177,13 @@ export async function validateAiTempAuthRequest(
     return { status: 'revoked' };
   }
 
+  if (
+    payload.aiConsentRequired === true &&
+    !(await lookupAiDataConsent(payload.user.id))
+  ) {
+    return { status: 'revoked' };
+  }
+
   return {
     status: 'valid',
     context: {
@@ -175,6 +191,7 @@ export async function validateAiTempAuthRequest(
       ...(payload.wsId ? { wsId: payload.wsId } : {}),
       ...(payload.creditWsId ? { creditWsId: payload.creditWsId } : {}),
       ...(payload.creditSource ? { creditSource: payload.creditSource } : {}),
+      ...(payload.aiConsentRequired ? { aiConsentRequired: true } : {}),
     },
   };
 }

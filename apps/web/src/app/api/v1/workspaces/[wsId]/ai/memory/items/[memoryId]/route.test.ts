@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   normalize: vi.fn(),
   admin: vi.fn(),
+  consent: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'synthetic-policy',
+  lookupAiDataConsent: mocks.consent,
 }));
 vi.mock('@tuturuuu/ai/memory', () => ({
   AI_MEMORY_PRODUCTS: ['mira', 'memories'],
@@ -67,6 +72,7 @@ beforeEach(() => {
     memory: { ...memory, revision: `v1:${'b'.repeat(32)}` },
   });
   mocks.rpc.mockResolvedValue({ data: 'synthetic-audit', error: null });
+  mocks.consent.mockResolvedValue(true);
 });
 function request(
   method = 'GET',
@@ -139,6 +145,24 @@ it('edits in place and records a proper edit audit without private content', asy
     updated: true,
     auditRecorded: true,
   });
+});
+it('refuses a native edit without Mira AI data consent before re-embedding', async () => {
+  mocks.consent.mockResolvedValue(false);
+  const response = await call(
+    'PATCH',
+    request('PATCH', { value: memory.content, revision })
+  );
+  expect(response.status).toBe(403);
+  expect(await response.json()).toMatchObject({ code: 'ai_consent_required' });
+  expect(mocks.consent).toHaveBeenCalledWith('synthetic-actor', undefined);
+  expect(mocks.edit).not.toHaveBeenCalled();
+});
+it('reads and edits over cookie auth without a consent lookup', async () => {
+  mocks.consent.mockResolvedValue(false);
+  const req = request('PATCH', { value: memory.content, revision }, '');
+  req.headers.set('cookie', 'session=synthetic-valid');
+  expect((await call('PATCH', req)).status).toBe(200);
+  expect(mocks.consent).not.toHaveBeenCalled();
 });
 it.each(['GET', 'PATCH'] as const)(
   'retains cookie auth for %s',

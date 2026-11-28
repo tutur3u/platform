@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { createCitationAiGrounding } from '@/lib/cite/ai/grounding';
@@ -10,6 +11,9 @@ import { createSessionCitationAiService } from '@/lib/cite/ai/runtime';
 
 export const POST = withSessionAuth(
   async (request, auth) => {
+    // The reference text is rewritten by Gemini.
+    const consentRefusal = await enforceAiDataConsent(request, auth.user.id);
+    if (consentRefusal) return consentRefusal;
     try {
       const input = await readCitationFixBody(request);
       const service = createSessionCitationAiService(

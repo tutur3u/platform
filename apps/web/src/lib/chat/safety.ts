@@ -88,3 +88,26 @@ export function filterBlockedSenders<T extends WithSender>(
     return !senderId || !blocked.has(senderId);
   });
 }
+
+type WithReactions = {
+  reactions?: { count: number; emoji: string; userIds: string[] }[] | null;
+};
+
+/**
+ * Removes people the reader blocked from a message's reaction summaries and
+ * drops summaries left with no visible reactor.
+ */
+export function hideBlockedReactors<T extends WithReactions>(
+  message: T,
+  blocked: Set<string>
+): T {
+  if (blocked.size === 0 || !Array.isArray(message.reactions)) return message;
+  const reactions = message.reactions.flatMap((reaction) => {
+    const userIds = reaction.userIds.filter((id) => !blocked.has(id));
+    const hidden = reaction.userIds.length - userIds.length;
+    if (hidden === 0) return [reaction];
+    const count = Math.max(0, reaction.count - hidden);
+    return count > 0 ? [{ ...reaction, count, userIds }] : [];
+  });
+  return { ...message, reactions };
+}

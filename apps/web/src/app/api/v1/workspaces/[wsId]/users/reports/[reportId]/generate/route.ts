@@ -1,4 +1,13 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  aiConsentRequiredResponse,
+  hasAiDataConsent,
+  requiresAiDataConsent,
+} from '@tuturuuu/ai/chat/ai-data-consent';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
 import { resolveUserGroupRouteWorkspaceId } from '@tuturuuu/users-core/lib/user-groups/route-helpers';
 import { NextResponse } from 'next/server';
@@ -31,6 +40,15 @@ export async function POST(request: Request, { params }: Params) {
     !permissions?.containsPermission('create_user_groups_reports')
   )
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  // The narrative is written by Gemini, so a native caller needs Mira AI data
+  // consent. Permissions carry no actor id, so it is resolved only here.
+  if (requiresAiDataConsent(request)) {
+    const { user } = await resolveAuthenticatedSessionUser(
+      await createClient(request)
+    );
+    if (!user || !(await hasAiDataConsent(user.id)))
+      return aiConsentRequiredResponse();
+  }
   const sbAdmin = await createAdminClient();
   const reportResult = await sbAdmin
     .schema('private')

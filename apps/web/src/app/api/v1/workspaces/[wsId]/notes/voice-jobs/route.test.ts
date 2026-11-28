@@ -9,6 +9,11 @@ const mock = vi.hoisted(() => ({
   after: vi.fn(),
   form: vi.fn(),
   run: vi.fn<typeof runVoiceJob>(),
+  consent: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'synthetic-policy',
+  lookupAiDataConsent: mock.consent,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({
@@ -156,5 +161,35 @@ describe('Notes voice honours MEET_AI_DISABLED', () => {
     await expect(verifyAccess('result_persistence')).rejects.toMatchObject({
       code: 'workspace_denied',
     });
+  });
+});
+
+describe('Notes voice Mira AI data consent', () => {
+  it('refuses a native caller without consent before reading audio', async () => {
+    mock.consent.mockResolvedValue(false);
+    process.env.MEET_AI_PROTECTED_WORKSPACE_IDS = protectedWorkspaceId;
+    process.env.MEET_AI_ENABLED_WORKSPACE_IDS = workspaceId;
+    process.env.MEET_AI_DISABLED = 'false';
+    const response = await (
+      POST as unknown as (
+        request: Request,
+        auth: unknown,
+        routeParams: typeof params
+      ) => Promise<Response>
+    )(
+      new Request('https://api.example', {
+        headers: { authorization: 'Bearer native-jwt' },
+      }),
+      auth,
+      params
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'ai_consent_required',
+    });
+    expect(mock.consent).toHaveBeenCalledWith('actor', undefined);
+    expect(mock.form).not.toHaveBeenCalled();
+    expect(mock.reserve).not.toHaveBeenCalled();
+    expect(mock.after).not.toHaveBeenCalled();
   });
 });

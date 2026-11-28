@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getRedis: vi.fn(),
   assurance: vi.fn(),
+  consent: vi.fn(),
   redis: {
     decr: vi.fn(),
     del: vi.fn(),
@@ -16,6 +17,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('../required-mfa-app-session', () => ({
   isRequiredMfaProofAllowed: (...args: unknown[]) => mocks.assurance(...args),
+}));
+
+vi.mock('../ai-data-consent-store', () => ({
+  lookupAiDataConsent: (...args: unknown[]) => mocks.consent(...args),
 }));
 
 vi.mock('../upstash-rest.js', () => ({
@@ -33,6 +38,59 @@ describe('ai temp auth', () => {
     mocks.redis.decr.mockResolvedValue(0);
     mocks.redis.expire.mockResolvedValue(1);
     mocks.redis.del.mockResolvedValue(1);
+    mocks.consent.mockResolvedValue(false);
+  });
+
+  it('re-checks Mira AI data consent on every use of a native-minted token', async () => {
+    const {
+      AI_TEMP_AUTH_HEADER,
+      mintAiTempAuthToken,
+      validateAiTempAuthRequest,
+    } = await import('../ai-temp-auth.js');
+    const minted = await mintAiTempAuthToken({
+      user: { id: 'native' },
+      aiConsentRequired: true,
+    });
+    const payload = mocks.redis.set.mock.calls[0]![1];
+    expect(payload.aiConsentRequired).toBe(true);
+    mocks.redis.get.mockImplementation(async (key: string) =>
+      key.startsWith('ai:temp-auth:token:') ? payload : '0'
+    );
+    const request = new Request('https://app.test/api/ai/chat', {
+      headers: { [AI_TEMP_AUTH_HEADER]: minted!.token },
+    });
+
+    mocks.consent.mockResolvedValueOnce(false);
+    expect(await validateAiTempAuthRequest(request)).toEqual({
+      status: 'revoked',
+    });
+    mocks.consent.mockResolvedValueOnce(true);
+    expect(await validateAiTempAuthRequest(request)).toMatchObject({
+      status: 'valid',
+      context: { user: { id: 'native' }, aiConsentRequired: true },
+    });
+    expect(mocks.consent).toHaveBeenCalledWith('native');
+  });
+
+  it('does not look up consent for browser-minted tokens', async () => {
+    const {
+      AI_TEMP_AUTH_HEADER,
+      mintAiTempAuthToken,
+      validateAiTempAuthRequest,
+    } = await import('../ai-temp-auth.js');
+    const minted = await mintAiTempAuthToken({ user: { id: 'browser' } });
+    const payload = mocks.redis.set.mock.calls[0]![1];
+    expect(payload).not.toHaveProperty('aiConsentRequired');
+    mocks.redis.get.mockImplementation(async (key: string) =>
+      key.startsWith('ai:temp-auth:token:') ? payload : '0'
+    );
+    const request = new Request('https://app.test/api/ai/chat', {
+      headers: { [AI_TEMP_AUTH_HEADER]: minted!.token },
+    });
+    expect(await validateAiTempAuthRequest(request)).toMatchObject({
+      status: 'valid',
+    });
+    expect(mocks.consent).not.toHaveBeenCalled();
   });
 
   it('uses normal session auth instead of cached tokens for required accounts', async () => {

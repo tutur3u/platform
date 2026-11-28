@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = {
+  consent: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
   getUser: vi.fn(),
@@ -16,6 +17,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createAdminClient(...args),
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
+}));
+
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'synthetic-policy',
+  lookupAiDataConsent: (...args: unknown[]) => mocks.consent(...args),
 }));
 
 vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
@@ -121,6 +127,37 @@ describe('AI temp auth routes', () => {
       creditWsId: 'normalized-workspace-1',
       creditSource: 'workspace',
     });
+  });
+
+  it('binds a native caller token to Mira AI data consent', async () => {
+    mocks.consent.mockResolvedValue(true);
+    const response = await tokenPOST(
+      new Request('http://localhost/api/ai/temp-auth/token', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer native-jwt' },
+        body: JSON.stringify({}),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.consent).toHaveBeenCalledWith('user-1', undefined);
+    expect(mocks.mintAiTempAuthToken).toHaveBeenCalledWith(
+      expect.objectContaining({ aiConsentRequired: true })
+    );
+  });
+
+  it('refuses to mint for a native caller without consent', async () => {
+    mocks.consent.mockResolvedValue(false);
+    const response = await tokenPOST(
+      new Request('http://localhost/api/ai/temp-auth/token', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer native-jwt' },
+        body: JSON.stringify({}),
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.mintAiTempAuthToken).not.toHaveBeenCalled();
   });
 
   it('rejects workspace credit tokens when the billing workspace differs', async () => {

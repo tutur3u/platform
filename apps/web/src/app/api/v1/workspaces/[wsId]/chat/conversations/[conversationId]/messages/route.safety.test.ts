@@ -1,5 +1,6 @@
 // @vitest-environment node
 
+import { AI_DATA_CONSENT_POLICY_VERSION } from '@tuturuuu/ai/chat/ai-data-consent';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createAdminClientMock,
@@ -7,6 +8,22 @@ import {
   resetMessageRouteMocks,
   userMessage,
 } from './route.test.harness';
+
+vi.mock('@tuturuuu/utils/ai-data-consent-store', async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import('@tuturuuu/utils/ai-data-consent-store')
+    >();
+  return {
+    ...actual,
+    // The real lookup, reading through this test's admin client double.
+    lookupAiDataConsent: async (userId: string, admin?: unknown) =>
+      actual.lookupAiDataConsent(
+        userId,
+        admin ?? (await mocks.createAdminClient())
+      ),
+  };
+});
 
 const consentRpc = vi.fn();
 
@@ -61,6 +78,7 @@ describe('chat message route safety gates', () => {
     });
     expect(consentRpc).toHaveBeenCalledWith('has_ai_data_consent', {
       p_user_id: 'user-1',
+      p_policy_version: AI_DATA_CONSENT_POLICY_VERSION,
     });
     // Nothing reached the model route or the message store.
     expect(mocks.createAiChatPost).not.toHaveBeenCalled();
@@ -100,6 +118,7 @@ describe('chat message route safety gates', () => {
 
     expect(consentRpc).toHaveBeenCalledWith('has_ai_data_consent', {
       p_user_id: 'user-1',
+      p_policy_version: AI_DATA_CONSENT_POLICY_VERSION,
     });
     const body = (await response.json().catch(() => ({}))) as {
       code?: string;
@@ -151,6 +170,38 @@ describe('chat message route safety gates', () => {
     expect(mocks.createAiChatPost).not.toHaveBeenCalled();
   });
 
+  it('refuses with 503 when the conversation cannot be loaded (fails closed)', async () => {
+    mocks.createAdminClient.mockResolvedValue(adminWithConsent(false));
+    mocks.callPrivateChatRpc.mockImplementation(async (fn: string) => {
+      if (fn === 'chat_get_conversation') throw new Error('timeout');
+      return null;
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request(
+        'http://localhost/api/v1/workspaces/workspace-1/chat/conversations/22222222-2222-4222-8222-222222222222/messages',
+        {
+          body: JSON.stringify({ content: 'hi Mira' }),
+          headers: {
+            Authorization: 'Bearer mobile-jwt',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        }
+      ) as never,
+      params('22222222-2222-4222-8222-222222222222')
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalledWith(
+      'chat_send_message',
+      expect.anything()
+    );
+    expect(mocks.createAiChatPost).not.toHaveBeenCalled();
+  });
+
   it('never gates a native message to a people conversation', async () => {
     mocks.createAdminClient.mockResolvedValue(adminWithConsent(false));
     mocks.callPrivateChatRpc.mockImplementation(async (fn: string) =>
@@ -180,6 +231,7 @@ describe('chat message route safety gates', () => {
   });
 
   it('returns 403 when SQL refuses a message across a block', async () => {
+    mocks.createAdminClient.mockResolvedValue(adminWithConsent(true));
     mocks.callPrivateChatRpc.mockRejectedValue({
       code: '42501',
       message: 'chat_blocked',

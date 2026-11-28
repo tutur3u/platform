@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -31,7 +31,30 @@ const REPORT = '00000000-0000-4000-8000-0000000000bb';
 describe('staff chat reports queue', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('PRODUCT_FEEDBACK_STAFF_INBOX_ENABLED', 'true');
     mocks.resolveStaffActor.mockResolvedValue(STAFF);
+  });
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('is unavailable while the staff inbox is switched off', async () => {
+    vi.stubEnv('PRODUCT_FEEDBACK_STAFF_INBOX_ENABLED', 'false');
+    const { GET } = await import('./route');
+    const response = await GET(new Request('https://test/api/v1/chat-reports'));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ message: 'Unavailable' });
+    expect(mocks.resolveStaffActor).not.toHaveBeenCalled();
+    expect(mocks.callPrivateChatRpc).not.toHaveBeenCalled();
+  });
+
+  it('reports an unavailable staff check as Unavailable', async () => {
+    const { StaffReadError } =
+      await import('@/app/api/v1/product-feedback/staff-access');
+    mocks.resolveStaffActor.mockRejectedValueOnce(new StaffReadError(503));
+    const { GET } = await import('./route');
+    const response = await GET(new Request('https://test/api/v1/chat-reports'));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ message: 'Unavailable' });
   });
 
   it('passes the verified staff actor to SQL, which re-checks the registry', async () => {

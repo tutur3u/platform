@@ -21,18 +21,31 @@ const reviewSchema = z
   })
   .strict();
 
+const failureMessages = {
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  503: 'Unavailable',
+} as const;
+
+function staffFailure(status: keyof typeof failureMessages) {
+  return {
+    ok: false as const,
+    response: NextResponse.json(
+      { message: failureMessages[status] },
+      { status, headers }
+    ),
+  };
+}
+
+// The queue follows the staff inbox switch, like the product-feedback staff
+// pages and routes.
 async function staffActor(request: Request) {
+  if (process.env.PRODUCT_FEEDBACK_STAFF_INBOX_ENABLED !== 'true')
+    return staffFailure(503);
   try {
     return { ok: true as const, actorId: await resolveStaffActor(request) };
   } catch (error) {
-    const status = error instanceof StaffReadError ? error.status : 503;
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { message: status === 403 ? 'Forbidden' : 'Unauthorized' },
-        { status, headers }
-      ),
-    };
+    return staffFailure(error instanceof StaffReadError ? error.status : 503);
   }
 }
 

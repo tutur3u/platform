@@ -5,6 +5,12 @@ const mocks = vi.hoisted(() => ({
   authenticate: vi.fn(),
   permissions: vi.fn(),
   generate: vi.fn(),
+  consent: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'synthetic-policy',
+  lookupAiDataConsent: mocks.consent,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({ createClient: vi.fn() }));
@@ -40,6 +46,23 @@ beforeEach(() => {
       permission === 'manage_workspace_settings',
   });
   mocks.generate.mockResolvedValue({ status: 'ok', draft: {} });
+});
+
+test('refuses a native draft without Mira AI data consent', async () => {
+  mocks.consent.mockResolvedValue(false);
+  const incoming = new Request('https://example.test/generation', {
+    method: 'POST',
+    headers: {
+      Authorization: 'Bearer native-jwt',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+  const response = await POST(incoming, context);
+  expect(response.status).toBe(403);
+  expect(await response.json()).toMatchObject({ code: 'ai_consent_required' });
+  expect(mocks.consent).toHaveBeenCalledWith('actor', undefined);
+  expect(mocks.generate).not.toHaveBeenCalled();
 });
 
 test('denies generation when workspace permissions are absent', async () => {

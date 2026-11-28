@@ -302,18 +302,24 @@ export const GET = withSessionAuth<RouteParams>(
 
     try {
       if (scope === 'external') {
-        const conversations = await listExternalChatConversations({
-          actorUserId: auth.user.id,
-          archived,
-          limit: pagination.limit + 1,
-          offset: pagination.offset,
-          wsId: context.context.normalizedWsId,
-        });
+        const [conversations, blocked] = await Promise.all([
+          listExternalChatConversations({
+            actorUserId: auth.user.id,
+            archived,
+            limit: pagination.limit + 1,
+            offset: pagination.offset,
+            wsId: context.context.normalizedWsId,
+          }),
+          getChatBlockedUserIds(auth.user.id),
+        ]);
         const hasNextPage = conversations.length > pagination.limit;
 
         return NextResponse.json({
           canModerate: await canModerate,
-          conversations: conversations.slice(0, pagination.limit),
+          conversations: hideBlockedPreviews(
+            conversations.slice(0, pagination.limit),
+            blocked
+          ),
           nextOffset: hasNextPage ? pagination.offset + pagination.limit : null,
         });
       }

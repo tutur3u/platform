@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -95,6 +96,9 @@ export async function POST(request: Request, { params }: Context) {
     });
     if (!permissions?.containsPermission('manage_workspace_settings'))
       return json({ status: 'forbidden' }, 403);
+    // Drafts send the instruction and attachment to Gemini.
+    const consentRefusal = await enforceAiDataConsent(request, user.id);
+    if (consentRefusal) return consentRefusal;
 
     const input = await readInput(request);
     if (!input) return json({ status: 'invalid' }, 400);

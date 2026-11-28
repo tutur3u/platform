@@ -6,9 +6,22 @@ import type { ReportIdentity } from '@/lib/user-report-automation/feedback-consu
 const model = vi.hoisted(() => vi.fn());
 const admin = vi.hoisted(() => vi.fn());
 const allowed = vi.hoisted(() => ({ value: true }));
+const consent = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'synthetic-policy',
+  lookupAiDataConsent: consent,
+}));
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: vi.fn(async () => ({
+    user: { id: 'native-manager' },
+  })),
+}));
 vi.mock('ai', () => ({ generateText: model, Output: { object: vi.fn() } }));
 vi.mock('@ai-sdk/google', () => ({ google: vi.fn() }));
-vi.mock('@tuturuuu/supabase/next/server', () => ({ createAdminClient: admin }));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: admin,
+  createClient: vi.fn(async () => ({})),
+}));
 vi.mock('@tuturuuu/users-core/lib/user-groups/route-auth', () => ({
   getUserGroupRoutePermissions: vi.fn(async () => ({
     containsPermission: () => allowed.value,
@@ -29,6 +42,7 @@ beforeEach(() => {
     },
   });
   admin.mockReset();
+  consent.mockReset().mockResolvedValue(false);
   allowed.value = true;
 });
 const id = (n: number) =>
@@ -538,6 +552,25 @@ describe('actual first-class manual feedback generation', () => {
     admin.mockResolvedValue(f.client);
     expect((await call()).status).toBe(404);
     expect(f.writes).toEqual([]);
+    expect(model).not.toHaveBeenCalled();
+  });
+});
+
+describe('Mira AI data consent', () => {
+  it('refuses a native caller without consent before claiming the report', async () => {
+    const response = await POST(
+      new Request('https://consumer.invalid/generate', {
+        headers: { Authorization: 'Bearer native-jwt' },
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ wsId: id(1), reportId: id(4) }) }
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'ai_consent_required',
+    });
+    expect(consent).toHaveBeenCalledWith('native-manager', undefined);
+    expect(admin).not.toHaveBeenCalled();
     expect(model).not.toHaveBeenCalled();
   });
 });

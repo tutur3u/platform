@@ -1,4 +1,7 @@
-import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
+import {
+  enforceAiDataConsent,
+  requiresAiDataConsent,
+} from '@tuturuuu/ai/chat/ai-data-consent';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -43,7 +46,8 @@ export async function POST(request: Request) {
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  // A temp token carries no bearer, so a native caller is checked here.
+  // A temp token carries no bearer, so a native caller is checked here and
+  // its token is bound to consent: validation re-checks it on every use.
   const consentRefusal = await enforceAiDataConsent(request, user.id);
   if (consentRefusal) return consentRefusal;
 
@@ -168,6 +172,7 @@ export async function POST(request: Request) {
     ...(normalizedWsId ? { wsId: normalizedWsId } : {}),
     ...(tokenCreditWsId ? { creditWsId: tokenCreditWsId } : {}),
     creditSource,
+    ...(requiresAiDataConsent(request) ? { aiConsentRequired: true } : {}),
   });
 
   return NextResponse.json({
