@@ -622,6 +622,19 @@ coordination notes.
   ```
 
   The second command must print nothing for a deliverable commit.
+- Before every push, verify the full commit range against `origin/main` touches
+  only intended files:
+
+  ```bash
+  git fetch origin main --quiet
+  git diff --stat origin/main...HEAD
+  ```
+
+  When building a commit with `git commit-tree`, always parent it on the exact
+  commit the index was built from (`-p "$(git rev-parse HEAD)"`, never a freshly
+  fetched `origin/main` that may have advanced past the worktree base), and
+  confirm `git show --stat HEAD` contains no unrelated files or accidental
+  reverts before pushing.
 - Release the commit window after the commit operation completes or aborts.
 - If checks fail on unrelated dirty files, do not fix them for convenience.
   Report the blocker and keep your diff scoped.
