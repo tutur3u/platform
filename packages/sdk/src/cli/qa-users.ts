@@ -105,7 +105,11 @@ function userLine(
   return `  #${user.ordinal}  ${user.email}  ${user.userId}  ${user.tier}${user.staff ? '  staff' : ''}`;
 }
 
-async function create(options: QaCliOptions, deps: QaCliDeps) {
+async function create(
+  options: QaCliOptions,
+  deps: QaCliDeps,
+  requireWorkspace = false
+) {
   const { flags } = options;
   const count = Number(getFlag(flags, 'count') ?? '1');
   if (!Number.isInteger(count) || count < 1 || count > 50)
@@ -164,6 +168,9 @@ async function create(options: QaCliOptions, deps: QaCliDeps) {
     failed: result.failed,
     credentials: stored,
   };
+  if (requireWorkspace && result.users.length && !result.runWorkspaceId) {
+    throw new Error(`QA run ${result.runId} has no isolated workspace.`);
+  }
   emit(
     deps,
     options.json,
@@ -192,8 +199,9 @@ async function create(options: QaCliOptions, deps: QaCliDeps) {
   );
   if (!users.length)
     throw new Error(
-      `No QA accounts were created in run ${result.runId}; see the failed steps above.`
+      `No QA accounts were created in run ${result.runId}; see the run ledger for failed steps.`
     );
+  return summary;
 }
 
 async function session(options: QaCliOptions, deps: QaCliDeps, id?: string) {
@@ -303,14 +311,91 @@ async function list(options: QaCliOptions, deps: QaCliDeps) {
   );
 }
 
+async function runProductQaCommand(options: QaCliOptions, deps: QaCliDeps) {
+  const [command, subcommand, ...extra] = options.positionals;
+  const { flags } = options;
+  const product = getFlag(flags, 'product') ?? 'tuturuuu';
+  if (flags.product === true || (product !== 'tuturuuu' && product !== 'meet')) {
+    throw new Error('Supported QA products are tuturuuu and meet.');
+  }
+
+  const issue = command === 'account' && subcommand === 'issue';
+  const mint = command === 'session' && subcommand === undefined;
+  const listing = command === 'list' && subcommand === undefined;
+  const sweeping = command === 'cleanup' && subcommand === undefined;
+  if (extra.length || !(issue || mint || listing || sweeping)) {
+    throw new Error('Unknown QA command. Run `ttr qa --help`.');
+  }
+
+  const allowed = ['product', 'json'];
+  if (issue || mint) allowed.push('role', 'ttl', 'workspace');
+  if (mint) allowed.push('out');
+  for (const key of Object.keys(flags)) {
+    if (!allowed.includes(key) || (key !== 'json' && !getFlag(flags, key))) {
+      throw new Error('Unsupported or missing QA option value. Run `ttr qa --help`.');
+    }
+  }
+
+  if (listing) return list({ ...options, flags: {} }, deps);
+  if (sweeping) return cleanup({ ...options, flags: { expired: true } }, deps);
+  if (getFlag(flags, 'role') !== 'member') {
+    throw new Error('Tuturuuu and Meet support --role member.');
+  }
+  if ((getFlag(flags, 'workspace') ?? 'qa') !== 'qa') {
+    throw new Error('Only --workspace qa is supported.');
+  }
+  const out = getFlag(flags, 'out');
+  if (mint && !out) throw new Error('Pass --out <storageState.json>.');
+
+  // Both surfaces use the same ledger. A new run always gets its own workspace.
+  const ttl = getFlag(flags, 'ttl') ?? '2h';
+  if (parseQaTtl(ttl) > 7200) throw new Error('Product QA accounts expire within 2h.');
+  const account = await create(
+    {
+      ...options,
+      flags: {
+        purpose: product === 'meet' ? 'fleet-meet' : 'fleet-tuturuuu',
+        ttl,
+        workspace: true,
+        'password-store': 'file',
+      },
+    },
+    mint ? { ...deps, write: () => {} } : deps,
+    true
+  );
+  if (!mint) return;
+
+  const user = account.users[0];
+  if (!user) throw new Error('The QA account could not be created.');
+  try {
+    await session(
+      {
+        ...options,
+        flags: {
+          ...(out ? { out } : {}),
+          origin:
+            product === 'meet'
+              ? 'https://meet.tuturuuu.com'
+              : 'https://tuturuuu.com',
+        },
+      },
+      deps,
+      user.userId
+    );
+  } catch {
+    throw new Error(
+      `Session issuance failed for QA user ${user.userId} in run ${account.runId}. Recover with \`ttr qa users session\` or clean up the run.`
+    );
+  }
+}
+
 /** `ttr qa users <create|list|session|delete|cleanup>`; positionals start after `qa`. */
 export async function runQaCommand(
   options: QaCliOptions,
   deps: QaCliDeps = defaultDeps()
 ) {
   const [resource, action = 'list', id] = options.positionals;
-  if (resource !== 'users')
-    throw new Error('Unknown qa command. Run `ttr qa --help`.');
+  if (resource !== 'users') return runProductQaCommand(options, deps);
   if (action === 'create') return create(options, deps);
   if (action === 'list') return list(options, deps);
   if (action === 'session') return session(options, deps, id);
@@ -334,6 +419,11 @@ export function qaHelp(action?: string) {
       ? [`  ${usage[action]}`]
       : Object.values(usage).map((line) => `  ${line}`);
   return `QA test users (root permission manage_qa_test_users)
+
+  ttr qa account issue --product <tuturuuu|meet> --role member [--ttl 2h] [--workspace qa] [--json]
+  ttr qa session --product <tuturuuu|meet> --role member --out <storageState.json> [--json]
+  ttr qa list [--product <tuturuuu|meet>] [--json]
+  ttr qa cleanup [--product <tuturuuu|meet>] [--json]
 
 ${lines.join('\n')}
 

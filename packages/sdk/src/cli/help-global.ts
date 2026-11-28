@@ -28,7 +28,7 @@ export function getGlobalHelp() {
     '  people <ls|search|show|link|fact|rules|consent|...>  people registry (managers)',
     '  flags <list|get|set|unset|audit>  platform feature flag rules (platform admins)',
     '  accounts <command>          manage staff and disposable fleet accounts',
-    '  qa users <create|list|session|delete|cleanup>  disposable QA test accounts',
+    '  qa <account issue|session|list|cleanup|users>  disposable QA accounts and sessions',
     '  employees create <address> --name <name>  staff account with a mailbox',
     '  calendar <events|schedule|sources|calendars|categories|accounts|auth|provider-calendars|connections>',
     '  finance <wallets|checkpoints|transactions|transfers|categories|tags|budgets|recurring>',

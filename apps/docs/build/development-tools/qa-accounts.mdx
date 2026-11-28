@@ -1,0 +1,23 @@
+---
+title: QA accounts
+description: Issue disposable Tuturuuu and Meet accounts and browser sessions from the CLI.
+---
+
+The QA CLI uses the existing [QA test user operator](/build/development-tools/qa-test-users)
+and its root workspace permission. Each issue or session command creates a
+fresh QA identity and isolated workspace. The initial identity owns that QA
+workspace. Use the legacy run workflow to add participants to the same space.
+
+```sh
+ttr qa account issue --product tuturuuu --role member --ttl 2h --workspace qa --json
+ttr qa session --product meet --role member --out ./storageState.json --json
+ttr qa list
+ttr qa cleanup
+```
+
+The CLI writes credentials and Playwright state to owner-only files. Use a
+private output directory. Both products share the same operator ledger.
+Cleanup acts on expired identities. To recover a failed session command,
+use the reported run and user IDs with the legacy session and cleanup commands.
+
+The product commands currently support the member role on Tuturuuu and Meet.

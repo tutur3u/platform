@@ -164,6 +164,55 @@ function expectNoSecrets(text: string) {
 }
 
 describe('qa users', () => {
+  it('issues a QA-only workspace and writes a Meet browser session', async () => {
+    const target = join(home, 'storageState.json');
+    const origin = 'https://meet.tuturuuu.com';
+    const { client, fetch } = fixture((url) =>
+      url.endsWith('/session')
+        ? Response.json({ ...minted, origin })
+        : Response.json({ ...created, runWorkspaceId: USER }, { status: 201 })
+    );
+    const { deps: d, out } = deps();
+    await runQaCommand(
+      {
+        client,
+        json: true,
+        positionals: ['session'],
+        flags: { product: 'meet', role: 'member', out: target },
+      },
+      d
+    );
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({
+      purpose: 'fleet-meet',
+      ttlSeconds: 7200,
+      workspace: true,
+      staff: false,
+      count: 1,
+    });
+    expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toEqual({ origin });
+    const state = await readPrivate(target);
+    expect(state.mode).toBe(0o600);
+    expect(JSON.parse(state.text).cookies[1].domain).toBe('meet.tuturuuu.com');
+    expectNoSecrets(out.join(''));
+  });
+
+  it('refuses unsupported products, privileged roles and real scopes before a request', async () => {
+    const { client, fetch } = fixture(() => Response.json(created));
+    const { deps: d } = deps();
+    for (const flags of [
+      { product: 'edufest', role: 'member' },
+      { product: 'tuturuuu', role: 'admin' },
+      { product: 'tuturuuu', role: 'member', workspace: 'customer' },
+      { product: 'tuturuuu', role: 'member', ttl: '3h' },
+    ]) {
+      await expect(
+        runQaCommand({ client, flags, json: true, positionals: ['account', 'issue'] }, d)
+      ).rejects.toThrow();
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('parses TTLs within 15m..72h', () => {
     expect(parseQaTtl('24h')).toBe(86_400);
     expect(parseQaTtl('15m')).toBe(900);

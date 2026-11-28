@@ -373,6 +373,7 @@
               "build/development-tools/e2e-pilot-decision",
               "build/development-tools/test-strategy",
               "build/development-tools/qa-test-users",
+              "build/development-tools/qa-accounts",
               "build/development-tools/hosted-dev-supabase-preview",
               "build/development-tools/notification-email-freshness",
               "build/development-tools/ci-cd-pipelines",
