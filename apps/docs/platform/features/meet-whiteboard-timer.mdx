@@ -282,6 +282,19 @@ keep two-minute tickets.
   joiner only if its last load is at least 30 seconds old, so rapid reconnects
   cost no database read. The load time is stored with the board's state and
   survives an eviction.
+- A board at rest sends no element messages. Each editor orders the scene by
+  fractional index (ties by element id) whenever it applies elements from the
+  room, so every editor holds the same order, and it never sends the index
+  repairs Excalidraw makes while applying them: only a person's own edits go
+  out. Regression coverage: `board-sync-quiescence.test.ts` (four editors, two
+  of them guests, with a colliding index and a labelled guest arrow, go quiet
+  after one relay of each drawing) and `whiteboard-editor.test.tsx`.
+- A board saves the same way whoever drew on it. The room keeps a guest's
+  element in the guest schema's field order; the save hash covers the flush
+  body exactly as sent, and the platform compares stored and sent content with
+  every field sorted, so field order never fails a save. Regression coverage:
+  `board-sync-flush-digest.test.ts` and the checkpoint `route.test.ts` (a
+  guest-authored element saves, and its replay settles without a write).
 
 **Exceptions.** Rules for under-18 and unconfirmed participants and every host
 control are unchanged.

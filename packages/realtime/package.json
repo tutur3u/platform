@@ -28,6 +28,7 @@
     "./meet": "./src/meet/index.ts",
     "./meet/board-sync-access": "./src/meet/board-sync-access.ts",
     "./meet/board-sync-actor": "./src/meet/board-sync-actor.ts",
+    "./meet/board-sync-guest": "./src/meet/board-sync-guest.ts",
     "./meet/board-sync-merge": "./src/meet/board-sync-merge.ts",
     "./meet/board-sync-schema": "./src/meet/board-sync-schema.ts",
     "./meet/classroom-tools-schema": "./src/meet/classroom-tools-schema.ts",

@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
 import { verifyRealtimePayload } from '@tuturuuu/realtime/core/token';
 import { checkBoardOpen } from '@tuturuuu/realtime/meet/board-sync-access';
-import { canonicalScene } from '@tuturuuu/realtime/meet/board-sync-merge';
+import {
+  canonicalScene,
+  flushDigestText,
+} from '@tuturuuu/realtime/meet/board-sync-merge';
 import {
   BOARD_LIMITS,
   BOARD_TICKET_AUDIENCE,
@@ -197,12 +200,14 @@ export async function POST(request: Request) {
     }
 
     const flush = body.data;
-    if (sha256(canonicalScene(flush.elements as BoardElement[])) !== flush.hash)
-      return fail(400);
+    // The hash covers the body as sent; parsing reorders element keys.
+    const sentRaw = (raw as { elements: unknown[] }).elements;
+    if (sha256(flushDigestText(sentRaw)) !== flush.hash) return fail(400);
+    const content = canonicalScene(flush.elements as BoardElement[]);
     const settle = (row: Row) => {
       const { supported, updatedAt, preservedIds } = conflict(row);
       // The same content already stored means an earlier attempt landed.
-      return sha256(canonicalScene(supported)) === flush.hash
+      return canonicalScene(supported) === content
         ? respond({ updatedAt })
         : respond({ updatedAt, elements: supported, preservedIds }, 409);
     };

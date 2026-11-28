@@ -73,11 +73,42 @@ export function dedupeElementChanges(
   return Array.from(byId.values());
 }
 
+const fractionalIndex = (element: ExcalidrawElement) => {
+  const { index } = element as { index?: unknown };
+  return typeof index === 'string' && index.length > 0 ? index : null;
+};
+
+/**
+ * Orders a scene by fractional index (ties by id), with elements that have no
+ * index after the rest in their current order. Excalidraw requires indices to
+ * ascend along the scene array: when they do not, it re-assigns the offending
+ * indices on `updateScene` and bumps those elements' versions, which other
+ * peers would receive as edits. Ordering by index makes every peer hold the
+ * same order for the same elements, so a remote apply re-assigns nothing.
+ */
+export function orderByFractionalIndex(
+  elements: readonly ExcalidrawElement[]
+): ExcalidrawElement[] {
+  const indexed: ExcalidrawElement[] = [];
+  const unindexed: ExcalidrawElement[] = [];
+  for (const element of elements)
+    (fractionalIndex(element) === null ? unindexed : indexed).push(element);
+  // Plain code-unit comparison, as Excalidraw's fractional indices use.
+  indexed.sort((a, b) => {
+    const left = fractionalIndex(a)!;
+    const right = fractionalIndex(b)!;
+    if (left !== right) return left < right ? -1 : 1;
+    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  });
+  return [...indexed, ...unindexed];
+}
+
 /**
  * Merges remote elements into the local scene:
  * - a higher version wins;
  * - on equal versions the lower versionNonce wins, so every peer converges on
  *   the same element regardless of the order updates arrive in.
+ * The result is ordered by fractional index (`orderByFractionalIndex`).
  * Applying the same remote batch twice yields the same result.
  */
 export function mergeElements(
@@ -105,5 +136,5 @@ export function mergeElements(
     }
   }
 
-  return Array.from(elementMap.values());
+  return orderByFractionalIndex(Array.from(elementMap.values()));
 }

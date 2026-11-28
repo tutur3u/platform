@@ -287,11 +287,36 @@ export function chunkElements(
   return chunks;
 }
 
-/** Canonical JSON of a scene: elements by id, so equal scenes hash equally. */
+const byId = (elements: readonly BoardElement[]) =>
+  [...elements].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+/** A JSON value with every object's keys in sorted order, recursively. */
+function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value === null || typeof value !== 'object') return value;
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(value).sort())
+    sorted[key] = sortKeys((value as Record<string, unknown>)[key]);
+  return sorted;
+}
+
+/**
+ * Canonical JSON of a scene's content: elements by id and every object's keys
+ * sorted, so equal scenes compare equal however their elements were built.
+ * The room stores a guest's element in the guest schema's key order and a
+ * member's in the board schema's; the platform re-parses both in the board
+ * schema's order, so a comparison by key order would never match a guest's
+ * element.
+ */
 export function canonicalScene(elements: readonly BoardElement[]) {
-  return JSON.stringify(
-    [...elements]
-      .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-      .map((element) => element)
-  );
+  return JSON.stringify(byId(elements).map(sortKeys));
+}
+
+/**
+ * The text a flush's `hash` covers: the elements exactly as the flush body
+ * carries them, by id. The platform checks it against the body's own JSON
+ * before parsing, so it never depends on how a parser orders keys.
+ */
+export function flushDigestText(elements: readonly unknown[]) {
+  return JSON.stringify(byId(elements as BoardElement[]));
 }

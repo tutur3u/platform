@@ -17,6 +17,7 @@ import {
   applyBoundedChanges,
   canonicalScene,
   chunkElements,
+  flushDigestText,
   mergeElements,
   pruneTombstones,
   sceneElements,
@@ -213,7 +214,7 @@ export function createBoardRoom(deps: BoardRoomDeps) {
       elements: elements as BoardCheckpointBody['elements'],
       revision,
       baseUpdatedAt: meta.baseUpdatedAt,
-      hash: await deps.hash(canonicalScene(elements)),
+      hash: await deps.hash(flushDigestText(elements)),
     };
     let answer: Awaited<ReturnType<BoardRoomDeps['flush']>>;
     try {

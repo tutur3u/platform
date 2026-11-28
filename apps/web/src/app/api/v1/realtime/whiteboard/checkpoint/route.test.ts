@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { createHash } from 'node:crypto';
 import { signRealtimePayload } from '@tuturuuu/realtime/core/token';
-import { canonicalScene } from '@tuturuuu/realtime/meet/board-sync-merge';
+import { flushDigestText } from '@tuturuuu/realtime/meet/board-sync-merge';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
@@ -69,9 +69,7 @@ const rect = (id: string, version = 1) => ({
   versionNonce: 1,
 });
 const hash = (elements: unknown[]) =>
-  createHash('sha256')
-    .update(canonicalScene(elements as never))
-    .digest('hex');
+  createHash('sha256').update(flushDigestText(elements)).digest('hex');
 function call(body: unknown, over: Record<string, unknown> = {}) {
   const token = signRealtimePayload(
     {
@@ -282,6 +280,32 @@ describe('whiteboard checkpoint route', () => {
     const response = await call(flush([rect('z')], 't1'));
     expect(response.status).toBe(409);
     expect((await response.json()).preservedIds).toEqual(['grew']);
+  });
+
+  it('saves a guest-authored element whose keys follow the guest schema', async () => {
+    // The room stores a guest's element in the guest schema's key order
+    // (`type` after the drawing fields); parsing moves `type` forward.
+    const guest = {
+      id: 'g',
+      version: 3,
+      versionNonce: 7,
+      x: 1,
+      y: 2,
+      index: 'a1',
+      boundElements: null,
+      type: 'arrow',
+    };
+    const first = await call(flush([guest], 't1'));
+    expect(first.status).toBe(200);
+    expect(state.updates).toHaveLength(1);
+
+    // A replay of the same content against what is now stored lands as success.
+    state.updates = [];
+    state.board!.snapshot = { elements: [guest], appState: {} };
+    state.board!.updated_at = 't2';
+    const replay = await call(flush([guest], 't1'));
+    expect(replay.status).toBe(200);
+    expect(state.updates).toHaveLength(0);
   });
 
   it('rejects a body whose hash does not match and malformed bodies', async () => {

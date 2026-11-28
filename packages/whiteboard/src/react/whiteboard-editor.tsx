@@ -21,7 +21,7 @@ import type {
   WhiteboardPersistence,
   WhiteboardTransport,
 } from '../adapters';
-import { mergeElements } from '../sync/elements';
+import { applyRemoteElements } from '../sync/remote-apply';
 import { getSelectionSignature } from '../sync/selection';
 import type { WhiteboardPresenceMember } from '../sync/collaborators';
 import type {
@@ -117,6 +117,7 @@ export const WhiteboardEditor = forwardRef<
 
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const previousElementsRef = useRef<readonly ExcalidrawElement[]>([]);
+  const applyingRemoteRef = useRef(false);
   const lastSelectionSignatureRef = useRef('');
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -166,10 +167,17 @@ export const WhiteboardEditor = forwardRef<
       const api = apiRef.current;
       if (!api) return;
 
-      const merged = mergeElements(api.getSceneElements(), remote);
-
-      previousElementsRef.current = merged.map((el) => ({ ...el }));
-      api.updateScene({ elements: merged });
+      // A change Excalidraw reports while it applies the batch is the batch.
+      applyingRemoteRef.current = true;
+      try {
+        previousElementsRef.current = applyRemoteElements(
+          api.getSceneElements(),
+          remote,
+          (elements) => api.updateScene({ elements })
+        );
+      } finally {
+        applyingRemoteRef.current = false;
+      }
     }, []),
     onError: useCallback((error: Error) => {
       onNotifyRef.current?.({ kind: 'collaboration-error', error });
@@ -197,7 +205,10 @@ export const WhiteboardEditor = forwardRef<
 
       const hasChanges = hasUnsavedChanges(elements);
 
-      if (previousElementsRef.current.length > 0 || elements.length > 0) {
+      if (
+        !applyingRemoteRef.current &&
+        (previousElementsRef.current.length > 0 || elements.length > 0)
+      ) {
         broadcastElementChanges(previousElementsRef.current, elements);
       }
 

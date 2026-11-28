@@ -2894,7 +2894,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/realtime/whiteboard/checkpoint/route.ts",
-    "sourceSha256": "4f3e34a9e9a414c5e99f98cb6a4479892006429440b9a1a690077a97b577bc2e",
+    "sourceSha256": "f6351345dea0c303c30e8cc7bd30130ab8d91d885e26b6dc203ed041196f3c02",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
