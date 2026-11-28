@@ -7,6 +7,8 @@ import {
 import { type LanguageModel, stepCountIs, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { normalizeStableModelId } from '../../credits/model-mapping';
+import type { CreatePostOptions } from './create-post-options';
+import { enforceAiDataConsent } from '../ai-data-consent';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
@@ -30,7 +32,6 @@ import {
   releaseAiPersistenceRequest,
 } from './request-persistence-lease';
 import {
-  type AiRouteAuthResult,
   authorizeAiWorkspace,
   isInternalTuturuuuAiUser,
   resolveAiRouteAuth,
@@ -66,30 +67,7 @@ import {
 } from './stream-finish-persistence';
 import { createPersistingSseStreamConsumer } from './stream-lifetime';
 
-export function createPOST(
-  _options: {
-    serverAPIKeyFallback?: boolean;
-    /** Trusted in-process instructions; never read from the request body. */
-    serverSystemInstructions?: string;
-    /** Direct user-funded chat. It bypasses gateway memory, credits, and provider tools. */
-    subscription?: {
-      resolveModel: (
-        userId: string,
-        model: string | undefined
-      ) => Promise<LanguageModel>;
-      onError: () => string;
-      errorResponse?: (error: unknown) => {
-        message: string;
-        status: number;
-        code: string;
-      };
-    };
-    /** Gateway provider prefix for bare model names (e.g., 'openai', 'anthropic', 'vertex'). Defaults to 'google'. */
-    defaultProvider?: string;
-    requireWorkspaceId?: boolean;
-    resolveAuth?: (request: NextRequest) => Promise<AiRouteAuthResult | null>;
-  } = {}
-) {
+export function createPOST(_options: CreatePostOptions = {}) {
   const defaultProvider = _options.defaultProvider ?? 'google';
 
   return async function handler(req: NextRequest): Promise<Response> {
@@ -160,6 +138,14 @@ export function createPOST(
         (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
       const { messageInsertMode = 'rpc', supabase, user } = auth;
+      if (isMiraMode && !_options.subscription) {
+        const consentRefusal = await enforceAiDataConsent(
+          req,
+          user.id,
+          sbAdmin
+        );
+        if (consentRefusal) return consentRefusal;
+      }
       let subscriptionModel: LanguageModel | undefined;
       if (_options.subscription) {
         try {

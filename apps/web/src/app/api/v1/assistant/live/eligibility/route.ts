@@ -16,6 +16,7 @@ export async function POST(request: NextRequest) {
   return liveEligibilityResponse({
     request,
     wsId: parsed.data.wsId,
+    requireAiDataConsent: true,
     resolveBillingWsId: ({ userId }) =>
       resolveMobileLiveBillingWorkspace(userId),
   });

@@ -398,6 +398,7 @@
                 "group": "Data protection",
                 "pages": [
                   "platform/data-protection-standard",
+                  "platform/chat-safety-and-ai-consent",
                   "platform/data-protection/inventory",
                   "platform/data-protection/account-deletion",
                   "platform/data-protection/delivery-plan",

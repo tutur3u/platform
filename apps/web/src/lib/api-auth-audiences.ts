@@ -54,7 +54,7 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   },
   {
     pattern:
-      /^\/api\/v1\/users\/me\/(?:analytics-consent|avatar|configs|default-workspace|email|hidden-workspaces|profile)(?:\/|$)/u,
+      /^\/api\/v1\/users\/me\/(?:ai-data-consent|analytics-consent|avatar|configs|default-workspace|email|hidden-workspaces|profile)(?:\/|$)/u,
     targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
   },
   {

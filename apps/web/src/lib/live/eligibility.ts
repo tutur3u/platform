@@ -23,6 +23,7 @@ export type LiveBlockReason =
   | 'credits_exhausted'
   | 'limit_reached'
   | 'role_not_allowed'
+  | 'ai_consent_required'
   | 'paused';
 
 export interface LiveBillingWorkspace {
@@ -288,6 +289,7 @@ const BLOCK_STATUS: Record<LiveBlockReason, number> = {
   credits_exhausted: 402,
   limit_reached: 429,
   role_not_allowed: 403,
+  ai_consent_required: 403,
   paused: 503,
 };
 

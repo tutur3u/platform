@@ -2,12 +2,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  type ChatFriendRequest,
   type ChatFriendRequests,
   callPrivateChatRpc,
   chatRpcErrorResponse,
   getChatRpcErrorStatus,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import { getChatBlockedUserIds } from '@/lib/chat/safety';
 
 type RouteParams = {
   wsId: string;
@@ -31,18 +33,24 @@ export const GET = withSessionAuth<RouteParams>(
     if (!context.ok) return context.response;
 
     try {
-      const requests = await callPrivateChatRpc<ChatFriendRequests>(
-        'chat_list_friend_requests',
-        {
+      const [requests, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatFriendRequests>('chat_list_friend_requests', {
           p_actor_user_id: auth.user.id,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
+        }),
+        getChatBlockedUserIds(auth.user.id),
+      ]);
+      const visible = (list: ChatFriendRequest[] | undefined) =>
+        (list ?? []).filter(
+          (request) =>
+            !blocked.has(request.requesterUserId) &&
+            !blocked.has(request.recipientUserId)
+        );
 
       return NextResponse.json({
-        accepted: requests?.accepted ?? [],
-        incoming: requests?.incoming ?? [],
-        outgoing: requests?.outgoing ?? [],
+        accepted: visible(requests?.accepted),
+        incoming: visible(requests?.incoming),
+        outgoing: visible(requests?.outgoing),
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load friend requests');

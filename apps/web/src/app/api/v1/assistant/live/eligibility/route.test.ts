@@ -15,6 +15,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => mocks);
+const consent = vi.hoisted(() => ({ granted: true }));
+vi.mock('@tuturuuu/ai/chat/ai-data-consent', () => ({
+  hasAiDataConsent: async () => consent.granted,
+  aiConsentRequiredResponse: () =>
+    Response.json(
+      { code: 'ai_consent_required', message: 'ai_consent_required' },
+      { status: 403 }
+    ),
+}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
   verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
@@ -100,6 +109,20 @@ describe('mobile Live eligibility pre-check', () => {
     const body = await (await post({ wsId: accessWs })).json();
     expect(body).toMatchObject({ eligible: false, reason: 'role_not_allowed' });
     expect(mocks.resolveMobileLiveBillingWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('reports ai_consent_required until Mira data sharing is allowed', async () => {
+    mocks.getTier.mockResolvedValue('PRO');
+    consent.granted = false;
+    try {
+      const body = await (await post({ wsId: accessWs })).json();
+      expect(body).toMatchObject({
+        eligible: false,
+        reason: 'ai_consent_required',
+      });
+    } finally {
+      consent.granted = true;
+    }
   });
 
   it('rejects an unauthenticated request', async () => {

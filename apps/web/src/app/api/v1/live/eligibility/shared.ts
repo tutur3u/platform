@@ -1,3 +1,4 @@
+import { hasAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -24,9 +25,12 @@ export async function liveEligibilityResponse({
   request,
   wsId,
   resolveBillingWsId,
+  requireAiDataConsent = false,
 }: {
   request: NextRequest;
   wsId: string;
+  /** Native Mira Live: refuse until the user allowed sharing with Gemini. */
+  requireAiDataConsent?: boolean;
   resolveBillingWsId: (args: {
     accessWsId: string;
     supabase: TypedSupabaseClient;
@@ -72,6 +76,14 @@ export async function liveEligibilityResponse({
       userId: user.id,
       billingWsId,
     });
+    if (
+      eligibility.eligible &&
+      requireAiDataConsent &&
+      !(await hasAiDataConsent(user.id))
+    ) {
+      eligibility.eligible = false;
+      eligibility.reason = 'ai_consent_required';
+    }
     return Response.json(serializeLiveEligibility(eligibility), {
       headers: CACHE_HEADERS,
     });

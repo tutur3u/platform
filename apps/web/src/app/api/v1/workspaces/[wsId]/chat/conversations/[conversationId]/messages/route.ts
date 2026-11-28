@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { miraClientCapabilitiesInputSchema } from '@tuturuuu/ai/tools/mira-client-capabilities';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -22,6 +23,10 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import {
+  filterBlockedSenders,
+  getChatBlockedUserIds,
+} from '@/lib/chat/safety';
 import {
   getChatRealtimeAudience,
   publishChatRealtimeEvent,
@@ -138,19 +143,22 @@ export const GET = withSessionAuth<RouteParams>(
         return NextResponse.json({ messages });
       }
 
-      const messages = await callPrivateChatRpc<ChatMessage[]>(
-        'chat_list_messages',
-        {
+      const [messages, blocked] = await Promise.all([
+        callPrivateChatRpc<ChatMessage[]>('chat_list_messages', {
           p_actor_user_id: auth.user.id,
           p_before: before || null,
           p_conversation_id: params.conversationId,
           p_limit: limit,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
+        }),
+        getChatBlockedUserIds(auth.user.id),
+      ]);
 
+      // People the reader blocked stay hidden, including in shared groups.
       return NextResponse.json({
-        messages: (messages ?? []).map(normalizeChatMessageTimestamp),
+        messages: filterBlockedSenders(messages ?? [], blocked).map(
+          normalizeChatMessageTimestamp
+        ),
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat messages');
@@ -198,6 +206,15 @@ export const POST = withSessionAuth<RouteParams>(
     }));
 
     const miraMode = parsed.data.miraMode === true;
+
+    // Mira content goes to Google Gemini only with the user's stored consent.
+    if (
+      parsed.data.initialConversation ||
+      isAiChatConversationId(params.conversationId)
+    ) {
+      const consentRefusal = await enforceAiDataConsent(request, auth.user.id);
+      if (consentRefusal) return consentRefusal;
+    }
 
     if (parsed.data.initialConversation) {
       if (

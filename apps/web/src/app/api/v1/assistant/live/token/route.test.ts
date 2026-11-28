@@ -21,6 +21,15 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => mocks);
+const consent = vi.hoisted(() => ({ granted: true }));
+vi.mock('@tuturuuu/ai/chat/ai-data-consent', () => ({
+  hasAiDataConsent: async () => consent.granted,
+  aiConsentRequiredResponse: () =>
+    Response.json(
+      { code: 'ai_consent_required', message: 'ai_consent_required' },
+      { status: 403 }
+    ),
+}));
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => mocks);
 vi.mock('@tuturuuu/utils/ai-temp-auth', () => mocks);
 vi.mock('@tuturuuu/utils/workspace-helper', () => mocks);
@@ -283,6 +292,22 @@ describe('mobile Live token shared-allowance admission', () => {
       expiresAt: expect.any(String),
     });
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses to mint a Gemini Live token without AI data consent', async () => {
+    consent.granted = false;
+    try {
+      const response = await POST(request());
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        code: 'ai_consent_required',
+        message: 'ai_consent_required',
+      });
+      expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    } finally {
+      consent.granted = true;
+    }
   });
 
   it('releases the slot when chat preparation returns before minting', async () => {

@@ -1,0 +1,66 @@
+---
+title: "Chat safety and Mira AI data consent"
+description: "How people report and block others in chat, report Mira responses, and allow or revoke sharing their content with Google Gemini."
+updatedAt: "2026-11-28"
+audience: developers
+---
+
+## Decision
+
+Decision (2026-11-28): both store-review requirements below ship before the public store submission.
+
+- **User-generated content** (Apple 1.2, Play UGC and AI-generated content policies). People can report a user or a message and block a user in chat. They can also report a Mira response.
+- **Third-party AI data sharing** (Apple 5.1.2(i)). Mira sends nothing to Google Gemini until the person allows it in a disclosure step. The choice is stored per user on the server and can be revoked in Settings.
+
+Both rules are enforced on the server. Client checks only improve the experience.
+
+## Blocking
+
+| Rule | Where it's enforced |
+|---|---|
+| Blocks are per user and apply across every workspace. | `private.chat_user_blocks` |
+| Neither person can message the other in a direct conversation. A send returns `403` with `chat_blocked`. | A `BEFORE INSERT` trigger on `private.chat_messages`, so every send path is covered |
+| Neither person can start a DM with the other or add the other to a group. | `private.chat_can_invite_user` |
+| Friend requests between the pair are dropped silently. The send still returns `{queued:true}`, so a block (or whether an email has an account) is never revealed. Accepting across a block is refused. Blocking also ends the friendship and any pending request. | Triggers on `private.chat_friend_requests`, plus `private.chat_block_user` |
+| The blocker doesn't see the blocked person's messages (group conversations included), directory entries or friend requests. | Web API read routes, via `getChatBlockedUserIds` in `apps/web/src/lib/chat/safety.ts` |
+| Realtime events aren't filtered on the server. The mobile client drops incoming messages from blocked senders. | `apps/mobile/lib/features/chat` |
+| The blocked person isn't notified. | |
+
+Hiding is one-way: content is hidden for the person who blocked. Sending and inviting are refused in both directions.
+
+**Known limit:** message pages are filtered after the database applies `limit`, so a page can come back shorter than requested.
+
+## Reports
+
+`POST /api/v1/workspaces/{wsId}/chat/reports` takes one of these subjects:
+
+- `user`: allowed only when the reporter shares a workspace, a friend request or a conversation with that person.
+- `message`: someone else's user message in a conversation the reporter can open.
+- `ai_response`: a Mira reply. That's an `ai-chat-*` / `legacy-ai-*` conversation owned by the reporter, or an assistant message in a native conversation the reporter can open.
+
+The server finds the message and **snapshots its content from the database**. Reports never trust text supplied by the client, and a snapshot survives a later edit or delete. Each reporter has one open report per subject (a repeat returns the existing report) and at most 30 reports an hour (`429`). An optional `alsoBlock` blocks the sender that SQL resolved, never an id sent by the client.
+
+Reports land in `private.chat_content_reports`. Verified Tuturuuu staff review them in the dashboard's **Chat reports** inbox, next to Product feedback, through `GET` and `PATCH /api/v1/chat-reports`. Both use the same staff gate as the product-feedback inbox. The app tells reporters "we review every report within 24 hours". That response time is a commitment the moderation owner staffs.
+
+## Mira AI data consent
+
+- Storage: `private.user_ai_data_consent` holds the current decision (provider `google_gemini`, `policy_version`, `granted_at`, `withdrawn_at`). `private.user_ai_data_consent_events` is the append-only audit log.
+- API: `GET` and `PUT /api/v1/users/me/ai-data-consent`, with `{granted, source, policyVersion}`. The current policy version is `2026-11-28`.
+- Default: not allowed. A failed lookup also counts as not allowed.
+- Enforcement. Each of these returns `403 {code: "ai_consent_required"}` without consent:
+  - native AI conversation sends: `POST .../chat/conversations/{id}/messages` for AI conversations and first messages;
+  - the shared Mira chat handler (`createPOST` in Mira mode, used by `/api/ai/chat`);
+  - the mobile Live token mint (`/api/v1/assistant/live/token`). Live audio and video go straight from the device to Google, so the token is the only server-side gate.
+
+  The mobile Live eligibility pre-check reports `reason: "ai_consent_required"`.
+- Shared helper: `packages/ai/src/chat/ai-data-consent.ts`.
+- Mobile: the consent sheet appears before the first text send, voice message, attachment upload or Live start (camera and screen included). Settings › Privacy has a switch to revoke. The on-device model needs no consent.
+
+**Intentional exception:** the server requires consent from native clients, meaning bearer-token requests other than first-party `ttr_app_*` app sessions. Browser sessions are exempt until a web consent surface ships. The web dashboard and the web Live token route (`/api/v1/live/token`) are unchanged. The iOS and Android apps are the store-distributed surfaces this decision covers.
+
+## Regression coverage
+
+- Database: `apps/database/supabase/tests/chat-user-safety-and-ai-consent.sql`. It covers DM refusal across a block, silent friend-request drops, report authorization and snapshots, consent defaults, revoke and the append-only audit log.
+- Web API: `chat/blocks/route.test.ts`, `chat/reports/route.test.ts`, `conversations/[conversationId]/messages/route.safety.test.ts` (Mira refuses without consent, fails closed, blocked send `403`, blocked senders hidden) and `users/me/ai-data-consent/route.test.ts`. The Live `token` and `eligibility` route tests cover the consent refusal.
+- Shared gate: `packages/ai/src/chat/ai-data-consent.test.ts`.
+- Mobile widget tests: `apps/mobile/test/features/chat/` and `apps/mobile/test/features/assistant/`.

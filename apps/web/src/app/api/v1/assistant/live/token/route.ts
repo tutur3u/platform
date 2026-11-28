@@ -1,3 +1,7 @@
+import {
+  aiConsentRequiredResponse,
+  hasAiDataConsent,
+} from '@tuturuuu/ai/chat/ai-data-consent';
 import { Modality, ThinkingLevel, Type } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
@@ -215,6 +219,8 @@ export async function POST(request: Request) {
       resolveLiveEligibility({ userId: actor.id, billingWsId })
     );
     if (!eligibility.eligible) return liveBlockedResponse(eligibility);
+    // Mira Live streams voice, camera and screen to Gemini: consent first.
+    if (!(await hasAiDataConsent(user.id))) return aiConsentRequiredResponse();
     const isFree = eligibility.isFree;
     const resolvedModel = model ?? LIVE_MODELS.flash;
     const allowedModels = new Set<string>(
