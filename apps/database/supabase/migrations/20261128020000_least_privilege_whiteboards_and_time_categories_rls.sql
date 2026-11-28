@@ -17,6 +17,11 @@
 --      Guests and non-members are denied.
 --    - UPDATE / DELETE: active workspace members holding
 --      `manage_workspace_settings` or `manage_time_tracking_requests`.
+--
+-- Trigger inventory addendum (has_workspace_permission caller added here; it
+-- is a non-callable BEFORE UPDATE trigger that evaluates auth.uid() for
+-- manage_workspace_settings on old.ws_id and cannot check another user):
+--   private.enforce_workspace_whiteboard_update()
 
 -- ============================================================================
 -- 1. public.workspace_whiteboards
