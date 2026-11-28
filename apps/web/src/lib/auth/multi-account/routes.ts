@@ -14,6 +14,7 @@ export const WEB_WORKSPACE_ROUTE_SEGMENTS = new Set([
   'calendar',
   'changelog',
   'chat',
+  'chat-reports',
   'crawlers',
   'cron',
   'datasets',

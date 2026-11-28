@@ -90,6 +90,7 @@ export const WORKSPACE_CHILD_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   'billing',
   'calendar',
   'changelog',
+  'chat-reports',
   'crawlers',
   'cron',
   'datasets',
