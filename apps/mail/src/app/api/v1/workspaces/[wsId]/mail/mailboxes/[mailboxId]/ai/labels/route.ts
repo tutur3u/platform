@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -63,6 +64,9 @@ export async function POST(
     if (!access) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const consentResponse = await enforceAiDataConsent(request, ctx.user.id);
+    if (consentResponse) return consentResponse;
 
     const model = await withAiMemory({
       customId: `mail-labels-${crypto.randomUUID()}`,

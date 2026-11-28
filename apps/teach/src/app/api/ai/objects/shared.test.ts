@@ -28,6 +28,10 @@ const mocks = vi.hoisted(() => ({
   withAiMemory: vi.fn(async ({ model }: { model: unknown }) => model),
 }));
 
+vi.mock('@tuturuuu/ai/chat/ai-data-consent', () => ({
+  // Consent is granted here; the consent gate has its own coverage.
+  enforceAiDataConsent: vi.fn(async () => null),
+}));
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: Parameters<typeof mocks.google>) => mocks.google(...args),
 }));

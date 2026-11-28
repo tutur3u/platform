@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   createMeteredTextEmbedding,
   GEMINI_EMBEDDING_2_DIMENSIONS,
@@ -41,6 +42,9 @@ export async function POST(request: Request, { params }: Params) {
     if (authError || !user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const consentResponse = await enforceAiDataConsent(request, user.id);
+    if (consentResponse) return consentResponse;
 
     const parsedTaskId = z.guid().safeParse(taskId);
     if (!parsedTaskId.success) {

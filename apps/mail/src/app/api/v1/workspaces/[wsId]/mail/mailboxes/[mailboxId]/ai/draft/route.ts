@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
 import { reserveNestedModelBudget } from '@tuturuuu/ai/credits/nested-budget';
 import {
@@ -39,6 +40,9 @@ export async function POST(
     if (!access) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const consentResponse = await enforceAiDataConsent(request, ctx.user.id);
+    if (consentResponse) return consentResponse;
 
     const thread = body.data.threadId
       ? await getMailThread({ ctx, mailboxId, threadId: body.data.threadId })

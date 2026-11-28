@@ -1,5 +1,6 @@
 import { safeErrorFields } from '@/lib/mail/log-safety';
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { authorizeAiWorkspace } from '@tuturuuu/ai/chat/google/route-auth';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (!user) return Response.json({ message: 'Forbidden' }, { status: 403 });
+
+    const consentResponse = await enforceAiDataConsent(req, user.id);
+    if (consentResponse) return consentResponse;
 
     if (tempAuth.status === 'valid') {
       const requestedWsId = wsId ?? tempAuth.context.wsId;

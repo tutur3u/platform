@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -160,6 +161,12 @@ export const POST = withSessionAuth(
           { status: 404 }
         );
       }
+
+      const consentResponse = await enforceAiDataConsent(
+        request,
+        context.user.id
+      );
+      if (consentResponse) return consentResponse;
 
       const creditCheck = await checkAiCredits(
         access.normalizedWsId,

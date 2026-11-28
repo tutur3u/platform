@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { executeConvertFileToMarkdown } from '@tuturuuu/ai/tools/executors/markitdown';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
@@ -223,13 +224,13 @@ async function cleanupGeneratedCourseArtifacts({
 export const POST = withSessionAuth(
   async (request, context) => {
     try {
-      // Use the request-scoped supabase client and session context provided
-      // by `withSessionAuth` so app-session and forwarded auth work consistently.
       const supabase = context.supabase;
 
       if (!context.user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
+      const denied = await enforceAiDataConsent(request, context.user.id);
+      if (denied) return denied;
 
       // 2. Parse & validate request body
       let rawBody: unknown;
@@ -668,7 +669,6 @@ export const POST = withSessionAuth(
         throw error;
       }
 
-      // 11. Return result
       return NextResponse.json({
         createdModules,
         quizResults,

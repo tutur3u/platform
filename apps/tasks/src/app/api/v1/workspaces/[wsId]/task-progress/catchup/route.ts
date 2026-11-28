@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -222,6 +223,15 @@ export async function POST(
       value,
     }));
     const intelligence = buildTaskProgressInsights(daily);
+
+    if (await enforceAiDataConsent(request, auth.user.id)) {
+      return respondDeterministic(
+        daily,
+        intelligence,
+        unitLabel,
+        'consent:ai_consent_required'
+      );
+    }
 
     let modelId: string;
     try {

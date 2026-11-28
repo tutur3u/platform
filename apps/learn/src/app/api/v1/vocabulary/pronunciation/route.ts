@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   checkAiCredits,
   deductAiCredits,
@@ -99,6 +100,9 @@ async function analyzePronunciation(
   request: NextRequest,
   { supabase, user }: SessionAuthContext
 ) {
+  const consentResponse = await enforceAiDataConsent(request, user.id);
+  if (consentResponse) return consentResponse;
+
   const apiKey =
     process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GOOGLE_API_KEY;
 

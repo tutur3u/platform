@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -149,6 +150,12 @@ ${difficultyInstruction}
 ${teacherContext?.trim() ? `Additional context/instructions: ${teacherContext.trim()}\n` : ''}
 Lesson Information:
 ${lessonInfo}`;
+
+      const consentResponse = await enforceAiDataConsent(
+        request,
+        context.user.id
+      );
+      if (consentResponse) return consentResponse;
 
       const creditCheck = await checkAiCredits(
         normalizedWsId,

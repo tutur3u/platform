@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -216,7 +217,6 @@ async function getAuthorizedUser(supabase: TypedSupabaseClient) {
   };
 }
 
-// Helper: parse and validate request body
 function parseRequestBody(rawBody: unknown) {
   const parsed = requestSchema.safeParse(rawBody);
   if (!parsed.success) {
@@ -301,7 +301,6 @@ async function getListIfProvided(
   };
 }
 
-// Helper: compute time context strings
 function computeTimeContext(clientTimezone?: string, clientTimestamp?: string) {
   const timezoneContext = (clientTimezone ?? '').trim() || 'UTC';
   let baseTime = clientTimestamp
@@ -315,7 +314,6 @@ function computeTimeContext(clientTimezone?: string, clientTimestamp?: string) {
   return { timezoneContext, clientIsoTimestamp, localTimeDescription };
 }
 
-// Helper: build system prompt
 function buildSystemPrompt(
   generateDescriptions: boolean,
   generatePriority: boolean,
@@ -343,7 +341,6 @@ function buildSystemPrompt(
   return promptInstructions.join('\n');
 }
 
-// Helper: normalize provided tasks
 function normalizeProvidedTasks(
   tasks: z.infer<typeof providedTaskSchema>[] | undefined
 ) {
@@ -645,6 +642,9 @@ export async function POST(
     let systemPrompt: string | null = null;
 
     if (shouldInvokeAI) {
+      const consentResponse = await enforceAiDataConsent(req, user.id);
+      if (consentResponse) return consentResponse;
+
       try {
         const resolvedModel = await resolvePlanModel({
           capability: 'language',

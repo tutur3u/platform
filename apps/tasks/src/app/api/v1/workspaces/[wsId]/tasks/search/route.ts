@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { createMeteredTextEmbedding } from '@tuturuuu/ai/embeddings/metered';
 import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -121,7 +122,12 @@ export const POST = withSessionAuth<Params>(
       let searchMode: SearchMode = mode;
       let fallbackReason: string | undefined;
 
-      if (mode !== 'text') {
+      // Native callers without AI data consent keep text search; the query
+      // is never sent to the embedding provider for them.
+      if (mode !== 'text' && (await enforceAiDataConsent(req, user.id))) {
+        fallbackReason = 'ai_consent_required';
+        searchMode = 'text';
+      } else if (mode !== 'text') {
         const embeddingResult = await createMeteredTextEmbedding({
           metadata: {
             operation: 'task_semantic_search',
@@ -220,7 +226,7 @@ export const POST = withSessionAuth<Params>(
       return NextResponse.json({
         ...(fallbackReason
           ? {
-              message: 'Task hybrid search fell back to text search',
+              message: `Task ${mode} search fell back to text search`,
               reason: fallbackReason,
             }
           : {}),

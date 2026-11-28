@@ -30,6 +30,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   generateObject: vi.fn(),
   google: vi.fn(),
+  lookupAiDataConsent: vi.fn(),
   resolveMailRouteContext: vi.fn(),
   validateAiTempAuthRequest: vi.fn(),
   withAiMemory: vi.fn(),
@@ -39,6 +40,10 @@ vi.mock('@ai-sdk/google', () => ({ google: mocks.google }));
 vi.mock('@tuturuuu/ai/memory', () => ({ withAiMemory: mocks.withAiMemory }));
 vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
   validateAiTempAuthRequest: mocks.validateAiTempAuthRequest,
+}));
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: mocks.lookupAiDataConsent,
 }));
 vi.mock('ai', () => ({ generateObject: mocks.generateObject }));
 vi.mock('@/lib/mail/auth', () => ({
@@ -107,6 +112,29 @@ describe('email draft route auth', () => {
     const response = await POST(request());
 
     expect(response.status).toBe(403);
+    expect(mocks.generateObject).not.toHaveBeenCalled();
+  });
+
+  it('refuses native callers without AI data consent before Gemini', async () => {
+    mocks.lookupAiDataConsent.mockResolvedValue(false);
+    mocks.resolveMailRouteContext.mockResolvedValue({
+      ok: true,
+      context: {
+        normalizedWsId: 'workspace-1',
+        supabase: {},
+        user: { email: 'member@tuturuuu.com', id: 'user-1' },
+      },
+    });
+    const nativeRequest = request();
+    nativeRequest.headers.set('authorization', 'Bearer supabase-jwt');
+
+    const response = await POST(nativeRequest);
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'ai_consent_required',
+    });
+    expect(mocks.lookupAiDataConsent).toHaveBeenCalledWith('user-1', undefined);
     expect(mocks.generateObject).not.toHaveBeenCalled();
   });
 });

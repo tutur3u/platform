@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
@@ -57,6 +58,12 @@ export const POST = withSessionAuth(
         wsId,
       });
       if (access instanceof NextResponse) return access;
+
+      const consentResponse = await enforceAiDataConsent(
+        request,
+        context.user.id
+      );
+      if (consentResponse) return consentResponse;
 
       const course = await validateTeachCourse({
         courseId,

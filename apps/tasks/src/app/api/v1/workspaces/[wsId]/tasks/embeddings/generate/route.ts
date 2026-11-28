@@ -1,3 +1,4 @@
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import {
   createMeteredTextEmbedding,
   GEMINI_EMBEDDING_2_DIMENSIONS,
@@ -23,7 +24,7 @@ interface Params {
  * On-demand batch embedding generation for workspace tasks
  * Generates embeddings for all tasks without embeddings in the workspace
  */
-export async function POST(_: Request, { params }: Params) {
+export async function POST(request: Request, { params }: Params) {
   try {
     let supabase = await createClient();
     const { wsId: rawWsId } = await params;
@@ -36,6 +37,9 @@ export async function POST(_: Request, { params }: Params) {
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const consentResponse = await enforceAiDataConsent(request, user.id);
+    if (consentResponse) return consentResponse;
 
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 

@@ -35,6 +35,7 @@ const mocks = vi.hoisted(() => {
     deductAiCredits: vi.fn(),
     generateObject: vi.fn(),
     google: vi.fn((modelId: string) => ({ modelId })),
+    lookupAiDataConsent: vi.fn(),
     requireTeachWorkspaceAccess: vi.fn(),
     results,
     sbAdmin: {
@@ -85,6 +86,13 @@ vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
     mocks.checkAiCredits(...args),
   deductAiCredits: (...args: Parameters<typeof mocks.deductAiCredits>) =>
     mocks.deductAiCredits(...args),
+}));
+
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: (
+    ...args: Parameters<typeof mocks.lookupAiDataConsent>
+  ) => mocks.lookupAiDataConsent(...args),
 }));
 
 vi.mock('@tuturuuu/ai/memory', () => ({
@@ -219,6 +227,29 @@ describe('test submission AI feedback route', () => {
     });
     expect(mocks.generateObject).not.toHaveBeenCalled();
     expect(mocks.deductAiCredits).not.toHaveBeenCalled();
+  });
+
+  it('refuses native callers without AI data consent before Gemini', async () => {
+    mocks.lookupAiDataConsent.mockResolvedValueOnce(false);
+    const { POST } = await import('./route');
+    const nativeRequest = new Request('http://localhost/api/test-feedback', {
+      body: JSON.stringify({ quizId: IDS.quizId }),
+      headers: {
+        Authorization: 'Bearer supabase-jwt',
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }) as NextRequest;
+
+    const response = await POST(nativeRequest, routeContext());
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'ai_consent_required',
+    });
+    expect(mocks.lookupAiDataConsent).toHaveBeenCalledWith('user-1', undefined);
+    expect(mocks.checkAiCredits).not.toHaveBeenCalled();
+    expect(mocks.generateObject).not.toHaveBeenCalled();
   });
 
   it('rejects generation when output cannot be capped to remaining credits', async () => {

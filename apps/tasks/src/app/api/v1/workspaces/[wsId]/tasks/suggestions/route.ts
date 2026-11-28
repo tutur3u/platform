@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { enforceAiDataConsent } from '@tuturuuu/ai/chat/ai-data-consent';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import {
   checkAiCredits,
@@ -630,9 +631,7 @@ async function checkCreditsOrResponse(
     wsId,
     modelId,
     TASK_SUGGESTIONS_CREDIT_FEATURE,
-    {
-      userId,
-    }
+    { userId }
   );
 
   if (!result.allowed) {
@@ -702,6 +701,9 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const consentResponse = await enforceAiDataConsent(req, user.id);
+    if (consentResponse) return consentResponse;
+
     let rawBody: unknown;
     try {
       rawBody = await req.json();
@@ -729,14 +731,10 @@ export async function POST(
       bodyResult.data;
 
     const boardResult = await loadBoardContext(sbAdmin, wsId, boardId);
-    if (boardResult.kind === 'error') {
-      return boardResult.response;
-    }
+    if (boardResult.kind === 'error') return boardResult.response;
 
     const contextResult = await loadSuggestionContext(sbAdmin, wsId, boardId);
-    if (contextResult.kind === 'error') {
-      return contextResult.response;
-    }
+    if (contextResult.kind === 'error') return contextResult.response;
 
     const modelResult = await resolveModelOrResponse(wsId);
     if (modelResult.kind === 'error') {

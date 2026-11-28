@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => {
     createAdminClient: vi.fn(),
     createMeteredTextEmbedding: vi.fn(),
     from: vi.fn(),
+    lookupAiDataConsent: vi.fn(),
     normalizeWorkspaceId: vi.fn(),
     rpc: vi.fn(),
     serverLoggerError: vi.fn(),
@@ -41,6 +42,11 @@ const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
 vi.mock('@tuturuuu/ai/embeddings/metered', () => ({
   createMeteredTextEmbedding: mocks.createMeteredTextEmbedding,
+}));
+
+vi.mock('@tuturuuu/utils/ai-data-consent-store', () => ({
+  AI_DATA_CONSENT_POLICY_VERSION: 'test',
+  lookupAiDataConsent: mocks.lookupAiDataConsent,
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -318,5 +324,36 @@ describe('workspace task search route', () => {
       query_text: 'deadline review',
       search_mode: 'text',
     });
+  });
+
+  it('keeps native callers without AI data consent on text search', async () => {
+    mocks.lookupAiDataConsent.mockResolvedValueOnce(false);
+    const { POST } = await import('./route');
+
+    const response = await POST(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/${RAW_WORKSPACE_ID}/tasks/search`,
+        {
+          body: JSON.stringify({ mode: 'semantic', query: 'deadline review' }),
+          headers: {
+            Authorization: 'Bearer supabase-jwt',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+        }
+      ),
+      createRouteContext()
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      reason: 'ai_consent_required',
+    });
+    expect(mocks.lookupAiDataConsent).toHaveBeenCalledWith(USER_ID, undefined);
+    expect(mocks.createMeteredTextEmbedding).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'match_tasks',
+      expect.objectContaining({ query_embedding: null, search_mode: 'text' })
+    );
   });
 });
