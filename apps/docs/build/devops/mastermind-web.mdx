@@ -311,6 +311,56 @@ Start a fresh sign-in from Mastermind when a transaction expires or was
 already used. Regression tests cover unsigned requests, callback changes,
 browser fetch, prefetch, concurrent replay, and tokens missing Web issuer proof.
 
+**Exact callbacks and the apex mount.** Web accepts a Mastermind return only
+at one of two exact callbacks (origin and path, from
+`@tuturuuu/auth/app-redeem-proof`):
+
+| Callback | Constant | Admitted |
+| --- | --- | --- |
+| `https://mastermind.tuturuuu.com/verify-token` | `MASTERMIND_HOST_CALLBACK` | Always |
+| `https://tuturuuu.com/mastermind/verify-token` | `MASTERMIND_APEX_CALLBACK` | Only with `MASTERMIND_APEX_CALLBACK=true` **and** `MASTERMIND_SIGNIN_TRANSACTION_REQUIRED=true` on Web |
+
+`MASTERMIND_APEX_CALLBACK` is a default-off Web secret. Web resolves the apex
+callback as `mastermind` before any mounted-app or platform lookup, so it is
+never treated as Web's own `/verify-token`. While it is not admitted, every
+apex return is refused with 403 and nothing is minted; when admitted, a
+return without a valid Worker-signed transaction is still refused. The
+transaction signs the full callback, so one signed for the host never
+verifies at the apex or the reverse. The handoff returns to exactly the
+signed callback with its query (the apex keeps `/mastermind`), never a URL
+rebuilt from the origin.
+
+**Callback-bound issuer proof (v2).** While `MASTERMIND_APEX_CALLBACK=true`,
+Web stamps every transaction handoff, host or apex, with
+`mm_issuer=v2.<HMAC>`: `v2.` followed by the 43-character base64url
+HMAC-SHA256 of `JSON.stringify([token, callback])` under the coordination
+secret (purpose `mastermind-handoff-issuer-v2`), where `callback` is the
+exact callback constant. At redemption the Worker must send, in the JSON body
+of `POST /api/v1/auth/cross-app-token/verify`:
+
+- `issuerProof`: the `mm_issuer` value exactly as received.
+- `callback`: the exact callback the Worker serves for this request, derived
+  from its own request origin and mount (for example
+  `"https://tuturuuu.com/mastermind/verify-token"`), never from a query
+  parameter or other client input. No query, trailing slash or fragment.
+
+A v2 proof redeems only with the callback it was issued for, so a handoff
+for the host return never redeems through the apex one or back. A stated
+callback that is neither constant, or the apex one while it is not admitted,
+is refused. The legacy v1 proof (the token alone) is accepted only for the
+host callback (no `callback`, or the host one) and only while
+`MASTERMIND_APEX_CALLBACK` is off; with the flag on, only v2 is accepted.
+While the flag is off Web still issues v1, which the serving Worker forwards
+unchanged.
+
+Rollout order: ship the Worker that sends `callback` on every redemption
+(harmless with v1), switch on both Web transaction switches, confirm a host
+sign-in, then set `MASTERMIND_APEX_CALLBACK=true`. Rollback: clear
+`MASTERMIND_APEX_CALLBACK` first; Web then returns to v1 for the host and
+refuses the apex. A host handoff issued with v2 shortly before a rollback
+still redeems, because a v2 proof with its host callback is always accepted;
+an apex one does not.
+
 **Revocation.** Removing the owner from the Worker's `OWNER_IDS` or from
 Web's root Mastermind permission denies the next request and every refresh.
 Revoking a Fleet grant denies the grantee's next request and refresh. Signing

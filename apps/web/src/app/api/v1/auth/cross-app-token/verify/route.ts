@@ -1,5 +1,7 @@
 import {
   APP_REDEEM_PROOF_HEADER,
+  MASTERMIND_APEX_CALLBACK,
+  MASTERMIND_HOST_CALLBACK,
   requiresWorkerRedeemProof,
   verifyAppRedeemProof,
   verifyMastermindHandoffIssuerProof,
@@ -20,12 +22,22 @@ import {
   type ReportHandoffFailure,
   withAuthHandoffDiagnostics,
 } from '@/lib/auth/handoff-diagnostics';
-import { mastermindSignInTransactionRequired } from '@/lib/auth/mastermind-signin-transaction';
+import {
+  mastermindApexCallbackAdmitted,
+  mastermindApexCallbackFlag,
+  mastermindSignInTransactionRequired,
+} from '@/lib/auth/mastermind-signin-transaction';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const ROUTE = '/api/v1/auth/cross-app-token/verify';
 
 const verifyCrossAppTokenSchema = z.object({
+  /**
+   * Mastermind only: the exact callback the redeeming Worker serves, e.g.
+   * `https://tuturuuu.com/mastermind/verify-token`. A v2 issuer proof
+   * redeems only for the callback it was issued for.
+   */
+  callback: z.string().max(128).optional(),
   /** RFC 7636 verifier for a challenge-bound handoff (Worker-only targets). */
   codeVerifier: z
     .string()
@@ -33,7 +45,7 @@ const verifyCrossAppTokenSchema = z.object({
     .optional(),
   issuerProof: z
     .string()
-    .regex(/^[A-Za-z0-9_-]{43}$/u)
+    .regex(/^(?:v2\.)?[A-Za-z0-9_-]{43}$/u)
     .optional(),
   targetApp: z.string().min(1).max(64),
   token: z.string().min(1),
@@ -50,6 +62,34 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
   return NextResponse.json(body, {
     ...init,
     headers,
+  });
+}
+
+/**
+ * Every issuer proof is checked. Its absence is refused once the signing
+ * Worker serves and the transaction requirement is on, and always for the
+ * apex callback. A stated callback must be the host one or the admitted apex
+ * one; a v2 proof redeems only for the callback it was issued for, and v1
+ * (host only) is refused while the apex flag is on.
+ */
+function mastermindIssuerAccepted({
+  callback,
+  issuerProof,
+  token,
+}: z.infer<typeof verifyCrossAppTokenSchema>) {
+  const apex = callback === MASTERMIND_APEX_CALLBACK;
+  if (callback !== undefined && callback !== MASTERMIND_HOST_CALLBACK) {
+    if (!apex || !mastermindApexCallbackAdmitted()) return false;
+  }
+  if (
+    issuerProof === undefined &&
+    !mastermindSignInTransactionRequired() &&
+    !apex
+  )
+    return true;
+  return verifyMastermindHandoffIssuerProof(token, issuerProof, {
+    acceptV1: !mastermindApexCallbackFlag(),
+    callback,
   });
 }
 
@@ -95,16 +135,9 @@ async function verifyCrossAppToken(
     );
   }
 
-  // Every issuer proof is checked. Its absence is refused once the signing
-  // Worker serves and the transaction requirement is on.
   if (
     parsed.data.targetApp === 'mastermind' &&
-    (parsed.data.issuerProof !== undefined ||
-      mastermindSignInTransactionRequired()) &&
-    !verifyMastermindHandoffIssuerProof(
-      parsed.data.token,
-      parsed.data.issuerProof
-    )
+    !mastermindIssuerAccepted(parsed.data)
   ) {
     return fail(
       'ISSUER_PROOF_REQUIRED',

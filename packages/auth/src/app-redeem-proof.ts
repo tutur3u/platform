@@ -55,7 +55,35 @@ const MASTERMIND_LOGIN_PURPOSE = 'mastermind-login-v1';
 export const MASTERMIND_LOGIN_TRANSACTION_PARAM = 'mm_tx';
 export const MASTERMIND_LOGIN_TRANSACTION_SECONDS = 600;
 export const MASTERMIND_FRESH_MFA_SECONDS = 30;
-const MASTERMIND_CALLBACK = 'https://mastermind.tuturuuu.com/verify-token';
+/** The dedicated-host callback the serving Mastermind Worker returns to. */
+export const MASTERMIND_HOST_CALLBACK =
+  'https://mastermind.tuturuuu.com/verify-token';
+/**
+ * The apex-mount callback. Web admits it only behind an explicit flag, and
+ * never resolves it as the platform app.
+ */
+export const MASTERMIND_APEX_CALLBACK =
+  'https://tuturuuu.com/mastermind/verify-token';
+export type MastermindCallback =
+  | typeof MASTERMIND_HOST_CALLBACK
+  | typeof MASTERMIND_APEX_CALLBACK;
+
+/**
+ * Which exact Mastermind callback a URL targets (origin and path only), or
+ * `null`. Query, credentials and fragment are judged by the transaction.
+ */
+export function mastermindCallbackOf(url: string): MastermindCallback | null {
+  try {
+    const parsed = new URL(url);
+    const endpoint = parsed.origin + parsed.pathname;
+    return endpoint === MASTERMIND_HOST_CALLBACK ||
+      endpoint === MASTERMIND_APEX_CALLBACK
+      ? endpoint
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 /** The Worker generates the challenge and binds it to its own callback and MFA intent. */
 export function createMastermindLoginTransaction(
@@ -78,13 +106,21 @@ export function createMastermindLoginTransaction(
   return `${binding}.${proof}`;
 }
 
+/**
+ * Verifies the Worker-signed transaction on a Mastermind return. The host
+ * callback is always eligible; the apex callback only when the caller says
+ * the apex mount is admitted (`apex: true`).
+ */
 export function verifyMastermindLoginTransaction(
   returnUrl: string,
-  nowSeconds = Math.floor(Date.now() / 1000)
+  nowSeconds = Math.floor(Date.now() / 1000),
+  { apex = false }: { apex?: boolean } = {}
 ) {
   const callback = new URL(returnUrl);
+  const endpoint = mastermindCallbackOf(returnUrl);
   if (
-    callback.origin + callback.pathname !== MASTERMIND_CALLBACK ||
+    !endpoint ||
+    (endpoint === MASTERMIND_APEX_CALLBACK && !apex) ||
     callback.username ||
     callback.password ||
     callback.hash
@@ -121,7 +157,9 @@ export function verifyMastermindLoginTransaction(
   )
     return null;
   return {
+    /** The exact signed callback, with its query and without `mm_tx`. */
     callback: callback.href,
+    endpoint,
     codeChallenge,
     codeChallengeMethod: 'S256' as const,
     expiresAt,
@@ -130,22 +168,61 @@ export function verifyMastermindLoginTransaction(
 }
 
 const MASTERMIND_HANDOFF_ISSUER_PURPOSE = 'mastermind-handoff-issuer-v1';
+const MASTERMIND_HANDOFF_ISSUER_V2_PURPOSE = 'mastermind-handoff-issuer-v2';
+/** A v2 issuer proof is `v2.` + HMAC(JSON [token, exact callback]). */
+export const MASTERMIND_HANDOFF_ISSUER_V2_PREFIX = 'v2.';
 export const MASTERMIND_HANDOFF_ISSUER_PARAM = 'mm_issuer';
 
-/** Only Web stamps a handoff after claiming the signed Worker transaction. */
-export function createMastermindHandoffIssuerProof(token: string) {
+/**
+ * Only Web stamps a handoff after claiming the signed Worker transaction.
+ * With a callback it issues v2, bound to that exact callback, so a handoff
+ * issued for the host return never redeems through the apex one or back.
+ * Without one it issues the legacy v1 proof (token only, host only).
+ */
+export function createMastermindHandoffIssuerProof(
+  token: string,
+  callback?: MastermindCallback
+) {
   const [secret] = getServerTokenSecretCandidates();
   if (!secret) throw new Error('Mastermind handoff signing unavailable');
-  return sign(MASTERMIND_HANDOFF_ISSUER_PURPOSE, token, secret);
+  if (callback === undefined)
+    return sign(MASTERMIND_HANDOFF_ISSUER_PURPOSE, token, secret);
+  return `${MASTERMIND_HANDOFF_ISSUER_V2_PREFIX}${sign(
+    MASTERMIND_HANDOFF_ISSUER_V2_PURPOSE,
+    JSON.stringify([token, callback]),
+    secret
+  )}`;
 }
 
+/**
+ * `callback` is the exact callback the redeeming Worker serves, as it states
+ * it. A v2 proof verifies only for that callback. A v1 proof verifies only
+ * when `acceptV1` is set and the stated callback is absent or the host one.
+ */
 export function verifyMastermindHandoffIssuerProof(
   token: string,
-  proof: string | undefined
+  proof: string | undefined,
+  { acceptV1, callback }: { acceptV1: boolean; callback?: string }
 ) {
+  if (!proof) return false;
+  if (proof.startsWith(MASTERMIND_HANDOFF_ISSUER_V2_PREFIX)) {
+    if (
+      callback !== MASTERMIND_HOST_CALLBACK &&
+      callback !== MASTERMIND_APEX_CALLBACK
+    )
+      return false;
+    return verifyAppRedeemProof({
+      targetApp: MASTERMIND_HANDOFF_ISSUER_V2_PURPOSE,
+      credential: JSON.stringify([token, callback]),
+      proof: proof.slice(MASTERMIND_HANDOFF_ISSUER_V2_PREFIX.length),
+    });
+  }
+  if (!acceptV1) return false;
+  if (callback !== undefined && callback !== MASTERMIND_HOST_CALLBACK)
+    return false;
   return verifyAppRedeemProof({
     targetApp: MASTERMIND_HANDOFF_ISSUER_PURPOSE,
     credential: token,
-    proof: proof ?? null,
+    proof,
   });
 }

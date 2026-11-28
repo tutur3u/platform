@@ -1,7 +1,9 @@
 import {
   createMastermindHandoffIssuerProof,
+  MASTERMIND_APEX_CALLBACK,
   MASTERMIND_HANDOFF_ISSUER_PARAM,
   MASTERMIND_LOGIN_TRANSACTION_PARAM,
+  mastermindCallbackOf,
   requiresWorkerRedeemProof,
   verifyMastermindLoginTransaction,
 } from '@tuturuuu/auth/app-redeem-proof';
@@ -27,7 +29,11 @@ import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
-import { mastermindSignInTransactionRequired } from '@/lib/auth/mastermind-signin-transaction';
+import {
+  mastermindApexCallbackAdmitted,
+  mastermindApexCallbackFlag,
+  mastermindSignInTransactionRequired,
+} from '@/lib/auth/mastermind-signin-transaction';
 import {
   matchesRegisteredCallbackPath,
   parseCrossAppPkceChallenge,
@@ -107,6 +113,8 @@ function decodeReturnUrl(returnUrl: string) {
 }
 
 type ResolvedCrossAppTarget = {
+  /** Mastermind's apex-mount callback, admitted only behind its flag. */
+  apexCallback?: boolean;
   appName: string;
   canonicalReturnUrl: string;
   kind: AppDomain['kind'] | 'managed-tuturuuu';
@@ -135,6 +143,17 @@ function mountedAppReturnUrl(
 function mapConfiguredUrlToApp(
   returnUrl: string
 ): ResolvedCrossAppTarget | null {
+  // Before the mounted-app and platform lookups: the apex path is
+  // Mastermind's own exact callback, never Web's or a shared-session mount.
+  if (mastermindCallbackOf(returnUrl) === MASTERMIND_APEX_CALLBACK)
+    return {
+      apexCallback: true,
+      appName: 'mastermind',
+      canonicalReturnUrl: returnUrl,
+      kind: 'internal',
+      requiresToken: true,
+      targetApp: 'mastermind',
+    };
   const mounted = getMountedAppVerifyTokenMatch(returnUrl);
 
   if (mounted) {
@@ -266,10 +285,22 @@ async function createCrossAppReturn(
     );
   }
 
+  if (target.apexCallback && !mastermindApexCallbackAdmitted()) {
+    return fail(
+      'INVALID_RETURN_URL',
+      NextResponse.json(
+        { error: 'Invalid returnUrl' },
+        { status: 403, headers: HANDOFF_NO_STORE }
+      )
+    );
+  }
+
   const mastermind = target.targetApp === 'mastermind';
   const transaction =
     mastermind && parsed.data.generateToken
-      ? verifyMastermindLoginTransaction(target.canonicalReturnUrl)
+      ? verifyMastermindLoginTransaction(target.canonicalReturnUrl, undefined, {
+          apex: mastermindApexCallbackAdmitted(),
+        })
       : null;
   // A Mastermind return that carries a transaction must carry a valid one.
   // Until the signing Worker serves, one without it keeps the PKCE handoff.
@@ -501,16 +532,26 @@ async function createCrossAppReturn(
     );
   }
 
-  const nextUrl = buildTokenReturnUrl(
-    transaction
-      ? { ...target, canonicalReturnUrl: transaction.callback }
-      : target
-  );
+  // The apex return is exactly the signed callback, query included; it is
+  // never rebuilt from the origin, which would drop `/mastermind`.
+  const nextUrl =
+    transaction?.endpoint === MASTERMIND_APEX_CALLBACK
+      ? new URL(transaction.callback)
+      : buildTokenReturnUrl(
+          transaction
+            ? { ...target, canonicalReturnUrl: transaction.callback }
+            : target
+        );
   nextUrl.searchParams.set('token', data);
   if (transaction) {
+    // While the apex flag is on, every proof is bound to its exact callback
+    // (v2). Until then the host keeps the v1 proof its Worker forwards.
     nextUrl.searchParams.set(
       MASTERMIND_HANDOFF_ISSUER_PARAM,
-      createMastermindHandoffIssuerProof(data)
+      createMastermindHandoffIssuerProof(
+        data,
+        mastermindApexCallbackFlag() ? transaction.endpoint : undefined
+      )
     );
   }
   nextUrl.searchParams.set('originApp', 'web');

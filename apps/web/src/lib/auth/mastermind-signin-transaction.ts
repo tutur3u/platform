@@ -11,3 +11,22 @@
 export function mastermindSignInTransactionRequired() {
   return process.env.MASTERMIND_SIGNIN_TRANSACTION_REQUIRED === 'true';
 }
+
+/**
+ * Whether the apex mount's exact callback
+ * (`https://tuturuuu.com/mastermind/verify-token`) is switched on. Off by
+ * default. While it is on, Web issues and accepts only callback-bound (v2)
+ * Mastermind issuer proofs; a legacy v1 proof is refused everywhere.
+ */
+export function mastermindApexCallbackFlag() {
+  return process.env.MASTERMIND_APEX_CALLBACK === 'true';
+}
+
+/**
+ * The apex callback is admitted only when its flag is on AND every handoff
+ * needs a Worker-signed transaction: on the apex, a handoff without one is
+ * never accepted.
+ */
+export function mastermindApexCallbackAdmitted() {
+  return mastermindApexCallbackFlag() && mastermindSignInTransactionRequired();
+}
