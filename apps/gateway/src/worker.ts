@@ -2,6 +2,7 @@ import { acceptanceRobots, isAcceptanceHost } from './acceptance-host';
 import { lmsRedirectDestination } from './lms-redirect';
 import { mastermindRedirect } from './mastermind-redirect';
 import { withOriginAuth } from './origin-ip-proof';
+import { serviceWorkerScriptRefusal } from './service-worker-scripts';
 import {
   HOP_HEADER,
   isMountedClientForwardingHeader,
@@ -686,6 +687,6 @@ const handler = createHandler({
 
 export default {
   fetch(request: Request, env: Env, ctx: WaitUntil) {
-    return handler(request, env, ctx);
+    return serviceWorkerScriptRefusal(request) ?? handler(request, env, ctx);
   },
 };

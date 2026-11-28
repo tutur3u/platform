@@ -54,6 +54,31 @@ requests they match.
   origin answers `502`, a throwing family `502`, and a request that already
   passed through the gateway (`x-gateway-hop`) `508`.
 
+## Service-worker install control
+
+The gateway refuses to serve a service-worker script fetch for any URL except
+the first-party worker scripts. Browsers send the request header
+`Service-Worker: script` on every registration and update fetch of a worker
+script; a request carrying that header (any value, any host the gateway serves)
+for a pathname outside the allowlist answers an uncached, bodyless `403` before
+any origin work. No uploaded file, JSONP response or other user-influenced
+same-origin content can therefore be installed as a controlling worker on
+`tuturuuu.com`. This is an origin-wide security control: it is always on, has
+no flag, and protects every profile that already holds a first-party worker.
+
+Allowlisted pathnames (`apps/gateway/src/service-worker-scripts.ts`; a query
+string such as `?v=<stamp>` is ignored, the pathname must match exactly):
+
+| Pathname | Registered by |
+| --- | --- |
+| `/serwist/sw.js` | Web, and root-served apps that register the shared offline worker (Calendar's root-served form, Workspace) |
+| `/tasks/serwist/sw.js` | Tasks mount (its layout registers only when it is not mounted; listed so a mounted registration keeps working) |
+| `/calendar/serwist/sw.js` | Calendar mount (`calendarOfflineContract('/calendar').workerUrl`) |
+
+Requests without the `Service-Worker` header are unchanged. Add a path to the
+list when a new first-party app registers a worker on the shared origin; the
+worker's own `/serwist/[path]` route is the only place that serves it.
+
 ## Scanner probes
 
 After mounted apps are dispatched and before the Web and Marketing families
