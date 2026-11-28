@@ -8,6 +8,7 @@ const {
   MAIL_URL,
   REPORT_RELATIVE_PATH,
   WORKFLOW_REF,
+  assertLoopbackDbUrl,
   assertMailE2EAdmission,
   buildMailRuntimeEnv,
   parseSupabaseEnv,
@@ -65,8 +66,28 @@ SECRET_KEY='sb_secret_test'
     supabaseUrl: 'http://127.0.0.1:8001',
     publishableKey: 'sb_publishable_test',
     secretKey: 'sb_secret_test',
+    dbUrl: '',
   });
   assert.throws(() => parseSupabaseEnv('API_URL="http://127.0.0.1:8001"'));
+});
+
+test('assertLoopbackDbUrl accepts only loopback Postgres URLs', () => {
+  assert.doesNotThrow(() =>
+    assertLoopbackDbUrl(
+      'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+    )
+  );
+  assert.doesNotThrow(() =>
+    assertLoopbackDbUrl('postgres://postgres:postgres@localhost:54322/postgres')
+  );
+  for (const bad of [
+    '',
+    'not-a-url',
+    'https://127.0.0.1:54322/postgres',
+    'postgresql://postgres:postgres@db.example.supabase.co:5432/postgres',
+  ]) {
+    assert.throws(() => assertLoopbackDbUrl(bad));
+  }
 });
 
 test('buildMailRuntimeEnv sets loopback production runtime flags and skips dev webServer', () => {

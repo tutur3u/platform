@@ -52,12 +52,71 @@ function parseSupabaseEnv(rawOutput) {
   const supabaseUrl = parsed.API_URL;
   const publishableKey = parsed.PUBLISHABLE_KEY || parsed.ANON_KEY;
   const secretKey = parsed.SECRET_KEY || parsed.SERVICE_ROLE_KEY;
+  const dbUrl = parsed.DB_URL || '';
   if (!supabaseUrl || !publishableKey || !secretKey) {
     throw new Error(
       'Missing API_URL, PUBLISHABLE_KEY/ANON_KEY, or SECRET_KEY/SERVICE_ROLE_KEY from supabase status -o env'
     );
   }
-  return { supabaseUrl, publishableKey, secretKey };
+  return { supabaseUrl, publishableKey, secretKey, dbUrl };
+}
+
+const LOCAL_MAIL_E2E_IDENTITIES_SQL = `
+INSERT INTO auth.identities (
+  id,
+  user_id,
+  provider_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at
+)
+SELECT
+  gen_random_uuid(),
+  u.id,
+  u.id::text,
+  jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+  'email',
+  now(),
+  now(),
+  now()
+FROM auth.users u
+WHERE u.email IN ('local@tuturuuu.com', 'user1@tuturuuu.com')
+  AND NOT EXISTS (
+    SELECT 1
+    FROM auth.identities i
+    WHERE i.user_id = u.id
+      AND i.provider = 'email'
+  );
+`.trim();
+
+function assertLoopbackDbUrl(dbUrl) {
+  if (!dbUrl) {
+    throw new Error('Missing DB_URL from local supabase status -o env');
+  }
+  let parsed;
+  try {
+    parsed = new URL(dbUrl);
+  } catch {
+    throw new Error('Invalid DB_URL for local Mail E2E fixture');
+  }
+  if (
+    !['postgres:', 'postgresql:'].includes(parsed.protocol) ||
+    !['127.0.0.1', 'localhost'].includes(parsed.hostname)
+  ) {
+    throw new Error('Refusing to seed Mail E2E identities on non-loopback DB');
+  }
+}
+
+function seedLocalMailIdentities(root, dbUrl, env) {
+  assertLoopbackDbUrl(dbUrl);
+  runSync(
+    root,
+    'psql',
+    [dbUrl, '-v', 'ON_ERROR_STOP=1', '-c', LOCAL_MAIL_E2E_IDENTITIES_SQL],
+    env
+  );
 }
 
 function buildMailRuntimeEnv(baseEnv, sb) {
@@ -206,6 +265,7 @@ async function runSuite(root, baseEnv) {
     true
   );
   const sb = parseSupabaseEnv(statusOutput);
+  seedLocalMailIdentities(root, sb.dbUrl, baseEnv);
   const runtimeEnv = buildMailRuntimeEnv(baseEnv, sb);
 
   const reportPath = path.join(root, 'apps/mail', REPORT_RELATIVE_PATH);
@@ -291,6 +351,7 @@ module.exports = {
   MAIL_URL,
   REPORT_RELATIVE_PATH,
   WORKFLOW_REF,
+  assertLoopbackDbUrl,
   assertMailE2EAdmission,
   buildMailRuntimeEnv,
   parseSupabaseEnv,
