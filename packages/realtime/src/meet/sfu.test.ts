@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { CloudflareSfuClient } from './sfu';
+import { CloudflareSfuClient, CloudflareSfuError } from './sfu';
 
 function createFetchMock() {
   // Declaring the parameters is what types `mock.calls` as real tuples; a
@@ -158,7 +158,17 @@ describe('CloudflareSfuClient', () => {
       fetch: fetchMock as unknown as typeof fetch,
     });
 
-    await expect(client.createSession()).rejects.toThrow(
+    await expect(client.createSession()).rejects.toMatchObject({
+      name: 'CloudflareSfuError',
+      status: 400,
+      errorCode: 'decoding_error',
+      errorDescription: 'Body JSON validation error: sessionDescription',
+    });
+    const error = await client
+      .createSession()
+      .catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(CloudflareSfuError);
+    expect((error as Error).message).toMatch(
       /cloudflare_sfu_request_failed:400.*decoding_error/u
     );
   });

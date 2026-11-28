@@ -231,9 +231,17 @@ export {
   accountRoomTime,
   closeBudgetPublications,
   deferBudgetCleanup,
+  describeProviderCleanupError,
   expireRoomBudget,
+  isMediaCleanupDue,
   MEET_MAX_ROOM_DURATION_MS,
   MEET_MAX_ROOM_PARTICIPANTS,
+  MEET_MEDIA_CLEANUP_BASE_DELAY_MS,
+  MEET_MEDIA_CLEANUP_MAX_AGE_MS,
+  MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+  MEET_MEDIA_CLEANUP_MAX_DELAY_MS,
+  mediaCleanupFenced,
+  nextMediaCleanupAt,
 } from './room-budget';
 export { mergePublicationCleanup } from './room-cleanup';
 export {
@@ -299,7 +307,7 @@ export type {
   CloudflareSfuClientOptions,
   RenegotiateInput,
 } from './sfu';
-export { CloudflareSfuClient } from './sfu';
+export { CloudflareSfuClient, CloudflareSfuError } from './sfu';
 export type {
   TranscriptionConsentMessage,
   TranscriptionState,

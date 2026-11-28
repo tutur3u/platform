@@ -44,6 +44,10 @@ export function queueRoomPublicationCleanup<T extends MeetRoomSnapshot>(
     ...state,
     budget: {
       ...state.budget,
+      cleanupAttempts: 0,
+      cleanupStartedAt: undefined,
+      cleanupStopped: undefined,
+      cleanupStoppedAt: undefined,
       nextCleanupAt: 0,
       pendingPublications: [
         ...new Map(
@@ -63,21 +67,49 @@ export function mergePublicationCleanup(
   progress: MeetRoomSnapshot
 ): MeetRoomSnapshot {
   if (!current.budget) return current;
+  const startedKeys = new Set(
+    (started.budget?.pendingPublications ?? []).map(publicationCleanupKey)
+  );
   const remaining = new Set(
     (progress.budget?.pendingPublications ?? []).map(publicationCleanupKey)
   );
   const completed = new Set(
-    (started.budget?.pendingPublications ?? [])
-      .map(publicationCleanupKey)
-      .filter((key) => !remaining.has(key))
+    [...startedKeys].filter((key) => !remaining.has(key))
+  );
+  const nextPending = current.budget.pendingPublications?.filter(
+    (track) => !completed.has(publicationCleanupKey(track))
+  );
+  if (!nextPending?.length) {
+    return {
+      ...current,
+      budget: {
+        ...current.budget,
+        pendingPublications: nextPending,
+        cleanupAttempts: 0,
+        cleanupStartedAt: undefined,
+        cleanupStopped: undefined,
+        cleanupStoppedAt: undefined,
+        nextCleanupAt: undefined,
+      },
+    };
+  }
+  const hasNewOnly = nextPending.every(
+    (track) => !startedKeys.has(publicationCleanupKey(track))
   );
   return {
     ...current,
     budget: {
       ...current.budget,
-      pendingPublications: current.budget.pendingPublications?.filter(
-        (track) => !completed.has(publicationCleanupKey(track))
-      ),
+      pendingPublications: nextPending,
+      ...(hasNewOnly
+        ? {
+            cleanupAttempts: 0,
+            cleanupStartedAt: undefined,
+            cleanupStopped: undefined,
+            cleanupStoppedAt: undefined,
+            nextCleanupAt: 0,
+          }
+        : {}),
     },
   };
 }

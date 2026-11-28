@@ -7,11 +7,18 @@ import { ENDED_ROOM_TOOLS, outcome } from './room-outcome';
 import { failActiveRecording } from './room-recording';
 import { publicationCleanupKey } from './room-tracks';
 
-export { closeBudgetPublications } from './room-provider-cleanup';
+export {
+  closeBudgetPublications,
+  describeProviderCleanupError,
+} from './room-provider-cleanup';
 
 /** Free/legacy room duration; paid entitlements arrive in server-signed join tokens. */
 export const MEET_MAX_ROOM_DURATION_MS = 2 * 60 * 60_000;
 export const MEET_MAX_ROOM_PARTICIPANTS = 104;
+export const MEET_MEDIA_CLEANUP_MAX_ATTEMPTS = 8;
+export const MEET_MEDIA_CLEANUP_MAX_AGE_MS = 60 * 60_000;
+export const MEET_MEDIA_CLEANUP_BASE_DELAY_MS = 10_000;
+export const MEET_MEDIA_CLEANUP_MAX_DELAY_MS = 15 * 60_000;
 export interface RoomBudget {
   historicalUsageUnknown?: boolean;
   expiresAt: number;
@@ -24,7 +31,39 @@ export interface RoomBudget {
   maxViewers: number;
   pendingPublications?: MeetRealtimeRoomTrack[];
   cleanupAttempts?: number;
+  cleanupStartedAt?: number;
+  cleanupStopped?: boolean;
+  cleanupStoppedAt?: number;
   nextCleanupAt?: number;
+}
+
+/**
+ * Durable stop fence for provider media cleanup. `true` or `1` halts provider
+ * cleanup calls, cleanup persistence writes and cleanup alarms; any other
+ * value (including unset and `false`) leaves cleanup enabled.
+ */
+export function mediaCleanupFenced(value: string | undefined): boolean {
+  return value === 'true' || value === '1';
+}
+
+/**
+ * Next cleanup alarm timestamp (0 means due now), or undefined when there is
+ * no active cleanup work left to schedule (empty queue or terminal stop).
+ */
+export function nextMediaCleanupAt(
+  budget: RoomBudget | undefined
+): number | undefined {
+  if (!budget?.pendingPublications?.length || budget.cleanupStopped)
+    return undefined;
+  return budget.nextCleanupAt ?? 0;
+}
+
+export function isMediaCleanupDue(
+  budget: RoomBudget | undefined,
+  now: number
+): boolean {
+  const dueAt = nextMediaCleanupAt(budget);
+  return dueAt !== undefined && now >= dueAt;
 }
 export function startRoomBudget(
   state: MeetRoomSnapshot,
@@ -128,7 +167,8 @@ export function accountRoomTime(
   const budget = state.budget;
   if (!budget || now <= budget.accountedAt) return state;
   const until = Math.min(now, budget.expiresAt);
-  const elapsed = Math.max(0, until - budget.accountedAt);
+  if (until <= budget.accountedAt) return state;
+  const elapsed = until - budget.accountedAt;
   const participants = Object.keys(state.presence).length;
   const participantTime = elapsed * participants;
   return {
@@ -205,15 +245,25 @@ export function expireRoomBudget(
     return null;
   const leftAt = new Date(now).toISOString();
   const attendance = closeOpenAttendanceIntervals(accounted.attendance, leftAt);
+  const activeTracks = Object.values(accounted.tracks);
   const budget = {
     ...accounted.budget,
-    nextCleanupAt: 0,
+    ...(activeTracks.length > 0
+      ? {
+          cleanupAttempts: 0,
+          cleanupStartedAt: undefined,
+          cleanupStopped: undefined,
+          cleanupStoppedAt: undefined,
+          nextCleanupAt: 0,
+        }
+      : accounted.budget.cleanupStopped
+        ? {}
+        : { nextCleanupAt: 0 }),
     pendingPublications: [
       ...new Map(
-        [
-          ...(accounted.budget?.pendingPublications ?? []),
-          ...Object.values(accounted.tracks),
-        ].map((track) => [publicationCleanupKey(track), track])
+        [...(accounted.budget?.pendingPublications ?? []), ...activeTracks].map(
+          (track) => [publicationCleanupKey(track), track]
+        )
       ).values(),
     ],
   };
@@ -261,13 +311,13 @@ export function roomBudgetSummary(state: MeetRoomSnapshot, now = Date.now()) {
   };
 }
 
-/** Retain unresolved closures, with bounded provider retry traffic. */
+/** Retain unresolved closures, with a bounded retry budget and terminal stop. */
 export function deferBudgetCleanup(
   state: MeetRoomSnapshot,
   now = Date.now(),
   attemptedState?: MeetRoomSnapshot
 ): MeetRoomSnapshot {
-  if (!state.budget) return state;
+  if (!state.budget || !state.budget.pendingPublications?.length) return state;
   const attempted = new Set(
     (attemptedState?.budget?.pendingPublications ?? []).map(
       publicationCleanupKey
@@ -275,22 +325,53 @@ export function deferBudgetCleanup(
   );
   if (
     attemptedState &&
-    state.budget.pendingPublications?.some(
+    state.budget.pendingPublications.some(
       (track) => !attempted.has(publicationCleanupKey(track))
     )
   ) {
     return {
       ...state,
-      budget: { ...state.budget, cleanupAttempts: 0, nextCleanupAt: 0 },
+      budget: {
+        ...state.budget,
+        cleanupAttempts: 0,
+        cleanupStartedAt: undefined,
+        cleanupStopped: undefined,
+        cleanupStoppedAt: undefined,
+        nextCleanupAt: 0,
+      },
     };
   }
-  const attempts = Math.min(32, (state.budget.cleanupAttempts ?? 0) + 1);
+  const startedAt = Number.isFinite(state.budget.cleanupStartedAt)
+    ? state.budget.cleanupStartedAt!
+    : now;
+  const attempts = (state.budget.cleanupAttempts ?? 0) + 1;
+  const deadlineAt = startedAt + MEET_MEDIA_CLEANUP_MAX_AGE_MS;
+  if (attempts >= MEET_MEDIA_CLEANUP_MAX_ATTEMPTS || now >= deadlineAt) {
+    return {
+      ...state,
+      budget: {
+        ...state.budget,
+        cleanupAttempts: attempts,
+        cleanupStartedAt: startedAt,
+        cleanupStopped: true,
+        cleanupStoppedAt: now,
+        nextCleanupAt: undefined,
+      },
+    };
+  }
+  const delay = Math.min(
+    MEET_MEDIA_CLEANUP_MAX_DELAY_MS,
+    MEET_MEDIA_CLEANUP_BASE_DELAY_MS * 2 ** Math.min(attempts - 1, 16)
+  );
   return {
     ...state,
     budget: {
       ...state.budget,
       cleanupAttempts: attempts,
-      nextCleanupAt: now + Math.min(3_600_000, 10_000 * 2 ** (attempts - 1)),
+      cleanupStartedAt: startedAt,
+      cleanupStopped: undefined,
+      cleanupStoppedAt: undefined,
+      nextCleanupAt: Math.min(now + delay, deadlineAt),
     },
   };
 }

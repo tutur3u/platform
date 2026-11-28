@@ -433,6 +433,10 @@ export function applyMeetRoomSettings(
     if (budget)
       next.budget = {
         ...budget,
+        cleanupAttempts: 0,
+        cleanupStartedAt: undefined,
+        cleanupStopped: undefined,
+        cleanupStoppedAt: undefined,
         nextCleanupAt: 0,
         pendingPublications: [
           ...new Map(

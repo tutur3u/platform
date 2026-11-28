@@ -25,6 +25,7 @@ Set by name only — never commit values.
 | `CLOUDFLARE_REALTIME_APP_ID` | yes | Cloudflare Realtime SFU app id. Not sensitive. |
 | `CLOUDFLARE_REALTIME_APP_SECRET` | yes | Cloudflare Realtime SFU app secret. **Sensitive** — treat as a bearer token. |
 | `CLOUDFLARE_REALTIME_API_BASE_URL` | no | Defaults to `https://rtc.live.cloudflare.com/v1`. |
+| `MEET_MEDIA_CLEANUP_DISABLED` | no | Stop fence for room media cleanup. `true` or `1` halts SFU track-close retries, cleanup storage writes and cleanup alarms while retaining pending entries; any other value, and the default `false`, leaves cleanup on. |
 | `MEET_WHITEBOARD_FLUSH_DISABLED` | no | Stop fence for saved whiteboards. `true` or `1` halts storage writes and database flushes; any other value, and the default `false`, leaves them on. |
 | `MEET_GUEST_WHITEBOARD_DRAW` | no | Guest drawing on saved whiteboards. Only the exact string `true` lets a guest ticket write; missing or any other value keeps guests view-only and closes a guest connection that draws. Must also be `true` on the Meet Worker. Keep it off until guest drawing is approved. |
 

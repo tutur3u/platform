@@ -27,6 +27,7 @@ export function endMeetRoom(
     miraSharePending?: unknown;
   };
   const attendance = closeOpenAttendanceIntervals(state.attendance, now);
+  const activeTracks = Object.values(state.tracks);
   return {
     ...failActiveRecording(kept, now),
     ...(attendance === undefined ? {} : { attendance }),
@@ -34,12 +35,22 @@ export function endMeetRoom(
     budget: state.budget
       ? {
           ...state.budget,
-          nextCleanupAt: 0,
+          ...(activeTracks.length > 0
+            ? {
+                cleanupAttempts: 0,
+                cleanupStartedAt: undefined,
+                cleanupStopped: undefined,
+                cleanupStoppedAt: undefined,
+                nextCleanupAt: 0,
+              }
+            : state.budget.cleanupStopped
+              ? {}
+              : { nextCleanupAt: 0 }),
           pendingPublications: [
             ...new Map(
               [
                 ...(state.budget.pendingPublications ?? []),
-                ...Object.values(state.tracks),
+                ...activeTracks,
               ].map((track) => [publicationCleanupKey(track), track])
             ).values(),
           ],

@@ -7,7 +7,125 @@ type ProviderTrack = {
   trackName?: string;
   location?: string;
   errorCode?: unknown;
+  errorDescription?: unknown;
 };
+
+const SESSION_GONE_CODES = new Set([
+  'not_found_session_error',
+  'session_not_found',
+  'session_closed',
+  'session_expired',
+]);
+
+const TRACK_GONE_CODES = new Set([
+  'not_found_track_error',
+  'track_not_found',
+  'track_already_closed',
+]);
+
+const TRACK_GONE_DESCRIPTION =
+  /doesn't exist|does not exist|already closed|not found/i;
+
+const APP_NOT_FOUND_DESCRIPTION =
+  /\bapp(?:lication)?\s+not\s+found\b|\binvalid\s+app\b/i;
+
+function isProviderSessionGoneCode(code: unknown): boolean {
+  return typeof code === 'string' && SESSION_GONE_CODES.has(code);
+}
+
+function isProviderTrackGone(track: ProviderTrack): boolean {
+  if (typeof track.errorCode !== 'string') return false;
+  if (TRACK_GONE_CODES.has(track.errorCode)) return true;
+  return (
+    track.errorCode === 'close_track_error' &&
+    typeof track.errorDescription === 'string' &&
+    TRACK_GONE_DESCRIPTION.test(track.errorDescription)
+  );
+}
+
+function readProviderErrorInfo(error: unknown): {
+  status?: number;
+  errorCode?: string;
+  errorDescription?: string;
+} {
+  if (!error || typeof error !== 'object') return {};
+  const record = error as {
+    status?: unknown;
+    errorCode?: unknown;
+    errorDescription?: unknown;
+    message?: unknown;
+  };
+  let status =
+    typeof record.status === 'number' && Number.isInteger(record.status)
+      ? record.status
+      : undefined;
+  let errorCode =
+    typeof record.errorCode === 'string' ? record.errorCode : undefined;
+  let errorDescription =
+    typeof record.errorDescription === 'string'
+      ? record.errorDescription
+      : undefined;
+  if (typeof record.message === 'string') {
+    const match = /^cloudflare_sfu_request_failed:(\d+)(?:\s+(.*))?$/s.exec(
+      record.message
+    );
+    if (match) {
+      status ??= Number(match[1]);
+      if (match[2] && (!errorCode || !errorDescription)) {
+        try {
+          const parsed = JSON.parse(match[2]) as {
+            errorCode?: unknown;
+            errorDescription?: unknown;
+          };
+          if (!errorCode && typeof parsed?.errorCode === 'string')
+            errorCode = parsed.errorCode;
+          if (!errorDescription && typeof parsed?.errorDescription === 'string')
+            errorDescription = parsed.errorDescription;
+        } catch {
+          // Message tail may be truncated or plain text.
+        }
+      }
+    }
+  }
+  return { status, errorCode, errorDescription };
+}
+
+function isProviderSessionGoneError(error: unknown): boolean {
+  const { status, errorCode, errorDescription } = readProviderErrorInfo(error);
+  if (isProviderSessionGoneCode(errorCode)) return true;
+  if (status !== 404 && status !== 410) return false;
+  if (errorCode === 'app_not_found') return false;
+  if (errorDescription && APP_NOT_FOUND_DESCRIPTION.test(errorDescription))
+    return false;
+  return true;
+}
+
+/** Secret-free diagnostic summary for media cleanup logs. */
+export function describeProviderCleanupError(error: unknown): {
+  reason: string;
+  status?: number;
+  errorCode?: string;
+} {
+  const { status, errorCode } = readProviderErrorInfo(error);
+  if (status !== undefined) {
+    return {
+      reason: 'sfu_http_error',
+      status,
+      ...(errorCode ? { errorCode } : {}),
+    };
+  }
+  if (errorCode) return { reason: 'sfu_provider_error', errorCode };
+  if (error instanceof Error) {
+    if (error.message.includes('lookup'))
+      return { reason: 'provider_lookup_failed' };
+    if (error.message.includes('identifier'))
+      return { reason: 'missing_track_identifier' };
+    if (error.message.includes('cleanup failed'))
+      return { reason: 'provider_close_unconfirmed' };
+  }
+  return { reason: 'provider_request_error' };
+}
+
 function providerResponse(value: unknown): {
   errorCode?: unknown;
   tracks?: ProviderTrack[];
@@ -24,8 +142,9 @@ function providerResponse(value: unknown): {
   return response as { errorCode?: unknown; tracks?: ProviderTrack[] };
 }
 
-function sessionInventory(value: unknown): ProviderTrack[] {
+function sessionInventory(value: unknown): ProviderTrack[] | 'session_gone' {
   const session = providerResponse(value);
+  if (isProviderSessionGoneCode(session.errorCode)) return 'session_gone';
   if (
     session.errorCode ||
     !session.tracks ||
@@ -57,6 +176,10 @@ export async function closeBudgetPublications(
     const tracks = pending.filter((track) => track.sessionId === sessionId);
     const resolved = new Map<string, string>();
     const completed = new Set<string>();
+    const completeSession = () => {
+      for (const track of tracks) completed.add(publicationCleanupKey(track));
+    };
+    let sessionFailure: unknown;
     for (const track of tracks)
       if (track.mid) resolved.set(publicationCleanupKey(track), track.mid);
     const legacy = tracks.filter((track) => !track.mid);
@@ -67,71 +190,100 @@ export async function closeBudgetPublications(
             'Meeting publication cleanup requires a provider track identifier'
           );
         const inventory = sessionInventory(await getSession(sessionId));
-        for (const track of legacy) {
-          if (!track.trackName)
-            throw new Error(
-              'Meeting publication cleanup requires a provider track identifier'
+        if (inventory === 'session_gone') {
+          completeSession();
+        } else {
+          for (const track of legacy) {
+            if (!track.trackName)
+              throw new Error(
+                'Meeting publication cleanup requires a provider track identifier'
+              );
+            const matches = inventory.filter(
+              (candidate) =>
+                candidate.location === 'local' &&
+                candidate.trackName === track.trackName
             );
-          const matches = inventory.filter(
-            (candidate) =>
-              candidate.location === 'local' &&
-              candidate.trackName === track.trackName
-          );
-          if (!matches.length) completed.add(publicationCleanupKey(track));
-          else if (
-            matches.length === 1 &&
-            typeof matches[0]?.mid === 'string' &&
-            matches[0].mid &&
-            !matches[0].errorCode
-          )
-            resolved.set(publicationCleanupKey(track), matches[0].mid);
-          else
-            throw new Error('Meeting publication cleanup lookup is ambiguous');
+            if (!matches.length) completed.add(publicationCleanupKey(track));
+            else if (
+              matches.length === 1 &&
+              typeof matches[0]?.mid === 'string' &&
+              matches[0].mid &&
+              !matches[0].errorCode
+            )
+              resolved.set(publicationCleanupKey(track), matches[0].mid);
+            else
+              throw new Error(
+                'Meeting publication cleanup lookup is ambiguous'
+              );
+          }
         }
       } catch (error) {
-        failure = error;
+        if (isProviderSessionGoneError(error)) completeSession();
+        else sessionFailure = error;
       }
     }
-    if (resolved.size) {
+    const remainingResolved = [...resolved.entries()].filter(
+      ([key]) => !completed.has(key)
+    );
+    if (remainingResolved.length) {
       try {
+        const mids = [...new Set(remainingResolved.map(([, mid]) => mid))];
         const result = providerResponse(
           await close({
             sessionId,
             force: true,
-            tracks: [...new Set(resolved.values())].map((mid) => ({ mid })),
+            tracks: mids.map((mid) => ({ mid })),
           })
         );
-        const successful = result.tracks
-          ? new Set(
-              result.tracks
-                .filter((track) => !track.errorCode)
-                .map((track) => track.mid)
-            )
-          : result.errorCode
-            ? new Set<string>()
-            : new Set(resolved.values());
-        for (const [key, mid] of resolved)
-          if (successful.has(mid)) completed.add(key);
-        if (
-          result.errorCode ||
-          [...resolved.keys()].some((key) => !completed.has(key))
-        )
-          failure = new Error('Meeting publication cleanup failed');
+        if (isProviderSessionGoneCode(result.errorCode)) {
+          completeSession();
+        } else {
+          const successful = result.tracks
+            ? new Set(
+                result.tracks
+                  .filter(
+                    (track) => !track.errorCode || isProviderTrackGone(track)
+                  )
+                  .map((track) => track.mid)
+              )
+            : result.errorCode
+              ? new Set<string>()
+              : new Set(mids);
+          for (const [key, mid] of remainingResolved)
+            if (successful.has(mid)) completed.add(key);
+          if (
+            result.errorCode ||
+            remainingResolved.some(([key]) => !completed.has(key))
+          )
+            sessionFailure = new Error('Meeting publication cleanup failed');
+        }
       } catch (error) {
-        failure = error;
+        if (isProviderSessionGoneError(error)) completeSession();
+        else sessionFailure = error;
       }
     }
     // A previous attempt may have closed the track before its durable write failed.
     // Confirm absence from the provider instead of assuming close errors are idempotent.
-    if (getSession && [...resolved.keys()].some((key) => !completed.has(key))) {
+    if (getSession && remainingResolved.some(([key]) => !completed.has(key))) {
       try {
         const inventory = sessionInventory(await getSession(sessionId));
-        const present = new Set(inventory.map((track) => track.mid));
-        for (const [key, mid] of resolved)
-          if (!present.has(mid)) completed.add(key);
+        if (inventory === 'session_gone') {
+          completeSession();
+        } else {
+          const present = new Set(inventory.map((track) => track.mid));
+          for (const [key, mid] of remainingResolved)
+            if (!present.has(mid)) completed.add(key);
+        }
       } catch (error) {
-        failure = error;
+        if (isProviderSessionGoneError(error)) completeSession();
+        else sessionFailure = error;
       }
+    }
+    if (
+      tracks.some((track) => !completed.has(publicationCleanupKey(track))) &&
+      sessionFailure !== undefined
+    ) {
+      failure = sessionFailure;
     }
     if (completed.size) {
       progress = {

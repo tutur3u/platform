@@ -1477,21 +1477,21 @@
     "apps/meet-realtime/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
-      "digest": "c8c21995684ade8abb4626b24163d0f29399febc88c0d92b67677efbdbebbc18",
+      "digest": "04ed68c4645e8f34e8475674eae40027defb7398479dadbf1fd326cf1041ee85",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d24b0cbb9d8a17a6845772800d7ce2e571d78edc",
-        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints, the WHITEBOARD_ROOM Durable Object with its v4-whiteboard migration and the MEET_WHITEBOARD_FLUSH_DISABLED variable. MEET_AI_DISABLED is \"false\" so Meet AI follows the reviewed all-workspaces gate; a contained release overrides it to \"true\" at deploy. Usage counts and the publication path are unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/d7931246ed55a9067673429c41c477bc11b56c8f",
+        "reason": "Meet Realtime adds the MEET_MEDIA_CLEANUP_DISABLED stop fence variable alongside existing bindings and vars so operators can halt room media cleanup retries and alarms. Wrangler usage counts and the publication path are unchanged."
       }
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
       "lines": 2,
       "uses": 2,
-      "digest": "6810276eef3f8ea622de410a3b9f60e40115527a11a5e2042a432e82a1d4f2d6",
+      "digest": "9260c87bad1e33caa06b1dff0cd62f5a42c3c8609e809cc07854ca139fe2eff6",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/8472aacfd17d9ec4160931aac800bcd70c80ac05",
-        "reason": "Meet Realtime uses public same-zone routing for programming and document checkpoints. The existing usage counts and publication path remain unchanged. The saved whiteboard adds a WHITEBOARD_ROOM Durable Object binding, its v4-whiteboard migration and the MEET_WHITEBOARD_FLUSH_DISABLED variable, documented under Saved whiteboard activity in the Meet application page."
+        "decision": "https://github.com/tutur3u/platform/commit/d7931246ed55a9067673429c41c477bc11b56c8f",
+        "reason": "Meet Realtime staging adds the MEET_MEDIA_CLEANUP_DISABLED stop fence variable in parity with production. Wrangler usage counts and the publication path are unchanged."
       }
     },
     "apps/meet/.gitignore": {

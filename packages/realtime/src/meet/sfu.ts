@@ -43,6 +43,25 @@ function getRequiredConfig(value: string | undefined, name: string) {
   return trimmed;
 }
 
+export class CloudflareSfuError extends Error {
+  readonly status: number;
+  readonly errorCode?: string;
+  readonly errorDescription?: string;
+
+  constructor(
+    message: string,
+    status: number,
+    errorCode?: string,
+    errorDescription?: string
+  ) {
+    super(message);
+    this.name = 'CloudflareSfuError';
+    this.status = status;
+    this.errorCode = errorCode;
+    this.errorDescription = errorDescription;
+  }
+}
+
 export class CloudflareSfuClient {
   private readonly apiBaseUrl: string;
   private readonly appId: string;
@@ -84,10 +103,29 @@ export class CloudflareSfuClient {
       // Cloudflare returns `{errorCode, errorDescription}`; surfacing it is the
       // difference between a diagnosable failure and a bare status code.
       const detail = await response.text().catch(() => '');
-      throw new Error(
+      let errorCode: string | undefined;
+      let errorDescription: string | undefined;
+      if (detail) {
+        try {
+          const parsed = JSON.parse(detail) as {
+            errorCode?: unknown;
+            errorDescription?: unknown;
+          };
+          if (typeof parsed?.errorCode === 'string')
+            errorCode = parsed.errorCode;
+          if (typeof parsed?.errorDescription === 'string')
+            errorDescription = parsed.errorDescription;
+        } catch {
+          // Non-JSON provider body; status and snippet remain on the message.
+        }
+      }
+      throw new CloudflareSfuError(
         `cloudflare_sfu_request_failed:${response.status}${
           detail ? ` ${detail.slice(0, 300)}` : ''
-        }`
+        }`,
+        response.status,
+        errorCode,
+        errorDescription
       );
     }
 

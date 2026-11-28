@@ -5,7 +5,11 @@ import {
   CloudflareSfuClient,
   closeBudgetPublications,
   deferBudgetCleanup,
+  describeProviderCleanupError,
   expireRoomBudget,
+  isMediaCleanupDue,
+  MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+  mediaCleanupFenced,
   MeetCommandExecutor,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
@@ -18,6 +22,7 @@ import {
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
 import { hasMeetMediaContextConflict } from '../../../packages/realtime/src/meet/room-media-role';
+import { publicationCleanupKey } from '../../../packages/realtime/src/meet/room-tracks';
 
 import {
   broadcast,
@@ -40,6 +45,7 @@ type SfuClient = Pick<
 export type MeetRealtimeServerOptions = {
   port?: number;
   sfuClient?: SfuClient;
+  mediaCleanupDisabled?: boolean;
 };
 
 const commands = new MeetCommandExecutor();
@@ -139,15 +145,21 @@ export function createMeetRealtimeServer(
         broadcast(roomId, expiredBudget.broadcast);
         disconnectUsers(roomId, expiredBudget.disconnect);
       }
+      const now = Date.now();
+      const cleanupDisabled =
+        options.mediaCleanupDisabled ??
+        mediaCleanupFenced(process.env.MEET_MEDIA_CLEANUP_DISABLED);
       if (
-        room.snapshot.budget?.pendingPublications?.length &&
-        Date.now() >= (room.snapshot.budget.nextCleanupAt ?? 0) &&
+        !cleanupDisabled &&
+        isMediaCleanupDue(room.snapshot.budget, now) &&
         !cleanupInFlight.has(roomId)
       ) {
         cleanupInFlight.add(roomId);
         const cleanupStarted = room.snapshot;
+        const reserved = deferBudgetCleanup(cleanupStarted, now);
+        room.snapshot = reserved;
         void closeBudgetPublications(
-          cleanupStarted,
+          reserved,
           (input) => getSfuClient().closeTracks(input),
           async (progress) => {
             room.snapshot = mergePublicationCleanup(
@@ -165,18 +177,41 @@ export function createMeetRealtimeServer(
               snapshot
             );
           })
-          .catch(() => {
-            room.snapshot = {
-              ...room.snapshot,
-              budget: deferBudgetCleanup(
+          .catch((error: unknown) => {
+            const attempted = new Set(
+              (cleanupStarted.budget?.pendingPublications ?? []).map(
+                publicationCleanupKey
+              )
+            );
+            if (
+              room.snapshot.budget?.pendingPublications?.some(
+                (track) => !attempted.has(publicationCleanupKey(track))
+              )
+            ) {
+              room.snapshot = deferBudgetCleanup(
                 room.snapshot,
                 Date.now(),
                 cleanupStarted
-              ).budget,
+              );
+            }
+            const budget = room.snapshot.budget;
+            const details = {
+              ...describeProviderCleanupError(error),
+              attempts: budget?.cleanupAttempts ?? 0,
+              maxAttempts: MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+              remaining: budget?.pendingPublications?.length ?? 0,
             };
-            console.error(
-              'Meeting media cleanup deferred; provider confirmation is still pending'
-            );
+            if (budget?.cleanupStopped) {
+              console.error(
+                'Meeting media cleanup stopped after retry budget exhausted',
+                details
+              );
+            } else {
+              console.warn(
+                'Meeting media cleanup deferred; provider confirmation is still pending',
+                details
+              );
+            }
           })
           .finally(() => cleanupInFlight.delete(roomId));
       }

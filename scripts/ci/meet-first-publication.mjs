@@ -232,6 +232,7 @@ export function inspectMeetFirstArtifact(directory, app, subdomain) {
         MEET_AI_ENABLED_WORKSPACE_IDS: '',
         MEET_CLASS_ATTENDANCE_ENABLED: 'false',
         MEET_CLASS_TIMER_ENABLED: 'true',
+        MEET_MEDIA_CLEANUP_DISABLED: 'false',
         MEET_WHITEBOARD_FLUSH_DISABLED: 'false',
       }),
       'Unadmitted staging variables'

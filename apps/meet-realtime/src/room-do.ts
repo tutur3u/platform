@@ -10,13 +10,13 @@ import {
   createMeetRoomSocketDelivery,
   type MeetRoomSocketAttachment,
   meetClassFeatures,
+  mediaCleanupFenced,
   createMeetRoomSnapshot,
   expireRoomBudget,
   MeetCommandExecutor,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
   readMeetClientFrame,
-  pruneMeetPresence,
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
@@ -43,8 +43,10 @@ import {
   cleanupRoomPublications,
   countRoomHttpRequest,
   expiryDeadline,
+  pruneExpiredRoomPresence,
   restoreHttpCounter,
   retainRoomAttendance,
+  schedulePendingMediaCleanup,
   scheduleRoomFollowUps,
   wakeAttendanceCopies,
 } from './room-maintenance';
@@ -93,7 +95,7 @@ export class MeetRoomDurableObject implements DurableObject {
     );
   }
 
-  private load() {
+  private load(fromAlarm = false) {
     this.loading ??= this.state.blockConcurrencyWhile(async () => {
       const stored =
         await this.state.storage.get<RoomServiceState>(SNAPSHOT_KEY);
@@ -109,9 +111,7 @@ export class MeetRoomDurableObject implements DurableObject {
         this.snapshot.usage.storageWrites++;
         await this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
       }
-      const budget = this.snapshot.budget;
-      if (budget?.pendingPublications?.length)
-        await this.scheduleSweep(budget.nextCleanupAt || Date.now());
+      if (!fromAlarm) await this.scheduleMediaCleanup();
       this.presence.restore(this.snapshot);
       this.delivery.resyncRestoredSockets();
       if (restored?.closedPublications.length)
@@ -273,11 +273,7 @@ export class MeetRoomDurableObject implements DurableObject {
         await this.persist();
       await this.scheduleEmptyRoom();
       if (!result.status) {
-        if (this.snapshot.budget?.pendingPublications?.length)
-          // `nextCleanupAt: 0` marks cleanup as due now.
-          await this.scheduleSweep(
-            this.snapshot.budget.nextCleanupAt || Date.now()
-          );
+        await this.scheduleMediaCleanup();
         this.broadcast(result.messages ?? []);
         if (
           this.snapshot.liveAssistant &&
@@ -317,8 +313,7 @@ export class MeetRoomDurableObject implements DurableObject {
         commit: async (updated) => {
           this.snapshot = updated.state;
           await this.persist();
-          if (this.snapshot.budget?.pendingPublications?.length)
-            await this.scheduleSweep(Date.now());
+          await this.scheduleMediaCleanup();
           this.broadcast(updated.broadcast);
         },
       });
@@ -375,9 +370,11 @@ export class MeetRoomDurableObject implements DurableObject {
       }
     }
     this.snapshot = this.connectionState(undefined, token);
-    if (this.snapshot.budget?.pendingPublications?.length)
-      await this.scheduleSweep(Date.now());
-    else if (this.snapshot.budget && !this.snapshot.ended)
+    if (
+      !(await this.scheduleMediaCleanup()) &&
+      this.snapshot.budget &&
+      !this.snapshot.ended
+    )
       await this.scheduleSweep(
         expiryDeadline(this.snapshot.budget.expiresAt, Date.now())
       );
@@ -488,8 +485,7 @@ export class MeetRoomDurableObject implements DurableObject {
     this.snapshot = this.connectionState();
     if (!deferred || this.snapshot !== result.state) await this.persist();
     await this.scheduleEmptyRoom();
-    if (this.snapshot.budget?.pendingPublications?.length)
-      await this.scheduleSweep(Date.now());
+    await this.scheduleMediaCleanup();
     this.delivery.sendToSocket(socket, result.reply);
     this.broadcast(result.broadcast);
     this.delivery.sendToManagers(result.toManagers);
@@ -559,9 +555,17 @@ export class MeetRoomDurableObject implements DurableObject {
   private scheduleSweep(deadline = Date.now() + PRESENCE_SWEEP_MS) {
     return armRoomAlarm(this.state.storage, deadline, Date.now());
   }
+  private scheduleMediaCleanup(now = Date.now()) {
+    return schedulePendingMediaCleanup(
+      this.snapshot.budget,
+      now,
+      (d) => this.scheduleSweep(d),
+      mediaCleanupFenced(this.env.MEET_MEDIA_CLEANUP_DISABLED)
+    );
+  }
 
   async alarm() {
-    await this.load();
+    await this.load(true);
     const now = Date.now();
     if (
       await wakeAttendanceCopies({
@@ -599,9 +603,13 @@ export class MeetRoomDurableObject implements DurableObject {
       this.broadcast(expiredBudget.broadcast);
       this.delivery.disconnect(expiredBudget.disconnect);
     }
+    const mediaCleanupDisabled = mediaCleanupFenced(
+      this.env.MEET_MEDIA_CLEANUP_DISABLED
+    );
     await cleanupRoomPublications({
       readSnapshot: () => this.snapshot,
       now,
+      disabled: mediaCleanupDisabled,
       closeTracks: (input) => this.sfuClient().closeTracks(input),
       getSession: (sessionId) => this.sfuClient().getSession(sessionId),
       persist: async (snapshot) => {
@@ -623,49 +631,20 @@ export class MeetRoomDurableObject implements DurableObject {
       this.snapshot = accounted;
       await this.persist();
     }
-    const pruned = pruneMeetPresence(
-      this.snapshot,
-      Date.now(),
-      connectedUserIds
-    );
-    if (pruned !== this.snapshot) {
-      const expired = Object.keys(this.snapshot.presence).filter(
-        (userId) => !pruned.presence[userId]
-      );
-      this.snapshot = pruned;
-      const releases = [];
-      for (const userId of expired) {
-        const token = sockets
-          .map((socket) => this.delivery.tokenOf(socket))
-          .find((candidate) => candidate?.userId === userId);
-        const firstSocket = sockets[0];
-        const roomId =
-          token?.roomId ??
-          (firstSocket
-            ? this.delivery.tokenOf(firstSocket)?.roomId
-            : undefined);
-        const outcome = releaseParticipant(
-          this.snapshot,
-          userId,
-          roomId ?? '',
-          meetClassFeatures(this.env)
-        );
-        this.snapshot = outcome.state;
-        releases.push(outcome);
-      }
-      await this.persist();
-      for (const outcome of releases) {
-        this.broadcast(outcome.broadcast);
-        this.delivery.sendToManagers(outcome.toManagers);
-      }
-      for (const userId of expired)
-        for (const socket of sockets)
-          if (
-            this.delivery.tokenOf(socket)?.userId === userId &&
-            socket.readyState === WebSocket.OPEN
-          )
-            socket.close(4000, 'heartbeat_timeout');
-    }
+    await pruneExpiredRoomPresence({
+      snapshot: this.snapshot,
+      sockets,
+      connectedUserIds,
+      now: Date.now(),
+      features,
+      tokenOf: (socket) => this.delivery.tokenOf(socket),
+      commit: async (snapshot) => {
+        this.snapshot = snapshot;
+        await this.persist();
+      },
+      broadcast: (messages) => this.broadcast(messages),
+      sendToManagers: (messages) => this.delivery.sendToManagers(messages),
+    });
 
     const observed = observeRoomConnections(
       this.snapshot,
@@ -693,6 +672,7 @@ export class MeetRoomDurableObject implements DurableObject {
       snapshot: this.snapshot,
       connectedUserIds,
       now: Date.now(),
+      mediaCleanupDisabled,
       scheduleSweep: (deadline) => this.scheduleSweep(deadline),
       scheduleEmptyRoom: () => this.scheduleEmptyRoom(),
     });

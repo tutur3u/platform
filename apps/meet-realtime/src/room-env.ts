@@ -14,4 +14,6 @@ export interface MeetRoomEnv
   MEET_AI_DISABLED?: string;
   MEET_AI_DISABLED_WORKSPACE_IDS?: string;
   MEET_AI_PROTECTED_WORKSPACE_IDS?: string;
+  /** Stop fence: `true` or `1` halts provider media cleanup calls, writes and alarms. */
+  MEET_MEDIA_CLEANUP_DISABLED?: string;
 }

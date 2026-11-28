@@ -1,7 +1,11 @@
 import { expect, it, vi } from 'vitest';
 import type { MeetRealtimeRoomTrack } from './messages';
 import { createMeetRoomSnapshot, type MeetRoomSnapshot } from './room';
-import { closeBudgetPublications } from './room-provider-cleanup';
+import {
+  closeBudgetPublications,
+  describeProviderCleanupError,
+} from './room-provider-cleanup';
+import { CloudflareSfuError } from './sfu';
 
 function snapshot(tracks: MeetRealtimeRoomTrack[]) {
   return {
@@ -149,4 +153,124 @@ it('retains a failed closure when the provider still lists its mid', async () =>
     )
   ).rejects.toThrow('cleanup failed');
   expect(state.budget.pendingPublications).toHaveLength(1);
+});
+
+it.each([404, 410])(
+  'treats HTTP %i on tracks/close as confirmed without calling getSession',
+  async (status) => {
+    const close = vi
+      .fn()
+      .mockRejectedValue(
+        new CloudflareSfuError(
+          `cloudflare_sfu_request_failed:${status} {"errorCode":"not_found_session_error"}`,
+          status,
+          'not_found_session_error',
+          'Session not found'
+        )
+      );
+    const getSession = vi.fn();
+    const cleaned = await closeBudgetPublications(
+      snapshot([one, { ...one, trackName: 'video', mid: '1' }]),
+      close,
+      undefined,
+      getSession
+    );
+    expect(cleaned.budget?.pendingPublications).toEqual([]);
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(getSession).not.toHaveBeenCalled();
+  }
+);
+
+it('treats HTTP 404 on fallback or legacy getSession as confirmed', async () => {
+  const gone = new Error(
+    'cloudflare_sfu_request_failed:404 {"errorDescription":"Session not found"}'
+  );
+  const recovered = await closeBudgetPublications(
+    snapshot([one]),
+    async () => ({ tracks: [{ mid: '0', errorCode: 'temporary' }] }),
+    undefined,
+    async () => {
+      throw gone;
+    }
+  );
+  expect(recovered.budget?.pendingPublications).toEqual([]);
+
+  const legacy = await closeBudgetPublications(
+    snapshot([{ ...one, mid: undefined }]),
+    vi.fn(),
+    undefined,
+    async () => {
+      throw gone;
+    }
+  );
+  expect(legacy.budget?.pendingPublications).toEqual([]);
+});
+
+it('does not treat app-level 404 misconfiguration as confirmed', async () => {
+  const appMissing = new CloudflareSfuError(
+    'cloudflare_sfu_request_failed:404 {"errorCode":"app_not_found","errorDescription":"App not found"}',
+    404,
+    'app_not_found',
+    'App not found'
+  );
+  await expect(
+    closeBudgetPublications(
+      snapshot([one]),
+      async () => {
+        throw appMissing;
+      },
+      undefined,
+      async () => {
+        throw appMissing;
+      }
+    )
+  ).rejects.toThrow('app_not_found');
+});
+
+it('treats already-closed track error codes and session-gone JSON responses as confirmed', async () => {
+  const getSession = vi.fn();
+  const trackClosed = await closeBudgetPublications(
+    snapshot([one]),
+    async () => ({
+      tracks: [
+        {
+          mid: '0',
+          errorCode: 'close_track_error',
+          errorDescription: "Track doesn't exist or was already closed",
+        },
+      ],
+    }),
+    undefined,
+    getSession
+  );
+  expect(trackClosed.budget?.pendingPublications).toEqual([]);
+  expect(getSession).not.toHaveBeenCalled();
+
+  const sessionGone = await closeBudgetPublications(
+    snapshot([one]),
+    async () => ({ errorCode: 'session_not_found' }),
+    undefined,
+    getSession
+  );
+  expect(sessionGone.budget?.pendingPublications).toEqual([]);
+  expect(getSession).not.toHaveBeenCalled();
+});
+
+it('summarizes provider cleanup errors without leaking raw bodies or identifiers', () => {
+  expect(
+    describeProviderCleanupError(
+      new CloudflareSfuError(
+        'cloudflare_sfu_request_failed:503 {"errorCode":"internal_error","sessionId":"secret"}',
+        503,
+        'internal_error'
+      )
+    )
+  ).toEqual({
+    reason: 'sfu_http_error',
+    status: 503,
+    errorCode: 'internal_error',
+  });
+  expect(describeProviderCleanupError(new TypeError('network down'))).toEqual({
+    reason: 'provider_request_error',
+  });
 });

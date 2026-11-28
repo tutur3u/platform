@@ -2,12 +2,21 @@ import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage'
 import {
   closeBudgetPublications,
   deferBudgetCleanup,
+  describeProviderCleanupError,
+  isMediaCleanupDue,
   maintainAttendanceCopy,
+  MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
   mergePublicationCleanup,
   nextAttendanceAlarm,
+  nextMediaCleanupAt,
+  pruneMeetPresence,
+  releaseParticipant,
   type MeetClassFeatures,
+  type MeetRealtimeServerMessage,
+  type MeetRealtimeTokenPayload,
   type MeetRoomSnapshot,
 } from '../../../packages/realtime/src/meet';
+import { publicationCleanupKey } from '../../../packages/realtime/src/meet/room-tracks';
 import {
   finishDirectoryAlarm,
   publishStoredAttendance,
@@ -134,19 +143,33 @@ export function retainRoomAttendance(
   return { ...snapshot, attendance: attendance ?? [] };
 }
 
+export async function schedulePendingMediaCleanup(
+  budget: MeetRoomSnapshot['budget'],
+  now: number,
+  scheduleSweep: (deadline?: number) => Promise<void>,
+  disabled = false
+): Promise<boolean> {
+  if (disabled) return false;
+  const dueAt = nextMediaCleanupAt(budget);
+  if (dueAt === undefined) return false;
+  // `nextCleanupAt: 0` marks cleanup as due now.
+  await scheduleSweep(dueAt || now);
+  return true;
+}
+
 export async function cleanupRoomPublications(input: {
   readSnapshot: () => MeetRoomSnapshot;
   now: number;
+  disabled?: boolean;
   closeTracks: Parameters<typeof closeBudgetPublications>[1];
   getSession: Parameters<typeof closeBudgetPublications>[3];
   persist: (snapshot: MeetRoomSnapshot) => Promise<void>;
 }) {
   const started = input.readSnapshot();
-  if (
-    !started.budget?.pendingPublications?.length ||
-    input.now < (started.budget.nextCleanupAt ?? 0)
-  )
-    return;
+  if (input.disabled || !isMediaCleanupDue(started.budget, input.now)) return;
+  // Reserve the attempt durably before provider I/O so restarts cannot replenish retries.
+  const reserved = deferBudgetCleanup(started, input.now);
+  await input.persist(reserved);
   // Provider awaits can interleave with room commands and lifecycle changes.
   const persistProgress = (progress: MeetRoomSnapshot) =>
     input.persist(
@@ -154,26 +177,105 @@ export async function cleanupRoomPublications(input: {
     );
   try {
     const closed = await closeBudgetPublications(
-      started,
+      reserved,
       input.closeTracks,
       persistProgress,
       input.getSession
     );
     await persistProgress(closed);
-  } catch {
-    await input.persist(
-      deferBudgetCleanup(input.readSnapshot(), Date.now(), started)
+  } catch (error) {
+    const current = input.readSnapshot();
+    const attempted = new Set(
+      (started.budget?.pendingPublications ?? []).map(publicationCleanupKey)
     );
-    console.error(
-      'Meeting media cleanup deferred; provider confirmation is still pending'
+    const hasNew = current.budget?.pendingPublications?.some(
+      (track) => !attempted.has(publicationCleanupKey(track))
     );
+    const reconciled = hasNew
+      ? deferBudgetCleanup(current, Date.now(), started)
+      : current;
+    if (reconciled !== current) await input.persist(reconciled);
+    const budget = reconciled.budget;
+    const details = {
+      ...describeProviderCleanupError(error),
+      attempts: budget?.cleanupAttempts ?? 0,
+      maxAttempts: MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+      remaining: budget?.pendingPublications?.length ?? 0,
+    };
+    if (budget?.cleanupStopped) {
+      console.error(
+        'Meeting media cleanup stopped after retry budget exhausted',
+        details
+      );
+    } else {
+      console.warn(
+        'Meeting media cleanup deferred; provider confirmation is still pending',
+        details
+      );
+    }
   }
+}
+
+export async function pruneExpiredRoomPresence<
+  T extends MeetRoomSnapshot,
+>(input: {
+  snapshot: T;
+  sockets: WebSocket[];
+  connectedUserIds: ReadonlySet<string>;
+  now: number;
+  features: MeetClassFeatures;
+  tokenOf: (socket: WebSocket) => MeetRealtimeTokenPayload | null;
+  commit: (snapshot: T) => Promise<void>;
+  broadcast: (messages: MeetRealtimeServerMessage[]) => void;
+  sendToManagers: (messages: MeetRealtimeServerMessage[]) => void;
+}) {
+  const pruned = pruneMeetPresence(
+    input.snapshot,
+    input.now,
+    input.connectedUserIds
+  ) as T;
+  if (pruned === input.snapshot) return;
+  const expired = Object.keys(input.snapshot.presence).filter(
+    (userId) => !pruned.presence[userId]
+  );
+  let next = pruned;
+  const releases = [];
+  for (const userId of expired) {
+    const token = input.sockets
+      .map((socket) => input.tokenOf(socket))
+      .find((candidate) => candidate?.userId === userId);
+    const firstSocket = input.sockets[0];
+    const roomId =
+      token?.roomId ??
+      (firstSocket ? input.tokenOf(firstSocket)?.roomId : undefined);
+    const outcome = releaseParticipant(
+      next,
+      userId,
+      roomId ?? '',
+      input.features
+    );
+    next = outcome.state as T;
+    releases.push(outcome);
+  }
+  await input.commit(next);
+  for (const outcome of releases) {
+    input.broadcast(outcome.broadcast);
+    input.sendToManagers(outcome.toManagers);
+  }
+  for (const userId of expired)
+    for (const socket of input.sockets)
+      if (
+        input.tokenOf(socket)?.userId === userId &&
+        socket.readyState === WebSocket.OPEN
+      )
+        socket.close(4000, 'heartbeat_timeout');
 }
 
 export async function scheduleRoomFollowUps(input: {
   snapshot: MeetRoomSnapshot;
   connectedUserIds: ReadonlySet<string>;
   now: number;
+  mediaCleanupDisabled?: boolean;
   scheduleSweep: (deadline?: number) => Promise<void>;
   scheduleEmptyRoom: () => Promise<void>;
 }) {
@@ -190,9 +292,12 @@ export async function scheduleRoomFollowUps(input: {
         ? input.now
         : expiryDeadline(input.snapshot.liveAssistant.expiresAt, input.now)
     );
-  if (input.snapshot.budget?.pendingPublications?.length)
-    // `nextCleanupAt: 0` marks cleanup as due now.
-    await input.scheduleSweep(input.snapshot.budget.nextCleanupAt || input.now);
+  await schedulePendingMediaCleanup(
+    input.snapshot.budget,
+    input.now,
+    input.scheduleSweep,
+    input.mediaCleanupDisabled
+  );
   if (input.snapshot.budget && !input.snapshot.ended)
     await input.scheduleSweep(
       expiryDeadline(input.snapshot.budget.expiresAt, input.now)

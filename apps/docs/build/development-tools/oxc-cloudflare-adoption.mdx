@@ -677,6 +677,33 @@ CI; a migration direction does not authorize production cutover.
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
 - [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
 
+### Meet room media cleanup cost bounds
+
+`MeetRoomDurableObject` closes retired or ended-room Cloudflare Realtime SFU
+publications in `cleanupRoomPublications` (`apps/meet-realtime/src/room-maintenance.ts`).
+Provider HTTP `404`/`410` session-gone responses (excluding `app_not_found`) and
+already-closed track error codes confirm closure immediately without a follow-up
+`GET /sessions/{sessionId}` lookup.
+
+Each attempt persists its retry reservation in Durable Object storage before
+making any SFU fetch. Failed attempts back off exponentially from 10 seconds
+(capped at 15 minutes) and terminate at **8 attempts** or **1 hour** total age
+(`cleanupStopped: true`, `nextCleanupAt: undefined`), bounding per-room worst-case
+cost for a persistent provider outage to 8 alarm wakes, 8 snapshot writes and
+at most 16 SFU fetches per stuck session (7 deferred `warn` logs and 1 terminal
+`error` log), after which no cleanup alarms are armed. `MEET_MEDIA_CLEANUP_DISABLED`
+(`true` or `1`) halts SFU cleanup fetches, cleanup writes and cleanup alarms at
+every entry point and alarm wake while retaining queued entries in storage.
+
+`packages/realtime/src/meet/room-provider-cleanup.test.ts` covers HTTP 404/410,
+app-not-found rejection and already-closed track responses;
+`packages/realtime/src/meet/room-budget.test.ts` covers attempt and age bounds,
+terminal state and fence parsing; `apps/meet-realtime/src/room-do-alarm.test.ts`
+counts alarms, storage writes and provider fetches across persistent failures,
+mid-I/O Durable Object restarts, legacy stuck snapshots, 404 confirmation and
+stop-fence activation/recovery. Hosted alarm behavior and operator stop
+rehearsal remain deployment evidence.
+
 ### Meet saved whiteboard cost bounds
 
 The Meet realtime Worker declares `WhiteboardRoomDurableObject` (SQLite,

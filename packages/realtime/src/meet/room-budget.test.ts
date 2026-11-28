@@ -11,7 +11,12 @@ import {
   closeBudgetPublications,
   deferBudgetCleanup,
   expireRoomBudget,
+  isMediaCleanupDue,
   MEET_MAX_ROOM_DURATION_MS,
+  MEET_MEDIA_CLEANUP_MAX_AGE_MS,
+  MEET_MEDIA_CLEANUP_MAX_ATTEMPTS,
+  mediaCleanupFenced,
+  nextMediaCleanupAt,
 } from './room-budget';
 import { mergePublicationCleanup } from './room-cleanup';
 
@@ -33,16 +38,73 @@ const initial = () =>
     .state;
 
 describe('meeting resource budget', () => {
-  it('backs off failed cleanup without discarding unresolved publications', () => {
+  it('backs off failed cleanup and enters a terminal stopped state after bounded attempts', () => {
+    let state = initial();
+    state.budget!.pendingPublications = [
+      { userId: 'host', sessionId: 'pending', mid: '0' },
+    ];
+    let currentTime = now;
+    const expectedDelays = [
+      10_000, 20_000, 40_000, 80_000, 160_000, 320_000, 640_000,
+    ];
+    for (let i = 0; i < MEET_MEDIA_CLEANUP_MAX_ATTEMPTS - 1; i++) {
+      state = deferBudgetCleanup(state, currentTime);
+      expect(state.budget!.cleanupAttempts).toBe(i + 1);
+      expect(state.budget!.cleanupStopped).toBeUndefined();
+      expect(state.budget!.nextCleanupAt).toBe(
+        currentTime + expectedDelays[i]!
+      );
+      expect(nextMediaCleanupAt(state.budget)).toBe(
+        state.budget!.nextCleanupAt
+      );
+      currentTime = state.budget!.nextCleanupAt!;
+    }
+    state = deferBudgetCleanup(state, currentTime);
+    expect(state.budget!.cleanupAttempts).toBe(MEET_MEDIA_CLEANUP_MAX_ATTEMPTS);
+    expect(state.budget!.cleanupStopped).toBe(true);
+    expect(state.budget!.cleanupStoppedAt).toBe(currentTime);
+    expect(state.budget!.nextCleanupAt).toBeUndefined();
+    expect(nextMediaCleanupAt(state.budget)).toBeUndefined();
+    expect(isMediaCleanupDue(state.budget, currentTime + 86_400_000)).toBe(
+      false
+    );
+    expect(state.budget!.pendingPublications).toHaveLength(1);
+  });
+
+  it('stops retrying when the cleanup age deadline expires even before max attempts', () => {
     let state = initial();
     state.budget!.pendingPublications = [
       { userId: 'host', sessionId: 'pending', mid: '0' },
     ];
     state = deferBudgetCleanup(state, now);
-    expect(state.budget!.nextCleanupAt).toBe(now + 10_000);
-    for (let i = 0; i < 40; i++) state = deferBudgetCleanup(state, now);
-    expect(state.budget!.nextCleanupAt).toBe(now + 3_600_000);
-    expect(state.budget!.pendingPublications).toHaveLength(1);
+    expect(state.budget!.cleanupStopped).toBeUndefined();
+    state = deferBudgetCleanup(state, now + MEET_MEDIA_CLEANUP_MAX_AGE_MS);
+    expect(state.budget!.cleanupStopped).toBe(true);
+    expect(state.budget!.nextCleanupAt).toBeUndefined();
+    expect(nextMediaCleanupAt(state.budget)).toBeUndefined();
+  });
+
+  it('recognizes only true and 1 for the media cleanup stop fence', () => {
+    expect(mediaCleanupFenced('true')).toBe(true);
+    expect(mediaCleanupFenced('1')).toBe(true);
+    expect(mediaCleanupFenced('false')).toBe(false);
+    expect(mediaCleanupFenced('0')).toBe(false);
+    expect(mediaCleanupFenced('')).toBe(false);
+    expect(mediaCleanupFenced(undefined)).toBe(false);
+  });
+
+  it('does not resurrect stopped cleanup when ending a room with no active tracks', () => {
+    let state = initial();
+    state.budget!.pendingPublications = [
+      { userId: 'host', sessionId: 'stuck', mid: '0' },
+    ];
+    for (let i = 0; i < MEET_MEDIA_CLEANUP_MAX_ATTEMPTS; i++) {
+      state = deferBudgetCleanup(state, now + i * 1000);
+    }
+    expect(state.budget!.cleanupStopped).toBe(true);
+    const expired = expireRoomBudget(state, now + MEET_MAX_ROOM_DURATION_MS)!;
+    expect(expired.state.budget?.cleanupStopped).toBe(true);
+    expect(nextMediaCleanupAt(expired.state.budget)).toBeUndefined();
   });
   it('persists successful closures before retrying a later provider failure', async () => {
     const state = initial();

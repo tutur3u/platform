@@ -666,6 +666,43 @@ restart, conflict merge), `board-sync-protocol.test.ts`,
 `packages/meet-core/src/features/call/server/whiteboard.test.ts` and the
 whiteboard client tests under `packages/meet-core/src/features/call/whiteboard/`.
 
+## Media cleanup retry bounds and stop fence
+
+When a room ends, expires, retires tracks or rejects an uncommitted publication,
+`MeetRoomDurableObject` queues the affected Cloudflare Realtime SFU publications
+in `budget.pendingPublications` and closes them via
+`PUT /apps/{appId}/sessions/{sessionId}/tracks/close` (`force: true`), falling
+back to `GET /apps/{appId}/sessions/{sessionId}` when confirmation is missing.
+Provider HTTP `404`/`410` responses for an already-expired session (excluding
+app-level `app_not_found`), session-gone error codes and already-closed track
+error codes count as confirmed closure and clear the pending entries without
+further retries.
+
+Every cleanup attempt reserves its counter in Durable Object storage before any
+SFU fetch, so crashes or isolate restarts cannot replenish retries. Failed
+attempts back off exponentially starting at 10 seconds (capped at 15 minutes per
+step) and stop permanently after **8 attempts** or **1 hour** from the first
+failure (`cleanupStopped: true`, `nextCleanupAt: undefined`). Deferred retries
+log at `warn` level with a secret-free diagnostic summary (`status`, `errorCode`,
+`reason`, `attempts`, `maxAttempts`, `remaining`). Exhausting the retry budget
+logs once at `error` level and arms no further cleanup alarms unless new
+publications are later queued.
+
+The stop fence is the Worker variable `MEET_MEDIA_CLEANUP_DISABLED`. Exactly
+`true` or `1` halts all SFU cleanup fetches, cleanup persistence writes and
+cleanup alarms while preserving queued `pendingPublications` in storage; any
+other value (default `false`) leaves cleanup enabled. To halt cleanup spend: set
+`MEET_MEDIA_CLEANUP_DISABLED` to `true` in `apps/meet-realtime/wrangler.jsonc`
+(and `apps/meet-realtime/wrangler.staging.jsonc`), deploy the realtime Worker,
+and confirm no cleanup alarm wakes or SFU `tracks/close` requests follow. Set it
+back to `false` and redeploy to resume. See the
+[cost acceptance record](/build/development-tools/oxc-cloudflare-adoption#meet-room-media-cleanup-cost-bounds).
+
+Regression coverage: `packages/realtime/src/meet/room-provider-cleanup.test.ts`,
+`packages/realtime/src/meet/room-budget.test.ts`,
+`packages/realtime/src/meet/sfu.test.ts` and
+`apps/meet-realtime/src/room-do-alarm.test.ts`.
+
 ## Meet AI kill switch
 
 The shared realtime workspace gate disables Meet AI when `MEET_AI_DISABLED` is
