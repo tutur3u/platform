@@ -321,7 +321,10 @@ export class TuturuuuServiceWorker {
    * True when this registration's scope lies under a strict mount (for
    * example a script registering this worker at `/mastermind/` through
    * `Service-Worker-Allowed: /`). Such a worker serves nothing outside the
-   * mount, so it unregisters and stays inert. A broader scope (`/`, `/m`)
+   * mount, so it stays inert: it precaches nothing, claims no clients and
+   * answers no fetch. It never removes its own registration, because the
+   * emitted workers of every app are accepted only without self-removal
+   * (scripts/ci/wave1-native-runtime.mjs). A broader scope (`/`, `/m`)
    * keeps running for its other paths: the fetch handler never answers a
    * strict-mount request whatever the scope.
    */
@@ -337,19 +340,8 @@ export class TuturuuuServiceWorker {
     );
   }
 
-  private async unregisterRefusedScope() {
-    try {
-      await self.registration.unregister();
-    } catch (error) {
-      console.warn('[offline] Could not unregister a refused scope.', error);
-    }
-  }
-
   private async install() {
-    if (this.refusesScope()) {
-      await this.unregisterRefusedScope();
-      return;
-    }
+    if (this.refusesScope()) return;
     const cache = await caches.open(this.precacheName);
     const urls = this.precacheEntries.map(resolveEntryUrl);
     const results = await Promise.allSettled(
@@ -375,10 +367,7 @@ export class TuturuuuServiceWorker {
   }
 
   private async activate() {
-    if (this.refusesScope()) {
-      await this.unregisterRefusedScope();
-      return;
-    }
+    if (this.refusesScope()) return;
     if (this.maxRuntimeCacheEntries === 0)
       await caches.delete(this.runtimeCacheName);
     // Other apps on the same origin keep their caches; only this namespace is pruned.

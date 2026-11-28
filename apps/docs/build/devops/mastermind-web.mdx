@@ -483,7 +483,9 @@ Web's offline page can answer. With navigation preload on, the browser discards
 the unused preload and may fetch the page twice; that cost is accepted.
 Activation deletes `/mastermind` entries from every cache the worker owns, and a
 registration whose scope lies under `/mastermind` (reachable through Web's
-`Service-Worker-Allowed: /`) unregisters itself and handles no fetches. A
+`Service-Worker-Allowed: /`) stays inert: it precaches nothing, claims no
+clients and handles no fetches, and it never removes its own registration,
+because every app's emitted worker is accepted only without self-removal. A
 broader scope (`/`, `/m`) keeps serving its other paths, and its fetch handler
 still never answers `/mastermind`. Tasks' worker carries the same strict
 bypass. Cache Storage is writable by any script on the origin, so the offline

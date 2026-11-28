@@ -81,7 +81,7 @@ export interface ServiceWorkerConfig {
    * `respondWith`, navigations included, so neither Cache Storage nor the
    * offline fallback can stand in for the page. Activation deletes their
    * entries from every cache this worker owns, and a registration whose scope
-   * lies under one (or narrowly covers one) unregisters itself. Same format as
+   * lies under one stays inert and answers no fetch. Same format as
    * `bypassPathPrefixes`.
    */
   strictBypassPathPrefixes?: readonly string[];

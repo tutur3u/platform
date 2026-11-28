@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createOfflineWorker } from './create-offline-worker';
 import type { ServiceWorkerConfig } from './types';
@@ -192,7 +194,7 @@ describe('strict bypass prefixes', () => {
   });
 
   it.each([`${ORIGIN}/mastermind/`, `${ORIGIN}/mastermind/vi/`])(
-    'unregisters and stays inert when registered at %s',
+    'stays inert without removing its registration at %s',
     async (scope) => {
       store('tuturuuu-offline-runtime-v1').set(
         `${ORIGIN}/_next/static/web.js`,
@@ -201,8 +203,9 @@ describe('strict bypass prefixes', () => {
       const web = boot(STRICT, scope);
       await web.install();
       await web.activate();
-      expect(unregister).toHaveBeenCalledTimes(2);
+      expect(unregister).not.toHaveBeenCalled();
       expect(claim).not.toHaveBeenCalled();
+      expect(stores.size).toBe(1);
       expect(network).not.toHaveBeenCalled();
       expect(
         web.dispatch('/_next/static/web.js', 'cors', 'script').mock.calls
@@ -255,6 +258,16 @@ describe('strict bypass prefixes', () => {
       'content-type',
     ]);
     expect(await response.text()).toBe('<p>offline</p>');
+  });
+
+  it('never removes its own registration in the emitted source', () => {
+    // Every app's emitted worker is accepted only without self-removal
+    // (scripts/ci/wave1-native-runtime.mjs asserts the same pattern).
+    const source = readFileSync(
+      join(import.meta.dirname, 'create-offline-worker.ts'),
+      'utf8'
+    );
+    expect(source).not.toMatch(/registration\.unregister/u);
   });
 
   it('rejects malformed strict prefixes', () => {
