@@ -96,9 +96,9 @@ for (const locale of ['en', 'vi'] as const) {
     const main = activitiesDialog.locator('main');
     await expect(main.locator('h2')).toHaveCount(0);
     await expect(main.getByText(pollsLabel).first()).toBeVisible();
-    await expect(
-      main.getByText(m.activities.descriptions.polls)
-    ).toHaveCount(1);
+    await expect(main.getByText(m.activities.descriptions.polls)).toHaveCount(
+      1
+    );
 
     // Timer page inside Activities has a localized placeholder on custom input
     await activitiesDialog
@@ -180,7 +180,9 @@ test('pressing Escape while a dialog is open inside focus view does not exit foc
     'participant-00000000-0000-4000-8000-000000000001-screen'
   );
   await tile.hover();
-  await tile.getByRole('button', { name: enMessages.meet.call.focus_view }).click();
+  await tile
+    .getByRole('button', { name: enMessages.meet.call.focus_view })
+    .click();
   await expect(tile).toHaveAttribute('data-focus-view', 'true');
 
   // Open a dialog while focus view is active.

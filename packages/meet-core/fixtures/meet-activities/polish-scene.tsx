@@ -72,7 +72,8 @@ function createStubPolicy(): MediaPolicy {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
-    getSnapshot: () => ({ smallModePreference: pref }) as ReturnType<MediaPolicy['getSnapshot']>,
+    getSnapshot: () =>
+      ({ smallModePreference: pref }) as ReturnType<MediaPolicy['getSnapshot']>,
     setSmallModePreference: (next: SmallModePreference) => {
       pref = next;
       for (const listener of listeners) listener();
@@ -136,119 +137,119 @@ export function PolishScene() {
   return (
     <NuqsTestingAdapter>
       <LiveQaClientContext value={qaClient}>
-      <div className="flex h-screen w-screen flex-col gap-3 bg-background p-4 text-foreground">
-        <header className="flex flex-wrap items-center gap-2 border-b pb-3">
-          <CallTimers state={timerState} />
-          <ActivitiesMenu
-            tools={FIXTURE_TOOLS}
-            openToolIds={[]}
-            onTool={() => {}}
-            pages={[
-              {
-                id: 'class-timer',
-                label: t('class_timer'),
-                icon: Clock3,
-                active: false,
-                page: () => (
-                  <ClassTimerControls
-                    meetingId="fixture-meeting"
-                    state={timerState}
-                  />
-                ),
-              },
-            ]}
-          />
-          <ShareMeetingButton
-            meetingId="00000000-0000-4000-8000-000000000042"
-            meetingName="EduFest 2026"
-          />
+        <div className="flex h-screen w-screen flex-col gap-3 bg-background p-4 text-foreground">
+          <header className="flex flex-wrap items-center gap-2 border-b pb-3">
+            <CallTimers state={timerState} />
+            <ActivitiesMenu
+              tools={FIXTURE_TOOLS}
+              openToolIds={[]}
+              onTool={() => {}}
+              pages={[
+                {
+                  id: 'class-timer',
+                  label: t('class_timer'),
+                  icon: Clock3,
+                  active: false,
+                  page: () => (
+                    <ClassTimerControls
+                      meetingId="fixture-meeting"
+                      state={timerState}
+                    />
+                  ),
+                },
+              ]}
+            />
+            <ShareMeetingButton
+              meetingId="00000000-0000-4000-8000-000000000042"
+              meetingName="EduFest 2026"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              data-testid="open-settings-fixture"
+              onClick={() => setSettingsOpen(true)}
+            >
+              {t('classroom.title')}
+            </Button>
+          </header>
+
           <Button
             type="button"
             size="sm"
             variant="outline"
-            data-testid="open-settings-fixture"
-            onClick={() => setSettingsOpen(true)}
+            style={{ position: 'fixed', bottom: 16, left: 16, zIndex: 60 }}
+            data-testid="open-focus-overlay-dialog"
+            onClick={() => setOverlayOpen(true)}
           >
-            {t('classroom.title')}
+            Open overlay
           </Button>
-        </header>
 
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          style={{ position: 'fixed', bottom: 16, left: 16, zIndex: 60 }}
-          data-testid="open-focus-overlay-dialog"
-          onClick={() => setOverlayOpen(true)}
-        >
-          Open overlay
-        </Button>
-
-        <div className="grid min-h-0 flex-1 grid-cols-2 gap-4">
-          <div
-            data-testid="polish-qa-container"
-            className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card"
-          >
-            <QaPanel meetingId="fixture-meeting" />
-          </div>
-          <div className="min-h-0">
-            <ParticipantTile
-              participant={SCREEN_PARTICIPANT}
-              kind="screen"
-              presenceOnly
-              resumePlaybackLabel={t('resume_audio')}
-              className="h-full w-full"
-            />
-          </div>
-        </div>
-
-        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-          <DialogContent
-            data-testid="polish-settings-dialog"
-            className="sm:max-w-lg"
-          >
-            <DialogHeader>
-              <DialogTitle>{t('settings')}</DialogTitle>
-              <DialogDescription>{t('room_maximum')}</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <ClassroomSettings room={roomStub} />
-              <DefaultActivitySetting
-                value={defaultActivity}
-                tools={FIXTURE_TOOLS}
-                onChange={setDefaultActivity}
-              />
-              <ThumbnailModeSetting policy={policy} />
-              <Select value="">
-                <SelectTrigger
-                  data-testid="empty-select-trigger"
-                  aria-label={t('forms.chooseForm')}
-                  className="w-full"
-                >
-                  <SelectValue placeholder={t('forms.chooseForm')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="sample">{t('forms.title')}</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="grid min-h-0 flex-1 grid-cols-2 gap-4">
+            <div
+              data-testid="polish-qa-container"
+              className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-card"
+            >
+              <QaPanel meetingId="fixture-meeting" />
             </div>
-          </DialogContent>
-        </Dialog>
+            <div className="min-h-0">
+              <ParticipantTile
+                participant={SCREEN_PARTICIPANT}
+                kind="screen"
+                presenceOnly
+                resumePlaybackLabel={t('resume_audio')}
+                className="h-full w-full"
+              />
+            </div>
+          </div>
 
-        <Dialog open={overlayOpen} onOpenChange={setOverlayOpen}>
-          <DialogContent
-            data-testid="focus-overlay-dialog"
-            style={{ zIndex: 70 }}
-            className="sm:max-w-sm"
-          >
-            <DialogHeader>
-              <DialogTitle>{t('classroom.title')}</DialogTitle>
-              <DialogDescription>{t('share.title')}</DialogDescription>
-            </DialogHeader>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </LiveQaClientContext>
+          <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+            <DialogContent
+              data-testid="polish-settings-dialog"
+              className="sm:max-w-lg"
+            >
+              <DialogHeader>
+                <DialogTitle>{t('settings')}</DialogTitle>
+                <DialogDescription>{t('room_maximum')}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <ClassroomSettings room={roomStub} />
+                <DefaultActivitySetting
+                  value={defaultActivity}
+                  tools={FIXTURE_TOOLS}
+                  onChange={setDefaultActivity}
+                />
+                <ThumbnailModeSetting policy={policy} />
+                <Select value="">
+                  <SelectTrigger
+                    data-testid="empty-select-trigger"
+                    aria-label={t('forms.chooseForm')}
+                    className="w-full"
+                  >
+                    <SelectValue placeholder={t('forms.chooseForm')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sample">{t('forms.title')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={overlayOpen} onOpenChange={setOverlayOpen}>
+            <DialogContent
+              data-testid="focus-overlay-dialog"
+              style={{ zIndex: 70 }}
+              className="sm:max-w-sm"
+            >
+              <DialogHeader>
+                <DialogTitle>{t('classroom.title')}</DialogTitle>
+                <DialogDescription>{t('share.title')}</DialogDescription>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </LiveQaClientContext>
     </NuqsTestingAdapter>
   );
 }
