@@ -149,3 +149,58 @@ test('relays a guest arrow without its text labels', async () => {
   const relayed = peer.sent.findLast((m) => m.type === 'elements');
   assert.deepEqual(relayed.changes[0].element.boundElements, []);
 });
+
+test('refuses long guest freehand strokes and rough arrows while relaying members', async () => {
+  const f = fixture();
+  const guest = await open(f, { userId: 'g1', actorKind: 'guest' });
+  const member = await open(f, { userId: 'u2' });
+  const longFreedraw = guestElement('freedraw', {
+    id: 'long-free',
+    points: Array.from({ length: 10_001 }, () => [0, 0]),
+  });
+  const roughArrow = guestElement('arrow', {
+    id: 'long-arrow',
+    roughness: 1,
+    strokeStyle: 'solid',
+    points: Array.from({ length: 5000 }, () => [0, 0]),
+  });
+  await f.the.webSocketMessage(
+    guest as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [
+        { type: 'insert', element: longFreedraw },
+        { type: 'insert', element: roughArrow },
+      ],
+    })
+  );
+  assert.deepEqual(guest.sent.at(-1), {
+    type: 'rejected',
+    reason: 'unsupported',
+  });
+  assert.equal(guest.closed, null);
+  assert.equal(
+    member.sent.some((m) => m.type === 'elements'),
+    false
+  );
+  // Members are not held to the guest point or render-cost limits.
+  await f.the.webSocketMessage(
+    member as any,
+    JSON.stringify({
+      type: 'elements',
+      changes: [
+        { type: 'insert', element: longFreedraw },
+        { type: 'insert', element: roughArrow },
+      ],
+    })
+  );
+  const relayed = guest.sent.findLast((m) => m.type === 'elements');
+  assert.deepEqual(
+    relayed.changes.map((change: any) => change.element.id),
+    ['long-free', 'long-arrow']
+  );
+  assert.equal(
+    member.sent.some((m) => m.type === 'rejected'),
+    false
+  );
+});

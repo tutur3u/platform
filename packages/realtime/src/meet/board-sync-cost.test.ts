@@ -7,14 +7,18 @@ import {
 import {
   refillChurnBudget,
   refillRoomChurnBudget,
+  sanitizeGuestChanges,
   sanitizeGuestElement,
 } from './board-sync-guest';
 import { guestElement } from './board-sync-guest.fixtures';
 import { applyBoundedChanges, sceneFrom, sizesFrom } from './board-sync-merge';
 import {
   BOARD_GUEST_LIMITS,
+  BOARD_LIMITS,
   type BoardChange,
   type BoardElement,
+  boardElementSchema,
+  byteLength,
 } from './board-sync-schema';
 
 const filled = { fillStyle: 'hachure', backgroundColor: '#ffc9c9' };
@@ -154,7 +158,7 @@ describe('elementRenderCost strokes and text', () => {
     expect(elementRenderCost(line)).toBe(1 + 2 + 1700);
   });
 
-  it('counts each point of a stroke, twice for a rough line', () => {
+  it('counts each point of a stroke, twice for a rough line or arrow', () => {
     const points = Array.from({ length: 5000 }, (_, i) => [i * 3, i % 2]);
     const line = (roughness: number) =>
       guestElement('line', { roughness, points });
@@ -162,6 +166,49 @@ describe('elementRenderCost strokes and text', () => {
     expect(elementRenderCost(line(1))).toBe(1 + 2 * 5000);
     expect(sanitizeGuestElement(line(0))).not.toBeNull();
     expect(sanitizeGuestElement(line(1))).toBeNull();
+    // A rough solid arrow hits the same 10,000 render-cost ceiling at 5,000 points.
+    const arrowPoints = Array.from({ length: 5000 }, () => [0, 0]);
+    const roughArrow = guestElement('arrow', {
+      id: 'rough-arrow',
+      roughness: 1,
+      strokeStyle: 'solid',
+      points: arrowPoints,
+    });
+    const maxRoughArrow = guestElement('arrow', {
+      id: 'max-rough-arrow',
+      roughness: 1,
+      strokeStyle: 'solid',
+      points: arrowPoints.slice(0, 4999),
+    });
+    const smoothArrow = guestElement('arrow', {
+      id: 'smooth-arrow',
+      roughness: 0,
+      strokeStyle: 'solid',
+      points: arrowPoints,
+    });
+    expect(elementRenderCost(maxRoughArrow)).toBe(1 + 2 * 4999);
+    expect(sanitizeGuestElement(maxRoughArrow)).not.toBeNull();
+    expect(elementRenderCost(roughArrow)).toBe(1 + 2 * 5000);
+    expect(sanitizeGuestElement(roughArrow)).toBeNull();
+    expect(sanitizeGuestChanges([insert(roughArrow)])).toEqual({
+      changes: [],
+      dropped: 1,
+    });
+    expect(elementRenderCost(smoothArrow)).toBe(1 + 5000);
+    expect(sanitizeGuestElement(smoothArrow)).not.toBeNull();
+    // Members are not held to the guest element render-cost limit.
+    expect(byteLength(roughArrow)).toBeLessThanOrEqual(
+      BOARD_LIMITS.maxElementBytes
+    );
+    expect(boardElementSchema.safeParse(roughArrow).success).toBe(true);
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const memberWrite = applyBoundedChanges(scene, tracker, [
+      insert(roughArrow),
+    ]);
+    expect(memberWrite.rejected).toBeNull();
+    expect(memberWrite.applied).toHaveLength(1);
+    expect(scene.get('rough-arrow')).toEqual(roughArrow);
     // A freehand stroke is one outline path, rough or not.
     const free = guestElement('freedraw', { roughness: 1, points });
     expect(elementRenderCost(free)).toBe(1 + 5000);

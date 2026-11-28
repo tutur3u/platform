@@ -2277,14 +2277,17 @@ Operating requirements:
   hour), which an open room's polling uses up in a few minutes. Regression
   coverage: `packages/utils/src/__tests__/api-proxy-meet-session-actor.test.ts`.
 - A guest whose signed guest cookie (`__Host-meet-guest`) the Meet proxy
-  verifies for the meeting in the request path gets its own guest budget
-  (`X-RateLimit-Caller-Class: guest`), keyed by that meeting and the guest id
-  the server minted into the cookie. The signature, meeting binding and expiry
-  are checked as the call routes check them. A client header, a display name,
-  or an unsigned, expired or other-meeting cookie stays on the anonymous
-  per-IP budget. Each guest read is checked against three budgets in this
-  order, and the first exhausted window refuses it without charging the
-  budgets after it:
+  verifies for the meeting in the request path gets its own guest budget, keyed
+  by that meeting and the guest id the server minted into the cookie.
+  `X-RateLimit-Caller-Class` is emitted only on HTTP `429` refusals from the
+  proxy guard, never on allowed responses, and carries only the caller class
+  name (`guest`, `authenticated`, `anonymous`, or `unknown` on an
+  unauthenticated IP block) — never user, guest or meeting ids or secrets. The
+  signature, meeting binding and expiry are checked as the call routes check
+  them. A client header, a display name, or an unsigned, expired or
+  other-meeting cookie stays on the anonymous per-IP budget. Each guest read is
+  checked against three budgets in this order, and the first exhausted window
+  refuses it without charging the budgets after it:
   1. the guest: 150 reads a minute, 7,000 an hour, 52,500 a day, and 45
      writes a minute, 2,000 an hour, 16,000 a day
      (`API_PROXY_GUEST_{READ,MUTATE}_LIMIT_{MINUTE,HOUR,DAY}`), so a guest

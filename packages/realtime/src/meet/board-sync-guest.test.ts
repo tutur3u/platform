@@ -13,6 +13,12 @@ import {
   sanitizeGuestChanges,
   sanitizeGuestElement,
 } from './board-sync-guest';
+import { applyBoundedChanges, sceneFrom, sizesFrom } from './board-sync-merge';
+import {
+  BOARD_LIMITS,
+  boardElementSchema,
+  byteLength,
+} from './board-sync-schema';
 
 describe('guest board links', () => {
   it('keeps http(s) and same-site links only', () => {
@@ -231,9 +237,46 @@ describe('guest element types', () => {
     expect(sanitizeGuestElement(text({ [key]: value }))).toBeNull();
   });
 
-  it('refuses a points array past ten thousand pairs', () => {
-    const points = Array.from({ length: 10_001 }, () => [0, 0]);
-    expect(sanitizeGuestElement(arrow({ points }))).toBeNull();
+  it('refuses a points array past ten thousand pairs for guests, not members', () => {
+    const overLimit = Array.from({ length: 10_001 }, () => [0, 0]);
+    const atLimit = Array.from({ length: 10_000 }, () => [0, 0]);
+    const liveMax = Array.from({ length: 9999 }, () => [0, 0]);
+    const longFreedraw = guestElement('freedraw', {
+      id: 'long-freedraw',
+      points: overLimit,
+    });
+    expect(byteLength(longFreedraw)).toBeLessThanOrEqual(
+      BOARD_LIMITS.maxElementBytes
+    );
+    expect(sanitizeGuestElement(arrow({ points: overLimit }))).toBeNull();
+    expect(
+      sanitizeGuestElement(guestElement('line', { points: overLimit }))
+    ).toBeNull();
+    expect(sanitizeGuestElement(longFreedraw)).toBeNull();
+    // Deleted strokes cost nothing to render, so the 10,000-point cap itself refuses >10,000.
+    expect(
+      sanitizeGuestElement(
+        guestElement('freedraw', { points: overLimit, isDeleted: true })
+      )
+    ).toBeNull();
+    expect(
+      sanitizeGuestElement(
+        guestElement('freedraw', { points: atLimit, isDeleted: true })
+      )
+    ).not.toBeNull();
+    expect(
+      sanitizeGuestElement(guestElement('freedraw', { points: liveMax }))
+    ).not.toBeNull();
+    // Members bypass guest sanitization and keep strokes within the byte cap.
+    expect(boardElementSchema.safeParse(longFreedraw).success).toBe(true);
+    const scene = sceneFrom([]);
+    const tracker = sizesFrom(scene);
+    const memberWrite = applyBoundedChanges(scene, tracker, [
+      { type: 'insert', element: longFreedraw },
+    ]);
+    expect(memberWrite.rejected).toBeNull();
+    expect(memberWrite.applied).toHaveLength(1);
+    expect(scene.get('long-freedraw')).toEqual(longFreedraw);
   });
 
   it('drops the refused elements of a batch and counts them', () => {
