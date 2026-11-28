@@ -120,6 +120,37 @@ describe('strict bypass prefixes', () => {
     expect(lookalike.mock.calls).toHaveLength(1);
   });
 
+  it('answers every path outside the strict mount exactly as a worker without it', async () => {
+    const { strictBypassPathPrefixes: _, ...withoutStrict } = STRICT;
+    const cases = [
+      ['/', 'navigate', 'document'],
+      ['/en/settings', 'navigate', 'document'],
+      ['/vi/ws/tasks?x=1', 'navigate', 'document'],
+      ['/mastermind-notes', 'navigate', 'document'],
+      ['/master', 'navigate', 'document'],
+      ['/meet/vi/r/abc', 'navigate', 'document'],
+      ['/meet/app.js', 'cors', 'script'],
+      ['/_next/static/web.js', 'no-cors', 'script'],
+      ['/_next/static/web.css', 'no-cors', 'style'],
+      ['/api/v1/users/me', 'cors', ''],
+    ] as const;
+    const observe = async (config: ServiceWorkerConfig) => {
+      stores.clear();
+      network.mockClear();
+      const web = boot(config);
+      const out: Array<[number, string | null]> = [];
+      for (const [path, mode, destination] of cases) {
+        const calls = web.dispatch(path, mode, destination).mock.calls;
+        const body = calls[0]
+          ? await (await (calls[0][0] as Promise<Response>)).text()
+          : null;
+        out.push([calls.length, body]);
+      }
+      return { out, networkCalls: network.mock.calls.length };
+    };
+    expect(await observe(STRICT)).toEqual(await observe(withoutStrict));
+  });
+
   it('purges strict-mount entries from owned caches on activate and keeps the rest', async () => {
     const runtime = store('tuturuuu-offline-runtime-v1');
     runtime.set(`${ORIGIN}/mastermind/_next/static/a.js`, new Response('x'));
