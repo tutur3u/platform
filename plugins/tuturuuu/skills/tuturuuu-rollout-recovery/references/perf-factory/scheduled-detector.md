@@ -22,10 +22,23 @@ Setup:
 
 1. Detect. Run
    `scripts/perf/run-detector-local.sh --production-failures --out tmp/perf-factory/detections/<UTC stamp>.json`.
+   Before the detector, remove any stale `tmp/perf-factory/candidates.json`,
+   write board-list-annotated open task records to
+   `tmp/perf-factory/open-tasks.json` (each task must carry its board `list`
+   name; raw mirrors without `list` fail closed), and build
+   `tmp/perf-factory/candidates.json` from open regression tasks only (excluding
+   `perf: production deploy` tasks) with
+   `node scripts/perf/perf-dispatch-gate.mjs extract-candidates --tasks tmp/perf-factory/open-tasks.json --out tmp/perf-factory/candidates.json`.
+   If extraction exits non-zero, do not reuse a stale file; pass
+   `--degraded-reason extract_candidates_failed` to the dispatch gate in step
+   3 (fails closed with `DEGRADED: dispatch gate closed (extract_candidates_failed)`). Pass `--candidates tmp/perf-factory/candidates.json` to the detector
+   command and record its exit code (`DETECTOR_EXIT`). Its `candidates[]`
+   entries carry `state` (`ready`, `insufficient_data`, or `unchecked`),
+   `observedRequests`, `minRequests` and `transition`.
    Exit 2 means a configuration or API problem: append one line to
-   `tmp/perf-factory/dispatcher.log` and continue to step 3 (do not notify; the
-   daily agent-log review picks up repeats). Never print or store
-   `CLOUDFLARE_*` values.
+   `tmp/perf-factory/dispatcher.log` and pass `--detector-exit 2` to the
+   dispatch gate (which fails closed so nothing dispatches; the daily agent-log
+   review picks up repeats). Never print or store `CLOUDFLARE_*` values.
    Then run
    `node scripts/perf/perf-observability-alerts.mjs --out tmp/perf-factory/detections/<UTC stamp>-slo.json`
    for firing SLO burn alerts from Admin. It reads `PERF_FACTORY_ADMIN_ORIGIN`
@@ -33,17 +46,44 @@ Setup:
    detector's. Its records carry `source: "observability-slo"` and empty
    `suspects`; fill them by running the detector's `rerun` for the record's
    `worker` before intake.
-2. Intake. For each regression record, look for an open `perf:` task for the
+2. Intake. Run
+   `node scripts/perf/perf-dispatch-gate.mjs intake-check --detection tmp/perf-factory/detections/<UTC stamp>.json`
+   and process ONLY its `ingestible` regression records (skipping records in
+   `blocked`, keyed on exact `id` only; a genuine new regression for the same
+   `(app, metric)` with a new `startTime` and `id`, already >= 50 usable
+   requests, is still ingested). For each ingestible regression record, look
+   for an open `perf:` task for the
    same app and metric whose start is within 6 hours. If one exists, append the
    new record to its `history`; otherwise create a task in **Queued** with the
    record as `regression`, `stage: "investigate"`, empty `hypotheses`,
    `evidence`, `reviews`, and move it to **Live Today**.
+   Data gate: for each candidate with `state: "insufficient_data"`, record
+   `dataGate: { state, observedRequests, minRequests, window }` on the task and
+   keep it in its current ready list (**Queued** or **Live Today**) with its
+   stage unchanged (if the board listing is degraded, write only to local
+   mirrors). If `transition` is true, log one line to
+   `tmp/perf-factory/dispatcher.log`: `insufficient_data <task key>
+   <observedRequests> of <minRequests> requests`. Do not log again while the state
+   persists. When `state` is `ready` and `transition` is true, clear `dataGate`,
+   log one `re-armed <task key>` line, and resume at the recorded stage (unless
+   a stored verification blocker remains, which clears only on explicit owner
+   clearance or a new verification pass). This insufficient-data state is not a
+   failure and not a regression.
    For each `productionFailures` record, use its stable run ID to deduplicate
    a `perf: production deploy <run ID>` task, including closed tasks. Add the
    workflow, SHA and run URL to the task and place it in **Needs User / Review**
    for deployment triage. Dispatch only tasks with a ready workflow stage.
-3. Dispatch. For every open `perf:` task whose stage is ready (no unmet
-   `subscription`), start exactly one agent with `delegate_task`, passing the
+3. Dispatch. Run
+   `node scripts/perf/perf-dispatch-gate.mjs --tasks tmp/perf-factory/open-tasks.json --detection tmp/perf-factory/detections/<UTC stamp>.json --detector-exit <DETECTOR_EXIT>`
+   and dispatch ONLY task keys returned in `dispatchable`. If the gate CLI
+   exits non-zero or prints invalid JSON, fail closed: dispatch nothing and log
+   a `DEGRADED:` marker. The gate skips tasks with missing/non-ready `list`,
+   stored verification blockers, unmet `verify-post-deploy` preconditions,
+   active `dataGate`, `insufficient_data`, or `unchecked` candidates, and fails
+   closed (`degraded: true`, empty `dispatchable`) on non-zero detector exit or
+   missing candidate output. For every dispatchable open `perf:` task whose
+   stage is ready (no unmet `subscription`), start exactly one agent with
+   `delegate_task`, passing the
    stage prompt file, the task key and the current record:
    - builder stages (`investigate`, `propose-fix`): provider A;
    - reviewer stages (`adversarial-review-*`, `verify-post-deploy`): provider B,

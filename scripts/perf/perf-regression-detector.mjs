@@ -7,6 +7,7 @@
 //   node scripts/perf/perf-regression-detector.mjs [detect] [--apps forms,tools]
 //     [--window-minutes 15] [--baseline-hours 24] [--evaluate-windows 8]
 //     [--now ISO] [--fixture path.json] [--out path.json]
+//     [--candidates path.json]  (open candidates; adds per-candidate data state)
 //   node scripts/perf/perf-regression-detector.mjs rerun --record path.json
 //     [--regression <id>] [--query zone-latency|worker-versions]
 //
@@ -27,7 +28,9 @@ import {
   runGraphql,
 } from './perf-regression-cloudflare.mjs';
 import {
+  CANDIDATE_READY,
   DEFAULT_RULES,
+  candidateDataState,
   computeBaseline,
   evaluateWindows,
   suspectDeploys,
@@ -62,6 +65,7 @@ export function parseArgs(argv) {
       record: { type: 'string' },
       regression: { type: 'string' },
       query: { type: 'string', default: 'zone-latency' },
+      candidates: { type: 'string' },
     },
     strict: true,
   });
@@ -91,7 +95,90 @@ export function parseArgs(argv) {
     record: values.record ?? null,
     regression: values.regression ?? null,
     query: values.query,
+    candidates: values.candidates ?? null,
   };
+}
+
+/**
+ * Normalize open regression candidates from either compact entries
+ * (`{ id, app, metric, state }`) or full task records
+ * (`{ taskKey, regression: { id, app, metric }, dataGate }`).
+ * Non-regression tasks (such as `production_deploy_failure`) and incomplete
+ * entries are skipped and flagged rather than throwing and exiting 2.
+ */
+export function parseCandidates(document) {
+  const raw = Array.isArray(document)
+    ? document
+    : (document?.candidates ?? document?.tasks ?? []);
+  const candidates = [];
+  const skipped = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') {
+      skipped.push({ id: null, reason: 'invalid_entry' });
+      continue;
+    }
+    if (
+      entry.type === 'production_deploy_failure' ||
+      entry.productionFailure ||
+      entry.stage === 'deployment-triage'
+    ) {
+      skipped.push({
+        id: entry.id ?? entry.taskKey ?? entry.productionFailure?.id ?? null,
+        reason: 'non_regression_task',
+      });
+      continue;
+    }
+    const id = entry.regression?.id ?? entry.id ?? null;
+    const app = entry.regression?.app ?? entry.app ?? null;
+    if (!id || !app) {
+      skipped.push({
+        id: id ?? entry.taskKey ?? null,
+        reason: 'missing_id_or_app',
+      });
+      continue;
+    }
+    candidates.push({
+      id,
+      app,
+      metric: entry.regression?.metric ?? entry.metric ?? null,
+      state: entry.dataGate?.state ?? entry.state ?? CANDIDATE_READY,
+      ...(entry.taskKey ? { taskKey: entry.taskKey } : {}),
+    });
+  }
+  return { candidates, skipped };
+}
+
+export function loadCandidates(path) {
+  return parseCandidates(readJson(path));
+}
+
+/**
+ * Per-candidate data state from the windows already fetched this run.
+ * `transition` is true only when the state differs from the state the
+ * dispatcher recorded, so logs print on entry and re-arm, not every tick.
+ */
+export function candidateStates(
+  candidates,
+  currentByApp,
+  rules = DEFAULT_RULES,
+  windowSpec = {}
+) {
+  return candidates.map((candidate) => {
+    const base = {
+      id: candidate.id,
+      app: candidate.app,
+      metric: candidate.metric ?? null,
+      ...(candidate.taskKey ? { taskKey: candidate.taskKey } : {}),
+    };
+    const current = currentByApp.get(candidate.app);
+    if (!current) return { ...base, state: 'unchecked', transition: false };
+    const data = candidateDataState(current, rules, windowSpec);
+    return {
+      ...base,
+      ...data,
+      transition: data.state !== (candidate.state ?? CANDIDATE_READY),
+    };
+  });
 }
 
 export function loadApps(selected, config = readJson(APPS_PATH)) {
@@ -210,7 +297,12 @@ async function liveSeries(app, options, credentials, fetchImpl) {
   });
   const data = await runGraphql(spec, credentials, fetchImpl);
   const deploys = await fetchDeploys(app, credentials, fetchImpl);
-  return { windows: parseZoneWindows(data, options.windowMinutes), deploys };
+  return {
+    windows: parseZoneWindows(data, options.windowMinutes, {
+      until: until.toISOString(),
+    }),
+    deploys,
+  };
 }
 
 export async function detect(
@@ -226,6 +318,10 @@ export async function detect(
   const resolved = { ...options, now };
   const regressions = [];
   const checked = [];
+  const currentByApp = new Map();
+  const { candidates, skipped: skippedCandidates } = options.candidates
+    ? loadCandidates(options.candidates)
+    : { candidates: [], skipped: [] };
   for (const app of apps) {
     const series = fixture
       ? (fixture.apps?.[app.name] ?? { windows: [], deploys: [] })
@@ -238,6 +334,7 @@ export async function detect(
       detectedAt: now,
     });
     const { current } = splitWindows(series.windows, resolved);
+    currentByApp.set(app.name, current);
     const latest = current.at(-1);
     checked.push({
       app: app.name,
@@ -271,6 +368,11 @@ export async function detect(
     productionFailures,
     source: fixture ? 'fixture' : 'cloudflare',
     checked,
+    candidates: candidateStates(candidates, currentByApp, DEFAULT_RULES, {
+      expectedEnd: now,
+      windowMinutes: options.windowMinutes,
+    }),
+    ...(skippedCandidates.length ? { skippedCandidates } : {}),
     regressions,
   };
 }

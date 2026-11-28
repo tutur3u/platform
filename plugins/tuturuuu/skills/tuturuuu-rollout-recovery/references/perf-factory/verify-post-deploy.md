@@ -13,6 +13,14 @@ the dispatcher that started you.
    p95 within the original trigger of the pre-regression baseline. Compare
    error rate with the baseline as well.
 4. Record the queries and results in `verification`.
+5. Blocker clearance rule: if a prior pass left `verification.blocker` or
+   `subscription.verificationBlocker`, the dispatch gate keeps the task blocked
+   until `verification.verdict` is updated to a cleared state (`recovered`,
+   `passed`, `cleared`, or `reopened`) AND an explicit zoned ISO-8601 timestamp
+   (`Z` or `±HH:MM`) is recorded in `verification.clearedAt` (or
+   `verification.updatedAt`). Always record `subscription.readyAfter` and
+   `fix.deployedAt` with explicit timezone offsets; zone-less timestamps fail
+   closed.
 
 If recovered, move the task to `Done`. If not, reopen it: set `stage` to
 `investigate`, keep all evidence, add the new measurements as evidence, and move

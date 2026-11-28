@@ -67,6 +67,54 @@ export function computeBaseline(windows, rules = DEFAULT_RULES) {
   };
 }
 
+export const CANDIDATE_READY = 'ready';
+export const CANDIDATE_INSUFFICIENT_DATA = 'insufficient_data';
+
+/**
+ * Data sufficiency for one regression candidate, judged on its newest complete
+ * filtered window (pass complete windows, oldest first). Below the request
+ * minimum the p95 and error rate are noise, so the candidate is parked as
+ * `insufficient_data`: not a failure and not a regression. It re-arms as soon
+ * as a window meets the minimum again.
+ *
+ * When `expectedEnd` and `windowMinutes` are provided and the newest expected
+ * slot `[expectedEnd - windowMinutes, expectedEnd]` is absent (zero traffic),
+ * it is padded with `observedRequests: 0` instead of judging an older busy
+ * window. A missing or non-numeric `requests` field yields `observedRequests:
+ * null` (distinct from `0`) and stays `insufficient_data`.
+ */
+export function candidateDataState(
+  windows,
+  rules = DEFAULT_RULES,
+  { expectedEnd, windowMinutes } = {}
+) {
+  const expectedEndMs = expectedEnd ? Date.parse(expectedEnd) : Number.NaN;
+  const windowMs = Number.isFinite(windowMinutes)
+    ? windowMinutes * 60_000
+    : Number.NaN;
+  let latest = windows.at(-1) ?? null;
+  if (Number.isFinite(expectedEndMs) && Number.isFinite(windowMs)) {
+    const match = windows.find((w) => Date.parse(w.end) === expectedEndMs);
+    latest = match ?? {
+      start: new Date(expectedEndMs - windowMs).toISOString(),
+      end: new Date(expectedEndMs).toISOString(),
+      requests: 0,
+    };
+  }
+  const observedRequests =
+    latest && Number.isFinite(latest.requests) ? latest.requests : null;
+  return {
+    state:
+      observedRequests !== null &&
+      observedRequests >= rules.minRequestsPerWindow
+        ? CANDIDATE_READY
+        : CANDIDATE_INSUFFICIENT_DATA,
+    observedRequests,
+    minRequests: rules.minRequestsPerWindow,
+    window: latest ? { start: latest.start, end: latest.end } : null,
+  };
+}
+
 export function isErrorJump(window, baselineRate, rules = DEFAULT_RULES) {
   const rate = errorRate(window);
   return (

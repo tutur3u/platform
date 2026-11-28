@@ -175,9 +175,16 @@ export async function runGraphql(spec, credentials, fetchImpl = fetch) {
   return payload.data;
 }
 
-/** Merge total and error groups into windows ordered oldest first. */
-export function parseZoneWindows(data, windowMinutes) {
+/**
+ * Merge total and error groups into windows ordered oldest first.
+ * When `until` is given and Cloudflare emitted no row for the newest complete
+ * window `[until - windowMinutes, until]` (zero traffic), pad that window with
+ * `requests: 0` so downstream checks do not mistake an older busy bucket for
+ * the current window.
+ */
+export function parseZoneWindows(data, windowMinutes, { until } = {}) {
   const dimension = windowDimension(windowMinutes);
+  const windowMs = windowMinutes * 60_000;
   const zone = data?.viewer?.zones?.[0] ?? {};
   const errorsByStart = new Map(
     (zone.errors ?? []).map((group) => [
@@ -185,12 +192,12 @@ export function parseZoneWindows(data, windowMinutes) {
       group.count,
     ])
   );
-  return (zone.total ?? [])
+  const windows = (zone.total ?? [])
     .map((group) => {
       const start = new Date(group.dimensions[dimension]).toISOString();
       return {
         start,
-        end: new Date(Date.parse(start) + windowMinutes * 60_000).toISOString(),
+        end: new Date(Date.parse(start) + windowMs).toISOString(),
         requests: group.count,
         errors: errorsByStart.get(group.dimensions[dimension]) ?? 0,
         p95Ms: group.quantiles?.edgeTimeToFirstByteMsP95 ?? null,
@@ -199,6 +206,26 @@ export function parseZoneWindows(data, windowMinutes) {
       };
     })
     .sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+  const untilMs = until ? Date.parse(until) : Number.NaN;
+  if (Number.isFinite(untilMs)) {
+    const expectedStartMs = untilMs - windowMs;
+    const hasNewest = windows.some(
+      (window) => Date.parse(window.end) === untilMs
+    );
+    if (!hasNewest) {
+      windows.push({
+        start: new Date(expectedStartMs).toISOString(),
+        end: new Date(untilMs).toISOString(),
+        requests: 0,
+        errors: 0,
+        p95Ms: null,
+        p99Ms: null,
+        originP95Ms: null,
+      });
+      windows.sort((a, b) => Date.parse(a.start) - Date.parse(b.start));
+    }
+  }
+  return windows;
 }
 
 const SHA = /\b[0-9a-f]{7,40}\b/;

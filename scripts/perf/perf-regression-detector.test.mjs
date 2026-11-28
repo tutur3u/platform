@@ -16,10 +16,12 @@ import {
   detect,
   loadApps,
   parseArgs,
+  parseCandidates,
   rerun,
   splitWindows,
 } from './perf-regression-detector.mjs';
 import {
+  candidateDataState,
   computeBaseline,
   evaluateWindows,
   isErrorJump,
@@ -395,4 +397,177 @@ test('rerun executes a stored query from a record file', async () => {
     }
   );
   assert.deepEqual(data, { ok: true });
+});
+
+function candidateWindows(latestRequests) {
+  const windows = series(Array(13).fill(400), { requests: 200 });
+  windows.at(-1).requests = latestRequests;
+  return windows;
+}
+
+async function detectCandidates({ latestRequests, candidates }) {
+  const dir = mkdtempSync(join(tmpdir(), 'perf-candidates-'));
+  const fixture = join(dir, 'fixture.json');
+  const candidatesPath = join(dir, 'candidates.json');
+  const windows = candidateWindows(latestRequests);
+  writeFileSync(
+    fixture,
+    JSON.stringify({ apps: { forms: { windows, deploys: [] } } })
+  );
+  writeFileSync(candidatesPath, JSON.stringify({ candidates }));
+  const options = parseArgs([
+    '--apps',
+    'forms',
+    '--fixture',
+    fixture,
+    '--candidates',
+    candidatesPath,
+  ]);
+  const config = {
+    host: 'tuturuuu.com',
+    locales: [],
+    apps: { forms: APP },
+  };
+  return (await detect(options, { config })).candidates;
+}
+
+const F431 = {
+  id: 'perf-forms-p95_ttfb_ms-20261127T120000000Z',
+  app: 'forms',
+  metric: 'p95_ttfb_ms',
+};
+
+test('a thin latest window parks a candidate as insufficient_data, not a regression', async () => {
+  const [entry, unchecked] = await detectCandidates({
+    latestRequests: 3,
+    candidates: [
+      { ...F431, state: 'ready' },
+      { id: 'perf-tools-p95_ttfb_ms-x', app: 'tools', state: 'ready' },
+    ],
+  });
+  assert.deepEqual(entry, {
+    id: F431.id,
+    app: 'forms',
+    metric: 'p95_ttfb_ms',
+    state: 'insufficient_data',
+    observedRequests: 3,
+    minRequests: 50,
+    window: {
+      start: new Date(T0 + 12 * W).toISOString(),
+      end: new Date(T0 + 13 * W).toISOString(),
+    },
+    transition: true,
+  });
+  assert.equal(unchecked.state, 'unchecked');
+  assert.equal(unchecked.transition, false);
+});
+
+test('a parked candidate does not log again on later ticks and re-arms at 50 requests', async () => {
+  const [stillThin] = await detectCandidates({
+    latestRequests: 1,
+    candidates: [{ ...F431, state: 'insufficient_data' }],
+  });
+  assert.equal(stillThin.state, 'insufficient_data');
+  assert.equal(stillThin.transition, false);
+
+  const [rearmed] = await detectCandidates({
+    latestRequests: 50,
+    candidates: [{ ...F431, state: 'insufficient_data' }],
+  });
+  assert.equal(rearmed.state, 'ready');
+  assert.equal(rearmed.observedRequests, 50);
+  assert.equal(rearmed.transition, true);
+});
+
+test('candidate data state reads only the newest complete window', () => {
+  const empty = candidateDataState([]);
+  assert.equal(empty.state, 'insufficient_data');
+  assert.equal(empty.observedRequests, null);
+  const missingReq = candidateDataState([
+    { start: new Date(T0).toISOString(), end: new Date(T0 + W).toISOString() },
+  ]);
+  assert.equal(missingReq.state, 'insufficient_data');
+  assert.equal(missingReq.observedRequests, null);
+  const thin = series([400, 400], { requests: 49 });
+  const enough = series([400, 400], { requests: 50 });
+  assert.equal(candidateDataState(thin).state, 'insufficient_data');
+  assert.equal(candidateDataState(enough).state, 'ready');
+});
+
+test('a missing zero-traffic newest window is padded with 0 requests and does not re-arm', () => {
+  const olderBusy = series([400, 400], { requests: 200 });
+  const expectedEnd = new Date(T0 + 4 * W).toISOString();
+  const state = candidateDataState(olderBusy, undefined, {
+    expectedEnd,
+    windowMinutes: 15,
+  });
+  assert.equal(state.state, 'insufficient_data');
+  assert.equal(state.observedRequests, 0);
+  assert.deepEqual(state.window, {
+    start: new Date(T0 + 3 * W).toISOString(),
+    end: expectedEnd,
+  });
+
+  const padded = parseZoneWindows(
+    {
+      viewer: {
+        zones: [
+          {
+            total: [
+              {
+                count: 120,
+                dimensions: { datetimeFifteenMinutes: '2026-11-20T00:00:00Z' },
+                quantiles: { edgeTimeToFirstByteMsP95: 410 },
+              },
+            ],
+            errors: [],
+          },
+        ],
+      },
+    },
+    15,
+    { until: '2026-11-20T00:30:00Z' }
+  );
+  assert.equal(padded.length, 2);
+  assert.deepEqual(
+    padded.map((w) => [w.start, w.end, w.requests]),
+    [
+      ['2026-11-20T00:00:00.000Z', '2026-11-20T00:15:00.000Z', 120],
+      ['2026-11-20T00:15:00.000Z', '2026-11-20T00:30:00.000Z', 0],
+    ]
+  );
+});
+
+test('parseCandidates skips non-regression deploy tasks instead of throwing', () => {
+  const { candidates, skipped } = parseCandidates([
+    {
+      taskKey: 'perf-production-deploy-46017368001',
+      type: 'production_deploy_failure',
+      stage: 'deployment-triage',
+      productionFailure: { id: 'perf-deploy-failure-46017368001' },
+    },
+    { taskKey: 'incomplete-entry' },
+    {
+      taskKey: 'perf-roadmap-error_rate-2026-11-21t033000000z',
+      regression: {
+        id: 'perf-roadmap-error_rate-2026-11-21T033000000Z',
+        app: 'roadmap',
+        metric: 'error_rate',
+      },
+      dataGate: { state: 'insufficient_data' },
+    },
+  ]);
+  assert.deepEqual(candidates, [
+    {
+      id: 'perf-roadmap-error_rate-2026-11-21T033000000Z',
+      app: 'roadmap',
+      metric: 'error_rate',
+      state: 'insufficient_data',
+      taskKey: 'perf-roadmap-error_rate-2026-11-21t033000000z',
+    },
+  ]);
+  assert.deepEqual(skipped, [
+    { id: 'perf-production-deploy-46017368001', reason: 'non_regression_task' },
+    { id: 'incomplete-entry', reason: 'missing_id_or_app' },
+  ]);
 });

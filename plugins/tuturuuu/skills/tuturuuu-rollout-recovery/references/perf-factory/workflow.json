@@ -63,6 +63,17 @@
     "done": "Done",
     "closed": "Archived / Closed"
   },
+  "dataGate": {
+    "state": "insufficient_data",
+    "minRequestsPerWindow": 50,
+    "comparableWindow": "newest complete filtered window of the candidate's app (detector candidates[].window, zero-padded if empty)",
+    "list": "keep current ready list (Queued or Live Today)",
+    "meaning": "Not a failure and not a regression: too little traffic to judge the p95 or error rate.",
+    "record": "dataGate: { state, observedRequests, minRequests, window }; keep the task in its current ready list (Queued or Live Today) with its stage unchanged",
+    "gateScript": "scripts/perf/perf-dispatch-gate.mjs",
+    "dispatcher": "run perf-dispatch-gate.mjs (extract-candidates, intake-check, gate) with board-list-annotated tasks and dispatch only its dispatchable task keys; fails closed on missing/non-ready list, zone-less readyAfter/deployedAt, stored verification blocker (clears only when verdict is recovered/passed/cleared/reopened with an explicit zoned verification.clearedAt or updatedAt), unmet verify-post-deploy precondition, dataGate, insufficient_data, unchecked, extraction/detector failure, or missing candidates; intake-check skips on exact regression id only; log only on entry and re-arm",
+    "rearm": "detector candidates[].state returns ready (transition true) once the newest window has minRequestsPerWindow requests; clear dataGate and resume at the recorded stage unless a stored verification blocker remains"
+  },
   "record": {
     "required": [
       "taskKey",
