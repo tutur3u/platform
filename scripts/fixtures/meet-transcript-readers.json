@@ -26,7 +26,7 @@
   "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/review/route.ts": "51e11dc185c7cef0f160b591e2ba6cf4d8d37c932cf1bff957b66e2834db8ebc",
   "packages/ai/src/meetings/transcript.ts": "bc76a6f9adfc5c5b8e2f5f07c09451d0ac26a2982ddc6929384bfd076ac67a5a",
   "packages/internal-api/src/meet-ai.ts": "0ef9222fe1c952a4f7e25021b4c046591193057377bb8c101dd107d35f715406",
-  "packages/internal-api/src/meetings.ts": "11bedc777e4670345ccc10817910ee713c2c6630c7d3e3f33de10e6ea87f287b",
+  "packages/internal-api/src/meetings.ts": "65403ca9f4e2cec5773d32a2ef12038e9f5c17da932d2fda59b5f0f0944557d6",
   "packages/legal/src/meet-ai-revision-2026-11-12.ts": "0bbac7403fcfdee5d2be6a4330e3d8c01ee65adc0a40fd64d54189bea2785645",
   "packages/meet-core/src/features/call/components/ended-notes-panel.tsx": "561a59e3b90dbb8ecdc95a9fba5e535aa9cdb23d212cb1b6998e27f771c1f4e4",
   "packages/meet-core/src/features/meeting-ai/meeting-ai-panel.tsx": "bc8c6664a2046727fbf5bee85449818d52a9fd6beb2a8e17db0c6587bf877724",
