@@ -1,4 +1,5 @@
 import { mkdtemp, rm } from 'node:fs/promises';
+import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
@@ -203,9 +204,34 @@ describe('vault witness Worker', () => {
       expect(
         (await call(mf, path, body, { type: 'application/json' })).status
       ).toBe(415);
-      expect(
-        (await call(mf, path, body, { raw: new Uint8Array(300 * 1024) })).status
-      ).toBe(413);
+      // The Worker rejects the declared size before reading the body. Send
+      // only headers so closing the connection cannot interrupt an upload.
+      const url = new URL(path, await mf.ready);
+      const oversizedStatus = await new Promise<number | undefined>(
+        (resolve, reject) => {
+          request(
+            url,
+            {
+              method: 'POST',
+              agent: false,
+              headers: {
+                authorization: `Bearer ${TOKEN}`,
+                'content-type': 'application/cbor',
+                'content-length': String(300 * 1024),
+              },
+              signal: AbortSignal.timeout(10_000),
+            },
+            (response) => {
+              response.once('error', reject);
+              response.once('end', () => resolve(response.statusCode));
+              response.resume();
+            }
+          )
+            .once('error', reject)
+            .end();
+        }
+      );
+      expect(oversizedStatus).toBe(413);
       // An indefinite-length map is valid CBOR but not canonical.
       expect(
         (await call(mf, path, body, { raw: Uint8Array.of(0xbf, 0xff) })).status
