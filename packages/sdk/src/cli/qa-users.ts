@@ -422,6 +422,8 @@ export function qaHelp(action?: string) {
 
   ttr qa account issue --product <tuturuuu|meet> --role member [--ttl 2h] [--workspace qa] [--json]
   ttr qa session --product <tuturuuu|meet> --role member --out <storageState.json> [--json]
+  ttr qa account issue --product upskii --role <teacher|student> [--json]
+  ttr qa session --product upskii --role <teacher|student> --out <storageState.json> [--json]
   ttr qa list [--product <tuturuuu|meet>] [--json]
   ttr qa cleanup [--product <tuturuuu|meet>] [--json]
 

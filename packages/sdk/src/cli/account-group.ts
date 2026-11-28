@@ -12,6 +12,7 @@ import { WorkspaceRolesAdminClient } from '../platform-workspace-roles';
 import { runAccountsCommand } from './accounts';
 import { defaultEmployeesDeps, runEmployeesCommand } from './employees';
 import { createEmployeeSecretStore } from './employees-secrets';
+import { runUpskiiQaCommand } from './qa-upskii';
 import { runQaCommand } from './qa-users';
 import { runWorkspaceRolesCommand } from './workspace-roles';
 
@@ -105,6 +106,10 @@ export async function runAccountGroup(
     return true;
   }
   if (group === 'qa') {
+    if (flags.product === 'upskii' && action !== 'users') {
+      await runUpskiiQaCommand({ flags, positionals: positionals.slice(1) });
+      return true;
+    }
     await runQaCommand({
       client: getClient(config),
       flags,

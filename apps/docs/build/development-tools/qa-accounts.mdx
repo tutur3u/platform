@@ -21,3 +21,22 @@ Cleanup acts on expired identities. To recover a failed session command,
 use the reported run and user IDs with the legacy session and cleanup commands.
 
 The product commands currently support the member role on Tuturuuu and Meet.
+
+## Upskii disposable fixtures
+
+```sh
+ttr qa account issue --product upskii --role teacher --json
+ttr qa session --product upskii --role student --out ./storageState.json --json
+```
+
+Run on the authorized macOS executor with the Upskii provisioner Keychain
+entry. Each command creates one two-hour test identity. Session issuance uses
+normal password sign-in and verifies the exact user ID and email before storing
+the browser cookie. The task can enroll this identity in a synthetic class using
+the normal invitation flow. Accounts expire on the server. If issuance fails
+after contacting the provisioner, reconcile the reported request ID before
+issuing a replacement.
+
+Tuturuuu's unattended CI uses a workflow-bound GitHub OIDC token. The QA CLI
+does not read the reported M4 Tuturuuu fleet-smoke Keychain item because the
+documented QA endpoint has no authentication contract for that item.
