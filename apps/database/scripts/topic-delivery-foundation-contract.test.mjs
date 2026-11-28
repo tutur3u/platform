@@ -166,7 +166,21 @@ function assertValidationConcurrency(policy) {
   const main = policy();
   assert.equal(main.cancel, false, 'main preserves active validation');
   assert.ok(main.group);
-  assert.deepEqual(policy({ sha: 'next-sha', run_id: 2 }), main);
+  // Ship-what-started: each main SHA keeps its own validation run, so a later
+  // push neither cancels nor displaces a pending one.
+  for (const extra of [
+    { sha: 'next-sha' },
+    { run_id: 2 },
+    { sha: 'next-sha', run_id: 2 },
+  ]) {
+    const next = policy(extra);
+    assert.equal(next.cancel, false);
+    assert.notEqual(
+      next.group,
+      main.group,
+      `main isolates ${Object.keys(extra)}`
+    );
+  }
   assert.notEqual(policy({ ref: 'refs/heads/validation' }).group, main.group);
   const mainRerun = policy({ run_attempt: 2 });
   assert.equal(mainRerun.cancel, false);
@@ -257,9 +271,10 @@ test('concurrency controls reject the old main policy and missing isolation or c
     '../../../.github/workflows/topic-delivery-foundation-contract.yaml'
   );
   for (const unsafe of [
+    // The old shared main group let a newer push displace a pending main run.
     workflow.replace(
-      "github.ref == 'refs/heads/production'",
-      "github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'"
+      "github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'",
+      "github.ref == 'refs/heads/production'"
     ),
     workflow.replace("github.ref != 'refs/heads/main' && ", ''),
     workflow.replace(

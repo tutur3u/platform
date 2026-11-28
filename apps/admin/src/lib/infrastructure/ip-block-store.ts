@@ -1,6 +1,9 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
-import { REDIS_KEYS } from '@tuturuuu/utils/abuse-protection';
+import {
+  type IPBlockStatus,
+  REDIS_KEYS,
+} from '@tuturuuu/utils/abuse-protection';
 import { isValidIpAddress } from '@tuturuuu/utils/abuse-protection/client-ip';
 import { getEdgeRedisClient } from '@tuturuuu/utils/abuse-protection/edge';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
@@ -20,6 +23,17 @@ export const blockReasons = [
   'api_abuse',
   'otp_limit_reset',
 ] as const;
+export const ipBlockStatuses = [
+  'active',
+  'expired',
+  'manually_unblocked',
+] as const satisfies readonly IPBlockStatus[];
+export function isIpBlockStatus(value: unknown): value is IPBlockStatus {
+  return (
+    typeof value === 'string' &&
+    (ipBlockStatuses as readonly string[]).includes(value)
+  );
+}
 export const ipLiteral = z
   .string()
   .refine(isValidIpAddress)
@@ -124,11 +138,14 @@ export async function listIpBlocks(
   }: {
     ip?: string;
     q?: string;
-    status?: string;
+    status?: IPBlockStatus;
     page: number;
     pageSize: number;
   }
 ) {
+  // Fail closed: an unrecognized status must never widen or blank the listing.
+  if (status !== undefined && !isIpBlockStatus(status))
+    throw new Error('Unsupported block status filter');
   const stores = await getBlockStores();
   const includesActive = !status || status === 'active';
   let edgeComplete =
