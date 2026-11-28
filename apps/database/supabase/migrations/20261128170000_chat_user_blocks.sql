@@ -14,6 +14,9 @@
 --   * chat_friend_requests guards       silently drop new requests between a
 --                                       blocked pair (keeps the email-lookup
 --                                       privacy contract) and refuse accepting
+--   * chat_conversation_json and
+--     external_chat_conversation_json   redefined: unreadCount skips senders
+--                                       the viewer blocked
 --
 -- Every function is service_role only; the Web API binds p_actor_user_id to
 -- the verified session user. Product decision and scope:
@@ -550,5 +553,92 @@ $$;
 
 revoke all on function private.chat_conversation_json(uuid, uuid) from public, anon, authenticated;
 grant execute on function private.chat_conversation_json(uuid, uuid) to service_role;
+
+-- The external-chat inbox applies the same unread rule as the native inbox.
+create or replace function private.external_chat_conversation_json(
+  p_conversation_id uuid,
+  p_actor_user_id uuid
+)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = private, public, pg_temp
+as $$
+  select jsonb_build_object(
+    'id', c.id,
+    'wsId', c.ws_id,
+    'type', c.type,
+    'title', c.title,
+    'description', c.description,
+    'aiEnabled', c.ai_enabled,
+    'metadata', c.metadata,
+    'createdBy', c.created_by,
+    'createdAt', c.created_at::text,
+    'updatedAt', c.updated_at::text,
+    'archivedAt', c.archived_at::text,
+    'memberCount', (
+      select count(*)::int
+      from private.chat_conversation_members cm_count
+      where cm_count.conversation_id = c.id
+        and cm_count.archived_at is null
+    ),
+    'unreadCount', (
+      select count(*)::int
+      from private.chat_messages m
+      left join private.chat_conversation_members own_member
+        on own_member.conversation_id = c.id
+       and own_member.user_id = p_actor_user_id
+      where m.conversation_id = c.id
+        and m.deleted_at is null
+        and coalesce(m.sender_id, '00000000-0000-0000-0000-000000000000'::uuid) <> p_actor_user_id
+        and m.created_at > coalesce(own_member.last_read_at, '-infinity'::timestamptz)
+        and not exists (
+          select 1
+          from private.chat_user_blocks viewer_block
+          where viewer_block.blocker_user_id = p_actor_user_id
+            and viewer_block.blocked_user_id = m.sender_id
+        )
+    ),
+    'latestMessage', (
+      select private.chat_message_json(m_latest)
+      from private.chat_messages m_latest
+      where m_latest.conversation_id = c.id
+        and m_latest.deleted_at is null
+      order by m_latest.created_at desc
+      limit 1
+    ),
+    'members', (
+      select coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'id', cm.id,
+            'conversationId', cm.conversation_id,
+            'userId', cm.user_id,
+            'role', cm.role,
+            'joinedAt', cm.joined_at::text,
+            'lastReadAt', cm.last_read_at::text,
+            'mutedAt', cm.muted_at::text,
+            'pinnedAt', cm.pinned_at::text,
+            'archivedAt', cm.archived_at::text,
+            'user', private.chat_member_profile_json(c.ws_id, cm.user_id)
+          )
+          order by cm.role = 'owner' desc, cm.joined_at
+        ),
+        '[]'::jsonb
+      )
+      from private.chat_conversation_members cm
+      where cm.conversation_id = c.id
+        and cm.archived_at is null
+    )
+  )
+  from private.chat_conversations c
+  where c.id = p_conversation_id;
+$$;
+
+revoke all on function private.external_chat_conversation_json(uuid, uuid)
+  from public, anon, authenticated;
+grant execute on function private.external_chat_conversation_json(uuid, uuid)
+  to service_role;
 
 commit;

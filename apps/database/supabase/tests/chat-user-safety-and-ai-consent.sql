@@ -69,6 +69,15 @@ select ok(not has_function_privilege('authenticated',
   and has_function_privilege('service_role',
     'private.has_ai_data_consent(uuid,text)', 'EXECUTE'),
   'block, report and consent functions run only as service_role');
+select ok(not has_function_privilege('authenticated',
+    'private.external_chat_conversation_json(uuid,uuid)', 'EXECUTE')
+  and not has_function_privilege('anon',
+    'private.external_chat_conversation_json(uuid,uuid)', 'EXECUTE')
+  and has_function_privilege('service_role',
+    'private.external_chat_conversation_json(uuid,uuid)', 'EXECUTE')
+  and (select prosecdef from pg_proc
+    where oid = 'private.external_chat_conversation_json(uuid,uuid)'::regprocedure),
+  'the redefined external-chat conversation JSON keeps definer rights and service_role-only execute');
 
 -- Blocking -----------------------------------------------------------------
 select ok(private.chat_can_invite_user(
@@ -171,6 +180,10 @@ select is((private.chat_conversation_json(
     '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a001')
   ->> 'unreadCount')::int, 0,
   'messages from a blocked sender do not count as unread for the blocker');
+select is((private.external_chat_conversation_json(
+    '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a001')
+  ->> 'unreadCount')::int, 0,
+  'the external-chat inbox skips a blocked sender in unreadCount too');
 select is((private.chat_conversation_json(
     '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a002')
   ->> 'unreadCount')::int, 0,
@@ -199,6 +212,10 @@ select is((private.chat_conversation_json(
     '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a001')
   ->> 'unreadCount')::int, 1,
   'after unblocking, the group message counts as unread again');
+select is((private.external_chat_conversation_json(
+    '00000000-0000-4000-8000-00000000c002', '00000000-0000-4000-8000-00000000a001')
+  ->> 'unreadCount')::int, 1,
+  'after unblocking, the external-chat inbox counts the group message again');
 select lives_ok($$
   insert into private.chat_messages(conversation_id, sender_id, kind, content)
   values ('00000000-0000-4000-8000-00000000c001',
