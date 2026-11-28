@@ -29,26 +29,36 @@ function assertPermissions(workflow, qualificationId) {
   ]) {
     for (const event of ['push', 'workflow_dispatch', 'pull_request']) {
       for (const allowed of ['true', 'false', '']) {
-        const expression = publication.if.replace(
-          /needs\.([\w-]+)/g,
-          'needs["$1"]'
-        );
-        const actual = vm.runInNewContext(
-          expression,
-          {
-            github: { ref, event_name: event },
-            needs: {
-              [qualificationId]: { outputs: { staging_allowed: allowed } },
-            },
-          },
-          { timeout: 100 }
-        );
-        assert.equal(
-          Boolean(actual),
-          ref === 'refs/heads/main' &&
-            event !== 'pull_request' &&
-            allowed === 'true'
-        );
+        for (const depResult of ['success', 'failure', 'skipped']) {
+          for (const isCancelled of [false, true]) {
+            const expression = publication.if.replace(
+              /needs\.([\w-]+)/g,
+              'needs["$1"]'
+            );
+            const actual = vm.runInNewContext(
+              expression,
+              {
+                cancelled: () => isCancelled,
+                github: { ref, event_name: event },
+                needs: {
+                  [qualificationId]: {
+                    result: depResult,
+                    outputs: { staging_allowed: allowed },
+                  },
+                },
+              },
+              { timeout: 100 }
+            );
+            assert.equal(
+              Boolean(actual),
+              !isCancelled &&
+                depResult === 'success' &&
+                ref === 'refs/heads/main' &&
+                event !== 'pull_request' &&
+                allowed === 'true'
+            );
+          }
+        }
       }
     }
   }

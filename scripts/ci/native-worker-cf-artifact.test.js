@@ -44,7 +44,7 @@ for (const { app, runtimeEnv } of WORKERS) {
 
     assert.equal(
       workflow.jobs.deploy.if,
-      "github.ref == 'refs/heads/production'"
+      "!cancelled() && needs.validate.result == 'success' && github.ref == 'refs/heads/production'"
     );
     const deployment = workflow.jobs.deploy.steps;
     const download = deployment.findIndex((step) =>

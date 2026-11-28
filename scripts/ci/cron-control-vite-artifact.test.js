@@ -43,7 +43,7 @@ test('Cron Control qualifies its cf Build Output and deploys the same immutable 
 
   assert.equal(
     workflow.jobs.deploy.if,
-    "github.ref == 'refs/heads/production'"
+    "!cancelled() && needs.validate.result == 'success' && github.ref == 'refs/heads/production'"
   );
   const deployment = workflow.jobs.deploy.steps;
   const download = deployment.findIndex((step) =>

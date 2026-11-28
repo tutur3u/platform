@@ -149,7 +149,7 @@ jobs:
           include-hidden-files: true
   deploy:
     needs: validate
-    if: ${{ (!cancelled() && needs.validate.result == 'success' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: (!cancelled() && needs.validate.result == 'success' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       deployments: write

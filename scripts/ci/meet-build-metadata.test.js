@@ -89,7 +89,7 @@ test('Meet generates source metadata before dependency and Worker builds', () =>
 test('only the production deploy verifies canonical identity before its success marker', () => {
   assert.equal(
     workflow.jobs.deploy.if,
-    "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
+    "!cancelled() && needs.validate.result == 'success' && needs.restored-artifact.result == 'success' && needs.production-policy.result == 'success' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
   );
   const steps = workflow.jobs.deploy.steps;
   const verify = steps.findIndex((step) =>

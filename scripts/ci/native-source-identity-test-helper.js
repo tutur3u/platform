@@ -169,7 +169,7 @@ function sourceIdentityTests({
       );
       assert.equal(
         workflow.jobs.deploy.if,
-        "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
+        "!cancelled() && needs.validate.result == 'success' && needs.restored-artifact.result == 'success' && needs.production-policy.result == 'success' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
       );
       // The marker names the published source, which a release dispatch pins.
       const marker = workflow.jobs.deploy.steps.find(

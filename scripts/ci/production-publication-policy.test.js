@@ -494,8 +494,8 @@ for (const { workflow, job } of publishers) {
     assert.equal(
       jobs[job].if,
       workflow === 'meet-cloudflare.yaml'
-        ? "(github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
-        : "github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
+        ? "!cancelled() && needs.validate.result == 'success' && needs.restored-artifact.result == 'success' && needs.production-policy.result == 'success' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true)) && needs.production-policy.outputs.allowed == 'true'"
+        : "!cancelled() && needs.artifact.result == 'success' && needs.production-policy.result == 'success' && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'"
     );
     const writes = publicationWrites(jobs);
     assert.deepEqual(

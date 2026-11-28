@@ -242,7 +242,7 @@ jobs:
   # captured serving version is still serving; any later failure restores it.
   deploy:
     needs: [artifact, production-policy]
-    if: ${{ (!cancelled() && needs.artifact.result == 'success' && needs.production-policy.result == 'success' && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: (!cancelled() && needs.artifact.result == 'success' && needs.production-policy.result == 'success' && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     # Includes up to 5 minutes waiting for the coordinator's lane.
     timeout-minutes: 30

@@ -478,7 +478,7 @@ jobs:
 
   native-publish-staging:
     needs: native-publication-profiles
-    if: ${{ (!cancelled() && needs.native-publication-profiles.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: (!cancelled() && needs.native-publication-profiles.result == 'success' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && needs.native-publication-profiles.outputs.staging_allowed == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       actions: read
@@ -524,7 +524,7 @@ jobs:
 
   native-publish-production:
     needs: [check-ci, production-policy, restore-acceptance]
-    if: ${{ (!cancelled() && needs.check-ci.result == 'success' && needs.production-policy.result == 'success' && github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@') && needs.check-ci.outputs.should_run == 'true' && needs.production-policy.outputs.allowed == 'true' && needs.restore-acceptance.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: (!cancelled() && needs.check-ci.result == 'success' && needs.production-policy.result == 'success' && github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && contains(github.workflow_ref, '/.github/workflows/vercel-production.yaml@') && needs.check-ci.outputs.should_run == 'true' && needs.production-policy.outputs.allowed == 'true' && needs.restore-acceptance.result == 'success') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       actions: read
