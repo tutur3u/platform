@@ -35,10 +35,13 @@ function context(ref, allowed = 'false', event = 'workflow_dispatch') {
     contains: (value, part) => value.includes(part),
     needs: {
       'affected-gate': { result: 'success', outputs: { run: 'true' } },
+      artifact: { result: 'success' },
       'production-policy': { result: 'success', outputs: { allowed } },
       qualify: { result: 'success' },
       restored: { result: 'success' },
+      'restored-artifact': { result: 'success' },
       'restore-acceptance': { result: 'success' },
+      validate: { result: 'success' },
       'check-ci': {
         result: 'success',
         outputs: { should_run: 'true', run_checks: 'true' },
