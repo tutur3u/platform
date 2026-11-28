@@ -1,4 +1,7 @@
-import { canonicalDeploymentId } from './wave1-production-deployments.mjs';
+import {
+  canonicalDeploymentId,
+  sameSplit,
+} from './wave1-production-deployments.mjs';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
@@ -224,16 +227,6 @@ const restoredStates = new Set([
   'switch-failed',
   'rolled-back',
 ]);
-
-function sameSplit(actual, expected) {
-  const shape = (list) =>
-    JSON.stringify(
-      (list ?? [])
-        .map(({ version_id, percentage }) => [version_id, percentage])
-        .sort()
-    );
-  return shape(actual) === shape(expected);
-}
 
 // A planner run names the called job `<caller> / <workflow job> / publish-<app>`.
 export function isPublicationJob(name, app) {

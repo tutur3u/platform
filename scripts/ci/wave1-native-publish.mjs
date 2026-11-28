@@ -135,6 +135,8 @@ function observationTarget(method, url) {
     return `${method} (unparseable URL)`;
   }
 }
+const CONFIRMED_VERSION_ABSENT = Symbol('confirmed version absence');
+
 export async function boundedJson(
   url,
   token,
@@ -182,6 +184,7 @@ export async function boundedJson(
         allowNotFound(data.errors),
         'Unrecognized missing version response'
       );
+      return CONFIRMED_VERSION_ABSENT;
     } else {
       assert.deepEqual(
         data.errors?.map((error) => error.code),
@@ -193,6 +196,31 @@ export async function boundedJson(
   }
   return data;
 }
+export async function isHistoricalVersionNotFound({
+  url,
+  token,
+  fetcher,
+  approvedCode,
+}) {
+  assert.ok(
+    Number.isSafeInteger(approvedCode),
+    'Missing approved version-not-found code'
+  );
+  const result = await boundedJson(
+    url,
+    token,
+    fetcher,
+    undefined,
+    undefined,
+    (errors) =>
+      Array.isArray(errors) &&
+      errors.length === 1 &&
+      errors[0]?.code === approvedCode &&
+      /^worker version not found\.?$/i.test(errors[0]?.message ?? '')
+  );
+  return result === CONFIRMED_VERSION_ABSENT;
+}
+
 export function matchesVersion(version, sha, digest) {
   return (
     version.annotations?.['workers/message'] === sha &&

@@ -4,6 +4,7 @@
 // the version's own annotation or from the accepted receipt of the earlier
 // upload that wrote it, the attempt refuses instead of guessing.
 import assert from 'node:assert/strict';
+import { canonicalDeploymentId } from './wave1-production-deployments.mjs';
 import { boundedJson } from './wave1-native-publish.mjs';
 
 const fullSha = /^[a-f0-9]{40}$/;
@@ -48,7 +49,8 @@ export async function provenLiveSha({ deployment, readVersion, baseline }) {
   const annotated = annotatedSourceSha(await readVersion(servingId));
   if (annotated) return annotated;
   assert.ok(
-    baseline?.versionId === servingId && fullSha.test(baseline.sha ?? ''),
+    canonicalDeploymentId(baseline?.versionId) ===
+      canonicalDeploymentId(servingId) && fullSha.test(baseline.sha ?? ''),
     'Serving version has no source SHA and no accepted receipt names it; owner reconciliation required'
   );
   return baseline.sha;

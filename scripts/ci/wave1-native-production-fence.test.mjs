@@ -323,4 +323,7 @@ test('R6-3: version inventory omitting a version from an earlier deployment in G
     /Incomplete version inventory: deployed version .* missing/u
   );
   assert.equal(p.state.writes, 0);
+  assert.ok(
+    !p.state.calls.some((url) => url.endsWith(`/versions/${PAGE2_ID}`))
+  );
 });

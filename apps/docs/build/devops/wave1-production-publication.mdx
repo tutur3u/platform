@@ -1,7 +1,7 @@
 ---
 title: "Wave-1 production publication"
 description: "How Mail, Calendar, Apps, Finance and Drive publish to production: version upload, 0% staged smoke, traffic switch, health gate and automatic rollback."
-updatedAt: "2026-11-25"
+updatedAt: "2026-11-28"
 audience: developers
 ---
 
@@ -60,7 +60,8 @@ every Cloudflare write.
    cursors) is used only to advance or refuse on contradiction, never to
    terminate early on a non-empty page; cursor-mode inventories, duplicate
    version IDs (including case aliases), >10 pages, or >=100 unique versions
-   refuse. As an independent cross-source check, preflight requires the
+   refuse. Deployment history refuses at 101 unique deployments or beyond
+   10 pages and requires an explicit empty terminal page. As an independent cross-source check, preflight requires the
    returned inventory to contain every version ID referenced by ANY deployment
    in the full `GET /deployments` history (active deployment, gradual splits,
    and all returned historical deployments, plus the rollback deployment when
@@ -94,10 +95,11 @@ every Cloudflare write.
    - Run two `/versions` pagination passes (`per_page=100` and a small
      `per_page`, for example `per_page=10`); confirm the two canonicalized
      lowercase version ID sets are identical.
-   - Page through all deployments and confirm active and rollback IDs appear in the
-     version set. Inspect each listed version’s SHA and digest before dispatch.
-     An absent historical ID requires a version-detail HTTP 404 with a structured
-     Worker version not-found error. This exception requires Iris’s approval.
+   - Page through all deployments and confirm every referenced version ID appears
+     in the version set. Inspect each listed version’s SHA and digest before dispatch.
+     Stop on an absent historical ID. A historical-only HTTP 404 exception is
+     disabled pending Iris’s approval and confirmation of the exact Cloudflare
+     version-detail error code and message.
    - Record the version and deployment counts and IDs in the release notes.
    - Revoke the temporary read token immediately after the audit.
    - **STOP** and do not dispatch if any hosted version carries an October SHA
@@ -286,6 +288,11 @@ a run. Callers use a group per run on `production`, so no planner callee
 replaces another.
 
 ## Regression coverage
+
+- `scripts/ci/wave1-native-production-fence.test.mjs` covers preflight refusal and the default-off historical exception.
+- `scripts/ci/wave1-native-production-guards.test.mjs` covers inventory bounds and live rollback checks.
+- `scripts/ci/wave1-native-production-guards-model.test.mjs` covers inventory pagination behavior.
+- `scripts/ci/wave1-native-production-deployment-history.test.mjs` covers deployment pagination, historical lookup responses, and UUID case aliases.
 
 - `scripts/ci/wave1-production-staged.test.mjs`: end-to-end sequence with fakes.
 - `scripts/ci/wave1-production-health.test.mjs`: health gate, smoke contract,

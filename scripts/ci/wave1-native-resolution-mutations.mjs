@@ -461,6 +461,13 @@ try {
   );
   for (const [label, testFile, pattern, mutator] of [
     [
+      'call-site historical exception enabled without approval',
+      'wave1-native-production-fence.test.mjs',
+      'R6-3:',
+      (s) =>
+        s.replace('approvedHistoricalVersionNotFoundCodes.get(app)', '100146'),
+    ],
+    [
       'call-site assertResolvedVersionsAbsent removed',
       'wave1-native-production.test.mjs',
       'resolved no-write SHA',

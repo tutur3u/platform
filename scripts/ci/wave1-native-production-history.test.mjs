@@ -648,7 +648,7 @@ for (const state of [
     const p = fixture();
     p.state.receipt.state = state;
     p.state.receipt.rollback = {
-      versions: [{ version_id: versionId, percentage: 100 }],
+      versions: [{ version_id: versionId.toUpperCase(), percentage: 100 }],
     };
     // The restored attempt's preflight proved the serving SHA; a later
     // attempt uses it to identify the unannotated serving version.

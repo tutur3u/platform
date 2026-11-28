@@ -30,6 +30,7 @@ import { profiles } from './wave1-native-profile.mjs';
 import { ABUSE_GUARD_SERVICE_BINDING } from './wave1-source-admissions.mjs';
 import {
   boundedJson,
+  isHistoricalVersionNotFound,
   matchesVersion,
   requireRollback,
   uploadArtifact,
@@ -48,6 +49,10 @@ import { compareUploadedModules } from './wave1-uploaded-modules.mjs';
 
 // Upload, staged smoke and health gate stop by this budget; the upload
 // step's 25-minute timeout keeps the rest for the rollback and its re-probe.
+// Add an app and its exact GET /versions/{id} error code only after Iris approval
+// and provider readback. 100146 (deploy) and 10007 (missing Worker) are unconfirmed here.
+const approvedHistoricalVersionNotFoundCodes = new Map();
+
 export const UPLOAD_BUDGET_MS = 17 * 60_000;
 
 export function assertRouteFree(config) {
@@ -324,24 +329,22 @@ export async function main({
       deployments: deployments.slice(0, 1),
       versionItems,
     });
+    const approvedMissingVersionCode =
+      approvedHistoricalVersionNotFoundCodes.get(app);
     const confirmedMissingHistoricalIds =
-      await confirmMissingHistoricalVersions({
-        deployments,
-        versionItems,
-        isVersionMissing: async (id) =>
-          (await boundedJson(
-            `${script}/versions/${id}`,
-            topologyToken,
-            boundedFetch,
-            undefined,
-            undefined,
-            (errors) =>
-              Array.isArray(errors) &&
-              errors.length === 1 &&
-              Number.isInteger(errors[0]?.code) &&
-              /^worker version not found\.?$/i.test(errors[0]?.message ?? '')
-          )) === null,
-      });
+      approvedMissingVersionCode === undefined
+        ? undefined
+        : await confirmMissingHistoricalVersions({
+            deployments,
+            versionItems,
+            isVersionMissing: (id) =>
+              isHistoricalVersionNotFound({
+                url: `${script}/versions/${id}`,
+                token: topologyToken,
+                fetcher: boundedFetch,
+                approvedCode: approvedMissingVersionCode,
+              }),
+          });
     assertActiveVersionsPresent({
       deployments,
       versionItems,

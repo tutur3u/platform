@@ -107,10 +107,10 @@ and strictly `< 100` unique versions). Before `assertResolvedVersionsAbsent`,
 `assertActiveVersionsPresent` also requires every version ID referenced by ANY
 deployment in the full `GET /deployments` history (active, gradual splits,
 historical deployments, and rollback) against the version inventory. Deployment
-pagination requires an explicit empty terminal page within the read bound. An
-absent historical ID requires a version-detail HTTP 404 with a structured Worker
-version not-found error. This exception requires Iris’s approval. Active and
-rollback IDs always require inventory membership.
+pagination requires an explicit empty terminal page within the read bound. Missing
+historical IDs refuse by default. Enabling an app's historical-only HTTP 404
+exception requires Iris approval and the exact error code and message confirmed
+from the version-detail endpoint. Active and rollback IDs require membership.
 Residual & compensation: a metadata-free silent truncation of an undeployed
 version is an accepted residual. Both October Calendar attempts failed at upload.
 Run `40428329193` recorded Cloudflare error `10021`. Run `40413173161` has no
@@ -125,8 +125,8 @@ also re-reads the live deployment id and version split before uploading
 (`assertLiveRollbackUnchanged`), refusing with zero writes on any drift since
 preflight. Continue checking
 other history; a later started pending replay remains fenced. Keep run, job,
-artifact and receipt fixtures independent, and run the 41-mutant harness
-(22 predicates + 14 helper-body guards + 1 model-based invariant + 4
+artifact and receipt fixtures independent, and run the 46-mutant harness
+(22 predicates + 18 predicate/guard mutations + 1 model-based invariant + 5
 `wave1-native-production.mjs` call-site guards:
 `node scripts/ci/wave1-native-resolution-mutations.mjs --out <file>`)
 when changing resolution matching or preflight/upload guards.
