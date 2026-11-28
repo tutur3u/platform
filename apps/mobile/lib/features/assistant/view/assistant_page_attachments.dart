@@ -7,6 +7,13 @@ extension _AssistantAttachments on _AssistantPageState {
   /// Callers check the remote guard first, so the local-model lane never
   /// reaches the New chat flow, which could clear the draft unasked.
   Future<bool> _readyAttachmentChat(String wsId) async {
+    // Asked before anything is picked or recorded, so Not now loses nothing.
+    if (_aiConsentPending &&
+        (!await _ensureAiConsent() ||
+            !mounted ||
+            !_remoteGuard(wsId).current)) {
+      return false;
+    }
     final chatState = _chatCubit.state;
     if (!chatState.creationOutcomeUnknown || chatState.storedChatId != null) {
       return true;

@@ -209,6 +209,46 @@
       "name": {}
     }
   },
+  "@chatSafetyAlsoBlock": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatSafetyAlsoReport": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatSafetyBlockTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatSafetyBlockUser": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatSafetyBlocked": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatSafetyReportDescription": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatSafetyReportUser": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "@chatSafetyUnblocked": {
+    "placeholders": {
+      "name": {}
+    }
+  },
   "@chatTypingMany": {
     "placeholders": {
       "count": {}
@@ -1982,6 +2022,40 @@
   "chatPin": "Ghim",
   "chatPinned": "Đã ghim",
   "chatRetry": "Thử lại",
+  "chatSafetyAlsoBlock": "Chặn luôn {name}",
+  "chatSafetyAlsoReport": "Báo cáo luôn {name}",
+  "chatSafetyBlock": "Chặn",
+  "chatSafetyBlockFailed": "Không chặn được. Vui lòng thử lại.",
+  "chatSafetyBlockHidden": "Tin nhắn của họ sẽ bị ẩn khỏi các cuộc trò chuyện của bạn, kể cả nhóm chung.",
+  "chatSafetyBlockNoMessages": "Họ không thể nhắn tin hay gửi lời mời kết bạn cho bạn.",
+  "chatSafetyBlockTitle": "Chặn {name}?",
+  "chatSafetyBlockUndo": "Bạn có thể bỏ chặn trong Cài đặt › Quyền riêng tư › Người đã chặn.",
+  "chatSafetyBlockUnfriend": "Hai bạn sẽ không còn là bạn bè và họ không được thông báo.",
+  "chatSafetyBlockUser": "Chặn {name}",
+  "chatSafetyBlocked": "Đã chặn {name}",
+  "chatSafetyBlockedPeople": "Người đã chặn",
+  "chatSafetyBlockedPeopleEmpty": "Bạn chưa chặn ai",
+  "chatSafetyCannotMessage": "Bạn không thể nhắn tin cho người này",
+  "chatSafetyDetailsLabel": "Chi tiết (không bắt buộc)",
+  "chatSafetyDetailsPlaceholder": "Hãy cho chúng tôi biết chuyện gì đã xảy ra",
+  "chatSafetyReasonHarassment": "Quấy rối hoặc bắt nạt",
+  "chatSafetyReasonHate": "Ngôn từ thù ghét",
+  "chatSafetyReasonImpersonation": "Mạo danh",
+  "chatSafetyReasonLabel": "Lý do",
+  "chatSafetyReasonOther": "Lý do khác",
+  "chatSafetyReasonSexual": "Nội dung tình dục",
+  "chatSafetyReasonSpam": "Tin rác hoặc lừa đảo",
+  "chatSafetyReasonViolence": "Bạo lực hoặc đe dọa",
+  "chatSafetyReportDescription": "{name} sẽ không được thông báo. Đội ngũ của chúng tôi xem xét báo cáo trong vòng 24 giờ.",
+  "chatSafetyReportFailed": "Không gửi được báo cáo. Vui lòng thử lại.",
+  "chatSafetyReportMessage": "Báo cáo tin nhắn",
+  "chatSafetyReportRateLimited": "Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.",
+  "chatSafetyReportSent": "Đã gửi báo cáo",
+  "chatSafetyReportUser": "Báo cáo {name}",
+  "chatSafetySendReport": "Gửi báo cáo",
+  "chatSafetyUnblock": "Bỏ chặn",
+  "chatSafetyUnblockFailed": "Không bỏ chặn được. Vui lòng thử lại.",
+  "chatSafetyUnblocked": "Đã bỏ chặn {name}",
   "chatSaveSettings": "Lưu cài đặt",
   "chatSearch": "Tìm kiếm",
   "chatSearchMessages": "Tìm tin nhắn",
@@ -3905,7 +3979,44 @@
   "mfaTitle": "Xác thực hai yếu tố",
   "mfaVerify": "Xác thực",
   "miraChatTitle": "Mira Chat",
+  "miraConsentAllow": "Cho phép",
+  "miraConsentAttachmentBlocked": "Hãy cho phép chia sẻ với Google Gemini để gửi nội dung này.",
+  "miraConsentBody": "Câu trả lời của Mira được tạo bởi các mô hình Google Gemini. Để trả lời, Mira gửi những gì bạn chia sẻ đến Google thông qua máy chủ của Tuturuuu.",
+  "miraConsentCamera": "Camera",
+  "miraConsentCameraDetail": "Ảnh và video Live mà bạn bật",
+  "miraConsentLiveBlocked": "Hãy cho phép chia sẻ với Google Gemini để bắt đầu Live.",
+  "miraConsentNotNow": "Để sau",
+  "miraConsentPrivacyPolicy": "Chính sách quyền riêng tư",
+  "miraConsentSaveFailed": "Không thể lưu lựa chọn của bạn. Hãy kiểm tra kết nối và thử lại.",
+  "miraConsentScreen": "Màn hình",
+  "miraConsentScreenDetail": "Màn hình của bạn trong lúc bạn chia sẻ",
+  "miraConsentSettingsAllowedOn": "Cần cho câu trả lời trên đám mây, giọng nói và Live của Mira. Đã cho phép ngày {date}.",
+  "miraConsentSettingsError": "Không thể cập nhật cài đặt này. Hãy thử lại.",
+  "miraConsentSettingsFootnote": "Khi tắt, Mira sẽ ngừng gửi mọi nội dung mới đến Google. Mô hình trên thiết bị vẫn hoạt động ngoại tuyến.",
+  "miraConsentSettingsSummary": "Cần cho câu trả lời trên đám mây, giọng nói và Live của Mira.",
+  "miraConsentSettingsTitle": "Chia sẻ dữ liệu với Google Gemini",
+  "miraConsentText": "Văn bản",
+  "miraConsentTextDetail": "Tin nhắn và tệp đính kèm của bạn",
+  "miraConsentTitle": "Chia sẻ dữ liệu với Google Gemini?",
+  "miraConsentVoice": "Giọng nói",
+  "miraConsentVoiceDetail": "Tin nhắn thoại và âm thanh Live",
+  "miraConsentWhatIsSent": "Những gì được gửi",
+  "miraConsentWhy": "Mục đích: chỉ để tạo câu trả lời của Mira cho bạn. Không có gì được gửi cho đến khi bạn cho phép. Bạn có thể tắt bất cứ lúc nào trong Cài đặt › Quyền riêng tư.",
   "miraLiveTitle": "Mira",
+  "miraReportAction": "Báo cáo câu trả lời này",
+  "miraReportDescription": "Chúng tôi sẽ xem xét câu trả lời này và tin nhắn trước đó để cải thiện Mira.",
+  "miraReportDetailsLabel": "Chi tiết (không bắt buộc)",
+  "miraReportDetailsPlaceholder": "Lẽ ra Mira nên trả lời thế nào?",
+  "miraReportFailed": "Không thể gửi báo cáo. Hãy thử lại.",
+  "miraReportRateLimited": "Bạn đã gửi quá nhiều báo cáo. Hãy thử lại sau.",
+  "miraReportReasonHarmful": "Có hại hoặc không an toàn",
+  "miraReportReasonHate": "Xúc phạm hoặc thù ghét",
+  "miraReportReasonInaccurate": "Sai hoặc bịa đặt",
+  "miraReportReasonOther": "Lý do khác",
+  "miraReportReasonSexual": "Nội dung tình dục",
+  "miraReportSend": "Gửi báo cáo",
+  "miraReportSent": "Đã gửi báo cáo",
+  "miraReportTitle": "Báo cáo câu trả lời này",
   "navApps": "Ứng dụng",
   "navAssistant": "Trợ lý",
   "navBack": "Quay lại",

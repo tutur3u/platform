@@ -15,6 +15,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
+import '../consent/mira_ai_consent.dart';
 import '../data/assistant_chat_persistence_contract.dart';
 import '../data/assistant_created_chat.dart';
 import '../data/assistant_first_message_creation.dart';
@@ -42,6 +43,7 @@ part 'assistant_chat_creation_submission.dart';
 part 'assistant_chat_pending_submission.dart';
 part 'assistant_chat_tool_effects.dart';
 part 'assistant_chat_reactions.dart';
+part 'assistant_chat_consent.dart';
 
 class AssistantChatCubit extends Cubit<AssistantChatState> {
   AssistantChatCubit({
@@ -66,7 +68,9 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     Future<void> Function(String theme, bool Function() isCurrent)?
     onThemeRequested,
     AssistantMediaOptimizer? mediaOptimizer,
-  }) : _mediaOptimizer = mediaOptimizer ?? const AssistantMediaOptimizer(),
+    MiraAiConsentGate? aiConsentGate,
+  }) : _aiConsentGate = aiConsentGate,
+       _mediaOptimizer = mediaOptimizer ?? const AssistantMediaOptimizer(),
        _operationalReporter =
            operationalReporter ??
            MobileObservability.instance.operationalReporter,
@@ -90,6 +94,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   _onThemeRequested;
   final OperationalErrorReporter _operationalReporter;
   final AssistantMediaOptimizer _mediaOptimizer;
+  final MiraAiConsentGate? _aiConsentGate;
   // Local sources of composer attachments that may still need a retry.
   final _voiceRetries = <String, Future<void> Function()>{};
   final _voiceUploads = <String>{};

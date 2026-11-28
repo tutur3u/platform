@@ -22,6 +22,7 @@ import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 
 part 'chat_repository_panels.dart';
+part 'chat_repository_safety.dart';
 
 /// A history page, how many rows the server itself returned, and whether
 /// it came from the network rather than the cache.

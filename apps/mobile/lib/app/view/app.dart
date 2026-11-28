@@ -59,6 +59,7 @@ import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent_controller.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/mira_offline_preparation.dart';
 import 'package:mobile/features/audience_mode/audience_mode.dart';
@@ -549,6 +550,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _mastermind.snapshot),
         RepositoryProvider.value(value: _mastermind),
         RepositoryProvider<AuthRepository>.value(value: _authRepo),
+        RepositoryProvider.value(value: MiraAiConsentProvision.app),
         BlocProvider.value(value: _appTabCubit),
         BlocProvider.value(value: _shellChromeActionsCubit),
         BlocProvider.value(value: _shellMiniNavCubit),

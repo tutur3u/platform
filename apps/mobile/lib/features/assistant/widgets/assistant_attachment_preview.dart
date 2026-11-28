@@ -340,6 +340,8 @@ String assistantAttachmentFailureMessage(
     context.l10n.assistantAttachmentFailureNetwork,
   AssistantAttachmentFailure.newChatRequired =>
     context.l10n.assistantAttachmentFailureNewChatRequired,
+  AssistantAttachmentFailure.consentRequired =>
+    context.l10n.miraConsentAttachmentBlocked,
   AssistantAttachmentFailure.server ||
   null => context.l10n.assistantAttachmentFailureServer,
 };

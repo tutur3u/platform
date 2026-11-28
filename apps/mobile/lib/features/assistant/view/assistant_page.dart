@@ -18,6 +18,9 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent_controller.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent_sheet.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
@@ -53,6 +56,8 @@ import 'package:mobile/features/assistant/models/assistant_mobile_screen_context
 import 'package:mobile/features/assistant/models/assistant_model_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/models/assistant_reply_failure.dart';
+import 'package:mobile/features/assistant/report/mira_response_report.dart';
+import 'package:mobile/features/assistant/report/mira_response_report_sheet.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_preferences.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
@@ -116,6 +121,7 @@ part 'assistant_page_history.dart';
 part 'assistant_page_history_panes.dart';
 part 'assistant_page_local.dart';
 part 'assistant_page_submission.dart';
+part 'assistant_page_consent.dart';
 
 class AssistantPage extends StatefulWidget {
   const AssistantPage({
@@ -128,6 +134,8 @@ class AssistantPage extends StatefulWidget {
     this.currentActor,
     this.liveRepository,
     this.liveSocket,
+    this.aiConsent,
+    this.reportRepository,
   });
 
   final int replayToken;
@@ -140,6 +148,10 @@ class AssistantPage extends StatefulWidget {
   final String? Function()? currentActor;
   final AssistantLiveRepository? liveRepository;
   final AssistantLiveSocketClient? liveSocket;
+
+  /// Mira's AI data consent; defaults to the app's provided controller.
+  final MiraAiConsentController? aiConsent;
+  final MiraResponseReportRepository? reportRepository;
 
   @override
   State<AssistantPage> createState() => _AssistantPageState();
@@ -154,6 +166,14 @@ class _AssistantPageState extends State<AssistantPage>
   String? _currentActor() => (widget.currentActor ?? currentCacheUserId)();
   late final AssistantLiveRepository _liveRepository =
       widget.liveRepository ?? AssistantLiveRepository();
+  MiraAiConsentController? _aiConsent;
+  late final MiraAiConsentGate? _aiConsentGate = switch (_aiConsent) {
+    final consent? => _AssistantPageAiConsentGate(this, consent),
+    null => null,
+  };
+  late final VoidCallback _aiConsentListener = () => _observeAiConsent();
+  late final MiraResponseReportRepository _reportRepository =
+      widget.reportRepository ?? MiraResponseReportRepository();
   final _voiceCapture = AssistantVoiceCaptureCubit();
   String? _voiceWorkspaceId;
   String? _voiceActorId;
@@ -212,6 +232,7 @@ class _AssistantPageState extends State<AssistantPage>
   late final AssistantChatCubit _chatCubit = AssistantChatCubit(
     repository: _repository,
     preferences: _preferences,
+    aiConsentGate: _aiConsentGate,
     prepareCreationSettings: _prepareCreationSettings,
     onWorkspaceContextChanged: (workspaceContextId) =>
         _shellCubit.setWorkspaceContextId(workspaceContextId),
@@ -256,6 +277,7 @@ class _AssistantPageState extends State<AssistantPage>
     },
   );
   late final AssistantLiveCubit _liveCubit = AssistantLiveCubit(
+    aiConsentGate: _aiConsentGate,
     currentScopeToken: () => _voiceActorScopeEpoch,
     repository: _liveRepository,
     socket: widget.liveSocket ?? AssistantLiveSocketClient(),
@@ -290,9 +312,10 @@ class _AssistantPageState extends State<AssistantPage>
       if (!_keepLiveWhileBrowsing || !mounted) {
         return {'screen': 'unavailable'};
       }
-      final uri = GoRouter.maybeOf(
-        context,
-      )?.routerDelegate.currentConfiguration.uri;
+      final uri = GoRouter.maybeOf(context)
+          ?.routerDelegate
+          .currentConfiguration
+          .uri;
       return assistantMobileScreenContext(uri);
     },
   );
@@ -321,6 +344,7 @@ class _AssistantPageState extends State<AssistantPage>
   void _resetLocalActor() {
     _syncThemeActor(force: true);
     ++_voiceActorScopeEpoch;
+    unawaited(_aiConsent?.refresh());
     _dismissLiveCall();
     unawaited(_localCubit.invalidate());
     setState(() => _loadedWorkspaceId = null);
@@ -331,6 +355,10 @@ class _AssistantPageState extends State<AssistantPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _scrollController.addListener(_handleScroll);
+    _aiConsent =
+        widget.aiConsent ?? context.read<MiraAiConsentProvision?>()?.controller;
+    _aiConsent?.addListener(_aiConsentListener);
+    unawaited(_aiConsent?.refresh());
   }
 
   @override
@@ -340,6 +368,7 @@ class _AssistantPageState extends State<AssistantPage>
       ForegroundRefresh.request(this, () {
         if (!mounted) return;
         _appIsForeground = true;
+        unawaited(_aiConsent?.refresh());
         _resumeLocal();
       });
     }
@@ -424,6 +453,7 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   void dispose() {
     _disposeChatTheme();
+    _aiConsent?.removeListener(_aiConsentListener);
     WidgetsBinding.instance.removeObserver(this);
     _liveHaptics.dispose();
     _scrollController.removeListener(_handleScroll);

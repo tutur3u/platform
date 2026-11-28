@@ -216,6 +216,7 @@ String assistantLiveErrorLabel(
     l10n.assistantLiveFailureMicrophone,
   AssistantLiveFailure.cameraPermission => l10n.assistantLiveFailureCamera,
   AssistantLiveFailure.noWorkspace => l10n.assistantLiveFailureNoWorkspace,
+  AssistantLiveFailure.aiConsentRequired => l10n.miraConsentLiveBlocked,
   AssistantLiveFailure.unknown => l10n.assistantLiveFailureUnknown,
   _ => l10n.assistantLiveDescriptionError,
 };

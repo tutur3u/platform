@@ -26,6 +26,8 @@ class AssistantTranscriptSection extends StatefulWidget {
     this.onReply,
     this.onReact,
     this.onRefreshReactions,
+    this.canReport,
+    this.onReport,
     this.onJumpToReply,
     super.key,
   });
@@ -44,6 +46,10 @@ class AssistantTranscriptSection extends StatefulWidget {
   final ValueChanged<String>? onReply;
   final void Function(String, String)? onReact;
   final ValueChanged<String>? onRefreshReactions;
+
+  /// Whether a reply is saved and reportable; [onReport] reports it.
+  final bool Function(String)? canReport;
+  final ValueChanged<String>? onReport;
   final VoidCallback? onJumpToReply;
 
   @override
@@ -139,6 +145,12 @@ class _AssistantTranscriptSectionState
                     : null,
                 onReact: persisted && !refreshRequired && widget.onReact != null
                     ? (reaction) => widget.onReact!(message.id, reaction)
+                    : null,
+                onReport:
+                    message.role == 'assistant' &&
+                        widget.onReport != null &&
+                        (widget.canReport?.call(message.id) ?? false)
+                    ? () => widget.onReport!(message.id)
                     : null,
                 onRefreshReactions:
                     persisted &&

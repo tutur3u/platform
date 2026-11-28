@@ -9,6 +9,7 @@ import 'package:image/image.dart' as img;
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/bridge/assistant_live_client_markers.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
 import 'package:mobile/features/assistant/data/assistant_audio_buffer.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
 import 'package:mobile/features/assistant/data/assistant_live_camera_service.dart';
@@ -29,6 +30,7 @@ import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/models/assistant_playback_spectrum.dart';
 
 part 'assistant_live_camera.dart';
+part 'assistant_live_consent.dart';
 part 'assistant_live_microphone.dart';
 part 'assistant_live_reconnect.dart';
 part 'assistant_live_recovery.dart';
@@ -59,6 +61,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     required Future<void> Function(String wsId, String chatId) onHistoryUpdated,
     AssistantLiveTurnConfirmation? isTurnRestored,
     this.screenContextProvider,
+    this.aiConsentGate,
     String? Function()? currentUserId,
     int Function()? currentScopeToken,
     AssistantLiveScreenService? screenService,
@@ -108,6 +111,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
   final Future<void> Function(String wsId, String chatId) _onHistoryUpdated;
   final AssistantLiveTurnConfirmation? _isTurnRestored;
   final Map<String, dynamic> Function()? screenContextProvider;
+  final MiraAiConsentGate? aiConsentGate;
 
   StreamSubscription<AssistantLiveSocketEvent>? _socketSubscription;
   Completer<void>? _readyCompleter;
@@ -164,6 +168,8 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
     bool Function()? isCurrent,
     Future<void> Function(String wsId, String chatId)? onChatBound,
   }) async {
+    // Mic, camera and screen reach Google only through a consented session.
+    if (_aiConsentPending && !await _admitLiveAiConsent()) return null;
     // A user start is a new intent; an automatic reconnect inherits the one it
     // was admitted under. Every continuation re-checks it after each await.
     final intentEpoch = _automaticReconnect ? _intentEpoch : _startIntent();
@@ -323,6 +329,7 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       timings.finish();
       await binding.then<void>((_) {}, onError: (Object _) {});
     } on Exception catch (error) {
+      if (isMiraAiConsentRequired(error)) aiConsentGate?.consentRequired();
       if (!currentRequest()) return null;
       _emitError(classifyAssistantLiveFailure(error));
     } finally {
@@ -345,15 +352,6 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
             state.status == AssistantLiveConnectionStatus.connected
         ? requestVersion
         : null;
-  }
-
-  void _publishLateTimings(
-    AssistantLiveStartupTimings timings,
-    bool Function() currentRequest,
-  ) {
-    if (currentRequest() && state.startupTimings.isNotEmpty) {
-      emit(state.copyWith(startupTimings: timings.snapshot));
-    }
   }
 
   Future<AssistantLiveDispatch> sendTypedMessage({

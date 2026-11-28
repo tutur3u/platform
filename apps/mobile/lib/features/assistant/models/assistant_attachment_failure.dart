@@ -11,9 +11,14 @@ enum AssistantAttachmentFailure {
 
   /// The composer has no chat and a new one needs the user's informed
   /// confirmation first; retrying the upload alone can never succeed.
-  newChatRequired;
+  newChatRequired,
 
-  bool get retryable => this == network || this == server;
+  /// Mira holds the upload until the user allows sharing with Google Gemini;
+  /// retrying asks again.
+  consentRequired;
+
+  bool get retryable =>
+      this == network || this == server || this == consentRequired;
 
   static AssistantAttachmentFailure fromApi(ApiException error) {
     if (error.failureKind == ApiFailureKind.transport) return network;

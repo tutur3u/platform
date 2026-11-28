@@ -593,6 +593,10 @@ extension _AssistantPageLayout on _AssistantPageState {
       onReact: (id, reaction) =>
           unawaited(_reactToMessage(id, reaction, current)),
       onRefreshReactions: (id) => unawaited(_reactToMessage(id, null, current)),
+      canReport: remote
+          ? (id) => _chatCubit.replyReportTarget(id) != null
+          : null,
+      onReport: (id) => unawaited(_reportReply(id, current)),
       onOpenBilling: billingWsId == null || isAppleStorePlatform()
           ? null
           : () => unawaited(

@@ -51,6 +51,8 @@ class ChatThreadView extends StatelessWidget {
     this.isMessageSynced,
     this.linkPreviews,
     this.canDeleteOthers = false,
+    this.onSafetyAction,
+    this.composerBlocked = false,
     super.key,
   });
 
@@ -92,6 +94,15 @@ class ChatThreadView extends StatelessWidget {
   /// Whether the viewer moderates this conversation and may delete other
   /// members' messages.
   final bool canDeleteOthers;
+
+  /// Reports a message or its sender, or blocks the sender; offered only on
+  /// other people's messages.
+  final void Function(ChatMessage message, ChatSafetyAction action)?
+  onSafetyAction;
+
+  /// Whether this direct conversation is blocked either way, which replaces
+  /// the composer with an explanation.
+  final bool composerBlocked;
 
   @override
   Widget build(BuildContext context) {
@@ -139,11 +150,14 @@ class ChatThreadView extends StatelessWidget {
                         (id) => !isPendingChatMessage(selected.wsId, id),
                     linkPreviews: linkPreviews,
                     canDeleteOthers: canDeleteOthers,
+                    onSafetyAction: onSafetyAction,
                   ),
                 },
         ),
         if (typingNames.isNotEmpty) _TypingLine(names: typingNames),
-        if (!selected.isReadOnlyAgent)
+        if (!selected.isReadOnlyAgent && composerBlocked)
+          const _BlockedComposerNotice()
+        else if (!selected.isReadOnlyAgent)
           ChatComposer(
             pendingAttachments: pendingAttachments,
             isSending: isSending,
@@ -157,6 +171,55 @@ class ChatThreadView extends StatelessWidget {
             onTypingStopped: onTypingStopped,
           ),
       ],
+    );
+  }
+}
+
+/// Shown in place of the composer when the person cannot be messaged.
+class _BlockedComposerNotice extends StatelessWidget {
+  const _BlockedComposerNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    return Padding(
+      key: const ValueKey('chat-composer-blocked'),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Semantics(
+        liveRegion: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: tokens.colorScheme.muted,
+            borderRadius: BorderRadius.circular(AppRadius.card - 4),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.ban,
+                  size: 18,
+                  color: tokens.colorScheme.mutedForeground,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    context.l10n.chatSafetyCannotMessage,
+                    style: tokens.typography.small.copyWith(
+                      color: tokens.colorScheme.mutedForeground,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

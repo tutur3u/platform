@@ -193,6 +193,8 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         state.status == AssistantChatStatus.error) {
       return false;
     }
+    // Nothing reaches Mira's cloud model before the user allows it.
+    if (_aiConsentPending && !await _admitAiConsent(current)) return false;
     if (retryMessageId != null &&
         state.messages
                 .where((m) => m.id == retryMessageId)
@@ -585,6 +587,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
               error,
             );
             _forgetUnsentNativePending(nativePending);
+            _observeAiConsentFailure(error);
             if (!current()) {
               _staleSubmission(clientRequestId);
               return;
@@ -636,6 +639,7 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         ),
       );
     } on Object catch (error) {
+      _observeAiConsentFailure(error);
       if (!current()) {
         _staleSubmission(clientRequestId);
         return;

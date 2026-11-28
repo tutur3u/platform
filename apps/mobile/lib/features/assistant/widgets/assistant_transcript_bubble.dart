@@ -40,6 +40,7 @@ class AssistantTranscriptBubble extends StatefulWidget {
     this.onRetryAttachment,
     this.onReact,
     this.onRefreshReactions,
+    this.onReport,
     this.isActionCurrent,
     this.replyPreview,
     super.key,
@@ -64,6 +65,9 @@ class AssistantTranscriptBubble extends StatefulWidget {
   final VoidCallback? onRetryAttachment;
   final ValueChanged<String>? onReact;
   final VoidCallback? onRefreshReactions;
+
+  /// Reports this saved Mira reply; null hides the action.
+  final VoidCallback? onReport;
   final bool Function()? isActionCurrent;
   final Widget? replyPreview;
 
@@ -109,6 +113,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
       final onReply = widget.onReply;
       final onReact = widget.onReact;
       final onRefresh = widget.onRefreshReactions;
+      final onReport = widget.onReport;
       final current = widget.isActionCurrent;
       final action = await showAppSheet<AssistantMessageAction>(
         context: context,
@@ -117,6 +122,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
           canReply: onReply != null,
           canReact: onReact != null,
           canRefresh: onRefresh != null,
+          canReport: onReport != null,
           selectedReactions: {
             for (final reaction in widget.reactions)
               if (reaction.userIds.contains(widget.actorId)) reaction.emoji,
@@ -139,6 +145,8 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
           onReact?.call(reaction);
         case AssistantRefreshReactions():
           onRefresh?.call();
+        case AssistantReportMessage():
+          onReport?.call();
         case null:
           break;
       }
@@ -211,7 +219,8 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         copyPayload.isNotEmpty ||
         widget.onReply != null ||
         widget.onReact != null ||
-        widget.onRefreshReactions != null;
+        widget.onRefreshReactions != null ||
+        widget.onReport != null;
 
     return Align(
       alignment: alignEnd

@@ -8,8 +8,42 @@ import 'package:mobile/features/chat/widgets/chat_format.dart';
 import 'package:mobile/features/chat/widgets/chat_reactions.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Opens the actions for [message]: quick reactions, reply, copy and, for
-/// the viewer's own messages, delete.
+/// A safety action offered on another person's message.
+enum ChatSafetyAction { reportMessage, reportSender, blockSender }
+
+/// Whether [message] may be reported or its sender blocked by the viewer:
+/// a synced message another person wrote. Assistant and system messages,
+/// and the viewer's own, never qualify.
+bool chatMessageAllowsSafetyActions(
+  ChatMessage message, {
+  required String? currentUserId,
+}) {
+  final senderId = message.senderId ?? message.sender?.id;
+  return currentUserId != null &&
+      message.kind == ChatMessageKind.user &&
+      message.deletedAt == null &&
+      senderId != null &&
+      senderId.isNotEmpty &&
+      senderId != currentUserId;
+}
+
+/// The sender of [message] as a profile for the report and block sheets.
+ChatUserProfile chatMessageSenderProfile(
+  BuildContext context,
+  ChatMessage message,
+) {
+  final sender = message.sender;
+  final id = message.senderId ?? sender?.id ?? '';
+  return ChatUserProfile(
+    id: id,
+    displayName: chatSenderName(context, message),
+    avatarUrl: sender?.avatarUrl,
+    handle: sender?.handle,
+  );
+}
+
+/// Opens the actions for [message]: quick reactions, reply, copy, delete
+/// where allowed and, with [onSafetyAction], report and block.
 Future<void> showChatMessageActions(
   BuildContext context, {
   required ChatMessage message,
@@ -17,6 +51,7 @@ Future<void> showChatMessageActions(
   ValueChanged<String>? onReaction,
   VoidCallback? onReply,
   Future<void> Function()? onDelete,
+  ValueChanged<ChatSafetyAction>? onSafetyAction,
 }) {
   final l10n = context.l10n;
   return showAppSheet<void>(
@@ -85,6 +120,39 @@ Future<void> showChatMessageActions(
                 },
                 child: Text(l10n.chatDeleteMessage),
               ),
+            if (onSafetyAction != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              for (final (action, icon, label) in [
+                (
+                  ChatSafetyAction.reportMessage,
+                  LucideIcons.flag,
+                  l10n.chatSafetyReportMessage,
+                ),
+                (
+                  ChatSafetyAction.reportSender,
+                  LucideIcons.userX,
+                  l10n.chatSafetyReportUser(
+                    chatSenderName(sheetContext, message),
+                  ),
+                ),
+                (
+                  ChatSafetyAction.blockSender,
+                  LucideIcons.ban,
+                  l10n.chatSafetyBlockUser(
+                    chatSenderName(sheetContext, message),
+                  ),
+                ),
+              ])
+                _DestructiveAction(
+                  key: ValueKey('chat-safety-${action.name}'),
+                  icon: icon,
+                  label: label,
+                  onPressed: () {
+                    close();
+                    onSafetyAction(action);
+                  },
+                ),
+            ],
           ],
         ),
       );
@@ -114,6 +182,30 @@ Future<void> _confirmDelete(
     ),
   );
   if (confirmed == true) await onDelete();
+}
+
+/// A sheet row in destructive ink.
+class _DestructiveAction extends StatelessWidget {
+  const _DestructiveAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    super.key,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ink = AppTokens.of(context).colorScheme.destructive;
+    return AppButton.ghost(
+      leading: Icon(icon, color: ink),
+      onPressed: onPressed,
+      child: Text(label, style: TextStyle(color: ink)),
+    );
+  }
 }
 
 class _QuickReaction extends StatelessWidget {

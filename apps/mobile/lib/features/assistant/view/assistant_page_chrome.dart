@@ -213,12 +213,34 @@ extension _AssistantPageChrome on _AssistantPageState {
   /// Checks eligibility before a start. Returns false after explaining a
   /// refusal, so ineligible accounts never see a failing connect attempt.
   Future<bool> _admitLiveStart(String wsId) async {
+    // Mic, camera and screen are asked for before the token request.
+    if (_aiConsentPending && (!await _ensureAiConsent() || !mounted)) {
+      return false;
+    }
     final actor = _currentActor();
     if (actor == null) return true;
-    final eligibility = await _liveEligibilityCubit.ensure(
+    var eligibility = await _liveEligibilityCubit.ensure(
       actorId: actor,
       wsId: wsId,
     );
+    if (mounted &&
+        (eligibility?.consentRequired ?? false) &&
+        (_aiConsent?.granted ?? false)) {
+      // The cached decision can predate an Allow given just now.
+      eligibility = await _liveEligibilityCubit.ensure(
+        actorId: actor,
+        wsId: wsId,
+        force: true,
+      );
+    }
+    if (mounted && (eligibility?.consentRequired ?? false)) {
+      _aiConsent?.consentRequired();
+      if (!await _ensureAiConsent() || !mounted) return false;
+      unawaited(
+        _liveEligibilityCubit.ensure(actorId: actor, wsId: wsId, force: true),
+      );
+      return true;
+    }
     if (!mounted || eligibility == null || !eligibility.blocked) return true;
     await showAssistantLiveBlockedSheet(
       context,

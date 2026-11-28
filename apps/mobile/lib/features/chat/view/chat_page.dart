@@ -12,6 +12,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_conversation_list.dart';
+import 'package:mobile/features/chat/widgets/chat_safety_actions.dart';
 import 'package:mobile/features/chat/widgets/chat_sheets.dart';
 import 'package:mobile/features/chat/widgets/chat_thread_view.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -384,9 +385,9 @@ class _ChatPageState extends State<_ChatActorHost> {
     final wsId = workspace?.id;
     if (wsId == null) return;
 
-    final requestedConversationId = GoRouterState.of(
-      context,
-    ).uri.queryParameters['conversationId'];
+    final requestedConversationId = GoRouterState.of(context)
+        .uri
+        .queryParameters['conversationId'];
     if (wsId == _loadedWorkspaceId) {
       if (requestedConversationId == null &&
           _openedInitialConversationId != null) {

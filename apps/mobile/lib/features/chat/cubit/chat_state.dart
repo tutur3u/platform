@@ -41,6 +41,8 @@ class ChatState extends Equatable {
     this.replyToMessageId,
     this.hasOlderMessages = const {},
     this.loadingOlderConversationId,
+    this.blockedUsers = const [],
+    this.blockedConversationIds = const {},
     this.error,
   });
 
@@ -86,6 +88,89 @@ class ChatState extends Equatable {
   /// Conversation whose older history is loading; one thread's request never
   /// shows a spinner in another.
   final String? loadingOlderConversationId;
+
+  /// People the viewer blocked. Their content is hidden on this device too,
+  /// since realtime events are not filtered by the server.
+  final List<ChatBlockedUser> blockedUsers;
+
+  /// Direct conversations whose send the server refused as blocked, which
+  /// covers being blocked by the other person.
+  final Set<String> blockedConversationIds;
+
+  Set<String> get blockedUserIds => {
+    for (final block in blockedUsers) block.userId,
+  };
+
+  /// Whether [message] was sent by someone the viewer blocked.
+  bool isFromBlockedSender(ChatMessage message, [Set<String>? blocked]) {
+    final ids = blocked ?? blockedUserIds;
+    if (ids.isEmpty) return false;
+    final senderId = message.senderId ?? message.sender?.id;
+    return senderId != null && ids.contains(senderId);
+  }
+
+  /// The open thread without messages from blocked senders.
+  List<ChatMessage> get visibleSelectedMessages {
+    final blocked = blockedUserIds;
+    final all = selectedMessages;
+    if (blocked.isEmpty) return all;
+    return all
+        .where((message) => !isFromBlockedSender(message, blocked))
+        .toList(growable: false);
+  }
+
+  /// Directory matches without blocked people.
+  List<ChatUserProfile> get visibleDirectoryResults {
+    final blocked = blockedUserIds;
+    return blocked.isEmpty
+        ? directoryResults
+        : directoryResults
+              .where((user) => !blocked.contains(user.id))
+              .toList(growable: false);
+  }
+
+  /// Message search matches without blocked senders.
+  List<ChatMessage> get visibleSearchResults {
+    final blocked = blockedUserIds;
+    return blocked.isEmpty
+        ? searchResults
+        : searchResults
+              .where((message) => !isFromBlockedSender(message, blocked))
+              .toList(growable: false);
+  }
+
+  /// Friend requests without any that involve a blocked person.
+  ChatFriendRequests get visibleFriendRequests {
+    final blocked = blockedUserIds;
+    if (blocked.isEmpty) return friendRequests;
+    List<ChatFriendRequest> keep(List<ChatFriendRequest> requests) => requests
+        .where(
+          (request) =>
+              !blocked.contains(request.requesterUserId) &&
+              !blocked.contains(request.recipientUserId),
+        )
+        .toList(growable: false);
+    return ChatFriendRequests(
+      accepted: keep(friendRequests.accepted),
+      incoming: keep(friendRequests.incoming),
+      outgoing: keep(friendRequests.outgoing),
+    );
+  }
+
+  /// Whether the open direct conversation is blocked either way, so the
+  /// composer is replaced by an explanation.
+  bool get isSelectedComposerBlocked {
+    final conversation = selectedConversation;
+    if (conversation == null ||
+        conversation.type != ChatConversationType.direct) {
+      return false;
+    }
+    if (blockedConversationIds.contains(conversation.id)) return true;
+    final blocked = blockedUserIds;
+    return conversation.members.any(
+      (member) => blocked.contains(member.userId),
+    );
+  }
 
   bool get isLoadingOlderMessages =>
       loadingOlderConversationId != null &&
@@ -179,6 +264,8 @@ class ChatState extends Equatable {
     Object? replyToMessageId = _chatStateSentinel,
     Map<String, bool>? hasOlderMessages,
     Object? loadingOlderConversationId = _chatStateSentinel,
+    List<ChatBlockedUser>? blockedUsers,
+    Set<String>? blockedConversationIds,
     Object? error = _chatStateSentinel,
     bool clearError = false,
   }) {
@@ -230,6 +317,9 @@ class ChatState extends Equatable {
           loadingOlderConversationId == _chatStateSentinel
           ? this.loadingOlderConversationId
           : loadingOlderConversationId as String?,
+      blockedUsers: blockedUsers ?? this.blockedUsers,
+      blockedConversationIds:
+          blockedConversationIds ?? this.blockedConversationIds,
       error: clearError
           ? null
           : error == _chatStateSentinel
@@ -268,6 +358,8 @@ class ChatState extends Equatable {
     replyToMessageId,
     hasOlderMessages,
     loadingOlderConversationId,
+    blockedUsers,
+    blockedConversationIds,
     error,
   ];
 }

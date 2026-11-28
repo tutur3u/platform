@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:mobile/data/sources/api_exception.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent.dart';
 
 /// Stable failure tokens stored in `AssistantLiveState.error`.
 ///
@@ -20,6 +21,7 @@ abstract final class AssistantLiveFailure {
   static const microphonePermission = 'live_microphone_permission';
   static const cameraPermission = 'live_camera_permission';
   static const noWorkspace = 'live_no_workspace';
+  static const aiConsentRequired = 'live_ai_consent_required';
   static const unknown = 'live_connect_failed';
 
   /// Failures that a plain retry cannot fix right now.
@@ -48,6 +50,9 @@ String classifyAssistantLiveFailure(Object error) {
     return AssistantLiveFailure.offline;
   }
   final code = error.code ?? '';
+  if (isMiraAiConsentRequired(error)) {
+    return AssistantLiveFailure.aiConsentRequired;
+  }
   if (code == 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED' ||
       code == 'LIVE_MINT_ACTOR_LIMIT') {
     return AssistantLiveFailure.dailyLimit;

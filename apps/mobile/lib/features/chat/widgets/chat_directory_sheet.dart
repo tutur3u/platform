@@ -38,13 +38,12 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
                 onChanged: (value) => unawaited(cubit.searchDirectory(value)),
               ),
               const SizedBox(height: AppSpacing.md),
-              _DirectoryResults(users: state.directoryResults),
+              _DirectoryResults(users: state.visibleDirectoryResults),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 l10n.chatFriendRequests,
-                style: AppTokens.of(
-                  context,
-                ).typography.large.copyWith(fontWeight: FontWeight.w700),
+                style: AppTokens.of(context).typography.large
+                    .copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: AppSpacing.sm),
               AppTextField(
@@ -65,8 +64,9 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
               ),
               _FriendRequestGroup(
                 title: l10n.chatIncoming,
-                requests: state.friendRequests.incoming,
+                requests: state.visibleFriendRequests.incoming,
                 actionsBuilder: (request) => [
+                  ..._safetyActions(context, cubit, request),
                   AppButton.primary(
                     density: AppButtonDensity.compact,
                     onPressed: () => unawaited(
@@ -91,7 +91,7 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
               ),
               _FriendRequestGroup(
                 title: l10n.chatOutgoing,
-                requests: state.friendRequests.outgoing,
+                requests: state.visibleFriendRequests.outgoing,
                 actionsBuilder: (request) => [
                   AppButton.outline(
                     density: AppButtonDensity.compact,
@@ -103,12 +103,50 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
               ),
               _FriendRequestGroup(
                 title: l10n.chatAccepted,
-                requests: state.friendRequests.accepted,
+                requests: state.visibleFriendRequests.accepted,
               ),
             ],
           ),
         );
       },
     );
+  }
+
+  /// Report and Block for the person who sent an incoming request.
+  List<Widget> _safetyActions(
+    BuildContext context,
+    ChatCubit cubit,
+    ChatFriendRequest request,
+  ) {
+    final l10n = context.l10n;
+    final requester = ChatUserProfile(
+      id: request.requesterUserId.isNotEmpty
+          ? request.requesterUserId
+          : request.requester.id,
+      displayName: request.requester.displayName,
+      avatarUrl: request.requester.avatarUrl,
+      handle: request.requester.handle,
+    );
+    if (requester.id.isEmpty) return const [];
+    return [
+      AppIconButton(
+        key: ValueKey('chat-friend-report-${request.id}'),
+        tooltip: l10n.chatSafetyReportUser(requester.displayName),
+        density: AppButtonDensity.iconDense,
+        icon: const Icon(LucideIcons.flag, size: 16),
+        onPressed: () => unawaited(
+          showChatReportSheet(context, cubit: cubit, subject: requester),
+        ),
+      ),
+      AppIconButton(
+        key: ValueKey('chat-friend-block-${request.id}'),
+        tooltip: l10n.chatSafetyBlockUser(requester.displayName),
+        density: AppButtonDensity.iconDense,
+        icon: const Icon(LucideIcons.ban, size: 16),
+        onPressed: () => unawaited(
+          showChatBlockSheet(context, cubit: cubit, user: requester),
+        ),
+      ),
+    ];
   }
 }

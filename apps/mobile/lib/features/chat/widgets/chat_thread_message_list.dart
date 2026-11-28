@@ -15,6 +15,7 @@ class _MessageList extends StatefulWidget {
     required this.isMessageSynced,
     required this.linkPreviews,
     required this.canDeleteOthers,
+    required this.onSafetyAction,
   });
 
   final ChatConversation conversation;
@@ -30,6 +31,8 @@ class _MessageList extends StatefulWidget {
   final bool Function(String messageId) isMessageSynced;
   final ChatLinkPreviewStore? linkPreviews;
   final bool canDeleteOthers;
+  final void Function(ChatMessage message, ChatSafetyAction action)?
+  onSafetyAction;
 
   @override
   State<_MessageList> createState() => _MessageListState();
@@ -116,6 +119,15 @@ class _MessageListState extends State<_MessageList> {
                 widget.onDeleteMessage == null
             ? null
             : () => widget.onDeleteMessage!(message),
+        onSafetyAction:
+            widget.onSafetyAction == null ||
+                pending ||
+                !chatMessageAllowsSafetyActions(
+                  message,
+                  currentUserId: widget.currentUserId,
+                )
+            ? null
+            : (action) => widget.onSafetyAction!(message, action),
       ),
     );
   }

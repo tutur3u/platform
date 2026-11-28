@@ -74,6 +74,7 @@ class _PreferencesSection extends StatelessWidget {
       value: hapticsEnabled ? l10n.commonOn : l10n.commonOff,
       onTap: onToggleHaptics,
     );
+    final miraConsent = context.watch<MiraAiConsentProvision?>()?.controller;
     final workspaceZone = workspaceId == null
         ? null
         : WorkspaceTimezoneSettingsTile(
@@ -106,7 +107,20 @@ class _PreferencesSection extends StatelessWidget {
           l10n.settingsMastermindPushTitle,
           [MastermindPushSettings(key: ValueKey(userId), userId: userId)],
         ),
-      ('privacy', l10n.settingsPrivacy, [const TelemetrySettingsTile()]),
+      (
+        'privacy',
+        l10n.settingsPrivacy,
+        [
+          const TelemetrySettingsTile(),
+          if (miraConsent != null && userId != null)
+            MiraAiConsentSettingsTile(
+              key: ValueKey(('mira-ai-consent', userId)),
+              controller: miraConsent,
+            ),
+          if (workspaceId != null)
+            BlockedPeopleSettingsTile(workspaceId: workspaceId),
+        ],
+      ),
     ];
     final sections = [
       for (final group in groups)

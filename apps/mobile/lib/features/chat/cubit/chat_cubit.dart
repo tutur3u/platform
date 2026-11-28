@@ -26,6 +26,7 @@ part 'chat_cubit_sync.dart';
 part 'chat_cubit_read_receipts.dart';
 part 'chat_cubit_search.dart';
 part 'chat_cubit_typing.dart';
+part 'chat_cubit_safety.dart';
 
 class ChatCubit extends Cubit<ChatState> {
   ChatCubit({
@@ -184,6 +185,7 @@ class ChatCubit extends Cubit<ChatState> {
         status: ChatStatus.loading,
       ),
     );
+    unawaited(loadBlocks());
 
     try {
       final page = await _repository.listConversations(wsId);
@@ -499,6 +501,7 @@ class ChatCubit extends Cubit<ChatState> {
         // echoes patch a loaded message in place, so an old message outside
         // the loaded pages is never appended and the list order holds.
         if (type == 'message.created') {
+          if (_isFromBlockedSender(message)) return;
           _upsertMessage(message);
         } else {
           _patchMessage(message, replaceReactions: type == 'reaction.updated');
@@ -577,6 +580,9 @@ class ChatCubit extends Cubit<ChatState> {
         );
       case ChatStreamAssistantPartEvent():
         break;
+      case ChatStreamErrorEvent(:final message) when message == 'chat_blocked':
+        final conversationId = state.selectedConversationId;
+        if (conversationId != null) _markConversationBlocked(conversationId);
       case ChatStreamErrorEvent(:final message):
         emit(
           state.copyWith(

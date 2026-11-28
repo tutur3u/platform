@@ -48,6 +48,7 @@ class _ChatDetailsSheetState extends State<ChatDetailsSheet> {
                 conversation.type == ChatConversationType.group);
         final canArchive =
             !conversation.isReadOnlyAgent && !canLeave && state.canManageChat;
+        final peer = _directPeer(conversation);
         return AppSheetScaffold(
           title: title,
           description: l10n.chatMembersCount(conversation.memberCount),
@@ -97,6 +98,13 @@ class _ChatDetailsSheetState extends State<ChatDetailsSheet> {
                     },
                   ),
                 ],
+                if (peer != null) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  _PeerSafetyActions(
+                    peer: peer,
+                    blocked: state.blockedUserIds.contains(peer.id),
+                  ),
+                ],
                 if (canLeave || canArchive) ...[
                   const SizedBox(height: AppSpacing.xl),
                   if (canLeave)
@@ -130,6 +138,29 @@ class _ChatDetailsSheetState extends State<ChatDetailsSheet> {
         );
       },
     );
+  }
+
+  /// The other person in a direct conversation, who can be reported or
+  /// blocked from here.
+  ChatUserProfile? _directPeer(ChatConversation conversation) {
+    final userId = widget.currentUserId;
+    if (userId == null ||
+        conversation.type != ChatConversationType.direct ||
+        conversation.isReadOnlyAgent ||
+        !ChatCubit.isServerConversationId(conversation.id)) {
+      return null;
+    }
+    for (final member in conversation.members) {
+      if (member.userId.isNotEmpty && member.userId != userId) {
+        return ChatUserProfile(
+          id: member.userId,
+          displayName: member.user.displayName,
+          avatarUrl: member.user.avatarUrl,
+          handle: member.user.handle,
+        );
+      }
+    }
+    return null;
   }
 
   ChatConversationMember? _ownMember(ChatConversation conversation) {
@@ -397,10 +428,11 @@ class _ActionButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     required this.destructive,
+    super.key,
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool destructive;
 
   @override

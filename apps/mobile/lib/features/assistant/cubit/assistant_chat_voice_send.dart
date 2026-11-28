@@ -85,6 +85,12 @@ extension AssistantChatVoiceSend on AssistantChatCubit {
     Future<void> attempt() async {
       if (!current() || !_voiceUploads.add(id)) return;
       try {
+        // Held, not dropped: retry asks for consent again.
+        if (_aiConsentPending && !await _admitAiConsent(current)) {
+          throw const AssistantAttachmentUploadException(
+            AssistantAttachmentFailure.consentRequired,
+          );
+        }
         if (attachment.storagePath == null) {
           publish(
             AssistantAttachment(

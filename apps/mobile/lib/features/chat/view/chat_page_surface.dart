@@ -136,7 +136,7 @@ class _ThreadPane extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: _threadMaxWidth),
           child: ChatThreadView(
             conversation: conversation,
-            messages: state.selectedMessages,
+            messages: state.visibleSelectedMessages,
             messageStatus: state.messageStatus,
             currentUserId: currentUserId,
             pendingAttachments: state.pendingAttachments,
@@ -161,6 +161,17 @@ class _ThreadPane extends StatelessWidget {
             isMessageSynced: cubit.isMessageSynced,
             linkPreviews: cubit.linkPreviews,
             canDeleteOthers: state.canModerateSelected,
+            composerBlocked: state.isSelectedComposerBlocked,
+            onSafetyAction:
+                conversation != null &&
+                    ChatCubit.isServerConversationId(conversation.id)
+                ? (message, action) => openChatSafetyAction(
+                    context,
+                    cubit: cubit,
+                    message: message,
+                    action: action,
+                  )
+                : null,
             onRetry: () => unawaited(
               cubit.selectConversation(
                 state.selectedConversationId ?? '',

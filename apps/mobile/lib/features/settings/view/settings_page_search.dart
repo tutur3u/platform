@@ -115,6 +115,14 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
         'privacy',
         l10n.settingsPrivacy,
       ),
+      jump(
+        'blocked-people',
+        LucideIcons.ban,
+        l10n.chatSafetyBlockedPeople,
+        'privacy',
+        l10n.settingsPrivacy,
+        terms: [l10n.chatSafetyUnblock],
+      ),
       route(
         'profile',
         LucideIcons.userRound,

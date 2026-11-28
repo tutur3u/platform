@@ -4027,6 +4027,210 @@ abstract class AppLocalizations {
   /// **'Retry'**
   String get chatRetry;
 
+  /// No description provided for @chatSafetyAlsoBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Also block {name}'**
+  String chatSafetyAlsoBlock(Object name);
+
+  /// No description provided for @chatSafetyAlsoReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Also report {name}'**
+  String chatSafetyAlsoReport(Object name);
+
+  /// No description provided for @chatSafetyBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get chatSafetyBlock;
+
+  /// No description provided for @chatSafetyBlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t block. Try again.'**
+  String get chatSafetyBlockFailed;
+
+  /// No description provided for @chatSafetyBlockHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Their messages are hidden from your chats, including shared groups.'**
+  String get chatSafetyBlockHidden;
+
+  /// No description provided for @chatSafetyBlockNoMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'They can\'t message you or send you friend requests.'**
+  String get chatSafetyBlockNoMessages;
+
+  /// No description provided for @chatSafetyBlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}?'**
+  String chatSafetyBlockTitle(Object name);
+
+  /// No description provided for @chatSafetyBlockUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'You can unblock them in Settings › Privacy › Blocked people.'**
+  String get chatSafetyBlockUndo;
+
+  /// No description provided for @chatSafetyBlockUnfriend.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re no longer friends, and they aren\'t told.'**
+  String get chatSafetyBlockUnfriend;
+
+  /// No description provided for @chatSafetyBlockUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Block {name}'**
+  String chatSafetyBlockUser(Object name);
+
+  /// No description provided for @chatSafetyBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} blocked'**
+  String chatSafetyBlocked(Object name);
+
+  /// No description provided for @chatSafetyBlockedPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked people'**
+  String get chatSafetyBlockedPeople;
+
+  /// No description provided for @chatSafetyBlockedPeopleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No one is blocked'**
+  String get chatSafetyBlockedPeopleEmpty;
+
+  /// No description provided for @chatSafetyCannotMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t message this person'**
+  String get chatSafetyCannotMessage;
+
+  /// No description provided for @chatSafetyDetailsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Details (optional)'**
+  String get chatSafetyDetailsLabel;
+
+  /// No description provided for @chatSafetyDetailsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what happened'**
+  String get chatSafetyDetailsPlaceholder;
+
+  /// No description provided for @chatSafetyReasonHarassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment or bullying'**
+  String get chatSafetyReasonHarassment;
+
+  /// No description provided for @chatSafetyReasonHate.
+  ///
+  /// In en, this message translates to:
+  /// **'Hate speech'**
+  String get chatSafetyReasonHate;
+
+  /// No description provided for @chatSafetyReasonImpersonation.
+  ///
+  /// In en, this message translates to:
+  /// **'Impersonation'**
+  String get chatSafetyReasonImpersonation;
+
+  /// No description provided for @chatSafetyReasonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get chatSafetyReasonLabel;
+
+  /// No description provided for @chatSafetyReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get chatSafetyReasonOther;
+
+  /// No description provided for @chatSafetyReasonSexual.
+  ///
+  /// In en, this message translates to:
+  /// **'Sexual content'**
+  String get chatSafetyReasonSexual;
+
+  /// No description provided for @chatSafetyReasonSpam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam or scam'**
+  String get chatSafetyReasonSpam;
+
+  /// No description provided for @chatSafetyReasonViolence.
+  ///
+  /// In en, this message translates to:
+  /// **'Violence or threats'**
+  String get chatSafetyReasonViolence;
+
+  /// No description provided for @chatSafetyReportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} won\'t be told. Our team reviews reports within 24 hours.'**
+  String chatSafetyReportDescription(Object name);
+
+  /// No description provided for @chatSafetyReportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the report. Try again.'**
+  String get chatSafetyReportFailed;
+
+  /// No description provided for @chatSafetyReportMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Report message'**
+  String get chatSafetyReportMessage;
+
+  /// No description provided for @chatSafetyReportRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many reports. Try again later.'**
+  String get chatSafetyReportRateLimited;
+
+  /// No description provided for @chatSafetyReportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Report sent'**
+  String get chatSafetyReportSent;
+
+  /// No description provided for @chatSafetyReportUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {name}'**
+  String chatSafetyReportUser(Object name);
+
+  /// No description provided for @chatSafetySendReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get chatSafetySendReport;
+
+  /// No description provided for @chatSafetyUnblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get chatSafetyUnblock;
+
+  /// No description provided for @chatSafetyUnblockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t unblock. Try again.'**
+  String get chatSafetyUnblockFailed;
+
+  /// No description provided for @chatSafetyUnblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} unblocked'**
+  String chatSafetyUnblocked(Object name);
+
   /// No description provided for @chatSaveSettings.
   ///
   /// In en, this message translates to:
@@ -14977,11 +15181,233 @@ abstract class AppLocalizations {
   /// **'Mira Chat'**
   String get miraChatTitle;
 
+  /// No description provided for @miraConsentAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get miraConsentAllow;
+
+  /// No description provided for @miraConsentAttachmentBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow sharing with Google Gemini to send this.'**
+  String get miraConsentAttachmentBlocked;
+
+  /// No description provided for @miraConsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira\'s answers are generated by Google Gemini models. To reply, Mira sends what you share to Google through Tuturuuu\'s servers.'**
+  String get miraConsentBody;
+
+  /// No description provided for @miraConsentCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get miraConsentCamera;
+
+  /// No description provided for @miraConsentCameraDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos and Live video you turn on'**
+  String get miraConsentCameraDetail;
+
+  /// No description provided for @miraConsentLiveBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow sharing with Google Gemini to start Live.'**
+  String get miraConsentLiveBlocked;
+
+  /// No description provided for @miraConsentNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get miraConsentNotNow;
+
+  /// No description provided for @miraConsentPrivacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy policy'**
+  String get miraConsentPrivacyPolicy;
+
+  /// No description provided for @miraConsentSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your choice. Check your connection and try again.'**
+  String get miraConsentSaveFailed;
+
+  /// No description provided for @miraConsentScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen'**
+  String get miraConsentScreen;
+
+  /// No description provided for @miraConsentScreenDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your screen while you share it'**
+  String get miraConsentScreenDetail;
+
+  /// No description provided for @miraConsentSettingsAllowedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed for Mira\'s cloud replies, voice and Live. Allowed {date}.'**
+  String miraConsentSettingsAllowedOn(String date);
+
+  /// No description provided for @miraConsentSettingsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update this setting. Try again.'**
+  String get miraConsentSettingsError;
+
+  /// No description provided for @miraConsentSettingsFootnote.
+  ///
+  /// In en, this message translates to:
+  /// **'Turning this off stops Mira from sending anything new to Google. The on-device model still works offline.'**
+  String get miraConsentSettingsFootnote;
+
+  /// No description provided for @miraConsentSettingsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Needed for Mira\'s cloud replies, voice and Live.'**
+  String get miraConsentSettingsSummary;
+
+  /// No description provided for @miraConsentSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share data with Google Gemini'**
+  String get miraConsentSettingsTitle;
+
+  /// No description provided for @miraConsentText.
+  ///
+  /// In en, this message translates to:
+  /// **'Text'**
+  String get miraConsentText;
+
+  /// No description provided for @miraConsentTextDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your messages and attached files'**
+  String get miraConsentTextDetail;
+
+  /// No description provided for @miraConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share data with Google Gemini?'**
+  String get miraConsentTitle;
+
+  /// No description provided for @miraConsentVoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice'**
+  String get miraConsentVoice;
+
+  /// No description provided for @miraConsentVoiceDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice messages and Live audio'**
+  String get miraConsentVoiceDetail;
+
+  /// No description provided for @miraConsentWhatIsSent.
+  ///
+  /// In en, this message translates to:
+  /// **'What is sent'**
+  String get miraConsentWhatIsSent;
+
+  /// No description provided for @miraConsentWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Why: only to generate Mira\'s replies to you. Nothing is sent until you allow it. You can turn this off anytime in Settings › Privacy.'**
+  String get miraConsentWhy;
+
   /// No description provided for @miraLiveTitle.
   ///
   /// In en, this message translates to:
   /// **'Mira'**
   String get miraLiveTitle;
+
+  /// No description provided for @miraReportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this response'**
+  String get miraReportAction;
+
+  /// No description provided for @miraReportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll review this response and the message before it to improve Mira.'**
+  String get miraReportDescription;
+
+  /// No description provided for @miraReportDetailsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Details (optional)'**
+  String get miraReportDetailsLabel;
+
+  /// No description provided for @miraReportDetailsPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'What should Mira have said?'**
+  String get miraReportDetailsPlaceholder;
+
+  /// No description provided for @miraReportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the report. Try again.'**
+  String get miraReportFailed;
+
+  /// No description provided for @miraReportRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many reports right now. Try again later.'**
+  String get miraReportRateLimited;
+
+  /// No description provided for @miraReportReasonHarmful.
+  ///
+  /// In en, this message translates to:
+  /// **'Harmful or unsafe'**
+  String get miraReportReasonHarmful;
+
+  /// No description provided for @miraReportReasonHate.
+  ///
+  /// In en, this message translates to:
+  /// **'Offensive or hateful'**
+  String get miraReportReasonHate;
+
+  /// No description provided for @miraReportReasonInaccurate.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong or made up'**
+  String get miraReportReasonInaccurate;
+
+  /// No description provided for @miraReportReasonOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get miraReportReasonOther;
+
+  /// No description provided for @miraReportReasonSexual.
+  ///
+  /// In en, this message translates to:
+  /// **'Sexual content'**
+  String get miraReportReasonSexual;
+
+  /// No description provided for @miraReportSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get miraReportSend;
+
+  /// No description provided for @miraReportSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Report sent'**
+  String get miraReportSent;
+
+  /// No description provided for @miraReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report this response'**
+  String get miraReportTitle;
 
   /// No description provided for @navApps.
   ///

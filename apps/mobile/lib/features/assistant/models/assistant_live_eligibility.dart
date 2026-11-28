@@ -12,7 +12,11 @@ enum AssistantLiveBlockReason {
   creditsExhausted('credits_exhausted'),
   limitReached('limit_reached'),
   roleNotAllowed('role_not_allowed'),
-  paused('paused');
+  paused('paused'),
+
+  /// The user has not allowed sharing Mira content with Google Gemini. The
+  /// consent sheet answers it; it never shows as a lock.
+  aiConsentRequired('ai_consent_required');
 
   const AssistantLiveBlockReason(this.code);
   final String code;
@@ -85,6 +89,8 @@ class AssistantLiveEligibility extends Equatable {
         AssistantLiveBlockReason.planRequired,
       (503, 'LIVE_BLOCKED' || 'LIVE_MINT_DISABLED') =>
         AssistantLiveBlockReason.paused,
+      (403, 'ai_consent_required') =>
+        AssistantLiveBlockReason.aiConsentRequired,
       _ => null,
     };
     if (reason == null) return null;
@@ -108,7 +114,14 @@ class AssistantLiveEligibility extends Equatable {
   final int? minimumCredits;
   final DateTime? resetAt;
 
-  bool get blocked => !eligible && reason != null;
+  bool get blocked =>
+      !eligible &&
+      reason != null &&
+      reason != AssistantLiveBlockReason.aiConsentRequired;
+
+  /// Live waits only for the user's AI data consent.
+  bool get consentRequired =>
+      !eligible && reason == AssistantLiveBlockReason.aiConsentRequired;
 
   @override
   List<Object?> get props => [
@@ -140,6 +153,8 @@ extension AssistantLiveBlockCopy on AssistantLiveEligibility {
           l10n.assistantLiveBlockedLimitShort,
         AssistantLiveBlockReason.roleNotAllowed =>
           l10n.assistantLiveBlockedRoleShort,
+        AssistantLiveBlockReason.aiConsentRequired =>
+          l10n.miraConsentLiveBlocked,
         AssistantLiveBlockReason.paused ||
         null => l10n.assistantLiveBlockedPausedShort,
       };
@@ -158,6 +173,7 @@ extension AssistantLiveBlockCopy on AssistantLiveEligibility {
           l10n.assistantLiveBlockedLimitTitle,
         AssistantLiveBlockReason.roleNotAllowed =>
           l10n.assistantLiveBlockedRoleTitle,
+        AssistantLiveBlockReason.aiConsentRequired => l10n.miraConsentTitle,
         AssistantLiveBlockReason.paused ||
         null => l10n.assistantLiveBlockedPausedTitle,
       };
@@ -198,6 +214,8 @@ extension AssistantLiveBlockCopy on AssistantLiveEligibility {
               );
       case AssistantLiveBlockReason.roleNotAllowed:
         return l10n.assistantLiveBlockedRoleBody;
+      case AssistantLiveBlockReason.aiConsentRequired:
+        return l10n.miraConsentBody;
       case AssistantLiveBlockReason.paused:
       case null:
         return l10n.assistantLiveBlockedPausedBody;

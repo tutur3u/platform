@@ -6,6 +6,7 @@ part 'chat_conversation_models.dart';
 part 'chat_content_models.dart';
 part 'chat_ai_models.dart';
 part 'chat_friend_models.dart';
+part 'chat_safety_models.dart';
 
 enum ChatConversationType { ai, channel, direct, group }
 

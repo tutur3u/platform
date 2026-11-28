@@ -10,7 +10,9 @@ import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_avatar.dart';
+import 'package:mobile/features/chat/widgets/chat_block_sheet.dart';
 import 'package:mobile/features/chat/widgets/chat_format.dart';
+import 'package:mobile/features/chat/widgets/chat_report_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
@@ -19,6 +21,7 @@ part 'chat_directory_sheet.dart';
 part 'chat_search_sheet.dart';
 part 'chat_sheet_common.dart';
 part 'chat_details_sheet.dart';
+part 'chat_details_safety.dart';
 part 'chat_ai_sections.dart';
 
 Future<void> showChatCreateConversationSheet({

@@ -126,6 +126,12 @@ extension AssistantChatAttachments on AssistantChatCubit {
     }
 
     try {
+      // Held, not dropped: retry asks for consent again.
+      if (_aiConsentPending && !await _admitAiConsent(isCurrentScope)) {
+        throw const AssistantAttachmentUploadException(
+          AssistantAttachmentFailure.consentRequired,
+        );
+      }
       // Optimization runs off the UI isolate; the original stays on device.
       final optimized = (await _mediaOptimizer.optimize(picked)).result;
       if (!isCurrentScope() || _composerAttachment(id) == null) return;

@@ -8,6 +8,10 @@ extension _AssistantPageSubmission on _AssistantPageState {
     }
     final guard = _remoteGuard(wsId);
     if (!guard.current) return;
+    // The composer keeps the draft while the user decides.
+    if (_aiConsentPending && (!await _ensureAiConsent() || !guard.current)) {
+      return;
+    }
     final shellState = _shellCubit.state;
     final chatState = _chatCubit.state;
     final submittedReplyId = chatState.replyTarget?.id;

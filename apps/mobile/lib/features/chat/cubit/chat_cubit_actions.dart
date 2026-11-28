@@ -145,6 +145,10 @@ extension ChatCubitActions on ChatCubit {
           _handleMessageStreamEvent,
           onError: (Object error) {
             if (!_scopeActive) return;
+            if (isChatBlockedError(error)) {
+              _markConversationBlocked(conversation.id);
+              return;
+            }
             _emitState(
               state.copyWith(
                 isSending: false,

@@ -40,7 +40,7 @@ class ChatSearchResults extends StatelessWidget {
                 ))
             .take(8)
             .toList(growable: false);
-    final messages = state.searchResults;
+    final messages = state.visibleSearchResults;
     if (conversations.isEmpty && messages.isEmpty) {
       return AppStateMessage(
         icon: LucideIcons.search,

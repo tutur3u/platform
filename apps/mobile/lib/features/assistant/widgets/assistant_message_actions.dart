@@ -35,6 +35,10 @@ class AssistantCopyMessage extends AssistantMessageAction {
   const AssistantCopyMessage();
 }
 
+class AssistantReportMessage extends AssistantMessageAction {
+  const AssistantReportMessage();
+}
+
 class AssistantReplyToMessage extends AssistantMessageAction {
   const AssistantReplyToMessage();
 }
@@ -54,6 +58,7 @@ class AssistantMessageActions extends StatelessWidget {
     required this.canReply,
     required this.canReact,
     this.canRefresh = false,
+    this.canReport = false,
     this.selectedReactions = const {},
     super.key,
   });
@@ -62,6 +67,9 @@ class AssistantMessageActions extends StatelessWidget {
   final bool canReply;
   final bool canReact;
   final bool canRefresh;
+
+  /// A saved Mira reply can be reported.
+  final bool canReport;
   final Set<String> selectedReactions;
 
   @override
@@ -90,9 +98,9 @@ class AssistantMessageActions extends StatelessWidget {
                             ? AppButtonVariant.primary
                             : AppButtonVariant.ghost,
                         icon: Icon(reaction.icon),
-                        onPressed: () => Navigator.of(
-                          context,
-                        ).pop(AssistantReactToMessage(reaction.value)),
+                        onPressed: () =>
+                            Navigator.of(context)
+                                .pop(AssistantReactToMessage(reaction.value)),
                       ),
                     ),
                   ),
@@ -104,6 +112,14 @@ class AssistantMessageActions extends StatelessWidget {
               title: Text(l10n.assistantCopyMessageAction),
               onTap: () =>
                   Navigator.of(context).pop(const AssistantCopyMessage()),
+            ),
+          if (canReport)
+            AppListTile(
+              key: const ValueKey('assistant-report-response'),
+              leading: const Icon(LucideIcons.flag),
+              title: Text(l10n.miraReportAction),
+              onTap: () =>
+                  Navigator.of(context).pop(const AssistantReportMessage()),
             ),
           if (canRefresh)
             AppListTile(

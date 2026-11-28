@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/assistant/consent/mira_ai_consent_controller.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
@@ -288,6 +289,7 @@ class BackgroundReplyHarness {
     WidgetTester tester, {
     VoidCallback? onFirstFrame,
     Map<String, Object> initialPreferences = const {},
+    MiraAiConsentController? aiConsent,
   }) async {
     SharedPreferences.setMockInitialValues(initialPreferences);
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -319,6 +321,7 @@ class BackgroundReplyHarness {
                   currentUserId: () => auth.state.user?.id,
                 ),
                 currentActor: () => auth.state.user?.id,
+                aiConsent: aiConsent,
               ),
             ),
           ),

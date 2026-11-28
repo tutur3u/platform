@@ -2064,6 +2064,124 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatRetry => 'Thử lại';
 
   @override
+  String chatSafetyAlsoBlock(Object name) {
+    return 'Chặn luôn $name';
+  }
+
+  @override
+  String chatSafetyAlsoReport(Object name) {
+    return 'Báo cáo luôn $name';
+  }
+
+  @override
+  String get chatSafetyBlock => 'Chặn';
+
+  @override
+  String get chatSafetyBlockFailed => 'Không chặn được. Vui lòng thử lại.';
+
+  @override
+  String get chatSafetyBlockHidden => 'Tin nhắn của họ sẽ bị ẩn khỏi các cuộc trò chuyện của bạn, kể cả nhóm chung.';
+
+  @override
+  String get chatSafetyBlockNoMessages => 'Họ không thể nhắn tin hay gửi lời mời kết bạn cho bạn.';
+
+  @override
+  String chatSafetyBlockTitle(Object name) {
+    return 'Chặn $name?';
+  }
+
+  @override
+  String get chatSafetyBlockUndo => 'Bạn có thể bỏ chặn trong Cài đặt › Quyền riêng tư › Người đã chặn.';
+
+  @override
+  String get chatSafetyBlockUnfriend => 'Hai bạn sẽ không còn là bạn bè và họ không được thông báo.';
+
+  @override
+  String chatSafetyBlockUser(Object name) {
+    return 'Chặn $name';
+  }
+
+  @override
+  String chatSafetyBlocked(Object name) {
+    return 'Đã chặn $name';
+  }
+
+  @override
+  String get chatSafetyBlockedPeople => 'Người đã chặn';
+
+  @override
+  String get chatSafetyBlockedPeopleEmpty => 'Bạn chưa chặn ai';
+
+  @override
+  String get chatSafetyCannotMessage => 'Bạn không thể nhắn tin cho người này';
+
+  @override
+  String get chatSafetyDetailsLabel => 'Chi tiết (không bắt buộc)';
+
+  @override
+  String get chatSafetyDetailsPlaceholder => 'Hãy cho chúng tôi biết chuyện gì đã xảy ra';
+
+  @override
+  String get chatSafetyReasonHarassment => 'Quấy rối hoặc bắt nạt';
+
+  @override
+  String get chatSafetyReasonHate => 'Ngôn từ thù ghét';
+
+  @override
+  String get chatSafetyReasonImpersonation => 'Mạo danh';
+
+  @override
+  String get chatSafetyReasonLabel => 'Lý do';
+
+  @override
+  String get chatSafetyReasonOther => 'Lý do khác';
+
+  @override
+  String get chatSafetyReasonSexual => 'Nội dung tình dục';
+
+  @override
+  String get chatSafetyReasonSpam => 'Tin rác hoặc lừa đảo';
+
+  @override
+  String get chatSafetyReasonViolence => 'Bạo lực hoặc đe dọa';
+
+  @override
+  String chatSafetyReportDescription(Object name) {
+    return '$name sẽ không được thông báo. Đội ngũ của chúng tôi xem xét báo cáo trong vòng 24 giờ.';
+  }
+
+  @override
+  String get chatSafetyReportFailed => 'Không gửi được báo cáo. Vui lòng thử lại.';
+
+  @override
+  String get chatSafetyReportMessage => 'Báo cáo tin nhắn';
+
+  @override
+  String get chatSafetyReportRateLimited => 'Bạn đã gửi quá nhiều báo cáo. Vui lòng thử lại sau.';
+
+  @override
+  String get chatSafetyReportSent => 'Đã gửi báo cáo';
+
+  @override
+  String chatSafetyReportUser(Object name) {
+    return 'Báo cáo $name';
+  }
+
+  @override
+  String get chatSafetySendReport => 'Gửi báo cáo';
+
+  @override
+  String get chatSafetyUnblock => 'Bỏ chặn';
+
+  @override
+  String get chatSafetyUnblockFailed => 'Không bỏ chặn được. Vui lòng thử lại.';
+
+  @override
+  String chatSafetyUnblocked(Object name) {
+    return 'Đã bỏ chặn $name';
+  }
+
+  @override
   String get chatSaveSettings => 'Lưu cài đặt';
 
   @override
@@ -7886,7 +8004,120 @@ class AppLocalizationsVi extends AppLocalizations {
   String get miraChatTitle => 'Mira Chat';
 
   @override
+  String get miraConsentAllow => 'Cho phép';
+
+  @override
+  String get miraConsentAttachmentBlocked => 'Hãy cho phép chia sẻ với Google Gemini để gửi nội dung này.';
+
+  @override
+  String get miraConsentBody => 'Câu trả lời của Mira được tạo bởi các mô hình Google Gemini. Để trả lời, Mira gửi những gì bạn chia sẻ đến Google thông qua máy chủ của Tuturuuu.';
+
+  @override
+  String get miraConsentCamera => 'Camera';
+
+  @override
+  String get miraConsentCameraDetail => 'Ảnh và video Live mà bạn bật';
+
+  @override
+  String get miraConsentLiveBlocked => 'Hãy cho phép chia sẻ với Google Gemini để bắt đầu Live.';
+
+  @override
+  String get miraConsentNotNow => 'Để sau';
+
+  @override
+  String get miraConsentPrivacyPolicy => 'Chính sách quyền riêng tư';
+
+  @override
+  String get miraConsentSaveFailed => 'Không thể lưu lựa chọn của bạn. Hãy kiểm tra kết nối và thử lại.';
+
+  @override
+  String get miraConsentScreen => 'Màn hình';
+
+  @override
+  String get miraConsentScreenDetail => 'Màn hình của bạn trong lúc bạn chia sẻ';
+
+  @override
+  String miraConsentSettingsAllowedOn(String date) {
+    return 'Cần cho câu trả lời trên đám mây, giọng nói và Live của Mira. Đã cho phép ngày $date.';
+  }
+
+  @override
+  String get miraConsentSettingsError => 'Không thể cập nhật cài đặt này. Hãy thử lại.';
+
+  @override
+  String get miraConsentSettingsFootnote => 'Khi tắt, Mira sẽ ngừng gửi mọi nội dung mới đến Google. Mô hình trên thiết bị vẫn hoạt động ngoại tuyến.';
+
+  @override
+  String get miraConsentSettingsSummary => 'Cần cho câu trả lời trên đám mây, giọng nói và Live của Mira.';
+
+  @override
+  String get miraConsentSettingsTitle => 'Chia sẻ dữ liệu với Google Gemini';
+
+  @override
+  String get miraConsentText => 'Văn bản';
+
+  @override
+  String get miraConsentTextDetail => 'Tin nhắn và tệp đính kèm của bạn';
+
+  @override
+  String get miraConsentTitle => 'Chia sẻ dữ liệu với Google Gemini?';
+
+  @override
+  String get miraConsentVoice => 'Giọng nói';
+
+  @override
+  String get miraConsentVoiceDetail => 'Tin nhắn thoại và âm thanh Live';
+
+  @override
+  String get miraConsentWhatIsSent => 'Những gì được gửi';
+
+  @override
+  String get miraConsentWhy => 'Mục đích: chỉ để tạo câu trả lời của Mira cho bạn. Không có gì được gửi cho đến khi bạn cho phép. Bạn có thể tắt bất cứ lúc nào trong Cài đặt › Quyền riêng tư.';
+
+  @override
   String get miraLiveTitle => 'Mira';
+
+  @override
+  String get miraReportAction => 'Báo cáo câu trả lời này';
+
+  @override
+  String get miraReportDescription => 'Chúng tôi sẽ xem xét câu trả lời này và tin nhắn trước đó để cải thiện Mira.';
+
+  @override
+  String get miraReportDetailsLabel => 'Chi tiết (không bắt buộc)';
+
+  @override
+  String get miraReportDetailsPlaceholder => 'Lẽ ra Mira nên trả lời thế nào?';
+
+  @override
+  String get miraReportFailed => 'Không thể gửi báo cáo. Hãy thử lại.';
+
+  @override
+  String get miraReportRateLimited => 'Bạn đã gửi quá nhiều báo cáo. Hãy thử lại sau.';
+
+  @override
+  String get miraReportReasonHarmful => 'Có hại hoặc không an toàn';
+
+  @override
+  String get miraReportReasonHate => 'Xúc phạm hoặc thù ghét';
+
+  @override
+  String get miraReportReasonInaccurate => 'Sai hoặc bịa đặt';
+
+  @override
+  String get miraReportReasonOther => 'Lý do khác';
+
+  @override
+  String get miraReportReasonSexual => 'Nội dung tình dục';
+
+  @override
+  String get miraReportSend => 'Gửi báo cáo';
+
+  @override
+  String get miraReportSent => 'Đã gửi báo cáo';
+
+  @override
+  String get miraReportTitle => 'Báo cáo câu trả lời này';
 
   @override
   String get navApps => 'Ứng dụng';
