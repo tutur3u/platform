@@ -54,8 +54,12 @@ test('host drafts flashcards and icebreaker with Mira in English with placeholde
   await expect(dialog).toBeVisible();
   const topic = dialog.getByRole('textbox', { name: 'Topic' });
   await expect(topic).toHaveAttribute('placeholder', /.+/);
-  await expect(dialog.getByRole('combobox', { name: 'Number of items' })).toBeVisible();
-  await expect(dialog.getByRole('combobox', { name: 'Language' })).toBeVisible();
+  await expect(
+    dialog.getByRole('combobox', { name: 'Number of items' })
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole('combobox', { name: 'Language' })
+  ).toBeVisible();
   await expect(
     dialog.getByRole('combobox', { name: 'Difficulty' })
   ).toContainText('Select difficulty');
@@ -69,12 +73,12 @@ test('host drafts flashcards and icebreaker with Mira in English with placeholde
   await dialog.getByRole('button', { name: 'Apply to editor' }).click();
   await expect(dialog).toBeHidden();
 
-  await expect(
-    flashcards.getByLabel('Front of card 1')
-  ).toHaveValue('Chlorophyll');
-  await expect(
-    flashcards.getByLabel('Back of card 2')
-  ).toHaveValue('Leaf pores for gas exchange');
+  await expect(flashcards.getByLabel('Front of card 1')).toHaveValue(
+    'Chlorophyll'
+  );
+  await expect(flashcards.getByLabel('Back of card 2')).toHaveValue(
+    'Leaf pores for gas exchange'
+  );
 
   // Icebreaker Mira draft journey
   const icebreaker = page.getByTestId('mira-icebreaker-host');
@@ -88,9 +92,9 @@ test('host drafts flashcards and icebreaker with Mira in English with placeholde
     'Which plant fact surprised you most this week?'
   );
   await dialog.getByRole('button', { name: 'Apply to editor' }).click();
-  await expect(
-    icebreaker.getByLabel('Ask your own question')
-  ).toHaveValue('Which plant fact surprised you most this week?');
+  await expect(icebreaker.getByLabel('Ask your own question')).toHaveValue(
+    'Which plant fact surprised you most this week?'
+  );
 });
 
 test('host drafts flashcards in Vietnamese with localized placeholders and zero side-by-side English', async ({
@@ -105,9 +109,7 @@ test('host drafts flashcards in Vietnamese with localized placeholders and zero 
       body: JSON.stringify({
         kind: 'flashcards',
         title: 'Quang hợp',
-        cards: [
-          { front: 'Diệp lục', back: 'Sắc tố hấp thụ ánh sáng' },
-        ],
+        cards: [{ front: 'Diệp lục', back: 'Sắc tố hấp thụ ánh sáng' }],
       }),
     });
   });
@@ -126,19 +128,21 @@ test('host drafts flashcards in Vietnamese with localized placeholders and zero 
   await expect(dialog).toBeVisible();
   const topic = dialog.getByRole('textbox', { name: 'Chủ đề' });
   await expect(topic).toHaveAttribute('placeholder', /^Ví dụ:/);
-  await expect(
-    dialog.getByRole('combobox', { name: 'Độ khó' })
-  ).toContainText('Chọn độ khó');
+  await expect(dialog.getByRole('combobox', { name: 'Độ khó' })).toContainText(
+    'Chọn độ khó'
+  );
 
   await topic.fill('Thuật ngữ quang hợp lớp 8');
   await dialog.getByRole('button', { name: 'Tạo bản nháp' }).click();
   await expect(dialog.getByTestId('mira-draft-preview')).toContainText(
     'Diệp lục'
   );
-  await dialog.getByRole('button', { name: 'Áp dụng vào trình soạn thảo' }).click();
-  await expect(
-    flashcards.getByLabel('Mặt trước của thẻ 1')
-  ).toHaveValue('Diệp lục');
+  await dialog
+    .getByRole('button', { name: 'Áp dụng vào trình soạn thảo' })
+    .click();
+  await expect(flashcards.getByLabel('Mặt trước của thẻ 1')).toHaveValue(
+    'Diệp lục'
+  );
 });
 
 test('guests never see the Draft with Mira trigger', async ({ page }) => {
@@ -147,7 +151,7 @@ test('guests never see the Draft with Mira trigger', async ({ page }) => {
     waitUntil: 'networkidle',
   });
 
-  await expect(page.getByRole('button', { name: 'Draft with Mira' })).toHaveCount(
-    0
-  );
+  await expect(
+    page.getByRole('button', { name: 'Draft with Mira' })
+  ).toHaveCount(0);
 });

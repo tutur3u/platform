@@ -67,11 +67,9 @@ function makeRoom(opts?: {
 
 describe('roomService activities.authorize', () => {
   it('allows a present host and returns admitted: true', () => {
-    const res = roomService(
-      makeRoom({ presentIds: [HOST] }),
-      makeToken(),
-      { action: 'activities.authorize' }
-    );
+    const res = roomService(makeRoom({ presentIds: [HOST] }), makeToken(), {
+      action: 'activities.authorize',
+    });
     expect(res.status).toBeUndefined();
     expect(res.body).toEqual({ ok: true, admitted: true });
   });

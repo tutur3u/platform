@@ -27,13 +27,4 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
   },
-  webServer: process.env.MEET_ACTIVITIES_FIXTURE_URL
-    ? undefined
-    : {
-        command:
-          'bunx vite --config ../../packages/meet-core/fixtures/meet-activities/vite.config.ts --host 127.0.0.1 --port 5213 --strictPort',
-        url: 'http://127.0.0.1:5213',
-        reuseExistingServer: !process.env.CI,
-        timeout: 60_000,
-      },
 });

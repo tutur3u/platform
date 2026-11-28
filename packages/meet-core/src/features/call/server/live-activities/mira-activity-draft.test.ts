@@ -347,9 +347,7 @@ describe('draftMeetLiveActivity security boundaries', () => {
       'not json at all',
       'x'.repeat(24_001),
       JSON.stringify({
-        rounds: [
-          { prompt: 'Q1', options: ['A', 'B'], answer: 4, seconds: 20 },
-        ],
+        rounds: [{ prompt: 'Q1', options: ['A', 'B'], answer: 4, seconds: 20 }],
       }),
       JSON.stringify({
         rounds: [
