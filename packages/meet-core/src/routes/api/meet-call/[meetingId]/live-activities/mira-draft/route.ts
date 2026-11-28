@@ -1,4 +1,5 @@
 import { MeetCallAccessError } from '../../../../../../features/call/lib/call-access';
+import { requireMeetAiDataConsent } from '../../../../../../features/call/server/ai-data-consent';
 import { draftMeetLiveActivity } from '../../../../../../features/call/server/live-activities/mira-activity-draft';
 import { roomRoute } from '../../../../../../features/call/server/room-service';
 
@@ -52,6 +53,7 @@ export async function POST(request: Request, { params }: Params) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
     const body = await readDraftBody(request);
+    await requireMeetAiDataConsent(request, access.user.id);
     return draftMeetLiveActivity(access, body);
   });
 }

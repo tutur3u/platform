@@ -135,12 +135,14 @@ async function settleQuietly(
 export async function transcribeSelfChunk(
   request: Request,
   params: MeetAiParams,
-  form: FormData
+  form: FormData,
+  requireAiConsent?: (userId: string) => Promise<void>
 ) {
   const { db, user, actor, wsId, meetingId } = await meetSelfAccess(
     request,
     params
   );
+  await requireAiConsent?.(user.id);
   const fields = readSelfChunkFields(request, form);
   const session = await loadSelfSession(
     db,

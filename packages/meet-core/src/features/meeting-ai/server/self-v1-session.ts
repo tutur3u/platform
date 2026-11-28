@@ -184,6 +184,8 @@ export async function finishSelfSession(
     session: MeetAiSessionRow;
     meetingStartedAt: string;
     timezone?: string;
+    /** Runs after capture stops, before the transcript goes to Gemini. */
+    requireAiConsent?: () => Promise<void>;
   }
 ) {
   const { db, meetingId, hostId } = input;
@@ -214,6 +216,7 @@ export async function finishSelfSession(
   if (inFlight.error) throw new MeetAiError(500, 'Transcript lookup failed');
   if ((inFlight.count ?? 0) > 0)
     throw new MeetAiError(409, 'Audio is still processing');
+  await input.requireAiConsent?.();
   return generateSelfNotes({
     db,
     session,

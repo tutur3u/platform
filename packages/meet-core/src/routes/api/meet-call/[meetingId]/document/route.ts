@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/meet-core/features/call/server/documents';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { connection } from 'next/server';
+import { requireMeetAiDataConsent } from '../../../../../features/call/server/ai-data-consent';
 import { readDocumentBody } from '../../../../../features/call/server/document-body';
 import { readMiraDemoAuthority } from '../../../../../features/live-assistant/server/demo-authority';
 import { requirePrivateMiraChoice } from '../../../../../features/live-assistant/server/private-consent';
@@ -48,6 +49,7 @@ export async function POST(
     const input = meetingDocumentAssistSchema.safeParse(body);
     if (!input.success)
       throw new MeetCallAccessError(400, 'Invalid Mira document request');
+    await requireMeetAiDataConsent(request, access.user.id);
     // `await` first: a runtime whose `getCloudflareContext` answers without a
     // Promise must not turn every request into a TypeError.
     const cloudflare = await Promise.resolve()

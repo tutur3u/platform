@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { connection } from 'next/server';
 import { z } from 'zod';
+import { requireMeetAiDataConsent } from '../../../../../features/call/server/ai-data-consent';
 import {
   pollActionSchema,
   runPollAction,
@@ -71,7 +72,14 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { meetingId } = await params;
-  return guestPollRoomRoute(request, meetingId, async (access) =>
-    runPollAction(access, await readPollAction(request))
-  );
+  return guestPollRoomRoute(request, meetingId, async (access) => {
+    const action = await readPollAction(request);
+    // Mira drafts and summaries send the prompt or results to Gemini.
+    if (
+      (action.action === 'mira_draft' || action.action === 'mira_summarize') &&
+      !access.guest
+    )
+      await requireMeetAiDataConsent(request, access.user.id);
+    return runPollAction(access, action);
+  });
 }

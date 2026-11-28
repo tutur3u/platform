@@ -12,6 +12,10 @@ import { POST as review } from './review/route';
 import { POST as live } from './route';
 
 vi.mock('server-only', () => ({}));
+// Mira AI data consent has its own route-ai-consent tests.
+vi.mock('../../../../features/call/server/ai-data-consent', () => ({
+  requireMeetAiDataConsent: async () => undefined,
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     auth: {

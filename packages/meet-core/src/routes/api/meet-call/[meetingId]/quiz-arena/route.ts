@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { connection } from 'next/server';
 import { z } from 'zod';
+import { requireMeetAiDataConsent } from '../../../../../features/call/server/ai-data-consent';
 import {
   quizArenaActionSchema,
   runQuizArenaAction,
@@ -92,6 +93,9 @@ export async function POST(request: Request, { params }: Params) {
         action: `arena.${action.action}`,
       });
     }
+    // A generated board sends the host's request to Gemini.
+    if (action.action === 'mira_generate_board' && !action.useStarterFallback)
+      await requireMeetAiDataConsent(request, access.user.id);
     return runQuizArenaAction(access, action);
   });
 }

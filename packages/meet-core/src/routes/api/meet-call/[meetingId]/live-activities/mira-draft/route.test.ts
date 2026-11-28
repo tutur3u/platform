@@ -19,6 +19,10 @@ const { AccessError } = vi.hoisted(() => ({
 }));
 
 vi.mock('server-only', () => ({}));
+// Mira AI data consent has its own route-ai-consent tests.
+vi.mock('../../../../../../features/call/server/ai-data-consent', () => ({
+  requireMeetAiDataConsent: async () => undefined,
+}));
 vi.mock('next/headers', () => ({
   cookies: mocks.cookies,
 }));

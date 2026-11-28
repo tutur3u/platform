@@ -1,4 +1,5 @@
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
+import { requireMeetAiDataConsent } from '../../../../../../features/call/server/ai-data-consent';
 import { meetFormsRoute } from '../../../../../../features/call/server/forms/route-guard';
 import { connection } from 'next/server';
 import { z } from 'zod';
@@ -74,6 +75,8 @@ export async function POST(request: Request, { params }: Params) {
     const requestId = requestIdSchema.parse(
       request.headers.get('Idempotency-Key')
     );
+    // The summary sends aggregated answers to Gemini.
+    await requireMeetAiDataConsent(request, access.user.id);
     const results = await authorizedResults(access, launchId);
     return summarizeFormsResults(access, results, locale, requestId);
   });

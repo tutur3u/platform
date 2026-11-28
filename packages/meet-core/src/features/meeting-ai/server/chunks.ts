@@ -34,17 +34,27 @@ const schema = z.object({
  * its capture stream; it runs the per-speaker uploader check and is accepted
  * only for a `self_v1` session. Every other request keeps the host-only room
  * capture path, which refuses `self_v1` sessions. The session row, not the
- * request, decides which audio a session accepts.
+ * request, decides which audio a session accepts. [requireAiConsent] is the
+ * route's Mira AI data consent check for the uploader; it runs after access
+ * resolves and before audio reaches Gemini.
  */
 export async function transcribeMeetChunk(
   request: Request,
-  params: MeetAiParams
+  params: MeetAiParams,
+  requireAiConsent?: (userId: string) => Promise<void>
 ) {
   // Preserve the batch budget even when the transport drops custom headers.
   const batched =
     request.headers.get('x-meet-audio-batch') === '1' ||
     new URL(request.url).searchParams.get('audioBatch') === '1';
-  if (batched) return transcribeLegacyChunk(request, params, true);
+  if (batched)
+    return transcribeLegacyChunk(
+      request,
+      params,
+      true,
+      undefined,
+      requireAiConsent
+    );
   if (
     Number(request.headers.get('content-length') ?? 0) >
     MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES
@@ -57,22 +67,24 @@ export async function transcribeMeetChunk(
   if (form.has('streamId')) {
     if (size > MEET_SELF_REQUEST_MAX_BYTES)
       throw new MeetAiError(413, 'Audio too large');
-    return transcribeSelfChunk(request, params, form);
+    return transcribeSelfChunk(request, params, form, requireAiConsent);
   }
-  return transcribeLegacyChunk(request, params, false, form);
+  return transcribeLegacyChunk(request, params, false, form, requireAiConsent);
 }
 
 async function transcribeLegacyChunk(
   request: Request,
   params: MeetAiParams,
   batched: boolean,
-  preread?: FormData
+  preread?: FormData,
+  requireAiConsent?: (userId: string) => Promise<void>
 ) {
   const { db, meetingId, wsId, user } = await meetAiAccess(
     request,
     params,
     true
   );
+  await requireAiConsent?.(user.id);
   const maxBytes = batched
     ? MEET_AUDIO_REQUEST_MAX_BYTES
     : MEET_AUDIO_SINGLE_REQUEST_MAX_BYTES;

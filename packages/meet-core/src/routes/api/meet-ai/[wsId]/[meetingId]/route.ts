@@ -2,6 +2,7 @@ import {
   type MeetAiParams,
   meetAiResponse,
 } from '@tuturuuu/meet-core/features/meeting-ai/server/access';
+import { meetTranscriptAiConsent } from '../../../../../features/meeting-ai/server/ai-data-consent';
 import {
   changeMeetAi,
   readMeetAi,
@@ -13,5 +14,7 @@ export async function GET(request: Request, params: MeetAiParams) {
   return meetAiResponse(() => readMeetAi(request, params));
 }
 export async function POST(request: Request, params: MeetAiParams) {
-  return meetAiResponse(() => changeMeetAi(request, params));
+  return meetAiResponse(() =>
+    changeMeetAi(request, params, meetTranscriptAiConsent(request))
+  );
 }

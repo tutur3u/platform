@@ -40,6 +40,9 @@ vi.mock('../meeting-ai/server/chunks', () => ({
   transcribeMeetChunk: handlers.chunk,
 }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
+vi.mock('../meeting-ai/server/ai-data-consent', () => ({
+  meetTranscriptAiConsent: () => async () => undefined,
+}));
 it('denies room Live commands and fences room chat without consulting environment gates', () => {
   const token = meetRealtimeTokenPayloadSchema.parse({
     exp: 2000000000,

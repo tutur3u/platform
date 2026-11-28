@@ -23,6 +23,7 @@ import {
   requireMiraAccountConfirmation,
   usesMiraAccountConfirmation,
 } from '../../../../features/live-assistant/server/account-confirmation';
+import { requireMeetAiDataConsent } from '../../../../features/call/server/ai-data-consent';
 import { readMiraDemoAuthority } from '../../../../features/live-assistant/server/demo-authority';
 import { privateMiraBillingWorkspace } from '../../../../features/live-assistant/server/mira-billing';
 import {
@@ -72,6 +73,9 @@ export async function POST(
     const accountFlow = usesMiraAccountConfirmation();
     if (command.action === 'start' && command.mode !== 'personal')
       throw new MeetCallAccessError(403, MIRA_ROOM_DENIED);
+    // Start and resume mint a Gemini Live session token.
+    if (command.action === 'start' || command.action === 'resume')
+      await requireMeetAiDataConsent(request, access.user.id);
     const cloudflare = await getCloudflareContext({ async: true });
     const env = cloudflare.env as unknown as {
       MEET_LIVE: DurableObjectNamespace;

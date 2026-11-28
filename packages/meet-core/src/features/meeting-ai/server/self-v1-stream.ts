@@ -74,11 +74,17 @@ async function readJson<T extends z.ZodType>(request: Request, schema: T) {
  * ended in between. A refused commit writes the room's compensating
  * withdraw at once, which closes the stream.
  */
-export async function openSelfStream(request: Request, params: MeetAiParams) {
+export async function openSelfStream(
+  request: Request,
+  params: MeetAiParams,
+  /** Mira AI data consent: the stream sends this voice to Gemini. */
+  requireAiConsent?: (userId: string) => Promise<void>
+) {
   const { db, user, actor, wsId, meetingId } = await meetSelfAccess(
     request,
     params
   );
+  await requireAiConsent?.(user.id);
   const { sessionId } = await readJson(
     request,
     z.object({ sessionId: z.uuid() }).strict()

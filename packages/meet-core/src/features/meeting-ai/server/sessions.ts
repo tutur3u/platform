@@ -47,7 +47,16 @@ const actionSchema = z.object({
   captureIncomplete: z.boolean().optional(),
   protocol: z.enum(['legacy', 'self_v1']).optional(),
 });
-export async function changeMeetAi(request: Request, params: MeetAiParams) {
+/**
+ * [requireAiConsent] is the route's Mira AI data consent check for the
+ * signed-in host. Capture and drafts check it first; finish stops capture
+ * and checks it only before the transcript goes to Gemini for notes.
+ */
+export async function changeMeetAi(
+  request: Request,
+  params: MeetAiParams,
+  requireAiConsent?: (userId: string) => Promise<void>
+) {
   const { db, meetingId, wsId, user, meetingStartedAt } = await meetAiAccess(
     request,
     params,
@@ -68,6 +77,7 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
   if (MEETING_APP !== 'parley' && !process.env.GOOGLE_GENERATIVE_AI_API_KEY)
     throw new MeetAiError(503, 'Meeting AI is not configured');
   const { action, sessionId } = parsed.data;
+  if (action !== 'finish') await requireAiConsent?.(user.id);
   if (action === 'draft') {
     if (!sessionId) throw new MeetAiError(400, 'Missing session');
     return draftMeetAiNotes({
@@ -136,6 +146,7 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       session,
       meetingStartedAt,
       timezone: parsed.data.timezone,
+      requireAiConsent: async () => requireAiConsent?.(user.id),
     });
   if (session.notes_status === 'completed') return { sessionId };
   if (
@@ -170,6 +181,7 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
       sessionId,
       active: false,
     });
+  await requireAiConsent?.(user.id);
   const { data: chunks, error: chunkError } = await db
     .from('meet_ai_chunks')
     .select('*')

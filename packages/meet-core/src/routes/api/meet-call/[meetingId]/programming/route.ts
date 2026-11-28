@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/meet-core/features/call/server/programming';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { connection } from 'next/server';
+import { requireMeetAiDataConsent } from '../../../../../features/call/server/ai-data-consent';
 import { readPersonalChatBody } from '../../../../../features/call/server/personal-chat-body';
 import {
   changeMeetingProgrammingMira,
@@ -44,11 +45,13 @@ export async function POST(request: Request, { params }: Context) {
   return roomRoute(request, meetingId, async (access) => {
     const query = new URL(request.url).searchParams;
     if (query.has('checkpoint')) return joinMeetingProgramming(access, true);
-    if (query.has('mira'))
-      return changeMeetingProgrammingMira(
-        access,
-        await readPersonalChatBody(request)
-      );
+    if (query.has('mira')) {
+      const input = await readPersonalChatBody(request);
+      // Analyze sends the selected code to Gemini (chat or Live).
+      if ((input as { action?: unknown } | null)?.action === 'analyze')
+        await requireMeetAiDataConsent(request, access.user.id);
+      return changeMeetingProgrammingMira(access, input);
+    }
     const body = await request.json();
     return query.has('create')
       ? createMeetingPlayground(access, body)
