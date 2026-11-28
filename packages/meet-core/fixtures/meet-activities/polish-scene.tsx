@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
+import { NuqsTestingAdapter } from 'nuqs/adapters/testing';
 import { useMemo, useState } from 'react';
 import { ActivitiesMenu } from '../../src/features/call/components/activities-menu';
 import { CallTimers } from '../../src/features/call/components/call-clock';
@@ -133,7 +134,8 @@ export function PolishScene() {
   );
 
   return (
-    <LiveQaClientContext value={qaClient}>
+    <NuqsTestingAdapter>
+      <LiveQaClientContext value={qaClient}>
       <div className="flex h-screen w-screen flex-col gap-3 bg-background p-4 text-foreground">
         <header className="flex flex-wrap items-center gap-2 border-b pb-3">
           <CallTimers state={timerState} />
@@ -245,5 +247,6 @@ export function PolishScene() {
         </Dialog>
       </div>
     </LiveQaClientContext>
+    </NuqsTestingAdapter>
   );
 }

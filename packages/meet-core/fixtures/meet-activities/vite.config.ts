@@ -20,6 +20,7 @@ export default defineConfig({
       '@tuturuuu/internal-api/meet-live-activities',
       '@tuturuuu/internal-api/meet-whiteboard',
       '@tuturuuu/internal-api/meetings',
+      '@tuturuuu/internal-api/people',
       '@tuturuuu/internal-api/storage',
       '@tuturuuu/internal-api/tasks',
       '@tuturuuu/internal-api/upskii-content',
