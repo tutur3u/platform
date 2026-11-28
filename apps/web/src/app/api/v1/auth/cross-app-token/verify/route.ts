@@ -69,14 +69,17 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
  * Every issuer proof is checked. Its absence is refused once the signing
  * Worker serves and the transaction requirement is on, and always for the
  * apex callback. A stated callback must be the host one or the admitted apex
- * one; a v2 proof redeems only for the callback it was issued for, and v1
- * (host only) is refused while the apex flag is on.
+ * one; a redeem that states none is the dedicated host's, so a host Worker
+ * that does not declare its callback keeps signing in while an apex handoff
+ * never redeems there. A v2 proof redeems only for the callback it was issued
+ * for, and v1 (host only) is refused while the apex flag is on.
  */
 function mastermindIssuerAccepted({
-  callback,
+  callback: declared,
   issuerProof,
   token,
 }: z.infer<typeof verifyCrossAppTokenSchema>) {
+  const callback = declared ?? MASTERMIND_HOST_CALLBACK;
   const apex = callback === MASTERMIND_APEX_CALLBACK;
   if (callback !== undefined && callback !== MASTERMIND_HOST_CALLBACK) {
     if (!apex || !mastermindApexCallbackAdmitted()) return false;

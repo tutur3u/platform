@@ -347,7 +347,10 @@ of `POST /api/v1/auth/cross-app-token/verify`:
 A v2 proof redeems only with the callback it was issued for, so a handoff
 for the host return never redeems through the apex one or back. A stated
 callback that is neither constant, or the apex one while it is not admitted,
-is refused. The legacy v1 proof (the token alone) is accepted only for the
+is refused. A redemption that states no callback is the dedicated host's: a
+host Worker that does not declare its callback keeps signing in after Web
+issues v2, and an apex handoff never redeems without the apex callback. The
+legacy v1 proof (the token alone) is accepted only for the
 host callback (no `callback`, or the host one) and only while
 `MASTERMIND_APEX_CALLBACK` is off; with the flag on, only v2 is accepted.
 While the flag is off Web still issues v1, which the serving Worker forwards
@@ -359,7 +362,7 @@ sign-in, then set `MASTERMIND_APEX_CALLBACK=true`. Rollback: clear
 `MASTERMIND_APEX_CALLBACK` first; Web then returns to v1 for the host and
 refuses the apex. A host handoff issued with v2 shortly before a rollback
 still redeems, because a v2 proof with its host callback is always accepted;
-an apex one does not.
+an apex one in flight fails closed and the person signs in again on the host.
 
 **Revocation.** Removing the owner from the Worker's `OWNER_IDS` or from
 Web's root Mastermind permission denies the next request and every refresh.

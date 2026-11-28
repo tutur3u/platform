@@ -95,6 +95,14 @@ describe('Mastermind redemption bound to its exact callback', () => {
     expect(mocks.adminRpc).toHaveBeenCalledTimes(2);
   });
 
+  it('treats a redeem without a declared callback as the host one', async () => {
+    // A dedicated-host Worker that does not declare its callback still signs
+    // in once v2 issuance is on; an apex handoff never redeems there.
+    expect((await verify(v2(MASTERMIND_HOST_CALLBACK))).status).toBe(200);
+    expect((await verify(v2(MASTERMIND_APEX_CALLBACK))).status).toBe(401);
+    expect(mocks.adminRpc).toHaveBeenCalledTimes(1);
+  });
+
   it('refuses host-to-apex and apex-to-host cross-redemption before redeeming', async () => {
     for (const [proof, callback] of [
       [v2(MASTERMIND_HOST_CALLBACK), MASTERMIND_APEX_CALLBACK],
