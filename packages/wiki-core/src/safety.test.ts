@@ -169,6 +169,22 @@ describe('public safety scan', () => {
       '0:0:0:0:0:ffff:a00:1',
     ],
     ['mapped dotted IP', 'private network address', '[::ffff:192.168.0.1]'],
+    [
+      'loopback before a sentence period',
+      'private network address',
+      'Connect to ::1.',
+    ],
+    [
+      'mapped loopback before a sentence period',
+      'private network address',
+      '::ffff:7f00:1.',
+    ],
+    [
+      'expanded loopback before a sentence period',
+      'private network address',
+      '0:0:0:0:0:0:0:1.',
+    ],
+    ['loopback after a dot', 'private network address', 'host.::1'],
     ['IPv6 unspecified', 'private network address', '[::]'],
   ])('detects %s', (_case, rule, value) => {
     const findings = scanPublicSafety({ type: 'doc' }, undefined, {
@@ -198,7 +214,36 @@ describe('public safety scan', () => {
     }
   );
 
+  it.each(['https://example.com/50%25-off', 'https://example.com/?q=100%25'])(
+    'allows literal percent encoding in %s',
+    (href) => expect(scan(`[Example](${href})`)).toEqual([])
+  );
+
+  it('rejects malformed percent encoding on the raw href', () => {
+    expect(scan('[Example](https://example.com/?q=%zz)')).toContainEqual({
+      rule: 'unsupported link',
+      location: 'body.content.0.content.0.marks.0.attrs.href',
+    });
+  });
+
+  it.each(['a:b', 'aa:bb', '12:34'])(
+    'skips IPv6 parsing for single-colon token %s',
+    (token) => {
+      const canParse = vi.spyOn(URL, 'canParse');
+      try {
+        expect(
+          scanPublicSafety({ type: 'doc' }, undefined, { title: token })
+        ).toEqual([]);
+        expect(canParse).not.toHaveBeenCalled();
+      } finally {
+        canParse.mockRestore();
+      }
+    }
+  );
+
   it.each([
+    ['short colon pairs', 'a:b '.repeat(499_000)],
+    ['long colon pairs', 'aa:bb '.repeat(333_000)],
     ['long prose token', 'a'.repeat(1_999_800)],
     ['long hyphenated token', 'a-'.repeat(999_900)],
     [

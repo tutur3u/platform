@@ -11,7 +11,7 @@ import {
 import type { RichTextNode } from './types';
 import { isWikiHost, parseWikiLink } from './urls';
 
-export const WIKI_SAFETY_RULE_VERSION = 2;
+export const WIKI_SAFETY_RULE_VERSION = 3;
 export type WikiVisibility = 'private' | 'internal' | 'public';
 
 /** Keys are canonical /wiki/<space>/<path> destinations resolved by the caller. */
@@ -52,7 +52,7 @@ const assignment = /(?<![a-z0-9_])([a-z0-9_]+)["']?\s*[:=]\s*(?=\S)/gi;
 const secretName =
   /token|secret|password|passwd|credential|bypass|_key(?:_|$)/i;
 const ipv6Candidate =
-  /(?<![0-9a-f:.])[0-9a-f:]{2,39}(?:\.\d{1,3}){0,3}(?![0-9a-f:.])/gi;
+  /(?<![0-9a-f:])[0-9a-f:]{2,39}(?:\.\d{1,3}){0,3}(?![0-9a-f:]|\.[0-9a-f:.])/gi;
 
 function normalizeSafetyText(value: string): string {
   return value.normalize('NFKC').replace(/\p{Cf}/gu, '');
@@ -67,37 +67,36 @@ function hasSecretAssignment(source: string): boolean {
 
 function hasPrivateIpv6(source: string): boolean {
   for (const { 0: candidate, index } of source.matchAll(ipv6Candidate)) {
-    if (!candidate.includes(':')) continue;
+    const colon = candidate.indexOf(':');
+    if (colon < 0 || candidate.indexOf(':', colon + 1) < 0) continue;
     // URL canonicalization expands mixed IPv4 notation into hexadecimal words.
-    try {
-      const host = new URL(`http://[${candidate}]`).hostname;
-      if (host === '[::1]') return true;
+    const address = `http://[${candidate}]`;
+    if (!URL.canParse(address)) continue;
+    const host = new URL(address).hostname;
+    if (host === '[::1]') return true;
+    if (
+      host === '[::]' &&
+      source[index - 1] === '[' &&
+      source[index + candidate.length] === ']'
+    )
+      return true;
+    const highWord = /^\[::ffff:([a-f0-9]{1,4}):[a-f0-9]{1,4}\]$/i.exec(
+      host
+    )?.[1];
+    if (highWord !== undefined) {
+      const number = Number.parseInt(highWord, 16);
+      const first = number >>> 8;
+      const second = number & 255;
       if (
-        host === '[::]' &&
-        source[index - 1] === '[' &&
-        source[index + candidate.length] === ']'
+        first === 0 ||
+        first === 10 ||
+        first === 127 ||
+        (first === 169 && second === 254) ||
+        (first === 172 && second >= 16 && second <= 31) ||
+        (first === 192 && second === 168) ||
+        (first === 100 && second >= 64 && second <= 127)
       )
         return true;
-      const highWord = /^\[::ffff:([a-f0-9]{1,4}):[a-f0-9]{1,4}\]$/i.exec(
-        host
-      )?.[1];
-      if (highWord !== undefined) {
-        const number = Number.parseInt(highWord, 16);
-        const first = number >>> 8;
-        const second = number & 255;
-        if (
-          first === 0 ||
-          first === 10 ||
-          first === 127 ||
-          (first === 169 && second === 254) ||
-          (first === 172 && second >= 16 && second <= 31) ||
-          (first === 192 && second === 168) ||
-          (first === 100 && second >= 64 && second <= 127)
-        )
-          return true;
-      }
-    } catch {
-      // Only valid IPv6 addresses are inspected.
     }
   }
   return false;
@@ -222,15 +221,17 @@ export function scanPublicSafety(
       inspect(value, field);
       if (key === 'href' && value.includes('%')) {
         let decoded = value;
-        try {
-          for (let pass = 0; pass < 3 && decoded.includes('%'); pass++) {
-            const next = decodeURIComponent(decoded);
-            if (next === decoded) break;
-            inspect(next, field);
-            decoded = next;
+        for (let pass = 0; pass < 3 && decoded.includes('%'); pass++) {
+          let next: string;
+          try {
+            next = decodeURIComponent(decoded);
+          } catch {
+            if (pass === 0) report('unsupported link', field);
+            break;
           }
-        } catch {
-          report('unsupported link', field);
+          if (next === decoded) break;
+          inspect(next, field);
+          decoded = next;
         }
       }
     }
