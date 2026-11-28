@@ -392,6 +392,136 @@ test('allowlist transitions require structured, fresh admission for expansion or
   );
 });
 
+test('gateway mount admission accepts only the exact Iris ref for that app and digest', () => {
+  const gatewayConfig = 'apps/gateway/wrangler.jsonc';
+  const apps =
+    'forms chat git rewise cms ai inventory drive storefront pay workspace worlds lettin shortener mastermind calendar colab track contacts finance mail tasks'.split(
+      ' '
+    );
+  const rule = 'IRIS-GATEWAY-MOUNT-ADMISSION-20261128';
+  const ref = (app) => `${rule}/${app}`;
+  const digest = 'a'.repeat(64);
+  const otherDigest = 'b'.repeat(64);
+  const reason = 'Iris exact-hash landing ACK of the gateway mount bundle';
+  const commitUrl = `https://github.com/tutur3u/platform/commit/${'c'.repeat(40)}`;
+  const gaps = { old: { reason: 'old gap' } };
+  const entry = (decision = ref('forms'), entryDigest = digest) => ({
+    lines: 1,
+    uses: 1,
+    gap: 'old',
+    digest: entryDigest,
+    admitted: { decision, reason },
+  });
+  const allow = (files) => ({ gaps, files });
+  const problems = (files, previous = allow({})) =>
+    validateAllowlistTransition(previous, allow(files)).join('\n');
+  const pr = /repository PR or commit decision/;
+  const reused = /cannot be reused across digests/;
+  const reject = (files, pattern, previous) =>
+    assert.match(problems(files, previous), pattern);
+  const urlEntry = (decision) => ({
+    lines: 1,
+    uses: 1,
+    gap: 'old',
+    admitted: { decision, reason },
+  });
+  const onGateway = (admitted, entryDigest = digest) => ({
+    [gatewayConfig]: { ...entry(admitted.decision, entryDigest), admitted },
+  });
+
+  for (const app of apps)
+    for (const file of [gatewayConfig, `apps/${app}/wrangler.jsonc`])
+      assert.equal(problems({ [file]: entry(ref(app)) }), '', file);
+
+  const forms = { [gatewayConfig]: entry() };
+  // Pull and full-SHA commit URLs stay valid, including without a digest.
+  assert.equal(
+    problems({
+      'new.js': urlEntry('https://github.com/tutur3u/platform/pull/6485'),
+    }),
+    ''
+  );
+  assert.equal(problems({ 'new.js': urlEntry(commitUrl) }), '');
+  assert.equal(
+    problems(
+      onGateway(
+        { decision: commitUrl, reason: 'direct-to-main change under D353' },
+        otherDigest
+      ),
+      allow(forms)
+    ),
+    ''
+  );
+
+  const loose = [
+    ...['20261127', '20261129'].map(
+      (date) => `IRIS-GATEWAY-MOUNT-ADMISSION-${date}/forms`
+    ),
+    ...'meet nova gateway form forms-extra FORMS forms* *'
+      .split(' ')
+      .map((app) => `${rule}/${app}`),
+    `${rule.toLowerCase()}/forms`,
+    ...[' ', '\n', '/extra', 'x'].map((suffix) => `${ref('forms')}${suffix}`),
+    ` ${ref('forms')}`,
+    `note ${ref('forms')}`,
+  ];
+  for (const decision of loose)
+    reject({ [gatewayConfig]: entry(decision) }, pr);
+  for (const [file, app] of [
+    ['apps/mail/wrangler.jsonc', 'forms'],
+    ['apps/forms/wrangler.jsonc', 'mail'],
+    ['apps/gateway/wrangler.subdomain-redirect.jsonc', 'forms'],
+    ['apps/forms/wrangler.toml', 'forms'],
+  ])
+    reject({ [file]: entry(ref(app)) }, pr);
+
+  const missing = entry();
+  delete missing.digest;
+  reject({ [gatewayConfig]: missing }, pr);
+  for (const bad of [
+    '',
+    digest.slice(1),
+    `${digest}a`,
+    digest.toUpperCase(),
+    `${digest}\n`,
+    'g'.repeat(64),
+  ])
+    reject({ [gatewayConfig]: entry(ref('forms'), bad) }, pr);
+  reject(onGateway({ decision: ref('forms'), reason: '  ' }), pr);
+  reject(onGateway({ decision: ref('forms'), reason, extra: true }), pr);
+  reject(
+    onGateway({ decision: ref('forms'), reason: 'a new reason' }, otherDigest),
+    reused,
+    allow(forms)
+  );
+  reject(
+    {
+      [gatewayConfig]: entry(),
+      'apps/forms/wrangler.jsonc': entry(ref('forms'), otherDigest),
+    },
+    reused
+  );
+  assert.equal(
+    problems(
+      onGateway({ decision: ref('forms'), reason: 'reworded ack' }),
+      allow(forms)
+    ),
+    ''
+  );
+  assert.equal(
+    problems(
+      { [gatewayConfig]: entry(ref('chat'), otherDigest) },
+      allow(forms)
+    ),
+    ''
+  );
+  assert.deepEqual(require('./wrangler-usage.js').GATEWAY_MOUNT_APPS, apps);
+  assert.equal(
+    require('./wrangler-usage.js').GATEWAY_MOUNT_CONFIG,
+    gatewayConfig
+  );
+});
+
 test('allowlist only shrinks relative to its base', (t) => {
   const base = baseAllowlist();
   if (!base) {

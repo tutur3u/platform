@@ -424,31 +424,111 @@ function readAllowlist(repoRoot = REPO_ROOT) {
   );
 }
 
-function validAdmission(admitted) {
+// Standing rule IRIS-GATEWAY-MOUNT-ADMISSION-20261128. One ref per app,
+// bound to that mount's exact gateway Wrangler digest.
+const GATEWAY_MOUNT_ADMISSION_RULE = 'IRIS-GATEWAY-MOUNT-ADMISSION-20261128';
+const GATEWAY_MOUNT_CONFIG = 'apps/gateway/wrangler.jsonc';
+const GATEWAY_MOUNT_APPS = Object.freeze([
+  'forms',
+  'chat',
+  'git',
+  'rewise',
+  'cms',
+  'ai',
+  'inventory',
+  'drive',
+  'storefront',
+  'pay',
+  'workspace',
+  'worlds',
+  'lettin',
+  'shortener',
+  'mastermind',
+  'calendar',
+  'colab',
+  'track',
+  'contacts',
+  'finance',
+  'mail',
+  'tasks',
+]);
+const GATEWAY_MOUNT_APP_SET = new Set(GATEWAY_MOUNT_APPS);
+const GATEWAY_MOUNT_DECISION = new RegExp(
+  `^${GATEWAY_MOUNT_ADMISSION_RULE}/(${GATEWAY_MOUNT_APPS.join('|')})$`
+);
+
+function validDecisionUrl(decision) {
+  // D353: direct ff-only main pushes have no PR, so a full 40-hex commit URL
+  // on this repository is an equally durable decision reference.
   return (
-    admitted !== null &&
-    typeof admitted === 'object' &&
-    !Array.isArray(admitted) &&
-    isDeepStrictEqual(Object.keys(admitted).sort(), ['decision', 'reason']) &&
-    typeof admitted.decision === 'string' &&
-    // D353: direct ff-only main pushes have no PR, so a full 40-hex commit URL
-    // on this repository is an equally durable decision reference.
-    (/^https:\/\/github\.com\/tutur3u\/platform\/pull\/[1-9]\d*$/.test(
-      admitted.decision
+    /^https:\/\/github\.com\/tutur3u\/platform\/pull\/[1-9]\d*$/.test(
+      decision
     ) ||
-      /^https:\/\/github\.com\/tutur3u\/platform\/commit\/[0-9a-f]{40}$/.test(
-        admitted.decision
-      )) &&
-    typeof admitted.reason === 'string' &&
-    admitted.reason.trim().length > 0
+    /^https:\/\/github\.com\/tutur3u\/platform\/commit\/[0-9a-f]{40}$/.test(
+      decision
+    )
   );
+}
+
+function gatewayMountDecisionApp(decision) {
+  if (typeof decision !== 'string') return null;
+  const match = GATEWAY_MOUNT_DECISION.exec(decision);
+  if (!match || !GATEWAY_MOUNT_APP_SET.has(match[1])) return null;
+  return match[1];
+}
+
+function gatewayMountEntryMatches(file, app) {
+  return file === GATEWAY_MOUNT_CONFIG || file === `apps/${app}/wrangler.jsonc`;
+}
+
+function exactMountDigest(digest) {
+  return typeof digest === 'string' && /^[a-f0-9]{64}$/.test(digest);
+}
+
+function validAdmission(admitted, file, entry) {
+  if (
+    admitted === null ||
+    typeof admitted !== 'object' ||
+    Array.isArray(admitted) ||
+    !isDeepStrictEqual(Object.keys(admitted).sort(), ['decision', 'reason']) ||
+    typeof admitted.decision !== 'string' ||
+    typeof admitted.reason !== 'string' ||
+    admitted.reason.trim().length === 0
+  )
+    return false;
+  if (validDecisionUrl(admitted.decision)) return true;
+  const app = gatewayMountDecisionApp(admitted.decision);
+  return (
+    app !== null &&
+    gatewayMountEntryMatches(file, app) &&
+    exactMountDigest(entry?.digest)
+  );
+}
+
+function gatewayMountReuseProblems(previous, current) {
+  const problems = [];
+  const seen = new Map();
+  for (const [file, entry] of Object.entries(current.files ?? {})) {
+    const decision = entry?.admitted?.decision;
+    if (!gatewayMountDecisionApp(decision)) continue;
+    const prior = seen.get(decision);
+    if (prior !== undefined && prior !== entry.digest)
+      problems.push(`${file}: ${decision} cannot be reused across digests`);
+    else if (prior === undefined) seen.set(decision, entry.digest);
+    for (const before of Object.values(previous?.files ?? {})) {
+      if (before?.admitted?.decision !== decision) continue;
+      if (before.digest !== entry.digest)
+        problems.push(`${file}: ${decision} cannot be reused across digests`);
+    }
+  }
+  return [...new Set(problems)];
 }
 
 /** Pure transition check; equal structured admissions never authorize growth. */
 function validateAllowlistTransition(previous, current) {
   const problems = [];
   for (const [file, entry] of Object.entries(current.files)) {
-    const admissionValid = validAdmission(entry.admitted);
+    const admissionValid = validAdmission(entry.admitted, file, entry);
     if (entry.admitted !== undefined && !admissionValid)
       problems.push(
         `${file}: admitted needs a repository PR or commit decision and reason`
@@ -479,7 +559,7 @@ function validateAllowlistTransition(previous, current) {
         `${file}: ${changes.join('; ')} needs a fresh admitted decision and reason`
       );
   }
-  return problems;
+  return [...problems, ...gatewayMountReuseProblems(previous, current)];
 }
 
 function main() {
@@ -502,6 +582,8 @@ function main() {
 
 module.exports = {
   ALLOWLIST_PATH,
+  GATEWAY_MOUNT_APPS,
+  GATEWAY_MOUNT_CONFIG,
   REPO_ROOT,
   classify,
   countPublishCalls,

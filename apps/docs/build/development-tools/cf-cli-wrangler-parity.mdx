@@ -339,9 +339,19 @@ parse executable documentation examples. It counts mention lines and all
 Wrangler token occurrences conservatively, including comments and strings. A SHA-256
 digest also covers each file's Wrangler lines (all content for config files), so
 same-count substitutions require admission. Lower or remove counts when usage falls.
-An `admitted` record must be `{ "decision": "https://github.com/tutur3u/platform/pull/<id>",
-"reason": "<specific reviewed change>" }`. New entries, growth, changed digests and
-changed gap scope need a fresh record; reverting a migration follows the same rule.
+An `admitted` record must be `{ "decision": "<reference>",
+"reason": "<specific reviewed change>" }`. The reference is a
+`https://github.com/tutur3u/platform/pull/<id>` URL, a full-SHA
+`https://github.com/tutur3u/platform/commit/<40-hex>` URL, or exactly
+`IRIS-GATEWAY-MOUNT-ADMISSION-20261128/<app>`. `<app>` is one of forms, chat,
+git, rewise, cms, ai, inventory, drive, storefront, pay, workspace, worlds,
+lettin, shortener, mastermind, calendar, colab, track, contacts, finance, mail,
+and tasks. That ref is valid only on `apps/gateway/wrangler.jsonc` or on
+`apps/<app>/wrangler.jsonc` for the same app, and only with that entry's exact
+64-character lowercase SHA-256 digest. The match is anchored and case-sensitive:
+no wildcard, prefix, suffix, or different date. The same ref does not authorize
+a different digest. New entries, growth, changed digests and changed gap scope
+need a fresh record; reverting a migration follows the same rule.
 Compatibility references need admission too: cache policies must still recognize
 legacy declaration producers and scratch directories, and cleanup exclusions must
 retain local state until its owning toolchain is retired. These references do not

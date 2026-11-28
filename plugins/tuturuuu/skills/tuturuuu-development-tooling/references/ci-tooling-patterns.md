@@ -37,7 +37,13 @@ commands until parity. Wrangler gaps remain in the shrink-only
 `scripts/ci/wrangler-usage-guard.test.js`. Lower or delete an entry in the change
 that removes usage. Count executable occurrences separately from mention lines,
 including multiple invocations per line. Changed Wrangler-line hashes, growth and
-changed gap scope need a fresh structured `admitted` PR decision and reason. Native Workers
+changed gap scope need a fresh structured `admitted` decision and reason. A
+decision is a `tutur3u/platform` pull URL, a full-SHA commit URL, or exactly
+`IRIS-GATEWAY-MOUNT-ADMISSION-20261128/<app>` on `apps/gateway/wrangler.jsonc`
+or `apps/<app>/wrangler.jsonc` for that same app (forms, chat, git, rewise, cms,
+ai, inventory, drive, storefront, pay, workspace, worlds, lettin, shortener,
+mastermind, calendar, colab, track, contacts, finance, mail, tasks), bound to
+that entry's exact digest and not reused for another digest. Native Workers
 use `cloudflare.config.ts` + `@cloudflare/vite-plugin` `newConfig.cfBuildOutput`,
 Build Output identity parity (`scripts/ci/cf-worker-parity.mjs`), runtime checks via
 `scripts/ci/cf-vite-worker.mjs`, and `cf deploy --prebuilt --no-provision`
