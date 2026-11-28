@@ -123,6 +123,8 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/personal/route.ts',
   // Owner-only review of server-held Mira continuations on the Meet Worker.
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/review/route.ts',
+  // Host/co-host Mira activity drafting uses Meet app-session auth plus the room Durable Object activities.authorize check.
+  'apps/meet/src/app/api/meet-call/[meetingId]/live-activities/mira-draft/route.ts',
   // Admitted participants read the room Mira notice and record their own choice.
   'apps/meet/src/app/api/meet-call/[meetingId]/mira-room/route.ts',
   // Signed-in Meet users withdraw their own account-level Mira confirmation
