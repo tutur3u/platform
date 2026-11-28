@@ -205,7 +205,7 @@ describe('public safety scan', () => {
     expect(scanPublicSafety({ type: 'doc' }, undefined, { title })).toEqual([]);
   });
 
-  it.each([1, 2, 3])(
+  it.each([1, 2, 3, 4, 5, 8])(
     'inspects href content after %i decoding passes',
     (passes) => {
       let reference = '%53%52%2D123';
@@ -251,6 +251,40 @@ describe('public safety scan', () => {
     }
   );
 
+  it.each([
+    ['?ref=%25FF%2553%2552%252D123', 'internal security register ID'],
+    ['?ref=%25FF%252553%252552%25252D123', 'internal security register ID'],
+    ['?ref=%25ED%25A0%2580%2553%2552%252D123', 'internal security register ID'],
+    ['?ref=%25C0%25AF%2553%2552%252D123', 'internal security register ID'],
+    ['?ref=%25E0%25A4%2553%2552%252D123', 'internal security register ID'],
+    ['?ip=%25FF%253A%253A1', 'private network address'],
+    ['?t=%25FF%2567%2568%2570%255F' + 'x'.repeat(30), 'token-shaped secret'],
+    [
+      '?ref=%25FF%25EF%25BC%25B3%25EF%25BC%25B2%252D%2531%2532%2533',
+      'internal security register ID',
+    ],
+    ['?p=%25C0%25AFUsers%252Falice%252F', 'unsupported link'],
+    ['?ref=%2500%252553%252552%25252D123', 'internal security register ID'],
+    ['?ref=%257F%252553%252552%25252D123', 'internal security register ID'],
+  ])('reports the decoded value in %s', (query, rule) => {
+    expect(scan(`[Example](https://example.com/${query})`)).toContainEqual({
+      rule,
+      location: 'body.content.0.content.0.marks.0.attrs.href',
+    });
+  });
+
+  it('rejects a register ID requiring nine decoding passes', () => {
+    const layer = '%25' + '25'.repeat(7);
+    expect(
+      scan(
+        `[Example](https://example.com/?ref=${layer}53${layer}52${layer}2D123)`
+      )
+    ).toContainEqual({
+      rule: 'unsupported link',
+      location: 'body.content.0.content.0.marks.0.attrs.href',
+    });
+  });
+
   it('rejects a malformed escape beside an encoded register ID', () => {
     const findings = scan(
       '[Example](https://example.com/?q=%zz&ref=%2553%2552%252D123)'
@@ -265,20 +299,23 @@ describe('public safety scan', () => {
   });
 
   it.each([
-    ['repeated escaped percent', '%25'],
-    ['repeated double-escaped percent', '%2525'],
-  ])('decodes a 2 MB %s href in bounded time', (_case, unit) => {
+    ['repeated escaped percent', '%25', '%'],
+    ['repeated double-escaped percent', '%2525', '%'],
+    ['mixed invalid bytes and text', '%25FFx', '\uFFFDx'],
+    ['truncated UTF-8 and a literal percent', '%25e0%25a4%25a', '\uFFFD%a'],
+    ['deeply escaped percent', '%25' + '25'.repeat(7), '%'],
+  ])('decodes a 2 MB %s href in bounded time', (_case, unit, expected) => {
     const value = unit.repeat(Math.ceil(2_000_000 / unit.length));
     expect(value.length).toBeGreaterThanOrEqual(2_000_000);
     const started = performance.now();
     let decoded = value;
-    for (let pass = 0; pass < 3 && decoded.includes('%'); pass++) {
+    for (let pass = 0; pass < 8 && decoded.includes('%'); pass++) {
       const next = decodeWikiHrefPass(decoded, pass);
       if (next === decoded) break;
       decoded = next;
     }
     expect(performance.now() - started).toBeLessThan(2000);
-    expect(decoded).toBe('%'.repeat(value.length / unit.length));
+    expect(decoded).toBe(expected.repeat(value.length / unit.length));
   });
 
   it.each(['a:b', 'aa:bb', '12:34'])(

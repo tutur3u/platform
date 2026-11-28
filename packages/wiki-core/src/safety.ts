@@ -177,17 +177,18 @@ function visibleText(node: RichTextNode): string {
   return (node.content ?? []).map(visibleText).join(separator);
 }
 
+const maxHrefDecodePasses = 8;
+// Reject legacy overlong encodings of "/" before UTF-8 replaces them.
+const overlongSlash = /%(?:c0%af|e0%80%af|f0%80%80%af)/i;
+const percentByte = /%[0-9a-f]{2}/i;
+const hrefDecoder = new TextDecoder('utf-8', { ignoreBOM: true });
+
 function decodePercentRun(run: string): string {
-  try {
-    return decodeURIComponent(run);
-  } catch {
-    // A byte run that is not UTF-8 still yields its ASCII bytes. Leaving
-    // the whole run in place would hide a sibling sequence such as %53.
-    return run.replace(/%([0-9a-f]{2})/gi, (encoded, hex: string) => {
-      const byte = Number.parseInt(hex, 16);
-      return byte <= 0x7f ? String.fromCharCode(byte) : encoded;
-    });
+  const bytes = new Uint8Array(run.length / 3);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = Number.parseInt(run.slice(i * 3 + 1, i * 3 + 3), 16);
   }
+  return hrefDecoder.decode(bytes);
 }
 
 function decodeContiguousPercentRuns(value: string): string {
@@ -248,7 +249,12 @@ export function scanPublicSafety(
       inspect(value, field);
       if (key === 'href' && value.includes('%')) {
         let decoded = value;
-        for (let pass = 0; pass < 3 && decoded.includes('%'); pass++) {
+        for (
+          let pass = 0;
+          pass < maxHrefDecodePasses && decoded.includes('%');
+          pass++
+        ) {
+          if (overlongSlash.test(decoded)) report('unsupported link', field);
           let next: string;
           try {
             next = decodeWikiHrefPass(decoded, pass);
@@ -259,6 +265,8 @@ export function scanPublicSafety(
           if (next === decoded) break;
           inspect(next, field);
           decoded = next;
+          if (pass === maxHrefDecodePasses - 1 && percentByte.test(decoded))
+            report('unsupported link', field);
         }
       }
     }
