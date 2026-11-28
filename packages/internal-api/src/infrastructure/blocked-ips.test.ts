@@ -43,7 +43,7 @@ describe('blocked IP internal API helpers', () => {
     expect(`${parsedUrl.origin}${parsedUrl.pathname}`).toBe(
       'https://web.test/api/v1/infrastructure/blocked-ips'
     );
-    expect(parsedUrl.searchParams.get('ip')).toBe('203.0.113');
+    expect(parsedUrl.searchParams.get('q')).toBe('203.0.113');
     expect(parsedUrl.searchParams.get('page')).toBe('2');
     expect(parsedUrl.searchParams.get('pageSize')).toBe('10');
     expect(parsedUrl.searchParams.get('status')).toBe('all');

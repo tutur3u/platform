@@ -99,13 +99,6 @@ function normalizeBlockedIpStatus(status?: ListBlockedIpsParams['status']) {
   return status ? status : 'all';
 }
 
-function normalizeBlockedIpFilter(params: ListBlockedIpsParams) {
-  const filter = params.ip ?? params.q;
-  const normalizedFilter = filter?.trim();
-
-  return normalizedFilter ? normalizedFilter : undefined;
-}
-
 export async function listBlockedIps(
   params: ListBlockedIpsParams = {},
   options?: InternalApiClientOptions
@@ -117,7 +110,8 @@ export async function listBlockedIps(
     {
       cache: 'no-store',
       query: {
-        ip: normalizeBlockedIpFilter(params),
+        ip: params.ip?.trim() || undefined,
+        q: params.q?.trim() || undefined,
         page: params.page,
         pageSize: params.pageSize,
         status: normalizeBlockedIpStatus(params.status),

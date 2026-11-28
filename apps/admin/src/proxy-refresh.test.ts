@@ -1,3 +1,4 @@
+import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -81,5 +82,26 @@ describe('Admin apex session isolation', () => {
       sessionMode: 'supabase-first',
       targetApp: 'infra',
     });
+  });
+});
+
+describe('CLI IP recovery ingress', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('routes a signed CLI unblock without requiring a browser session', async () => {
+    const secret = 'synthetic-cli-proxy-fixture';
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', secret);
+    const { access } = createCliAppSession({ userId: 'operator' }, { secret });
+    const response = await proxy(
+      new NextRequest(
+        'https://tuturuuu.com/admin/api/v1/infrastructure/blocked-ips',
+        {
+          method: 'DELETE',
+          headers: { authorization: `Bearer ${access.token}` },
+          nextConfig: { basePath: '/admin' },
+        }
+      )
+    );
+    expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 });

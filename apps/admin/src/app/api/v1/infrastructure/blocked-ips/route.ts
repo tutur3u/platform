@@ -1,230 +1,350 @@
-import type { IPBlockStatus } from '@tuturuuu/utils/abuse-protection';
+import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
+import type { Tables } from '@tuturuuu/types/supabase';
+import { BLOCK_DURATIONS, REDIS_KEYS } from '@tuturuuu/utils/abuse-protection';
+import { isCloudflareIp } from '@tuturuuu/utils/abuse-protection/abuse-subject';
 import {
-  BLOCK_DURATIONS,
-  REDIS_KEYS,
-  unblockIP,
-  WINDOW_MS,
-} from '@tuturuuu/utils/abuse-protection';
-import { MAX_IP_LENGTH, MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+  extractIPFromRequest,
+  readEdgeAbuseProtectionControls,
+} from '@tuturuuu/utils/abuse-protection/edge';
+import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
+import {
+  allBlockStores,
+  blockReasons,
+  getBlockStores,
+  ipLiteral,
+  listIpBlocks,
+  readEdgeBlock,
+} from '@/lib/infrastructure/ip-block-store';
+import { authorizeIpOperator } from '@/lib/infrastructure/ip-operator';
 
-const UnblockSchema = z.object({
-  ip_address: z.string().max(MAX_IP_LENGTH).min(1),
-  reason: z.string().max(MAX_SEARCH_LENGTH).optional(),
+const maxTtl = 30 * 24 * 3600;
+const blockReason = z.enum(blockReasons);
+const reason = z.string().trim().min(1).max(MAX_SEARCH_LENGTH);
+const input = z.object({
+  ip_address: ipLiteral,
+  reason,
+  notes: reason.optional(),
+  block_level: z
+    .union([
+      z.literal(0),
+      z.literal(1),
+      z.literal(2),
+      z.literal(3),
+      z.literal(4),
+    ])
+    .default(1),
+  ttl: z.number().int().min(1).max(maxTtl).optional(),
 });
 
-const BlockIPSchema = z.object({
-  ip_address: z.string().min(1).max(MAX_IP_LENGTH), // Max length for IPv6
-  reason: z.enum([
-    'otp_send',
-    'otp_verify_failed',
-    'mfa_challenge',
-    'mfa_verify_failed',
-    'reauth_send',
-    'reauth_verify_failed',
-    'password_login_failed',
-    'manual',
-  ] as const),
-  block_level: z.number().int().min(0).max(4).default(1), // 0 = permanent
-  notes: z.string().max(MAX_SEARCH_LENGTH).optional(),
+const query = z.object({
+  status: z
+    .enum(['all', 'active', 'expired', 'manually_unblocked'])
+    .default('active'),
+  page: z.coerce.number().int().min(1).max(10000).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  ip: ipLiteral.optional(),
+  q: z.string().max(MAX_SEARCH_LENGTH).optional(),
+  mode: z.enum(['list', 'inspect', 'whoami', 'ratelimit']).default('list'),
 });
 
-// 100 years in seconds for permanent blocks
-const PERMANENT_BLOCK_DURATION = 100 * 365 * 24 * 60 * 60;
-
-export async function GET(req: Request) {
-  await connection();
-
-  const auth = await authorizeInfrastructureAdminRequest('view_infrastructure');
-  if (!auth.ok) return auth.response;
-
-  // Parse query parameters
-  const url = new URL(req.url);
-  const status = url.searchParams.get('status') || 'active';
-  const page = parseInt(url.searchParams.get('page') || '1', 10);
-  const pageSize = parseInt(url.searchParams.get('pageSize') || '20', 10);
-  const ipFilter = url.searchParams.get('ip');
-
-  // Build query
-  let query = auth.sbAdmin
-    .from('blocked_ips')
-    .select('*, unblocked_by_user:unblocked_by(id, display_name)', {
-      count: 'exact',
-    })
-    .order('blocked_at', { ascending: false });
-
-  // Apply status filter
-  if (status !== 'all') {
-    query = query.eq('status', status as IPBlockStatus);
-  }
-
-  // Apply IP filter
-  if (ipFilter) {
-    query = query.ilike('ip_address', `%${ipFilter}%`);
-  }
-
-  // Apply pagination
-  const start = (page - 1) * pageSize;
-  query = query.range(start, start + pageSize - 1);
-
-  const { data, count, error } = await query;
-
-  if (error) {
-    console.error('Error fetching blocked IPs:', error);
-    return NextResponse.json(
-      { message: 'Error fetching blocked IPs' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({
-    data,
-    count,
-    page,
-    pageSize,
-    totalPages: count ? Math.ceil(count / pageSize) : 0,
+function reply(body: unknown, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: { 'Cache-Control': 'private, no-store' },
   });
 }
 
-export async function DELETE(req: Request) {
-  const auth = await authorizeInfrastructureAdminRequest(
-    'manage_workspace_roles'
-  );
+export async function GET(req: Request) {
+  await connection();
+  const auth = await authorizeIpOperator(req);
   if (!auth.ok) return auth.response;
+  const parsed = query.safeParse(
+    Object.fromEntries(new URL(req.url).searchParams)
+  );
+  if (!parsed.success) return reply({ message: 'Invalid block query' }, 400);
 
   try {
-    const body = await req.json();
-    const { ip_address, reason } = UnblockSchema.parse(body);
+    const { mode, ip, q, page, pageSize, status } = parsed.data;
+    if (mode === 'ratelimit') {
+      return reply({
+        controls: await readEdgeAbuseProtectionControls({ allowCache: false }),
+        blockDurationsSeconds: BLOCK_DURATIONS,
+      });
+    }
+    const address = mode === 'whoami' ? extractIPFromRequest(req.headers) : ip;
+    if (
+      (mode === 'inspect' || mode === 'whoami') &&
+      !ipLiteral.safeParse(address).success
+    )
+      return reply({ message: 'A valid IP address is required' }, 400);
+    const listing = await listIpBlocks(auth.sbAdmin, {
+      ip: address,
+      q: mode === 'list' ? q : undefined,
+      page,
+      pageSize,
+      status: status === 'all' ? undefined : status,
+    });
+    if (mode === 'whoami')
+      return reply({
+        ip: address,
+        blocked: listing.count > 0,
+        edgeComplete: listing.edgeComplete,
+      });
 
-    const success = await unblockIP(ip_address, auth.user.id, reason);
-
-    if (!success) {
-      return NextResponse.json(
-        { message: 'Failed to unblock IP' },
-        { status: 500 }
-      );
+    if (mode === 'inspect') {
+      if (!listing.count && !listing.edgeComplete)
+        return reply({ message: 'Complete block state unavailable' }, 503);
+      if (!listing.count)
+        return reply(
+          { message: 'IP block not found', edgeComplete: listing.edgeComplete },
+          404
+        );
+      const { data, count, error } = await auth.sbAdmin
+        .from('abuse_events')
+        .select('event_type, endpoint, created_at', { count: 'exact' })
+        .eq('ip_address', address ?? '')
+        .neq('event_type', 'manual')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw new Error('Events unavailable');
+      const routes = new Map<string, number>();
+      for (const event of data) {
+        const path = event.endpoint?.split(/[?#]/u, 1)[0];
+        if (path?.startsWith('/') && !path.startsWith('//'))
+          routes.set(path, (routes.get(path) ?? 0) + 1);
+      }
+      return reply({
+        ip: address,
+        blocks: listing.data.map(({ metadata: _metadata, ...block }) => block),
+        eventCount: count,
+        sampledEvents: data.length,
+        routes: [...routes].map(([route, count]) => ({ route, count })),
+        edgeComplete: listing.edgeComplete,
+      });
     }
 
-    return NextResponse.json({ message: 'IP unblocked successfully' });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { message: 'Invalid request data', errors: error.issues },
-        { status: 400 }
-      );
-    }
+    return reply({
+      ...listing,
+      ...(req.headers.has('authorization')
+        ? {
+            data: listing.data.map(
+              ({ metadata: _metadata, ...block }) => block
+            ),
+          }
+        : {}),
+      page,
+      pageSize,
+      totalPages: Math.ceil(listing.count / pageSize),
+    });
+  } catch {
+    return reply({ message: 'Block state unavailable' }, 503);
+  }
+}
 
-    console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
+async function readMutation(req: Request) {
+  if (
+    req.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase() !==
+    'application/json'
+  )
+    return null;
+  const reader = req.body?.getReader();
+  if (!reader) return null;
+  const decoder = new TextDecoder();
+  let text = '';
+  let bytes = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.length;
+      if (bytes > 4096) {
+        void reader.cancel();
+        return null;
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    const parsed = input.safeParse(JSON.parse(text + decoder.decode()));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+async function mutate(req: Request, operation: 'block' | 'unblock') {
+  const auth = await authorizeIpOperator(req, true);
+  if (!auth.ok) return auth.response;
+  const payload = await readMutation(req);
+  if (!payload || (operation === 'block' && isCloudflareIp(payload.ip_address)))
+    return reply(
+      { message: 'A single IP address and a reason are required' },
+      400
+    );
+
+  const { ip_address: ip, block_level: level, ttl } = payload;
+  const operatorReason = payload.notes ?? payload.reason;
+  try {
+    const stores = await getBlockStores();
+    if (
+      !stores.edge ||
+      (isAbuseGuardFamilyAssigned('ratelimit') && !stores.backend)
+    )
+      return reply({ message: 'Edge block store unavailable' }, 503);
+    const { sbAdmin, user } = auth;
+    const now = new Date();
+    const [{ block: edge, unreadable }, existing] = await Promise.all([
+      readEdgeBlock(stores, ip),
+      sbAdmin
+        .from('blocked_ips')
+        .select('id, reason, expires_at')
+        .eq('ip_address', ip)
+        .eq('status', 'active')
+        .gt('expires_at', now.toISOString()),
+    ]);
+    if (existing.error) throw new Error('Block lookup unavailable');
+    const before = {
+      unreadableEdgeRecord: unreadable,
+      database: existing.data,
+      edge: edge && {
+        id: edge.id,
+        reason: edge.reason,
+        expires_at: edge.expires_at,
+      },
+    };
+    const isBlocked = Boolean(edge || unreadable || existing.data.length);
+    const blockLevelKey = REDIS_KEYS.IP_BLOCK_LEVEL(ip);
+    const hasResidualLevel =
+      operation === 'unblock' &&
+      !isBlocked &&
+      (
+        await Promise.all(
+          allBlockStores(stores).map((store) => store.get(blockLevelKey))
+        )
+      ).some((level) => level !== null);
+    if (operation === 'block' && isBlocked)
+      return reply({ message: 'IP already blocked' }, 409);
+    if (operation === 'unblock' && !isBlocked && !hasResidualLevel)
+      return reply({ message: 'IP block not found' }, 404);
+
+    const operationId = crypto.randomUUID();
+    const category = blockReason.safeParse(payload.reason).data ?? 'manual';
+    let blockRecord: Tables<'blocked_ips'> | undefined;
+    const duration =
+      ttl ?? (level ? BLOCK_DURATIONS[level] : 100 * 365 * 24 * 3600);
+    const expiresAt = new Date(now.getTime() + duration * 1000).toISOString();
+    const audit = async (success: boolean) => {
+      const { error } = await sbAdmin.from('abuse_events').insert({
+        ip_address: ip,
+        event_type: 'manual',
+        endpoint: '/api/v1/infrastructure/blocked-ips',
+        success,
+        metadata: {
+          actor: user.id,
+          operation,
+          operationId,
+          reason: operatorReason,
+          category,
+          before,
+          after: {
+            blocked: operation === 'block',
+            expiresAt: operation === 'block' ? expiresAt : null,
+          },
+          phase: success ? 'completed' : 'requested',
+        },
+      });
+      if (error) throw new Error('Block audit unavailable');
+    };
+    await audit(false);
+
+    if (operation === 'unblock') {
+      const { error } = await sbAdmin
+        .from('blocked_ips')
+        .update({
+          status: 'manually_unblocked',
+          unblocked_at: now.toISOString(),
+          unblocked_by: user.id,
+          unblock_reason: operatorReason,
+        })
+        .eq('ip_address', ip)
+        .eq('status', 'active');
+      if (error) throw new Error('Block history update failed');
+      const keys = [REDIS_KEYS.IP_BLOCKED(ip), REDIS_KEYS.IP_BLOCK_LEVEL(ip)];
+      await Promise.all(
+        allBlockStores(stores).map(async (store) => {
+          await store.del(...keys);
+          const remaining = await store.mget(...keys);
+          if (
+            remaining.length !== keys.length ||
+            remaining.some((value) => value !== null)
+          )
+            throw new Error('Block keys still present after deletion');
+        })
+      );
+    } else {
+      const { data, error } = await sbAdmin
+        .from('blocked_ips')
+        .insert({
+          ip_address: ip,
+          reason: category,
+          block_level: level,
+          expires_at: expiresAt,
+          metadata: {
+            manual: true,
+            blocked_by: user.id,
+            notes: operatorReason,
+          },
+        })
+        .select('*')
+        .single();
+      if (error) throw new Error('Block history insert failed');
+      blockRecord = data;
+      const writes = await Promise.all(
+        allBlockStores(stores).map((store) =>
+          store.set(
+            REDIS_KEYS.IP_BLOCKED(ip),
+            {
+              id: data.id,
+              level,
+              reason: category,
+              blockedAt: now.toISOString(),
+              expiresAt,
+            },
+            { ex: Math.min(duration, maxTtl) }
+          )
+        )
+      );
+      if (writes.some((result) => result !== 'OK'))
+        throw new Error('Block cache write unconfirmed');
+    }
+    await audit(true);
+    return reply({
+      ip,
+      blocked: operation === 'block',
+      operationId,
+      message:
+        operation === 'block'
+          ? 'IP blocked successfully'
+          : 'IP unblocked successfully',
+      ...(blockRecord
+        ? { data: { ...blockRecord, metadata: null, unblocked_by_user: null } }
+        : {}),
+    });
+  } catch {
+    return reply(
+      {
+        message:
+          'Block change could not be confirmed. Inspect current state before retrying.',
+      },
+      503
     );
   }
 }
 
-export async function POST(req: Request) {
-  const auth = await authorizeInfrastructureAdminRequest(
-    'manage_workspace_roles'
-  );
-  if (!auth.ok) return auth.response;
+export function POST(req: Request) {
+  return mutate(req, 'block');
+}
 
-  try {
-    const body = await req.json();
-    const { ip_address, reason, block_level, notes } =
-      BlockIPSchema.parse(body);
-
-    // Calculate expiration based on block level (0 = permanent)
-    const blockDuration =
-      block_level === 0
-        ? PERMANENT_BLOCK_DURATION
-        : BLOCK_DURATIONS[block_level as 1 | 2 | 3 | 4];
-    const expiresAt = new Date(Date.now() + blockDuration * 1000);
-
-    // Check if IP is already actively blocked
-    const { data: existingBlock } = await auth.sbAdmin
-      .from('blocked_ips')
-      .select('id')
-      .eq('ip_address', ip_address)
-      .eq('status', 'active')
-      .single();
-
-    if (existingBlock) {
-      return NextResponse.json(
-        { message: 'IP is already blocked' },
-        { status: 409 }
-      );
-    }
-
-    // Insert block record
-    const { data: blockRecord, error } = await auth.sbAdmin
-      .from('blocked_ips')
-      .insert({
-        ip_address,
-        reason: reason as never,
-        block_level,
-        expires_at: expiresAt.toISOString(),
-        metadata: {
-          manual: true,
-          blocked_by: auth.user.id,
-          notes: notes || null,
-        },
-      })
-      .select('*')
-      .single();
-
-    if (error) {
-      console.error('Error blocking IP:', error);
-      return NextResponse.json(
-        { message: 'Failed to block IP' },
-        { status: 500 }
-      );
-    }
-
-    // Update Redis cache if available
-    try {
-      const redis = await getUpstashRestRedisClient();
-      if (redis) {
-        await Promise.all([
-          redis.set(
-            REDIS_KEYS.IP_BLOCKED(ip_address),
-            JSON.stringify({
-              id: blockRecord.id,
-              level: block_level,
-              reason,
-              expiresAt: expiresAt.toISOString(),
-              blockedAt: new Date().toISOString(),
-            }),
-            { ex: blockDuration }
-          ),
-          redis.set(REDIS_KEYS.IP_BLOCK_LEVEL(ip_address), block_level, {
-            ex: WINDOW_MS.TWENTY_FOUR_HOURS / 1000,
-          }),
-        ]);
-      }
-    } catch (redisError) {
-      console.warn('Redis cache update failed:', redisError);
-      // Continue - DB is the source of truth
-    }
-
-    return NextResponse.json({
-      message: 'IP blocked successfully',
-      data: blockRecord,
-    });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { message: 'Invalid request data', errors: error.issues },
-        { status: 400 }
-      );
-    }
-
-    console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+export function DELETE(req: Request) {
+  return mutate(req, 'unblock');
 }

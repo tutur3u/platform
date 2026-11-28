@@ -45,13 +45,13 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
   const displayIp = entry.ip_address === '::1' ? 'localhost' : entry.ip_address;
 
   const handleUnblock = async () => {
-    if (isUnblocking) return;
+    if (isUnblocking || !unblockReason.trim()) return;
 
     setIsUnblocking(true);
     try {
       await unblockBlockedIp({
         ipAddress: entry.ip_address,
-        reason: unblockReason || undefined,
+        reason: unblockReason.trim(),
       });
 
       toast.success(t('blocked-ips.ip-unblocked'), {
@@ -62,7 +62,7 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
     } catch (error) {
       toast.error(t('blocked-ips.unblock-failed'), {
         description:
-          error instanceof InternalApiError
+          error instanceof Error && error instanceof InternalApiError
             ? error.message
             : t('blocked-ips.network-error'),
       });
@@ -108,7 +108,10 @@ export function BlockedIPRowActions({ row }: BlockedIPRowActionsProps) {
             <Button variant="outline" onClick={() => setUnblockOpen(false)}>
               {t('blocked-ips.cancel')}
             </Button>
-            <Button onClick={handleUnblock} disabled={isUnblocking}>
+            <Button
+              onClick={handleUnblock}
+              disabled={isUnblocking || !unblockReason.trim()}
+            >
               {isUnblocking
                 ? t('blocked-ips.processing')
                 : t('blocked-ips.unblock')}

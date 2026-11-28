@@ -5,7 +5,10 @@ const mocks = vi.hoisted(() => ({
   membershipType: 'MEMBER' as string | undefined,
   permissions: new Set<string>(),
   actor: { user: { id: 'staff', email: 'staff@tuturuuu.com' }, admin: {} },
-  admin: { rpc: vi.fn().mockResolvedValue({ error: null }) },
+  admin: {
+    auth: { admin: { getUserById: vi.fn() } },
+    rpc: vi.fn().mockResolvedValue({ error: null }),
+  },
   snapshot: vi.fn(),
   sync: vi.fn(),
 }));
@@ -19,6 +22,12 @@ vi.mock('@tuturuuu/utils/email/staff-session', () => ({
 vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: vi.fn(async () => mocks.actor),
   resolveSatellitePageActor: vi.fn(async () => mocks.actor),
+}));
+vi.mock('@tuturuuu/utils/upstash-rest', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/utils/upstash-rest')>()),
+  getUpstashRestRedisClient: vi.fn(async () => ({
+    incrRateWindow: async () => ({ n: 1, ttlMs: 60_000 }),
+  })),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: vi.fn(async () => ({
@@ -83,6 +92,10 @@ const req = () =>
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.membershipType = 'MEMBER';
+  mocks.admin.auth.admin.getUserById.mockResolvedValue({
+    data: { user: mocks.actor.user },
+    error: null,
+  });
   mocks.permissions.clear();
   mocks.permissions.add('view_infrastructure');
   mocks.actor.admin = {
@@ -180,6 +193,12 @@ describe.each([
       params: Promise.resolve({ entryId: 'entry' }),
     });
     expect(response.status).toBe(403);
+    if (path === 'blocked-ips') {
+      expect(mocks.admin.auth.admin.getUserById).toHaveBeenCalledWith('staff');
+      await expect(response.json()).resolves.toEqual({
+        message: 'Infrastructure permission required',
+      });
+    }
   });
 });
 

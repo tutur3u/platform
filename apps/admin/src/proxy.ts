@@ -1,12 +1,13 @@
 import {
-  getCanonicalLocaleCookieOptions,
-  withCanonicalLocaleCookie,
-} from '@tuturuuu/auth/locale-cookie';
-import {
   clearSupabaseAuthCookies,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
+import {
+  getCanonicalLocaleCookieOptions,
+  withCanonicalLocaleCookie,
+} from '@tuturuuu/auth/locale-cookie';
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
@@ -137,6 +138,21 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     : appSessionFailureResponse;
 
   if (request.nextUrl.pathname.startsWith('/api')) {
+    // Recovery must be reachable from the very address the operator is fixing.
+    // The exact route independently verifies staff, permissions, MFA and rate.
+    if (
+      request.nextUrl.pathname === '/api/v1/infrastructure/blocked-ips' &&
+      ['GET', 'POST', 'DELETE'].includes(request.method) &&
+      isExplicitBearerRequest(request)
+    ) {
+      const bearer = request.headers
+        .get('authorization')
+        ?.match(/^Bearer (\S+)$/iu)?.[1];
+      const verified = bearer ? verifyCliAccessToken(bearer) : null;
+      if (verified?.ok && verified.claims.origin_app === 'cli')
+        return NextResponse.next();
+    }
+
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );

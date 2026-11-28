@@ -45,6 +45,10 @@ export function infraHelp(): string {
     '  dns-readonly list --zone <id> [--type A|AAAA|CNAME|TXT|MX]',
     '  runners list|status [--watch [seconds]]',
     '  hosts list|status',
+    '  ip list [--ip <addr>] | inspect <addr> | whoami',
+    '  ip unblock <addr> --reason <text>',
+    '  ip block <addr> --reason <text> --ttl <seconds>',
+    '  ratelimit status',
     '  packet create --provider <provider> --target <target> --action <action>',
     '      --summary <text> --rollback <plan> [--reason <text>] [--changes <json-array>]',
     '      [--out <file> --yes] [--dry-run]',
@@ -501,6 +505,11 @@ export async function runInfraCommand(
     if (flags.has('help') || family === 'help' || !family) {
       checkFlags(flags);
       write(`${infraHelp()}\n`);
+      return;
+    }
+    if (family === 'ip' || family === 'ratelimit') {
+      const { runIpOperator } = await import('./ip.js');
+      await runIpOperator(positionals, flags, write);
       return;
     }
     const explicitFlag = optionalText(flags, 'env');

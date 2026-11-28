@@ -64,7 +64,7 @@ function parsePositiveIntEnv(name: string, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-async function getEdgeRedisClient() {
+export async function getEdgeRedisClient() {
   if (isAbuseGuardFamilyAssigned('proxy'))
     return getUpstashRestRedisClient({ family: 'proxy' });
   if (edgeRedisInitialized) return edgeRedisClient;

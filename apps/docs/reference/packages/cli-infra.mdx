@@ -1,11 +1,11 @@
 ---
 title: "ttr infra"
-description: "Read-only Cloudflare, Worker, deploy, DNS, runner, and host inventory, plus Exact-ACK change packets that never call a provider write."
+description: "Read-only Cloudflare, Worker, deploy, DNS, runner, and host inventory, plus IP abuse operations and Exact-ACK change packets."
 updatedAt: "2026-11-27"
 audience: developers
 ---
 
-`ttr infra` reads infrastructure and writes change packets to disk only.
+`ttr infra` provides infrastructure inventory, IP abuse operations, and local change packets.
 Inventory commands do not deploy a Worker, edit DNS, drain a runner, or
 promote a release. `packet create` prints a canonical JSON document and a
 `sha256` digest. A file is written only when you pass both `--out` and
@@ -43,6 +43,30 @@ ttr infra hosts list --json
 
 `--json` with `--watch` prints one JSON object per poll. Binding secrets and
 API tokens are not part of these rows.
+
+## IP abuse operations
+
+These commands use the platform session and server selected by `ttr login`.
+Reads require verified Tuturuuu staff with root `view_infrastructure`.
+Mutations also require root `manage_workspace_roles`, MFA verified within the
+last 10 minutes, and a reason recorded in the abuse audit log.
+
+```sh
+ttr infra ip whoami --json
+ttr infra ip list --ip 203.0.113.10 --json
+ttr infra ip inspect 203.0.113.10 --json
+ttr infra ratelimit status --json
+ttr infra ip unblock 203.0.113.10 --reason "Disabled the noisy prober"
+ttr infra ip block 203.0.113.10 --reason "Confirmed abusive traffic" --ttl 900
+```
+
+Block and unblock accept one IPv4 or IPv6 address. TTL is in seconds and can
+range from 1 to 2,592,000. Exit code 0 is success, 2 is a missing block or
+conflict, and 3 is an authorization failure. Exact-IP reads check live block
+stores and database rows. A broad list can include Redis-only blocks and sets
+`edgeComplete: false` when a bounded scan is incomplete or the Durable Object
+store, which uses opaque keys, cannot enumerate addresses. Search by the
+complete address in the Blocked IPs page to look up an edge-only block.
 
 ## Exact-ACK change packet
 

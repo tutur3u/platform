@@ -1,356 +1,209 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
+const mock = vi.hoisted(() => ({
   authorize: vi.fn(),
-  connection: vi.fn(),
-  from: vi.fn(),
-  getUpstashRestRedisClient: vi.fn(),
-  redisSet: vi.fn(),
-  unblockIP: vi.fn(),
+  list: vi.fn(),
+  stores: vi.fn(),
+  edge: vi.fn(),
+  del: vi.fn(),
+  mget: vi.fn(),
+  update: vi.fn(),
+  audit: vi.fn(),
 }));
 
-vi.mock('@/lib/infrastructure-admin-access', () => ({
-  authorizeInfrastructureAdminRequest: (...args: unknown[]) =>
-    mocks.authorize(...args),
+vi.mock('@/lib/infrastructure/ip-operator', () => ({
+  authorizeIpOperator: mock.authorize,
 }));
-
-vi.mock('next/server', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('next/server')>()),
-  connection: (...args: unknown[]) => mocks.connection(...args),
+vi.mock('@/lib/infrastructure/ip-block-store', async (original) => ({
+  ...(await original<typeof import('@/lib/infrastructure/ip-block-store')>()),
+  allBlockStores: () => [{ del: mock.del, mget: mock.mget }],
+  getBlockStores: mock.stores,
+  listIpBlocks: mock.list,
+  readEdgeBlock: mock.edge,
 }));
-
-vi.mock('@tuturuuu/utils/abuse-protection', () => ({
-  BLOCK_DURATIONS: {
-    1: 300,
-    2: 900,
-    3: 3600,
-    4: 86_400,
-  },
-  REDIS_KEYS: {
-    IP_BLOCKED: (ipAddress: string) => `blocked:${ipAddress}`,
-    IP_BLOCK_LEVEL: (ipAddress: string) => `level:${ipAddress}`,
-  },
-  WINDOW_MS: {
-    TWENTY_FOUR_HOURS: 86_400_000,
-  },
-  unblockIP: (...args: unknown[]) => mocks.unblockIP(...args),
-}));
-
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: (...args: unknown[]) =>
-    mocks.getUpstashRestRedisClient(...args),
+vi.mock('next/server', async (original) => ({
+  ...(await original<typeof import('next/server')>()),
+  connection: async () => {},
 }));
 
 import { DELETE, GET, POST } from './route';
 
-const USER_ID = '42529372-c669-4833-bb32-2cab1f4ffd83';
+const ip = '203.0.113.10';
 
-function createRequest(method: string, body?: unknown, query = '') {
+function request(method: string, body?: unknown, query = '') {
   return new Request(
     `https://infrastructure.example/api/v1/infrastructure/blocked-ips${query}`,
     {
-      body: body === undefined ? undefined : JSON.stringify(body),
       method,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: { 'Content-Type': 'application/json' },
     }
   );
 }
 
-function authorize() {
-  mocks.authorize.mockResolvedValue({
-    ok: true,
-    sbAdmin: { from: mocks.from },
-    user: { id: USER_ID },
-  });
-}
-
-function deny(status: 401 | 403) {
-  mocks.authorize.mockResolvedValue({
-    ok: false,
-    response: Response.json(
-      { error: status === 401 ? 'Unauthorized' : 'Forbidden' },
-      { status }
-    ),
-  });
-}
-
-type GetQueryResult = {
-  count: number | null;
-  data: Array<{ id: string }> | null;
-  error: { message: string } | null;
-};
-
-function mockGetQuery(
-  result: GetQueryResult = {
-    count: 1,
-    data: [{ id: 'block-1' }],
-    error: null,
-  }
-) {
-  const query = {
-    eq: vi.fn(() => query),
-    ilike: vi.fn(() => query),
-    order: vi.fn(() => query),
-    range: vi.fn(() => Promise.resolve(result)),
-    select: vi.fn(() => query),
-  };
-  mocks.from.mockReturnValue(query);
-  return query;
-}
-
-function mockPostQueries(options?: {
-  existingBlock?: unknown;
-  insertError?: unknown;
-}) {
-  const existingSingle = vi.fn().mockResolvedValue({
-    data: options?.existingBlock ?? null,
-    error: null,
-  });
-  const existingSecondEq = vi.fn(() => ({ single: existingSingle }));
-  const existingFirstEq = vi.fn(() => ({ eq: existingSecondEq }));
-  const existingSelect = vi.fn(() => ({ eq: existingFirstEq }));
-
-  const insertedRecord = { id: 'block-1', ip_address: '203.0.113.10' };
-  const insertSingle = vi.fn().mockResolvedValue({
-    data: insertedRecord,
-    error: options?.insertError ?? null,
-  });
-  const insertSelect = vi.fn(() => ({ single: insertSingle }));
-  const insert = vi.fn(() => ({ select: insertSelect }));
-
-  mocks.from.mockReturnValue({ insert, select: existingSelect });
-  return { insert, insertedRecord };
-}
-
-describe('blocked IP authorization', () => {
+describe('IP block operator route', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.getUpstashRestRedisClient.mockResolvedValue({ set: mocks.redisSet });
-    mocks.redisSet.mockResolvedValue('OK');
-    mocks.unblockIP.mockResolvedValue(true);
-  });
-
-  for (const status of [401, 403] as const) {
-    it(`denies GET with ${status} before querying the denylist`, async () => {
-      deny(status);
-
-      const response = await GET(createRequest('GET'));
-
-      expect(response.status).toBe(status);
-      expect(mocks.authorize).toHaveBeenCalledWith('view_infrastructure');
-      expect(mocks.from).not.toHaveBeenCalled();
-      expect(mocks.getUpstashRestRedisClient).not.toHaveBeenCalled();
-    });
-
-    it(`denies POST with ${status} before parsing or writing`, async () => {
-      deny(status);
-
-      const response = await POST(createRequest('POST', { invalid: true }));
-
-      expect(response.status).toBe(status);
-      expect(mocks.authorize).toHaveBeenCalledWith('manage_workspace_roles');
-      expect(mocks.from).not.toHaveBeenCalled();
-      expect(mocks.getUpstashRestRedisClient).not.toHaveBeenCalled();
-    });
-
-    it(`denies DELETE with ${status} before unblocking`, async () => {
-      deny(status);
-
-      const response = await DELETE(
-        createRequest('DELETE', { ip_address: '203.0.113.10' })
-      );
-
-      expect(response.status).toBe(status);
-      expect(mocks.authorize).toHaveBeenCalledWith('manage_workspace_roles');
-      expect(mocks.unblockIP).not.toHaveBeenCalled();
-    });
-  }
-});
-
-describe('blocked IP route GET', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    authorize();
-  });
-
-  it('uses the authorized admin client for filtered pagination', async () => {
-    const query = mockGetQuery();
-
-    const response = await GET(
-      createRequest(
-        'GET',
-        undefined,
-        '?status=active&page=2&pageSize=10&ip=203'
-      )
+    vi.resetAllMocks();
+    const existing = { data: [], error: null };
+    const builder = {
+      eq: vi.fn(() => builder),
+      gt: vi.fn().mockResolvedValue(existing),
+    };
+    mock.update.mockReturnValue(builder);
+    mock.audit.mockResolvedValue({ error: null });
+    const state = new Map<string, unknown>([
+      [`ip:blocked:${ip}`, 'edge-only-block'],
+      [`ip:block:level:${ip}`, 1],
+    ]);
+    mock.del.mockImplementation(
+      (...keys: string[]) => keys.filter((key) => state.delete(key)).length
     );
+    mock.mget.mockImplementation((...keys: string[]) =>
+      keys.map((key) => state.get(key) ?? null)
+    );
+    mock.edge.mockResolvedValue({ block: null, unreadable: false });
+    mock.stores.mockResolvedValue({ edge: {} });
+    mock.authorize.mockResolvedValue({
+      ok: true,
+      user: { id: 'operator-id' },
+      sbAdmin: {
+        from: (table: string) =>
+          table === 'abuse_events'
+            ? { insert: mock.audit }
+            : { select: () => builder, update: mock.update },
+      },
+    });
+  });
 
+  it.each([DELETE, POST])(
+    'requires a reason before reading or writing block state',
+    async (handler) => {
+      expect(
+        (await handler(request(handler.name, { ip_address: ip, reason: ' ' })))
+          .status
+      ).toBe(400);
+      expect(mock.stores).not.toHaveBeenCalled();
+    }
+  );
+
+  it('refuses a CIDR even if force is submitted', async () => {
+    expect(
+      (
+        await DELETE(
+          request('DELETE', {
+            ip_address: `${ip}/24`,
+            reason: 'Incident',
+            force: true,
+          })
+        )
+      ).status
+    ).toBe(400);
+    expect(mock.audit).not.toHaveBeenCalled();
+  });
+
+  it('audits an edge-only unblock before deleting either key and records completion', async () => {
+    mock.edge.mockResolvedValue({
+      unreadable: false,
+      block: {
+        id: 'edge:id',
+        reason: 'api_abuse',
+        expires_at: '2026-12-01T00:00:00Z',
+      },
+    });
+    const response = await DELETE(
+      request('DELETE', { ip_address: ip, reason: 'Prober fixed' })
+    );
     expect(response.status).toBe(200);
-    expect(mocks.from).toHaveBeenCalledWith('blocked_ips');
-    expect(query.eq).toHaveBeenCalledWith('status', 'active');
-    expect(query.ilike).toHaveBeenCalledWith('ip_address', '%203%');
-    expect(query.range).toHaveBeenCalledWith(10, 19);
-    await expect(response.json()).resolves.toMatchObject({
-      count: 1,
-      page: 2,
-      pageSize: 10,
-    });
-  });
-
-  it('returns a sanitized database error', async () => {
-    mockGetQuery({
-      count: null,
-      data: null,
-      error: { message: 'private detail' },
-    });
-
-    const response = await GET(createRequest('GET'));
-
-    expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({
-      message: 'Error fetching blocked IPs',
-    });
-  });
-});
-
-describe('blocked IP route POST', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    authorize();
-    mocks.getUpstashRestRedisClient.mockResolvedValue({ set: mocks.redisSet });
-    mocks.redisSet.mockResolvedValue('OK');
-  });
-
-  it.each([
-    { blockLevel: 1, expectedSeconds: 300 },
-    { blockLevel: 0, expectedSeconds: 100 * 365 * 24 * 60 * 60 },
-  ])(
-    'preserves block duration semantics for level $blockLevel',
-    async ({ blockLevel, expectedSeconds }) => {
-      const { insert, insertedRecord } = mockPostQueries();
-      const now = Date.now();
-      const dateNow = vi.spyOn(Date, 'now').mockReturnValue(now);
-
-      const response = await POST(
-        createRequest('POST', {
-          block_level: blockLevel,
-          ip_address: '203.0.113.10',
-          notes: 'Confirmed abuse',
-          reason: 'manual',
-        })
-      );
-
-      expect(response.status).toBe(200);
-      expect(insert).toHaveBeenCalledWith(
-        expect.objectContaining({
-          block_level: blockLevel,
-          expires_at: new Date(now + expectedSeconds * 1000).toISOString(),
-          metadata: {
-            blocked_by: USER_ID,
-            manual: true,
-            notes: 'Confirmed abuse',
+    expect(mock.del).toHaveBeenCalledWith(
+      `ip:blocked:${ip}`,
+      `ip:block:level:${ip}`
+    );
+    expect(mock.audit.mock.invocationCallOrder[0]).toBeLessThan(
+      mock.del.mock.invocationCallOrder[0] ?? 0
+    );
+    expect(mock.audit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        success: true,
+        ip_address: ip,
+        metadata: expect.objectContaining({
+          actor: 'operator-id',
+          reason: 'Prober fixed',
+          before: {
+            unreadableEdgeRecord: false,
+            database: [],
+            edge: {
+              id: 'edge:id',
+              reason: 'api_abuse',
+              expires_at: '2026-12-01T00:00:00Z',
+            },
           },
-        })
-      );
-      expect(mocks.redisSet).toHaveBeenCalledTimes(2);
-      await expect(response.json()).resolves.toEqual({
-        data: insertedRecord,
-        message: 'IP blocked successfully',
-      });
-      dateNow.mockRestore();
-    }
-  );
-
-  it('rejects malformed input without database or Redis work', async () => {
-    const response = await POST(createRequest('POST', { block_level: 9 }));
-
-    expect(response.status).toBe(400);
-    expect(mocks.from).not.toHaveBeenCalled();
-    expect(mocks.getUpstashRestRedisClient).not.toHaveBeenCalled();
-  });
-
-  it('does not insert or cache an already blocked IP', async () => {
-    const { insert } = mockPostQueries({ existingBlock: { id: 'existing' } });
-
-    const response = await POST(
-      createRequest('POST', {
-        block_level: 2,
-        ip_address: '203.0.113.10',
-        reason: 'manual',
+          after: { blocked: false, expiresAt: null },
+        }),
       })
     );
-
-    expect(response.status).toBe(409);
-    expect(insert).not.toHaveBeenCalled();
-    expect(mocks.getUpstashRestRedisClient).not.toHaveBeenCalled();
   });
 
-  it('returns failure when the denylist insert fails', async () => {
-    mockPostQueries({ insertError: { message: 'insert failed' } });
-
-    const response = await POST(
-      createRequest('POST', {
-        block_level: 2,
-        ip_address: '203.0.113.10',
-        reason: 'manual',
-      })
-    );
-
-    expect(response.status).toBe(500);
-    expect(mocks.getUpstashRestRedisClient).not.toHaveBeenCalled();
+  it('keeps enforcement in place when the audit intent cannot be written', async () => {
+    mock.edge.mockResolvedValue({
+      unreadable: false,
+      block: {
+        id: 'edge:id',
+        reason: 'api_abuse',
+        expires_at: '2026-12-01T00:00:00Z',
+      },
+    });
+    mock.audit.mockResolvedValue({ error: { message: 'unavailable' } });
+    expect(
+      (
+        await DELETE(
+          request('DELETE', { ip_address: ip, reason: 'Prober fixed' })
+        )
+      ).status
+    ).toBe(503);
+    expect(mock.del).not.toHaveBeenCalled();
+    expect(mock.update).not.toHaveBeenCalled();
   });
 
-  it('keeps the database write successful when Redis is unavailable', async () => {
-    mockPostQueries();
-    mocks.getUpstashRestRedisClient.mockRejectedValue(new Error('redis down'));
-
-    const response = await POST(
-      createRequest('POST', {
-        block_level: 2,
-        ip_address: '203.0.113.10',
-        reason: 'manual',
-      })
-    );
-
-    expect(response.status).toBe(200);
-  });
-});
-
-describe('blocked IP route DELETE', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    authorize();
-    mocks.unblockIP.mockResolvedValue(true);
+  it('fails closed when the proxy store still has either block key', async () => {
+    mock.edge.mockResolvedValue({
+      unreadable: false,
+      block: {
+        id: 'edge:id',
+        reason: 'api_abuse',
+        expires_at: '2026-12-01T00:00:00Z',
+      },
+    });
+    mock.mget.mockResolvedValue([null, 2]);
+    expect(
+      (
+        await DELETE(
+          request('DELETE', { ip_address: ip, reason: 'Prober fixed' })
+        )
+      ).status
+    ).toBe(503);
+    expect(mock.audit).toHaveBeenCalledTimes(1);
   });
 
-  it('unblocks with the authorized app-session actor', async () => {
+  it('clears an unreadable edge record without recording its raw value', async () => {
+    mock.edge.mockResolvedValue({ block: null, unreadable: true });
     const response = await DELETE(
-      createRequest('DELETE', {
-        ip_address: '203.0.113.10',
-        reason: 'False positive',
-      })
+      request('DELETE', { ip_address: ip, reason: 'Clear malformed entry' })
     );
-
     expect(response.status).toBe(200);
-    expect(mocks.unblockIP).toHaveBeenCalledWith(
-      '203.0.113.10',
-      USER_ID,
-      'False positive'
+    expect(mock.mget).toHaveBeenCalledWith(
+      `ip:blocked:${ip}`,
+      `ip:block:level:${ip}`
     );
   });
 
-  it('rejects malformed input before unblocking', async () => {
-    const response = await DELETE(createRequest('DELETE', {}));
-
-    expect(response.status).toBe(400);
-    expect(mocks.unblockIP).not.toHaveBeenCalled();
-  });
-
-  it('returns failure when the unblock helper fails', async () => {
-    mocks.unblockIP.mockResolvedValue(false);
-
-    const response = await DELETE(
-      createRequest('DELETE', { ip_address: '203.0.113.10' })
+  it('passes a partial IP search to the shared listing', async () => {
+    mock.list.mockResolvedValue({ data: [], count: 0, edgeComplete: true });
+    expect((await GET(request('GET', undefined, '?q=203.0.113'))).status).toBe(
+      200
     );
-
-    expect(response.status).toBe(500);
+    expect(mock.list).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ q: '203.0.113' })
+    );
   });
 });

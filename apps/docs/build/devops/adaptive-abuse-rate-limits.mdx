@@ -22,3 +22,18 @@ Trusted, organic use gets more headroom; suspicious automation gets less.
 
 Operational detail for these controls is maintained internally and is not published, because this repository is open source and published thresholds or rejection rules would help attackers.
 
+
+## Recover a blocked fleet egress IP
+
+1. Run `ttr infra ip whoami --json` on the affected host to confirm its egress IP.
+2. Run `ttr infra ip inspect <ip> --json` to review the active block, expiry, and
+   recorded abuse events. Inspect can look up an edge-only block by its address.
+3. Stop or fix the noisy prober before clearing enforcement.
+4. With a recently MFA-verified staff session, run
+   `ttr infra ip unblock <ip> --reason "Disabled the noisy prober"`.
+5. Rerun `whoami` to verify the block cleared. If a write returns an unconfirmed
+   result, inspect the current state and reconcile the audit record before
+   retrying.
+
+See the [CLI IP abuse commands](/reference/packages/cli-infra#ip-abuse-operations)
+for permissions, exit codes, and edge listing coverage.

@@ -1,17 +1,17 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { listIpBlocks } from '@/lib/infrastructure/ip-block-store';
+import { authorizeIpOperator } from '@/lib/infrastructure/ip-operator';
 import AddBlockedIPDialog from './add-blocked-ip-dialog';
 import { getBlockedIPsColumns } from './columns';
 import Filters from './filters';
 import {
-  type BlockedIpSearchParams,
   BlockedIpSearchParamsSchema,
   shouldApplyBlockedIpStatusFilter,
 } from './search-params';
@@ -39,20 +39,26 @@ interface Props {
 export default async function BlockedIPsPage({ params, searchParams }: Props) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId, locale }) => {
+      {async ({ locale }) => {
         const t = await getTranslations();
 
-        const permissions = await getPermissions({ wsId });
-        if (!permissions) notFound();
-        const { containsPermission } = permissions;
-        const canViewInfrastructure = containsPermission('view_infrastructure');
-        if (!canViewInfrastructure) {
-          notFound();
-        }
+        const auth = await authorizeIpOperator(
+          new Request(
+            'https://infrastructure.tuturuuu.com/api/v1/infrastructure/blocked-ips',
+            {
+              headers: await headers(),
+            }
+          )
+        );
+        if (!auth.ok) notFound();
 
         const sp = BlockedIpSearchParamsSchema.parse(await searchParams);
-
-        const { data, count } = await getData(sp);
+        const { data, count } = await listIpBlocks(auth.sbAdmin, {
+          ...sp,
+          status: shouldApplyBlockedIpStatusFilter(sp.status)
+            ? sp.status
+            : undefined,
+        });
 
         return (
           <>
@@ -88,67 +94,4 @@ export default async function BlockedIPsPage({ params, searchParams }: Props) {
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getData({
-  q,
-  page = 1,
-  pageSize = 10,
-  status,
-  retry = true,
-}: Partial<BlockedIpSearchParams> & { retry?: boolean } = {}) {
-  const supabase = await createClient();
-
-  let queryBuilder = supabase
-    .from('blocked_ips')
-    .select(
-      `
-      *,
-      unblocked_by_user:unblocked_by (
-        id,
-        display_name
-      )
-    `,
-      {
-        count: 'exact',
-      }
-    )
-    .order('blocked_at', { ascending: false });
-
-  // Filter by status if provided
-  if (status && shouldApplyBlockedIpStatusFilter(status)) {
-    queryBuilder = queryBuilder.eq('status', status);
-  }
-
-  // Search filter
-  if (q) {
-    queryBuilder = queryBuilder.or(
-      `ip_address.ilike.%${q}%,reason.ilike.%${q}%`
-    );
-  }
-
-  // Pagination
-  if (page && pageSize) {
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize - 1;
-    queryBuilder = queryBuilder.range(start, end);
-  }
-
-  const { data, error, count } = await queryBuilder;
-
-  if (error) {
-    if (!retry) throw error;
-    return getData({
-      q,
-      page,
-      pageSize,
-      status,
-      retry: false,
-    });
-  }
-
-  return {
-    data: data || [],
-    count: count || 0,
-  };
 }
